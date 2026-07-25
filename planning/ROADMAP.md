@@ -33,12 +33,14 @@ Current implementation:
 - Durable Object storage adapter and serialized object runtime
 - Cloudflare static-asset and Durable Object configuration
 - Local fake-runtime tests covering eviction recovery and competing writes
+- Hibernation-WebSocket projection hub with player-specific fan-out
+- Browser reconnect and refresh behavior
+- Projection-failure isolation from authoritative command commits
 
 Remaining acceptance work:
 
 - Install and lock current Cloudflare development tooling
-- Run the suite inside `workerd` through Cloudflare's Vitest integration
-- Add WebSocket synchronization and reconnect fan-out
+- Run the full Durable Object and WebSocket suite inside real `workerd`, including eviction and hibernation
 - Perform a compact deployed Cloudflare canary
 
 ### GF-0003 — Discord Activity adapter

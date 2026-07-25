@@ -18,14 +18,14 @@ Implemented in the initial slice:
 - In-memory development storage and restorable snapshots
 - Cloudflare Worker and Durable Object adapter boundary
 - Zero-dependency HTTP server and browser client
-- Unit, invariant, service, and HTTP integration tests
+- Unit, invariant, service, HTTP integration, and WebSocket projection tests
 
 Not yet claimed:
 
 - Discord Activity authentication or launch flow
 - Deployed Cloudflare Worker or real `workerd` validation
 - OpenClaw runtime integration
-- Durable persistence across process restarts
+- Real `workerd` hibernation and deployment behavior
 - Canonical self-hosted-runner validation
 
 ## Run locally
@@ -50,7 +50,7 @@ src/server/               authoritative development service and HTTP host
 src/scripts/              repository self-checks
 public/                   standalone browser shell
 planning/                 architecture, deployment, roadmap, and validation doctrine
-src/cloudflare/            Worker, Durable Object, and storage adapters
+src/cloudflare/           Worker, Durable Object, and storage adapters
 ```
 
 See `AGENTS.md` before consequential development work.

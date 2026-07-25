@@ -3,8 +3,18 @@ export interface DurableStorageLike {
   put<T>(key: string, value: T): Promise<void>;
 }
 
+export interface HibernationWebSocketLike {
+  send(message: string | ArrayBuffer): void;
+  close?(code?: number, reason?: string): void;
+  serializeAttachment?(attachment: unknown): void;
+  deserializeAttachment?<T>(): T | null;
+  readyState?: number;
+}
+
 export interface DurableObjectContextLike {
   storage: DurableStorageLike;
+  acceptWebSocket(socket: HibernationWebSocketLike, tags?: string[]): void;
+  getWebSockets(tag?: string): HibernationWebSocketLike[];
 }
 
 export interface DurableObjectStubLike {

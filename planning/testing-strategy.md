@@ -42,3 +42,17 @@ These cannot be claimed from local validation:
 - Production or staging recovery
 
 Reports must distinguish local execution from canonical CI and live-environment proof.
+
+## WebSocket projection tests
+
+Local contract tests prove:
+
+- A socket is attached only after its player-specific view resolves.
+- Each connection receives an initial authoritative view.
+- Match updates fan out only to subscribers of that match.
+- Every subscriber receives its own player-specific observation.
+- Refresh messages recover current state after reconnect or uncertainty.
+- Game-changing messages are rejected on the WebSocket channel.
+- Projection delivery failure does not roll back an accepted command.
+
+Real hibernation across `workerd` eviction remains an external runtime test until Cloudflare's development packages can be installed and locked.

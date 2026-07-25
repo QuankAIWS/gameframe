@@ -5,10 +5,15 @@ interface WorkerRouterOptions {
   idGenerator?: () => string;
 }
 
-function publicMatchRoute(pathname: string): { matchId: string; action: boolean } | null {
-  const match = /^\/api\/matches\/([^/]+)(\/actions)?$/.exec(pathname);
+type MatchOperation = "view" | "actions" | "events";
+
+function publicMatchRoute(pathname: string): { matchId: string; operation: MatchOperation } | null {
+  const match = /^\/api\/matches\/([^/]+)(?:\/(actions|events))?$/.exec(pathname);
   if (!match) return null;
-  return { matchId: decodeURIComponent(match[1]), action: Boolean(match[2]) };
+  return {
+    matchId: decodeURIComponent(match[1]),
+    operation: (match[2] as MatchOperation | undefined) ?? "view",
+  };
 }
 
 function stubFor(env: GameFrameWorkerEnv, matchId: string) {
@@ -24,7 +29,12 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
         const url = new URL(request.url);
 
         if (request.method === "GET" && url.pathname === "/api/health") {
-          return json(200, { status: "ok", service: "theo-gameframe", runtime: "cloudflare" });
+          return json(200, {
+            status: "ok",
+            service: "theo-gameframe",
+            runtime: "cloudflare",
+            realtime: "websocket-hibernation",
+          });
         }
 
         if (request.method === "POST" && url.pathname === "/api/matches") {
@@ -38,19 +48,29 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
         }
 
         const route = publicMatchRoute(url.pathname);
-        if (route && request.method === "GET" && !route.action) {
+        if (route && request.method === "GET" && route.operation === "view") {
           const internal = new URL("https://match.internal/view");
           internal.searchParams.set("matchId", route.matchId);
           internal.searchParams.set("playerId", url.searchParams.get("playerId") ?? "");
           return stubFor(env, route.matchId).fetch(new Request(internal));
         }
 
-        if (route && request.method === "POST" && route.action) {
+        if (route && request.method === "POST" && route.operation === "actions") {
           const body = await readJson(request);
           return stubFor(env, route.matchId).fetch(new Request("https://match.internal/actions", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ ...body, matchId: route.matchId }),
+          }));
+        }
+
+        if (route && request.method === "GET" && route.operation === "events") {
+          const internal = new URL("https://match.internal/events");
+          internal.searchParams.set("matchId", route.matchId);
+          internal.searchParams.set("playerId", url.searchParams.get("playerId") ?? "");
+          return stubFor(env, route.matchId).fetch(new Request(internal, {
+            method: "GET",
+            headers: request.headers,
           }));
         }
 

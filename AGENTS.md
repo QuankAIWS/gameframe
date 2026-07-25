@@ -27,6 +27,7 @@ The repository currently has no third-party runtime or development dependencies.
 - `src/server` owns the current authoritative process boundary. Browser clients never mutate state directly.
 - Discord, Cloudflare, and OpenClaw integrations must enter through explicit adapters. Do not scatter vendor SDK calls through game logic.
 - Event history, revision checks, idempotency, and visibility are correctness requirements, not deployment polish.
+- HTTP owns commands; WebSockets are projection-only. Do not introduce a second mutation path without preserving the same validation and idempotency contracts.
 
 ## Current active lane
 

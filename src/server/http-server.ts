@@ -65,7 +65,7 @@ export function createGameFrameServer(service = new InMemoryTicTacToeService()) 
       const url = new URL(request.url ?? "/", "http://127.0.0.1");
 
       if (request.method === "GET" && url.pathname === "/api/health") {
-        return json(response, 200, { status: "ok", service: "theo-gameframe" });
+        return json(response, 200, { status: "ok", service: "theo-gameframe", runtime: "node-local", realtime: false });
       }
 
       if (request.method === "POST" && url.pathname === "/api/matches") {

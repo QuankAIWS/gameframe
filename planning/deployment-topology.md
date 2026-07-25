@@ -9,7 +9,7 @@ Discord users
     │
     ▼
 Discord Activity / standalone browser
-    │ HTTPS + WebSocket later
+    │ HTTPS commands + hibernating WebSocket projections
     ▼
 Cloudflare Worker
     ├── static browser assets
@@ -42,7 +42,7 @@ This topology keeps active games available when Theo's computer is busy, rebooti
 - One Durable Object authority per active match
 - Durable snapshots and event history
 - Deterministic fallback opponents
-- Later WebSocket fan-out and reconnect coordination
+- Hibernating WebSocket fan-out and reconnect coordination
 
 ### Theo host
 

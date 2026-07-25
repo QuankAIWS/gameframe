@@ -6,6 +6,10 @@ const newMatch = document.querySelector("#new-match");
 
 const playerId = `browser-${crypto.randomUUID()}`;
 let current = null;
+let realtimeEnabled = false;
+let socket = null;
+let reconnectTimer = null;
+let reconnectAttempt = 0;
 
 function statusText(observation) {
   if (observation.status.draw) return "Draw. Theo remains undefeated.";
@@ -19,7 +23,11 @@ function render(view) {
   current = view;
   status.textContent = statusText(view.observation);
   revision.textContent = `Revision ${view.revision}`;
-  details.textContent = JSON.stringify({ matchId: view.matchId, eventCount: view.eventCount }, null, 2);
+  details.textContent = JSON.stringify({
+    matchId: view.matchId,
+    eventCount: view.eventCount,
+    realtime: realtimeEnabled ? (socket?.readyState === WebSocket.OPEN ? "connected" : "enabled") : "local-http",
+  }, null, 2);
   board.replaceChildren();
 
   view.observation.board.forEach((mark, cell) => {
@@ -45,12 +53,79 @@ async function request(url, options = {}) {
   return body;
 }
 
+async function detectRuntime() {
+  try {
+    const health = await request("/api/health");
+    realtimeEnabled = health.realtime === "websocket-hibernation";
+  } catch {
+    realtimeEnabled = false;
+  }
+}
+
+function disconnectRealtime() {
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  reconnectTimer = null;
+  reconnectAttempt = 0;
+  if (socket) {
+    socket.onclose = null;
+    socket.close();
+  }
+  socket = null;
+}
+
+function scheduleReconnect(matchId) {
+  if (!realtimeEnabled || !current || current.matchId !== matchId || current.observation.status.lifecycle !== "active") {
+    return;
+  }
+  const delay = Math.min(1000 * (2 ** reconnectAttempt), 15_000);
+  reconnectAttempt += 1;
+  reconnectTimer = setTimeout(() => connectRealtime(matchId), delay);
+}
+
+function connectRealtime(matchId) {
+  if (!realtimeEnabled || !current || current.matchId !== matchId) return;
+  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
+
+  const url = new URL(`/api/matches/${encodeURIComponent(matchId)}/events`, window.location.href);
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  url.searchParams.set("playerId", playerId);
+  socket = new WebSocket(url);
+
+  socket.onopen = () => {
+    reconnectAttempt = 0;
+    socket.send(JSON.stringify({ type: "refresh" }));
+  };
+
+  socket.onmessage = (event) => {
+    try {
+      const message = JSON.parse(event.data);
+      if (message.type === "match_state" && message.view.matchId === matchId) {
+        if (!current || message.view.revision >= current.revision) render(message.view);
+      }
+    } catch {
+      // Malformed projection messages do not change authoritative client state.
+    }
+  };
+
+  socket.onclose = () => {
+    socket = null;
+    scheduleReconnect(matchId);
+  };
+
+  socket.onerror = () => {
+    socket?.close();
+  };
+}
+
 async function start() {
+  disconnectRealtime();
   status.textContent = "Creating match…";
-  render(await request("/api/matches", {
+  const view = await request("/api/matches", {
     method: "POST",
     body: JSON.stringify({ humanPlayerId: playerId }),
-  }));
+  });
+  render(view);
+  connectRealtime(view.matchId);
 }
 
 async function move(cell) {
@@ -68,6 +143,9 @@ async function move(cell) {
     }));
   } catch (error) {
     status.textContent = error.message;
+    if (realtimeEnabled && socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: "refresh" }));
+    }
   }
 }
 
@@ -79,3 +157,5 @@ for (let index = 0; index < 9; index += 1) {
   placeholder.disabled = true;
   board.append(placeholder);
 }
+
+await detectRuntime();

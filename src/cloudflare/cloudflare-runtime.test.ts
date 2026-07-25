@@ -57,7 +57,7 @@ class FakeMatchNamespace implements DurableObjectNamespaceLike {
   }
 }
 
-function createEnvironment(namespace = new FakeMatchNamespace()): GameFrameWorkerEnv {
+function createEnvironment(namespace: DurableObjectNamespaceLike = new FakeMatchNamespace()): GameFrameWorkerEnv {
   return {
     MATCHES: namespace,
     ASSETS: { fetch: async () => new Response("asset", { status: 200 }) },
@@ -152,4 +152,76 @@ test("Durable Object serialization rejects one of two competing revision-zero mo
 
   const responses = await Promise.all([submit("race-1", 0), submit("race-2", 1)]);
   assert.deepEqual(responses.map((response) => response.status).sort(), [200, 409]);
+});
+
+test("Cloudflare router forwards WebSocket upgrade requests to the match object", async () => {
+  let captured: Request | null = null;
+  const namespace: DurableObjectNamespaceLike = {
+    idFromName: (name) => name,
+    get: () => ({
+      fetch: async (request) => {
+        captured = request;
+        return new Response(JSON.stringify({ forwarded: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      },
+    }),
+  };
+  const worker = createGameFrameWorker();
+
+  const response = await worker.fetch(new Request(
+    "https://games.example/api/matches/match-events/events?playerId=human",
+    { headers: { Upgrade: "websocket", "Sec-WebSocket-Protocol": "gameframe-v1" } },
+  ), createEnvironment(namespace));
+
+  assert.equal(response.status, 200);
+  assert.ok(captured);
+  const forwarded = captured as Request;
+  assert.equal(new URL(forwarded.url).pathname, "/events");
+  assert.equal(new URL(forwarded.url).searchParams.get("matchId"), "match-events");
+  assert.equal(new URL(forwarded.url).searchParams.get("playerId"), "human");
+  assert.equal(forwarded.headers.get("Upgrade"), "websocket");
+  assert.equal(forwarded.headers.get("Sec-WebSocket-Protocol"), "gameframe-v1");
+});
+
+test("match runtime projection failures do not roll back committed actions", async () => {
+  const storage = new FakeStorage();
+  let notifications = 0;
+  const runtime = new TicTacToeMatchObjectRuntime(
+    storage,
+    (() => {
+      let sequence = 0;
+      return () => `runtime-action-${++sequence}`;
+    })(),
+    {
+      onMatchUpdated: async () => {
+        notifications += 1;
+        throw new Error("socket projection unavailable");
+      },
+    },
+  );
+
+  const initialized = await runtime.fetch(new Request("https://match.internal/initialize", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ matchId: "match-notify", humanPlayerId: "human" }),
+  }));
+  assert.equal(initialized.status, 201);
+
+  const advanced = await runtime.fetch(new Request("https://match.internal/actions", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      matchId: "match-notify",
+      playerId: "human",
+      actionId: "human-1",
+      expectedRevision: 0,
+      action: { type: "place", cell: 0 },
+    }),
+  }));
+
+  assert.equal(advanced.status, 200);
+  assert.equal((await advanced.json() as any).revision, 2);
+  assert.equal(notifications, 2);
 });

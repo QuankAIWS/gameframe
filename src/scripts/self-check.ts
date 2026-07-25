@@ -15,6 +15,7 @@ for (const path of [
   "../../planning/testing-strategy.md",
   "../../planning/deployment-topology.md",
   "../../planning/openclaw-integration.md",
+  "../../planning/decisions/0002-websockets-are-projections.md",
   "../../wrangler.jsonc",
 ]) {
   const content = await readFile(new URL(path, import.meta.url), "utf8");
