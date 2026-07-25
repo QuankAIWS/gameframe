@@ -43,7 +43,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
           return stubFor(env, matchId).fetch(new Request("https://match.internal/initialize", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ matchId, humanPlayerId: String(body.humanPlayerId ?? "") }),
+            body: JSON.stringify({ matchId, playerIds: body.playerIds }),
           }));
         }
 

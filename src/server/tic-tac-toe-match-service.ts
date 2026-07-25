@@ -11,6 +11,7 @@ import type { MatchSnapshotStore } from "../platform/match-store.ts";
 
 export interface PublicMatchView {
   matchId: string;
+  playerIds: readonly string[];
   revision: number;
   observation: TicTacToeObservation;
   eventCount: number;
@@ -33,10 +34,18 @@ export class TicTacToeMatchService {
     this.#theo = options.theo ?? new PerfectTicTacToePlayer("theo");
   }
 
-  async createHumanVsTheo(humanPlayerId: string, requestedMatchId?: string): Promise<PublicMatchView> {
-    if (!humanPlayerId || humanPlayerId === "theo") {
-      throw new Error("A distinct human player ID is required.");
+  async createMatch(playerIds: readonly string[], requestedMatchId?: string): Promise<PublicMatchView> {
+    const normalizedPlayers = playerIds.map((playerId) => playerId.trim());
+    if (
+      normalizedPlayers.length !== 2 ||
+      normalizedPlayers.some((playerId) => !playerId) ||
+      normalizedPlayers[0] === normalizedPlayers[1]
+    ) {
+      const error = new Error("Tic-tac-toe requires exactly two distinct player IDs.");
+      Object.assign(error, { code: "invalid_players" });
+      throw error;
     }
+
     const matchId = requestedMatchId ?? this.#idGenerator();
     if (await this.#store.load(matchId)) {
       const error = new Error(`Match already exists: ${matchId}`);
@@ -47,17 +56,20 @@ export class TicTacToeMatchService {
     const session = new MatchSession({
       matchId,
       definition: ticTacToeDefinition,
-      playerIds: [humanPlayerId, "theo"],
+      playerIds: normalizedPlayers,
     });
+    await this.#runTheoTurnIfNeeded(session);
     await this.#store.save(session.snapshot());
-    return this.#view(session, humanPlayerId);
+    const requestingPlayerId = normalizedPlayers.find((playerId) => playerId !== this.#theo.agentId)
+      ?? normalizedPlayers[0];
+    return this.#view(session, requestingPlayerId);
   }
 
   async view(matchId: string, playerId: string): Promise<PublicMatchView> {
     return this.#view(await this.#loadSession(matchId), playerId);
   }
 
-  async submitHumanAction(input: {
+  async submitAction(input: {
     matchId: string;
     playerId: string;
     actionId: string;
@@ -78,23 +90,7 @@ export class TicTacToeMatchService {
       throw error;
     }
 
-    const theoObservation = session.observe("theo");
-    if (theoObservation.status.lifecycle === "active" && theoObservation.nextPlayerId === "theo") {
-      const action = await this.#theo.chooseAction({
-        observation: theoObservation,
-        legalActions: theoObservation.legalActions,
-      });
-      const theoResult = session.submit({
-        actionId: `theo:${this.#idGenerator()}`,
-        playerId: "theo",
-        expectedRevision: session.revision,
-        action,
-      });
-      if (!theoResult.accepted) {
-        throw new Error(`Deterministic Theo action was rejected: ${theoResult.message}`);
-      }
-    }
-
+    await this.#runTheoTurnIfNeeded(session);
     await this.#store.save(session.snapshot());
     return this.#view(session, input.playerId);
   }
@@ -107,6 +103,35 @@ export class TicTacToeMatchService {
 
   async replay(matchId: string): Promise<TicTacToeState> {
     return (await this.#loadSession(matchId)).replay();
+  }
+
+  async #runTheoTurnIfNeeded(
+    session: MatchSession<TicTacToeState, TicTacToeAction, TicTacToeObservation>,
+  ): Promise<void> {
+    const snapshot = session.snapshot();
+    if (!snapshot.playerIds.includes(this.#theo.agentId)) return;
+
+    const theoObservation = session.observe(this.#theo.agentId);
+    if (
+      theoObservation.status.lifecycle !== "active" ||
+      theoObservation.nextPlayerId !== this.#theo.agentId
+    ) {
+      return;
+    }
+
+    const action = await this.#theo.chooseAction({
+      observation: theoObservation,
+      legalActions: theoObservation.legalActions,
+    });
+    const theoResult = session.submit({
+      actionId: `${this.#theo.agentId}:${this.#idGenerator()}`,
+      playerId: this.#theo.agentId,
+      expectedRevision: session.revision,
+      action,
+    });
+    if (!theoResult.accepted) {
+      throw new Error(`Deterministic Theo action was rejected: ${theoResult.message}`);
+    }
   }
 
   async #loadSession(matchId: string): Promise<MatchSession<TicTacToeState, TicTacToeAction, TicTacToeObservation>> {
@@ -128,11 +153,13 @@ export class TicTacToeMatchService {
     session: MatchSession<TicTacToeState, TicTacToeAction, TicTacToeObservation>,
     playerId: string,
   ): PublicMatchView {
+    const snapshot = session.snapshot();
     return {
       matchId: session.matchId,
+      playerIds: [...snapshot.playerIds],
       revision: session.revision,
       observation: session.observe(playerId),
-      eventCount: session.snapshot().events.length,
+      eventCount: snapshot.events.length,
     };
   }
 }

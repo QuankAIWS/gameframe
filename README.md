@@ -13,6 +13,8 @@ Implemented in the initial slice:
 - Idempotent action submission and stale-write rejection
 - Replayable event history
 - Tic-tac-toe rules and player observations
+- Explicit two-seat human/agent identity model
+- Human-versus-human and human-versus-Theo match creation
 - Perfect deterministic Theo opponent
 - Storage-neutral asynchronous match service
 - In-memory development storage and restorable snapshots
@@ -50,7 +52,7 @@ src/server/               authoritative development service and HTTP host
 src/scripts/              repository self-checks
 public/                   standalone browser shell
 planning/                 architecture, deployment, roadmap, and validation doctrine
-src/cloudflare/           Worker, Durable Object, and storage adapters
+src/cloudflare/            Worker, Durable Object, and storage adapters
 ```
 
 See `AGENTS.md` before consequential development work.

@@ -70,8 +70,10 @@ export function createGameFrameServer(service = new InMemoryTicTacToeService()) 
 
       if (request.method === "POST" && url.pathname === "/api/matches") {
         const body = await readJson(request);
-        const humanPlayerId = String(body.humanPlayerId ?? "").trim();
-        return json(response, 201, await service.createHumanVsTheo(humanPlayerId));
+        const playerIds = Array.isArray(body.playerIds)
+          ? body.playerIds.map((playerId) => String(playerId))
+          : [];
+        return json(response, 201, await service.createMatch(playerIds));
       }
 
       const route = matchRoute(url.pathname);
@@ -82,7 +84,7 @@ export function createGameFrameServer(service = new InMemoryTicTacToeService()) 
 
       if (route && request.method === "POST" && route.action) {
         const body = await readJson(request);
-        const view = await service.submitHumanAction({
+        const view = await service.submitAction({
           matchId: route.matchId,
           playerId: String(body.playerId ?? ""),
           actionId: String(body.actionId ?? ""),

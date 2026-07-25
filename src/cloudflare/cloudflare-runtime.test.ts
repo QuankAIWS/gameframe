@@ -72,7 +72,7 @@ test("Cloudflare router creates, advances, and restores a durable match", async 
   const createdResponse = await worker.fetch(new Request("https://games.example/api/matches", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ humanPlayerId: "human" }),
+    body: JSON.stringify({ playerIds: ["human", "theo"] }),
   }), env);
   assert.equal(createdResponse.status, 201);
   const created = await createdResponse.json() as any;
@@ -133,7 +133,7 @@ test("Durable Object serialization rejects one of two competing revision-zero mo
   await worker.fetch(new Request("https://games.example/api/matches", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ humanPlayerId: "human" }),
+    body: JSON.stringify({ playerIds: ["human", "theo"] }),
   }), env);
 
   const submit = (actionId: string, cell: number) => worker.fetch(new Request(
@@ -205,7 +205,7 @@ test("match runtime projection failures do not roll back committed actions", asy
   const initialized = await runtime.fetch(new Request("https://match.internal/initialize", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ matchId: "match-notify", humanPlayerId: "human" }),
+    body: JSON.stringify({ matchId: "match-notify", playerIds: ["human", "theo"] }),
   }));
   assert.equal(initialized.status, 201);
 
@@ -224,4 +224,43 @@ test("match runtime projection failures do not roll back committed actions", asy
   assert.equal(advanced.status, 200);
   assert.equal((await advanced.json() as any).revision, 2);
   assert.equal(notifications, 2);
+});
+
+test("Cloudflare runtime preserves two-human turn ownership without auto-playing Theo", async () => {
+  const env = createEnvironment();
+  const worker = createGameFrameWorker({ idGenerator: () => "match-two-human" });
+
+  const created = await worker.fetch(new Request("https://games.example/api/matches", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ playerIds: ["alice", "bob"] }),
+  }), env);
+  assert.equal(created.status, 201);
+
+  const afterAlice = await worker.fetch(new Request(
+    "https://games.example/api/matches/match-two-human/actions",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        playerId: "alice",
+        actionId: "alice-cloudflare-1",
+        expectedRevision: 0,
+        action: { type: "place", cell: 0 },
+      }),
+    },
+  ), env);
+
+  assert.equal(afterAlice.status, 200);
+  const aliceView = await afterAlice.json() as any;
+  assert.equal(aliceView.revision, 1);
+  assert.equal(aliceView.observation.nextPlayerId, "bob");
+  assert.deepEqual(aliceView.playerIds, ["alice", "bob"]);
+
+  const bobResponse = await worker.fetch(new Request(
+    "https://games.example/api/matches/match-two-human?playerId=bob",
+  ), env);
+  const bobView = await bobResponse.json() as any;
+  assert.equal(bobView.observation.yourMark, "O");
+  assert.ok(bobView.observation.legalActions.some((action: any) => action.cell === 4));
 });

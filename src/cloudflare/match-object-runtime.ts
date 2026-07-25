@@ -42,8 +42,10 @@ export class TicTacToeMatchObjectRuntime {
       if (request.method === "POST" && url.pathname === "/initialize") {
         const body = await readJson(request);
         const matchId = String(body.matchId ?? "").trim();
-        const humanPlayerId = String(body.humanPlayerId ?? "").trim();
-        const view = await this.#service.createHumanVsTheo(humanPlayerId, matchId);
+        const playerIds = Array.isArray(body.playerIds)
+          ? body.playerIds.map((playerId) => String(playerId))
+          : [];
+        const view = await this.#service.createMatch(playerIds, matchId);
         await this.#notify(matchId);
         return json(201, view);
       }
@@ -58,7 +60,7 @@ export class TicTacToeMatchObjectRuntime {
       if (request.method === "POST" && url.pathname === "/actions") {
         const body = await readJson(request);
         const matchId = String(body.matchId ?? "");
-        const view = await this.#service.submitHumanAction({
+        const view = await this.#service.submitAction({
           matchId,
           playerId: String(body.playerId ?? ""),
           actionId: String(body.actionId ?? ""),

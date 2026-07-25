@@ -58,6 +58,7 @@ class FakeContext implements DurableObjectContextLike {
 function view(matchId: string, playerId: string, revision = 2) {
   return {
     matchId,
+    playerIds: ["human", "theo"],
     revision,
     eventCount: revision,
     observation: {

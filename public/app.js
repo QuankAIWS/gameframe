@@ -122,7 +122,7 @@ async function start() {
   status.textContent = "Creating match…";
   const view = await request("/api/matches", {
     method: "POST",
-    body: JSON.stringify({ humanPlayerId: playerId }),
+    body: JSON.stringify({ playerIds: [playerId, "theo"] }),
   });
   render(view);
   connectRealtime(view.matchId);

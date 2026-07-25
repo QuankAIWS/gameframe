@@ -36,6 +36,9 @@ Current implementation:
 - Hibernation-WebSocket projection hub with player-specific fan-out
 - Browser reconnect and refresh behavior
 - Projection-failure isolation from authoritative command commits
+- Explicit two-seat match creation for human and agent identities
+- Human-versus-human turn flow through Node and Cloudflare adapters
+- Automatic Theo opening action when Theo owns the first seat
 
 Remaining acceptance work:
 
