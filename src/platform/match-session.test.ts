@@ -53,3 +53,41 @@ test("event replay reconstructs authoritative state", () => {
   session.submit({ actionId: "3", playerId: "a", expectedRevision: 2, action: { type: "place", cell: 1 } });
   assert.deepEqual(session.replay(), session.snapshot().state);
 });
+
+test("snapshot restoration preserves accepted and rejected action idempotency", () => {
+  const session = createSession();
+  const rejectedEnvelope = {
+    actionId: "b-rejected",
+    playerId: "b",
+    expectedRevision: 0,
+    action: { type: "place" as const, cell: 0 },
+  };
+  const rejected = session.submit(rejectedEnvelope);
+  assert.equal(rejected.accepted, false);
+
+  const acceptedEnvelope = {
+    actionId: "a-accepted",
+    playerId: "a",
+    expectedRevision: 0,
+    action: { type: "place" as const, cell: 0 },
+  };
+  session.submit(acceptedEnvelope);
+
+  const snapshot = session.snapshot();
+  const restored = new MatchSession({
+    matchId: snapshot.matchId,
+    definition: ticTacToeDefinition,
+    playerIds: snapshot.playerIds,
+    snapshot,
+    now: () => new Date("2026-07-25T12:00:00.000Z"),
+  });
+
+  const acceptedDuplicate = restored.submit(acceptedEnvelope);
+  assert.equal(acceptedDuplicate.accepted, true);
+  if (acceptedDuplicate.accepted) assert.equal(acceptedDuplicate.duplicate, true);
+
+  const rejectedDuplicate = restored.submit(rejectedEnvelope);
+  assert.deepEqual(rejectedDuplicate, rejected);
+  assert.equal(restored.revision, 1);
+  assert.deepEqual(restored.replay(), restored.snapshot().state);
+});

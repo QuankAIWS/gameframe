@@ -30,7 +30,7 @@ The repository currently has no third-party runtime or development dependencies.
 
 ## Current active lane
 
-`GF-0001`: infrastructure-complete tic-tac-toe walking skeleton.
+`GF-0002`: Cloudflare-compatible authoritative match runtime and deployment boundary.
 
 ## Validation posture
 

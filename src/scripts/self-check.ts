@@ -13,6 +13,9 @@ for (const path of [
   "../../planning/ROADMAP.md",
   "../../planning/architecture.md",
   "../../planning/testing-strategy.md",
+  "../../planning/deployment-topology.md",
+  "../../planning/openclaw-integration.md",
+  "../../wrangler.jsonc",
 ]) {
   const content = await readFile(new URL(path, import.meta.url), "utf8");
   assert.ok(content.trim().length > 40, `${path} must contain durable content.`);

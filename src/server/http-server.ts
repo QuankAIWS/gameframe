@@ -71,13 +71,13 @@ export function createGameFrameServer(service = new InMemoryTicTacToeService()) 
       if (request.method === "POST" && url.pathname === "/api/matches") {
         const body = await readJson(request);
         const humanPlayerId = String(body.humanPlayerId ?? "").trim();
-        return json(response, 201, service.createHumanVsTheo(humanPlayerId));
+        return json(response, 201, await service.createHumanVsTheo(humanPlayerId));
       }
 
       const route = matchRoute(url.pathname);
       if (route && request.method === "GET" && !route.action) {
         const playerId = url.searchParams.get("playerId") ?? "";
-        return json(response, 200, service.view(route.matchId, playerId));
+        return json(response, 200, await service.view(route.matchId, playerId));
       }
 
       if (route && request.method === "POST" && route.action) {

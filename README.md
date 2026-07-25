@@ -14,14 +14,16 @@ Implemented in the initial slice:
 - Replayable event history
 - Tic-tac-toe rules and player observations
 - Perfect deterministic Theo opponent
-- In-memory match service
+- Storage-neutral asynchronous match service
+- In-memory development storage and restorable snapshots
+- Cloudflare Worker and Durable Object adapter boundary
 - Zero-dependency HTTP server and browser client
 - Unit, invariant, service, and HTTP integration tests
 
 Not yet claimed:
 
 - Discord Activity authentication or launch flow
-- Cloudflare Worker or Durable Object deployment
+- Deployed Cloudflare Worker or real `workerd` validation
 - OpenClaw runtime integration
 - Durable persistence across process restarts
 - Canonical self-hosted-runner validation
@@ -47,7 +49,8 @@ src/agents/               nonhuman player contracts and implementations
 src/server/               authoritative development service and HTTP host
 src/scripts/              repository self-checks
 public/                   standalone browser shell
-planning/                 architecture, roadmap, and validation doctrine
+planning/                 architecture, deployment, roadmap, and validation doctrine
+src/cloudflare/            Worker, Durable Object, and storage adapters
 ```
 
 See `AGENTS.md` before consequential development work.

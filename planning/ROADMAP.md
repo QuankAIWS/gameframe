@@ -1,6 +1,6 @@
 # Theo GameFrame Roadmap
 
-## Active
+## Implemented locally; canonical CI pending
 
 ### GF-0001 — Infrastructure-complete tic-tac-toe walking skeleton
 
@@ -20,11 +20,26 @@ Current proof boundary:
 - Browser smoke validation is available locally.
 - Canonical CI, Discord canary, Cloudflare canary, and OpenClaw integration remain pending.
 
-## Planned
+## Active
 
 ### GF-0002 — Cloudflare match runtime
 
-Add Worker entry points, Durable Object authoritative sessions, WebSocket synchronization, durable snapshots, and local `workerd` validation.
+Current implementation:
+
+- Storage-neutral async match service
+- Serializable and restorable authoritative snapshots
+- Persistent accepted/rejected action idempotency
+- Worker routing boundary
+- Durable Object storage adapter and serialized object runtime
+- Cloudflare static-asset and Durable Object configuration
+- Local fake-runtime tests covering eviction recovery and competing writes
+
+Remaining acceptance work:
+
+- Install and lock current Cloudflare development tooling
+- Run the suite inside `workerd` through Cloudflare's Vitest integration
+- Add WebSocket synchronization and reconnect fan-out
+- Perform a compact deployed Cloudflare canary
 
 ### GF-0003 — Discord Activity adapter
 

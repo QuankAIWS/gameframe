@@ -4,7 +4,7 @@ import { InMemoryTicTacToeService } from "./in-memory-match-service.ts";
 
 test("human action is followed by an authoritative Theo action", async () => {
   const service = new InMemoryTicTacToeService();
-  const created = service.createHumanVsTheo("human");
+  const created = await service.createHumanVsTheo("human");
   const updated = await service.submitHumanAction({
     matchId: created.matchId,
     playerId: "human",
@@ -17,5 +17,5 @@ test("human action is followed by an authoritative Theo action", async () => {
   assert.equal(updated.eventCount, 2);
   assert.equal(updated.observation.board[0], "X");
   assert.equal(updated.observation.board[4], "O");
-  assert.deepEqual(service.replay(created.matchId), service.snapshot(created.matchId).state);
+  assert.deepEqual(await service.replay(created.matchId), (await service.snapshot(created.matchId)).state);
 });
