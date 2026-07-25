@@ -95,3 +95,9 @@ Discord SDK authorize
 ```
 
 The local Node adapter uses `x-gameframe-player-id` only as an explicit development authenticator. The Cloudflare entry point rejects public game API requests until a production verifier is installed. OpenClaw will use a separate service principal bound to Theo's agent identity.
+
+## Activity sessions
+
+After Discord OAuth verification, GameFrame issues a short-lived HMAC-signed session cookie. The token is opaque to the game core and contains only the canonical principal and expiry metadata. The cookie is HttpOnly, Secure, `SameSite=None`, and `Partitioned`, and is scoped to the Activity's `{clientId}.discordsays.com` host.
+
+HTTP commands and WebSocket upgrades therefore pass through the same `RequestAuthenticator`. The Worker imports `SESSION_SECRET` from the deployment environment; without it, all game APIs fail closed.

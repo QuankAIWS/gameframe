@@ -66,3 +66,12 @@ Real hibernation across `workerd` eviction remains an external runtime test unti
 - Rejected impersonation attempts do not mutate the match.
 - WebSocket attachments receive only the authenticated principal's observation.
 - Development authentication is explicitly separate from the production Discord and service verifiers.
+
+## Signed session tests
+
+- Valid signed sessions recover the original principal.
+- Signature modification fails closed.
+- Expired and malformed sessions fail closed.
+- Cookie parsing does not expose or reinterpret client identity claims.
+- Activity cookies include Discord's required iframe and partitioning attributes.
+- Cloudflare uses the configured secret for both HTTP and WebSocket request authentication.

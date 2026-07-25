@@ -15,6 +15,7 @@ Implemented in the initial slice:
 - Tic-tac-toe rules and player observations
 - Explicit two-seat human/agent identity model
 - Server-derived request principals and spoof-resistant seat authorization
+- Signed, expiring, partitioned Discord Activity session cookies
 - Human-versus-human and human-versus-Theo match creation
 - Perfect deterministic Theo opponent
 - Storage-neutral asynchronous match service
@@ -53,7 +54,7 @@ src/server/               authoritative development service and HTTP host
 src/scripts/              repository self-checks
 public/                   standalone browser shell
 planning/                 architecture, deployment, roadmap, and validation doctrine
-src/cloudflare/            Worker, Durable Object, and storage adapters
+src/cloudflare/           Worker, Durable Object, and storage adapters
 ```
 
 See `AGENTS.md` before consequential development work.

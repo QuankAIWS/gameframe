@@ -330,3 +330,29 @@ test("Cloudflare boundary rejects seat and action identity spoofing", async () =
   ), env).then((response) => response.json() as Promise<any>);
   assert.equal(unchanged.revision, 0);
 });
+
+test("Cloudflare boundary accepts a signed Discord-style session cookie", async () => {
+  const { SignedSessionCodec } = await import("../auth/signed-session.ts");
+  const secret = "0123456789abcdef0123456789abcdef";
+  const codec = new SignedSessionCodec(secret);
+  const token = await codec.issue({ playerId: "discord:123", source: "discord" });
+  const env = { ...createEnvironment(), SESSION_SECRET: secret };
+  const worker = createGameFrameWorker({ idGenerator: () => "match-cookie" });
+
+  const created = await worker.fetch(new Request("https://games.example/api/matches", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      cookie: `gameframe_session=${token}`,
+    },
+    body: JSON.stringify({ playerIds: ["discord:123", "theo"] }),
+  }), env);
+
+  assert.equal(created.status, 201);
+  assert.equal((await created.json() as any).matchId, "match-cookie");
+
+  const tampered = await worker.fetch(new Request("https://games.example/api/matches/match-cookie", {
+    headers: { cookie: `gameframe_session=${token.slice(0, -1)}A` },
+  }), env);
+  assert.equal(tampered.status, 401);
+});

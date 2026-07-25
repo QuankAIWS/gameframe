@@ -41,6 +41,8 @@ Current implementation:
 - Automatic Theo opening action when Theo owns the first seat
 - Server-derived player identity boundary for create, view, action, and WebSocket requests
 - Fail-closed Cloudflare API behavior until a production identity verifier is configured
+- HMAC-signed session cookies shared by HTTPS commands and WebSocket upgrades
+- Discord Activity cookie attributes and expiry/tamper validation
 
 Remaining acceptance work:
 
@@ -50,7 +52,7 @@ Remaining acceptance work:
 
 ### GF-0003 — Discord Activity adapter
 
-Add Discord authorization-code exchange, verified user sessions, Activity launch context, participant mapping, invite/resume behavior, and desktop/mobile canaries.
+Add Discord authorization-code exchange and verified user lookup, issue the signed Activity session, then add launch context, participant mapping, invite/resume behavior, and desktop/mobile canaries.
 
 ### GF-0004 — OpenClaw Theo player adapter
 

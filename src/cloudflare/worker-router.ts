@@ -4,6 +4,7 @@ import {
   requirePrincipalSeat,
   type RequestAuthenticator,
 } from "../auth/request-authenticator.ts";
+import { SignedCookieSessionAuthenticator, SignedSessionCodec } from "../auth/signed-session.ts";
 import { errorResponse, json, readJson } from "./http-utils.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
@@ -29,14 +30,30 @@ function stubFor(env: GameFrameWorkerEnv, matchId: string) {
 
 export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
   const idGenerator = options.idGenerator ?? (() => crypto.randomUUID());
-  const authenticator = options.authenticator ?? new RejectingRequestAuthenticator(
-    "Cloudflare game APIs require a configured Discord or service identity verifier.",
-  );
+  let cachedSessionAuthenticator: { secret: string; authenticator: RequestAuthenticator } | null = null;
+
+  function authenticatorFor(env: GameFrameWorkerEnv): RequestAuthenticator {
+    if (options.authenticator) return options.authenticator;
+    const secret = env.SESSION_SECRET?.trim() ?? "";
+    if (!secret) {
+      return new RejectingRequestAuthenticator(
+        "Cloudflare game APIs require a configured Discord or service identity verifier.",
+      );
+    }
+    if (!cachedSessionAuthenticator || cachedSessionAuthenticator.secret !== secret) {
+      cachedSessionAuthenticator = {
+        secret,
+        authenticator: new SignedCookieSessionAuthenticator(new SignedSessionCodec(secret)),
+      };
+    }
+    return cachedSessionAuthenticator.authenticator;
+  }
 
   return {
     async fetch(request: Request, env: GameFrameWorkerEnv): Promise<Response> {
       try {
         const url = new URL(request.url);
+        const authenticator = authenticatorFor(env);
 
         if (request.method === "GET" && url.pathname === "/api/health") {
           return json(200, {

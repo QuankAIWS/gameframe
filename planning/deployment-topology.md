@@ -77,3 +77,7 @@ Tic-tac-toe and compact turn-based tactics require negligible local compute when
 Discord user authentication terminates at the public Cloudflare application boundary. The Activity obtains an authorization code through the Embedded App SDK; a backend route exchanges it using the application secret, verifies the Discord user, and establishes the GameFrame principal used by HTTP and WebSocket requests. Durable Objects receive only the already-derived player identity.
 
 Theo does not reuse a Discord human session. The OpenClaw plugin receives a narrow service credential that maps only to Theo's registered agent identity and cannot impersonate human seats.
+
+## Session secret
+
+The public Worker requires a `SESSION_SECRET` provisioned through Cloudflare's secret store. It signs short-lived Activity sessions after Discord verification and validates them before routing any match request. Removing or rotating the secret invalidates sessions signed by the previous value; rotation therefore requires an explicit operator procedure once live sessions matter.
