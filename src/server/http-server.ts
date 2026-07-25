@@ -2,6 +2,12 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  DevelopmentHeaderAuthenticator,
+  rejectIdentityClaim,
+  requirePrincipalSeat,
+  type RequestAuthenticator,
+} from "../auth/request-authenticator.ts";
 import { InMemoryTicTacToeService } from "./in-memory-match-service.ts";
 
 const publicRoot = fileURLToPath(new URL("../../public/", import.meta.url));
@@ -28,6 +34,18 @@ async function readJson(request: IncomingMessage): Promise<Record<string, unknow
     }
   }
   return body ? JSON.parse(body) as Record<string, unknown> : {};
+}
+
+function authenticationRequest(request: IncomingMessage, url: URL): Request {
+  const headers = new Headers();
+  for (const [name, value] of Object.entries(request.headers)) {
+    if (Array.isArray(value)) {
+      for (const item of value) headers.append(name, item);
+    } else if (value !== undefined) {
+      headers.set(name, value);
+    }
+  }
+  return new Request(url, { method: request.method, headers });
 }
 
 function matchRoute(pathname: string): { matchId: string; action: boolean } | null {
@@ -59,34 +77,56 @@ async function serveStatic(pathname: string, response: ServerResponse): Promise<
   }
 }
 
-export function createGameFrameServer(service = new InMemoryTicTacToeService()) {
+function errorStatus(error: ApiError): number {
+  if (error.code === "authentication_required") return 401;
+  if (error.code === "forbidden" || error.code === "identity_mismatch") return 403;
+  if (error.code === "stale_revision") return 409;
+  if (error.code === "match_not_found") return 404;
+  return 400;
+}
+
+export function createGameFrameServer(
+  service = new InMemoryTicTacToeService(),
+  authenticator: RequestAuthenticator = new DevelopmentHeaderAuthenticator(),
+) {
   return createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? "/", "http://127.0.0.1");
 
       if (request.method === "GET" && url.pathname === "/api/health") {
-        return json(response, 200, { status: "ok", service: "theo-gameframe", runtime: "node-local", realtime: false });
+        return json(response, 200, {
+          status: "ok",
+          service: "theo-gameframe",
+          runtime: "node-local",
+          realtime: false,
+          authentication: "development-header",
+        });
       }
 
       if (request.method === "POST" && url.pathname === "/api/matches") {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
         const body = await readJson(request);
         const playerIds = Array.isArray(body.playerIds)
           ? body.playerIds.map((playerId) => String(playerId))
           : [];
+        requirePrincipalSeat(principal, playerIds);
         return json(response, 201, await service.createMatch(playerIds));
       }
 
       const route = matchRoute(url.pathname);
       if (route && request.method === "GET" && !route.action) {
-        const playerId = url.searchParams.get("playerId") ?? "";
-        return json(response, 200, await service.view(route.matchId, playerId));
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        rejectIdentityClaim(principal, url.searchParams.get("playerId"));
+        return json(response, 200, await service.view(route.matchId, principal.playerId));
       }
 
       if (route && request.method === "POST" && route.action) {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
         const body = await readJson(request);
+        rejectIdentityClaim(principal, body.playerId);
         const view = await service.submitAction({
           matchId: route.matchId,
-          playerId: String(body.playerId ?? ""),
+          playerId: principal.playerId,
           actionId: String(body.actionId ?? ""),
           expectedRevision: Number(body.expectedRevision),
           action: { type: "place", cell: Number((body.action as { cell?: unknown } | undefined)?.cell) },
@@ -101,8 +141,7 @@ export function createGameFrameServer(service = new InMemoryTicTacToeService()) 
       return await serveStatic(url.pathname, response);
     } catch (caught) {
       const error = caught as ApiError;
-      const status = error.code === "stale_revision" ? 409 : 400;
-      return json(response, status, {
+      return json(response, errorStatus(error), {
         error: error.code ?? "bad_request",
         message: error.message,
         revision: error.revision,

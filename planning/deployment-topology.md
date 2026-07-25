@@ -38,7 +38,7 @@ This topology keeps active games available when Theo's computer is busy, rebooti
 ### Cloudflare
 
 - Static web and Discord Activity assets
-- Public API routing
+- Public API routing and authenticated session enforcement
 - One Durable Object authority per active match
 - Durable snapshots and event history
 - Deterministic fallback opponents
@@ -71,3 +71,9 @@ This topology keeps active games available when Theo's computer is busy, rebooti
 ## Resource posture
 
 Tic-tac-toe and compact turn-based tactics require negligible local compute when hosted on Cloudflare. Theo's host performs model calls and plugin work only when Theo must decide, explain, narrate, or react. Real-time simulation may later require a dedicated server, but should retain the same public API and Theo-player contracts.
+
+## Identity placement
+
+Discord user authentication terminates at the public Cloudflare application boundary. The Activity obtains an authorization code through the Embedded App SDK; a backend route exchanges it using the application secret, verifies the Discord user, and establishes the GameFrame principal used by HTTP and WebSocket requests. Durable Objects receive only the already-derived player identity.
+
+Theo does not reuse a Discord human session. The OpenClaw plugin receives a narrow service credential that maps only to Theo's registered agent identity and cannot impersonate human seats.

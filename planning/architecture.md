@@ -55,7 +55,6 @@ GF-0001 uses an in-memory repository so the contracts can be tested without depl
 - Cloudflare is an intended public edge and match-runtime option, not a dependency of game rules.
 - OpenClaw connects through a constrained player adapter and receives structured observations.
 
-
 ## Command and projection split
 
 Game-changing actions use authenticated HTTP commands with action IDs and expected revisions. WebSockets are read-side projections only:
@@ -76,9 +75,23 @@ WebSocket
 
 This prevents connection retries, duplicate socket messages, or projection failures from becoming game-state authority. Cloudflare's hibernation WebSocket API is the intended transport so idle connections can survive Durable Object eviction without keeping the object continuously active.
 
-
 ## Player seats
 
 Tic-tac-toe matches are created with exactly two explicit, distinct player IDs. A player ID may represent a Discord-authenticated human or a registered agent identity such as `theo`. The game definition maps the ordered seats to X and O; transports do not infer or silently replace identities.
 
 The service invokes an agent decision adapter only when that agent ID is actually present and currently owns the turn. Human-versus-human matches therefore use the same service and persistence path without model calls or deterministic bot actions. If Theo occupies the first seat, his opening action is committed during match creation so an agent-owned turn is not stranded.
+
+## Authenticated player identity
+
+External transports produce an authenticated principal before they reach match services. The public request body never determines the actor:
+
+```text
+Discord SDK authorize
+  -> backend code exchange and Discord verification
+  -> authenticated session
+  -> canonical player principal
+  -> seat authorization
+  -> match command or projection
+```
+
+The local Node adapter uses `x-gameframe-player-id` only as an explicit development authenticator. The Cloudflare entry point rejects public game API requests until a production verifier is installed. OpenClaw will use a separate service principal bound to Theo's agent identity.

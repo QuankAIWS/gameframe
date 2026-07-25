@@ -46,7 +46,11 @@ function render(view) {
 async function request(url, options = {}) {
   const response = await fetch(url, {
     ...options,
-    headers: { "content-type": "application/json", ...(options.headers ?? {}) },
+    headers: {
+      "content-type": "application/json",
+      "x-gameframe-player-id": playerId,
+      ...(options.headers ?? {}),
+    },
   });
   const body = await response.json();
   if (!response.ok) throw new Error(body.message ?? body.error);
@@ -88,7 +92,6 @@ function connectRealtime(matchId) {
 
   const url = new URL(`/api/matches/${encodeURIComponent(matchId)}/events`, window.location.href);
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-  url.searchParams.set("playerId", playerId);
   socket = new WebSocket(url);
 
   socket.onopen = () => {
@@ -135,7 +138,6 @@ async function move(cell) {
     render(await request(`/api/matches/${encodeURIComponent(current.matchId)}/actions`, {
       method: "POST",
       body: JSON.stringify({
-        playerId,
         actionId: crypto.randomUUID(),
         expectedRevision: current.revision,
         action: { type: "place", cell },

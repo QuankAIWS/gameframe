@@ -56,3 +56,13 @@ Local contract tests prove:
 - Projection delivery failure does not roll back an accepted command.
 
 Real hibernation across `workerd` eviction remains an external runtime test until Cloudflare's development packages can be installed and locked.
+
+## Authentication and authorization tests
+
+- Anonymous game API calls fail closed.
+- The creator must occupy one requested seat.
+- Reads and actions derive identity from the authenticated request principal.
+- Conflicting client-supplied identity claims are rejected.
+- Rejected impersonation attempts do not mutate the match.
+- WebSocket attachments receive only the authenticated principal's observation.
+- Development authentication is explicitly separate from the production Discord and service verifiers.

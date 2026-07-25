@@ -21,11 +21,15 @@ export async function readJson(request: Request): Promise<Record<string, unknown
 
 export function errorResponse(caught: unknown): Response {
   const error = caught as ApiError;
-  const status = error.code === "stale_revision" || error.code === "match_exists"
-    ? 409
-    : error.code === "match_not_found"
-      ? 404
-      : 400;
+  const status = error.code === "authentication_required"
+    ? 401
+    : error.code === "forbidden" || error.code === "identity_mismatch"
+      ? 403
+      : error.code === "stale_revision" || error.code === "match_exists"
+        ? 409
+        : error.code === "match_not_found"
+          ? 404
+          : 400;
   return json(status, {
     error: error.code ?? "bad_request",
     message: error.message,

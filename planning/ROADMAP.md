@@ -39,6 +39,8 @@ Current implementation:
 - Explicit two-seat match creation for human and agent identities
 - Human-versus-human turn flow through Node and Cloudflare adapters
 - Automatic Theo opening action when Theo owns the first seat
+- Server-derived player identity boundary for create, view, action, and WebSocket requests
+- Fail-closed Cloudflare API behavior until a production identity verifier is configured
 
 Remaining acceptance work:
 
@@ -48,7 +50,7 @@ Remaining acceptance work:
 
 ### GF-0003 — Discord Activity adapter
 
-Add Discord identity exchange, Activity launch context, participant mapping, invite/resume behavior, and desktop/mobile canaries.
+Add Discord authorization-code exchange, verified user sessions, Activity launch context, participant mapping, invite/resume behavior, and desktop/mobile canaries.
 
 ### GF-0004 — OpenClaw Theo player adapter
 

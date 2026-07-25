@@ -16,6 +16,7 @@ for (const path of [
   "../../planning/deployment-topology.md",
   "../../planning/openclaw-integration.md",
   "../../planning/decisions/0002-websockets-are-projections.md",
+  "../../planning/decisions/0003-server-derived-player-identity.md",
   "../../wrangler.jsonc",
 ]) {
   const content = await readFile(new URL(path, import.meta.url), "utf8");

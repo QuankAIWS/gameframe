@@ -14,6 +14,7 @@ Implemented in the initial slice:
 - Replayable event history
 - Tic-tac-toe rules and player observations
 - Explicit two-seat human/agent identity model
+- Server-derived request principals and spoof-resistant seat authorization
 - Human-versus-human and human-versus-Theo match creation
 - Perfect deterministic Theo opponent
 - Storage-neutral asynchronous match service
@@ -24,7 +25,7 @@ Implemented in the initial slice:
 
 Not yet claimed:
 
-- Discord Activity authentication or launch flow
+- Discord Activity OAuth exchange, session establishment, or launch flow
 - Deployed Cloudflare Worker or real `workerd` validation
 - OpenClaw runtime integration
 - Real `workerd` hibernation and deployment behavior

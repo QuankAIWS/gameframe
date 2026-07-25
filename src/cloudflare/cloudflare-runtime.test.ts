@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { DevelopmentHeaderAuthenticator } from "../auth/request-authenticator.ts";
 import { TicTacToeMatchObjectRuntime } from "./match-object-runtime.ts";
 import type {
   DurableObjectNamespaceLike,
@@ -8,6 +9,19 @@ import type {
   GameFrameWorkerEnv,
 } from "./runtime-contracts.ts";
 import { createGameFrameWorker } from "./worker-router.ts";
+
+function authenticatedRequest(url: string, playerId: string, init: RequestInit = {}): Request {
+  const headers = new Headers(init.headers);
+  headers.set("x-gameframe-player-id", playerId);
+  return new Request(url, { ...init, headers });
+}
+
+function createTestWorker(options: { idGenerator?: () => string } = {}) {
+  return createGameFrameWorker({
+    ...options,
+    authenticator: new DevelopmentHeaderAuthenticator(),
+  });
+}
 
 class FakeStorage implements DurableStorageLike {
   readonly values = new Map<string, unknown>();
@@ -67,9 +81,9 @@ function createEnvironment(namespace: DurableObjectNamespaceLike = new FakeMatch
 test("Cloudflare router creates, advances, and restores a durable match", async () => {
   const namespace = new FakeMatchNamespace();
   const env = createEnvironment(namespace);
-  const worker = createGameFrameWorker({ idGenerator: () => "match-cloudflare-1" });
+  const worker = createTestWorker({ idGenerator: () => "match-cloudflare-1" });
 
-  const createdResponse = await worker.fetch(new Request("https://games.example/api/matches", {
+  const createdResponse = await worker.fetch(authenticatedRequest("https://games.example/api/matches", "human", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ playerIds: ["human", "theo"] }),
@@ -78,13 +92,12 @@ test("Cloudflare router creates, advances, and restores a durable match", async 
   const created = await createdResponse.json() as any;
   assert.equal(created.matchId, "match-cloudflare-1");
 
-  const actionResponse = await worker.fetch(new Request(
-    "https://games.example/api/matches/match-cloudflare-1/actions",
+  const actionResponse = await worker.fetch(authenticatedRequest(
+    "https://games.example/api/matches/match-cloudflare-1/actions", "human",
     {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        playerId: "human",
         actionId: "human-action-1",
         expectedRevision: 0,
         action: { type: "place", cell: 0 },
@@ -98,21 +111,20 @@ test("Cloudflare router creates, advances, and restores a durable match", async 
   assert.equal(advanced.observation.board[4], "O");
 
   namespace.evict("match-cloudflare-1");
-  const restoredResponse = await worker.fetch(new Request(
-    "https://games.example/api/matches/match-cloudflare-1?playerId=human",
+  const restoredResponse = await worker.fetch(authenticatedRequest(
+    "https://games.example/api/matches/match-cloudflare-1", "human",
   ), env);
   assert.equal(restoredResponse.status, 200);
   const restored = await restoredResponse.json() as any;
   assert.deepEqual(restored.observation.board, advanced.observation.board);
   assert.equal(restored.revision, 2);
 
-  const duplicateResponse = await worker.fetch(new Request(
-    "https://games.example/api/matches/match-cloudflare-1/actions",
+  const duplicateResponse = await worker.fetch(authenticatedRequest(
+    "https://games.example/api/matches/match-cloudflare-1/actions", "human",
     {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        playerId: "human",
         actionId: "human-action-1",
         expectedRevision: 0,
         action: { type: "place", cell: 0 },
@@ -128,16 +140,16 @@ test("Cloudflare router creates, advances, and restores a durable match", async 
 test("Durable Object serialization rejects one of two competing revision-zero moves", async () => {
   const namespace = new FakeMatchNamespace();
   const env = createEnvironment(namespace);
-  const worker = createGameFrameWorker({ idGenerator: () => "match-race" });
+  const worker = createTestWorker({ idGenerator: () => "match-race" });
 
-  await worker.fetch(new Request("https://games.example/api/matches", {
+  await worker.fetch(authenticatedRequest("https://games.example/api/matches", "human", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ playerIds: ["human", "theo"] }),
   }), env);
 
-  const submit = (actionId: string, cell: number) => worker.fetch(new Request(
-    "https://games.example/api/matches/match-race/actions",
+  const submit = (actionId: string, cell: number) => worker.fetch(authenticatedRequest(
+    "https://games.example/api/matches/match-race/actions", "human",
     {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -168,10 +180,10 @@ test("Cloudflare router forwards WebSocket upgrade requests to the match object"
       },
     }),
   };
-  const worker = createGameFrameWorker();
+  const worker = createTestWorker();
 
-  const response = await worker.fetch(new Request(
-    "https://games.example/api/matches/match-events/events?playerId=human",
+  const response = await worker.fetch(authenticatedRequest(
+    "https://games.example/api/matches/match-events/events", "human",
     { headers: { Upgrade: "websocket", "Sec-WebSocket-Protocol": "gameframe-v1" } },
   ), createEnvironment(namespace));
 
@@ -228,22 +240,21 @@ test("match runtime projection failures do not roll back committed actions", asy
 
 test("Cloudflare runtime preserves two-human turn ownership without auto-playing Theo", async () => {
   const env = createEnvironment();
-  const worker = createGameFrameWorker({ idGenerator: () => "match-two-human" });
+  const worker = createTestWorker({ idGenerator: () => "match-two-human" });
 
-  const created = await worker.fetch(new Request("https://games.example/api/matches", {
+  const created = await worker.fetch(authenticatedRequest("https://games.example/api/matches", "alice", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ playerIds: ["alice", "bob"] }),
   }), env);
   assert.equal(created.status, 201);
 
-  const afterAlice = await worker.fetch(new Request(
-    "https://games.example/api/matches/match-two-human/actions",
+  const afterAlice = await worker.fetch(authenticatedRequest(
+    "https://games.example/api/matches/match-two-human/actions", "alice",
     {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        playerId: "alice",
         actionId: "alice-cloudflare-1",
         expectedRevision: 0,
         action: { type: "place", cell: 0 },
@@ -257,10 +268,65 @@ test("Cloudflare runtime preserves two-human turn ownership without auto-playing
   assert.equal(aliceView.observation.nextPlayerId, "bob");
   assert.deepEqual(aliceView.playerIds, ["alice", "bob"]);
 
-  const bobResponse = await worker.fetch(new Request(
-    "https://games.example/api/matches/match-two-human?playerId=bob",
+  const bobResponse = await worker.fetch(authenticatedRequest(
+    "https://games.example/api/matches/match-two-human", "bob",
   ), env);
   const bobView = await bobResponse.json() as any;
   assert.equal(bobView.observation.yourMark, "O");
   assert.ok(bobView.observation.legalActions.some((action: any) => action.cell === 4));
+});
+
+test("Cloudflare public APIs fail closed without a configured identity verifier", async () => {
+  const worker = createGameFrameWorker({ idGenerator: () => "match-closed" });
+  const response = await worker.fetch(new Request("https://games.example/api/matches", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ playerIds: ["alice", "theo"] }),
+  }), createEnvironment());
+
+  assert.equal(response.status, 401);
+  assert.equal((await response.json() as any).error, "authentication_required");
+});
+
+test("Cloudflare boundary rejects seat and action identity spoofing", async () => {
+  const env = createEnvironment();
+  const worker = createTestWorker({ idGenerator: () => "match-authz" });
+
+  const forbiddenCreate = await worker.fetch(authenticatedRequest(
+    "https://games.example/api/matches", "mallory", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ playerIds: ["alice", "theo"] }),
+    },
+  ), env);
+  assert.equal(forbiddenCreate.status, 403);
+
+  const created = await worker.fetch(authenticatedRequest(
+    "https://games.example/api/matches", "alice", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ playerIds: ["alice", "bob"] }),
+    },
+  ), env);
+  assert.equal(created.status, 201);
+
+  const spoofedAction = await worker.fetch(authenticatedRequest(
+    "https://games.example/api/matches/match-authz/actions", "alice", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        playerId: "bob",
+        actionId: "spoof-1",
+        expectedRevision: 0,
+        action: { type: "place", cell: 0 },
+      }),
+    },
+  ), env);
+  assert.equal(spoofedAction.status, 403);
+  assert.equal((await spoofedAction.json() as any).error, "identity_mismatch");
+
+  const unchanged = await worker.fetch(authenticatedRequest(
+    "https://games.example/api/matches/match-authz", "alice",
+  ), env).then((response) => response.json() as Promise<any>);
+  assert.equal(unchanged.revision, 0);
 });
