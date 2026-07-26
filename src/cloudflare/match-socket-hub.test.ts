@@ -58,7 +58,7 @@ class FakeContext implements DurableObjectContextLike {
 function view(matchId: string, playerId: string, revision = 2) {
   return {
     matchId,
-    playerIds: ["human", "theo"],
+    playerIds: ["human", "scribbles"],
     revision,
     eventCount: revision,
     observation: {
@@ -91,24 +91,24 @@ test("socket hub attaches a player and immediately sends an authoritative view",
 test("socket hub broadcasts player-specific views to every match subscriber", async () => {
   const context = new FakeContext();
   const human = new FakeSocket();
-  const theo = new FakeSocket();
+  const scribbles = new FakeSocket();
   const otherMatch = new FakeSocket();
   const hub = new MatchSocketHub(context, async (matchId, playerId) => view(matchId, playerId, 4));
 
   await hub.attach(human, "match-1", "human");
-  await hub.attach(theo, "match-1", "theo");
+  await hub.attach(scribbles, "match-1", "scribbles");
   await hub.attach(otherMatch, "match-2", "human");
   human.messages.length = 0;
-  theo.messages.length = 0;
+  scribbles.messages.length = 0;
   otherMatch.messages.length = 0;
 
   await hub.broadcast("match-1");
 
   assert.equal(human.messages.length, 1);
-  assert.equal(theo.messages.length, 1);
+  assert.equal(scribbles.messages.length, 1);
   assert.equal(otherMatch.messages.length, 0);
   assert.equal((human.messages[0] as any).view.observation.yourMark, "X");
-  assert.equal((theo.messages[0] as any).view.observation.yourMark, "O");
+  assert.equal((scribbles.messages[0] as any).view.observation.yourMark, "O");
   assert.equal((human.messages[0] as any).reason, "update");
 });
 
