@@ -1,11 +1,10 @@
 name: CI
 
 on:
-  pull_request:
   workflow_dispatch:
 
 concurrency:
-  group: scribbles-gameframe-${{ github.event.pull_request.number || github.ref }}
+  group: scribbles-gameframe-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
