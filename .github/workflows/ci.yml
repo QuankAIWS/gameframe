@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: theo-gameframe-${{ github.event.pull_request.number || github.ref }}
+  group: scribbles-gameframe-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
