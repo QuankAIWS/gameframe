@@ -21,4 +21,4 @@ A client-controlled player ID would allow one participant to read another player
 
 ## Production direction
 
-The Discord Activity adapter will exchange the SDK authorization code server-side, verify the resulting user identity with Discord, and establish a same-origin authenticated session. The OpenClaw adapter will use a separate service principal restricted to Theo's registered agent identity.
+The Discord Activity adapter will exchange the SDK authorization code server-side, verify the resulting user identity with Discord, and establish a same-origin authenticated session. The Scribbles Runtime adapter will use a separate service principal restricted to the registered `scribbles` agent identity.
