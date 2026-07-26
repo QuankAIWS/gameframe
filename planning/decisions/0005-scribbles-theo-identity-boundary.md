@@ -14,4 +14,4 @@ Scribbles GameFrame is the game platform and service. Scribbles Runtime is the p
 
 ## Regression protection
 
-Repository self-checks must reject precise retired platform identifiers such as `theo-gameframe` and current-tense OpenClaw integration artifacts. They must not reject legitimate references to Theo.
+Repository self-checks must reject the previous hyphenated project package and service identifiers, along with current-tense OpenClaw integration artifacts. They must not reject legitimate references to Theo.
