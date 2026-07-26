@@ -86,7 +86,7 @@ test("Cloudflare router creates, advances, and restores a durable match", async 
   const createdResponse = await worker.fetch(authenticatedRequest("https://games.example/api/matches", "human", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ playerIds: ["human", "theo"] }),
+    body: JSON.stringify({ playerIds: ["human", "scribbles"] }),
   }), env);
   assert.equal(createdResponse.status, 201);
   const created = await createdResponse.json() as any;
@@ -145,7 +145,7 @@ test("Durable Object serialization rejects one of two competing revision-zero mo
   await worker.fetch(authenticatedRequest("https://games.example/api/matches", "human", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ playerIds: ["human", "theo"] }),
+    body: JSON.stringify({ playerIds: ["human", "scribbles"] }),
   }), env);
 
   const submit = (actionId: string, cell: number) => worker.fetch(authenticatedRequest(
@@ -217,7 +217,7 @@ test("match runtime projection failures do not roll back committed actions", asy
   const initialized = await runtime.fetch(new Request("https://match.internal/initialize", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ matchId: "match-notify", playerIds: ["human", "theo"] }),
+    body: JSON.stringify({ matchId: "match-notify", playerIds: ["human", "scribbles"] }),
   }));
   assert.equal(initialized.status, 201);
 
@@ -238,7 +238,7 @@ test("match runtime projection failures do not roll back committed actions", asy
   assert.equal(notifications, 2);
 });
 
-test("Cloudflare runtime preserves two-human turn ownership without auto-playing Theo", async () => {
+test("Cloudflare runtime preserves two-human turn ownership without auto-playing Scribbles", async () => {
   const env = createEnvironment();
   const worker = createTestWorker({ idGenerator: () => "match-two-human" });
 
@@ -281,7 +281,7 @@ test("Cloudflare public APIs fail closed without a configured identity verifier"
   const response = await worker.fetch(new Request("https://games.example/api/matches", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ playerIds: ["alice", "theo"] }),
+    body: JSON.stringify({ playerIds: ["alice", "scribbles"] }),
   }), createEnvironment());
 
   assert.equal(response.status, 401);
@@ -296,7 +296,7 @@ test("Cloudflare boundary rejects seat and action identity spoofing", async () =
     "https://games.example/api/matches", "mallory", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ playerIds: ["alice", "theo"] }),
+      body: JSON.stringify({ playerIds: ["alice", "scribbles"] }),
     },
   ), env);
   assert.equal(forbiddenCreate.status, 403);
@@ -345,7 +345,7 @@ test("Cloudflare boundary accepts a signed Discord-style session cookie", async 
       "content-type": "application/json",
       cookie: `gameframe_session=${token}`,
     },
-    body: JSON.stringify({ playerIds: ["discord:123", "theo"] }),
+    body: JSON.stringify({ playerIds: ["discord:123", "scribbles"] }),
   }), env);
 
   assert.equal(created.status, 201);
