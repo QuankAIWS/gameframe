@@ -96,7 +96,7 @@ export function createGameFrameServer(
       if (request.method === "GET" && url.pathname === "/api/health") {
         return json(response, 200, {
           status: "ok",
-          service: "theo-gameframe",
+          service: "scribbles-gameframe",
           runtime: "node-local",
           realtime: false,
           authentication: "development-header",
@@ -154,6 +154,6 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const port = Number(process.env.PORT ?? 8787);
   const server = createGameFrameServer();
   server.listen(port, "127.0.0.1", () => {
-    console.log(`Theo GameFrame development server: http://127.0.0.1:${port}`);
+    console.log(`Scribbles GameFrame development server: http://127.0.0.1:${port}`);
   });
 }
