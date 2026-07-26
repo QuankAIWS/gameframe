@@ -5,7 +5,7 @@ const details = document.querySelector("#details");
 const newMatch = document.querySelector("#new-match");
 
 const playerId = `browser-${crypto.randomUUID()}`;
-const scribblesPlayerId = "scribbles";
+const theoPlayerId = "theo";
 let current = null;
 let realtimeEnabled = false;
 let socket = null;
@@ -13,13 +13,13 @@ let reconnectTimer = null;
 let reconnectAttempt = 0;
 
 function statusText(observation) {
-  if (observation.status.draw) return "Draw. Scribbles remains undefeated.";
+  if (observation.status.draw) return "Draw. Theo remains undefeated.";
   if (observation.status.winnerPlayerId) {
-    return observation.status.winnerPlayerId === playerId ? "You won." : "Scribbles won.";
+    return observation.status.winnerPlayerId === playerId ? "You won." : "Theo won.";
   }
   return observation.nextPlayerId === playerId
     ? "Your turn — you are X."
-    : "Scribbles is considering the position.";
+    : "Theo is considering the position.";
 }
 
 function render(view) {
@@ -128,7 +128,7 @@ async function start() {
   status.textContent = "Creating match…";
   const view = await request("/api/matches", {
     method: "POST",
-    body: JSON.stringify({ playerIds: [playerId, scribblesPlayerId] }),
+    body: JSON.stringify({ playerIds: [playerId, theoPlayerId] }),
   });
   render(view);
   connectRealtime(view.matchId);
