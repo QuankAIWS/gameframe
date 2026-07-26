@@ -2,7 +2,7 @@
 
 ## Decision
 
-Theo GameFrame uses authenticated HTTP requests for game-changing commands. WebSockets deliver initial state, authoritative updates, and explicit refresh responses only.
+Scribbles GameFrame uses authenticated HTTP requests for game-changing commands. WebSockets deliver initial state, authoritative updates, and explicit refresh responses only.
 
 ## Rationale
 
