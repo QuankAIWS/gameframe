@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "theo-gameframe",
+  "main": "src/cloudflare/worker.ts",
+  "compatibility_date": "2026-07-25",
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MATCHES",
+        "class_name": "TicTacToeMatchDurableObject"
+      }
+    ]
+  },
+  "exports": {
+    "TicTacToeMatchDurableObject": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  },
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  }
+}

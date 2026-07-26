@@ -1,0 +1,16 @@
+{
+  "name": "@quankaiws/theo-gameframe",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic multiplayer game platform and Discord Activity foundation for Theo.",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "dev": "node --experimental-strip-types src/server/http-server.ts",
+    "test": "node scripts/run-tests.mjs",
+    "validate": "npm test && npm run check:browser && node --experimental-strip-types src/scripts/self-check.ts",
+    "check:browser": "node --check public/app.js"
+  }
+}
