@@ -27,5 +27,5 @@ Results:
 - Discord SDK authorization and backend token exchange
 - Discord user lookup and canonical player-ID mapping
 - Same-origin authenticated session or cookie behavior through the Discord proxy
-- Service authentication for the Scribbles Runtime adapter
+- Service authentication for the OpenClaw Theo adapter
 - Real Cloudflare `workerd` and deployed identity verification
