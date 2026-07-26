@@ -20,18 +20,18 @@ export interface PublicMatchView {
 export interface TicTacToeMatchServiceOptions {
   store: MatchSnapshotStore<TicTacToeState, TicTacToeAction>;
   idGenerator?: () => string;
-  scribblesAgent?: AgentPlayer<TicTacToeAction, TicTacToeObservation>;
+  theo?: AgentPlayer<TicTacToeAction, TicTacToeObservation>;
 }
 
 export class TicTacToeMatchService {
   readonly #store: MatchSnapshotStore<TicTacToeState, TicTacToeAction>;
   readonly #idGenerator: () => string;
-  readonly #scribblesAgent: AgentPlayer<TicTacToeAction, TicTacToeObservation>;
+  readonly #theo: AgentPlayer<TicTacToeAction, TicTacToeObservation>;
 
   constructor(options: TicTacToeMatchServiceOptions) {
     this.#store = options.store;
     this.#idGenerator = options.idGenerator ?? (() => crypto.randomUUID());
-    this.#scribblesAgent = options.scribblesAgent ?? new PerfectTicTacToePlayer("scribbles");
+    this.#theo = options.theo ?? new PerfectTicTacToePlayer("theo");
   }
 
   async createMatch(playerIds: readonly string[], requestedMatchId?: string): Promise<PublicMatchView> {
@@ -58,11 +58,10 @@ export class TicTacToeMatchService {
       definition: ticTacToeDefinition,
       playerIds: normalizedPlayers,
     });
-    await this.#runScribblesTurnIfNeeded(session);
+    await this.#runTheoTurnIfNeeded(session);
     await this.#store.save(session.snapshot());
-    const requestingPlayerId = normalizedPlayers.find(
-      (playerId) => playerId !== this.#scribblesAgent.agentId,
-    ) ?? normalizedPlayers[0];
+    const requestingPlayerId = normalizedPlayers.find((playerId) => playerId !== this.#theo.agentId)
+      ?? normalizedPlayers[0];
     return this.#view(session, requestingPlayerId);
   }
 
@@ -91,7 +90,7 @@ export class TicTacToeMatchService {
       throw error;
     }
 
-    await this.#runScribblesTurnIfNeeded(session);
+    await this.#runTheoTurnIfNeeded(session);
     await this.#store.save(session.snapshot());
     return this.#view(session, input.playerId);
   }
@@ -106,38 +105,36 @@ export class TicTacToeMatchService {
     return (await this.#loadSession(matchId)).replay();
   }
 
-  async #runScribblesTurnIfNeeded(
+  async #runTheoTurnIfNeeded(
     session: MatchSession<TicTacToeState, TicTacToeAction, TicTacToeObservation>,
   ): Promise<void> {
     const snapshot = session.snapshot();
-    if (!snapshot.playerIds.includes(this.#scribblesAgent.agentId)) return;
+    if (!snapshot.playerIds.includes(this.#theo.agentId)) return;
 
-    const scribblesObservation = session.observe(this.#scribblesAgent.agentId);
+    const theoObservation = session.observe(this.#theo.agentId);
     if (
-      scribblesObservation.status.lifecycle !== "active" ||
-      scribblesObservation.nextPlayerId !== this.#scribblesAgent.agentId
+      theoObservation.status.lifecycle !== "active" ||
+      theoObservation.nextPlayerId !== this.#theo.agentId
     ) {
       return;
     }
 
-    const action = await this.#scribblesAgent.chooseAction({
-      observation: scribblesObservation,
-      legalActions: scribblesObservation.legalActions,
+    const action = await this.#theo.chooseAction({
+      observation: theoObservation,
+      legalActions: theoObservation.legalActions,
     });
-    const scribblesResult = session.submit({
-      actionId: `${this.#scribblesAgent.agentId}:${this.#idGenerator()}`,
-      playerId: this.#scribblesAgent.agentId,
+    const theoResult = session.submit({
+      actionId: `${this.#theo.agentId}:${this.#idGenerator()}`,
+      playerId: this.#theo.agentId,
       expectedRevision: session.revision,
       action,
     });
-    if (!scribblesResult.accepted) {
-      throw new Error(`Deterministic Scribbles action was rejected: ${scribblesResult.message}`);
+    if (!theoResult.accepted) {
+      throw new Error(`Deterministic Theo action was rejected: ${theoResult.message}`);
     }
   }
 
-  async #loadSession(
-    matchId: string,
-  ): Promise<MatchSession<TicTacToeState, TicTacToeAction, TicTacToeObservation>> {
+  async #loadSession(matchId: string): Promise<MatchSession<TicTacToeState, TicTacToeAction, TicTacToeObservation>> {
     const snapshot = await this.#store.load(matchId);
     if (!snapshot) {
       const error = new Error(`Unknown match: ${matchId}`);
