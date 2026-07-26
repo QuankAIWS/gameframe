@@ -61,6 +61,6 @@ src/cloudflare/           Worker, Durable Object, and storage adapters
 
 Scribbles GameFrame and `codename-scribbles-runtime` are peer systems. GameFrame remains independently testable with deterministic or mock participants. Runtime integration must use an explicit, versioned adapter boundary rather than imports from runtime internals.
 
-The repository was originally developed under the Theo GameFrame working name. Active source, configuration, tests, and planning now use the Scribbles namespace; the former name should appear only in historical migration records.
+The rename history remains available in Git history and the merged pull-request record. Active source, configuration, tests, and planning use the Scribbles namespace exclusively.
 
 See `AGENTS.md` before consequential development work.
