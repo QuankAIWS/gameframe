@@ -46,4 +46,4 @@ A strict `tsc --noEmit` pass also succeeded for the framework-independent platfo
 - Deploy a development Worker
 - Verify static assets, API routing, persistence, eviction, and usage telemetry
 - Add and verify WebSocket synchronization
-- Run Discord Activity and Scribbles Runtime canaries
+- Run Discord Activity and OpenClaw canaries
