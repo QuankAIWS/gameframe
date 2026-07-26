@@ -20,7 +20,7 @@ Validation is layered so ordinary game development does not require a live Scrib
 ## Layer 3 — Local service integration
 
 - Match creation through HTTP
-- Human action followed by deterministic Scribbles response
+- Human action followed by deterministic Theo response
 - Observation retrieval
 - Health and error behavior
 
@@ -38,7 +38,7 @@ These cannot be claimed from local validation:
 
 - Discord Activity launch, identity, proxy, and mobile behavior
 - Cloudflare deployed Worker/Durable Object behavior and quotas
-- Scribbles Runtime adapter compatibility and real model-driven decisions
+- Scribbles Runtime adapter compatibility and real Theo model-driven decisions
 - Production or staging recovery
 
 Reports must distinguish assistant/local execution from canonical CI and live-environment proof.
@@ -66,6 +66,7 @@ Real hibernation across `workerd` eviction remains an external runtime test unti
 - Rejected impersonation attempts do not mutate the match.
 - WebSocket attachments receive only the authenticated principal's observation.
 - Development authentication is explicitly separate from the production Discord and service verifiers.
+- Scribbles Runtime service credentials map only to Theo's stable `theo` player identity.
 
 ## Signed session tests
 
@@ -78,6 +79,6 @@ Real hibernation across `workerd` eviction remains an external runtime test unti
 
 ## Merge evidence policy
 
-- `npm run validate` in a local or assistant environment is useful pre-merge evidence and should be recorded with its execution environment.
-- The self-hosted GitHub runner is the canonical repository validation when available.
-- Branches may continue accumulating verified work while the runner is offline, but should not be represented as canonically green until the GitHub workflow records a passing run.
+- `npm run validate` in a local or assistant environment is the active validation path while no runner is available and must be recorded with its execution environment.
+- The self-hosted GitHub runner will later provide canonical repository validation before final merge.
+- Branches may continue accumulating locally verified work while the runner is offline, but should not be represented as canonically green until the manually dispatched workflow records a passing run.
