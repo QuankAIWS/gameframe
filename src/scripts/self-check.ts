@@ -50,9 +50,10 @@ async function collectFiles(directory: string): Promise<string[]> {
   return files;
 }
 
+const retiredProjectName = ["theo", "gameframe"].join("-");
 const retiredPlatformTokens = [
-  "theo-gameframe",
-  "@quankaiws/theo-gameframe",
+  retiredProjectName,
+  `@quankaiws/${retiredProjectName}`,
 ];
 
 for (const absolutePath of await collectFiles(repositoryRoot)) {
