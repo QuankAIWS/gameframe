@@ -1,6 +1,6 @@
 # Testing Strategy
 
-Validation is layered so ordinary game development does not require a live Theo deployment.
+Validation is layered so ordinary game development does not require a live Scribbles Runtime deployment.
 
 ## Layer 1 — Deterministic core
 
@@ -20,7 +20,7 @@ Validation is layered so ordinary game development does not require a live Theo 
 ## Layer 3 — Local service integration
 
 - Match creation through HTTP
-- Human action followed by deterministic Theo response
+- Human action followed by deterministic Scribbles response
 - Observation retrieval
 - Health and error behavior
 
@@ -38,10 +38,10 @@ These cannot be claimed from local validation:
 
 - Discord Activity launch, identity, proxy, and mobile behavior
 - Cloudflare deployed Worker/Durable Object behavior and quotas
-- OpenClaw plugin compatibility and real Theo decisions
+- Scribbles Runtime adapter compatibility and real model-driven decisions
 - Production or staging recovery
 
-Reports must distinguish local execution from canonical CI and live-environment proof.
+Reports must distinguish assistant/local execution from canonical CI and live-environment proof.
 
 ## WebSocket projection tests
 
@@ -75,3 +75,9 @@ Real hibernation across `workerd` eviction remains an external runtime test unti
 - Cookie parsing does not expose or reinterpret client identity claims.
 - Activity cookies include Discord's required iframe and partitioning attributes.
 - Cloudflare uses the configured secret for both HTTP and WebSocket request authentication.
+
+## Merge evidence policy
+
+- `npm run validate` in a local or assistant environment is useful pre-merge evidence and should be recorded with its execution environment.
+- The self-hosted GitHub runner is the canonical repository validation when available.
+- Branches may continue accumulating verified work while the runner is offline, but should not be represented as canonically green until the GitHub workflow records a passing run.
