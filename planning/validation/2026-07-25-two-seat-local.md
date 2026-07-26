@@ -16,8 +16,8 @@ Results:
 - Human-versus-human turn ownership passed at the service boundary
 - Human-versus-human creation and observation passed through the Node HTTP boundary
 - Human-versus-human creation and observation passed through the Cloudflare Worker/Durable Object adapter boundary
-- Theo was not invoked when absent from the player seats
-- Theo's opening action was committed during creation when Theo occupied the first seat
+- Scribbles was not invoked when absent from the player seats
+- Scribbles' opening action was committed during creation when Scribbles occupied the first seat
 - Empty, duplicate, and incomplete player identities were rejected
 - Existing persistence, idempotency, replay, concurrency, and WebSocket projection tests remained green
 
