@@ -8,7 +8,7 @@ function authenticatedFetch(url: string, playerId: string, init: RequestInit = {
   return fetch(url, { ...init, headers });
 }
 
-test("HTTP boundary creates and advances a human-versus-Theo match", async (context) => {
+test("HTTP boundary creates and advances a human-versus-Scribbles match", async (context) => {
   const server = createGameFrameServer();
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   context.after(() => server.close());
@@ -18,11 +18,12 @@ test("HTTP boundary creates and advances a human-versus-Theo match", async (cont
 
   const health = await fetch(`${base}/api/health`).then((response) => response.json());
   assert.equal(health.status, "ok");
+  assert.equal(health.service, "scribbles-gameframe");
 
   const createdResponse = await authenticatedFetch(`${base}/api/matches`, "human", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ playerIds: ["human", "theo"] }),
+    body: JSON.stringify({ playerIds: ["human", "scribbles"] }),
   });
   assert.equal(createdResponse.status, 201);
   const created = await createdResponse.json();
@@ -43,7 +44,7 @@ test("HTTP boundary creates and advances a human-versus-Theo match", async (cont
   assert.equal(updated.observation.board[4], "O");
 });
 
-test("HTTP boundary supports a two-human match without invoking Theo", async (context) => {
+test("HTTP boundary supports a two-human match without invoking Scribbles", async (context) => {
   const server = createGameFrameServer();
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   context.after(() => server.close());
@@ -88,14 +89,14 @@ test("HTTP boundary rejects anonymous and spoofed identities", async (context) =
   const anonymous = await fetch(`${base}/api/matches`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ playerIds: ["alice", "theo"] }),
+    body: JSON.stringify({ playerIds: ["alice", "scribbles"] }),
   });
   assert.equal(anonymous.status, 401);
 
   const forbiddenCreate = await authenticatedFetch(`${base}/api/matches`, "mallory", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ playerIds: ["alice", "theo"] }),
+    body: JSON.stringify({ playerIds: ["alice", "scribbles"] }),
   });
   assert.equal(forbiddenCreate.status, 403);
 
