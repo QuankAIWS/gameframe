@@ -25,13 +25,13 @@ Cloudflare Worker
 
 Scribbles Runtime host
 ├── Scribbles Runtime
-├── Discord channel integration
-└── Scribbles GameFrame plugin/client
-        │ outbound authenticated HTTPS
+├── Theo personality, model, memory, and Discord channel integration
+└── Scribbles GameFrame adapter/client
+        │ outbound authenticated HTTPS as Theo
         └──────────────────────────────► Cloudflare GameFrame API
 ```
 
-This topology keeps active games available when the Scribbles Runtime host is busy, rebooting, or offline. Scribbles Runtime is a participant and narrator, not the game server.
+This topology keeps active games available when the Scribbles Runtime host is busy, rebooting, or offline. Scribbles Runtime hosts Theo's cognition and narration; it is not the game server. Theo is the registered participant represented through the runtime adapter.
 
 ## Component placement
 
@@ -47,8 +47,8 @@ This topology keeps active games available when the Scribbles Runtime host is bu
 ### Scribbles Runtime host
 
 - Scribbles Runtime and model access
-- The Discord bot/channel runtime
-- A narrow GameFrame integration plugin
+- Theo's personality, memory, and Discord integration
+- A narrow GameFrame integration adapter bound to Theo's player identity
 - Optional local development and administration tools
 - No authoritative public match state
 
@@ -56,27 +56,27 @@ This topology keeps active games available when the Scribbles Runtime host is bu
 
 - Standalone Node development server
 - Fake Discord host
-- Fake Scribbles Runtime player
+- Fake Scribbles Runtime adapter acting for Theo
 - Local deterministic tests
 - Optional conventional deployment adapter if Cloudflare proves unsuitable
 
 ## Failure behavior
 
 - If Scribbles Runtime is offline, human-versus-human games continue.
-- A game configured for deterministic fallback can continue without Scribbles Runtime.
-- A game requiring Scribbles Runtime pauses the `scribbles` seat and exposes a clear unavailable state; it does not transfer authority to the browser.
+- A game configured for deterministic Theo fallback can continue without Scribbles Runtime.
+- A game requiring live Theo decisions pauses the `theo` seat and exposes a clear unavailable state; it does not transfer authority to the browser.
 - Restarting or replacing the runtime host must not lose Cloudflare-hosted matches.
 - Cloudflare failure affects public game availability but does not expose or compromise the private runtime host.
 
 ## Resource posture
 
-Tic-tac-toe and compact turn-based tactics require negligible local compute when hosted on Cloudflare. The Scribbles Runtime host performs model calls and plugin work only when Scribbles must decide, explain, narrate, or react. Real-time simulation may later require a dedicated server, but should retain the same public API and agent-player contracts.
+Tic-tac-toe and compact turn-based tactics require negligible local compute when hosted on Cloudflare. The Scribbles Runtime host performs model calls and adapter work only when Theo must decide, explain, narrate, or react. Real-time simulation may later require a dedicated server, but should retain the same public API and agent-player contracts.
 
 ## Identity placement
 
 Discord user authentication terminates at the public Cloudflare application boundary. The Activity obtains an authorization code through the Embedded App SDK; a backend route exchanges it using the application secret, verifies the Discord user, and establishes the GameFrame principal used by HTTP and WebSocket requests. Durable Objects receive only the already-derived player identity.
 
-Scribbles Runtime does not reuse a Discord human session. The runtime plugin receives a narrow service credential that maps only to the registered `scribbles` agent identity and cannot impersonate human seats.
+Scribbles Runtime does not reuse a Discord human session. Its adapter receives a narrow service credential that maps only to the registered `theo` agent identity and cannot impersonate human seats.
 
 ## Session secret
 
