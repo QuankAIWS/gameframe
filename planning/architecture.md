@@ -2,13 +2,13 @@
 
 ## System shape
 
-Theo GameFrame is a modular monolith with explicit game modules and integration adapters. One authoritative service owns each match. Clients and agents submit intentions; deterministic code validates and commits state transitions.
+Scribbles GameFrame is a modular monolith with explicit game modules and integration adapters. One authoritative service owns each match. Clients and agents submit intentions; deterministic code validates and commits state transitions.
 
 ```text
 Discord Activity ─┐
 Standalone web ───┼── authenticated application boundary
 Discord text ─────┤                 │
-Theo/OpenClaw ────┘                 ▼
+Scribbles Runtime ┘                 ▼
                            authoritative match service
                          sessions · revisions · events
                                   │
@@ -17,6 +17,8 @@ Theo/OpenClaw ────┘                 ▼
              game definition             decision adapter
           tic-tac-toe / tactics        Theo / solver / bot
 ```
+
+Scribbles Runtime is the integration host. Theo is the public-facing agent and registered GameFrame player represented by that integration.
 
 ## Game definition contract
 
@@ -42,7 +44,7 @@ The platform owns:
 
 ## Authority
 
-The server is authoritative. Browser code, Discord clients, and Theo are untrusted callers. They may request only actions the current game definition exposes as legal. Theo never owns dice, clocks, turn order, health, movement, or victory state.
+The server is authoritative. Browser code, Discord clients, Scribbles Runtime, and Theo's model output are untrusted callers. They may request only actions the current game definition exposes as legal. Neither the runtime nor Theo owns dice, clocks, turn order, health, movement, or victory state.
 
 ## First-slice persistence
 
@@ -53,7 +55,7 @@ GF-0001 uses an in-memory repository so the contracts can be tested without depl
 - The ordinary browser client remains the base client.
 - Discord Activity is a host adapter around that client.
 - Cloudflare is an intended public edge and match-runtime option, not a dependency of game rules.
-- OpenClaw connects through a constrained player adapter and receives structured observations.
+- Scribbles Runtime connects through a constrained player adapter, receives Theo's structured observations, and submits actions on Theo's behalf.
 
 ## Command and projection split
 
@@ -94,7 +96,7 @@ Discord SDK authorize
   -> match command or projection
 ```
 
-The local Node adapter uses `x-gameframe-player-id` only as an explicit development authenticator. The Cloudflare entry point rejects public game API requests until a production verifier is installed. OpenClaw will use a separate service principal bound to Theo's agent identity.
+The local Node adapter uses `x-gameframe-player-id` only as an explicit development authenticator. The Cloudflare entry point rejects public game API requests until a production verifier is installed. Scribbles Runtime uses a separate service principal bound only to Theo's stable `theo` player identity.
 
 ## Activity sessions
 

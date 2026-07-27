@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "theo-gameframe",
+  "name": "scribbles-gameframe",
   "main": "src/cloudflare/worker.ts",
   "compatibility_date": "2026-07-25",
   "durable_objects": {

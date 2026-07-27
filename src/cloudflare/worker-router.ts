@@ -58,7 +58,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
         if (request.method === "GET" && url.pathname === "/api/health") {
           return json(200, {
             status: "ok",
-            service: "theo-gameframe",
+            service: "scribbles-gameframe",
             runtime: "cloudflare",
             realtime: "websocket-hibernation",
             authentication: "required",

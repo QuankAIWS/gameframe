@@ -1,15 +1,20 @@
-name: CI
+name: Canonical Validation
 
 on:
-  pull_request:
   workflow_dispatch:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
 
 concurrency:
-  group: theo-gameframe-${{ github.event.pull_request.number || github.ref }}
+  group: scribbles-gameframe-canonical-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   validate:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'canonical-validation' }}
     runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 15
     steps:
@@ -21,5 +26,5 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      - name: Validate deterministic platform slice
+      - name: Validate final feature candidate
         run: npm run validate

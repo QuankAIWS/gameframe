@@ -1,9 +1,9 @@
 {
-  "name": "@quankaiws/theo-gameframe",
+  "name": "@quankaiws/scribbles-gameframe",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Deterministic multiplayer game platform and Discord Activity foundation for Theo.",
+  "description": "Deterministic multiplayer game platform and Discord Activity foundation for Codename Scribbles.",
   "engines": {
     "node": ">=22.16.0"
   },

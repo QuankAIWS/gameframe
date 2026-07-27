@@ -18,6 +18,7 @@ test("HTTP boundary creates and advances a human-versus-Theo match", async (cont
 
   const health = await fetch(`${base}/api/health`).then((response) => response.json());
   assert.equal(health.status, "ok");
+  assert.equal(health.service, "scribbles-gameframe");
 
   const createdResponse = await authenticatedFetch(`${base}/api/matches`, "human", {
     method: "POST",

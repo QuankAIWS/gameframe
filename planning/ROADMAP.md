@@ -1,4 +1,4 @@
-# Theo GameFrame Roadmap
+# Scribbles GameFrame Roadmap
 
 ## Implemented locally; canonical CI pending
 
@@ -12,13 +12,13 @@ Acceptance target:
 - Illegal, duplicate, out-of-turn, and stale actions have deterministic behavior.
 - State can be reconstructed from the event stream.
 - A standalone browser client can complete a human-versus-Theo match.
-- The same contracts can later support Discord Activity, Cloudflare, and OpenClaw adapters.
+- The same contracts can later support Discord Activity, Cloudflare, and Scribbles Runtime adapters.
 
 Current proof boundary:
 
 - Local deterministic and HTTP integration validation is implemented.
 - Browser smoke validation is available locally.
-- Canonical CI, Discord canary, Cloudflare canary, and OpenClaw integration remain pending.
+- Canonical CI, Discord canary, Cloudflare canary, and Scribbles Runtime integration remain pending.
 
 ## Active
 
@@ -54,9 +54,9 @@ Remaining acceptance work:
 
 Add Discord authorization-code exchange and verified user lookup, issue the signed Activity session, then add launch context, participant mapping, invite/resume behavior, and desktop/mobile canaries.
 
-### GF-0004 — OpenClaw Theo player adapter
+### GF-0004 — Scribbles Runtime adapter for Theo
 
-Expose structured observations and legal actions to Theo while retaining deterministic fallback behavior and server authority.
+Expose structured observations and legal actions to Scribbles Runtime so it can choose actions on Theo's behalf while GameFrame retains server authority and deterministic fallback behavior.
 
 ### GF-0010 — Compact tactical arena
 
