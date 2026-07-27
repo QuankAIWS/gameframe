@@ -1,10 +1,13 @@
-name: CI
+name: Canonical Validation
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
-  group: scribbles-gameframe-${{ github.ref }}
+  group: scribbles-gameframe-canonical-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -20,5 +23,5 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      - name: Validate deterministic platform slice
+      - name: Validate final feature candidate
         run: npm run validate
