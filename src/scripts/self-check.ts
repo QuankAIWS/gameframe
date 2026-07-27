@@ -44,15 +44,26 @@ const workflow = await readFile(
 );
 assert.match(workflow, /^name: Canonical Validation$/m);
 assert.match(workflow, /^\s{2}workflow_dispatch:\s*$/m);
+assert.match(workflow, /^\s{2}pull_request:\s*$/m);
+assert.match(workflow, /^\s{4}types: \[labeled\]\s*$/m);
+assert.match(
+  workflow,
+  /^\s{4}if: \$\{\{ github\.event_name == 'workflow_dispatch' \|\| github\.event\.label\.name == 'canonical-validation' \}\}\s*$/m,
+);
 assert.match(workflow, /^\s{4}runs-on: \[self-hosted, Linux, X64\]$/m);
 assert.match(workflow, /^\s{8}run: npm run validate$/m);
-for (const automaticTrigger of ["push", "pull_request", "schedule"]) {
+for (const automaticTrigger of ["push", "schedule"]) {
   assert.doesNotMatch(
     workflow,
     new RegExp(`^\\s{2}${automaticTrigger}:`, "m"),
     `Canonical validation must not use the automatic ${automaticTrigger} trigger.`,
   );
 }
+assert.doesNotMatch(
+  workflow,
+  /^\s{4}types:.*\b(?:opened|reopened|synchronize|ready_for_review)\b/m,
+  "Pull-request validation may run only for a deliberate label event.",
+);
 
 async function collectFiles(directory: string): Promise<string[]> {
   const files: string[] = [];
