@@ -24,13 +24,27 @@ Implemented in the initial slice:
 - Zero-dependency HTTP server and browser client
 - Unit, invariant, service, HTTP integration, and WebSocket projection tests
 
+## Canonical baseline
+
+The repository baseline was canonically validated and merged on July 27, 2026.
+
+- Pull request: `#3`
+- Frozen feature head: `d2f404dfb76c03f5568ea3869eaccd6997423005`
+- Validated GitHub PR merge ref: `932a1f5e0a185399b0a992ac2807903618ba0661`
+- Canonical workflow: run `#8` (`30283559393`)
+- Runner: `gh-runner-01`
+- Result: complete `npm run validate` job passed
+- Artifact uploads: none
+- Squash-merged `main` baseline: `01584a43777ddc97a6439101ac4eff79aae1d876`
+
+See `planning/validation/2026-07-27-canonical-baseline.md` for the durable evidence record.
+
 Not yet claimed:
 
 - Discord Activity OAuth exchange, session establishment, or launch flow
 - Deployed Cloudflare Worker or real `workerd` validation
 - Scribbles Runtime integration controlling Theo
 - Real `workerd` hibernation and deployment behavior
-- Canonical self-hosted-runner validation of the current branch
 
 ## Run locally
 

@@ -1,6 +1,6 @@
 # Scribbles GameFrame Roadmap
 
-## Implemented locally; canonical CI pending
+## Canonically validated baseline
 
 ### GF-0001 — Infrastructure-complete tic-tac-toe walking skeleton
 
@@ -16,9 +16,11 @@ Acceptance target:
 
 Current proof boundary:
 
-- Local deterministic and HTTP integration validation is implemented.
-- Browser smoke validation is available locally.
-- Canonical CI, Discord canary, Cloudflare canary, and Scribbles Runtime integration remain pending.
+- Local deterministic, HTTP integration, browser syntax, and repository validation are implemented.
+- Canonical Validation run `#8` (`30283559393`) passed on self-hosted runner `gh-runner-01` on July 27, 2026.
+- The run validated GitHub PR merge ref `932a1f5e0a185399b0a992ac2807903618ba0661`, generated from frozen feature head `d2f404dfb76c03f5568ea3869eaccd6997423005` and base `f9d5d36c5ab569f7a39722bb4909c9804d256881`.
+- The validated change was squash-merged to `main` as `01584a43777ddc97a6439101ac4eff79aae1d876` without further feature-branch changes.
+- Discord, deployed Cloudflare, real `workerd`, and Scribbles Runtime canaries remain pending.
 
 ## Active
 
