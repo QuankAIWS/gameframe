@@ -9,14 +9,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: scribbles-gameframe-canonical-${{ github.ref }}
+  group: scribbles-gameframe-validation-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  validate:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'canonical-validation' }}
+  development-integration:
+    if: ${{ github.event_name == 'pull_request' && github.event.label.name == 'canonical-validation' && github.event.pull_request.draft }}
     runs-on: [self-hosted, Linux, X64]
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -25,6 +25,39 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
+
+      - name: Install pinned development dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Preserve generated lockfile briefly
+        uses: actions/upload-artifact@v4
+        with:
+          name: gf-0002-package-lock-${{ github.run_id }}
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Validate development integration candidate
+        run: npm run validate
+
+  validate:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.label.name == 'canonical-validation' && !github.event.pull_request.draft) }}
+    runs-on: [self-hosted, Linux, X64]
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Select Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Require committed dependency lock
+        run: test -f package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
 
       - name: Validate final feature candidate
         run: npm run validate
