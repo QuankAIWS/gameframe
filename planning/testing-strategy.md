@@ -18,7 +18,8 @@ Scribbles GameFrame uses two distinct verification tiers.
 
 - When a feature or major milestone is complete, bring the branch up to date with `main` and run the complete suite locally one final time.
 - Push that exact final head and freeze the branch.
-- Manually dispatch the `Canonical Validation` workflow against the final feature branch.
+- Start `Canonical Validation` either by manually dispatching the workflow against the feature branch or by applying the `canonical-validation` label to its pull request.
+- The label path is intentionally limited to the `pull_request:labeled` event; ordinary pushes, synchronization, opening, and review-state changes do not occupy the runner.
 - The canonical `validate` job must pass before merge.
 - Any commit added after the canonical pass invalidates that pass and requires another local and canonical run.
 - The GitHub Actions result is the durable repository record; local reports remain supporting development evidence.
