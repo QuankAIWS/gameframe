@@ -17,12 +17,14 @@ const durableFiles = [
   "planning/ROADMAP.md",
   "planning/architecture.md",
   "planning/testing-strategy.md",
+  "planning/development-workflow.md",
   "planning/deployment-topology.md",
   "planning/scribbles-runtime-integration.md",
   "planning/decisions/0002-websockets-are-projections.md",
   "planning/decisions/0003-server-derived-player-identity.md",
   "planning/decisions/0004-signed-discord-activity-sessions.md",
   "planning/decisions/0005-scribbles-theo-identity-boundary.md",
+  ".github/workflows/ci.yml",
   "wrangler.jsonc",
 ];
 
@@ -35,6 +37,22 @@ await assert.rejects(
   access(join(repositoryRoot, "planning/openclaw-integration.md")),
   "The retired OpenClaw integration document must not remain active.",
 );
+
+const workflow = await readFile(
+  join(repositoryRoot, ".github/workflows/ci.yml"),
+  "utf8",
+);
+assert.match(workflow, /^name: Canonical Validation$/m);
+assert.match(workflow, /^\s{2}workflow_dispatch:\s*$/m);
+assert.match(workflow, /^\s{4}runs-on: \[self-hosted, Linux, X64\]$/m);
+assert.match(workflow, /^\s{8}run: npm run validate$/m);
+for (const automaticTrigger of ["push", "pull_request", "schedule"]) {
+  assert.doesNotMatch(
+    workflow,
+    new RegExp(`^\\s{2}${automaticTrigger}:`, "m"),
+    `Canonical validation must not use the automatic ${automaticTrigger} trigger.`,
+  );
+}
 
 async function collectFiles(directory: string): Promise<string[]> {
   const files: string[] = [];
@@ -74,6 +92,14 @@ const readme = await readFile(join(repositoryRoot, "README.md"), "utf8");
 assert.match(readme, /Scribbles GameFrame/);
 assert.match(readme, /Scribbles Runtime/);
 assert.match(readme, /Theo/);
+
+const testingStrategy = await readFile(
+  join(repositoryRoot, "planning/testing-strategy.md"),
+  "utf8",
+);
+assert.match(testingStrategy, /Feature-branch verification/);
+assert.match(testingStrategy, /Canonical merge verification/);
+assert.match(testingStrategy, /Any commit added after the canonical pass invalidates that pass/);
 
 const service = await readFile(
   join(repositoryRoot, "src/server/tic-tac-toe-match-service.ts"),
