@@ -19,7 +19,7 @@ Current proof boundary:
 - Local deterministic, HTTP integration, browser syntax, and repository validation are implemented.
 - Canonical Validation run `#8` (`30283559393`) passed on self-hosted runner `gh-runner-01` on July 27, 2026.
 - The run validated GitHub PR merge ref `932a1f5e0a185399b0a992ac2807903618ba0661`, generated from frozen feature head `d2f404dfb76c03f5568ea3869eaccd6997423005` and base `f9d5d36c5ab569f7a39722bb4909c9804d256881`.
-- The validated change was squash-merged to `main` as `01584a43777dc97a6439101ac4eff79aae1d876` without further feature-branch changes.
+- The validated change was squash-merged to `main` as `01584a43777ddc97a6439101ac4eff79aae1d876` without further feature-branch changes.
 - Discord, deployed Cloudflare, real `workerd`, and Scribbles Runtime canaries remain pending.
 
 ## Active
