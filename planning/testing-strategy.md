@@ -56,7 +56,21 @@ Scribbles GameFrame uses two distinct verification tiers.
 
 The current `check:browser` command is a JavaScript syntax check. Full automated browser interaction remains an implementation task and must not be claimed until a headless acceptance test is included in `npm run validate`.
 
-## Layer 5 — External canaries
+## Layer 5 — Local Cloudflare runtime
+
+The `test:workerd` command uses Cloudflare's Workers Vitest integration and the checked-in `wrangler.jsonc` configuration to execute the Worker and Durable Object inside `workerd`.
+
+This layer must prove:
+
+- the production Worker entry point loads with its declared Durable Object and asset bindings
+- accepted actions survive real Durable Object eviction and instance reconstruction
+- competing writes are serialized by the real Durable Object runtime
+- hibernatable WebSocket attachments survive eviction and resume player-specific projections
+- the signed session secret is applied consistently to HTTP commands and WebSocket upgrades
+
+Durable Object WebSocket tests run with one worker and shared test storage because the Workers Vitest integration does not support WebSockets with per-file storage isolation. The exact Wrangler, Vitest, and Workers Vitest integration versions must be recorded in `package-lock.json`.
+
+## Layer 6 — External canaries
 
 These cannot be claimed from local or canonical repository validation:
 
@@ -69,7 +83,7 @@ Reports must distinguish assistant-local execution, canonical GitHub Actions val
 
 ## WebSocket projection tests
 
-Local contract tests prove:
+Fast local contract tests prove:
 
 - A socket is attached only after its player-specific view resolves.
 - Each connection receives an initial authoritative view.
@@ -79,7 +93,7 @@ Local contract tests prove:
 - Game-changing messages are rejected on the WebSocket channel.
 - Projection delivery failure does not roll back an accepted command.
 
-Real hibernation across `workerd` eviction remains an external runtime test until Cloudflare's development packages can be installed and locked.
+The `test:workerd` suite adds the runtime proof that a hibernatable connection and its serialized attachment resume after Durable Object eviction.
 
 ## Authentication and authorization tests
 
