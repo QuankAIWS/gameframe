@@ -47,5 +47,5 @@ The repository currently has no third-party runtime or development dependencies.
 - Record the exact validated commit SHA and execution environment in the pull request. A local statement is evidence of development verification, not canonical CI.
 - Ordinary branch pushes and pull-request updates must not start GitHub Actions. The self-hosted runner is reserved for completed feature candidates and major milestones.
 - When a feature is complete, update it from `main`, run the complete suite locally again, push the final head, and freeze the branch.
-- Manually dispatch the `Canonical Validation` workflow against that exact final branch head. Merge only after its `validate` job passes, and rerun it if the branch changes afterward.
+- Start `Canonical Validation` either by manual workflow dispatch or by applying the `canonical-validation` label to the frozen pull request. Merge only after its `validate` job passes, and rerun it if the branch changes afterward.
 - Real Discord, deployed Cloudflare, and Scribbles Runtime behavior require compact external canaries and must not be claimed from local tests or the repository-only canonical suite.
