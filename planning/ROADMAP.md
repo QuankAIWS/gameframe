@@ -19,7 +19,7 @@ Current proof boundary:
 - Local deterministic, HTTP integration, browser syntax, and repository validation are implemented.
 - Canonical Validation run `#8` (`30283559393`) passed on self-hosted runner `gh-runner-01` on July 27, 2026.
 - The run validated GitHub PR merge ref `932a1f5e0a185399b0a992ac2807903618ba0661`, generated from frozen feature head `d2f404dfb76c03f5568ea3869eaccd6997423005` and base `f9d5d36c5ab569f7a39722bb4909c9804d256881`.
-- The validated change was squash-merged to `main` as `01584a43777ddc97a6439101ac4eff79aae1d876` without further feature-branch changes.
+- The validated change was squash-merged to `main` as `01584a43777dc97a6439101ac4eff79aae1d876` without further feature-branch changes.
 - Discord, deployed Cloudflare, real `workerd`, and Scribbles Runtime canaries remain pending.
 
 ## Active
@@ -60,9 +60,28 @@ Add Discord authorization-code exchange and verified user lookup, issue the sign
 
 Expose structured observations and legal actions to Scribbles Runtime so it can choose actions on Theo's behalf while GameFrame retains server authority and deterministic fallback behavior.
 
-### GF-0010 — Compact tactical arena
+### GF-0010 — Monster-master tactical battler foundation
 
-Build the first replayable 2–4 player tactical game after the platform survives a real Discord tic-tac-toe canary.
+Build the first replayable tactical game after the platform survives a real Discord tic-tac-toe canary. Begin with a compact two-player monster-master duel while preserving an eventual two-to-four-player architecture.
+
+This milestone establishes the shared square-grid combat substrate for later RPG encounters: board occupancy, movement, initiative, activations, range, line of sight, terrain, effects, objectives, visibility, replay, and human or agent participation through the same authoritative command path.
+
+Detailed sequencing, visual direction, generative-content boundaries, and acceptance criteria are recorded in [`planning/tactical-battler-rpg-foundation.md`](tactical-battler-rpg-foundation.md).
+
+Planned internal sequence:
+
+- `TC-0001`: board, selection, legal movement, replay, and reconnect
+- `TC-0002`: initiative, activations, line of sight, combat, effects, and victory
+- `MM-0001`: masters, monster cubes, deployment, resources, and a complete duel
+- `MM-0002`: Theo tactical observation and legal-action integration
+- `MM-0003`: Discord multiplayer canary
+- `MM-0004`: second-theme proof without tactical-rule changes
+
+### GF-0011 — RPG encounter and campaign foundation
+
+Wrap the tactical core with persistent party, exploration, inventory, quest, and campaign state. Enter combat through a structured encounter configuration and return authoritative tactical outcomes to the campaign rather than reconstructing results from narration.
+
+After the encounter wrapper is proven, add a bounded Game Director hosted through Scribbles Runtime. The Director narrates, portrays nonplayer characters, and proposes permitted campaign operations; GameFrame remains the rules authority, and Theo remains a player without access to Director-only or hidden campaign information.
 
 ### GF-0020 — Specialist chess module
 
@@ -70,7 +89,6 @@ Add chess rules, clocks, notation, Stockfish integration, strength profiles, exp
 
 ## Deferred
 
-- RPG campaign platform
 - Real-time command strategy simulation
 - Public discovery, subscriptions, or monetization
 - Native desktop or mobile clients
