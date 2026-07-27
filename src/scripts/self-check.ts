@@ -48,10 +48,20 @@ assert.match(workflow, /^\s{2}pull_request:\s*$/m);
 assert.match(workflow, /^\s{4}types: \[labeled\]\s*$/m);
 assert.match(
   workflow,
-  /^\s{4}if: \$\{\{ github\.event_name == 'workflow_dispatch' \|\| github\.event\.label\.name == 'canonical-validation' \}\}\s*$/m,
+  /^\s{4}if: \$\{\{ github\.event_name == 'pull_request' && github\.event\.label\.name == 'canonical-validation' && github\.event\.pull_request\.draft \}\}\s*$/m,
 );
-assert.match(workflow, /^\s{4}runs-on: \[self-hosted, Linux, X64\]$/m);
-assert.match(workflow, /^\s{8}run: npm run validate$/m);
+assert.match(
+  workflow,
+  /^\s{4}if: \$\{\{ github\.event_name == 'workflow_dispatch' \|\| \(github\.event\.label\.name == 'canonical-validation' && !github\.event\.pull_request\.draft\) \}\}\s*$/m,
+);
+assert.equal((workflow.match(/^\s{4}runs-on: \[self-hosted, Linux, X64\]$/gm) ?? []).length, 2);
+assert.match(workflow, /^\s{8}run: npm install --no-audit --no-fund$/m);
+assert.match(workflow, /^\s{8}uses: actions\/upload-artifact@v4$/m);
+assert.match(workflow, /^\s{10}path: package-lock\.json$/m);
+assert.match(workflow, /^\s{10}retention-days: 1$/m);
+assert.match(workflow, /^\s{8}run: test -f package-lock\.json$/m);
+assert.match(workflow, /^\s{8}run: npm ci --no-audit --no-fund$/m);
+assert.equal((workflow.match(/^\s{8}run: npm run validate$/gm) ?? []).length, 2);
 for (const automaticTrigger of ["push", "schedule"]) {
   assert.doesNotMatch(
     workflow,
@@ -111,6 +121,8 @@ const testingStrategy = await readFile(
 assert.match(testingStrategy, /Feature-branch verification/);
 assert.match(testingStrategy, /Canonical merge verification/);
 assert.match(testingStrategy, /Any commit added after the canonical pass invalidates that pass/);
+assert.match(testingStrategy, /draft pull request/);
+assert.match(testingStrategy, /one-day lockfile artifact/);
 
 const service = await readFile(
   join(repositoryRoot, "src/server/tic-tac-toe-match-service.ts"),
