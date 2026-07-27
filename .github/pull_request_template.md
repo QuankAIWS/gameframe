@@ -13,7 +13,7 @@ Describe the completed feature or milestone and the boundaries intentionally lef
 ## Canonical validation
 
 - [ ] The feature is complete and the branch is frozen.
-- [ ] `Canonical Validation` was manually dispatched against the final branch head.
+- [ ] `Canonical Validation` was deliberately started by manual dispatch or the `canonical-validation` label against the final branch head.
 - Canonical run/result:
 - [ ] The `validate` job passed.
 - [ ] No commits were added after the canonical pass.
