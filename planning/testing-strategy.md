@@ -13,13 +13,17 @@ Scribbles GameFrame uses two distinct verification tiers.
 - Local verification must identify the exact tested commit SHA, execution environment, and commands used.
 - Pushing commits or updating an ordinary pull request does not start GitHub Actions.
 - Local verification is the normal development gate and may be repeated as often as needed without occupying the self-hosted runner.
+- When a required integration runtime is unavailable in the assistant environment, applying `canonical-validation` to a draft pull request starts the bounded `development-integration` job instead of the final merge gate.
+- The development job may generate a one-day lockfile artifact so the exact resolved dependency graph can be committed to the feature branch. No broad test-output, browser, build, coverage, or cache artifacts are uploaded.
+- A development-integration result is diagnostic evidence. It does not authorize merge and becomes stale when the branch changes.
 
 ### Canonical merge verification
 
 - When a feature or major milestone is complete, bring the branch up to date with `main` and run the complete suite locally one final time.
-- Push that exact final head and freeze the branch.
-- Start `Canonical Validation` either by manually dispatching the workflow against the feature branch or by applying the `canonical-validation` label to its pull request.
+- Push that exact final head, mark the pull request ready for review, and freeze the branch.
+- Start `Canonical Validation` either by manually dispatching the workflow against the feature branch or by applying the `canonical-validation` label to the ready pull request.
 - The label path is intentionally limited to the `pull_request:labeled` event; ordinary pushes, synchronization, opening, and review-state changes do not occupy the runner.
+- The canonical job requires a committed `package-lock.json`, installs exclusively with `npm ci`, and runs the complete `npm run validate` suite.
 - The canonical `validate` job must pass before merge.
 - Any commit added after the canonical pass invalidates that pass and requires another local and canonical run.
 - The GitHub Actions result is the durable repository record; local reports remain supporting development evidence.
@@ -79,7 +83,7 @@ These cannot be claimed from local or canonical repository validation:
 - Scribbles Runtime adapter compatibility and real Theo model-driven decisions
 - Production or staging recovery
 
-Reports must distinguish assistant-local execution, canonical GitHub Actions validation, and live-environment proof.
+Reports must distinguish assistant-local execution, development integration, canonical GitHub Actions validation, and live-environment proof.
 
 ## WebSocket projection tests
 
