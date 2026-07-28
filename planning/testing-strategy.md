@@ -2,9 +2,11 @@
 
 Validation is layered so ordinary game development does not require a live Scribbles Runtime deployment or routine use of the self-hosted GitHub runner.
 
+The target posture is that deployment canaries confirm environment integration. They should not be the first place ordinary game-rule, browser-flow, reconnect, or agent-contract defects are discovered.
+
 ## Execution model
 
-Scribbles GameFrame uses two distinct verification tiers.
+Scribbles GameFrame uses three repository and environment verification tiers.
 
 ### Feature-branch verification
 
@@ -13,6 +15,7 @@ Scribbles GameFrame uses two distinct verification tiers.
 - Local verification must identify the exact tested commit SHA, execution environment, and commands used.
 - Pushing commits or updating an ordinary pull request does not start GitHub Actions.
 - Local verification is the normal development gate and may be repeated as often as needed without occupying the self-hosted runner.
+- Browser screenshots, traces, and reports produced locally are development evidence, not canonical GitHub evidence.
 
 ### Canonical merge verification
 
@@ -23,13 +26,38 @@ Scribbles GameFrame uses two distinct verification tiers.
 - The canonical `validate` job must pass before merge.
 - Any commit added after the canonical pass invalidates that pass and requires another local and canonical run.
 - The GitHub Actions result is the durable repository record; local reports remain supporting development evidence.
+- Stable visual-regression baselines should be generated and accepted in the canonical environment when environment-dependent rendering makes cross-machine comparison noisy.
 
-## Layer 1 — Deterministic core
+### External canary verification
+
+External canaries are deliberately separate from repository validation. They prove deployed environment behavior and may be run with human players, deterministic opponents, or the mock remote-agent connector before Scribbles Runtime is available.
+
+Reports must distinguish assistant-local execution, canonical GitHub Actions validation, deployed Cloudflare proof, Discord Activity proof, mock-agent proof, and real Scribbles Runtime proof.
+
+## Layer 1 — Deterministic rules and simulation
+
+Required coverage includes:
 
 - Game-rule unit tests
 - Legal-action invariants
-- Complete win/draw coverage
-- Exhaustive perfect-player non-loss proof for tic-tac-toe
+- Complete win, loss, and draw coverage
+- Event replay equivalence
+- Seeded deterministic simulation
+- Bot-versus-bot completed games
+- Property or fuzz tests when they provide useful state-space coverage
+
+Tic-tac-toe should retain exhaustive perfect-player non-loss proof.
+
+American checkers should cover at least:
+
+- Dark-square movement
+- Mandatory capture enforcement
+- Multi-jump continuation and termination
+- Promotion timing
+- King movement and captures
+- Win conditions
+- Draw, repetition, or no-progress policy
+- Complete deterministic games from representative positions
 
 ## Layer 2 — Match contracts
 
@@ -37,39 +65,134 @@ Scribbles GameFrame uses two distinct verification tiers.
 - Stale revision rejection
 - Duplicate action idempotency
 - Completed-match rejection
+- Unauthorized and impersonation rejection
 - Event replay equivalence
+- Match restoration after process or object reconstruction
+- Player-specific observations
+- Hidden-information nonleakage where applicable
+- Deterministic fallback behavior
 
 ## Layer 3 — Local service integration
 
 - Match creation through HTTP
-- Human action followed by deterministic Theo response
+- Human-versus-human action flow
+- Human action followed by deterministic opponent response
 - Observation retrieval
 - Health and error behavior
+- Reconnect and refresh
+- Competing commands
+- Projection failure isolation
+- Storage restoration
 
-## Layer 4 — Browser acceptance
+Service tests should exercise the same public application boundary used by browser and deployed clients rather than bypassing authority with direct state mutation.
 
-- Render a board
-- Start a match
-- Submit moves through the application boundary
-- Reach a deterministic completed state
-- Exercise desktop and mobile viewports
+## Layer 4 — Workers-runtime integration
 
-The current `check:browser` command is a JavaScript syntax check. Full automated browser interaction remains an implementation task and must not be claimed until a headless acceptance test is included in `npm run validate`.
+Fake storage and process tests remain useful, but Cloudflare runtime behavior must also be tested inside real `workerd` or the currently supported Workers test runtime.
 
-## Layer 5 — External canaries
+Coverage should include:
+
+- Durable Object bindings
+- Snapshot and event persistence
+- Object reconstruction after eviction
+- Competing writes
+- Hibernating WebSocket attachment and restoration
+- Player-specific projection fan-out
+- Refresh after reconnect or uncertainty
+- Runtime serialization compatibility
+- Configuration and binding failures that should fail closed
+
+A fake-runtime test must not be reported as proof of real Workers-runtime behavior.
+
+## Layer 5 — Browser acceptance
+
+The ordinary browser client is the base GameFrame interface. Browser acceptance must use real headless interaction through the application boundary.
+
+Coverage should include:
+
+- Render the game board or Canvas viewport
+- Start, create, and join a match
+- Select cells, pieces, units, or actions
+- Display legal actions and reject illegal input
+- Complete deterministic game flows
+- Resume and reconnect
+- Refresh projections
+- Display finished, stale, unauthorized, and error states
+- Exercise desktop and mobile viewport dimensions
+- Exercise keyboard and pointer input where supported
+- Exercise touch-oriented layouts or equivalent mobile interactions
+
+The current `check:browser` command is only a JavaScript syntax check. Full automated browser interaction must not be claimed until a headless acceptance harness is included in `npm run validate`. Playwright is the expected implementation unless repository evidence establishes a better fit.
+
+## Layer 6 — Visual QA
+
+Visual QA has two purposes: regression detection and design review.
+
+### Deterministic visual regression
+
+Use screenshot comparison for stable screens and deterministic game states, including representative desktop and mobile layouts. Keep the test surface narrow enough that harmless animation or timing variance does not make the suite unreliable.
+
+The canonical self-hosted runner is the authority for accepted environment-sensitive baselines. Baseline updates require explicit review and must not be automatically regenerated merely because a comparison failed.
+
+### Curated design evidence
+
+Development work may produce screenshots or short captures for human evaluation of:
+
+- Layout and hierarchy
+- Canvas readability
+- Responsive behavior
+- Legal-action highlighting
+- Error states
+- Match completion
+- Tactical camera and viewport behavior
+
+Curated concept or review images are not substitutes for automated interaction tests.
+
+## Layer 7 — External canaries
 
 These cannot be claimed from local or canonical repository validation:
 
-- Discord Activity launch, identity, proxy, and mobile behavior
-- Cloudflare deployed Worker/Durable Object behavior and quotas
-- Scribbles Runtime adapter compatibility and real Theo model-driven decisions
+- Deployed Cloudflare Worker and Durable Object behavior
+- Deployed persistence, eviction, reconnect, and recovery
+- Discord Activity launch, identity, proxy, invite or resume, and mobile behavior
+- Mock remote-agent network behavior
+- Scribbles Runtime adapter compatibility
+- Real Theo model-driven decisions
 - Production or staging recovery
+- Quota and platform-limit behavior
 
-Reports must distinguish assistant-local execution, canonical GitHub Actions validation, and live-environment proof.
+The initial deployed GameFrame and Discord canaries do not require a live Scribbles Runtime. Human seats, deterministic opponents, and the mock remote-agent connector are valid canary participants.
+
+## Agent decision-provider tests
+
+The decision-provider contract is versioned and structured. Tests must prove that GameFrame validates the returned action rather than trusting the provider.
+
+Required mock-provider modes:
+
+- Deterministic legal choice
+- Scripted action sequence
+- Seeded random legal choice
+- Delayed response
+- Timeout or unavailable service
+- Malformed schema
+- Illegal action
+- Duplicate response
+- Stale expected revision
+- Mismatched request or player identity
+
+Required assertions:
+
+- A response is correlated to the pending request.
+- The expected revision still matches.
+- The selected action is currently legal for the assigned player.
+- Duplicate or late responses do not create duplicate commits.
+- Provider commentary is never parsed as the authoritative action.
+- Provider failure invokes documented fallback or failure behavior.
+- The real Scribbles Runtime adapter can replace the mock provider without changing GameFrame authority.
 
 ## WebSocket projection tests
 
-Local contract tests prove:
+Local contract and Workers-runtime tests should prove:
 
 - A socket is attached only after its player-specific view resolves.
 - Each connection receives an initial authoritative view.
@@ -78,8 +201,7 @@ Local contract tests prove:
 - Refresh messages recover current state after reconnect or uncertainty.
 - Game-changing messages are rejected on the WebSocket channel.
 - Projection delivery failure does not roll back an accepted command.
-
-Real hibernation across `workerd` eviction remains an external runtime test until Cloudflare's development packages can be installed and locked.
+- Hibernation and object reconstruction preserve the ability to recover authoritative state.
 
 ## Authentication and authorization tests
 
@@ -89,8 +211,9 @@ Real hibernation across `workerd` eviction remains an external runtime test unti
 - Conflicting client-supplied identity claims are rejected.
 - Rejected impersonation attempts do not mutate the match.
 - WebSocket attachments receive only the authenticated principal's observation.
-- Development authentication is explicitly separate from the production Discord and service verifiers.
+- Development authentication is explicitly separate from production Discord and service verifiers.
 - Scribbles Runtime service credentials map only to Theo's stable `theo` player identity.
+- Mock-provider credentials receive only the capabilities and player identity configured for that provider.
 
 ## Signed session tests
 
@@ -100,3 +223,42 @@ Real hibernation across `workerd` eviction remains an external runtime test unti
 - Cookie parsing does not expose or reinterpret client identity claims.
 - Activity cookies include Discord's required iframe and partitioning attributes.
 - Cloudflare uses the configured secret for both HTTP and WebSocket request authentication.
+
+## Artifact policy
+
+GitHub Actions artifact storage is a constrained diagnostic channel, not the permanent record of every successful run.
+
+### Passing runs
+
+- Do not upload full browser reports, videos, screenshots, and traces by default.
+- The job log and GitHub result are the durable canonical record.
+- Approved small visual baselines may remain committed in the repository.
+
+### Failed runs
+
+A failed browser, Workers-runtime, or visual run may upload one compressed diagnostic bundle containing only relevant material:
+
+- Failed screenshot
+- Expected screenshot
+- Difference image
+- Playwright or equivalent trace
+- Focused logs
+- Test and commit metadata
+
+Failure diagnostics should use a provisional retention of three days.
+
+### Manual visual milestones
+
+A deliberately requested visual-review run may upload one curated bundle with a provisional maximum retention of seven days unless it is copied into a deliberate durable location.
+
+### Storage escalation
+
+Before creating a local artifact archive:
+
+1. Upload artifacts only on failure or explicit visual-review runs.
+2. Disable routine videos and traces.
+3. Compress diagnostics.
+4. Keep retention short.
+5. Delete obsolete workflow runs and artifacts.
+
+If this remains insufficient, a self-hosted archive may be added outside the ephemeral Actions workspace. It must enforce age, count, and total-size limits and must not silently consume the runner disk without rotation and monitoring.
