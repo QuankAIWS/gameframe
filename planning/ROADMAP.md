@@ -20,9 +20,11 @@ Current proof boundary:
 - Canonical Validation run `#8` (`30283559393`) passed on self-hosted runner `gh-runner-01` on July 27, 2026.
 - The run validated GitHub PR merge ref `932a1f5e0a185399b0a992ac2807903618ba0661`, generated from frozen feature head `d2f404dfb76c03f5568ea3869eaccd6997423005` and base `f9d5d36c5ab569f7a39722bb4909c9804d256881`.
 - The validated change was squash-merged to `main` as `01584a43777dc97a6439101ac4eff79aae1d876` without further feature-branch changes.
-- Discord, deployed Cloudflare, real `workerd`, and Scribbles Runtime canaries remain pending.
+- Real browser interaction, deployed Cloudflare, Discord Activity, and Scribbles Runtime canaries remain pending.
 
-## Active
+## Active platform-proof sequence
+
+The accepted near-term order is recorded in [`planning/decisions/0007-platform-proof-sequence-and-mock-agents.md`](decisions/0007-platform-proof-sequence-and-mock-agents.md). Tic-tac-toe proves the complete delivery stack, American checkers proves that the game-module and agent contracts generalize, and the monster-master battler remains the first substantial original game.
 
 ### GF-0002 — Cloudflare match runtime
 
@@ -40,7 +42,7 @@ Current implementation:
 - Projection-failure isolation from authoritative command commits
 - Explicit two-seat match creation for human and agent identities
 - Human-versus-human turn flow through Node and Cloudflare adapters
-- Automatic Theo opening action when Theo owns the first seat
+- Automatic deterministic opening action when the agent seat owns the first turn
 - Server-derived player identity boundary for create, view, action, and WebSocket requests
 - Fail-closed Cloudflare API behavior until a production identity verifier is configured
 - HMAC-signed session cookies shared by HTTPS commands and WebSocket upgrades
@@ -49,20 +51,71 @@ Current implementation:
 Remaining acceptance work:
 
 - Install and lock current Cloudflare development tooling
-- Run the full Durable Object and WebSocket suite inside real `workerd`, including eviction and hibernation
-- Perform a compact deployed Cloudflare canary
+- Run the full Durable Object and WebSocket suite inside real `workerd` or the supported Workers test runtime, including eviction and hibernation
+- Perform a compact standalone deployed Cloudflare canary
 
-### GF-0003 — Discord Activity adapter
+### GF-0003 — Complete tic-tac-toe browser proof
 
-Add Discord authorization-code exchange and verified user lookup, issue the signed Activity session, then add launch context, participant mapping, invite/resume behavior, and desktop/mobile canaries.
+Promote tic-tac-toe from a walking-skeleton interface into the complete delivery-stack proof:
 
-### GF-0004 — Scribbles Runtime adapter for Theo
+- Human-versus-human and human-versus-deterministic-opponent play
+- Match create, join, complete, resume, reconnect, and refresh flows
+- Clear stale, duplicate, illegal, unauthorized, and completed-match presentation
+- Desktop and mobile-responsive behavior
+- Real headless browser interaction included in repository validation
+- Deterministic screenshots or curated captures for stable screens
+- Basic visual polish sufficient to evaluate the ordinary browser client as the base GameFrame interface
 
-Expose structured observations and legal actions to Scribbles Runtime so it can choose actions on Theo's behalf while GameFrame retains server authority and deterministic fallback behavior.
+The existing JavaScript syntax check does not satisfy this milestone by itself.
+
+### GF-0004 — Standalone deployment and Discord delivery canaries
+
+Validate GameFrame without requiring a live Scribbles Runtime:
+
+- Deploy the standalone browser client, Worker routes, and Durable Object runtime
+- Verify persistence, reconnect, WebSocket projection, and recovery in the deployed environment
+- Add Discord authorization-code exchange and verified user lookup
+- Issue signed Activity sessions
+- Validate launch context, participant mapping, invite or resume, and desktop/mobile Activity behavior
+
+The first canaries may use human seats and deterministic in-process opponents.
+
+### GF-0005 — Versioned agent decision contract and mock connector
+
+Define the durable decision-provider boundary used by both test agents and the future Scribbles Runtime adapter. The contract must carry a protocol version, correlated request, game and match identity, stable player identity, expected revision, player-specific observation, enumerated legal actions, and a structured selected action.
+
+Implement mock-provider modes for deterministic, scripted, seeded-random, delayed, unavailable, malformed, illegal, duplicate, and stale responses. GameFrame remains authoritative and validates every returned action before commit. Provider prose is optional and non-authoritative.
+
+### GF-0006 — American checkers module
+
+Build American checkers on an 8x8 board as the first nontrivial reusable game-module proof. Document and test dark-square movement, mandatory captures, multi-jumps, promotion, king behavior, wins, and draw handling.
+
+Checkers must exercise the same match service, event history, player-specific observations, legal-action enumeration, browser input, reconnect, deterministic opponent, and mock-agent contract used by tic-tac-toe and intended for later games.
+
+### GF-0007 — Checkers full-stack canary
+
+Complete and validate:
+
+- Human-versus-human checkers
+- Human-versus-deterministic-opponent checkers
+- Human-versus-mock-remote-agent checkers
+- Browser selection, legal destinations, forced captures, multi-jump continuation, promotion, and completed-state presentation
+- Standalone deployed GameFrame canary
+- Discord Activity canary when the delivery adapter is available
+
+This milestone is the gate proving that GameFrame is not structurally hard-coded around tic-tac-toe.
+
+### GF-0008 — Scribbles Runtime adapter for Theo
+
+When Scribbles Runtime is available, implement the accepted versioned decision-provider contract so it can choose actions for stable player ID `theo`. The adapter is not a prerequisite for the preceding standalone, Discord, mock-agent, or checkers proofs.
+
+Retain deterministic fallback behavior and fail closed on malformed, stale, illegal, or unauthorized Runtime responses.
 
 ### GF-0010 — Monster-master tactical battler foundation
 
-Build the first replayable tactical game after the platform survives a real Discord tic-tac-toe canary. Begin with a two-player monster-master duel on a larger scrollable battlefield that extends beyond the normal viewport, while preserving an eventual two-to-four-player architecture.
+Build the first substantial original GameFrame game after the platform has survived tic-tac-toe deployment, browser acceptance, the mock-agent boundary, and the American-checkers generalization proof.
+
+Begin with a two-player monster-master duel on a larger scrollable battlefield that extends beyond the normal viewport, while preserving an eventual two-to-four-player architecture.
 
 The first production direction favors tactical-RPG-style maneuver over an immediately engaged tiny arena: small active forces move across a larger map with approach routes, objectives, terrain positions, camera panning, and room for scouting or repositioning. Compact boards remain supported for tests, tutorials, puzzles, quick matches, and small RPG encounters rather than being removed or developed as a separate engine.
 
@@ -75,7 +128,7 @@ Planned internal sequence:
 - `TC-0001`: map, viewport and camera, selection, legal movement, replay, and reconnect
 - `TC-0002`: initiative, activations, line of sight, combat, effects, and victory
 - `MM-0001`: masters, monster cubes, deployment, resources, and a complete larger-field duel
-- `MM-0002`: Theo tactical observation and legal-action integration
+- `MM-0002`: Theo and generic decision-provider tactical observation and legal-action integration
 - `MM-0003`: Discord multiplayer canary
 - `MM-0004`: second-theme proof without tactical-rule changes
 
