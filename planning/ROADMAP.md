@@ -19,7 +19,7 @@ Current proof boundary:
 - Local deterministic, HTTP integration, browser syntax, and repository validation are implemented.
 - Canonical Validation run `#8` (`30283559393`) passed on self-hosted runner `gh-runner-01` on July 27, 2026.
 - The run validated GitHub PR merge ref `932a1f5e0a185399b0a992ac2807903618ba0661`, generated from frozen feature head `d2f404dfb76c03f5568ea3869eaccd6997423005` and base `f9d5d36c5ab569f7a39722bb4909c9804d256881`.
-- The validated change was squash-merged to `main` as `01584a43777ddc97a6439101ac4eff79aae1d876` without further feature-branch changes.
+- The validated change was squash-merged to `main` as `01584a43777dc97a6439101ac4eff79aae1d876` without further feature-branch changes.
 - Discord, deployed Cloudflare, real `workerd`, and Scribbles Runtime canaries remain pending.
 
 ## Active
@@ -62,20 +62,24 @@ Expose structured observations and legal actions to Scribbles Runtime so it can 
 
 ### GF-0010 — Monster-master tactical battler foundation
 
-Build the first replayable tactical game after the platform survives a real Discord tic-tac-toe canary. Begin with a compact two-player monster-master duel while preserving an eventual two-to-four-player architecture.
+Build the first replayable tactical game after the platform survives a real Discord tic-tac-toe canary. Begin with a two-player monster-master duel on a larger scrollable battlefield that extends beyond the normal viewport, while preserving an eventual two-to-four-player architecture.
 
-This milestone establishes the shared square-grid combat substrate for later RPG encounters: board occupancy, movement, initiative, activations, range, line of sight, terrain, effects, objectives, visibility, replay, and human or agent participation through the same authoritative command path.
+The first production direction favors tactical-RPG-style maneuver over an immediately engaged tiny arena: small active forces move across a larger map with approach routes, objectives, terrain positions, camera panning, and room for scouting or repositioning. Compact boards remain supported for tests, tutorials, puzzles, quick matches, and small RPG encounters rather than being removed or developed as a separate engine.
 
-Detailed sequencing, visual direction, generative-content boundaries, and acceptance criteria are recorded in [`planning/tactical-battler-rpg-foundation.md`](tactical-battler-rpg-foundation.md).
+This milestone establishes the shared square-grid combat substrate for later RPG encounters and possible squad-scale strategy modules: board occupancy, movement, camera-independent map state, initiative, activations, range, line of sight, terrain, effects, objectives, visibility, replay, and human or agent participation through the same authoritative command path.
+
+Detailed sequencing, visual direction, generative-content boundaries, and acceptance criteria are recorded in [`planning/tactical-battler-rpg-foundation.md`](tactical-battler-rpg-foundation.md). The accepted larger-map direction and its relationship to retained compact arenas are recorded in [`planning/decisions/0006-scrollable-tactical-battlefields.md`](decisions/0006-scrollable-tactical-battlefields.md).
 
 Planned internal sequence:
 
-- `TC-0001`: board, selection, legal movement, replay, and reconnect
+- `TC-0001`: map, viewport and camera, selection, legal movement, replay, and reconnect
 - `TC-0002`: initiative, activations, line of sight, combat, effects, and victory
-- `MM-0001`: masters, monster cubes, deployment, resources, and a complete duel
+- `MM-0001`: masters, monster cubes, deployment, resources, and a complete larger-field duel
 - `MM-0002`: Theo tactical observation and legal-action integration
 - `MM-0003`: Discord multiplayer canary
 - `MM-0004`: second-theme proof without tactical-rule changes
+
+Potential later scale variants may use larger battlefields, more units, or squad and formation entities in a turn-based strategy mode. Those possibilities should influence clean abstractions but must not expand the first battler into a Total War-scale simulation before the small-force tactical loop is proven.
 
 ### GF-0011 — RPG encounter and campaign foundation
 
