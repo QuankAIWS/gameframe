@@ -10,7 +10,7 @@ Validated scope:
 - Scribbles Runtime is documented as a peer integration runtime
 - Theo remains the public-facing agent and stable GameFrame player identity `theo`
 - deterministic match, HTTP, authentication, signed-session, Cloudflare-adapter, and WebSocket projection tests remain green
-- repository workflow policy prevents ordinary pushes and routine pull-request updates from consuming the self-hosted runner
+- repository workflow policy prevents ordinary pushes and routine pull-request updates from starting canonical validation
 
 ## Canonical GitHub Actions evidence
 
@@ -18,8 +18,6 @@ Validated scope:
 - Run number: `#8`
 - Run ID: `30283559393`
 - Job: `validate`
-- Runner: `gh-runner-01`
-- Runner version: `2.336.0`
 - Node.js selected from `.nvmrc`: `22.16.0`
 - Result: success
 - Artifact uploads: none
@@ -37,7 +35,7 @@ Because the canonical run was started by the deliberate `pull_request:labeled` e
 
 ## Evidence boundary
 
-This validation proves the checked-in repository suite in the self-hosted GitHub Actions environment. It does not prove:
+This validation proves the checked-in repository suite in its recorded GitHub Actions environment. It does not prove:
 
 - deployed Cloudflare Worker or Durable Object behavior
 - real `workerd` eviction or WebSocket hibernation behavior
