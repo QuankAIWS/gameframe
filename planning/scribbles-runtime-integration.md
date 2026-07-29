@@ -2,7 +2,7 @@
 
 ## Decision
 
-Scribbles GameFrame integrates with `codename-scribbles-runtime` through a dedicated native adapter after the public match API is stable. Scribbles Runtime hosts the public-facing Theo agent and calls GameFrame on Theo's behalf. The adapter is an outbound client of GameFrame; it does not embed authoritative game state into the runtime, memory system, or conversation machinery.
+Scribbles GameFrame integrates with Scribbles Runtime through a dedicated native adapter after the public match API is stable. Scribbles Runtime hosts the public-facing Theo agent and calls GameFrame on Theo's behalf. The adapter is an outbound client of GameFrame; it does not embed authoritative game state into the runtime, memory system, or conversation machinery.
 
 ## Initial adapter shape
 
@@ -40,7 +40,7 @@ A pure tool adapter is sufficient when a Discord message or command already star
 
 The GameFrame-facing adapter may begin under `scribbles-gameframe/integrations/scribbles-runtime/` while contracts are changing. It should move elsewhere only when independent release, security ownership, or runtime compatibility validation makes that operationally useful.
 
-GameFrame must not import runtime internals or depend on a runtime checkout, branch name, filesystem layout, or deployment process. Shared payloads should be versioned contracts with fixtures on both sides.
+GameFrame must not import runtime internals or depend on a runtime checkout, branch name, filesystem layout, repository identifier, or deployment process. Shared payloads should be versioned contracts with fixtures on both sides.
 
 ## Validation
 
