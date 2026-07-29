@@ -81,27 +81,41 @@ Validate GameFrame without requiring a live Scribbles Runtime:
 
 The first canaries may use human seats and deterministic in-process opponents. This lane is paused until the repository owner is available for deployment-account setup, secrets, and live environment verification. It remains an unresolved external checkpoint and may resume between later repository milestones. Repository, browser, Workers-runtime, mock-agent, checkers, and tactical development may continue without claiming this evidence.
 
-### GF-0005 — Versioned agent decision contract and mock connector — Active
+### GF-0005 — Versioned agent decision contract and mock connector — Complete
 
-Define the durable decision-provider boundary used by both test agents and the future Scribbles Runtime adapter. The contract must carry a protocol version, correlated request, game and match identity, stable player identity, expected revision, player-specific observation, enumerated legal actions, and a structured selected action.
+The durable version-1 decision-provider boundary is implemented for test agents and the future Scribbles Runtime adapter.
 
-Implement mock-provider modes for deterministic, scripted, seeded-random, delayed, unavailable, malformed, illegal, duplicate, mismatched, and stale responses. GameFrame remains authoritative and validates every returned action before commit. Provider prose is optional and non-authoritative.
+Canonically validated implementation:
 
-Acceptance requires:
+- Transport-neutral versioned request and response schemas
+- Game, match, request, player, revision, deadline, observation, and legal-action context
+- Provider-generated structured action IDs
+- Protocol, request-correlation, player-identity, revision, response-shape, action-ID, duplicate-ID, and current-legality validation
+- Explicit unavailable, timeout, malformed, mismatched, stale, duplicate, illegal, and missing-context failure classes
+- Deterministic fallback restricted to the same stable player identity
+- Deterministic, scripted, seeded-random, delayed, unavailable, malformed, illegal, duplicate, stale, mismatched-request, and mismatched-player mock modes
+- Tic-tac-toe integration through the existing authoritative match path
+- Canonical version-1 request and response fixtures for independent Runtime implementation
+- Normative protocol and Scribbles Runtime boundary documentation
 
-- Transport-neutral request and response schemas
-- Runtime validation of protocol version, request correlation, player identity, expected revision, action ID, and structured action shape
-- Current-legality validation before commit
-- Duplicate and late-response idempotency
-- Explicit timeout, unavailable-provider, malformed-response, and fallback behavior
-- Deterministic, scripted, and seeded-random mock providers
-- Tests demonstrating that the future Scribbles Runtime adapter can replace the mock provider without changing game authority
+The frozen candidate passed GitHub-hosted Canonical Validation run #39 (`30494321343`) and was squash-merged as `46c2a0d5edcd22dfe908211915efc442d7b2d912`. See [`planning/validation/2026-07-29-agent-decision-contract.md`](validation/2026-07-29-agent-decision-contract.md). No remote provider transport, live Runtime, or deployed authentication behavior is claimed by this milestone.
 
-### GF-0006 — American checkers module
+### GF-0006 — American checkers module — Active
 
 Build American checkers on an 8x8 board as the first nontrivial reusable game-module proof. Document and test dark-square movement, mandatory captures, multi-jumps, promotion, king behavior, wins, and draw handling.
 
-Checkers must exercise the same match service, event history, player-specific observations, legal-action enumeration, browser input, reconnect, deterministic opponent, and mock-agent contract used by tic-tac-toe and intended for later games.
+Checkers must exercise the same match service, event history, player-specific observations, legal-action enumeration, browser input, reconnect, deterministic opponent, and versioned mock-agent contract used by tic-tac-toe and intended for later games.
+
+Acceptance requires:
+
+- Explicit American Checkers rules and coordinate conventions
+- Initial-state, legal-move, mandatory-capture, multi-jump, promotion, king, win, and draw or no-progress tests
+- Replay equivalence and representative complete deterministic games
+- A deterministic checkers opponent and provider-backed mock-agent path
+- Game-module registration without special-casing the platform authority model
+- Service-level human-versus-human, deterministic-agent, and mock-provider flows
+- Browser piece selection, destination highlighting, forced capture, continuation, promotion, completion, refresh, and mobile behavior
+- Canonical repository validation before merge
 
 ### GF-0007 — Checkers full-stack proof
 

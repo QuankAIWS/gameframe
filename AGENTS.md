@@ -51,7 +51,9 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 
 ## Current active lane
 
-`GF-0005`: define and implement the versioned decision-provider contract and durable mock connector. Prove request correlation, player identity, expected revision, legal-action selection, idempotency, malformed and stale responses, timeout or unavailability behavior, and deterministic fallback without requiring a live Scribbles Runtime.
+`GF-0006`: implement American Checkers as the first nontrivial reusable game-module proof. Use an 8x8 board and explicitly test dark-square movement, mandatory captures, multi-jump continuation, promotion, king movement and captures, win conditions, draw or no-progress policy, replay, observations, deterministic opponents, and compatibility with the versioned mock-agent contract.
+
+`GF-0005` is canonically complete. The version-1 decision protocol and fixtures in `planning/agent-decision-protocol.md` and `test/fixtures/agent-decision/` are the compatibility boundary for future Runtime work.
 
 `GF-0004` standalone Cloudflare and Discord canaries are paused until the repository owner is available for deployment setup. They remain unresolved external checkpoints and must not be claimed from repository validation. See `planning/decisions/0009-defer-external-canaries-without-blocking-development.md`.
 
