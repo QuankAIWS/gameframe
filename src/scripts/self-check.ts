@@ -58,6 +58,7 @@ const durableFiles = [
   "planning/decisions/0009-defer-external-canaries-without-blocking-development.md",
   "planning/validation/2026-07-27-canonical-baseline.md",
   "planning/validation/2026-07-29-tic-tac-toe-browser-proof.md",
+  "planning/validation/2026-07-29-agent-decision-contract.md",
   ".github/workflows/ci.yml",
   "wrangler.jsonc",
 ];
@@ -188,7 +189,8 @@ assert.match(notice, /No open-source license/);
 
 const roadmap = await readFile(join(repositoryRoot, "planning/ROADMAP.md"), "utf8");
 assert.match(roadmap, /GF-0004 .* Paused/);
-assert.match(roadmap, /GF-0005 .* Active/);
+assert.match(roadmap, /GF-0005 .* Complete/);
+assert.match(roadmap, /GF-0006 .* Active/);
 assert.match(roadmap, /American checkers/);
 assert.match(roadmap, /Monster-master tactical battler foundation/);
 assert.match(roadmap, /RPG encounter and campaign foundation/);
