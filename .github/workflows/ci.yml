@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: scribbles-gameframe-canonical-${{ github.ref }}
+  group: scribbles-gameframe-prepublication-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -18,8 +18,13 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 30
     steps:
-      - name: Check out repository
+      - name: Check out exact public-readiness candidate
         uses: actions/checkout@v4
+        with:
+          ref: agent/public-readiness-final
+
+      - name: Record validated candidate
+        run: git rev-parse HEAD
 
       - name: Select Node.js
         uses: actions/setup-node@v4
@@ -30,17 +35,16 @@ jobs:
         run: |
           if [ -f package-lock.json ]; then
             npm ci --no-audit --no-fund
-          elif node -e "const p=require('./package.json'); process.exit(Object.keys(p.dependencies||{}).length + Object.keys(p.devDependencies||{}).length > 0 ? 0 : 1)"; then
+          else
             npm install --no-audit --no-fund
           fi
 
-      - name: Emit generated dependency lock for review
-        if: ${{ hashFiles('package-lock.json') != '' }}
+      - name: Emit dependency lock for review
         run: |
           echo BEGIN_PACKAGE_LOCK_BASE64
           base64 -w 0 package-lock.json
           echo
           echo END_PACKAGE_LOCK_BASE64
 
-      - name: Validate final feature candidate
+      - name: Validate exact public-readiness candidate
         run: npm run validate
