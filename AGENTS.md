@@ -51,7 +51,7 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 
 ## Current active lane
 
-`GF-0003`: complete the tic-tac-toe browser proof with resumable human and deterministic-opponent play, real Playwright interaction, responsive desktop and mobile behavior, and a frozen GitHub-hosted canonical pass. The next lane after merge is the compact standalone Cloudflare deployment canary in `GF-0004`.
+`GF-0004`: deploy the canonically validated Tic-Tac-Toe browser client and authoritative Cloudflare runtime as a compact standalone canary. Prove deployed static assets, Worker routing, Durable Object persistence, projection updates, refresh, reconnect, and recovery without requiring Discord or a live Scribbles Runtime.
 
 ## Development and validation posture
 

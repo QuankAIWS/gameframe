@@ -28,11 +28,16 @@ Implemented in the initial platform and browser proof:
 - Real Playwright browser acceptance through the ordinary application boundary
 - Unit, invariant, service, HTTP integration, WebSocket projection, browser, and real Workers-runtime tests
 
-## Canonical baseline
+## Canonical checkpoints
 
 The initial repository baseline was validated and merged on July 27, 2026. The complete repository suite passed and uploaded no artifacts.
 
-See `planning/validation/2026-07-27-canonical-baseline.md` for the durable evidence record. The GF-0003 browser candidate adds its own GitHub-hosted validation evidence in pull request #17.
+The complete Tic-Tac-Toe browser proof passed GitHub-hosted canonical validation and was merged on July 29, 2026.
+
+Durable evidence:
+
+- `planning/validation/2026-07-27-canonical-baseline.md`
+- `planning/validation/2026-07-29-tic-tac-toe-browser-proof.md`
 
 Not yet claimed:
 
