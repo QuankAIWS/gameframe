@@ -12,9 +12,9 @@ assert.match(packageJson.engines.node, /22/);
 assert.equal(packageJson.scripts["test:workerd"], "vitest run --config vitest.config.ts --max-workers=1 --no-isolate");
 assert.match(packageJson.scripts.validate, /npm run test:workerd/);
 assert.deepEqual(packageJson.devDependencies, {
-  "@cloudflare/vitest-pool-workers": "0.18.8",
+  "@cloudflare/vitest-pool-workers": "0.19.0",
   vitest: "4.1.10",
-  wrangler: "4.114.0",
+  wrangler: "4.115.0",
 });
 
 const durableFiles = [
