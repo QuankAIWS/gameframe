@@ -21,8 +21,8 @@ Implemented in the initial slice:
 - Storage-neutral asynchronous match service
 - In-memory development storage and restorable snapshots
 - Cloudflare Worker and Durable Object adapter boundary
-- Zero-dependency HTTP server and browser client
-- Unit, invariant, service, HTTP integration, and WebSocket projection tests
+- Zero-dependency application runtime and browser client
+- Unit, invariant, service, HTTP integration, WebSocket projection, and real Workers-runtime tests
 
 ## Canonical baseline
 
@@ -42,16 +42,18 @@ See `planning/validation/2026-07-27-canonical-baseline.md` for the durable evide
 Not yet claimed:
 
 - Discord Activity OAuth exchange, session establishment, or launch flow
-- Deployed Cloudflare Worker or real `workerd` validation
+- Deployed Cloudflare Worker validation
 - Scribbles Runtime integration controlling Theo
-- Real `workerd` hibernation and deployment behavior
+- Production recovery, quota, and durability behavior
 
 ## Run locally
 
-Requires Node.js 22.16.0 or newer. The current slice deliberately has no package dependencies.
+Requires Node.js 22.16.0 or newer.
 
 ```bash
+npm ci
 npm test
+npm run test:workerd
 npm run validate
 npm run dev
 ```
@@ -67,9 +69,24 @@ src/agents/               nonhuman player contracts and implementations
 src/server/               authoritative development service and HTTP host
 src/scripts/              repository self-checks
 public/                   standalone browser shell
+test/workerd/             real Workers-runtime integration tests
 planning/                 architecture, deployment, roadmap, and validation doctrine
 src/cloudflare/           Worker, Durable Object, and storage adapters
 ```
+
+## Ownership and licensing
+
+This repository is publicly viewable proprietary software. Copyright remains with the applicable copyright owner, and all rights are reserved.
+
+No open-source license is granted. The absence of a `LICENSE` file is intentional. Viewing, cloning, or forking the repository through GitHub does not grant permission to reuse, modify, redistribute, sell, deploy, or create derivative works from the code except as required for GitHub's own repository functionality or with prior written authorization.
+
+See `NOTICE` for the controlling repository notice and `CONTRIBUTING.md` for the current external-contribution policy.
+
+## Security and deployment data
+
+The public repository must not contain production credentials, private keys, access tokens, cookies, private user or campaign data, incident records, or secret-bearing environment files. Deployment secrets belong in GitHub, Cloudflare, or equivalent secret stores and are supplied through environment bindings.
+
+Security vulnerabilities should be reported through the private process in `SECURITY.md`, not through a public issue containing exploit details.
 
 ## Repository relationship
 
