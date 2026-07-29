@@ -8,7 +8,7 @@ import {
   requirePrincipalSeat,
   type RequestAuthenticator,
 } from "../auth/request-authenticator.ts";
-import { InMemoryTicTacToeService } from "./in-memory-match-service.ts";
+import { InMemoryGameFrameService } from "./in-memory-match-service.ts";
 
 const publicRoot = fileURLToPath(new URL("../../public/", import.meta.url));
 
@@ -29,7 +29,7 @@ async function readJson(request: IncomingMessage): Promise<Record<string, unknow
   let body = "";
   for await (const chunk of request) {
     body += chunk;
-    if (body.length > 16_384) {
+    if (body.length > 65_536) {
       throw new Error("Request body is too large.");
     }
   }
@@ -80,13 +80,13 @@ async function serveStatic(pathname: string, response: ServerResponse): Promise<
 function errorStatus(error: ApiError): number {
   if (error.code === "authentication_required") return 401;
   if (error.code === "forbidden" || error.code === "identity_mismatch") return 403;
-  if (error.code === "stale_revision") return 409;
+  if (error.code === "stale_revision" || error.code === "match_exists") return 409;
   if (error.code === "match_not_found") return 404;
   return 400;
 }
 
 export function createGameFrameServer(
-  service = new InMemoryTicTacToeService(),
+  service = new InMemoryGameFrameService(),
   authenticator: RequestAuthenticator = new DevelopmentHeaderAuthenticator(),
 ) {
   return createServer(async (request, response) => {
@@ -100,6 +100,7 @@ export function createGameFrameServer(
           runtime: "node-local",
           realtime: false,
           authentication: "development-header",
+          games: ["tic-tac-toe", "american-checkers"],
         });
       }
 
@@ -110,7 +111,8 @@ export function createGameFrameServer(
           ? body.playerIds.map((playerId) => String(playerId))
           : [];
         requirePrincipalSeat(principal, playerIds);
-        return json(response, 201, await service.createMatch(playerIds));
+        const gameId = String(body.gameId ?? "tic-tac-toe");
+        return json(response, 201, await service.createMatch(gameId, playerIds));
       }
 
       const route = matchRoute(url.pathname);
@@ -129,7 +131,7 @@ export function createGameFrameServer(
           playerId: principal.playerId,
           actionId: String(body.actionId ?? ""),
           expectedRevision: Number(body.expectedRevision),
-          action: { type: "place", cell: Number((body.action as { cell?: unknown } | undefined)?.cell) },
+          action: body.action,
         });
         return json(response, 200, view);
       }
