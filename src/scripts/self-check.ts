@@ -29,13 +29,22 @@ const durableFiles = [
   "package-lock.json",
   "playwright.config.mjs",
   "vitest.config.ts",
+  "src/agents/index.ts",
+  "src/agents/agent-player.ts",
+  "src/agents/decision-protocol.ts",
+  "src/agents/mock-decision-provider.ts",
+  "src/agents/provider-backed-agent.ts",
+  "src/agents/decision-protocol.test.ts",
   "test/browser/tic-tac-toe.spec.mjs",
+  "test/fixtures/agent-decision/request-v1.json",
+  "test/fixtures/agent-decision/response-v1.json",
   "test/workerd/cloudflare-runtime.test.ts",
   "planning/ROADMAP.md",
   "planning/architecture.md",
   "planning/testing-strategy.md",
   "planning/development-workflow.md",
   "planning/deployment-topology.md",
+  "planning/agent-decision-protocol.md",
   "planning/scribbles-runtime-integration.md",
   "planning/tactical-battler-rpg-foundation.md",
   "planning/decisions/0001-zero-dependency-walking-skeleton.md",
@@ -46,7 +55,9 @@ const durableFiles = [
   "planning/decisions/0006-scrollable-tactical-battlefields.md",
   "planning/decisions/0007-platform-proof-sequence-and-mock-agents.md",
   "planning/decisions/0008-public-source-proprietary-repository.md",
+  "planning/decisions/0009-defer-external-canaries-without-blocking-development.md",
   "planning/validation/2026-07-27-canonical-baseline.md",
+  "planning/validation/2026-07-29-tic-tac-toe-browser-proof.md",
   ".github/workflows/ci.yml",
   "wrangler.jsonc",
 ];
@@ -176,6 +187,8 @@ assert.match(notice, /All rights reserved/);
 assert.match(notice, /No open-source license/);
 
 const roadmap = await readFile(join(repositoryRoot, "planning/ROADMAP.md"), "utf8");
+assert.match(roadmap, /GF-0004 .* Paused/);
+assert.match(roadmap, /GF-0005 .* Active/);
 assert.match(roadmap, /American checkers/);
 assert.match(roadmap, /Monster-master tactical battler foundation/);
 assert.match(roadmap, /RPG encounter and campaign foundation/);
@@ -191,6 +204,43 @@ assert.match(testingStrategy, /Browser acceptance/);
 assert.match(testingStrategy, /Artifact policy/);
 assert.match(testingStrategy, /Any commit added after the canonical pass invalidates that pass/);
 assert.match(testingStrategy, /GitHub-hosted runner/);
+
+const agentProtocol = await readFile(
+  join(repositoryRoot, "src/agents/decision-protocol.ts"),
+  "utf8",
+);
+assert.match(agentProtocol, /AGENT_DECISION_PROTOCOL_VERSION = "1"/);
+assert.match(agentProtocol, /request_mismatch/);
+assert.match(agentProtocol, /duplicate_action_id/);
+assert.match(agentProtocol, /illegal_action/);
+
+const providerBackedAgent = await readFile(
+  join(repositoryRoot, "src/agents/provider-backed-agent.ts"),
+  "utf8",
+);
+assert.match(providerBackedAgent, /parseAgentDecisionResponse/);
+assert.match(providerBackedAgent, /provider_timeout/);
+assert.match(providerBackedAgent, /fallback/);
+
+const mockProvider = await readFile(
+  join(repositoryRoot, "src/agents/mock-decision-provider.ts"),
+  "utf8",
+);
+for (const mode of [
+  "deterministic",
+  "scripted",
+  "seeded-random",
+  "delayed",
+  "unavailable",
+  "malformed",
+  "illegal",
+  "duplicate",
+  "stale",
+  "mismatched-request",
+  "mismatched-player",
+]) {
+  assert.match(mockProvider, new RegExp(mode));
+}
 
 const browserTest = await readFile(
   join(repositoryRoot, "test/browser/tic-tac-toe.spec.mjs"),
@@ -213,6 +263,7 @@ const service = await readFile(
   "utf8",
 );
 assert.match(service, /PerfectTicTacToePlayer\("theo"\)/);
+assert.match(service, /chooseAgentDecision/);
 assert.doesNotMatch(service, /PerfectTicTacToePlayer\("scribbles"\)/);
 
 console.log("Repository self-check passed.");
