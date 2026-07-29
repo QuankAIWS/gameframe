@@ -2,7 +2,7 @@
 
 Describe the completed feature or milestone and the boundaries intentionally left unchanged.
 
-## Assistant-local validation
+## Local validation
 
 - Final locally validated SHA:
 - Execution environment:
