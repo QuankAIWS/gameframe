@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Deterministic multiplayer game platform and Discord Activity foundation for Codename Scribbles.",
+  "description": "Deterministic multiplayer game platform and Discord Activity foundation for the Scribbles architecture.",
   "engines": {
     "node": ">=22.16.0"
   },
