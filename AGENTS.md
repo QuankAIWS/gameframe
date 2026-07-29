@@ -1,6 +1,6 @@
 # AGENTS.md — Scribbles GameFrame
 
-Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate objective is to prove the complete multiplayer and integration architecture with tic-tac-toe before expanding into tactical, chess, RPG, or RTS modules.
+Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate objective is to prove the complete multiplayer and integration architecture with small, deterministic games before expanding into tactical, chess, RPG, or RTS modules.
 
 ## Startup
 
@@ -51,7 +51,9 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 
 ## Current active lane
 
-`GF-0004`: deploy the canonically validated Tic-Tac-Toe browser client and authoritative Cloudflare runtime as a compact standalone canary. Prove deployed static assets, Worker routing, Durable Object persistence, projection updates, refresh, reconnect, and recovery without requiring Discord or a live Scribbles Runtime.
+`GF-0005`: define and implement the versioned decision-provider contract and durable mock connector. Prove request correlation, player identity, expected revision, legal-action selection, idempotency, malformed and stale responses, timeout or unavailability behavior, and deterministic fallback without requiring a live Scribbles Runtime.
+
+`GF-0004` standalone Cloudflare and Discord canaries are paused until the repository owner is available for deployment setup. They remain unresolved external checkpoints and must not be claimed from repository validation. See `planning/decisions/0009-defer-external-canaries-without-blocking-development.md`.
 
 ## Development and validation posture
 
