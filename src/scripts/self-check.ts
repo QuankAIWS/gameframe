@@ -9,21 +9,37 @@ assert.equal(packageJson.name, "@quankaiws/scribbles-gameframe");
 assert.equal(packageJson.private, true);
 assert.equal(packageJson.type, "module");
 assert.match(packageJson.engines.node, /22/);
+assert.equal(packageJson.scripts["test:workerd"], "vitest run --config vitest.config.ts --max-workers=1 --no-isolate");
+assert.match(packageJson.scripts.validate, /npm run test:workerd/);
+assert.deepEqual(packageJson.devDependencies, {
+  "@cloudflare/vitest-pool-workers": "0.18.8",
+  vitest: "4.1.10",
+  wrangler: "4.114.0",
+});
 
 const durableFiles = [
   "README.md",
   "AGENTS.md",
   "NOTICE",
+  "CONTRIBUTING.md",
+  "SECURITY.md",
+  "package-lock.json",
+  "vitest.config.ts",
+  "test/workerd/cloudflare-runtime.test.ts",
   "planning/ROADMAP.md",
   "planning/architecture.md",
   "planning/testing-strategy.md",
   "planning/development-workflow.md",
   "planning/deployment-topology.md",
   "planning/scribbles-runtime-integration.md",
+  "planning/tactical-battler-rpg-foundation.md",
   "planning/decisions/0002-websockets-are-projections.md",
   "planning/decisions/0003-server-derived-player-identity.md",
   "planning/decisions/0004-signed-discord-activity-sessions.md",
   "planning/decisions/0005-scribbles-theo-identity-boundary.md",
+  "planning/decisions/0006-scrollable-tactical-battlefields.md",
+  "planning/decisions/0007-platform-proof-sequence-and-mock-agents.md",
+  "planning/decisions/0008-public-source-proprietary-repository.md",
   ".github/workflows/ci.yml",
   "wrangler.jsonc",
 ];
@@ -38,6 +54,16 @@ await assert.rejects(
   "The retired OpenClaw integration document must not remain active.",
 );
 
+await assert.rejects(
+  access(join(repositoryRoot, "LICENSE")),
+  "The proprietary public-source repository must not gain an open-source LICENSE file without an explicit decision.",
+);
+
+const lockfile = JSON.parse(await readFile(join(repositoryRoot, "package-lock.json"), "utf8"));
+assert.equal(lockfile.lockfileVersion, 3);
+assert.equal(lockfile.packages[""].name, packageJson.name);
+assert.deepEqual(lockfile.packages[""].devDependencies, packageJson.devDependencies);
+
 const workflow = await readFile(
   join(repositoryRoot, ".github/workflows/ci.yml"),
   "utf8",
@@ -50,7 +76,10 @@ assert.match(
   workflow,
   /^\s{4}if: \$\{\{ github\.event_name == 'workflow_dispatch' \|\| github\.event\.label\.name == 'canonical-validation' \}\}\s*$/m,
 );
-assert.match(workflow, /^\s{4}runs-on: \[self-hosted, Linux, X64\]$/m);
+assert.match(workflow, /^\s{4}runs-on: ubuntu-latest$/m);
+assert.doesNotMatch(workflow, /self-hosted/);
+assert.match(workflow, /^\s{8}run: test -f package-lock\.json$/m);
+assert.match(workflow, /^\s{8}run: npm ci --no-audit --no-fund$/m);
 assert.match(workflow, /^\s{8}run: npm run validate$/m);
 for (const automaticTrigger of ["push", "schedule"]) {
   assert.doesNotMatch(
@@ -64,6 +93,11 @@ assert.doesNotMatch(
   /^\s{4}types:.*\b(?:opened|reopened|synchronize|ready_for_review)\b/m,
   "Pull-request validation may run only for a deliberate label event.",
 );
+
+const gitignore = await readFile(join(repositoryRoot, ".gitignore"), "utf8");
+for (const requiredIgnore of [".env.*", ".dev.vars.*", ".wrangler/", "*.pem", "*.key", "credentials/", "secrets/"]) {
+  assert.match(gitignore, new RegExp(requiredIgnore.replaceAll(".", "\\.").replaceAll("*", ".*")));
+}
 
 async function collectFiles(directory: string): Promise<string[]> {
   const files: string[] = [];
@@ -103,6 +137,17 @@ const readme = await readFile(join(repositoryRoot, "README.md"), "utf8");
 assert.match(readme, /Scribbles GameFrame/);
 assert.match(readme, /Scribbles Runtime/);
 assert.match(readme, /Theo/);
+assert.match(readme, /publicly viewable proprietary software/);
+assert.match(readme, /No open-source license is granted/);
+
+const notice = await readFile(join(repositoryRoot, "NOTICE"), "utf8");
+assert.match(notice, /All rights reserved/);
+assert.match(notice, /No open-source license/);
+
+const roadmap = await readFile(join(repositoryRoot, "planning/ROADMAP.md"), "utf8");
+assert.match(roadmap, /American checkers/);
+assert.match(roadmap, /Monster-master tactical battler foundation/);
+assert.match(roadmap, /RPG encounter and campaign foundation/);
 
 const testingStrategy = await readFile(
   join(repositoryRoot, "planning/testing-strategy.md"),
@@ -110,7 +155,19 @@ const testingStrategy = await readFile(
 );
 assert.match(testingStrategy, /Feature-branch verification/);
 assert.match(testingStrategy, /Canonical merge verification/);
+assert.match(testingStrategy, /Workers-runtime integration/);
+assert.match(testingStrategy, /Browser acceptance/);
+assert.match(testingStrategy, /Artifact policy/);
 assert.match(testingStrategy, /Any commit added after the canonical pass invalidates that pass/);
+assert.match(testingStrategy, /GitHub-hosted runner/);
+
+const workerdTest = await readFile(
+  join(repositoryRoot, "test/workerd/cloudflare-runtime.test.ts"),
+  "utf8",
+);
+assert.match(workerdTest, /evictDurableObject/);
+assert.match(workerdTest, /serializes competing writes/);
+assert.match(workerdTest, /resumes a hibernatable WebSocket/);
 
 const service = await readFile(
   join(repositoryRoot, "src/server/tic-tac-toe-match-service.ts"),
