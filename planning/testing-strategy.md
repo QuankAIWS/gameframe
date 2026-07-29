@@ -1,6 +1,6 @@
 # Testing Strategy
 
-Validation is layered so ordinary game development does not require a live Scribbles Runtime deployment or routine use of the self-hosted GitHub runner.
+Validation is layered so ordinary game development does not require a live Scribbles Runtime deployment or routine GitHub Actions execution.
 
 ## Execution model
 
@@ -12,7 +12,7 @@ Scribbles GameFrame uses two distinct verification tiers.
 - The assistant runs targeted tests during iteration and the complete `npm run validate` suite before pushing a branch head represented as locally verified.
 - Local verification must identify the exact tested commit SHA, execution environment, and commands used.
 - Pushing commits or updating an ordinary pull request does not start GitHub Actions.
-- Local verification is the normal development gate and may be repeated as often as needed without occupying the self-hosted runner.
+- Local verification is the normal development gate and may be repeated as often as needed without consuming canonical GitHub-hosted validation runs.
 
 ### Canonical merge verification
 
@@ -20,6 +20,7 @@ Scribbles GameFrame uses two distinct verification tiers.
 - Push that exact final head and freeze the branch.
 - Start `Canonical Validation` either by manually dispatching the workflow against the feature branch or by applying the `canonical-validation` label to its pull request.
 - The label path is intentionally limited to the `pull_request:labeled` event; ordinary pushes, synchronization, opening, and review-state changes do not occupy the runner.
+- The canonical job runs on a GitHub-hosted runner; public GameFrame code must not execute on the private self-hosted runner.
 - The canonical `validate` job must pass before merge.
 - Any commit added after the canonical pass invalidates that pass and requires another local and canonical run.
 - The GitHub Actions result is the durable repository record; local reports remain supporting development evidence.
@@ -100,3 +101,7 @@ Real hibernation across `workerd` eviction remains an external runtime test unti
 - Cookie parsing does not expose or reinterpret client identity claims.
 - Activity cookies include Discord's required iframe and partitioning attributes.
 - Cloudflare uses the configured secret for both HTTP and WebSocket request authentication.
+
+## Public artifact safety
+
+Workflow logs, screenshots, traces, and artifacts must be assumed public. Test fixtures must use synthetic credentials and synthetic users. Diagnostics must not capture production cookies, secrets, private campaign state, private user data, or privileged administration interfaces.
