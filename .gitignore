@@ -1,7 +1,28 @@
 node_modules/
+
+# Environment and deployment secrets
 .env
 .env.*
 !.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+credentials/
+secrets/
+
+# Cloudflare local state
+.wrangler/
+
+# Generated output
 coverage/
 reports/
+
+# Local editor and operating-system files
+*.local
 .DS_Store
