@@ -1,0 +1,49 @@
+{
+  "protocolVersion": "1",
+  "requestId": "decision-fixture-1",
+  "gameId": "tic-tac-toe",
+  "matchId": "match-fixture-1",
+  "playerId": "theo",
+  "expectedRevision": 3,
+  "observation": {
+    "board": [
+      "X",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "yourMark": "O",
+    "nextPlayerId": "theo",
+    "status": {
+      "lifecycle": "active",
+      "winnerPlayerId": null,
+      "draw": false
+    },
+    "legalActions": [
+      { "type": "place", "cell": 1 },
+      { "type": "place", "cell": 2 },
+      { "type": "place", "cell": 3 },
+      { "type": "place", "cell": 4 },
+      { "type": "place", "cell": 5 },
+      { "type": "place", "cell": 6 },
+      { "type": "place", "cell": 7 },
+      { "type": "place", "cell": 8 }
+    ]
+  },
+  "legalActions": [
+    { "type": "place", "cell": 1 },
+    { "type": "place", "cell": 2 },
+    { "type": "place", "cell": 3 },
+    { "type": "place", "cell": 4 },
+    { "type": "place", "cell": 5 },
+    { "type": "place", "cell": 6 },
+    { "type": "place", "cell": 7 },
+    { "type": "place", "cell": 8 }
+  ],
+  "deadlineAt": "2026-07-29T22:15:00.000Z"
+}

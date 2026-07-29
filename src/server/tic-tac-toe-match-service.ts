@@ -1,4 +1,7 @@
-import type { AgentPlayer } from "../agents/agent-player.ts";
+import {
+  chooseAgentDecision,
+  type AgentPlayer,
+} from "../agents/agent-player.ts";
 import {
   PerfectTicTacToePlayer,
   ticTacToeDefinition,
@@ -119,18 +122,26 @@ export class TicTacToeMatchService {
       return;
     }
 
-    const action = await this.#theo.chooseAction({
-      observation: theoObservation,
-      legalActions: theoObservation.legalActions,
-    });
+    const decision = await chooseAgentDecision(
+      this.#theo,
+      {
+        gameId: ticTacToeDefinition.gameId,
+        matchId: session.matchId,
+        playerId: this.#theo.agentId,
+        revision: session.revision,
+        observation: theoObservation,
+        legalActions: theoObservation.legalActions,
+      },
+      `${this.#theo.agentId}:${this.#idGenerator()}`,
+    );
     const theoResult = session.submit({
-      actionId: `${this.#theo.agentId}:${this.#idGenerator()}`,
+      actionId: decision.actionId,
       playerId: this.#theo.agentId,
       expectedRevision: session.revision,
-      action,
+      action: decision.action,
     });
     if (!theoResult.accepted) {
-      throw new Error(`Deterministic Theo action was rejected: ${theoResult.message}`);
+      throw new Error(`Theo decision was rejected: ${theoResult.message}`);
     }
   }
 
