@@ -1,0 +1,15 @@
+{
+  "protocolVersion": "1",
+  "requestId": "decision-fixture-1",
+  "playerId": "theo",
+  "expectedRevision": 3,
+  "actionId": "theo-action-fixture-1",
+  "action": {
+    "type": "place",
+    "cell": 4
+  },
+  "commentary": "Take the center.",
+  "metadata": {
+    "fixture": true
+  }
+}
