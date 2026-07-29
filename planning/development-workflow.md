@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This repository uses assistant-local verification for routine iteration and deliberately triggered GitHub-hosted validation for completed feature candidates and major milestones. Development should maximize deterministic, service, Workers-runtime, browser, and visual confidence before deployment. Deployment canaries confirm environment integration; they are not the normal debugging loop.
+This repository uses local verification for routine iteration and deliberately triggered GitHub-hosted validation for completed feature candidates and major milestones. Development should maximize deterministic, service, Workers-runtime, browser, and visual confidence before deployment. Deployment canaries confirm environment integration; they are not the normal debugging loop.
 
-Public GameFrame code must not execute on the private self-hosted runner after repository visibility changes.
+Public GameFrame code must not execute on persistent self-hosted runners.
 
 ## Branch lifecycle
 
@@ -23,7 +23,7 @@ When the feature is complete:
 
 1. Bring the branch up to date with `main`.
 2. Resolve conflicts and rerun all affected focused tests.
-3. Run `npm run validate` in the assistant execution environment.
+3. Run `npm run validate` in the local development environment.
 4. Review any browser screenshots or visual differences that are part of the acceptance target.
 5. Commit and push the exact validated tree.
 6. Record the final locally validated SHA in the pull request.
@@ -37,9 +37,9 @@ Any commit added after the canonical result requires the local final-candidate p
 
 ## Evidence classes
 
-### Assistant-local evidence
+### Local development evidence
 
-Proves repository behavior reproducible in the assistant execution environment. It must identify the exact commit and must not be presented as GitHub Actions, deployed Cloudflare, Discord, or real Scribbles Runtime evidence.
+Proves repository behavior reproducible in the recorded development environment. It must identify the exact commit and must not be presented as GitHub Actions, deployed Cloudflare, Discord, or real Scribbles Runtime evidence.
 
 ### Canonical GitHub evidence
 
@@ -65,9 +65,7 @@ The canonical workflow may be started only by manual dispatch or the explicit `c
 
 Do not add `push`, `schedule`, `opened`, `synchronize`, `ready_for_review`, or other routine triggers without an explicit workflow-policy decision.
 
-Public repository workflows must use GitHub-hosted runners. Do not target the private self-hosted runner from GameFrame workflows, including for pull requests, branches, manual dispatches, or reusable workflows.
-
-The private runner may be used for the one-time pre-publication validation sequence while the repository remains private. That exception ends before the public visibility change and must not remain in the final public workflow.
+Public repository workflows must use GitHub-hosted runners. Do not target persistent self-hosted runners from GameFrame workflows, including for pull requests, branches, manual dispatches, or reusable workflows.
 
 ## Artifact handling
 
