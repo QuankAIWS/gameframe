@@ -10,8 +10,7 @@ Scribbles GameFrame is the game platform and service. Scribbles Runtime is the p
 - Runtime integration language uses Scribbles Runtime.
 - User-facing opponent copy, deterministic fallback identity, service-principal authorization, observations, action IDs, and match seats use Theo and `theo`.
 - Scribbles Runtime may select and submit actions on Theo's behalf but never becomes the player identity or game authority.
-- Historical records may retain retired names when accurately describing what was executed at that time.
 
 ## Regression protection
 
-Repository self-checks must reject the previous hyphenated project package and service identifiers, along with current-tense OpenClaw integration artifacts. They must not reject legitimate references to Theo.
+Repository self-checks preserve the distinction between platform, runtime, and agent identities while allowing legitimate references to Theo.
