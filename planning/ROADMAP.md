@@ -51,11 +51,11 @@ Repository implementation:
 
 The repository-level runtime proof is complete. Live environment behavior remains separate and is exercised by the standalone deployment canary in `GF-0004`.
 
-### GF-0003 — Complete tic-tac-toe browser proof
+### GF-0003 — Complete tic-tac-toe browser proof — Complete
 
-Promote tic-tac-toe from a walking-skeleton interface into the complete delivery-stack browser proof.
+Tic-tac-toe has been promoted from a walking-skeleton interface into the complete delivery-stack browser proof.
 
-Current implementation candidate:
+Canonically validated implementation:
 
 - Human-versus-human and human-versus-deterministic-opponent play
 - Persistent development-browser identity
@@ -67,9 +67,9 @@ Current implementation candidate:
 - Failure-only screenshots and traces
 - Basic visual polish sufficient to evaluate the ordinary browser client as the base GameFrame interface
 
-Acceptance requires the frozen candidate to pass the read-only GitHub-hosted canonical workflow with the committed dependency lock. No deployed Cloudflare behavior is claimed by this milestone.
+The frozen candidate passed GitHub-hosted Canonical Validation run #36 (`30492977351`) and was squash-merged as `42d6cd3da2f4a1b110fa3debd9df9da016fb2351`. See [`planning/validation/2026-07-29-tic-tac-toe-browser-proof.md`](validation/2026-07-29-tic-tac-toe-browser-proof.md). No deployed Cloudflare behavior is claimed by this milestone.
 
-### GF-0004 — Standalone deployment and Discord delivery canaries
+### GF-0004 — Standalone deployment and Discord delivery canaries — Active
 
 Validate GameFrame without requiring a live Scribbles Runtime:
 
@@ -79,7 +79,7 @@ Validate GameFrame without requiring a live Scribbles Runtime:
 - Issue signed Activity sessions
 - Validate launch context, participant mapping, invite or resume, and desktop/mobile Activity behavior
 
-The first canaries may use human seats and deterministic in-process opponents.
+The first canaries may use human seats and deterministic in-process opponents. The immediate slice is the standalone Cloudflare deployment; Discord delivery follows after the deployed browser and match runtime are proven.
 
 ### GF-0005 — Versioned agent decision contract and mock connector
 
