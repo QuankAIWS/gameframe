@@ -15,7 +15,7 @@ concurrency:
 jobs:
   validate:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'canonical-validation' }}
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Check out repository
@@ -26,21 +26,11 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      - name: Install dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          elif node -e "const p=require('./package.json'); process.exit(Object.keys(p.dependencies||{}).length + Object.keys(p.devDependencies||{}).length > 0 ? 0 : 1)"; then
-            npm install --no-audit --no-fund
-          fi
+      - name: Require committed dependency lock
+        run: test -f package-lock.json
 
-      - name: Emit generated dependency lock for review
-        if: ${{ hashFiles('package-lock.json') != '' }}
-        run: |
-          echo BEGIN_PACKAGE_LOCK_BASE64
-          base64 -w 0 package-lock.json
-          echo
-          echo END_PACKAGE_LOCK_BASE64
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
 
       - name: Validate final feature candidate
         run: npm run validate

@@ -9,8 +9,15 @@
   },
   "scripts": {
     "dev": "node --experimental-strip-types src/server/http-server.ts",
+    "dev:cloudflare": "wrangler dev",
     "test": "node scripts/run-tests.mjs",
-    "validate": "npm test && npm run check:browser && node --experimental-strip-types src/scripts/self-check.ts",
+    "test:workerd": "vitest run --config vitest.config.ts --max-workers=1 --no-isolate",
+    "validate": "npm test && npm run test:workerd && npm run check:browser && node --experimental-strip-types src/scripts/self-check.ts",
     "check:browser": "node --check public/app.js"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.18.8",
+    "vitest": "4.1.10",
+    "wrangler": "4.114.0"
   }
 }
