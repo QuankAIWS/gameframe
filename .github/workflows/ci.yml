@@ -15,7 +15,7 @@ concurrency:
 jobs:
   validate:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'canonical-validation' }}
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Check out repository
