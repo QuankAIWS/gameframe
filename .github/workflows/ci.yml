@@ -6,7 +6,7 @@ on:
     types: [labeled]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: scribbles-gameframe-canonical-${{ github.ref }}
@@ -18,8 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - name: Check out repository
+      - name: Check out repository branch
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Select Node.js
         uses: actions/setup-node@v7
@@ -29,13 +31,15 @@ jobs:
       - name: Generate candidate dependency lock
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
-      - name: Preserve candidate dependency lock
-        uses: actions/upload-artifact@v4
-        with:
-          name: gf-0003-package-lock
-          path: package-lock.json
-          retention-days: 1
-          if-no-files-found: error
+      - name: Commit candidate dependency lock
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Lock Playwright browser dependencies"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
 
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
@@ -43,7 +47,7 @@ jobs:
       - name: Install Chromium for browser acceptance
         run: npx playwright install --with-deps chromium
 
-      - name: Validate final feature candidate
+      - name: Validate development candidate
         run: npm run validate
 
       - name: Preserve failure diagnostics
