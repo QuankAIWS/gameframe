@@ -3,27 +3,110 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Scribbles GameFrame</title>
+  <meta name="theme-color" content="#0b1020">
+  <title>Tic-Tac-Toe · Scribbles GameFrame</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <main class="shell">
-    <header>
+    <header class="hero">
       <p class="eyebrow">SCRIBBLES GAMEFRAME</p>
-      <h1>Tic-Tac-Toe Systems Test</h1>
-      <p>Authoritative match state, deterministic Theo play, and a browser client using the same contracts intended for Discord Activity delivery.</p>
+      <h1>Tic-Tac-Toe</h1>
+      <p class="hero-copy">A small complete game proving authoritative turns, deterministic opponents, resumable browser play, and the same match contracts intended for larger GameFrame modules.</p>
     </header>
 
-    <section class="panel">
-      <div class="status-row">
-        <span id="status">Start a match.</span>
-        <span id="revision">Revision —</span>
+    <div id="error-banner" class="error-banner" role="alert" hidden></div>
+
+    <section id="lobby" class="panel lobby" aria-labelledby="lobby-title">
+      <div class="section-heading">
+        <p class="section-label">MATCH SETUP</p>
+        <h2 id="lobby-title">Choose a table</h2>
+        <p id="lobby-message" class="muted" role="status">Preparing the browser client…</p>
       </div>
-      <div id="board" class="board" aria-label="Tic-tac-toe board"></div>
+
+      <div class="mode-grid">
+        <button id="challenge-theo" class="mode-card" type="button">
+          <span class="mode-icon" aria-hidden="true">T</span>
+          <span>
+            <strong>Challenge Theo</strong>
+            <small>Play X against the perfect deterministic fallback opponent.</small>
+          </span>
+        </button>
+
+        <button id="create-human-match" class="mode-card" type="button">
+          <span class="mode-icon duo" aria-hidden="true">2P</span>
+          <span>
+            <strong>Play with a friend</strong>
+            <small>Create a second seat and share a resumable development invite.</small>
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <section id="match-panel" class="panel match-panel" aria-labelledby="match-title" hidden>
+      <div class="match-header">
+        <div>
+          <p class="section-label">ACTIVE MATCH</p>
+          <h2 id="match-title">Authoritative board</h2>
+        </div>
+        <span id="revision" class="revision">Revision —</span>
+      </div>
+
+      <div id="status" class="status" role="status" aria-live="polite">Loading match…</div>
+
+      <div class="game-layout">
+        <aside class="players" aria-label="Players">
+          <article id="player-x" class="player-card">
+            <span class="mark-badge x">X</span>
+            <span>
+              <small>First seat</small>
+              <strong id="player-x-name">Player X</strong>
+            </span>
+          </article>
+          <article id="player-o" class="player-card">
+            <span class="mark-badge o">O</span>
+            <span>
+              <small>Second seat</small>
+              <strong id="player-o-name">Player O</strong>
+            </span>
+          </article>
+
+          <dl class="match-meta">
+            <div>
+              <dt>Match</dt>
+              <dd id="match-id">—</dd>
+            </div>
+            <div>
+              <dt>Updates</dt>
+              <dd id="connection">—</dd>
+            </div>
+          </dl>
+        </aside>
+
+        <div class="board-wrap">
+          <div id="board" class="board" role="grid" aria-label="Tic-tac-toe board"></div>
+        </div>
+      </div>
+
+      <div id="invite-panel" class="invite-panel" hidden>
+        <div>
+          <strong>Second-player invite</strong>
+          <p>This development link contains a synthetic seat identity. Production delivery replaces it with verified authentication.</p>
+        </div>
+        <div class="invite-controls">
+          <input id="invite-link" type="text" readonly aria-label="Second-player invite link">
+          <button id="copy-invite" class="secondary-button" type="button">Copy invite</button>
+        </div>
+      </div>
+
       <div class="actions">
-        <button id="new-match" type="button">Challenge Theo</button>
+        <button id="new-match" class="secondary-button" type="button">Back to match setup</button>
       </div>
-      <pre id="details" class="details"></pre>
+
+      <details class="diagnostics">
+        <summary>Match diagnostics</summary>
+        <pre id="details" class="details"></pre>
+      </details>
     </section>
   </main>
   <script type="module" src="/app.js"></script>

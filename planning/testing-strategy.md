@@ -23,7 +23,7 @@ Scribbles GameFrame uses three repository and environment verification tiers.
 - Push that exact final head and freeze the branch.
 - Start `Canonical Validation` either by manually dispatching the workflow against the feature branch or by applying the `canonical-validation` label to its pull request.
 - The label path is intentionally limited to the `pull_request:labeled` event; ordinary pushes, synchronization, opening, and review-state changes do not occupy the runner.
-- The canonical workflow requires a committed `package-lock.json`, installs exclusively with `npm ci`, and runs the complete `npm run validate` suite.
+- The canonical workflow requires a committed `package-lock.json`, installs exclusively with `npm ci`, installs the pinned Playwright Chromium runtime, and runs the complete `npm run validate` suite.
 - The canonical job runs on a GitHub-hosted runner; public GameFrame code must not execute on persistent self-hosted runners.
 - The canonical `validate` job must pass before merge.
 - Any commit added after the canonical pass invalidates that pass and requires another local and canonical run.
@@ -118,7 +118,7 @@ A fake-runtime test must not be reported as proof of real Workers-runtime behavi
 
 ## Layer 5 — Browser acceptance
 
-The ordinary browser client is the base GameFrame interface. Browser acceptance must use real headless interaction through the application boundary.
+The ordinary browser client is the base GameFrame interface. Browser acceptance uses real headless interaction through the ordinary HTTP application boundary.
 
 Coverage should include:
 
@@ -134,7 +134,7 @@ Coverage should include:
 - Exercise keyboard and pointer input where supported
 - Exercise touch-oriented layouts or equivalent mobile interactions
 
-The current `check:browser` command is only a JavaScript syntax check. Full automated browser interaction must not be claimed until a headless acceptance harness is included in `npm run validate`. Playwright is the expected implementation unless repository evidence establishes a better fit.
+The repository uses Playwright through `npm run test:browser`, and `npm run validate` includes that browser suite. Current tic-tac-toe coverage proves deterministic Theo completion with refresh and resume, two independent browser seats sharing and completing one match, visible invalid-resume handling, and a mobile layout without horizontal overflow. `check:browser` remains the fast JavaScript syntax check; it does not replace the Playwright suite.
 
 ## Layer 6 — Visual QA
 

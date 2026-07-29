@@ -13,11 +13,14 @@ Scribbles GameFrame is the publicly viewable, proprietary game platform used by 
 ```bash
 npm test
 npm run test:workerd
+npm run test:browser
 npm run validate
 npm run dev
 ```
 
-Node 22.16.0 is pinned in `.nvmrc`. Cloudflare Workers development dependencies are exactly pinned and must remain represented by a committed `package-lock.json`. Do not introduce or update dependencies without a concrete need, provenance review, and lockfile update.
+Node 22.16.0 is pinned in `.nvmrc`. Cloudflare Workers and browser-development dependencies are exactly pinned and must remain represented by a committed `package-lock.json`. Do not introduce or update dependencies without a concrete need, provenance review, and lockfile update.
+
+Playwright browser acceptance requires a compatible Chromium installation. Use `npx playwright install chromium` for local browser work. Canonical GitHub validation installs Chromium explicitly before running `npm run validate`.
 
 ## Canonical identity model
 
@@ -48,7 +51,7 @@ Node 22.16.0 is pinned in `.nvmrc`. Cloudflare Workers development dependencies 
 
 ## Current active lane
 
-`GF-0002`: Cloudflare-compatible authoritative match runtime and deployment boundary.
+`GF-0003`: complete the tic-tac-toe browser proof with resumable human and deterministic-opponent play, real Playwright interaction, responsive desktop and mobile behavior, and a frozen GitHub-hosted canonical pass. The next lane after merge is the compact standalone Cloudflare deployment canary in `GF-0004`.
 
 ## Development and validation posture
 

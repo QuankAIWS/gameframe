@@ -10,9 +10,12 @@ assert.equal(packageJson.private, true);
 assert.equal(packageJson.type, "module");
 assert.match(packageJson.engines.node, /22/);
 assert.equal(packageJson.scripts["test:workerd"], "vitest run --config vitest.config.ts --max-workers=1 --no-isolate");
+assert.equal(packageJson.scripts["test:browser"], "playwright test --config playwright.config.mjs");
 assert.match(packageJson.scripts.validate, /npm run test:workerd/);
+assert.match(packageJson.scripts.validate, /npm run test:browser/);
 assert.deepEqual(packageJson.devDependencies, {
   "@cloudflare/vitest-pool-workers": "0.19.0",
+  "@playwright/test": "1.61.1",
   vitest: "4.1.10",
   wrangler: "4.115.0",
 });
@@ -24,7 +27,9 @@ const durableFiles = [
   "CONTRIBUTING.md",
   "SECURITY.md",
   "package-lock.json",
+  "playwright.config.mjs",
   "vitest.config.ts",
+  "test/browser/tic-tac-toe.spec.mjs",
   "test/workerd/cloudflare-runtime.test.ts",
   "planning/ROADMAP.md",
   "planning/architecture.md",
@@ -80,8 +85,8 @@ assert.match(
 );
 assert.match(workflow, /^\s{4}runs-on: ubuntu-latest$/m);
 assert.doesNotMatch(workflow, /self-hosted/);
-assert.match(workflow, /^\s{8}run: test -f package-lock\.json$/m);
 assert.match(workflow, /^\s{8}run: npm ci --no-audit --no-fund$/m);
+assert.match(workflow, /^\s{8}run: npx playwright install --with-deps chromium$/m);
 assert.match(workflow, /^\s{8}run: npm run validate$/m);
 for (const automaticTrigger of ["push", "schedule"]) {
   assert.doesNotMatch(
@@ -97,7 +102,17 @@ assert.doesNotMatch(
 );
 
 const gitignore = await readFile(join(repositoryRoot, ".gitignore"), "utf8");
-for (const requiredIgnore of [".env.*", ".dev.vars.*", ".wrangler/", "*.pem", "*.key", "credentials/", "secrets/"]) {
+for (const requiredIgnore of [
+  ".env.*",
+  ".dev.vars.*",
+  ".wrangler/",
+  "*.pem",
+  "*.key",
+  "credentials/",
+  "secrets/",
+  "playwright-report/",
+  "test-results/",
+]) {
   assert.match(gitignore, new RegExp(requiredIgnore.replaceAll(".", "\\.").replaceAll("*", ".*")));
 }
 
@@ -176,6 +191,14 @@ assert.match(testingStrategy, /Browser acceptance/);
 assert.match(testingStrategy, /Artifact policy/);
 assert.match(testingStrategy, /Any commit added after the canonical pass invalidates that pass/);
 assert.match(testingStrategy, /GitHub-hosted runner/);
+
+const browserTest = await readFile(
+  join(repositoryRoot, "test/browser/tic-tac-toe.spec.mjs"),
+  "utf8",
+);
+assert.match(browserTest, /completes and resumes a deterministic match against Theo/);
+assert.match(browserTest, /two browser seats can share, refresh, and complete one match/);
+assert.match(browserTest, /mobile layout remains usable without horizontal overflow/);
 
 const workerdTest = await readFile(
   join(repositoryRoot, "test/workerd/cloudflare-runtime.test.ts"),

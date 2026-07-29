@@ -22,6 +22,8 @@ secrets/
 # Generated output
 coverage/
 reports/
+playwright-report/
+test-results/
 
 # Local editor and operating-system files
 *.local
