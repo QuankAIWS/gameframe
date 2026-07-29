@@ -33,6 +33,7 @@ const durableFiles = [
   "planning/deployment-topology.md",
   "planning/scribbles-runtime-integration.md",
   "planning/tactical-battler-rpg-foundation.md",
+  "planning/decisions/0001-zero-dependency-walking-skeleton.md",
   "planning/decisions/0002-websockets-are-projections.md",
   "planning/decisions/0003-server-derived-player-identity.md",
   "planning/decisions/0004-signed-discord-activity-sessions.md",
@@ -40,6 +41,7 @@ const durableFiles = [
   "planning/decisions/0006-scrollable-tactical-battlefields.md",
   "planning/decisions/0007-platform-proof-sequence-and-mock-agents.md",
   "planning/decisions/0008-public-source-proprietary-repository.md",
+  "planning/validation/2026-07-27-canonical-baseline.md",
   ".github/workflows/ci.yml",
   "wrangler.jsonc",
 ];
@@ -118,6 +120,13 @@ const retiredPlatformTokens = [
   retiredProjectName,
   `@quankaiws/${retiredProjectName}`,
 ];
+const publicHygieneTokens = [
+  ["gh", "runner", "01"].join("-"),
+  ["AI Workspace", "Software Development Doctrine"].join(" "),
+  ["codename", "scribbles", "runtime"].join("-"),
+  ["assistant", "execution environment"].join(" "),
+  ["assistant", "local"].join("-"),
+];
 
 for (const absolutePath of await collectFiles(repositoryRoot)) {
   const repositoryPath = relative(repositoryRoot, absolutePath).replaceAll("\\", "/");
@@ -129,6 +138,13 @@ for (const absolutePath of await collectFiles(repositoryRoot)) {
       normalizedPath.includes(token) || normalizedContent.includes(token),
       false,
       `${repositoryPath} contains the retired platform identifier ${token}.`,
+    );
+  }
+  for (const token of publicHygieneTokens) {
+    assert.equal(
+      normalizedPath.includes(token.toLowerCase()) || normalizedContent.includes(token.toLowerCase()),
+      false,
+      `${repositoryPath} contains internal-only public-hygiene marker ${token}.`,
     );
   }
 }
