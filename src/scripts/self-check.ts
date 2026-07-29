@@ -14,6 +14,8 @@ const durableFiles = [
   "README.md",
   "AGENTS.md",
   "NOTICE",
+  "CONTRIBUTING.md",
+  "SECURITY.md",
   "planning/ROADMAP.md",
   "planning/architecture.md",
   "planning/testing-strategy.md",
@@ -24,6 +26,7 @@ const durableFiles = [
   "planning/decisions/0003-server-derived-player-identity.md",
   "planning/decisions/0004-signed-discord-activity-sessions.md",
   "planning/decisions/0005-scribbles-theo-identity-boundary.md",
+  "planning/decisions/0008-public-source-proprietary-repository.md",
   ".github/workflows/ci.yml",
   "wrangler.jsonc",
 ];
@@ -38,6 +41,11 @@ await assert.rejects(
   "The retired OpenClaw integration document must not remain active.",
 );
 
+await assert.rejects(
+  access(join(repositoryRoot, "LICENSE")),
+  "The proprietary public-source repository must not gain an open-source LICENSE file without an explicit decision.",
+);
+
 const workflow = await readFile(
   join(repositoryRoot, ".github/workflows/ci.yml"),
   "utf8",
@@ -50,7 +58,8 @@ assert.match(
   workflow,
   /^\s{4}if: \$\{\{ github\.event_name == 'workflow_dispatch' \|\| github\.event\.label\.name == 'canonical-validation' \}\}\s*$/m,
 );
-assert.match(workflow, /^\s{4}runs-on: \[self-hosted, Linux, X64\]$/m);
+assert.match(workflow, /^\s{4}runs-on: ubuntu-latest$/m);
+assert.doesNotMatch(workflow, /self-hosted/);
 assert.match(workflow, /^\s{8}run: npm run validate$/m);
 for (const automaticTrigger of ["push", "schedule"]) {
   assert.doesNotMatch(
@@ -103,6 +112,12 @@ const readme = await readFile(join(repositoryRoot, "README.md"), "utf8");
 assert.match(readme, /Scribbles GameFrame/);
 assert.match(readme, /Scribbles Runtime/);
 assert.match(readme, /Theo/);
+assert.match(readme, /publicly viewable proprietary software/);
+assert.match(readme, /No open-source license is granted/);
+
+const notice = await readFile(join(repositoryRoot, "NOTICE"), "utf8");
+assert.match(notice, /All rights reserved/);
+assert.match(notice, /No open-source license/);
 
 const testingStrategy = await readFile(
   join(repositoryRoot, "planning/testing-strategy.md"),
@@ -111,6 +126,7 @@ const testingStrategy = await readFile(
 assert.match(testingStrategy, /Feature-branch verification/);
 assert.match(testingStrategy, /Canonical merge verification/);
 assert.match(testingStrategy, /Any commit added after the canonical pass invalidates that pass/);
+assert.match(testingStrategy, /GitHub-hosted runner/);
 
 const service = await readFile(
   join(repositoryRoot, "src/server/tic-tac-toe-match-service.ts"),
