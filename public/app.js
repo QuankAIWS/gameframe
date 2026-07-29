@@ -79,7 +79,9 @@ function setBusy(busy) {
   createHumanMatch.disabled = busy;
   newMatch.disabled = busy;
   for (const cell of board.querySelectorAll(".cell")) {
-    if (busy) cell.disabled = true;
+    const index = Number(cell.dataset.cell);
+    const legal = current?.observation.legalActions.some((action) => action.cell === index) ?? false;
+    cell.disabled = busy || !legal;
   }
 }
 
@@ -365,7 +367,6 @@ async function move(cell) {
     else status.textContent = error.message;
   } finally {
     setBusy(false);
-    if (current) render(current);
   }
 }
 
