@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository preserves the self-hosted GitHub runner for completed feature candidates and major milestones. Routine development verification is performed in the assistant execution environment.
+This repository uses assistant-local verification for routine iteration and deliberately triggered GitHub-hosted validation for completed feature candidates and major milestones. Public GameFrame code must not execute on the private self-hosted runner.
 
 ## Branch lifecycle
 
@@ -25,7 +25,7 @@ When the feature is complete:
 5. Record the final locally validated SHA in the pull request.
 6. Freeze the branch. Do not add commits while canonical validation is running or after it passes.
 7. Start `.github/workflows/ci.yml`, displayed as `Canonical Validation`, either by manual workflow dispatch or by applying the `canonical-validation` label to the frozen pull request.
-8. Confirm that the `validate` job passed on the final head.
+8. Confirm that the `validate` job passed on the final head using the configured GitHub-hosted runner.
 9. Squash-merge the pull request unless preserving separate commits has a concrete value.
 
 Any commit added after the canonical result requires the local final-candidate procedure and canonical workflow to be repeated.
@@ -38,7 +38,7 @@ Proves repository behavior reproducible in the assistant execution environment. 
 
 ### Canonical GitHub evidence
 
-The deliberately triggered self-hosted workflow is the durable pre-merge repository marker. It reruns `npm run validate` in the canonical GitHub Actions environment.
+The deliberately triggered GitHub-hosted workflow is the durable pre-merge repository marker. It reruns `npm run validate` in the canonical public GitHub Actions environment.
 
 ### External canary evidence
 
@@ -47,3 +47,11 @@ Discord, deployed Cloudflare, and Scribbles Runtime integration require their ow
 ## Runner controls
 
 The canonical workflow may be started only by manual dispatch or the explicit `canonical-validation` pull-request label. The only permitted pull-request event is `labeled`. Do not add `push`, `schedule`, `opened`, `synchronize`, `ready_for_review`, or other routine triggers without an explicit workflow-policy decision.
+
+Public repository workflows must use GitHub-hosted runners. Do not target the private self-hosted runner from GameFrame workflows, including for pull requests, branches, manual dispatches, or reusable workflows.
+
+## Public logs and artifacts
+
+Workflow logs and artifacts are public information after the repository visibility changes. Do not print or upload credentials, cookies, private keys, private user or campaign data, internal administration screens, incident records, or secret-bearing environment output.
+
+Passing runs should avoid broad artifact uploads. Failed runs may retain focused diagnostics for a short period, and intentionally selected milestone evidence may be preserved in a deliberate durable location after review.
