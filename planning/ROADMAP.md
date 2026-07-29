@@ -17,9 +17,7 @@ Acceptance target:
 Current proof boundary:
 
 - Local deterministic, HTTP integration, browser syntax, and repository validation are implemented.
-- Canonical Validation run `#8` (`30283559393`) passed on self-hosted runner `gh-runner-01` on July 27, 2026.
-- The run validated GitHub PR merge ref `932a1f5e0a185399b0a992ac2807903618ba0661`, generated from frozen feature head `d2f404dfb76c03f5568ea3869eaccd6997423005` and base `f9d5d36c5ab569f7a39722bb4909c9804d256881`.
-- The validated change was squash-merged to `main` as `01584a43777dc97a6439101ac4eff79aae1d876` without further feature-branch changes.
+- Initial canonical validation completed successfully on July 27, 2026; see `planning/validation/2026-07-27-canonical-baseline.md`.
 - Real browser interaction, deployed Cloudflare, Discord Activity, and Scribbles Runtime canaries remain pending.
 
 ## Active platform-proof sequence
@@ -38,6 +36,7 @@ Current implementation:
 - Cloudflare static-asset and Durable Object configuration
 - Local fake-runtime tests covering eviction recovery and competing writes
 - Exactly pinned Wrangler, Vitest, and Workers Vitest development tooling
+- Committed dependency lock validated with `npm ci`
 - Real Workers-runtime tests covering object eviction, competing writes, and hibernatable WebSocket recovery
 - Hibernation-WebSocket projection hub with player-specific fan-out
 - Browser reconnect and refresh behavior
@@ -52,7 +51,6 @@ Current implementation:
 
 Remaining acceptance work:
 
-- Commit and canonically validate the exact dependency lock
 - Perform a compact standalone deployed Cloudflare canary
 
 ### GF-0003 — Complete tic-tac-toe browser proof
