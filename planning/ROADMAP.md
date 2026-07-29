@@ -22,7 +22,7 @@ Current proof boundary:
 
 ## Active platform-proof sequence
 
-The accepted near-term order is recorded in [`planning/decisions/0007-platform-proof-sequence-and-mock-agents.md`](decisions/0007-platform-proof-sequence-and-mock-agents.md). Tic-tac-toe proves the complete delivery stack, American checkers proves that the game-module and agent contracts generalize, and the monster-master battler remains the first substantial original game.
+The accepted near-term order is recorded in [`planning/decisions/0007-platform-proof-sequence-and-mock-agents.md`](decisions/0007-platform-proof-sequence-and-mock-agents.md). The scheduling amendment in [`planning/decisions/0009-defer-external-canaries-without-blocking-development.md`](decisions/0009-defer-external-canaries-without-blocking-development.md) pauses external deployment canaries without blocking repository development. Tic-tac-toe proves the browser and repository stack, American checkers proves that the game-module and agent contracts generalize, and the monster-master battler remains the first substantial original game.
 
 ### GF-0002 — Cloudflare match runtime
 
@@ -49,7 +49,7 @@ Repository implementation:
 - HMAC-signed session cookies shared by HTTPS commands and WebSocket upgrades
 - Discord Activity cookie attributes and expiry/tamper validation
 
-The repository-level runtime proof is complete. Live environment behavior remains separate and is exercised by the standalone deployment canary in `GF-0004`.
+The repository-level runtime proof is complete. Live environment behavior remains separate and is exercised by the paused standalone deployment canary in `GF-0004` when deployment access and owner availability permit it.
 
 ### GF-0003 — Complete tic-tac-toe browser proof — Complete
 
@@ -69,7 +69,7 @@ Canonically validated implementation:
 
 The frozen candidate passed GitHub-hosted Canonical Validation run #36 (`30492977351`) and was squash-merged as `42d6cd3da2f4a1b110fa3debd9df9da016fb2351`. See [`planning/validation/2026-07-29-tic-tac-toe-browser-proof.md`](validation/2026-07-29-tic-tac-toe-browser-proof.md). No deployed Cloudflare behavior is claimed by this milestone.
 
-### GF-0004 — Standalone deployment and Discord delivery canaries — Active
+### GF-0004 — Standalone deployment and Discord delivery canaries — Paused
 
 Validate GameFrame without requiring a live Scribbles Runtime:
 
@@ -79,13 +79,23 @@ Validate GameFrame without requiring a live Scribbles Runtime:
 - Issue signed Activity sessions
 - Validate launch context, participant mapping, invite or resume, and desktop/mobile Activity behavior
 
-The first canaries may use human seats and deterministic in-process opponents. The immediate slice is the standalone Cloudflare deployment; Discord delivery follows after the deployed browser and match runtime are proven.
+The first canaries may use human seats and deterministic in-process opponents. This lane is paused until the repository owner is available for deployment-account setup, secrets, and live environment verification. It remains an unresolved external checkpoint and may resume between later repository milestones. Repository, browser, Workers-runtime, mock-agent, checkers, and tactical development may continue without claiming this evidence.
 
-### GF-0005 — Versioned agent decision contract and mock connector
+### GF-0005 — Versioned agent decision contract and mock connector — Active
 
 Define the durable decision-provider boundary used by both test agents and the future Scribbles Runtime adapter. The contract must carry a protocol version, correlated request, game and match identity, stable player identity, expected revision, player-specific observation, enumerated legal actions, and a structured selected action.
 
-Implement mock-provider modes for deterministic, scripted, seeded-random, delayed, unavailable, malformed, illegal, duplicate, and stale responses. GameFrame remains authoritative and validates every returned action before commit. Provider prose is optional and non-authoritative.
+Implement mock-provider modes for deterministic, scripted, seeded-random, delayed, unavailable, malformed, illegal, duplicate, mismatched, and stale responses. GameFrame remains authoritative and validates every returned action before commit. Provider prose is optional and non-authoritative.
+
+Acceptance requires:
+
+- Transport-neutral request and response schemas
+- Runtime validation of protocol version, request correlation, player identity, expected revision, action ID, and structured action shape
+- Current-legality validation before commit
+- Duplicate and late-response idempotency
+- Explicit timeout, unavailable-provider, malformed-response, and fallback behavior
+- Deterministic, scripted, and seeded-random mock providers
+- Tests demonstrating that the future Scribbles Runtime adapter can replace the mock provider without changing game authority
 
 ### GF-0006 — American checkers module
 
@@ -93,28 +103,29 @@ Build American checkers on an 8x8 board as the first nontrivial reusable game-mo
 
 Checkers must exercise the same match service, event history, player-specific observations, legal-action enumeration, browser input, reconnect, deterministic opponent, and mock-agent contract used by tic-tac-toe and intended for later games.
 
-### GF-0007 — Checkers full-stack canary
+### GF-0007 — Checkers full-stack proof
 
 Complete and validate:
 
 - Human-versus-human checkers
 - Human-versus-deterministic-opponent checkers
-- Human-versus-mock-remote-agent checkers
+- Human-versus-mock-agent checkers through the versioned decision contract
 - Browser selection, legal destinations, forced captures, multi-jump continuation, promotion, and completed-state presentation
-- Standalone deployed GameFrame canary
-- Discord Activity canary when the delivery adapter is available
+- Real browser, repository, and Workers-runtime validation
+- Standalone deployed GameFrame canary when `GF-0004` resumes
+- Discord Activity canary when the delivery adapter and owner availability permit it
 
-This milestone is the gate proving that GameFrame is not structurally hard-coded around tic-tac-toe.
+The repository portion of this milestone is the gate proving that GameFrame is not structurally hard-coded around tic-tac-toe. Deployed proof remains separately unresolved until the paused canary lane runs.
 
 ### GF-0008 — Scribbles Runtime adapter for Theo
 
-When Scribbles Runtime is available, implement the accepted versioned decision-provider contract so it can choose actions for stable player ID `theo`. The adapter is not a prerequisite for the preceding standalone, Discord, mock-agent, or checkers proofs.
+When Scribbles Runtime is available, implement the accepted versioned decision-provider contract so it can choose actions for stable player ID `theo`. The adapter is not a prerequisite for the preceding mock-agent, checkers, or repository proofs.
 
-Retain deterministic fallback behavior and fail closed on malformed, stale, illegal, or unauthorized Runtime responses.
+Retain deterministic fallback behavior and fail closed on malformed, stale, illegal, mismatched, or unauthorized Runtime responses.
 
 ### GF-0010 — Monster-master tactical battler foundation
 
-Build the first substantial original GameFrame game after the platform has survived tic-tac-toe deployment, browser acceptance, the mock-agent boundary, and the American-checkers generalization proof.
+Build the first substantial original GameFrame game after the platform has survived browser acceptance, the mock-agent boundary, and the American-checkers generalization proof. The paused external canary does not block tactical repository development, but deployed tactical behavior must not be claimed until the relevant external lane is resumed and proven.
 
 Begin with a two-player monster-master duel on a larger scrollable battlefield that extends beyond the normal viewport, while preserving an eventual two-to-four-player architecture.
 
