@@ -6,7 +6,7 @@ GF-0001 uses Node 22's erasable TypeScript support, built-in HTTP/fetch APIs, an
 
 ## Rationale
 
-The first uncertainty is the platform contract and deployment/integration path, not frontend framework choice. A dependency-free slice can be built and validated in constrained environments, runs quickly on the self-hosted runner, and avoids making package installation a prerequisite for proving deterministic behavior.
+The first uncertainty is the platform contract and deployment/integration path, not frontend framework choice. A dependency-free slice can be built and validated in constrained environments, runs quickly in CI, and avoids making package installation a prerequisite for proving deterministic behavior.
 
 ## Limits
 

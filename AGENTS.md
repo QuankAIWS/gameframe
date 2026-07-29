@@ -1,13 +1,12 @@
 # AGENTS.md — Scribbles GameFrame
 
-Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Codename Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate objective is to prove the complete multiplayer and integration architecture with tic-tac-toe before expanding into tactical, chess, RPG, or RTS modules.
+Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate objective is to prove the complete multiplayer and integration architecture with tic-tac-toe before expanding into tactical, chess, RPG, or RTS modules.
 
 ## Startup
 
-1. Read the AI Workspace Software Development Doctrine.
-2. Read this file.
-3. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, and `planning/development-workflow.md`.
-4. Inspect the affected code and tests before editing.
+1. Read this file.
+2. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, and `planning/development-workflow.md`.
+3. Inspect the affected code and tests before editing.
 
 ## Canonical commands
 
@@ -25,7 +24,7 @@ Node 22.16.0 is pinned in `.nvmrc`. Cloudflare Workers development dependencies 
 - Scribbles GameFrame is the game platform, package, service, and deployment.
 - Scribbles Runtime is the peer runtime that hosts agent capabilities and model access.
 - Theo is the public-facing agent, user-visible opponent, and registered GameFrame player with stable player ID `theo`.
-- Do not rename Theo to Scribbles. Do not refer to the platform or runtime as Theo GameFrame or OpenClaw in active architecture.
+- Use the current Scribbles platform and runtime names consistently while preserving Theo as the agent identity.
 
 ## Architectural boundaries
 
@@ -43,7 +42,7 @@ Node 22.16.0 is pinned in `.nvmrc`. Cloudflare Workers development dependencies 
 - Never commit credentials, tokens, cookies, private keys, production user data, private campaign data, incident records, or secret-bearing environment files.
 - Production secrets belong in GitHub, Cloudflare, or equivalent secret stores and must enter only through deployment bindings.
 - Treat workflow logs, artifacts, screenshots, traces, branch history, pull requests, and commit history as public information.
-- Public-repository workflows must use GitHub-hosted runners. Do not execute public repository code on the private self-hosted runner.
+- Public-repository workflows must use GitHub-hosted runners. Do not execute public repository code on persistent self-hosted runners.
 - External code contributions are not accepted unless explicitly invited and covered by an approved contributor-rights agreement.
 - Third-party code, assets, and data require documented provenance, license compatibility, attribution, and an explicit repository boundary before inclusion.
 

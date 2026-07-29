@@ -146,7 +146,7 @@ Browser coverage should eventually include:
 - Keyboard, pointer, and touch-oriented viewport behavior
 - Canvas or DOM screenshot capture
 
-Visual-regression baselines should be generated and compared in a stable environment. The canonical GitHub-hosted environment is the authority for accepted baselines when font and rendering differences make cross-environment screenshots noisy. Assistant-local screenshots remain useful development evidence and design-review material.
+Visual-regression baselines should be generated and compared in a stable environment. The canonical GitHub-hosted environment is the authority for accepted baselines when font and rendering differences make cross-environment screenshots noisy. Local screenshots remain useful development evidence and design-review material.
 
 ## Artifact policy
 
@@ -173,7 +173,7 @@ A future local archive must live outside any ephemeral Actions workspace, enforc
 - The real Theo integration receives a tested, versioned contract rather than defining the boundary under production pressure.
 - Checkers exposes generalization defects before tactical complexity obscures them.
 - Browser and visual defects are expected to be caught before deployment.
-- Canonical validation remains deliberate while public hosted capacity removes dependence on the private runner.
+- Canonical validation remains deliberate while public hosted capacity removes dependence on persistent private infrastructure.
 - Artifact storage remains bounded by policy.
 
 ### Costs

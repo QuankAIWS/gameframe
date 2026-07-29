@@ -1,6 +1,6 @@
 # Scribbles GameFrame
 
-Scribbles GameFrame is the deterministic multiplayer game platform for the Codename Scribbles architecture. It owns game sessions, legal-action validation, event history, player observations, browser delivery, and the integration boundaries for Discord Activities and Scribbles Runtime. Individual games remain explicit modules rather than being forced into one generalized rules engine.
+Scribbles GameFrame is the deterministic multiplayer game platform for the Scribbles architecture. It owns game sessions, legal-action validation, event history, player observations, browser delivery, and the integration boundaries for Discord Activities and Scribbles Runtime. Individual games remain explicit modules rather than being forced into one generalized rules engine.
 
 Theo is the public-facing Scribbles agent and the first registered nonhuman GameFrame player. The first vertical slice is an infrastructure-complete tic-tac-toe implementation proving the shared game contract, authoritative session behavior, a perfect deterministic Theo fallback opponent, an ordinary browser client, and a transport-neutral HTTP boundary before real Discord and Cloudflare adapters are introduced.
 
@@ -26,16 +26,7 @@ Implemented in the initial slice:
 
 ## Canonical baseline
 
-The repository baseline was canonically validated and merged on July 27, 2026.
-
-- Pull request: `#3`
-- Frozen feature head: `d2f404dfb76c03f5568ea3869eaccd6997423005`
-- Validated GitHub PR merge ref: `932a1f5e0a185399b0a992ac2807903618ba0661`
-- Canonical workflow: run `#8` (`30283559393`)
-- Runner: `gh-runner-01`
-- Result: complete `npm run validate` job passed
-- Artifact uploads: none
-- Squash-merged `main` baseline: `01584a43777ddc97a6439101ac4eff79aae1d876`
+The initial repository baseline was validated and merged on July 27, 2026. The complete repository suite passed and uploaded no artifacts.
 
 See `planning/validation/2026-07-27-canonical-baseline.md` for the durable evidence record.
 
@@ -90,8 +81,6 @@ Security vulnerabilities should be reported through the private process in `SECU
 
 ## Repository relationship
 
-Scribbles GameFrame and `codename-scribbles-runtime` are peer systems. GameFrame remains independently testable with deterministic or mock participants. Scribbles Runtime integrates through an explicit, versioned adapter and acts on behalf of Theo; it does not become the game authority or the player identity.
-
-The retired Theo GameFrame and OpenClaw names remain available in Git history and historical validation records. Active source, configuration, and architecture use the Scribbles namespace for the platform while preserving Theo as the agent.
+Scribbles GameFrame and Scribbles Runtime are peer systems. GameFrame remains independently testable with deterministic or mock participants. Scribbles Runtime integrates through an explicit, versioned adapter and acts on behalf of Theo; it does not become the game authority or the player identity.
 
 See `AGENTS.md` before consequential development work.
