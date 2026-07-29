@@ -26,8 +26,21 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      - name: Install locked dependencies when present
-        run: if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; fi
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          elif node -e "const p=require('./package.json'); process.exit(Object.keys(p.dependencies||{}).length + Object.keys(p.devDependencies||{}).length > 0 ? 0 : 1)"; then
+            npm install --no-audit --no-fund
+          fi
+
+      - name: Emit generated dependency lock for review
+        if: ${{ hashFiles('package-lock.json') != '' }}
+        run: |
+          echo BEGIN_PACKAGE_LOCK_BASE64
+          base64 -w 0 package-lock.json
+          echo
+          echo END_PACKAGE_LOCK_BASE64
 
       - name: Validate final feature candidate
         run: npm run validate
