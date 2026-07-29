@@ -18,7 +18,7 @@ Current proof boundary:
 
 - Local deterministic, HTTP integration, browser syntax, and repository validation are implemented.
 - Initial canonical validation completed successfully on July 27, 2026; see `planning/validation/2026-07-27-canonical-baseline.md`.
-- Real browser interaction, deployed Cloudflare, Discord Activity, and Scribbles Runtime canaries remain pending.
+- Deployed Cloudflare, Discord Activity, and Scribbles Runtime canaries remain pending.
 
 ## Active platform-proof sequence
 
@@ -26,7 +26,7 @@ The accepted near-term order is recorded in [`planning/decisions/0007-platform-p
 
 ### GF-0002 — Cloudflare match runtime
 
-Current implementation:
+Repository implementation:
 
 - Storage-neutral async match service
 - Serializable and restorable authoritative snapshots
@@ -49,23 +49,25 @@ Current implementation:
 - HMAC-signed session cookies shared by HTTPS commands and WebSocket upgrades
 - Discord Activity cookie attributes and expiry/tamper validation
 
-Remaining acceptance work:
-
-- Perform a compact standalone deployed Cloudflare canary
+The repository-level runtime proof is complete. Live environment behavior remains separate and is exercised by the standalone deployment canary in `GF-0004`.
 
 ### GF-0003 — Complete tic-tac-toe browser proof
 
-Promote tic-tac-toe from a walking-skeleton interface into the complete delivery-stack proof:
+Promote tic-tac-toe from a walking-skeleton interface into the complete delivery-stack browser proof.
+
+Current implementation candidate:
 
 - Human-versus-human and human-versus-deterministic-opponent play
-- Match create, join, complete, resume, reconnect, and refresh flows
-- Clear stale, duplicate, illegal, unauthorized, and completed-match presentation
+- Persistent development-browser identity
+- Match create, share, complete, resume, reconnect, refresh, and invalid-resume flows
+- Clear active, completed, error, and stale-state presentation
 - Desktop and mobile-responsive behavior
-- Real headless browser interaction included in repository validation
-- Deterministic screenshots or curated captures for stable screens
+- HTTP polling fallback when projection WebSockets are unavailable
+- Real Playwright interaction included in `npm run validate`
+- Failure-only screenshots and traces
 - Basic visual polish sufficient to evaluate the ordinary browser client as the base GameFrame interface
 
-The existing JavaScript syntax check does not satisfy this milestone by itself.
+Acceptance requires the frozen candidate to pass the read-only GitHub-hosted canonical workflow with the committed dependency lock. No deployed Cloudflare behavior is claimed by this milestone.
 
 ### GF-0004 — Standalone deployment and Discord delivery canaries
 
