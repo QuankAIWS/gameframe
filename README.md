@@ -71,6 +71,20 @@ planning/                 architecture, deployment, roadmap, and validation doct
 src/cloudflare/           Worker, Durable Object, and storage adapters
 ```
 
+## Ownership and licensing
+
+This repository is publicly viewable proprietary software. Copyright remains with the applicable copyright owner, and all rights are reserved.
+
+No open-source license is granted. The absence of a `LICENSE` file is intentional. Viewing, cloning, or forking the repository through GitHub does not grant permission to reuse, modify, redistribute, sell, deploy, or create derivative works from the code except as required for GitHub's own repository functionality or with prior written authorization.
+
+See `NOTICE` for the controlling repository notice and `CONTRIBUTING.md` for the current external-contribution policy.
+
+## Security and deployment data
+
+The public repository must not contain production credentials, private keys, access tokens, cookies, private user or campaign data, incident records, or secret-bearing environment files. Deployment secrets belong in GitHub, Cloudflare, or equivalent secret stores and are supplied through environment bindings.
+
+Security vulnerabilities should be reported through the private process in `SECURITY.md`, not through a public issue containing exploit details.
+
 ## Repository relationship
 
 Scribbles GameFrame and `codename-scribbles-runtime` are peer systems. GameFrame remains independently testable with deterministic or mock participants. Scribbles Runtime integrates through an explicit, versioned adapter and acts on behalf of Theo; it does not become the game authority or the player identity.
