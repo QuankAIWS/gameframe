@@ -67,8 +67,8 @@ export class ProviderBackedAgentPlayer<Action, Observation>
   async chooseDecision(
     context: AgentDecisionContext<Action, Observation>,
   ): Promise<AgentDecision<Action>> {
+    const request = this.#createRequest(context);
     try {
-      const request = this.#createRequest(context);
       const rawResponse = await this.#requestDecision(request);
       const response = parseAgentDecisionResponse(rawResponse, request, this.#isSameAction);
       if (this.#seenActionIds.has(response.actionId)) {
@@ -151,16 +151,17 @@ export class ProviderBackedAgentPlayer<Action, Observation>
     });
 
     try {
-      return await Promise.race([
-        this.#provider.decide(request).catch((cause) => {
+      const providerCall = Promise.resolve()
+        .then(() => this.#provider.decide(request))
+        .catch((cause) => {
+          if (cause instanceof AgentDecisionError) throw cause;
           throw new AgentDecisionError(
             "provider_unavailable",
             "Decision provider failed before returning a response.",
             { cause },
           );
-        }),
-        timeout,
-      ]);
+        });
+      return await Promise.race([providerCall, timeout]);
     } finally {
       if (timer) clearTimeout(timer);
     }
