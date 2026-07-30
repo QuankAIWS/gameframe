@@ -62,6 +62,7 @@ The matrix is risk-based rather than combinatorial. Every meaningful player cont
 | Recipient page | Cancelled invitation | Interaction; visual review | Lower-level coverage; browser presentation pending |
 | Recipient page | Already claimed by another user | Interaction; visual review | Covered interaction; shared error composition visually reviewed |
 | Inviter | Self-claim rejected without match mutation | Service-backed | Covered below browser layer; browser presentation pending |
+| Local Monster Master duel | Expand and collapse the synthetic second-seat invitation | Interaction | Covered; collapsed by default during gameplay |
 
 ## Tic-Tac-Toe journeys
 
@@ -141,14 +142,14 @@ The matrix is risk-based rather than combinatorial. Every meaningful player cont
 | Deployment | Opposing seat receives next legal deployment | Two-context | Covered |
 | Combat start | Initiative roster, command energy, budgets, and active unit | Interaction; visual review | Covered and visually reviewed |
 | Move action | Show legal destinations and commit | Interaction; visual review | Covered and visually reviewed |
-| Attack action | Show legal targets and commit damage | Interaction; visual review | Covered interaction; dedicated Monster Master attack capture deferred |
-| Mend ability | Spend command and heal a legal friendly target | Interaction; visual review | Covered interaction; dedicated Mend capture deferred |
+| Attack action | Show legal targets and commit damage | Interaction; visual review | Covered and visually reviewed before and after submission |
+| Mend ability | Spend command and heal a legal friendly target | Interaction; visual review | Covered and visually reviewed before and after submission |
 | Activation | End activation and allow deterministic Theo response | Interaction | Covered |
 | Command regeneration | New round updates both command displays | Interaction | Covered through the ordinary two-seat HTTP boundary |
-| Defeat | Remove defeated monster and present effect | Interaction; visual review | Covered interaction; dedicated defeat capture deferred |
-| Master defeat | Immediate victory and disabled controls | Interaction; visual review | Covered interaction; dedicated victory capture deferred |
-| Round cap | Bounded draw presentation | Interaction; visual review | Covered interaction; dedicated draw capture deferred |
-| Camera | Pan, center active, center field, zoom in, and zoom out | Interaction | Core button and keyboard paths covered; complete direct-control parity audit pending |
+| Defeat | Remove an ordinary defeated monster and present the effect while combat continues | Interaction; visual review | Covered and visually reviewed |
+| Master defeat | Immediate victory, winner-relative presentation, and disabled controls | Interaction; visual review | Covered and visually reviewed |
+| Round cap | Draw at the configured final round with disabled actions | Interaction; visual review | Covered and visually reviewed at round 24 |
+| Camera | Pan, center active, center field, zoom in, and zoom out | Interaction | Core button and keyboard paths covered; curated draw framing uses the real pan controls |
 | Active duel | Refresh and resume exact revision | Interaction | Covered |
 | Active duel | Back to setup and create a different match | Interaction | Covered |
 | Diagnostics | Open and close authoritative diagnostics | Interaction | Covered |
@@ -196,6 +197,13 @@ The manual visual workflow produces a small named set rather than screenshots of
 21. Monster Master — deployment and starting zone
 22. Monster Master — combat activation
 23. Monster Master — movement options
+24. Monster Master — attack targeting
+25. Monster Master — committed attack result
+26. Monster Master — Mend targeting
+27. Monster Master — committed Mend result
+28. Monster Master — ordinary monster defeat with combat continuing
+29. Monster Master — Master-defeat victory from the winning seat
+30. Monster Master — bounded draw at round 24
 
 ## Narrow visual-baseline candidates
 
@@ -209,7 +217,7 @@ Only stable compositions should become pixel comparisons:
 - Tactical Movement shell with deterministic initial camera
 - Tactical Combat shell with deterministic initial activation
 
-Monster Master has completed curated rendered review. Its lobby, deployment, and Canvas compositions remain curated-only for MM-0001 because match identifiers, roster state, camera position, legal actions, and Canvas contents are deliberately dynamic. A narrow baseline may be accepted later only after a stable composition is selected and its dynamic fields are fixed or masked.
+Monster Master has completed curated rendered review. Its lobby, deployment, action, effect, outcome, and Canvas compositions remain curated-only for MM-0001 because match identifiers, roster state, camera position, legal actions, and Canvas contents are deliberately dynamic. A narrow baseline may be accepted later only after a stable composition is selected and its dynamic fields are fixed or masked.
 
 Dynamic identifiers, status timestamps, profile names, and Canvas animation frames must be masked or fixed before baseline acceptance.
 
