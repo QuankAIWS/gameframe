@@ -105,7 +105,7 @@ Browser quality proof:
 - Dynamic Canvas and match states remain in curated review rather than brittle pixel baselines
 - Screenshot review corrected tactical badge overlap, unbounded legal-action lists, Checkers capture timing, Monster Master phase guidance, asynchronous capture timing, and globally duplicated capture IDs
 
-The active repository candidate is MM-0001: the first playable Monster Master duel. Repository validation and curated rendering are separate from owner-controlled Cloudflare deployment, live Discord website/Activity canaries, and subjective gameplay review. Those external and human results are not claimed here.
+The active repository candidate is MM-0001: the first playable Monster Master duel in the monster-master tactical battler foundation. Repository validation and curated rendering are separate from owner-controlled Cloudflare deployment, live Discord website/Activity canaries, and subjective gameplay review. Those external and human results are not claimed here.
 
 ## Canonical checkpoints
 
