@@ -100,7 +100,7 @@ export function createGameFrameServer(
           runtime: "node-local",
           realtime: false,
           authentication: "development-header",
-          games: ["tic-tac-toe", "american-checkers"],
+          games: ["tic-tac-toe", "american-checkers", "tactical-movement-canary"],
         });
       }
 
