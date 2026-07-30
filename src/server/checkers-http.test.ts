@@ -26,6 +26,7 @@ test("HTTP health advertises every supported deterministic game", async (context
     "tic-tac-toe",
     "american-checkers",
     "tactical-movement-canary",
+    "tactical-combat-canary",
   ]);
 });
 
@@ -101,6 +102,88 @@ test("HTTP boundary supports separate human Checkers seats", async (context) => 
   assert.equal(bobView.gameId, "american-checkers");
   assert.equal(bobView.observation.yourColor, "red");
   assert.ok(bobView.observation.legalActions.length > 0);
+});
+
+test("HTTP boundary runs complete multi-action Theo combat activations", async (context) => {
+  const base = await startServer(context);
+  const createdResponse = await authenticatedFetch(`${base}/api/matches`, "human", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      gameId: "tactical-combat-canary",
+      playerIds: ["human", "theo"],
+    }),
+  });
+  assert.equal(createdResponse.status, 201);
+  const created = await createdResponse.json();
+  assert.equal(created.gameId, "tactical-combat-canary");
+  assert.equal(created.observation.board.units.length, 4);
+  assert.equal(created.observation.activeUnitId, "alpha-vanguard");
+
+  const endActivation = created.observation.legalActions.find((action: { type: string }) => (
+    action.type === "end-activation"
+  ));
+  assert.ok(endActivation);
+  const advancedResponse = await authenticatedFetch(
+    `${base}/api/matches/${created.matchId}/actions`,
+    "human",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        actionId: "http-combat-human-end",
+        expectedRevision: 0,
+        action: endActivation,
+      }),
+    },
+  );
+  assert.equal(advancedResponse.status, 200);
+  const advanced = await advancedResponse.json();
+  assert.equal(advanced.gameId, "tactical-combat-canary");
+  assert.equal(advanced.revision, 3);
+  assert.equal(advanced.eventCount, 3);
+  assert.equal(advanced.observation.activePlayerId, "human");
+  assert.equal(advanced.observation.activeUnitId, "alpha-ranger");
+});
+
+test("HTTP boundary supports separate human tactical combat seats", async (context) => {
+  const base = await startServer(context);
+  const created = await authenticatedFetch(`${base}/api/matches`, "alpha", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      gameId: "tactical-combat-canary",
+      playerIds: ["alpha", "beta"],
+    }),
+  }).then((response) => response.json());
+
+  const endActivation = created.observation.legalActions.find((action: { type: string }) => (
+    action.type === "end-activation"
+  ));
+  assert.ok(endActivation);
+  const afterAlpha = await authenticatedFetch(
+    `${base}/api/matches/${created.matchId}/actions`,
+    "alpha",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        actionId: "http-combat-alpha-end",
+        expectedRevision: 0,
+        action: endActivation,
+      }),
+    },
+  ).then((response) => response.json());
+  assert.equal(afterAlpha.revision, 1);
+  assert.equal(afterAlpha.observation.activePlayerId, "beta");
+
+  const betaView = await authenticatedFetch(
+    `${base}/api/matches/${created.matchId}`,
+    "beta",
+  ).then((response) => response.json());
+  assert.equal(betaView.gameId, "tactical-combat-canary");
+  assert.equal(betaView.observation.activeUnitId, "beta-vanguard");
+  assert.ok(betaView.observation.legalActions.length > 0);
 });
 
 test("HTTP boundary rejects unknown game IDs without creating a match", async (context) => {
