@@ -7,6 +7,13 @@
   gap: 24px;
 }
 
+.tactical-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .tactical-home-link {
   display: inline-flex;
   align-items: center;
@@ -162,6 +169,7 @@
 
 @media (max-width: 650px) {
   .tactical-hero { align-items: flex-start; flex-direction: column; }
+  .tactical-nav { justify-content: flex-start; }
   .tactical-sidebar { grid-template-columns: 1fr; }
   .tactical-player-grid { grid-template-columns: 1fr 1fr; }
   .tactical-meta { grid-column: 1; grid-row: auto; grid-template-columns: 1fr 1fr; }
