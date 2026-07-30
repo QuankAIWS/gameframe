@@ -2,7 +2,7 @@
 
 Scribbles GameFrame is the deterministic multiplayer game platform for the Scribbles architecture. It owns game sessions, legal-action validation, event history, player observations, browser delivery, and the integration boundaries for Discord Activities and Scribbles Runtime. Individual games remain explicit modules rather than being forced into one generalized rules engine.
 
-Theo is the public-facing Scribbles agent and the first registered nonhuman GameFrame player. The platform proof now includes complete Tic-Tac-Toe and American Checkers repository paths plus a versioned, transport-neutral decision-provider contract that deterministic mocks and the future Scribbles Runtime adapter can implement without becoming game authority.
+Theo is the public-facing Scribbles agent and the first registered nonhuman GameFrame player. The platform proof now includes complete Tic-Tac-Toe and American Checkers paths, a versioned decision-provider contract, a larger-field tactical map and movement client, and a complete deterministic tactical combat stack.
 
 ## Current status
 
@@ -12,6 +12,7 @@ Implemented in the validated platform proofs:
 - Authoritative revisioned match sessions
 - Idempotent action submission and stale-write rejection
 - Replayable event history and restorable snapshots
+- Configured encounter initial-state persistence and replay
 - Explicit two-seat human and agent identity model
 - Server-derived request principals and spoof-resistant seat authorization
 - Signed, expiring, partitioned Discord Activity session cookies
@@ -19,9 +20,9 @@ Implemented in the validated platform proofs:
 - In-memory development storage and Durable Object storage adapters
 - Shared multi-game HTTP create, view, and action boundary
 - Explicit `gameId` dispatch with backward-compatible Tic-Tac-Toe defaults
-- Cloudflare Worker and migration-stable Durable Object routing for both supported games
+- Cloudflare Worker and migration-stable Durable Object routing
 - HTTP polling fallback and WebSocket projection reconnect behavior
-- Responsive multi-game browser shell
+- Responsive browser and tactical Canvas surfaces
 - Real Playwright browser acceptance through the ordinary application boundary
 - Real Workers-runtime persistence, eviction, competing-write, and hibernating-WebSocket tests
 
@@ -43,6 +44,18 @@ American Checkers proof:
 - Two-browser human Checkers matches
 - Checkers state and legal-action recovery after real Durable Object eviction
 
+Tactical foundation proof:
+
+- Semantic 24×24 map larger than the ordinary viewport
+- Weighted deterministic pathfinding, occupancy, complete path actions, and replay
+- Client-only pan, bounded zoom, centering, selection, and path previews
+- Four-unit tactical combat with vanguards and rangers
+- Deterministic initiative and multi-action activations
+- Movement, row/column/diagonal line of sight, attacks, damage, defeat, structured effects, victory, and bounded draws
+- Human, deterministic Theo, and provider-compatible combat service flows
+- Dedicated movement and combat Canvas clients with health, initiative, legal targets, resume, invites, and mobile controls
+- Tactical movement and combat recovery after real Durable Object eviction
+
 Agent-provider proof:
 
 - Version-1 decision request and response protocol
@@ -50,7 +63,7 @@ Agent-provider proof:
 - Deterministic, scripted, seeded-random, delayed, unavailable, malformed, illegal, duplicate, stale, and mismatched mock-provider modes
 - Canonical JSON fixtures for independent Scribbles Runtime compatibility work
 
-The active development lane is the larger-field monster-master tactical battler foundation. The standalone Cloudflare and Discord deployment canaries remain paused until the repository owner is available for setup; they are not treated as complete.
+The active development lane is MM-0001: the first playable Monster Master duel in the monster-master tactical battler foundation, built as its own game definition over the validated tactical substrate. The standalone Cloudflare and Discord deployment canaries remain paused until the repository owner is available for setup; they are not treated as complete.
 
 ## Canonical checkpoints
 
@@ -59,6 +72,8 @@ The active development lane is the larger-field monster-master tactical battler 
 - Versioned agent decision contract and durable mock provider validated and merged on July 29, 2026
 - American Checkers rules module validated and merged on July 29, 2026
 - American Checkers full-stack repository proof validated and merged on July 30, 2026
+- TC-0001 tactical map, movement, Canvas, and Workers proof validated and merged on July 30, 2026
+- TC-0002 deterministic tactical combat stack validated and merged on July 30, 2026
 
 Durable evidence:
 
@@ -67,6 +82,8 @@ Durable evidence:
 - `planning/validation/2026-07-29-agent-decision-contract.md`
 - `planning/validation/2026-07-29-american-checkers-rules.md`
 - `planning/validation/2026-07-30-american-checkers-full-stack.md`
+- `planning/validation/2026-07-30-tactical-canvas-canary.md`
+- `planning/validation/2026-07-30-tactical-combat-stack.md`
 
 Not yet claimed:
 
@@ -75,6 +92,8 @@ Not yet claimed:
 - Remote decision-provider network transport and authentication
 - Live Scribbles Runtime integration controlling Theo
 - Production recovery, quota, and durability behavior
+- Final Monster Master rules, content, balance, or art
+- Open-world campaign behavior or D&D rules
 
 ## Run locally
 
@@ -90,23 +109,29 @@ npm run validate
 npm run dev
 ```
 
-Open `http://127.0.0.1:8787` after starting the development server.
+Open these development surfaces after starting the server:
+
+- `http://127.0.0.1:8787/` — Tic-Tac-Toe and American Checkers
+- `http://127.0.0.1:8787/tactical.html` — larger-field movement canary
+- `http://127.0.0.1:8787/combat.html` — deterministic tactical combat canary
 
 ## Repository map
 
 ```text
-src/platform/             shared game and match contracts
-src/games/tic-tac-toe/   compact deterministic delivery proof
-src/games/checkers/       American Checkers rules and deterministic opponent
-src/agents/               versioned decision contracts, mocks, and agent implementations
-src/server/               authoritative multi-game services and HTTP host
-src/scripts/              repository self-checks
-public/                   standalone responsive multi-game browser client
-test/browser/             real Playwright Tic-Tac-Toe and Checkers acceptance
-test/fixtures/            cross-repository compatibility fixtures
-test/workerd/             real multi-game Workers-runtime integration tests
-planning/                 architecture, deployment, roadmap, protocol, rules, and validation doctrine
-src/cloudflare/           Worker, Durable Object, storage, and projection adapters
+src/platform/                 shared game and match contracts
+src/games/tic-tac-toe/       compact deterministic delivery proof
+src/games/checkers/           American Checkers rules and deterministic opponent
+src/games/tactical-core/      semantic map, movement, and viewport-neutral contracts
+src/games/tactical-combat/    initiative, line of sight, combat, effects, and agents
+src/agents/                   versioned decision contracts, mocks, and agent implementations
+src/server/                   authoritative multi-game services and HTTP host
+src/scripts/                  repository self-checks
+public/                       responsive board-game and tactical Canvas clients
+test/browser/                 real Playwright acceptance across all browser surfaces
+test/fixtures/                cross-repository compatibility fixtures
+test/workerd/                 real multi-game Workers-runtime integration tests
+planning/                     architecture, deployment, roadmap, rules, contracts, and validation doctrine
+src/cloudflare/               Worker, Durable Object, storage, and projection adapters
 ```
 
 ## Ownership and licensing
@@ -126,5 +151,7 @@ Security vulnerabilities should be reported through the private process in `SECU
 ## Repository relationship
 
 Scribbles GameFrame and Scribbles Runtime are peer systems. GameFrame remains independently testable with deterministic or mock participants. Scribbles Runtime integrates through the explicit versioned decision-provider contract and acts on behalf of Theo; it does not become the game authority or the player identity.
+
+Monster Master, future RPG encounters, and D&D-style encounters may reuse map, encounter, replay, service, storage, projection, and rendering infrastructure while retaining separate game definitions, turn structures, action economies, content models, and rules.
 
 See `AGENTS.md` before consequential development work.
