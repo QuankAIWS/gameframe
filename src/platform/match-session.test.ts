@@ -95,7 +95,7 @@ test("snapshot restoration preserves accepted and rejected action idempotency", 
 test("revision-zero scenario snapshots become durable replay origins", () => {
   const scenarioState = ticTacToeDefinition.createInitialState(["a", "b"]);
   scenarioState.board[4] = "X";
-  scenarioState.nextPlayerIndex = 1;
+  scenarioState.nextMark = "O";
 
   const seeded = new MatchSession({
     matchId: "scenario-match",
