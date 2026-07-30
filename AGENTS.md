@@ -1,6 +1,6 @@
 # AGENTS.md — Scribbles GameFrame
 
-Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate objective is now the first substantial original tactical game, built on the deterministic multiplayer, browser, Workers-runtime, and agent contracts proven by Tic-Tac-Toe and American Checkers.
+Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate objective is the first playable Monster Master duel, built on the deterministic multiplayer, tactical combat, browser, Workers-runtime, and agent contracts already validated in the repository.
 
 ## Startup
 
@@ -38,7 +38,8 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 - Discord, Cloudflare, and Scribbles Runtime integrations must enter through explicit adapters. Do not scatter vendor SDK calls through game logic.
 - Event history, revision checks, idempotency, and visibility are correctness requirements, not deployment polish.
 - HTTP owns commands; WebSockets are projection-only. Do not introduce a second mutation path without preserving the same validation and idempotency contracts.
-- The tactical renderer must consume authoritative map and unit state; camera position, interpolation, and transient effects remain presentation state.
+- Tactical renderers consume authoritative map, unit, action, effect, and visibility state. Camera position, interpolation, hover previews, and transient animation remain presentation state.
+- Monster Master, future RPG encounters, and D&D-style encounters may share map, encounter, replay, service, storage, projection, and rendering infrastructure without sharing one `GameDefinition`, turn economy, or rules implementation.
 
 ## Public repository controls
 
@@ -52,11 +53,23 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 
 ## Current active lane
 
-`GF-0010 / TC-0001`: begin the monster-master tactical battler foundation with camera-independent square-grid map state, a larger map than the visible viewport, pan and bounded zoom, unit selection, legal movement, path presentation, authoritative turn actions, replay, reconnect, and a minimal renderer/HUD boundary.
+`GF-0010 / MM-0001`: build the first playable two-player Monster Master duel as a separate game definition over the validated tactical substrate.
 
-Do not expand the first slice into full combat, complex action points, reactions, elevation, destructible terrain, generated campaigns, or Total War-scale formations. Preserve those later directions through clean data boundaries rather than implementing them prematurely.
+The first slice should include:
 
-`GF-0007` is the completed repository-side Checkers generalization proof. `GF-0004` standalone Cloudflare and Discord canaries remain paused until the repository owner is available for deployment setup. They remain unresolved external checkpoints and must not be claimed from repository validation.
+- one Master and a small roster of monsters for each player
+- explicit deployment zones and a bounded deployment phase
+- stable unit archetypes and content IDs
+- a small resource model used by deployment or abilities
+- movement, line of sight, attacks, health, defeat, effects, and victory through authoritative actions
+- at least one simple ability that proves actions are not limited to generic attacks
+- a complete beginning-to-end duel against deterministic Theo and another human seat
+- a dedicated browser surface with functional silhouettes and UI rather than final art
+- replay, resume, Workers eviction recovery, and player-specific legal-action projections
+
+Do not turn MM-0001 into the open world, campaign layer, full content roster, randomized loot system, generated-story system, or D&D rules engine. Preserve those directions through explicit encounter configuration, content definitions, and separate game or campaign wrappers.
+
+`TC-0001` map/movement/Canvas and `TC-0002` deterministic combat are complete repository proofs. `GF-0004` standalone Cloudflare and Discord canaries remain paused until the repository owner is available for deployment setup. They remain unresolved external checkpoints and must not be claimed from repository validation.
 
 ## Development and validation posture
 
