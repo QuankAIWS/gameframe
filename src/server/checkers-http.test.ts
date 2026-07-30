@@ -17,12 +17,16 @@ async function startServer(context: { after(callback: () => void): void }) {
   return `http://127.0.0.1:${address.port}`;
 }
 
-test("HTTP health advertises both supported deterministic games", async (context) => {
+test("HTTP health advertises every supported deterministic game", async (context) => {
   const base = await startServer(context);
   const response = await fetch(`${base}/api/health`);
   assert.equal(response.status, 200);
   const health = await response.json();
-  assert.deepEqual(health.games, ["tic-tac-toe", "american-checkers"]);
+  assert.deepEqual(health.games, [
+    "tic-tac-toe",
+    "american-checkers",
+    "tactical-movement-canary",
+  ]);
 });
 
 test("HTTP boundary creates and advances human-versus-Theo Checkers", async (context) => {
