@@ -1,14 +1,37 @@
 import { expect, test } from "@playwright/test";
 
 const gameId = "monster-master-duel";
+const roleOrder = ["master", "bulwark", "emberling"];
 
 function playerHeaders(playerId) {
   return { "x-gameframe-player-id": playerId };
 }
 
-async function viewAs(page, matchId, playerId) {
-  const response = await page.context().request.get(`/api/matches/${encodeURIComponent(matchId)}`, {
+async function createMonsterMaster(request, playerIds = ["browser-monster-alpha", "browser-monster-beta"]) {
+  const response = await request.post("/api/matches", {
+    headers: playerHeaders(playerIds[0]),
+    data: { gameId, playerIds },
+  });
+  expect(response.status()).toBe(201);
+  return response.json();
+}
+
+async function viewAs(request, matchId, playerId) {
+  const response = await request.get(`/api/matches/${encodeURIComponent(matchId)}`, {
     headers: playerHeaders(playerId),
+  });
+  expect(response.status()).toBe(200);
+  return response.json();
+}
+
+async function submit(request, view, playerId, action) {
+  const response = await request.post(`/api/matches/${encodeURIComponent(view.matchId)}/actions`, {
+    headers: playerHeaders(playerId),
+    data: {
+      actionId: `browser-monster-master-${crypto.randomUUID()}`,
+      expectedRevision: view.revision,
+      action,
+    },
   });
   expect(response.status()).toBe(200);
   return response.json();
@@ -38,7 +61,7 @@ async function clickBoardCoordinate(page, coordinate) {
 
 async function deploySelectedUnit(page) {
   const state = await diagnostics(page);
-  const view = await viewAs(page, state.matchId, state.playerId);
+  const view = await viewAs(page.context().request, state.matchId, state.playerId);
   expect(view.gameId).toBe(gameId);
   const bounds = state.viewport.bounds;
   const selectedUnitId = state.selectedUnitId;
@@ -52,6 +75,98 @@ async function deploySelectedUnit(page) {
   ));
   expect(action).toBeDefined();
   await clickBoardCoordinate(page, action.position);
+}
+
+function rosterUnit(view, unitId) {
+  return Object.values(view.observation.rosters)
+    .flat()
+    .find((unit) => unit.id === unitId);
+}
+
+function chooseDeployment(view) {
+  const activePlayerId = view.observation.activePlayerId;
+  const playerIndex = view.observation.playerIds.indexOf(activePlayerId);
+  return [...view.observation.legalActions]
+    .filter((action) => action.type === "deploy-unit")
+    .sort((left, right) => {
+      const leftRole = rosterUnit(view, left.unitId)?.role;
+      const rightRole = rosterUnit(view, right.unitId)?.role;
+      const roleDifference = roleOrder.indexOf(leftRole) - roleOrder.indexOf(rightRole);
+      if (roleDifference) return roleDifference;
+      const edgeDifference = playerIndex === 0
+        ? right.position.x - left.position.x
+        : left.position.x - right.position.x;
+      return edgeDifference
+        || Math.abs(left.position.y - 11) - Math.abs(right.position.y - 11)
+        || left.position.y - right.position.y
+        || left.position.x - right.position.x;
+    })[0];
+}
+
+function destination(action) {
+  return action.path.at(-1);
+}
+
+function distanceToEnemyMaster(view, action) {
+  const active = view.observation.board.units.find((unit) => unit.id === action.unitId);
+  const enemyMaster = view.observation.board.units.find((unit) => (
+    unit.ownerId !== active.ownerId && unit.role === "master"
+  ));
+  if (!enemyMaster) return 0;
+  const target = destination(action);
+  return Math.max(
+    Math.abs(target.x - enemyMaster.position.x),
+    Math.abs(target.y - enemyMaster.position.y),
+  );
+}
+
+function chooseDeterministicAction(view, { passiveCombat = false } = {}) {
+  if (view.observation.phase === "deployment") return chooseDeployment(view);
+  const actions = view.observation.legalActions;
+  if (passiveCombat) return actions.find((action) => action.type === "end-activation");
+
+  const enemyMasterAttack = actions.find((action) => (
+    action.type === "attack"
+    && view.observation.board.units.find((unit) => unit.id === action.targetUnitId)?.role === "master"
+  ));
+  if (enemyMasterAttack) return enemyMasterAttack;
+
+  const attack = actions.find((action) => action.type === "attack");
+  if (attack) return attack;
+
+  const mend = [...actions]
+    .filter((action) => action.type === "use-ability")
+    .sort((left, right) => right.healing - left.healing || left.targetUnitId.localeCompare(right.targetUnitId))[0];
+  if (mend) return mend;
+
+  const move = [...actions]
+    .filter((action) => action.type === "move")
+    .sort((left, right) => (
+      distanceToEnemyMaster(view, left) - distanceToEnemyMaster(view, right)
+      || right.movementCost - left.movementCost
+      || destination(left).y - destination(right).y
+      || destination(left).x - destination(right).x
+    ))[0];
+  if (move) return move;
+
+  return actions.find((action) => action.type === "end-activation");
+}
+
+async function prepareAuthoritativeState(request, predicate, options = {}) {
+  let view = await createMonsterMaster(request, options.playerIds);
+  for (let step = 0; step < (options.maximumActions ?? 600); step += 1) {
+    if (predicate(view)) return view;
+    if (view.observation.status.lifecycle === "completed") break;
+    const activePlayerId = view.observation.activePlayerId;
+    expect(activePlayerId).toBeTruthy();
+    view = await viewAs(request, view.matchId, activePlayerId);
+    if (predicate(view)) return view;
+    const action = chooseDeterministicAction(view, options);
+    expect(action).toBeDefined();
+    view = await submit(request, view, activePlayerId, action);
+  }
+  if (predicate(view)) return view;
+  throw new Error("The deterministic Monster Master browser setup did not reach the requested state.");
 }
 
 test("deploys a full roster, advances combat against Theo, and resumes the duel", async ({ page }) => {
@@ -113,6 +228,88 @@ test("two browser seats alternate Monster Master deployment on one match", async
     await alphaContext.close();
     await betaContext.close();
   }
+});
+
+test("selects and commits a legal Monster Master attack", async ({ page, request }) => {
+  const prepared = await prepareAuthoritativeState(
+    request,
+    (view) => view.observation.legalActions.some((action) => action.type === "attack"),
+  );
+  const actingPlayer = prepared.observation.activePlayerId;
+  const attack = prepared.observation.legalActions.find((action) => action.type === "attack");
+  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.matchId)}&player=${encodeURIComponent(actingPlayer)}`);
+  await expect(page.locator("#monster-master-revision")).toHaveText(`Revision ${prepared.revision}`);
+
+  await page.locator("#monster-master-select-attack").click();
+  const target = page.locator(`#monster-master-options button[data-action-kind="attack"][data-target-unit-id="${attack.targetUnitId}"]`);
+  await expect(target).toBeVisible();
+  await target.click();
+
+  await expect(page.locator("#monster-master-revision")).toHaveText(`Revision ${prepared.revision + 1}`);
+  await expect(page.locator("#monster-master-effects .damage")).toContainText("took");
+});
+
+test("spends command energy and renders a legal Warden Mend", async ({ page, request }) => {
+  const prepared = await prepareAuthoritativeState(
+    request,
+    (view) => view.observation.legalActions.some((action) => action.type === "use-ability"),
+  );
+  const actingPlayer = prepared.observation.activePlayerId;
+  const mend = prepared.observation.legalActions.find((action) => action.type === "use-ability");
+  const commandBefore = prepared.observation.commandByPlayer[actingPlayer];
+  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.matchId)}&player=${encodeURIComponent(actingPlayer)}`);
+
+  await page.locator("#monster-master-select-mend").click();
+  const target = page.locator(`#monster-master-options button[data-action-kind="use-ability"][data-target-unit-id="${mend.targetUnitId}"]`);
+  await expect(target).toBeVisible();
+  await target.click();
+
+  await expect(page.locator("#monster-master-revision")).toHaveText(`Revision ${prepared.revision + 1}`);
+  await expect(page.locator("#monster-master-effects")).toContainText("recovered");
+  const state = await diagnostics(page);
+  expect(state.commandByPlayer[actingPlayer]).toBe(commandBefore - mend.commandCost);
+});
+
+test("renders defeated units and the authoritative defeat effect", async ({ page, request }) => {
+  const prepared = await prepareAuthoritativeState(
+    request,
+    (view) => view.observation.lastEffects.some((effect) => effect.type === "unit-defeated"),
+  );
+  const player = prepared.playerIds[0];
+  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.matchId)}&player=${encodeURIComponent(player)}`);
+
+  await expect(page.locator("#monster-master-roster-list .is-defeated")).toHaveCount(prepared.observation.defeatedUnitIds.length);
+  await expect(page.locator("#monster-master-effects .defeat")).toContainText("defeated");
+});
+
+test("renders a completed Monster Master victory and disables actions", async ({ page, request }) => {
+  const prepared = await prepareAuthoritativeState(
+    request,
+    (view) => view.observation.status.lifecycle === "completed" && Boolean(view.observation.status.winnerPlayerId),
+  );
+  const player = prepared.playerIds[0];
+  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.matchId)}&player=${encodeURIComponent(player)}`);
+
+  await expect(page.locator("#monster-master-status")).toContainText("won the duel");
+  await expect(page.locator("#monster-master-effects .victory")).toBeVisible();
+  await expect(page.locator("#monster-master-select-move")).toBeDisabled();
+  await expect(page.locator("#monster-master-select-attack")).toBeDisabled();
+  await expect(page.locator("#monster-master-select-mend")).toBeDisabled();
+  await expect(page.locator("#monster-master-end-activation")).toBeDisabled();
+});
+
+test("renders the bounded round-cap draw", async ({ page, request }) => {
+  const prepared = await prepareAuthoritativeState(
+    request,
+    (view) => view.observation.status.draw,
+    { passiveCombat: true, maximumActions: 220 },
+  );
+  const player = prepared.playerIds[0];
+  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.matchId)}&player=${encodeURIComponent(player)}`);
+
+  await expect(page.locator("#monster-master-status")).toHaveText("The duel ended in a draw.");
+  await expect(page.locator("#monster-master-effects .victory")).toContainText("draw");
+  await expect(page.locator("#monster-master-end-activation")).toBeDisabled();
 });
 
 test("Monster Master controls remain usable without horizontal overflow on mobile", async ({ page }) => {
