@@ -18,6 +18,13 @@ function gameConfiguration(entry) {
       label: "Tactical Combat",
     };
   }
+  if (entry === "/monster-master-app.js") {
+    return {
+      selector: "#monster-master-human",
+      gameId: () => "monster-master-duel",
+      label: "Monster Master",
+    };
+  }
   if (entry === "/app.js") {
     return {
       selector: "#create-human-match",
