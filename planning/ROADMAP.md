@@ -135,42 +135,52 @@ Repository proof:
 - Real Workers-runtime Checkers persistence and legal-action recovery after Durable Object eviction
 - Existing Tic-Tac-Toe, authentication, WebSocket, and browser regressions retained
 
-The repository-side milestone is complete after the frozen PR #23 candidate passes canonical validation and merges. A durable final validation record will identify that exact run and merge. Standalone Cloudflare deployment and Discord Activity canaries remain separately paused under `GF-0004`; they are not implied by this repository proof.
+The repository-side milestone is complete after the frozen PR #23 candidate passes canonical validation and merges. Standalone Cloudflare deployment and Discord Activity canaries remain separately paused under `GF-0004`; they are not implied by this repository proof.
 
 ### GF-0008 — Scribbles Runtime adapter for Theo — Available when Runtime is ready
 
-When Scribbles Runtime is available, implement the accepted versioned decision-provider contract so it can choose actions for stable player ID `theo`. The adapter is not a prerequisite for the completed mock-agent and Checkers repository proofs or for beginning the tactical foundation.
+When Scribbles Runtime is available, implement the accepted versioned decision-provider contract so it can choose actions for stable player ID `theo`. The adapter is not a prerequisite for the completed mock-agent and Checkers repository proofs or for tactical and Monster Master repository development.
 
 Retain deterministic fallback behavior and fail closed on malformed, stale, illegal, mismatched, or unauthorized Runtime responses.
 
 ### GF-0010 — Monster-master tactical battler foundation — Active
 
-Build the first substantial original GameFrame game now that the platform has survived browser acceptance, the mock-agent boundary, and the American-Checkers generalization proof. The paused external canary does not block tactical repository development, but deployed tactical behavior must not be claimed until the relevant external lane is resumed and proven.
+Build the first substantial original GameFrame game now that the platform has survived browser acceptance, the mock-agent boundary, American Checkers, larger-field tactical movement, and deterministic tactical combat.
 
-Begin with a two-player monster-master duel on a larger scrollable battlefield that extends beyond the normal viewport, while preserving an eventual two-to-four-player architecture.
+The paused external canary does not block repository development, but deployed tactical behavior must not be claimed until the relevant external lane is resumed and proven.
 
-The first production direction favors tactical-RPG-style maneuver over an immediately engaged tiny arena: small active forces move across a larger map with approach routes, objectives, terrain positions, camera panning, and room for scouting or repositioning. Compact boards remain supported for tests, tutorials, puzzles, quick matches, and small RPG encounters rather than being removed or developed as a separate engine.
+The production direction favors tactical-RPG-style maneuver over an immediately engaged tiny arena: small active forces move across a larger map with approach routes, objectives, terrain positions, camera panning, and room for scouting or repositioning. Compact boards remain supported for tests, tutorials, puzzles, quick matches, and RPG rooms.
 
-This milestone establishes the shared square-grid combat substrate for later RPG encounters and possible squad-scale strategy modules: board occupancy, movement, camera-independent map state, initiative, activations, range, line of sight, terrain, effects, objectives, visibility, replay, and human or agent participation through the same authoritative command path.
+Detailed sequencing, visual direction, generative-content boundaries, and acceptance criteria are recorded in [`planning/tactical-battler-rpg-foundation.md`](tactical-battler-rpg-foundation.md). The accepted larger-map direction is recorded in [`planning/decisions/0006-scrollable-tactical-battlefields.md`](decisions/0006-scrollable-tactical-battlefields.md).
 
-Detailed sequencing, visual direction, generative-content boundaries, and acceptance criteria are recorded in [`planning/tactical-battler-rpg-foundation.md`](tactical-battler-rpg-foundation.md). The accepted larger-map direction and its relationship to retained compact arenas are recorded in [`planning/decisions/0006-scrollable-tactical-battlefields.md`](decisions/0006-scrollable-tactical-battlefields.md).
+Completed internal milestones:
 
-Planned internal sequence:
+- `TC-0001` — Complete: semantic map, weighted movement, viewport and camera, selection, legal paths, service, Canvas, replay, reconnect, and Workers recovery. See [`planning/validation/2026-07-30-tactical-canvas-canary.md`](validation/2026-07-30-tactical-canvas-canary.md).
+- `TC-0002` — Complete: initiative, multi-action activations, line of sight, attacks, health, defeat, structured effects, victory, service, combat Canvas, player-specific projections, and Workers recovery. See [`planning/validation/2026-07-30-tactical-combat-stack.md`](validation/2026-07-30-tactical-combat-stack.md).
 
-- `TC-0001`: map, viewport and camera, selection, legal movement, replay, and reconnect
-- `TC-0002`: initiative, activations, line of sight, combat, effects, and victory
-- `MM-0001`: masters, monster cubes, deployment, resources, and a complete larger-field duel
-- `MM-0002`: Theo and generic decision-provider tactical observation and legal-action integration
+Active milestone:
+
+- `MM-0001` — Active: one Master and a small monster roster per player, deployment zones, bounded resources, at least one non-generic ability, and a complete larger-field duel through rules, service, Canvas, replay, agents, and Workers runtime.
+
+Later sequence:
+
+- `MM-0002`: Theo and generic decision-provider tactical observation and legal-action integration beyond the deterministic fallback proof
 - `MM-0003`: Discord multiplayer canary
 - `MM-0004`: second-theme proof without tactical-rule changes
 
-Potential later scale variants may use larger battlefields, more units, or squad and formation entities in a turn-based strategy mode. Those possibilities should influence clean abstractions but must not expand the first battler into a Total War-scale simulation before the small-force tactical loop is proven.
+Monster Master, future RPG encounters, and D&D-style encounters may reuse map, encounter, replay, identity, storage, service, projection, and rendering infrastructure without sharing a single game definition, turn economy, action schema, or rules implementation.
+
+Potential later scale variants may use larger battlefields, more units, squad entities, open-world maps, NPC interaction, or encounter transitions. Those possibilities should influence clean encounter and content boundaries but must not expand the first playable duel into a full campaign before the tactical loop is proven.
 
 ### GF-0011 — RPG encounter and campaign foundation
 
-Wrap the tactical core with persistent party, exploration, inventory, quest, and campaign state. Enter combat through a structured encounter configuration and return authoritative tactical outcomes to the campaign rather than reconstructing results from narration.
+Wrap the tactical core with persistent party, exploration, inventory, quest, dialogue, and campaign state. Enter combat through a structured encounter configuration and return authoritative tactical outcomes to the campaign rather than reconstructing results from narration.
+
+A future open-world layer may place NPCs, points of interest, dialogue, and encounter triggers on larger semantic maps. It should launch explicit encounter definitions rather than blending exploration narration and combat authority into one unbounded state machine.
 
 After the encounter wrapper is proven, add a bounded Game Director hosted through Scribbles Runtime. The Director narrates, portrays nonplayer characters, and proposes permitted campaign operations; GameFrame remains the rules authority, and Theo remains a player without access to Director-only or hidden campaign information.
+
+D&D-style encounters should be implemented as a separate rules definition or family of definitions. They may reuse the platform and tactical substrate while retaining their own initiative, actions, reactions, conditions, resources, character data, and licensing boundary.
 
 ### GF-0020 — Specialist chess module
 
