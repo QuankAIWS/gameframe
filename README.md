@@ -2,7 +2,7 @@
 
 Scribbles GameFrame is the deterministic multiplayer game platform for the Scribbles architecture. It owns game sessions, legal-action validation, event history, player observations, browser delivery, and the integration boundaries for Discord Activities and Scribbles Runtime. Individual games remain explicit modules rather than being forced into one generalized rules engine.
 
-Theo is the public-facing Scribbles agent and the first registered nonhuman GameFrame player. The platform proof now includes complete Tic-Tac-Toe and American Checkers paths, a versioned decision-provider contract, a larger-field tactical map and movement client, a complete deterministic tactical combat stack, and production-shaped Cloudflare/Discord identity and multiplayer boundaries.
+Theo is the public-facing Scribbles agent and the first registered nonhuman GameFrame player. The platform proof now includes complete Tic-Tac-Toe and American Checkers paths, a versioned decision-provider contract, a larger-field tactical map and movement client, a complete deterministic tactical combat stack, production-shaped Cloudflare/Discord identity and multiplayer boundaries, and a browser-journey and visual-regression foundation for future game surfaces.
 
 ## Current status
 
@@ -27,6 +27,9 @@ Implemented in the validated platform proofs:
 - HTTP polling fallback and WebSocket projection reconnect behavior
 - Responsive browser and tactical Canvas surfaces
 - Real Playwright browser acceptance through the ordinary application boundary
+- Risk-based browser journey ledger covering current controls and outstanding states
+- Deliberate 18-state curated visual-review artifacts
+- Four canonical Ubuntu/Chromium visual baselines for stable shell states
 - Real Workers-runtime persistence, eviction, competing-write, hibernating-WebSocket, authentication, Activity, and invitation tests
 
 Tic-Tac-Toe proof:
@@ -79,6 +82,15 @@ Secure delivery proof:
 - Discord direct human-seat spoofing rejection
 - Authenticated inviter and recipient browser flows
 
+Browser quality proof:
+
+- A durable journey matrix inventories every current player-facing control and security-sensitive transition
+- Twenty-two Playwright interaction journeys cover game navigation, diagnostics, setup reset, camera controls, logout, clipboard, invitation cancellation, multiplayer, resume, mobile layout, and error presentation
+- A deliberate label-triggered visual-review lane captures 18 synthetic desktop, mobile, game, tactical, authentication, and invitation states with seven-day retention
+- Four stable shell compositions are protected by canonical screenshot comparison
+- Dynamic Canvas and match states remain in curated review rather than brittle pixel baselines
+- Screenshot review corrected tactical badge overlap, unbounded legal-action lists, and Checkers capture timing
+
 The active gameplay lane remains MM-0001: the first playable Monster Master duel in the monster-master tactical battler foundation. The repository is ready for owner-controlled Cloudflare deployment and live Discord website/Activity canaries; those live results are not yet claimed.
 
 ## Canonical checkpoints
@@ -93,6 +105,7 @@ The active gameplay lane remains MM-0001: the first playable Monster Master duel
 - Production Discord website identity and session boundary validated and merged on July 30, 2026
 - Official Discord Activity SDK client handshake validated and merged on July 30, 2026
 - Authenticated human-match invitation boundary validated and merged on July 30, 2026
+- Browser journey, curated visual review, and stable visual baselines validated and merged on July 30, 2026
 
 Durable evidence:
 
@@ -106,6 +119,7 @@ Durable evidence:
 - `planning/validation/2026-07-30-discord-authentication-boundary.md`
 - `planning/validation/2026-07-30-discord-activity-client.md`
 - `planning/validation/2026-07-30-authenticated-match-invitations.md`
+- `planning/validation/2026-07-30-browser-journey-visual-hardening.md`
 
 Not yet claimed:
 
@@ -129,6 +143,8 @@ npx playwright install chromium
 npm test
 npm run test:workerd
 npm run test:browser
+npm run test:visual
+npm run test:visual-baseline
 npm run validate
 npm run dev
 ```
@@ -148,15 +164,17 @@ src/games/checkers/           American Checkers rules and deterministic opponent
 src/games/tactical-core/      semantic map, movement, and viewport-neutral contracts
 src/games/tactical-combat/    initiative, line of sight, combat, effects, and agents
 src/auth/                     principals, sessions, Discord OAuth/Activity, and invitations
-src/browser/                  bundled browser integration entry points
+src/browser/                  browser integration and durable journey/visual contracts
 src/agents/                   versioned decision contracts, mocks, and agent implementations
 src/server/                   authoritative multi-game services and local HTTP host
 src/scripts/                  repository self-checks
 public/                       responsive game, auth, invitation, and tactical Canvas clients
-test/browser/                 real Playwright acceptance across all browser surfaces
+test/browser/                 real Playwright interaction journeys
+test/visual/                  curated screenshot review states
+test/visual-baseline/         narrow committed visual regression baselines
 test/fixtures/                cross-repository compatibility fixtures
 test/workerd/                 real multi-game Workers-runtime integration tests
-planning/                     architecture, deployment, roadmap, rules, contracts, and validation doctrine
+planning/                     architecture, deployment, roadmap, rules, contracts, journeys, and validation doctrine
 src/cloudflare/               Worker, Durable Objects, invitations, storage, and projection adapters
 ```
 
@@ -178,6 +196,6 @@ Security vulnerabilities should be reported through the private process in `SECU
 
 Scribbles GameFrame and Scribbles Runtime are peer systems. GameFrame remains independently testable with deterministic or mock participants. Scribbles Runtime integrates through the explicit versioned decision-provider contract and acts on behalf of Theo; it does not become the game authority or the player identity.
 
-Monster Master, future RPG encounters, and D&D-style encounters may reuse map, encounter, replay, service, storage, projection, identity, invitation, and rendering infrastructure while retaining separate game definitions, turn structures, action economies, content models, and rules.
+Monster Master, future RPG encounters, and D&D-style encounters may reuse map, encounter, replay, service, storage, projection, identity, invitation, browser-journey, visual-review, and rendering infrastructure while retaining separate game definitions, turn structures, action economies, content models, and rules.
 
 See `AGENTS.md` before consequential development work.
