@@ -166,7 +166,7 @@ When Scribbles Runtime is available, implement the accepted versioned decision-p
 
 Retain deterministic fallback behavior and fail closed on malformed, stale, illegal, mismatched, or unauthorized Runtime responses.
 
-### GF-0010 — Monster-master tactical battler foundation — Repository candidate
+### GF-0010 — Monster-master tactical battler foundation — Repository candidate — Active
 
 Build the first substantial original GameFrame game now that the platform has survived browser acceptance, the mock-agent boundary, American Checkers, larger-field tactical movement, and deterministic tactical combat.
 
