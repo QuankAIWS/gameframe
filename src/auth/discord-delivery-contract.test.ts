@@ -11,6 +11,7 @@ test("Discord authentication remains a provider boundary rather than game author
   const wrangler = await read("wrangler.jsonc");
   const launcher = await read("public/auth-launcher.js");
   const identity = await read("public/gameframe-auth.js");
+  const invitations = await read("public/secure-match-invite.js");
 
   assert.match(oauth, /DiscordOAuthStateCodec/);
   assert.match(oauth, /DISCORD_ALLOWED_USER_IDS/);
@@ -32,11 +33,14 @@ test("Discord authentication remains a provider boundary rather than game author
     "/auth/discord/activity/session",
     "/api/session",
     "/auth/logout",
+    "/api/invitations",
+    "/api/invitations/claim",
   ]) {
     assert.match(router, new RegExp(route.replaceAll("/", "\\/")));
   }
-  assert.match(router, /requirePrincipalSeat/);
+  assert.match(router, /requireDirectMatchCreationPolicy/);
   assert.match(router, /SignedCookieSessionAuthenticator/);
+  assert.match(router, /authenticatedInvitations: true/);
   assert.doesNotMatch(router, /x-gameframe-player-id/);
 
   for (const requiredBinding of [
@@ -51,7 +55,10 @@ test("Discord authentication remains a provider boundary rather than game author
 
   assert.match(launcher, /establishGameFrameIdentity/);
   assert.match(launcher, /url\.searchParams\.delete\("player"\)/);
-  assert.match(launcher, /Verified friend invites are not enabled/);
+  assert.match(launcher, /installAuthenticatedInvitationFlow/);
+  assert.doesNotMatch(launcher, /Verified friend invites are not enabled/);
+  assert.match(invitations, /\/api\/invitations/);
+  assert.doesNotMatch(invitations, /player=/);
   assert.match(identity, /\/auth\/discord\/start/);
   assert.match(identity, /\/api\/session/);
 });
@@ -61,6 +68,7 @@ test("every browser surface resolves server identity before loading game code", 
     ["public/index.html", "/app.js"],
     ["public/tactical.html", "/tactical-app.js"],
     ["public/combat.html", "/combat-app.js"],
+    ["public/invite.html", "/invite-app.js"],
   ] as const;
 
   for (const [path, entry] of pages) {

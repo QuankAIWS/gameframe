@@ -1,7 +1,9 @@
 import {
+  AuthenticationError,
   RejectingRequestAuthenticator,
   rejectIdentityClaim,
   requirePrincipalSeat,
+  type AuthenticatedPrincipal,
   type RequestAuthenticator,
 } from "../auth/request-authenticator.ts";
 import {
@@ -20,6 +22,7 @@ import {
   createDiscordActivitySessionCookie,
   createWebsiteSessionCookie,
 } from "../auth/signed-session.ts";
+import { InvitationCoordinator } from "./invitation-coordinator.ts";
 import { errorResponse, json, readJson } from "./http-utils.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
@@ -37,6 +40,15 @@ function publicMatchRoute(pathname: string): { matchId: string; operation: Match
   return {
     matchId: decodeURIComponent(match[1]),
     operation: (match[2] as MatchOperation | undefined) ?? "view",
+  };
+}
+
+function invitationRoute(pathname: string): { invitationId: string; cancel: boolean } | null {
+  const match = /^\/api\/invitations\/([^/]+)(\/cancel)?$/.exec(pathname);
+  if (!match) return null;
+  return {
+    invitationId: decodeURIComponent(match[1]),
+    cancel: Boolean(match[2]),
   };
 }
 
@@ -60,6 +72,23 @@ function sessionResponse(principal: Awaited<ReturnType<RequestAuthenticator["aut
     displayName: principal.displayName ?? null,
     avatarUrl: principal.avatarUrl ?? null,
   };
+}
+
+function requireDirectMatchCreationPolicy(
+  principal: AuthenticatedPrincipal,
+  playerIds: readonly string[],
+): void {
+  requirePrincipalSeat(principal, playerIds);
+  if (principal.source !== "discord") return;
+  const validTheoMatch = playerIds.length === 2
+    && playerIds.filter((playerId) => playerId === principal.playerId).length === 1
+    && playerIds.filter((playerId) => playerId === "theo").length === 1;
+  if (!validTheoMatch) {
+    throw new AuthenticationError(
+      "forbidden",
+      "Discord-authenticated human matches require a signed invitation and second-user claim.",
+    );
+  }
 }
 
 export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
@@ -92,6 +121,10 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
     return cachedSessionAuthenticator.authenticator;
   }
 
+  function invitationsFor(env: GameFrameWorkerEnv): InvitationCoordinator {
+    return new InvitationCoordinator(env, env.SESSION_SECRET ?? "", { idGenerator });
+  }
+
   return {
     async fetch(request: Request, env: GameFrameWorkerEnv): Promise<Response> {
       try {
@@ -106,6 +139,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
             realtime: "websocket-hibernation",
             authentication: "discord-oauth-session",
             discordActivity: true,
+            authenticatedInvitations: true,
             games: [
               "tic-tac-toe",
               "american-checkers",
@@ -197,13 +231,41 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
           return json(200, { authenticated: false }, { "set-cookie": cookie });
         }
 
+        if (request.method === "POST" && url.pathname === "/api/invitations") {
+          const principal = await authenticator.authenticate(request);
+          return json(201, await invitationsFor(env).create(
+            url.origin,
+            principal,
+            await readJson(request),
+          ));
+        }
+
+        if (request.method === "POST" && url.pathname === "/api/invitations/claim") {
+          const principal = await authenticator.authenticate(request);
+          const body = await readJson(request);
+          return json(200, await invitationsFor(env).claim(
+            principal,
+            String(body.token ?? ""),
+          ));
+        }
+
+        const inviteRoute = invitationRoute(url.pathname);
+        if (inviteRoute && request.method === "GET" && !inviteRoute.cancel) {
+          const principal = await authenticator.authenticate(request);
+          return json(200, await invitationsFor(env).view(inviteRoute.invitationId, principal));
+        }
+        if (inviteRoute && request.method === "POST" && inviteRoute.cancel) {
+          const principal = await authenticator.authenticate(request);
+          return json(200, await invitationsFor(env).cancel(inviteRoute.invitationId, principal));
+        }
+
         if (request.method === "POST" && url.pathname === "/api/matches") {
           const principal = await authenticator.authenticate(request);
           const body = await readJson(request);
           const playerIds = Array.isArray(body.playerIds)
             ? body.playerIds.map((playerId) => String(playerId))
             : [];
-          requirePrincipalSeat(principal, playerIds);
+          requireDirectMatchCreationPolicy(principal, playerIds);
           const matchId = idGenerator();
           return stubFor(env, matchId).fetch(new Request("https://match.internal/initialize", {
             method: "POST",

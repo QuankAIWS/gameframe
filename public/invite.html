@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="referrer" content="no-referrer">
+  <title>Claim GameFrame Invitation · Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/gameframe-auth.css">
+</head>
+<body>
+  <main class="shell invite-claim-shell">
+    <header class="hero">
+      <p class="eyebrow">SCRIBBLES GAMEFRAME</p>
+      <h1>Authenticated match invitation</h1>
+      <p class="hero-copy">This link identifies an open match seat, not a player. Your signed Discord-backed GameFrame session must claim the seat before the match is created.</p>
+    </header>
+
+    <section class="panel invite-claim-panel" aria-labelledby="invite-claim-status">
+      <p class="section-label">SECOND-SEAT CLAIM</p>
+      <h2 id="invite-claim-status" role="status" aria-live="polite">Verifying the invitation…</h2>
+      <p id="invite-claim-details" class="muted">Checking the signed invitation and your authenticated identity.</p>
+      <a id="invite-open-match" class="gameframe-auth-button" href="/" hidden>Open the match</a>
+      <p class="gameframe-invite-note">GameFrame never accepts a player identity from this URL. A successful claim binds the second seat to the Discord user in the signed session.</p>
+    </section>
+  </main>
+  <script type="module" src="/auth-launcher.js" data-entry="/invite-app.js"></script>
+</body>
+</html>
