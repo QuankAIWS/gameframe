@@ -4,13 +4,16 @@ export interface ApiError extends Error {
 }
 
 export function json(status: number, value: unknown, headers: HeadersInit = {}): Response {
+  const responseHeaders = new Headers(headers);
+  if (!responseHeaders.has("content-type")) {
+    responseHeaders.set("content-type", "application/json; charset=utf-8");
+  }
+  if (!responseHeaders.has("cache-control")) {
+    responseHeaders.set("cache-control", "no-store");
+  }
   return new Response(JSON.stringify(value), {
     status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store",
-      ...headers,
-    },
+    headers: responseHeaders,
   });
 }
 
