@@ -23,6 +23,10 @@ function developmentIdentity(preferred) {
   return created;
 }
 
+function isDiscordActivity() {
+  return /^\d+\.discordsays\.com$/i.test(window.location.hostname);
+}
+
 function returnTo() {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }
@@ -33,7 +37,10 @@ function loginUrl() {
   return url.toString();
 }
 
-function renderAuthenticationGate(message = "Sign in with Discord to use this hosted GameFrame deployment.") {
+function renderAuthenticationGate(
+  message = "Sign in with Discord to use this hosted GameFrame deployment.",
+  options = {},
+) {
   let gate = document.querySelector("#gameframe-auth-gate");
   if (!gate) {
     gate = document.createElement("section");
@@ -46,13 +53,19 @@ function renderAuthenticationGate(message = "Sign in with Discord to use this ho
         <h1>Discord sign-in required</h1>
         <p data-auth-message></p>
         <a class="gameframe-auth-button" data-auth-login>Sign in with Discord</a>
+        <button class="gameframe-auth-button" type="button" data-auth-retry hidden>Retry Activity authentication</button>
         <small>Game commands use the signed GameFrame session. Discord does not control game rules or match state.</small>
       </div>
     `;
     document.body.append(gate);
   }
   gate.querySelector("[data-auth-message]").textContent = message;
-  gate.querySelector("[data-auth-login]").href = loginUrl();
+  const login = gate.querySelector("[data-auth-login]");
+  const retry = gate.querySelector("[data-auth-retry]");
+  login.href = loginUrl();
+  login.hidden = Boolean(options.activity);
+  retry.hidden = !options.activity;
+  retry.onclick = options.activity ? () => window.location.reload() : null;
   document.documentElement.classList.add("gameframe-auth-blocked");
 }
 
@@ -88,9 +101,26 @@ async function readSession(preferredDevelopmentPlayerId) {
   });
 }
 
+async function establishActivitySession() {
+  const { bootstrapDiscordActivitySession } = await import("/discord-activity-bootstrap.js");
+  return bootstrapDiscordActivitySession();
+}
+
 export async function establishGameFrameIdentity(options = {}) {
   if (installedIdentity) return installedIdentity;
-  const response = await readSession(options.preferredDevelopmentPlayerId);
+  let response = await readSession(options.preferredDevelopmentPlayerId);
+  if (response.status === 401 && isDiscordActivity()) {
+    try {
+      await establishActivitySession();
+      response = await readSession(options.preferredDevelopmentPlayerId);
+    } catch (error) {
+      renderAuthenticationGate(
+        error instanceof Error ? error.message : "Discord Activity authentication failed.",
+        { activity: true },
+      );
+      return new Promise(() => {});
+    }
+  }
   if (response.status === 401) {
     renderAuthenticationGate();
     return new Promise(() => {});
@@ -119,7 +149,10 @@ export async function gameFrameFetch(url, options = {}, identity = installedIden
     credentials: "same-origin",
   });
   if (response.status === 401 && identity.source !== "development") {
-    renderAuthenticationGate("Your GameFrame session expired. Sign in again to continue.");
+    renderAuthenticationGate(
+      "Your GameFrame session expired. Sign in again to continue.",
+      { activity: isDiscordActivity() },
+    );
   }
   return response;
 }
