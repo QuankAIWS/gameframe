@@ -32,6 +32,9 @@ export interface AssetFetcherLike {
 
 export interface GameFrameWorkerEnv {
   SESSION_SECRET?: string;
+  DISCORD_CLIENT_ID?: string;
+  DISCORD_CLIENT_SECRET?: string;
+  DISCORD_ALLOWED_USER_IDS?: string;
   MATCHES: DurableObjectNamespaceLike;
   ASSETS?: AssetFetcherLike;
 }
