@@ -69,7 +69,7 @@ Canonically validated implementation:
 
 The frozen candidate passed GitHub-hosted Canonical Validation run #36 (`30492977351`) and was squash-merged as `42d6cd3da2f4a1b110fa3debd9df9da016fb2351`. See [`planning/validation/2026-07-29-tic-tac-toe-browser-proof.md`](validation/2026-07-29-tic-tac-toe-browser-proof.md). No deployed Cloudflare behavior is claimed by this milestone.
 
-### GF-0004 — Secure Cloudflare and Discord delivery — Repository ready; live canaries pending
+### GF-0004 — Paused live canaries; secure repository ready
 
 The production-shaped delivery boundaries are implemented and canonically validated:
 
