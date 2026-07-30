@@ -686,12 +686,12 @@ function advanceActivation(state: MonsterMasterState): void {
   } while (state.activeActivationIndex !== startIndex);
 
   if (wrapped) {
-    state.round += 1;
-    if (state.round > state.maxRounds) {
+    if (state.round >= state.maxRounds) {
       state.draw = true;
       state.lastEffects.push({ type: "duel-completed", winnerPlayerId: null, draw: true });
       return;
     }
+    state.round += 1;
     state.lastEffects.push({ type: "round-started", round: state.round });
     state.lastEffects.push(...restoreCommandAtRoundStart(state));
   }
