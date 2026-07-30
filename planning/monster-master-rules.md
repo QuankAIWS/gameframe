@@ -96,7 +96,7 @@ The Warden Master may use `Mend` as its primary action:
 
 - Defeating the opposing Master immediately wins the duel.
 - Remaining monsters do not prevent Master-defeat victory.
-- A deterministic maximum-round bound produces a draw if neither Master is defeated.
+- If neither Master is defeated, the duel becomes a draw when the final activation of round 24 ends. The authoritative round remains 24; a phantom round 25 is not started.
 
 Alternative objectives, capture points, escort rules, monster elimination, retreats, surrender, and multi-stage encounters remain future rules.
 
