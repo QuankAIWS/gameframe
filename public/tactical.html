@@ -123,6 +123,18 @@
       </details>
     </section>
   </main>
+  <script>
+    // Destination preview handlers redraw their button list. Stop those target-level
+    // preview events so pointer and keyboard activation commit the stable button that
+    // received the interaction; Canvas hover continues to provide path previews.
+    const preserveDestinationControl = (event) => {
+      if (event.target instanceof Element && event.target.matches("#tactical-destinations button")) {
+        event.stopImmediatePropagation();
+      }
+    };
+    document.addEventListener("mouseenter", preserveDestinationControl, true);
+    document.addEventListener("focus", preserveDestinationControl, true);
+  </script>
   <script type="module" src="/tactical-app.js"></script>
 </body>
 </html>
