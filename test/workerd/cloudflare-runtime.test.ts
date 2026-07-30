@@ -37,10 +37,36 @@ interface CheckersMatchView {
   };
 }
 
+interface TacticalMoveAction {
+  type: "move";
+  unitId: string;
+  from: { x: number; y: number };
+  path: Array<{ x: number; y: number }>;
+  movementCost: number;
+}
+
+interface TacticalMatchView {
+  gameId: "tactical-movement-canary";
+  matchId: string;
+  revision: number;
+  playerIds: string[];
+  observation: {
+    board: {
+      map: { width: number; height: number; cells: unknown[] };
+      units: Array<{ id: string; ownerId: string; position: { x: number; y: number } }>;
+    };
+    activePlayerId: string | null;
+    activeUnitId: string | null;
+    legalActions: TacticalMoveAction[];
+  };
+}
+
+type PublicMatchView = TicTacToeMatchView | CheckersMatchView | TacticalMatchView;
+
 interface MatchStateMessage {
   type: "match_state";
   reason: "initial" | "update" | "refresh";
-  view: TicTacToeMatchView | CheckersMatchView;
+  view: PublicMatchView;
 }
 
 async function cookieFor(playerId: string): Promise<string> {
@@ -63,15 +89,15 @@ async function workerFetch(
 
 async function createMatch(
   playerIds: [string, string],
-  gameId: "tic-tac-toe" | "american-checkers" = "tic-tac-toe",
-): Promise<TicTacToeMatchView | CheckersMatchView> {
+  gameId: "tic-tac-toe" | "american-checkers" | "tactical-movement-canary" = "tic-tac-toe",
+): Promise<PublicMatchView> {
   const response = await workerFetch("/api/matches", playerIds[0], {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ gameId, playerIds }),
   });
   expect(response.status).toBe(201);
-  return response.json() as Promise<TicTacToeMatchView | CheckersMatchView>;
+  return response.json() as Promise<PublicMatchView>;
 }
 
 function decodeSocketData(data: string | ArrayBuffer): string {
@@ -105,11 +131,15 @@ function matchStub(matchId: string): any {
 }
 
 describe("GameFrame real workerd runtime", () => {
-  it("advertises both supported games", async () => {
+  it("advertises every supported deterministic game", async () => {
     const response = await workerExports.default.fetch(new Request("https://games.example/api/health"));
     expect(response.status).toBe(200);
     const health = await response.json() as { games: string[] };
-    expect(health.games).toEqual(["tic-tac-toe", "american-checkers"]);
+    expect(health.games).toEqual([
+      "tic-tac-toe",
+      "american-checkers",
+      "tactical-movement-canary",
+    ]);
   });
 
   it("restores committed tic-tac-toe state after Durable Object eviction", async () => {
@@ -183,6 +213,50 @@ describe("GameFrame real workerd runtime", () => {
     expect(restoredResponse.status).toBe(200);
     const restored = await restoredResponse.json() as CheckersMatchView;
     expect(restored.gameId).toBe("american-checkers");
+    expect(restored.revision).toBe(advanced.revision);
+    expect(restored.observation.board).toEqual(advanced.observation.board);
+    expect(restored.observation.legalActions).toEqual(advanced.observation.legalActions);
+  });
+
+  it("restores tactical state and canonical paths after Durable Object eviction", async () => {
+    const created = await createMatch(
+      ["tactical-human", "theo"],
+      "tactical-movement-canary",
+    ) as TacticalMatchView;
+    expect(created.gameId).toBe("tactical-movement-canary");
+    expect(created.observation.board.map.width).toBe(24);
+    expect(created.observation.board.map.height).toBe(24);
+    expect(created.observation.legalActions.length).toBeGreaterThan(0);
+
+    const action = created.observation.legalActions[0];
+    expect(action.path.length).toBeGreaterThan(0);
+    const actionResponse = await workerFetch(
+      `/api/matches/${encodeURIComponent(created.matchId)}/actions`,
+      "tactical-human",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          actionId: "workerd-tactical-human-1",
+          expectedRevision: 0,
+          action,
+        }),
+      },
+    );
+    expect(actionResponse.status).toBe(200);
+    const advanced = await actionResponse.json() as TacticalMatchView;
+    expect(advanced.revision).toBe(2);
+    expect(advanced.observation.activePlayerId).toBe("tactical-human");
+
+    await evictDurableObject(matchStub(created.matchId));
+
+    const restoredResponse = await workerFetch(
+      `/api/matches/${encodeURIComponent(created.matchId)}`,
+      "tactical-human",
+    );
+    expect(restoredResponse.status).toBe(200);
+    const restored = await restoredResponse.json() as TacticalMatchView;
+    expect(restored.gameId).toBe("tactical-movement-canary");
     expect(restored.revision).toBe(advanced.revision);
     expect(restored.observation.board).toEqual(advanced.observation.board);
     expect(restored.observation.legalActions).toEqual(advanced.observation.legalActions);
