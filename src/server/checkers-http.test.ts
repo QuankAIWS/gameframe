@@ -27,6 +27,7 @@ test("HTTP health advertises every supported deterministic game", async (context
     "american-checkers",
     "tactical-movement-canary",
     "tactical-combat-canary",
+    "monster-master-duel",
   ]);
 });
 
@@ -120,9 +121,7 @@ test("HTTP boundary runs complete multi-action Theo combat activations", async (
   assert.equal(created.observation.board.units.length, 4);
   assert.equal(created.observation.activeUnitId, "alpha-vanguard");
 
-  const endActivation = created.observation.legalActions.find((action: { type: string }) => (
-    action.type === "end-activation"
-  ));
+  const endActivation = created.observation.legalActions.find((action: { type: string }) => action.type === "end-activation");
   assert.ok(endActivation);
   const advancedResponse = await authenticatedFetch(
     `${base}/api/matches/${created.matchId}/actions`,
@@ -157,9 +156,7 @@ test("HTTP boundary supports separate human tactical combat seats", async (conte
     }),
   }).then((response) => response.json());
 
-  const endActivation = created.observation.legalActions.find((action: { type: string }) => (
-    action.type === "end-activation"
-  ));
+  const endActivation = created.observation.legalActions.find((action: { type: string }) => action.type === "end-activation");
   assert.ok(endActivation);
   const afterAlpha = await authenticatedFetch(
     `${base}/api/matches/${created.matchId}/actions`,
