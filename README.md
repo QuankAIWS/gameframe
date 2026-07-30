@@ -63,7 +63,7 @@ Agent-provider proof:
 - Deterministic, scripted, seeded-random, delayed, unavailable, malformed, illegal, duplicate, stale, and mismatched mock-provider modes
 - Canonical JSON fixtures for independent Scribbles Runtime compatibility work
 
-The active development lane is MM-0001: the first playable Monster Master duel built as its own game definition over the validated tactical substrate. The standalone Cloudflare and Discord deployment canaries remain paused until the repository owner is available for setup; they are not treated as complete.
+The active development lane is MM-0001: the first playable Monster Master duel in the monster-master tactical battler foundation, built as its own game definition over the validated tactical substrate. The standalone Cloudflare and Discord deployment canaries remain paused until the repository owner is available for setup; they are not treated as complete.
 
 ## Canonical checkpoints
 
