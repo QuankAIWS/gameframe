@@ -16,14 +16,26 @@ assert.equal(
   "vitest run --config vitest.config.ts --max-workers=1 --no-isolate",
 );
 assert.equal(packageJson.scripts["test:browser"], "playwright test --config playwright.config.mjs");
+assert.equal(packageJson.scripts["build:activity"], "node scripts/build-activity-bundle.mjs");
+assert.equal(packageJson.scripts["check:activity"], "node scripts/build-activity-bundle.mjs --check");
 assert.match(packageJson.scripts.validate, /npm run test:workerd/);
+assert.match(packageJson.scripts.validate, /npm run check:activity/);
 assert.match(packageJson.scripts.validate, /npm run test:browser/);
-for (const browserEntry of ["public/app.js", "public/tactical-app.js", "public/combat-app.js"]) {
+for (const browserEntry of [
+  "public/discord-activity-bootstrap.js",
+  "public/gameframe-auth.js",
+  "public/auth-launcher.js",
+  "public/app.js",
+  "public/tactical-app.js",
+  "public/combat-app.js",
+]) {
   assert.match(packageJson.scripts["check:browser"], new RegExp(browserEntry.replaceAll(".", "\\.")));
 }
 assert.deepEqual(packageJson.devDependencies, {
   "@cloudflare/vitest-pool-workers": "0.19.0",
+  "@discord/embedded-app-sdk": "2.5.0",
   "@playwright/test": "1.61.1",
+  esbuild: "0.28.1",
   vitest: "4.1.10",
   wrangler: "4.115.0",
 });
@@ -32,11 +44,13 @@ const durableFiles = [
   "README.md",
   "AGENTS.md",
   "NOTICE",
+  "THIRD_PARTY_NOTICES.md",
   "CONTRIBUTING.md",
   "SECURITY.md",
   "package-lock.json",
   "playwright.config.mjs",
   "vitest.config.ts",
+  "scripts/build-activity-bundle.mjs",
   "src/platform/match-session.ts",
   "src/platform/match-session.test.ts",
   "src/agents/index.ts",
@@ -45,6 +59,11 @@ const durableFiles = [
   "src/agents/mock-decision-provider.ts",
   "src/agents/provider-backed-agent.ts",
   "src/agents/decision-protocol.test.ts",
+  "src/auth/discord-oauth.ts",
+  "src/auth/discord-activity-client.ts",
+  "src/auth/discord-activity-client.test.ts",
+  "src/auth/discord-activity-delivery-contract.test.ts",
+  "src/browser/discord-activity-bootstrap.ts",
   "src/games/tic-tac-toe/index.ts",
   "src/games/checkers/index.ts",
   "src/games/checkers/index.test.ts",
@@ -63,6 +82,10 @@ const durableFiles = [
   "src/server/in-memory-match-service.ts",
   "src/cloudflare/match-object-runtime.ts",
   "src/cloudflare/worker-router.ts",
+  "public/discord-activity-bootstrap.js",
+  "public/gameframe-auth.js",
+  "public/gameframe-auth.css",
+  "public/auth-launcher.js",
   "public/tactical.html",
   "public/tactical-app.js",
   "public/tactical.css",
@@ -77,6 +100,7 @@ const durableFiles = [
   "test/fixtures/agent-decision/response-v1.json",
   "test/workerd/cloudflare-runtime.test.ts",
   "test/workerd/tactical-combat-runtime.test.ts",
+  "test/workerd/discord-session-runtime.test.ts",
   "planning/ROADMAP.md",
   "planning/architecture.md",
   "planning/testing-strategy.md",
@@ -85,6 +109,7 @@ const durableFiles = [
   "planning/agent-decision-protocol.md",
   "planning/checkers-rules.md",
   "planning/scribbles-runtime-integration.md",
+  "planning/discord-authentication-and-cloudflare-canary.md",
   "planning/tactical-battler-rpg-foundation.md",
   "planning/tactical-core-contract.md",
   "planning/tactical-canvas-canary.md",
@@ -118,6 +143,10 @@ await assert.rejects(
 await assert.rejects(
   access(join(repositoryRoot, "LICENSE")),
   "The proprietary public-source repository must not gain an open-source LICENSE file without an explicit decision.",
+);
+await assert.rejects(
+  access(join(repositoryRoot, ".github/workflows/activity-bundle-bootstrap.yml")),
+  "The temporary write-capable Activity bundle workflow must not remain on a final branch.",
 );
 
 const lockfile = JSON.parse(await read("package-lock.json"));
