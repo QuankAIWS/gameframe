@@ -18,6 +18,9 @@ assert.equal(
 assert.equal(packageJson.scripts["test:browser"], "playwright test --config playwright.config.mjs");
 assert.match(packageJson.scripts.validate, /npm run test:workerd/);
 assert.match(packageJson.scripts.validate, /npm run test:browser/);
+for (const browserEntry of ["public/app.js", "public/tactical-app.js", "public/combat-app.js"]) {
+  assert.match(packageJson.scripts["check:browser"], new RegExp(browserEntry.replaceAll(".", "\\.")));
+}
 assert.deepEqual(packageJson.devDependencies, {
   "@cloudflare/vitest-pool-workers": "0.19.0",
   "@playwright/test": "1.61.1",
@@ -34,6 +37,8 @@ const durableFiles = [
   "package-lock.json",
   "playwright.config.mjs",
   "vitest.config.ts",
+  "src/platform/match-session.ts",
+  "src/platform/match-session.test.ts",
   "src/agents/index.ts",
   "src/agents/agent-player.ts",
   "src/agents/decision-protocol.ts",
@@ -44,16 +49,34 @@ const durableFiles = [
   "src/games/checkers/index.ts",
   "src/games/checkers/index.test.ts",
   "src/games/checkers/integration.test.ts",
+  "src/games/tactical-core/index.ts",
+  "src/games/tactical-combat/index.ts",
+  "src/games/tactical-combat/index.test.ts",
+  "src/games/tactical-combat/repository-contract.test.ts",
   "src/server/tic-tac-toe-match-service.ts",
   "src/server/checkers-match-service.ts",
   "src/server/checkers-match-service.test.ts",
+  "src/server/tactical-movement-match-service.ts",
+  "src/server/tactical-combat-match-service.ts",
+  "src/server/tactical-combat-match-service.test.ts",
   "src/server/checkers-http.test.ts",
   "src/server/in-memory-match-service.ts",
+  "src/cloudflare/match-object-runtime.ts",
+  "src/cloudflare/worker-router.ts",
+  "public/tactical.html",
+  "public/tactical-app.js",
+  "public/tactical.css",
+  "public/combat.html",
+  "public/combat-app.js",
+  "public/combat.css",
   "test/browser/tic-tac-toe.spec.mjs",
   "test/browser/checkers.spec.mjs",
+  "test/browser/tactical-movement.spec.mjs",
+  "test/browser/tactical-combat.spec.mjs",
   "test/fixtures/agent-decision/request-v1.json",
   "test/fixtures/agent-decision/response-v1.json",
   "test/workerd/cloudflare-runtime.test.ts",
+  "test/workerd/tactical-combat-runtime.test.ts",
   "planning/ROADMAP.md",
   "planning/architecture.md",
   "planning/testing-strategy.md",
@@ -63,6 +86,9 @@ const durableFiles = [
   "planning/checkers-rules.md",
   "planning/scribbles-runtime-integration.md",
   "planning/tactical-battler-rpg-foundation.md",
+  "planning/tactical-core-contract.md",
+  "planning/tactical-canvas-canary.md",
+  "planning/tactical-combat-contract.md",
   "planning/decisions/0001-zero-dependency-walking-skeleton.md",
   "planning/decisions/0002-websockets-are-projections.md",
   "planning/decisions/0003-server-derived-player-identity.md",
@@ -252,9 +278,43 @@ const checkersService = await read("src/server/checkers-match-service.ts");
 assert.match(checkersService, /chooseAgentDecision/);
 assert.match(checkersService, /DeterministicCheckersPlayer\("theo"\)/);
 
+const matchSession = await read("src/platform/match-session.ts");
+assert.match(matchSession, /initialState\?: State/);
+assert.match(matchSession, /snapshot\.initialState/);
+assert.match(matchSession, /snapshot\.rejectedActions \?\? \[\]/);
+
 const multiGameService = await read("src/server/in-memory-match-service.ts");
-assert.match(multiGameService, /"tic-tac-toe" \| "american-checkers"/);
-assert.match(multiGameService, /InMemoryGameFrameService/);
+for (const gameId of [
+  "tic-tac-toe",
+  "american-checkers",
+  "tactical-movement-canary",
+  "tactical-combat-canary",
+]) {
+  assert.match(multiGameService, new RegExp(`"${gameId}"`));
+}
+assert.match(multiGameService, /InMemoryTacticalCombatService/);
+assert.match(multiGameService, /parseTacticalCombatAction/);
+
+const combatRules = await read("src/games/tactical-combat/index.ts");
+assert.match(combatRules, /gameId: "tactical-combat-canary"/);
+assert.match(combatRules, /DeterministicTacticalCombatPlayer/);
+assert.match(combatRules, /lineOfSightCoordinates/);
+assert.match(combatRules, /primaryActionAvailable/);
+assert.match(combatRules, /unit-defeated/);
+assert.match(combatRules, /combat-completed/);
+assert.doesNotMatch(combatRules, /Math\.random/);
+
+const combatService = await read("src/server/tactical-combat-match-service.ts");
+assert.match(combatService, /chooseAgentDecision/);
+assert.match(combatService, /DeterministicTacticalCombatPlayer\("theo"\)/);
+assert.match(combatService, /actionCount < 8/);
+
+const combatClient = await read("public/combat-app.js");
+assert.match(combatClient, /tactical-combat-canary/);
+assert.match(combatClient, /data-action-kind/);
+assert.match(combatClient, /combat-effects/);
+assert.match(combatClient, /WebSocket/);
+assert.doesNotMatch(combatClient, /listTacticalMoveActions|applyAction|MatchSession/);
 
 const ticTacToeBrowserTest = await read("test/browser/tic-tac-toe.spec.mjs");
 assert.match(ticTacToeBrowserTest, /completes and resumes a deterministic match against Theo/);
@@ -266,10 +326,21 @@ assert.match(checkersBrowserTest, /deterministic American Checkers match against
 assert.match(checkersBrowserTest, /two browser seats share, play, and resume one Checkers match/);
 assert.match(checkersBrowserTest, /without horizontal overflow on mobile/);
 
+const combatBrowserTest = await read("test/browser/tactical-combat.spec.mjs");
+assert.match(combatBrowserTest, /moves, ends, observes Theo, and resumes/);
+assert.match(combatBrowserTest, /two browser seats share and advance one combat match/);
+assert.match(combatBrowserTest, /selects and commits a legal Canvas combat attack/);
+assert.match(combatBrowserTest, /without horizontal overflow on mobile/);
+
 const workerdTest = await read("test/workerd/cloudflare-runtime.test.ts");
+assert.match(workerdTest, /tactical-combat-canary/);
 assert.match(workerdTest, /restores committed Checkers state after Durable Object eviction/);
 assert.match(workerdTest, /serializes competing writes/);
 assert.match(workerdTest, /resumes a hibernatable WebSocket/);
+
+const combatWorkerdTest = await read("test/workerd/tactical-combat-runtime.test.ts");
+assert.match(combatWorkerdTest, /persists a human combat activation through Durable Object eviction/);
+assert.match(combatWorkerdTest, /commits Theo's complete multi-action activation before persistence/);
 
 const ticTacToeService = await read("src/server/tic-tac-toe-match-service.ts");
 assert.match(ticTacToeService, /PerfectTicTacToePlayer\("theo"\)/);
