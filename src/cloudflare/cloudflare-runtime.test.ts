@@ -351,8 +351,10 @@ test("Cloudflare boundary accepts a signed Discord-style session cookie", async 
   assert.equal(created.status, 201);
   assert.equal((await created.json() as any).matchId, "match-cookie");
 
+  const [payload, signature] = token.split(".");
+  const tamperedPayload = `${payload[0] === "A" ? "B" : "A"}${payload.slice(1)}`;
   const tampered = await worker.fetch(new Request("https://games.example/api/matches/match-cookie", {
-    headers: { cookie: `gameframe_session=${token.slice(0, -1)}A` },
+    headers: { cookie: `gameframe_session=${tamperedPayload}.${signature}` },
   }), env);
   assert.equal(tampered.status, 401);
 });
