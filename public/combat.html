@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090d18">
+  <title>Tactical Combat Canary · Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/tactical.css">
+  <link rel="stylesheet" href="/combat.css">
+</head>
+<body>
+  <main class="shell tactical-shell combat-shell">
+    <header class="hero tactical-hero">
+      <div>
+        <p class="eyebrow">SCRIBBLES GAMEFRAME · TC-0002</p>
+        <h1>Tactical Combat</h1>
+        <p class="hero-copy">A deterministic four-unit skirmish proving initiative, movement, line of sight, attacks, damage, defeat, replay, and resumable multiplayer on the larger battlefield.</p>
+      </div>
+      <nav class="combat-nav" aria-label="Game navigation">
+        <a class="secondary-button tactical-home-link" href="/tactical.html">Movement canary</a>
+        <a class="secondary-button tactical-home-link" href="/">Other games</a>
+      </nav>
+    </header>
+
+    <div id="combat-error" class="error-banner" role="alert" hidden></div>
+
+    <section id="combat-lobby" class="panel tactical-lobby" aria-labelledby="combat-lobby-title">
+      <p class="section-label">COMBAT CANARY</p>
+      <h2 id="combat-lobby-title">Choose an opponent</h2>
+      <p id="combat-lobby-message" class="muted" role="status">Preparing the combat client…</p>
+      <div class="mode-grid tactical-mode-grid">
+        <button id="combat-theo" class="mode-card" type="button">
+          <span class="mode-icon" aria-hidden="true">T</span>
+          <span>
+            <strong>Skirmish with Theo</strong>
+            <small>Control the blue vanguard and ranger against Theo's deterministic red team.</small>
+          </span>
+        </button>
+        <button id="combat-human" class="mode-card" type="button">
+          <span class="mode-icon duo" aria-hidden="true">2P</span>
+          <span>
+            <strong>Skirmish with a friend</strong>
+            <small>Create a second combat seat and share a resumable development invite.</small>
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <section id="combat-match" class="panel tactical-match" hidden aria-labelledby="combat-match-title">
+      <div class="match-header tactical-match-header">
+        <div>
+          <p class="section-label">ACTIVE COMBAT MATCH</p>
+          <h2 id="combat-match-title">Four-Unit Skirmish</h2>
+        </div>
+        <span id="combat-revision" class="revision">Revision —</span>
+      </div>
+
+      <div id="combat-status" class="status" role="status" aria-live="polite">Loading combat state…</div>
+
+      <div class="tactical-layout combat-layout">
+        <aside class="tactical-sidebar combat-sidebar">
+          <div class="tactical-player-grid" aria-label="Combat teams">
+            <article id="combat-player-alpha" class="player-card">
+              <span class="mark-badge tactical-alpha">A</span>
+              <span><small>Blue team</small><strong id="combat-alpha-name">Player Alpha</strong></span>
+            </article>
+            <article id="combat-player-beta" class="player-card">
+              <span class="mark-badge tactical-beta">B</span>
+              <span><small>Red team</small><strong id="combat-beta-name">Player Beta</strong></span>
+            </article>
+          </div>
+
+          <dl class="match-meta tactical-meta combat-meta">
+            <div><dt>Round</dt><dd id="combat-round">—</dd></div>
+            <div><dt>Revision</dt><dd id="combat-revision-small">—</dd></div>
+            <div><dt>Active unit</dt><dd id="combat-active-unit">—</dd></div>
+            <div><dt>Updates</dt><dd id="combat-connection">—</dd></div>
+            <div><dt>Move</dt><dd id="combat-move-budget">—</dd></div>
+            <div><dt>Attack</dt><dd id="combat-attack-budget">—</dd></div>
+          </dl>
+
+          <section class="combat-roster" aria-labelledby="combat-roster-title">
+            <h3 id="combat-roster-title">Initiative roster</h3>
+            <div id="combat-roster-list"></div>
+          </section>
+
+          <div class="tactical-controls" aria-label="Camera controls">
+            <button type="button" data-combat-pan-x="0" data-combat-pan-y="-3" aria-label="Pan camera north">↑</button>
+            <button type="button" data-combat-pan-x="-3" data-combat-pan-y="0" aria-label="Pan camera west">←</button>
+            <button type="button" id="combat-center-active">Active</button>
+            <button type="button" data-combat-pan-x="3" data-combat-pan-y="0" aria-label="Pan camera east">→</button>
+            <button type="button" data-combat-pan-x="0" data-combat-pan-y="3" aria-label="Pan camera south">↓</button>
+            <button type="button" id="combat-zoom-out" aria-label="Zoom out">−</button>
+            <button type="button" id="combat-center-field">Center</button>
+            <button type="button" id="combat-zoom-in" aria-label="Zoom in">+</button>
+          </div>
+        </aside>
+
+        <div class="tactical-stage combat-stage">
+          <div class="combat-action-bar" aria-label="Combat actions">
+            <button id="combat-select-move" type="button" class="combat-action-button">Move</button>
+            <button id="combat-select-attack" type="button" class="combat-action-button">Attack</button>
+            <button id="combat-end-activation" type="button" class="combat-action-button combat-end-button">End activation</button>
+          </div>
+          <div class="tactical-canvas-frame combat-canvas-frame">
+            <canvas id="combat-canvas" width="960" height="720" tabindex="0" aria-label="Scrollable tactical combat battlefield"></canvas>
+          </div>
+          <p id="combat-help" class="board-help">Select the active unit, then choose Move or Attack.</p>
+          <div id="combat-options" class="tactical-destinations combat-options" aria-label="Legal combat actions"></div>
+          <div id="combat-effects" class="combat-effects" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div id="combat-invite-panel" class="invite-panel" hidden>
+        <div>
+          <strong>Second-player combat invite</strong>
+          <p>This development link contains a synthetic seat identity. Production delivery replaces it with verified authentication.</p>
+        </div>
+        <div class="invite-controls">
+          <input id="combat-invite-link" type="text" readonly aria-label="Second-player combat invite link">
+          <button id="combat-copy-invite" class="secondary-button" type="button">Copy invite</button>
+        </div>
+      </div>
+
+      <div class="actions tactical-actions">
+        <button id="combat-new-match" class="secondary-button" type="button">Back to setup</button>
+      </div>
+
+      <details class="diagnostics">
+        <summary>Combat diagnostics</summary>
+        <pre id="combat-details" class="details"></pre>
+      </details>
+    </section>
+  </main>
+  <script type="module" src="/combat-app.js"></script>
+</body>
+</html>
