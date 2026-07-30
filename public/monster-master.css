@@ -1,0 +1,75 @@
+.monster-master-action-bar {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.monster-master-meta {
+  grid-template-columns: 1fr 1fr;
+}
+
+#monster-master-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #090d16;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+#monster-master-canvas:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: -3px;
+}
+
+#monster-master-roster-list {
+  display: grid;
+  gap: 7px;
+}
+
+.monster-master-mend-button {
+  border-color: #477c69;
+  background: rgba(30, 78, 62, .86);
+}
+
+.monster-master-mend-button:hover:not(:disabled),
+.monster-master-mend-button:focus-visible,
+.monster-master-mend-button[aria-pressed="true"] {
+  border-color: #78e4b4;
+  background: rgba(40, 101, 79, .94);
+}
+
+.monster-master-options button[data-action-kind="deploy-unit"] {
+  border-color: #75633e;
+  background: rgba(76, 59, 27, .88);
+}
+
+.monster-master-options button[data-action-kind="use-ability"] {
+  border-color: #3f7a67;
+  background: rgba(30, 76, 60, .88);
+}
+
+.monster-master-options button[data-action-kind="use-ability"]:hover,
+.monster-master-options button[data-action-kind="use-ability"]:focus-visible,
+.monster-master-options button[data-preview="true"][data-action-kind="use-ability"] {
+  border-color: #7ce8b8;
+  color: #d9fff0;
+}
+
+.monster-master-role-master { border-radius: 24%; }
+.monster-master-role-bulwark { border-radius: 50%; }
+.monster-master-role-emberling { transform: rotate(45deg); border-radius: 22%; }
+
+@media (max-width: 800px) {
+  .monster-master-action-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .monster-master-action-bar .combat-end-button { grid-column: auto; }
+}
+
+@media (max-width: 650px) {
+  .monster-master-action-bar { grid-template-columns: 1fr 1fr; }
+  .monster-master-action-bar .combat-end-button { grid-column: 1 / -1; }
+  #monster-master-canvas { aspect-ratio: 1 / 1; }
+}
+
+@media (max-width: 420px) {
+  .monster-master-action-bar { grid-template-columns: 1fr; }
+  .monster-master-action-bar .combat-end-button { grid-column: auto; }
+}
