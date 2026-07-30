@@ -62,7 +62,12 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
             runtime: "cloudflare",
             realtime: "websocket-hibernation",
             authentication: "required",
-            games: ["tic-tac-toe", "american-checkers", "tactical-movement-canary"],
+            games: [
+              "tic-tac-toe",
+              "american-checkers",
+              "tactical-movement-canary",
+              "tactical-combat-canary",
+            ],
           });
         }
 
