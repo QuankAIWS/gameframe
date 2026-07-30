@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090d18">
+  <title>Monster Master Duel · Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/tactical.css">
+  <link rel="stylesheet" href="/combat.css">
+  <link rel="stylesheet" href="/monster-master.css">
+</head>
+<body>
+  <main class="shell tactical-shell combat-shell monster-master-shell">
+    <header class="hero tactical-hero">
+      <div>
+        <p class="eyebrow">SCRIBBLES GAMEFRAME · MM-0001</p>
+        <h1>Monster Master</h1>
+        <p class="hero-copy">Deploy a Warden Master and two monsters, then resolve a deterministic initiative duel with movement, attacks, command energy, and Mend.</p>
+      </div>
+      <nav class="combat-nav" aria-label="Game navigation">
+        <a class="secondary-button tactical-home-link" href="/combat.html">Combat canary</a>
+        <a class="secondary-button tactical-home-link" href="/">Other games</a>
+      </nav>
+    </header>
+
+    <div id="monster-master-error" class="error-banner" role="alert" hidden></div>
+
+    <section id="monster-master-lobby" class="panel tactical-lobby" aria-labelledby="monster-master-lobby-title">
+      <p class="section-label">FIRST PLAYABLE DUEL</p>
+      <h2 id="monster-master-lobby-title">Choose an opponent</h2>
+      <p id="monster-master-lobby-message" class="muted" role="status">Preparing the duel client…</p>
+      <div class="mode-grid tactical-mode-grid">
+        <button id="monster-master-theo" class="mode-card" type="button">
+          <span class="mode-icon" aria-hidden="true">T</span>
+          <span>
+            <strong>Duel Theo</strong>
+            <small>Deploy the alpha roster against Theo's deterministic beta roster.</small>
+          </span>
+        </button>
+        <button id="monster-master-human" class="mode-card" type="button">
+          <span class="mode-icon duo" aria-hidden="true">2P</span>
+          <span>
+            <strong>Duel a friend</strong>
+            <small>Create a second authenticated seat and share a resumable invitation.</small>
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <section id="monster-master-match" class="panel tactical-match" hidden aria-labelledby="monster-master-match-title">
+      <div class="match-header tactical-match-header">
+        <div>
+          <p class="section-label">ACTIVE MONSTER MASTER DUEL</p>
+          <h2 id="monster-master-match-title">Warden Duel</h2>
+        </div>
+        <span id="monster-master-revision" class="revision">Revision —</span>
+      </div>
+
+      <div id="monster-master-status" class="status" role="status" aria-live="polite">Loading duel state…</div>
+
+      <div class="tactical-layout combat-layout">
+        <aside class="tactical-sidebar combat-sidebar">
+          <div class="tactical-player-grid" aria-label="Duelists">
+            <article id="monster-master-player-alpha" class="player-card">
+              <span class="mark-badge tactical-alpha">A</span>
+              <span><small>Alpha roster</small><strong id="monster-master-alpha-name">Player Alpha</strong></span>
+            </article>
+            <article id="monster-master-player-beta" class="player-card">
+              <span class="mark-badge tactical-beta">B</span>
+              <span><small>Beta roster</small><strong id="monster-master-beta-name">Player Beta</strong></span>
+            </article>
+          </div>
+
+          <dl class="match-meta tactical-meta combat-meta monster-master-meta">
+            <div><dt>Phase</dt><dd id="monster-master-phase">—</dd></div>
+            <div><dt>Round</dt><dd id="monster-master-round">—</dd></div>
+            <div><dt>Revision</dt><dd id="monster-master-revision-small">—</dd></div>
+            <div><dt>Active unit</dt><dd id="monster-master-active-unit">—</dd></div>
+            <div><dt>Alpha command</dt><dd id="monster-master-alpha-command">—</dd></div>
+            <div><dt>Beta command</dt><dd id="monster-master-beta-command">—</dd></div>
+            <div><dt>Move</dt><dd id="monster-master-move-budget">—</dd></div>
+            <div><dt>Primary</dt><dd id="monster-master-primary-budget">—</dd></div>
+            <div><dt>Updates</dt><dd id="monster-master-connection">—</dd></div>
+          </dl>
+
+          <section class="combat-roster monster-master-roster" aria-labelledby="monster-master-roster-title">
+            <h3 id="monster-master-roster-title">Duel roster</h3>
+            <div id="monster-master-roster-list"></div>
+          </section>
+
+          <div class="tactical-controls" aria-label="Camera controls">
+            <button type="button" data-monster-master-pan-x="0" data-monster-master-pan-y="-3" aria-label="Pan camera north">↑</button>
+            <button type="button" data-monster-master-pan-x="-3" data-monster-master-pan-y="0" aria-label="Pan camera west">←</button>
+            <button type="button" id="monster-master-center-active">Active</button>
+            <button type="button" data-monster-master-pan-x="3" data-monster-master-pan-y="0" aria-label="Pan camera east">→</button>
+            <button type="button" data-monster-master-pan-x="0" data-monster-master-pan-y="3" aria-label="Pan camera south">↓</button>
+            <button type="button" id="monster-master-zoom-out" aria-label="Zoom out">−</button>
+            <button type="button" id="monster-master-center-field">Center</button>
+            <button type="button" id="monster-master-zoom-in" aria-label="Zoom in">+</button>
+          </div>
+        </aside>
+
+        <div class="tactical-stage combat-stage">
+          <div class="combat-action-bar monster-master-action-bar" aria-label="Duel actions">
+            <button id="monster-master-select-deploy" type="button" class="combat-action-button">Deploy</button>
+            <button id="monster-master-select-move" type="button" class="combat-action-button">Move</button>
+            <button id="monster-master-select-attack" type="button" class="combat-action-button">Attack</button>
+            <button id="monster-master-select-mend" type="button" class="combat-action-button monster-master-mend-button">Mend</button>
+            <button id="monster-master-end-activation" type="button" class="combat-action-button combat-end-button">End activation</button>
+          </div>
+          <div class="tactical-canvas-frame combat-canvas-frame">
+            <canvas id="monster-master-canvas" width="960" height="720" tabindex="0" aria-label="Scrollable Monster Master battlefield"></canvas>
+          </div>
+          <p id="monster-master-help" class="board-help">Deploy your roster into the highlighted starting zone.</p>
+          <div id="monster-master-options" class="tactical-destinations combat-options monster-master-options" aria-label="Legal duel actions"></div>
+          <div id="monster-master-effects" class="combat-effects" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div id="monster-master-invite-panel" class="invite-panel" hidden>
+        <div>
+          <strong>Second-player duel invite</strong>
+          <p>This local-development link carries a synthetic seat. Hosted Discord delivery uses a signed authenticated invitation.</p>
+        </div>
+        <div class="invite-controls">
+          <input id="monster-master-invite-link" type="text" readonly aria-label="Second-player duel invite link">
+          <button id="monster-master-copy-invite" class="secondary-button" type="button">Copy invite</button>
+        </div>
+      </div>
+
+      <div class="actions tactical-actions">
+        <button id="monster-master-new-match" class="secondary-button" type="button">Back to setup</button>
+      </div>
+
+      <details class="diagnostics">
+        <summary>Duel diagnostics</summary>
+        <pre id="monster-master-details" class="details"></pre>
+      </details>
+    </section>
+  </main>
+  <script type="module" src="/auth-launcher.js" data-entry="/monster-master-app.js"></script>
+</body>
+</html>
