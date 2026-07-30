@@ -21,6 +21,7 @@ describe("Discord identity boundary in the real workerd runtime", () => {
 
     const start = await workerExports.default.fetch(new Request(
       "https://games.example/auth/discord/start?returnTo=%2Fcombat.html",
+      { redirect: "manual" },
     ));
     expect(start.status).toBe(302);
     const location = new URL(start.headers.get("location") ?? "");
