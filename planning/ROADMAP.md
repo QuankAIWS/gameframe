@@ -22,7 +22,7 @@ Current proof boundary:
 
 ## Active platform-proof sequence
 
-The accepted near-term order is recorded in [`planning/decisions/0007-platform-proof-sequence-and-mock-agents.md`](decisions/0007-platform-proof-sequence-and-mock-agents.md). The scheduling amendment in [`planning/decisions/0009-defer-external-canaries-without-blocking-development.md`](decisions/0009-defer-external-canaries-without-blocking-development.md) pauses external deployment canaries without blocking repository development. Tic-tac-toe proves the browser and repository stack, American checkers proves that the game-module and agent contracts generalize, and the monster-master battler remains the first substantial original game.
+The accepted near-term order is recorded in [`planning/decisions/0007-platform-proof-sequence-and-mock-agents.md`](decisions/0007-platform-proof-sequence-and-mock-agents.md). The scheduling amendment in [`planning/decisions/0009-defer-external-canaries-without-blocking-development.md`](decisions/0009-defer-external-canaries-without-blocking-development.md) pauses external deployment canaries without blocking repository development. Tic-tac-toe proves the browser and repository stack, American Checkers proves that the game-module and agent contracts generalize, and the monster-master battler remains the first substantial original game.
 
 ### GF-0002 — Cloudflare match runtime
 
@@ -100,46 +100,52 @@ Canonically validated implementation:
 
 The frozen candidate passed GitHub-hosted Canonical Validation run #39 (`30494321343`) and was squash-merged as `46c2a0d5edcd22dfe908211915efc442d7b2d912`. See [`planning/validation/2026-07-29-agent-decision-contract.md`](validation/2026-07-29-agent-decision-contract.md). No remote provider transport, live Runtime, or deployed authentication behavior is claimed by this milestone.
 
-### GF-0006 — American checkers module — Active
+### GF-0006 — American Checkers rules module — Complete
 
-Build American checkers on an 8x8 board as the first nontrivial reusable game-module proof. Document and test dark-square movement, mandatory captures, multi-jumps, promotion, king behavior, wins, and draw handling.
+The deterministic American Checkers module is complete as the first nontrivial reusable game definition.
 
-Checkers must exercise the same match service, event history, player-specific observations, legal-action enumeration, browser input, reconnect, deterministic opponent, and versioned mock-agent contract used by tic-tac-toe and intended for later games.
+Canonically validated implementation:
 
-Acceptance requires:
+- Explicit 8x8 dark-square coordinate model and twelve-piece initial setup
+- Mandatory captures and complete terminal multi-jump actions
+- Forward men, short-range kings, promotion-stop behavior, elimination wins, and blockade wins
+- Choice among legal capture sequences without a maximum-capture requirement
+- Deterministic threefold-repetition and eighty-ply no-progress draws
+- Stable piece IDs, serializable repetition state, replay equivalence, and snapshot restoration
+- Deterministic Checkers opponent and representative completed self-play
+- Shared `GameDefinition`, `MatchSession`, observation, legal-action, event-history, and agent compatibility
+- Normative rules and complete-turn action representation in [`planning/checkers-rules.md`](checkers-rules.md)
 
-- Explicit American Checkers rules and coordinate conventions
-- Initial-state, legal-move, mandatory-capture, multi-jump, promotion, king, win, and draw or no-progress tests
-- Replay equivalence and representative complete deterministic games
-- A deterministic checkers opponent and provider-backed mock-agent path
-- Game-module registration without special-casing the platform authority model
-- Service-level human-versus-human, deterministic-agent, and mock-provider flows
-- Browser piece selection, destination highlighting, forced capture, continuation, promotion, completion, refresh, and mobile behavior
-- Canonical repository validation before merge
+The frozen candidate passed GitHub-hosted Canonical Validation run #41 (`30500405772`) and was squash-merged as `53730a0ddf9bdc1f56dc641c7a4f226ecf61011b`. See [`planning/validation/2026-07-29-american-checkers-rules.md`](validation/2026-07-29-american-checkers-rules.md).
 
-### GF-0007 — Checkers full-stack proof
+### GF-0007 — Checkers full-stack repository proof — Complete
 
-Complete and validate:
+American Checkers now exercises the shared GameFrame delivery stack rather than existing as a rules-only module.
 
-- Human-versus-human checkers
-- Human-versus-deterministic-opponent checkers
-- Human-versus-mock-agent checkers through the versioned decision contract
-- Browser selection, legal destinations, forced captures, multi-jump continuation, promotion, and completed-state presentation
-- Real browser, repository, and Workers-runtime validation
-- Standalone deployed GameFrame canary when `GF-0004` resumes
-- Discord Activity canary when the delivery adapter and owner availability permit it
+Repository proof:
 
-The repository portion of this milestone is the gate proving that GameFrame is not structurally hard-coded around tic-tac-toe. Deployed proof remains separately unresolved until the paused canary lane runs.
+- Authoritative Checkers service with human, deterministic Theo, and provider-backed Theo participation
+- Shared in-memory game dispatch with explicit `gameId` and backward-compatible Tic-Tac-Toe defaults
+- Shared authenticated HTTP create, view, and action routes for both games
+- Provider request correlation, revision, identity, legality, action-ID, and fallback behavior through the existing versioned contract
+- Responsive multi-game browser shell preserving the validated Tic-Tac-Toe path
+- Checkers piece selection, legal-destination highlighting, complete multi-jump path collection, forced-capture guidance, king presentation, match resume, and mobile behavior
+- Two-browser human Checkers play and deterministic Theo browser play
+- Multi-game Cloudflare Worker routing through the migration-stable Durable Object binding
+- Real Workers-runtime Checkers persistence and legal-action recovery after Durable Object eviction
+- Existing Tic-Tac-Toe, authentication, WebSocket, and browser regressions retained
 
-### GF-0008 — Scribbles Runtime adapter for Theo
+The repository-side milestone is complete after the frozen PR #23 candidate passes canonical validation and merges. A durable final validation record will identify that exact run and merge. Standalone Cloudflare deployment and Discord Activity canaries remain separately paused under `GF-0004`; they are not implied by this repository proof.
 
-When Scribbles Runtime is available, implement the accepted versioned decision-provider contract so it can choose actions for stable player ID `theo`. The adapter is not a prerequisite for the preceding mock-agent, checkers, or repository proofs.
+### GF-0008 — Scribbles Runtime adapter for Theo — Available when Runtime is ready
+
+When Scribbles Runtime is available, implement the accepted versioned decision-provider contract so it can choose actions for stable player ID `theo`. The adapter is not a prerequisite for the completed mock-agent and Checkers repository proofs or for beginning the tactical foundation.
 
 Retain deterministic fallback behavior and fail closed on malformed, stale, illegal, mismatched, or unauthorized Runtime responses.
 
-### GF-0010 — Monster-master tactical battler foundation
+### GF-0010 — Monster-master tactical battler foundation — Active
 
-Build the first substantial original GameFrame game after the platform has survived browser acceptance, the mock-agent boundary, and the American-checkers generalization proof. The paused external canary does not block tactical repository development, but deployed tactical behavior must not be claimed until the relevant external lane is resumed and proven.
+Build the first substantial original GameFrame game now that the platform has survived browser acceptance, the mock-agent boundary, and the American-Checkers generalization proof. The paused external canary does not block tactical repository development, but deployed tactical behavior must not be claimed until the relevant external lane is resumed and proven.
 
 Begin with a two-player monster-master duel on a larger scrollable battlefield that extends beyond the normal viewport, while preserving an eventual two-to-four-player architecture.
 
