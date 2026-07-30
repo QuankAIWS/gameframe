@@ -34,6 +34,8 @@ test("Monster Master browser delivery uses authenticated GameFrame boundaries", 
   assert.match(html, /data-entry="\/monster-master-app\.js"/);
   assert.match(html, /id="monster-master-canvas"/);
   assert.match(html, /id="monster-master-select-mend"/);
+  assert.match(html, /Use the action controls and highlighted battlefield cells to resolve the duel\./);
+  assert.doesNotMatch(html, /Deploy your roster into the highlighted starting zone\./);
   assert.match(app, /const gameId = "monster-master-duel"/);
   assert.match(app, /gameFrameFetch/);
   assert.match(app, /type === "deploy-unit"/);
