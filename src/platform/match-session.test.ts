@@ -91,3 +91,44 @@ test("snapshot restoration preserves accepted and rejected action idempotency", 
   assert.equal(restored.revision, 1);
   assert.deepEqual(restored.replay(), restored.snapshot().state);
 });
+
+test("revision-zero scenario snapshots become durable replay origins", () => {
+  const scenarioState = ticTacToeDefinition.createInitialState(["a", "b"]);
+  scenarioState.board[4] = "X";
+  scenarioState.nextMark = "O";
+
+  const seeded = new MatchSession({
+    matchId: "scenario-match",
+    definition: ticTacToeDefinition,
+    playerIds: ["a", "b"],
+    snapshot: {
+      matchId: "scenario-match",
+      gameId: ticTacToeDefinition.gameId,
+      playerIds: ["a", "b"],
+      revision: 0,
+      state: scenarioState,
+      events: [],
+      rejectedActions: [],
+    },
+  });
+
+  assert.equal(seeded.observe("b").board[4], "X");
+  assert.equal(seeded.submit({
+    actionId: "scenario-b-1",
+    playerId: "b",
+    expectedRevision: 0,
+    action: { type: "place", cell: 0 },
+  }).accepted, true);
+
+  const snapshot = seeded.snapshot();
+  assert.deepEqual(snapshot.initialState, scenarioState);
+
+  const restored = new MatchSession({
+    matchId: snapshot.matchId,
+    definition: ticTacToeDefinition,
+    playerIds: snapshot.playerIds,
+    snapshot,
+  });
+  assert.deepEqual(restored.snapshot(), snapshot);
+  assert.deepEqual(restored.replay(), snapshot.state);
+});

@@ -5,6 +5,11 @@ import type {
   CheckersState,
 } from "../games/checkers/index.ts";
 import type {
+  TacticalCombatAction,
+  TacticalCombatObservation,
+  TacticalCombatState,
+} from "../games/tactical-combat/index.ts";
+import type {
   TacticalMovementAction,
   TacticalMovementObservation,
   TacticalMovementState,
@@ -20,26 +25,41 @@ import {
   type PublicCheckersMatchView,
 } from "./checkers-match-service.ts";
 import {
+  TacticalCombatMatchService,
+  type PublicTacticalCombatMatchView,
+} from "./tactical-combat-match-service.ts";
+import {
   TacticalMovementMatchService,
   type PublicTacticalMovementMatchView,
 } from "./tactical-movement-match-service.ts";
 import { TicTacToeMatchService, type PublicMatchView } from "./tic-tac-toe-match-service.ts";
 
-export type SupportedGameId = "tic-tac-toe" | "american-checkers" | "tactical-movement-canary";
+export type SupportedGameId =
+  | "tic-tac-toe"
+  | "american-checkers"
+  | "tactical-movement-canary"
+  | "tactical-combat-canary";
 
 export type PublicGameMatchView =
   | ({ gameId: "tic-tac-toe" } & PublicMatchView)
   | ({ gameId: "american-checkers" } & PublicCheckersMatchView)
-  | ({ gameId: "tactical-movement-canary" } & PublicTacticalMovementMatchView);
+  | ({ gameId: "tactical-movement-canary" } & PublicTacticalMovementMatchView)
+  | ({ gameId: "tactical-combat-canary" } & PublicTacticalCombatMatchView);
 
 export interface InMemoryGameFrameServiceOptions {
   idGenerator?: () => string;
   ticTacToeTheo?: AgentPlayer<TicTacToeAction, TicTacToeObservation>;
   checkersTheo?: AgentPlayer<CheckersAction, CheckersObservation>;
   tacticalTheo?: AgentPlayer<TacticalMovementAction, TacticalMovementObservation>;
+  tacticalCombatTheo?: AgentPlayer<TacticalCombatAction, TacticalCombatObservation>;
 }
 
-export type { PublicMatchView, PublicCheckersMatchView, PublicTacticalMovementMatchView };
+export type {
+  PublicMatchView,
+  PublicCheckersMatchView,
+  PublicTacticalMovementMatchView,
+  PublicTacticalCombatMatchView,
+};
 
 export class InMemoryTicTacToeService extends TicTacToeMatchService {
   constructor(theo?: AgentPlayer<TicTacToeAction, TicTacToeObservation>) {
@@ -68,11 +88,21 @@ export class InMemoryTacticalMovementService extends TacticalMovementMatchServic
   }
 }
 
+export class InMemoryTacticalCombatService extends TacticalCombatMatchService {
+  constructor(theo?: AgentPlayer<TacticalCombatAction, TacticalCombatObservation>) {
+    super({
+      store: new InMemoryMatchSnapshotStore<TacticalCombatState, TacticalCombatAction>(),
+      ...(theo ? { theo } : {}),
+    });
+  }
+}
+
 export class InMemoryGameFrameService {
   readonly #idGenerator: () => string;
   readonly #ticTacToe: TicTacToeMatchService;
   readonly #checkers: CheckersMatchService;
   readonly #tactical: TacticalMovementMatchService;
+  readonly #combat: TacticalCombatMatchService;
   readonly #matchGames = new Map<string, SupportedGameId>();
 
   constructor(options: InMemoryGameFrameServiceOptions = {}) {
@@ -88,6 +118,10 @@ export class InMemoryGameFrameService {
     this.#tactical = new TacticalMovementMatchService({
       store: new InMemoryMatchSnapshotStore<TacticalMovementState, TacticalMovementAction>(),
       ...(options.tacticalTheo ? { theo: options.tacticalTheo } : {}),
+    });
+    this.#combat = new TacticalCombatMatchService({
+      store: new InMemoryMatchSnapshotStore<TacticalCombatState, TacticalCombatAction>(),
+      ...(options.tacticalCombatTheo ? { theo: options.tacticalCombatTheo } : {}),
     });
   }
 
@@ -108,7 +142,9 @@ export class InMemoryGameFrameService {
       ? await this.#ticTacToe.createMatch(playerIds, matchId)
       : normalizedGameId === "american-checkers"
         ? await this.#checkers.createMatch(playerIds, matchId)
-        : await this.#tactical.createMatch(playerIds, matchId);
+        : normalizedGameId === "tactical-movement-canary"
+          ? await this.#tactical.createMatch(playerIds, matchId)
+          : await this.#combat.createMatch(playerIds, matchId);
     this.#matchGames.set(matchId, normalizedGameId);
     return { gameId: normalizedGameId, ...view } as PublicGameMatchView;
   }
@@ -119,7 +155,9 @@ export class InMemoryGameFrameService {
       ? await this.#ticTacToe.view(matchId, playerId)
       : gameId === "american-checkers"
         ? await this.#checkers.view(matchId, playerId)
-        : await this.#tactical.view(matchId, playerId);
+        : gameId === "tactical-movement-canary"
+          ? await this.#tactical.view(matchId, playerId)
+          : await this.#combat.view(matchId, playerId);
     return { gameId, ...view } as PublicGameMatchView;
   }
 
@@ -145,9 +183,16 @@ export class InMemoryGameFrameService {
       });
       return { gameId, ...view };
     }
-    const view = await this.#tactical.submitAction({
+    if (gameId === "tactical-movement-canary") {
+      const view = await this.#tactical.submitAction({
+        ...input,
+        action: parseTacticalMovementAction(input.action),
+      });
+      return { gameId, ...view };
+    }
+    const view = await this.#combat.submitAction({
       ...input,
-      action: parseTacticalMovementAction(input.action),
+      action: parseTacticalCombatAction(input.action),
     });
     return { gameId, ...view };
   }
@@ -167,6 +212,7 @@ export class InMemoryGameFrameService {
       gameId === "tic-tac-toe"
       || gameId === "american-checkers"
       || gameId === "tactical-movement-canary"
+      || gameId === "tactical-combat-canary"
     ) {
       return gameId;
     }
@@ -212,6 +258,30 @@ function parseTacticalMovementAction(value: unknown): TacticalMovementAction {
   const action = record(value);
   const unitId = String(action.unitId ?? "");
   if (action.type === "end-activation") return { type: "end-activation", unitId };
+  return {
+    type: "move",
+    unitId,
+    from: coordinate(action.from),
+    path: Array.isArray(action.path) ? action.path.map(coordinate) : [],
+    movementCost: Number(action.movementCost),
+  };
+}
+
+function parseTacticalCombatAction(value: unknown): TacticalCombatAction {
+  const action = record(value);
+  const unitId = String(action.unitId ?? "");
+  if (action.type === "end-activation") return { type: "end-activation", unitId };
+  if (action.type === "attack") {
+    return {
+      type: "attack",
+      unitId,
+      targetUnitId: String(action.targetUnitId ?? ""),
+      from: coordinate(action.from),
+      target: coordinate(action.target),
+      range: Number(action.range),
+      damage: Number(action.damage),
+    };
+  }
   return {
     type: "move",
     unitId,
