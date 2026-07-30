@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090d18">
+  <title>Tactical Movement Canary · Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/tactical.css">
+</head>
+<body>
+  <main class="shell tactical-shell">
+    <header class="hero tactical-hero">
+      <div>
+        <p class="eyebrow">SCRIBBLES GAMEFRAME · TC-0001</p>
+        <h1>Tactical Movement</h1>
+        <p class="hero-copy">A 24×24 authoritative battlefield viewed through a movable camera. Select your active unit, inspect legal paths, and reach the central beacon before the opposing player.</p>
+      </div>
+      <a class="secondary-button tactical-home-link" href="/">Other games</a>
+    </header>
+
+    <div id="tactical-error" class="error-banner" role="alert" hidden></div>
+
+    <section id="tactical-lobby" class="panel tactical-lobby" aria-labelledby="tactical-lobby-title">
+      <p class="section-label">MOVEMENT CANARY</p>
+      <h2 id="tactical-lobby-title">Choose an opponent</h2>
+      <p id="tactical-lobby-message" class="muted" role="status">Preparing the tactical client…</p>
+      <div class="mode-grid tactical-mode-grid">
+        <button id="tactical-theo" class="mode-card" type="button">
+          <span class="mode-icon" aria-hidden="true">T</span>
+          <span>
+            <strong>Race Theo</strong>
+            <small>Play unit Alpha against Theo's deterministic objective-seeking unit.</small>
+          </span>
+        </button>
+        <button id="tactical-human" class="mode-card" type="button">
+          <span class="mode-icon duo" aria-hidden="true">2P</span>
+          <span>
+            <strong>Race a friend</strong>
+            <small>Create a second seat and share a resumable development invite.</small>
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <section id="tactical-match" class="panel tactical-match" hidden aria-labelledby="tactical-match-title">
+      <div class="match-header tactical-match-header">
+        <div>
+          <p class="section-label">ACTIVE TACTICAL MATCH</p>
+          <h2 id="tactical-match-title">Central Beacon Race</h2>
+        </div>
+        <span id="tactical-revision" class="revision">Revision —</span>
+      </div>
+
+      <div id="tactical-status" class="status" role="status" aria-live="polite">Loading tactical state…</div>
+
+      <div class="tactical-layout">
+        <aside class="tactical-sidebar">
+          <div class="tactical-player-grid" aria-label="Players">
+            <article id="tactical-player-alpha" class="player-card">
+              <span class="mark-badge tactical-alpha">A</span>
+              <span><small>Unit Alpha</small><strong id="tactical-alpha-name">Player Alpha</strong></span>
+            </article>
+            <article id="tactical-player-beta" class="player-card">
+              <span class="mark-badge tactical-beta">B</span>
+              <span><small>Unit Beta</small><strong id="tactical-beta-name">Player Beta</strong></span>
+            </article>
+          </div>
+
+          <dl class="match-meta tactical-meta">
+            <div><dt>Round</dt><dd id="tactical-round">—</dd></div>
+            <div><dt>Match</dt><dd id="tactical-match-id">—</dd></div>
+            <div><dt>Updates</dt><dd id="tactical-connection">—</dd></div>
+            <div><dt>Viewport</dt><dd id="tactical-viewport-label">—</dd></div>
+          </dl>
+
+          <div class="tactical-controls" aria-label="Camera controls">
+            <button type="button" data-pan-x="0" data-pan-y="-3" aria-label="Pan camera north">↑</button>
+            <button type="button" data-pan-x="-3" data-pan-y="0" aria-label="Pan camera west">←</button>
+            <button type="button" id="tactical-center-active">Active</button>
+            <button type="button" data-pan-x="3" data-pan-y="0" aria-label="Pan camera east">→</button>
+            <button type="button" data-pan-x="0" data-pan-y="3" aria-label="Pan camera south">↓</button>
+            <button type="button" id="tactical-zoom-out" aria-label="Zoom out">−</button>
+            <button type="button" id="tactical-center-objective">Beacon</button>
+            <button type="button" id="tactical-zoom-in" aria-label="Zoom in">+</button>
+          </div>
+
+          <div class="tactical-legend" aria-label="Map legend">
+            <span><i class="legend-floor"></i>Floor</span>
+            <span><i class="legend-difficult"></i>Difficult</span>
+            <span><i class="legend-wall"></i>Wall</span>
+            <span><i class="legend-objective"></i>Beacon</span>
+          </div>
+        </aside>
+
+        <div class="tactical-stage">
+          <div class="tactical-canvas-frame">
+            <canvas id="tactical-canvas" width="960" height="720" tabindex="0" aria-label="Scrollable tactical battlefield"></canvas>
+          </div>
+          <p id="tactical-help" class="board-help">Select your active unit, then choose a highlighted destination.</p>
+          <div id="tactical-destinations" class="tactical-destinations" aria-label="Legal movement destinations"></div>
+        </div>
+      </div>
+
+      <div id="tactical-invite-panel" class="invite-panel" hidden>
+        <div>
+          <strong>Second-player invite</strong>
+          <p>This development link contains a synthetic seat identity. Production delivery replaces it with verified authentication.</p>
+        </div>
+        <div class="invite-controls">
+          <input id="tactical-invite-link" type="text" readonly aria-label="Second-player tactical invite link">
+          <button id="tactical-copy-invite" class="secondary-button" type="button">Copy invite</button>
+        </div>
+      </div>
+
+      <div class="actions tactical-actions">
+        <button id="tactical-new-match" class="secondary-button" type="button">Back to setup</button>
+      </div>
+
+      <details class="diagnostics">
+        <summary>Tactical diagnostics</summary>
+        <pre id="tactical-details" class="details"></pre>
+      </details>
+    </section>
+  </main>
+  <script>
+    // Destination preview handlers redraw their button list. Stop those target-level
+    // preview events so pointer and keyboard activation commit the stable button that
+    // received the interaction; Canvas hover continues to provide path previews.
+    const preserveDestinationControl = (event) => {
+      if (event.target instanceof Element && event.target.matches("#tactical-destinations button")) {
+        event.stopImmediatePropagation();
+      }
+    };
+    document.addEventListener("mouseenter", preserveDestinationControl, true);
+    document.addEventListener("focus", preserveDestinationControl, true);
+  </script>
+  <script type="module" src="/tactical-app.js"></script>
+</body>
+</html>
