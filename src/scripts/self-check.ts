@@ -312,7 +312,7 @@ assert.match(combatService, /actionCount < 8/);
 
 const combatClient = await read("public/combat-app.js");
 assert.match(combatClient, /tactical-combat-canary/);
-assert.match(combatClient, /data-action-kind/);
+assert.match(combatClient, /dataset\.actionKind/);
 assert.match(combatClient, /combat-effects/);
 assert.match(combatClient, /WebSocket/);
 assert.doesNotMatch(combatClient, /listTacticalMoveActions|applyAction|MatchSession/);
