@@ -1,6 +1,7 @@
 import { establishGameFrameIdentity } from "./gameframe-auth.js";
 
-const entry = document.currentScript?.dataset.entry;
+const launcher = [...document.querySelectorAll('script[type="module"][src="/auth-launcher.js"]')].at(-1);
+const entry = launcher?.dataset.entry;
 if (!entry || !entry.startsWith("/") || !entry.endsWith(".js")) {
   throw new Error("The GameFrame authentication launcher requires a local JavaScript entry path.");
 }
