@@ -32,7 +32,7 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
   assert.match(readme, /src\/games\/monster-master/);
 
   assert.match(roadmap, /GF-0010 .* Repository candidate/);
-  assert.match(roadmap, /MM-0001 .* Repository-complete candidate/);
+  assert.match(roadmap, /`MM-0001` — Repository-complete candidate/);
   assert.match(roadmap, /2026-07-30-monster-master-first-playable\.md/);
 
   assert.match(agents, /review and freeze the repository-complete first playable Monster Master candidate/);
