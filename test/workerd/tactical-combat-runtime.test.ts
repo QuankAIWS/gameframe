@@ -7,7 +7,7 @@ import type {
   TacticalCombatObservation,
 } from "../../src/games/tactical-combat/index.ts";
 
-const sessionCodec = new SignedSessionCodec("tc0002-workerd-session-secret-0123456789abcdef");
+const sessionCodec = new SignedSessionCodec("gf0002-workerd-session-secret-0123456789abcdef");
 
 interface TacticalCombatMatchView {
   gameId: "tactical-combat-canary";
