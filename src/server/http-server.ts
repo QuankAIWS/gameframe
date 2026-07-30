@@ -105,6 +105,7 @@ export function createGameFrameServer(
             "american-checkers",
             "tactical-movement-canary",
             "tactical-combat-canary",
+            "monster-master-duel",
           ],
         });
       }
