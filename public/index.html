@@ -11,17 +11,34 @@
   <main class="shell">
     <header class="hero">
       <p class="eyebrow">SCRIBBLES GAMEFRAME</p>
-      <h1>Tic-Tac-Toe</h1>
-      <p class="hero-copy">A small complete game proving authoritative turns, deterministic opponents, resumable browser play, and the same match contracts intended for larger GameFrame modules.</p>
+      <h1 id="game-title">Tic-Tac-Toe</h1>
+      <p id="hero-copy" class="hero-copy">A small complete game proving authoritative turns, deterministic opponents, resumable browser play, and the same match contracts intended for larger GameFrame modules.</p>
     </header>
 
     <div id="error-banner" class="error-banner" role="alert" hidden></div>
 
     <section id="lobby" class="panel lobby" aria-labelledby="lobby-title">
       <div class="section-heading">
-        <p class="section-label">MATCH SETUP</p>
-        <h2 id="lobby-title">Choose a table</h2>
+        <p class="section-label">GAME AND MATCH SETUP</p>
+        <h2 id="lobby-title">Choose a game</h2>
         <p id="lobby-message" class="muted" role="status">Preparing the browser client…</p>
+      </div>
+
+      <div class="game-grid" role="group" aria-label="Game selection">
+        <button id="select-tic-tac-toe" class="game-card is-selected" type="button" data-game-id="tic-tac-toe" aria-pressed="true">
+          <span class="game-glyph" aria-hidden="true">XO</span>
+          <span>
+            <strong>Tic-Tac-Toe</strong>
+            <small>The compact delivery-stack proof.</small>
+          </span>
+        </button>
+        <button id="select-checkers" class="game-card" type="button" data-game-id="american-checkers" aria-pressed="false">
+          <span class="game-glyph checkers-glyph" aria-hidden="true">●</span>
+          <span>
+            <strong>American Checkers</strong>
+            <small>Mandatory captures, multi-jumps, kings, and longer match history.</small>
+          </span>
+        </button>
       </div>
 
       <div class="mode-grid">
@@ -29,7 +46,7 @@
           <span class="mode-icon" aria-hidden="true">T</span>
           <span>
             <strong>Challenge Theo</strong>
-            <small>Play X against the perfect deterministic fallback opponent.</small>
+            <small id="theo-description">Play X against the perfect deterministic fallback opponent.</small>
           </span>
         </button>
 
@@ -37,7 +54,7 @@
           <span class="mode-icon duo" aria-hidden="true">2P</span>
           <span>
             <strong>Play with a friend</strong>
-            <small>Create a second seat and share a resumable development invite.</small>
+            <small id="human-description">Create a second seat and share a resumable development invite.</small>
           </span>
         </button>
       </div>
@@ -46,7 +63,7 @@
     <section id="match-panel" class="panel match-panel" aria-labelledby="match-title" hidden>
       <div class="match-header">
         <div>
-          <p class="section-label">ACTIVE MATCH</p>
+          <p id="match-label" class="section-label">ACTIVE MATCH</p>
           <h2 id="match-title">Authoritative board</h2>
         </div>
         <span id="revision" class="revision">Revision —</span>
@@ -57,21 +74,25 @@
       <div class="game-layout">
         <aside class="players" aria-label="Players">
           <article id="player-x" class="player-card">
-            <span class="mark-badge x">X</span>
+            <span id="player-x-badge" class="mark-badge x">X</span>
             <span>
-              <small>First seat</small>
+              <small id="player-x-seat">First seat</small>
               <strong id="player-x-name">Player X</strong>
             </span>
           </article>
           <article id="player-o" class="player-card">
-            <span class="mark-badge o">O</span>
+            <span id="player-o-badge" class="mark-badge o">O</span>
             <span>
-              <small>Second seat</small>
+              <small id="player-o-seat">Second seat</small>
               <strong id="player-o-name">Player O</strong>
             </span>
           </article>
 
           <dl class="match-meta">
+            <div>
+              <dt>Game</dt>
+              <dd id="match-game">—</dd>
+            </div>
             <div>
               <dt>Match</dt>
               <dd id="match-id">—</dd>
@@ -84,7 +105,8 @@
         </aside>
 
         <div class="board-wrap">
-          <div id="board" class="board" role="grid" aria-label="Tic-tac-toe board"></div>
+          <div id="board" class="board board-tic-tac-toe" role="grid" aria-label="Tic-tac-toe board"></div>
+          <p id="board-help" class="board-help">Choose an open cell.</p>
         </div>
       </div>
 

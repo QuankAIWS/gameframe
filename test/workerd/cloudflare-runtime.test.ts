@@ -6,7 +6,8 @@ import { SignedSessionCodec } from "../../src/auth/signed-session.ts";
 const sessionSecret = "gf0002-workerd-session-secret-0123456789abcdef";
 const sessionCodec = new SignedSessionCodec(sessionSecret);
 
-interface MatchView {
+interface TicTacToeMatchView {
+  gameId: "tic-tac-toe";
   matchId: string;
   revision: number;
   playerIds: string[];
@@ -16,10 +17,30 @@ interface MatchView {
   };
 }
 
+interface CheckersAction {
+  type: "move";
+  pieceId: string;
+  from: number;
+  path: number[];
+  capturedPieceIds: string[];
+}
+
+interface CheckersMatchView {
+  gameId: "american-checkers";
+  matchId: string;
+  revision: number;
+  playerIds: string[];
+  observation: {
+    board: Array<{ id: string; color: "black" | "red"; rank: "man" | "king" } | null>;
+    activePlayerId: string | null;
+    legalActions: CheckersAction[];
+  };
+}
+
 interface MatchStateMessage {
   type: "match_state";
   reason: "initial" | "update" | "refresh";
-  view: MatchView;
+  view: TicTacToeMatchView | CheckersMatchView;
 }
 
 async function cookieFor(playerId: string): Promise<string> {
@@ -40,14 +61,17 @@ async function workerFetch(
   }));
 }
 
-async function createMatch(playerIds: [string, string]): Promise<MatchView> {
+async function createMatch(
+  playerIds: [string, string],
+  gameId: "tic-tac-toe" | "american-checkers" = "tic-tac-toe",
+): Promise<TicTacToeMatchView | CheckersMatchView> {
   const response = await workerFetch("/api/matches", playerIds[0], {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ playerIds }),
+    body: JSON.stringify({ gameId, playerIds }),
   });
   expect(response.status).toBe(201);
-  return response.json() as Promise<MatchView>;
+  return response.json() as Promise<TicTacToeMatchView | CheckersMatchView>;
 }
 
 function decodeSocketData(data: string | ArrayBuffer): string {
@@ -80,9 +104,17 @@ function matchStub(matchId: string): any {
   return matches.get(matches.idFromName(matchId));
 }
 
-describe("GF-0002 real workerd runtime", () => {
-  it("restores committed match state after Durable Object eviction", async () => {
-    const created = await createMatch(["human", "theo"]);
+describe("GameFrame real workerd runtime", () => {
+  it("advertises both supported games", async () => {
+    const response = await workerExports.default.fetch(new Request("https://games.example/api/health"));
+    expect(response.status).toBe(200);
+    const health = await response.json() as { games: string[] };
+    expect(health.games).toEqual(["tic-tac-toe", "american-checkers"]);
+  });
+
+  it("restores committed tic-tac-toe state after Durable Object eviction", async () => {
+    const created = await createMatch(["human", "theo"]) as TicTacToeMatchView;
+    expect(created.gameId).toBe("tic-tac-toe");
 
     const actionResponse = await workerFetch(
       `/api/matches/${encodeURIComponent(created.matchId)}/actions`,
@@ -98,7 +130,7 @@ describe("GF-0002 real workerd runtime", () => {
       },
     );
     expect(actionResponse.status).toBe(200);
-    const advanced = await actionResponse.json() as MatchView;
+    const advanced = await actionResponse.json() as TicTacToeMatchView;
     expect(advanced.revision).toBe(2);
     expect(advanced.observation.board[0]).toBe("X");
     expect(advanced.observation.board[4]).toBe("O");
@@ -110,13 +142,54 @@ describe("GF-0002 real workerd runtime", () => {
       "human",
     );
     expect(restoredResponse.status).toBe(200);
-    const restored = await restoredResponse.json() as MatchView;
+    const restored = await restoredResponse.json() as TicTacToeMatchView;
     expect(restored.revision).toBe(advanced.revision);
     expect(restored.observation.board).toEqual(advanced.observation.board);
   });
 
+  it("restores committed Checkers state after Durable Object eviction", async () => {
+    const created = await createMatch(
+      ["checkers-human", "theo"],
+      "american-checkers",
+    ) as CheckersMatchView;
+    expect(created.gameId).toBe("american-checkers");
+    expect(created.observation.legalActions).toHaveLength(7);
+
+    const actionResponse = await workerFetch(
+      `/api/matches/${encodeURIComponent(created.matchId)}/actions`,
+      "checkers-human",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          actionId: "workerd-checkers-human-1",
+          expectedRevision: 0,
+          action: created.observation.legalActions[0],
+        }),
+      },
+    );
+    expect(actionResponse.status).toBe(200);
+    const advanced = await actionResponse.json() as CheckersMatchView;
+    expect(advanced.gameId).toBe("american-checkers");
+    expect(advanced.revision).toBe(2);
+    expect(advanced.observation.activePlayerId).toBe("checkers-human");
+
+    await evictDurableObject(matchStub(created.matchId));
+
+    const restoredResponse = await workerFetch(
+      `/api/matches/${encodeURIComponent(created.matchId)}`,
+      "checkers-human",
+    );
+    expect(restoredResponse.status).toBe(200);
+    const restored = await restoredResponse.json() as CheckersMatchView;
+    expect(restored.gameId).toBe("american-checkers");
+    expect(restored.revision).toBe(advanced.revision);
+    expect(restored.observation.board).toEqual(advanced.observation.board);
+    expect(restored.observation.legalActions).toEqual(advanced.observation.legalActions);
+  });
+
   it("serializes competing writes inside the real Durable Object runtime", async () => {
-    const created = await createMatch(["alice", "bob"]);
+    const created = await createMatch(["alice", "bob"]) as TicTacToeMatchView;
     const path = `/api/matches/${encodeURIComponent(created.matchId)}/actions`;
 
     const submit = (actionId: string, cell: number) => workerFetch(path, "alice", {
@@ -138,7 +211,7 @@ describe("GF-0002 real workerd runtime", () => {
   });
 
   it("resumes a hibernatable WebSocket after Durable Object eviction", async () => {
-    const created = await createMatch(["socket-human", "theo"]);
+    const created = await createMatch(["socket-human", "theo"]) as TicTacToeMatchView;
     const response = await workerFetch(
       `/api/matches/${encodeURIComponent(created.matchId)}/events`,
       "socket-human",

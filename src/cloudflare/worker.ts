@@ -1,17 +1,19 @@
 import { DurableObject } from "cloudflare:workers";
 import { json } from "./http-utils.ts";
-import { TicTacToeMatchObjectRuntime } from "./match-object-runtime.ts";
+import { GameFrameMatchObjectRuntime } from "./match-object-runtime.ts";
 import { MatchSocketHub } from "./match-socket-hub.ts";
 import { createGameFrameWorker } from "./worker-router.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
+// The class name remains migration-stable for the existing Durable Object binding.
+// Its internal runtime now dispatches every supported GameFrame game.
 export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEnv> {
-  readonly #runtime: TicTacToeMatchObjectRuntime;
+  readonly #runtime: GameFrameMatchObjectRuntime;
   readonly #sockets: MatchSocketHub;
 
   constructor(ctx: DurableObjectState, env: GameFrameWorkerEnv) {
     super(ctx, env);
-    this.#runtime = new TicTacToeMatchObjectRuntime(ctx.storage, undefined, {
+    this.#runtime = new GameFrameMatchObjectRuntime(ctx.storage, undefined, {
       onMatchUpdated: async (matchId) => this.#sockets.broadcast(matchId),
     });
     this.#sockets = new MatchSocketHub(ctx, (matchId, playerId) => (

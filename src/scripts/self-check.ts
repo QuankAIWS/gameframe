@@ -4,12 +4,17 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
-const packageJson = JSON.parse(await readFile(join(repositoryRoot, "package.json"), "utf8"));
+const read = (path: string) => readFile(join(repositoryRoot, path), "utf8");
+
+const packageJson = JSON.parse(await read("package.json"));
 assert.equal(packageJson.name, "@quankaiws/scribbles-gameframe");
 assert.equal(packageJson.private, true);
 assert.equal(packageJson.type, "module");
 assert.match(packageJson.engines.node, /22/);
-assert.equal(packageJson.scripts["test:workerd"], "vitest run --config vitest.config.ts --max-workers=1 --no-isolate");
+assert.equal(
+  packageJson.scripts["test:workerd"],
+  "vitest run --config vitest.config.ts --max-workers=1 --no-isolate",
+);
 assert.equal(packageJson.scripts["test:browser"], "playwright test --config playwright.config.mjs");
 assert.match(packageJson.scripts.validate, /npm run test:workerd/);
 assert.match(packageJson.scripts.validate, /npm run test:browser/);
@@ -35,7 +40,17 @@ const durableFiles = [
   "src/agents/mock-decision-provider.ts",
   "src/agents/provider-backed-agent.ts",
   "src/agents/decision-protocol.test.ts",
+  "src/games/tic-tac-toe/index.ts",
+  "src/games/checkers/index.ts",
+  "src/games/checkers/index.test.ts",
+  "src/games/checkers/integration.test.ts",
+  "src/server/tic-tac-toe-match-service.ts",
+  "src/server/checkers-match-service.ts",
+  "src/server/checkers-match-service.test.ts",
+  "src/server/checkers-http.test.ts",
+  "src/server/in-memory-match-service.ts",
   "test/browser/tic-tac-toe.spec.mjs",
+  "test/browser/checkers.spec.mjs",
   "test/fixtures/agent-decision/request-v1.json",
   "test/fixtures/agent-decision/response-v1.json",
   "test/workerd/cloudflare-runtime.test.ts",
@@ -45,6 +60,7 @@ const durableFiles = [
   "planning/development-workflow.md",
   "planning/deployment-topology.md",
   "planning/agent-decision-protocol.md",
+  "planning/checkers-rules.md",
   "planning/scribbles-runtime-integration.md",
   "planning/tactical-battler-rpg-foundation.md",
   "planning/decisions/0001-zero-dependency-walking-skeleton.md",
@@ -59,12 +75,13 @@ const durableFiles = [
   "planning/validation/2026-07-27-canonical-baseline.md",
   "planning/validation/2026-07-29-tic-tac-toe-browser-proof.md",
   "planning/validation/2026-07-29-agent-decision-contract.md",
+  "planning/validation/2026-07-29-american-checkers-rules.md",
   ".github/workflows/ci.yml",
   "wrangler.jsonc",
 ];
 
 for (const path of durableFiles) {
-  const content = await readFile(join(repositoryRoot, path), "utf8");
+  const content = await read(path);
   assert.ok(content.trim().length > 40, `${path} must contain durable content.`);
 }
 
@@ -72,21 +89,17 @@ await assert.rejects(
   access(join(repositoryRoot, "planning/openclaw-integration.md")),
   "The retired OpenClaw integration document must not remain active.",
 );
-
 await assert.rejects(
   access(join(repositoryRoot, "LICENSE")),
   "The proprietary public-source repository must not gain an open-source LICENSE file without an explicit decision.",
 );
 
-const lockfile = JSON.parse(await readFile(join(repositoryRoot, "package-lock.json"), "utf8"));
+const lockfile = JSON.parse(await read("package-lock.json"));
 assert.equal(lockfile.lockfileVersion, 3);
 assert.equal(lockfile.packages[""].name, packageJson.name);
 assert.deepEqual(lockfile.packages[""].devDependencies, packageJson.devDependencies);
 
-const workflow = await readFile(
-  join(repositoryRoot, ".github/workflows/ci.yml"),
-  "utf8",
-);
+const workflow = await read(".github/workflows/ci.yml");
 assert.match(workflow, /^name: Canonical Validation$/m);
 assert.match(workflow, /^\s{2}workflow_dispatch:\s*$/m);
 assert.match(workflow, /^\s{2}pull_request:\s*$/m);
@@ -113,7 +126,7 @@ assert.doesNotMatch(
   "Pull-request validation may run only for a deliberate label event.",
 );
 
-const gitignore = await readFile(join(repositoryRoot, ".gitignore"), "utf8");
+const gitignore = await read(".gitignore");
 for (const requiredIgnore of [
   ".env.*",
   ".dev.vars.*",
@@ -133,20 +146,14 @@ async function collectFiles(directory: string): Promise<string[]> {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     if (entry.name === ".git" || entry.name === "node_modules") continue;
     const absolutePath = join(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...await collectFiles(absolutePath));
-    } else if (entry.isFile()) {
-      files.push(absolutePath);
-    }
+    if (entry.isDirectory()) files.push(...await collectFiles(absolutePath));
+    else if (entry.isFile()) files.push(absolutePath);
   }
   return files;
 }
 
 const retiredProjectName = ["theo", "gameframe"].join("-");
-const retiredPlatformTokens = [
-  retiredProjectName,
-  `@quankaiws/${retiredProjectName}`,
-];
+const retiredPlatformTokens = [retiredProjectName, `@quankaiws/${retiredProjectName}`];
 const publicHygieneTokens = [
   ["gh", "runner", "01"].join("-"),
   ["AI Workspace", "Software Development Doctrine"].join(" "),
@@ -176,29 +183,29 @@ for (const absolutePath of await collectFiles(repositoryRoot)) {
   }
 }
 
-const readme = await readFile(join(repositoryRoot, "README.md"), "utf8");
+const readme = await read("README.md");
 assert.match(readme, /Scribbles GameFrame/);
 assert.match(readme, /Scribbles Runtime/);
 assert.match(readme, /Theo/);
+assert.match(readme, /American Checkers proof/);
+assert.match(readme, /monster-master tactical battler foundation/i);
 assert.match(readme, /publicly viewable proprietary software/);
 assert.match(readme, /No open-source license is granted/);
 
-const notice = await readFile(join(repositoryRoot, "NOTICE"), "utf8");
+const notice = await read("NOTICE");
 assert.match(notice, /All rights reserved/);
 assert.match(notice, /No open-source license/);
 
-const roadmap = await readFile(join(repositoryRoot, "planning/ROADMAP.md"), "utf8");
+const roadmap = await read("planning/ROADMAP.md");
 assert.match(roadmap, /GF-0004 .* Paused/);
 assert.match(roadmap, /GF-0005 .* Complete/);
-assert.match(roadmap, /GF-0006 .* Active/);
-assert.match(roadmap, /American checkers/);
+assert.match(roadmap, /GF-0006 .* Complete/);
+assert.match(roadmap, /GF-0007 .* Complete/);
+assert.match(roadmap, /GF-0010 .* Active/);
 assert.match(roadmap, /Monster-master tactical battler foundation/);
 assert.match(roadmap, /RPG encounter and campaign foundation/);
 
-const testingStrategy = await readFile(
-  join(repositoryRoot, "planning/testing-strategy.md"),
-  "utf8",
-);
+const testingStrategy = await read("planning/testing-strategy.md");
 assert.match(testingStrategy, /Feature-branch verification/);
 assert.match(testingStrategy, /Canonical merge verification/);
 assert.match(testingStrategy, /Workers-runtime integration/);
@@ -207,27 +214,18 @@ assert.match(testingStrategy, /Artifact policy/);
 assert.match(testingStrategy, /Any commit added after the canonical pass invalidates that pass/);
 assert.match(testingStrategy, /GitHub-hosted runner/);
 
-const agentProtocol = await readFile(
-  join(repositoryRoot, "src/agents/decision-protocol.ts"),
-  "utf8",
-);
+const agentProtocol = await read("src/agents/decision-protocol.ts");
 assert.match(agentProtocol, /AGENT_DECISION_PROTOCOL_VERSION = "1"/);
 assert.match(agentProtocol, /request_mismatch/);
 assert.match(agentProtocol, /duplicate_action_id/);
 assert.match(agentProtocol, /illegal_action/);
 
-const providerBackedAgent = await readFile(
-  join(repositoryRoot, "src/agents/provider-backed-agent.ts"),
-  "utf8",
-);
+const providerBackedAgent = await read("src/agents/provider-backed-agent.ts");
 assert.match(providerBackedAgent, /parseAgentDecisionResponse/);
 assert.match(providerBackedAgent, /provider_timeout/);
 assert.match(providerBackedAgent, /fallback/);
 
-const mockProvider = await readFile(
-  join(repositoryRoot, "src/agents/mock-decision-provider.ts"),
-  "utf8",
-);
+const mockProvider = await read("src/agents/mock-decision-provider.ts");
 for (const mode of [
   "deterministic",
   "scripted",
@@ -244,28 +242,38 @@ for (const mode of [
   assert.match(mockProvider, new RegExp(mode));
 }
 
-const browserTest = await readFile(
-  join(repositoryRoot, "test/browser/tic-tac-toe.spec.mjs"),
-  "utf8",
-);
-assert.match(browserTest, /completes and resumes a deterministic match against Theo/);
-assert.match(browserTest, /two browser seats can share, refresh, and complete one match/);
-assert.match(browserTest, /mobile layout remains usable without horizontal overflow/);
+const checkersRules = await read("src/games/checkers/index.ts");
+assert.match(checkersRules, /gameId: "american-checkers"/);
+assert.match(checkersRules, /CHECKERS_NO_PROGRESS_PLY_LIMIT = 80/);
+assert.match(checkersRules, /capturedPieceIds/);
+assert.match(checkersRules, /DeterministicCheckersPlayer/);
 
-const workerdTest = await readFile(
-  join(repositoryRoot, "test/workerd/cloudflare-runtime.test.ts"),
-  "utf8",
-);
-assert.match(workerdTest, /evictDurableObject/);
+const checkersService = await read("src/server/checkers-match-service.ts");
+assert.match(checkersService, /chooseAgentDecision/);
+assert.match(checkersService, /DeterministicCheckersPlayer\("theo"\)/);
+
+const multiGameService = await read("src/server/in-memory-match-service.ts");
+assert.match(multiGameService, /"tic-tac-toe" \| "american-checkers"/);
+assert.match(multiGameService, /InMemoryGameFrameService/);
+
+const ticTacToeBrowserTest = await read("test/browser/tic-tac-toe.spec.mjs");
+assert.match(ticTacToeBrowserTest, /completes and resumes a deterministic match against Theo/);
+assert.match(ticTacToeBrowserTest, /two browser seats can share, refresh, and complete one match/);
+assert.match(ticTacToeBrowserTest, /mobile layout remains usable without horizontal overflow/);
+
+const checkersBrowserTest = await read("test/browser/checkers.spec.mjs");
+assert.match(checkersBrowserTest, /deterministic American Checkers match against Theo/);
+assert.match(checkersBrowserTest, /two browser seats share, play, and resume one Checkers match/);
+assert.match(checkersBrowserTest, /without horizontal overflow on mobile/);
+
+const workerdTest = await read("test/workerd/cloudflare-runtime.test.ts");
+assert.match(workerdTest, /restores committed Checkers state after Durable Object eviction/);
 assert.match(workerdTest, /serializes competing writes/);
 assert.match(workerdTest, /resumes a hibernatable WebSocket/);
 
-const service = await readFile(
-  join(repositoryRoot, "src/server/tic-tac-toe-match-service.ts"),
-  "utf8",
-);
-assert.match(service, /PerfectTicTacToePlayer\("theo"\)/);
-assert.match(service, /chooseAgentDecision/);
-assert.doesNotMatch(service, /PerfectTicTacToePlayer\("scribbles"\)/);
+const ticTacToeService = await read("src/server/tic-tac-toe-match-service.ts");
+assert.match(ticTacToeService, /PerfectTicTacToePlayer\("theo"\)/);
+assert.match(ticTacToeService, /chooseAgentDecision/);
+assert.doesNotMatch(ticTacToeService, /PerfectTicTacToePlayer\("scribbles"\)/);
 
 console.log("Repository self-check passed.");

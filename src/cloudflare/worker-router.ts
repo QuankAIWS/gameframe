@@ -62,6 +62,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
             runtime: "cloudflare",
             realtime: "websocket-hibernation",
             authentication: "required",
+            games: ["tic-tac-toe", "american-checkers"],
           });
         }
 
@@ -76,7 +77,11 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
           return stubFor(env, matchId).fetch(new Request("https://match.internal/initialize", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ matchId, playerIds }),
+            body: JSON.stringify({
+              matchId,
+              playerIds,
+              gameId: String(body.gameId ?? "tic-tac-toe"),
+            }),
           }));
         }
 
