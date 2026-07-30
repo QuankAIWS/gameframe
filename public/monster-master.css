@@ -54,6 +54,20 @@
   color: #d9fff0;
 }
 
+.monster-master-invite-panel > summary {
+  cursor: pointer;
+  color: #dceaff;
+  font-weight: 800;
+}
+
+.monster-master-invite-panel > summary::marker {
+  color: var(--cyan);
+}
+
+.monster-master-invite-panel[open] > summary {
+  margin-bottom: 4px;
+}
+
 .monster-master-role-master { border-radius: 24%; }
 .monster-master-role-bulwark { border-radius: 50%; }
 .monster-master-role-emberling { transform: rotate(45deg); border-radius: 22%; }
