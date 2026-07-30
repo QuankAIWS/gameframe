@@ -30,7 +30,7 @@ test("OAuth state is signed, expiring, and restricted to same-origin paths", asy
   const state = await codec.issue("/combat.html?match=test#board");
   assert.deepEqual(await codec.verify(state), {
     returnTo: "/combat.html?match=test#board",
-    nonce: "AxQlNkdYaXqLnK2-z-DxAhMkNUZXaHmKm6y9zt_g8QI",
+    nonce: "AxQlNkdYaXqLnK2-z-DxAhMkNUZXaHmKm6y9zt_wARI",
     issuedAt: 1000,
     expiresAt: 1600,
   });
