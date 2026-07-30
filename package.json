@@ -16,7 +16,8 @@
     "test:workerd": "vitest run --config vitest.config.ts --max-workers=1 --no-isolate",
     "test:browser": "playwright test --config playwright.config.mjs",
     "test:visual": "playwright test --config playwright.visual.config.mjs",
-    "validate": "npm test && npm run test:workerd && npm run check:activity && npm run check:browser && npm run test:browser && node --experimental-strip-types src/scripts/self-check.ts",
+    "test:visual-baseline": "playwright test --config playwright.visual-baseline.config.mjs",
+    "validate": "npm test && npm run test:workerd && npm run check:activity && npm run check:browser && npm run test:browser && npm run test:visual-baseline && node --experimental-strip-types src/scripts/self-check.ts",
     "check:browser": "node --check public/discord-activity-bootstrap.js && node --check public/gameframe-auth.js && node --check public/secure-match-invite.js && node --check public/invite-app.js && node --check public/auth-launcher.js && node --check public/app.js && node --check public/tactical-app.js && node --check public/combat-app.js"
   },
   "devDependencies": {
