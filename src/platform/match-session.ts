@@ -21,7 +21,7 @@ export interface MatchSnapshot<State, Action = unknown> {
   initialState?: State;
   state: State;
   events: readonly MatchEvent<Action>[];
-  rejectedActions: readonly PersistedRejectedAction[];
+  rejectedActions?: readonly PersistedRejectedAction[];
 }
 
 export interface MatchSessionOptions<State, Action, Observation> {
@@ -178,7 +178,7 @@ export class MatchSession<State, Action, Observation> {
     this.#revision = snapshot.revision;
     this.#state = this.#stateAtRevision(this.#revision);
     this.#rejected = new Map(
-      snapshot.rejectedActions.map(({ actionId, result }) => [actionId, structuredClone(result)]),
+      (snapshot.rejectedActions ?? []).map(({ actionId, result }) => [actionId, structuredClone(result)]),
     );
   }
 
