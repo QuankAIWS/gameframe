@@ -69,24 +69,27 @@ async function deploySelectedUnit(page) {
 test("captures Monster Master lobby, deployment, combat, and move-selection states", async ({ page }, testInfo) => {
   await page.goto("/monster-master.html?player=visual-monster-master");
   await expect(page.locator("#monster-master-lobby")).toBeVisible();
-  await capture(page, testInfo, "18-monster-master-lobby-desktop");
+  await capture(page, testInfo, "19-monster-master-lobby-desktop");
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await capture(page, testInfo, "19-monster-master-lobby-mobile");
+  await capture(page, testInfo, "20-monster-master-lobby-mobile");
 
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.locator("#monster-master-theo").click();
   await expect(page.locator("#monster-master-phase")).toHaveText("Deployment");
   await expect(page.locator('#monster-master-options button[data-action-kind="deploy-unit"]')).toHaveCount(3);
-  await capture(page, testInfo, "20-monster-master-deployment");
+  await capture(page, testInfo, "21-monster-master-deployment");
 
   for (let deployment = 0; deployment < 3; deployment += 1) {
     await deploySelectedUnit(page);
   }
   await expect(page.locator("#monster-master-phase")).toHaveText("Combat");
-  await capture(page, testInfo, "21-monster-master-combat-activation");
+  await expect(page.locator("#monster-master-help")).toHaveText(
+    "Use the action controls and highlighted battlefield cells to resolve the duel.",
+  );
+  await capture(page, testInfo, "22-monster-master-combat-activation");
 
   await page.locator("#monster-master-select-move").click();
   await expect(page.locator('#monster-master-options button[data-action-kind="move"]').first()).toBeVisible();
-  await capture(page, testInfo, "22-monster-master-move-options");
+  await capture(page, testInfo, "23-monster-master-move-options");
 });
