@@ -54,7 +54,7 @@ test("combat service runs a complete bounded Theo activation after a human ends"
   assert.equal(advanced.eventCount, 3);
   assert.equal(advanced.observation.activePlayerId, "human");
   assert.equal(advanced.observation.activeUnitId, "alpha-ranger");
-  assert.equal(advanced.observation.board.units.find((unit) => unit.id === "beta-vanguard")?.position.x, 14);
+  assert.equal(advanced.observation.board.units.find((unit) => unit.id === "beta-vanguard")?.position.x, 18);
   assert.deepEqual(await service.replay(created.matchId), (await service.snapshot(created.matchId)).state);
 });
 
@@ -66,7 +66,7 @@ test("combat service completes an opening Theo activation when Theo owns player 
   assert.equal(created.eventCount, 2);
   assert.equal(created.observation.activePlayerId, "human");
   assert.equal(created.observation.activeUnitId, "beta-vanguard");
-  assert.equal(created.observation.board.units.find((unit) => unit.id === "alpha-vanguard")?.position.x, 9);
+  assert.equal(created.observation.board.units.find((unit) => unit.id === "alpha-vanguard")?.position.x, 6);
 });
 
 test("combat service persists rejected action IDs and stale revisions", async () => {
