@@ -3,13 +3,17 @@ export interface ApiError extends Error {
   revision?: number;
 }
 
-export function json(status: number, value: unknown): Response {
+export function json(status: number, value: unknown, headers: HeadersInit = {}): Response {
+  const responseHeaders = new Headers(headers);
+  if (!responseHeaders.has("content-type")) {
+    responseHeaders.set("content-type", "application/json; charset=utf-8");
+  }
+  if (!responseHeaders.has("cache-control")) {
+    responseHeaders.set("cache-control", "no-store");
+  }
   return new Response(JSON.stringify(value), {
     status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store",
-    },
+    headers: responseHeaders,
   });
 }
 
@@ -29,7 +33,11 @@ export function errorResponse(caught: unknown): Response {
         ? 409
         : error.code === "match_not_found"
           ? 404
-          : 400;
+          : error.code === "discord_oauth_exchange_failed" || error.code === "discord_identity_failed"
+            ? 502
+            : error.code === "oauth_configuration_error"
+              ? 503
+              : 400;
   return json(status, {
     error: error.code ?? "bad_request",
     message: error.message,

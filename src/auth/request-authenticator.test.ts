@@ -13,7 +13,11 @@ test("development authenticator derives identity from the trusted request bounda
     headers: { "x-gameframe-player-id": "alice" },
   }));
 
-  assert.deepEqual(principal, { playerId: "alice", source: "development" });
+  assert.deepEqual(principal, {
+    playerId: "alice",
+    source: "development",
+    displayName: "Development player",
+  });
 });
 
 test("development authenticator rejects anonymous requests", async () => {

@@ -1,0 +1,143 @@
+.gameframe-auth-blocked body > :not(#gameframe-auth-gate) {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
+
+#gameframe-auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(5, 8, 18, 0.88);
+  backdrop-filter: blur(12px);
+}
+
+.gameframe-auth-card {
+  width: min(100%, 32rem);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid rgba(139, 156, 255, 0.35);
+  border-radius: 1.25rem;
+  background: #11172a;
+  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.45);
+  color: #f5f7ff;
+}
+
+.gameframe-auth-card h1 {
+  margin: 0.25rem 0 0.75rem;
+  font-size: clamp(1.7rem, 5vw, 2.35rem);
+}
+
+.gameframe-auth-card p {
+  line-height: 1.6;
+  color: #c7cdec;
+}
+
+.gameframe-auth-card small {
+  display: block;
+  margin-top: 1rem;
+  line-height: 1.45;
+  color: #929ac2;
+}
+
+.gameframe-auth-eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #aeb7ff;
+}
+
+.gameframe-auth-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.1rem;
+  border-radius: 0.75rem;
+  background: #5865f2;
+  color: white;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.gameframe-auth-button:focus-visible,
+.gameframe-session-badge button:focus-visible {
+  outline: 3px solid #d9ddff;
+  outline-offset: 3px;
+}
+
+.gameframe-session-badge {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  max-width: min(24rem, calc(100vw - 1.5rem));
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(139, 156, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(12, 17, 34, 0.92);
+  box-shadow: 0 0.65rem 2rem rgba(0, 0, 0, 0.28);
+  color: #f5f7ff;
+  backdrop-filter: blur(12px);
+}
+
+.gameframe-session-badge img,
+.gameframe-session-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+}
+
+.gameframe-session-badge img {
+  object-fit: cover;
+}
+
+.gameframe-session-avatar {
+  display: grid;
+  place-items: center;
+  background: #5865f2;
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+
+.gameframe-session-badge span:not(.gameframe-session-avatar) {
+  min-width: 0;
+  display: grid;
+}
+
+.gameframe-session-badge small {
+  color: #aeb6da;
+  font-size: 0.65rem;
+}
+
+.gameframe-session-badge strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+}
+
+.gameframe-session-badge button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 0.7rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .gameframe-session-badge {
+    position: static;
+    width: calc(100% - 1rem);
+    margin: 0.5rem;
+    max-width: none;
+  }
+}

@@ -3,6 +3,8 @@ export type PrincipalSource = "development" | "discord" | "service";
 export interface AuthenticatedPrincipal {
   playerId: string;
   source: PrincipalSource;
+  displayName?: string;
+  avatarUrl?: string;
 }
 
 export interface RequestAuthenticator {
@@ -49,7 +51,7 @@ export class DevelopmentHeaderAuthenticator implements RequestAuthenticator {
         `Development requests require the ${this.#headerName} header.`,
       );
     }
-    return { playerId, source: "development" };
+    return { playerId, source: "development", displayName: "Development player" };
   }
 }
 
