@@ -84,7 +84,7 @@
 }
 
 .gameframe-session-badge {
-  position: fixed;
+  position: absolute;
   top: 0.75rem;
   right: 0.75rem;
   z-index: 9000;

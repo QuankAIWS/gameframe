@@ -24,6 +24,7 @@ coverage/
 reports/
 playwright-report/
 test-results/
+visual-results/
 
 # Local editor and operating-system files
 *.local

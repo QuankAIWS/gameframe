@@ -118,9 +118,14 @@
 .tactical-destinations {
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 7px;
   min-height: 38px;
+  max-height: 160px;
   margin-top: 10px;
+  padding: 2px 4px 2px 2px;
+  overflow: auto;
+  scrollbar-gutter: stable;
 }
 .tactical-destinations button {
   padding: 7px 9px;
@@ -169,5 +174,5 @@
   .tactical-shell { width: min(100% - 12px, 1240px); }
   .tactical-player-grid { grid-template-columns: 1fr; }
   .tactical-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .tactical-destinations { max-height: 112px; overflow: auto; }
+  .tactical-destinations { max-height: 112px; }
 }

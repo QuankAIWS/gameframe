@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: scribbles-gameframe-canonical-${{ github.ref }}
+  group: scribbles-gameframe-${{ github.workflow }}-${{ github.ref }}-${{ github.event.label.name || 'manual' }}
   cancel-in-progress: true
 
 jobs:
@@ -42,7 +42,38 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: gf-0003-browser-diagnostics
+          name: gameframe-browser-diagnostics-${{ github.run_id }}
           path: test-results/
           retention-days: 3
           if-no-files-found: ignore
+
+  visual-review:
+    if: ${{ github.event_name == 'pull_request' && github.event.label.name == 'visual-review' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Select Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Install Chromium for curated visual review
+        run: npx playwright install --with-deps chromium
+
+      - name: Capture curated visual states
+        run: npm run test:visual
+
+      - name: Upload curated visual review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gameframe-visual-review-${{ github.run_id }}
+          path: visual-results/
+          retention-days: 7
+          if-no-files-found: error
