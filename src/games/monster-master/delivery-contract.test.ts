@@ -28,7 +28,7 @@ test("Monster Master browser delivery uses authenticated GameFrame boundaries", 
   const html = await read("public/monster-master.html");
   const app = await read("public/monster-master-app.js");
   const invitations = await read("public/secure-match-invite.js");
-  const index = await read("public/index.html");
+  const combat = await read("public/combat.html");
   const packageJson = JSON.parse(await read("package.json"));
 
   assert.match(html, /data-entry="\/monster-master-app\.js"/);
@@ -43,6 +43,6 @@ test("Monster Master browser delivery uses authenticated GameFrame boundaries", 
   assert.match(invitations, /entry === "\/monster-master-app\.js"/);
   assert.match(invitations, /selector: "#monster-master-human"/);
   assert.match(invitations, /gameId: \(\) => "monster-master-duel"/);
-  assert.match(index, /href="\/monster-master\.html"/);
+  assert.match(combat, /href="\/monster-master\.html"/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-app\.js/);
 });
