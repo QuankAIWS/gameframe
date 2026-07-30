@@ -4,7 +4,22 @@ import {
   requirePrincipalSeat,
   type RequestAuthenticator,
 } from "../auth/request-authenticator.ts";
-import { SignedCookieSessionAuthenticator, SignedSessionCodec } from "../auth/signed-session.ts";
+import {
+  DiscordOAuthClient,
+  clearActivityOAuthStateCookie,
+  clearWebsiteOAuthStateCookie,
+  createActivityOAuthStateCookie,
+  createWebsiteOAuthStateCookie,
+  safeReturnTo,
+} from "../auth/discord-oauth.ts";
+import {
+  SignedCookieSessionAuthenticator,
+  SignedSessionCodec,
+  clearDiscordActivitySessionCookie,
+  clearWebsiteSessionCookie,
+  createDiscordActivitySessionCookie,
+  createWebsiteSessionCookie,
+} from "../auth/signed-session.ts";
 import { errorResponse, json, readJson } from "./http-utils.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
@@ -14,6 +29,7 @@ interface WorkerRouterOptions {
 }
 
 type MatchOperation = "view" | "actions" | "events";
+const SESSION_TTL_SECONDS = 60 * 60 * 12;
 
 function publicMatchRoute(pathname: string): { matchId: string; operation: MatchOperation } | null {
   const match = /^\/api\/matches\/([^/]+)(?:\/(actions|events))?$/.exec(pathname);
@@ -28,9 +44,36 @@ function stubFor(env: GameFrameWorkerEnv, matchId: string) {
   return env.MATCHES.get(env.MATCHES.idFromName(matchId));
 }
 
+function callbackUri(url: URL): string {
+  return `${url.origin}/auth/discord/callback`;
+}
+
+function activityHost(clientId: string): string {
+  return `${clientId}.discordsays.com`;
+}
+
+function sessionResponse(principal: Awaited<ReturnType<RequestAuthenticator["authenticate"]>>) {
+  return {
+    authenticated: true,
+    playerId: principal.playerId,
+    source: principal.source,
+    displayName: principal.displayName ?? null,
+    avatarUrl: principal.avatarUrl ?? null,
+  };
+}
+
 export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
   const idGenerator = options.idGenerator ?? (() => crypto.randomUUID());
   let cachedSessionAuthenticator: { secret: string; authenticator: RequestAuthenticator } | null = null;
+  let cachedSessionCodec: { secret: string; codec: SignedSessionCodec } | null = null;
+
+  function sessionCodecFor(env: GameFrameWorkerEnv): SignedSessionCodec {
+    const secret = env.SESSION_SECRET ?? "";
+    if (!cachedSessionCodec || cachedSessionCodec.secret !== secret) {
+      cachedSessionCodec = { secret, codec: new SignedSessionCodec(secret) };
+    }
+    return cachedSessionCodec.codec;
+  }
 
   function authenticatorFor(env: GameFrameWorkerEnv): RequestAuthenticator {
     if (options.authenticator) return options.authenticator;
@@ -43,7 +86,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
     if (!cachedSessionAuthenticator || cachedSessionAuthenticator.secret !== secret) {
       cachedSessionAuthenticator = {
         secret,
-        authenticator: new SignedCookieSessionAuthenticator(new SignedSessionCodec(secret)),
+        authenticator: new SignedCookieSessionAuthenticator(sessionCodecFor(env)),
       };
     }
     return cachedSessionAuthenticator.authenticator;
@@ -61,7 +104,8 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
             service: "scribbles-gameframe",
             runtime: "cloudflare",
             realtime: "websocket-hibernation",
-            authentication: "required",
+            authentication: "discord-oauth-session",
+            discordActivity: true,
             games: [
               "tic-tac-toe",
               "american-checkers",
@@ -69,6 +113,88 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
               "tactical-combat-canary",
             ],
           });
+        }
+
+        if (request.method === "GET" && url.pathname === "/auth/discord/start") {
+          const oauth = new DiscordOAuthClient(env);
+          const state = await oauth.stateCodec.issue(safeReturnTo(url.searchParams.get("returnTo")));
+          const headers = new Headers({
+            location: oauth.authorizationUrl(state, callbackUri(url)),
+            "cache-control": "no-store",
+          });
+          headers.append("set-cookie", createWebsiteOAuthStateCookie(state));
+          return new Response(null, { status: 302, headers });
+        }
+
+        if (request.method === "GET" && url.pathname === "/auth/discord/callback") {
+          if (url.searchParams.get("error")) {
+            throw Object.assign(new Error("Discord authorization was denied or cancelled."), {
+              code: "discord_oauth_exchange_failed",
+            });
+          }
+          const oauth = new DiscordOAuthClient(env);
+          const state = String(url.searchParams.get("state") ?? "");
+          const transaction = await oauth.validateState(request, state);
+          const token = await oauth.exchangeCode(
+            String(url.searchParams.get("code") ?? ""),
+            callbackUri(url),
+          );
+          const principal = oauth.principalFor(await oauth.currentUser(token.access_token));
+          const sessionToken = await sessionCodecFor(env).issue(principal, SESSION_TTL_SECONDS);
+          const headers = new Headers({
+            location: transaction.returnTo,
+            "cache-control": "no-store",
+          });
+          headers.append("set-cookie", createWebsiteSessionCookie(sessionToken, {
+            maxAgeSeconds: SESSION_TTL_SECONDS,
+          }));
+          headers.append("set-cookie", clearWebsiteOAuthStateCookie());
+          return new Response(null, { status: 302, headers });
+        }
+
+        if (request.method === "GET" && url.pathname === "/auth/discord/activity/config") {
+          const oauth = new DiscordOAuthClient(env);
+          const state = await oauth.stateCodec.issue("/");
+          return json(200, {
+            clientId: oauth.clientId,
+            state,
+            scopes: ["identify"],
+          }, {
+            "set-cookie": createActivityOAuthStateCookie(state, oauth.clientId),
+          });
+        }
+
+        if (request.method === "POST" && url.pathname === "/auth/discord/activity/session") {
+          const oauth = new DiscordOAuthClient(env);
+          const body = await readJson(request);
+          await oauth.validateState(request, String(body.state ?? ""));
+          const token = await oauth.exchangeCode(String(body.code ?? ""));
+          const principal = oauth.principalFor(await oauth.currentUser(token.access_token));
+          const sessionToken = await sessionCodecFor(env).issue(principal, SESSION_TTL_SECONDS);
+          const headers = new Headers();
+          headers.append("set-cookie", createDiscordActivitySessionCookie(sessionToken, {
+            clientId: oauth.clientId,
+            maxAgeSeconds: SESSION_TTL_SECONDS,
+          }));
+          headers.append("set-cookie", clearActivityOAuthStateCookie(oauth.clientId));
+          return json(200, {
+            access_token: token.access_token,
+            token_type: token.token_type,
+            expires_in: token.expires_in,
+            session: sessionResponse(principal),
+          }, headers);
+        }
+
+        if (request.method === "GET" && url.pathname === "/api/session") {
+          return json(200, sessionResponse(await authenticator.authenticate(request)));
+        }
+
+        if (request.method === "POST" && url.pathname === "/auth/logout") {
+          const clientId = env.DISCORD_CLIENT_ID?.trim() ?? "";
+          const cookie = /^\d+$/.test(clientId) && url.hostname === activityHost(clientId)
+            ? clearDiscordActivitySessionCookie(clientId)
+            : clearWebsiteSessionCookie();
+          return json(200, { authenticated: false }, { "set-cookie": cookie });
         }
 
         if (request.method === "POST" && url.pathname === "/api/matches") {
@@ -123,7 +249,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
           }));
         }
 
-        if (url.pathname.startsWith("/api/")) {
+        if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) {
           return json(404, { error: "not_found" });
         }
 
