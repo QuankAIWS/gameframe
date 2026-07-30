@@ -10,15 +10,19 @@
   "scripts": {
     "dev": "node --experimental-strip-types src/server/http-server.ts",
     "dev:cloudflare": "wrangler dev",
+    "build:activity": "node scripts/build-activity-bundle.mjs",
+    "check:activity": "node scripts/build-activity-bundle.mjs --check",
     "test": "node scripts/run-tests.mjs",
     "test:workerd": "vitest run --config vitest.config.ts --max-workers=1 --no-isolate",
     "test:browser": "playwright test --config playwright.config.mjs",
-    "validate": "npm test && npm run test:workerd && npm run check:browser && npm run test:browser && node --experimental-strip-types src/scripts/self-check.ts",
-    "check:browser": "node --check public/gameframe-auth.js && node --check public/auth-launcher.js && node --check public/app.js && node --check public/tactical-app.js && node --check public/combat-app.js"
+    "validate": "npm test && npm run test:workerd && npm run check:activity && npm run check:browser && npm run test:browser && node --experimental-strip-types src/scripts/self-check.ts",
+    "check:browser": "node --check public/discord-activity-bootstrap.js && node --check public/gameframe-auth.js && node --check public/auth-launcher.js && node --check public/app.js && node --check public/tactical-app.js && node --check public/combat-app.js"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.19.0",
+    "@discord/embedded-app-sdk": "2.5.0",
     "@playwright/test": "1.61.1",
+    "esbuild": "0.28.1",
     "vitest": "4.1.10",
     "wrangler": "4.115.0"
   }
