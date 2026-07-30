@@ -1,11 +1,11 @@
 # AGENTS.md — Scribbles GameFrame
 
-Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate objective is the first playable Monster Master duel, built on the deterministic multiplayer, tactical combat, browser, Workers-runtime, and agent contracts already validated in the repository.
+Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate gameplay objective is the first playable Monster Master duel, built on the deterministic multiplayer, tactical combat, browser, Workers-runtime, agent, Discord identity, and authenticated invitation contracts already validated in the repository.
 
 ## Startup
 
 1. Read this file.
-2. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, `planning/development-workflow.md`, and `planning/tactical-battler-rpg-foundation.md`.
+2. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, `planning/development-workflow.md`, `planning/discord-authentication-and-cloudflare-canary.md`, `planning/authenticated-match-invitations.md`, and `planning/tactical-battler-rpg-foundation.md`.
 3. Inspect the affected code and tests before editing.
 
 ## Canonical commands
@@ -18,7 +18,7 @@ npm run validate
 npm run dev
 ```
 
-Node 22.16.0 is pinned in `.nvmrc`. Cloudflare Workers and browser-development dependencies are exactly pinned and must remain represented by a committed `package-lock.json`. Do not introduce or update dependencies without a concrete need, provenance review, and lockfile update.
+Node 22.16.0 is pinned in `.nvmrc`. Cloudflare Workers, Discord Activity, bundling, and browser-development dependencies are exactly pinned and must remain represented by a committed `package-lock.json`. Do not introduce or update dependencies without a concrete need, provenance review, lockfile update, and third-party notice when applicable.
 
 Playwright browser acceptance requires a compatible Chromium installation. Use `npx playwright install chromium` for local browser work. Canonical GitHub validation installs Chromium explicitly before running `npm run validate`.
 
@@ -27,6 +27,8 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 - Scribbles GameFrame is the game platform, package, service, and deployment.
 - Scribbles Runtime is the peer runtime that hosts agent capabilities and model access.
 - Theo is the public-facing agent, user-visible opponent, and registered GameFrame player with stable player ID `theo`.
+- Discord users receive stable GameFrame player IDs in the form `discord:<discord-user-id>`.
+- Discord display names and avatars are presentation metadata, not authorization keys.
 - Use the current Scribbles platform and runtime names consistently while preserving Theo as the agent identity.
 
 ## Architectural boundaries
@@ -34,12 +36,14 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 - `src/platform` owns transport-neutral game and match contracts.
 - `src/games/*` owns game-specific state, rules, observations, and legal actions.
 - `src/agents` owns nonhuman decision contracts. Theo is a participant through an adapter, not the authority for game mechanics.
-- `src/server` owns the current authoritative process boundary. Browser clients never mutate state directly.
+- `src/server` owns the current local authoritative process boundary. Browser clients never mutate state directly.
 - Discord, Cloudflare, and Scribbles Runtime integrations must enter through explicit adapters. Do not scatter vendor SDK calls through game logic.
+- Discord authenticates external users; GameFrame issues its own signed session and remains the authority for seats, commands, and match state.
+- Hosted human-versus-human seats require signed, expiring invitation claims by independently authenticated principals. Never restore URL player impersonation or caller-supplied Discord seats.
 - Event history, revision checks, idempotency, and visibility are correctness requirements, not deployment polish.
 - HTTP owns commands; WebSockets are projection-only. Do not introduce a second mutation path without preserving the same validation and idempotency contracts.
 - Tactical renderers consume authoritative map, unit, action, effect, and visibility state. Camera position, interpolation, hover previews, and transient animation remain presentation state.
-- Monster Master, future RPG encounters, and D&D-style encounters may share map, encounter, replay, service, storage, projection, and rendering infrastructure without sharing one `GameDefinition`, turn economy, or rules implementation.
+- Monster Master, future RPG encounters, and D&D-style encounters may share map, encounter, replay, service, storage, projection, identity, invitation, and rendering infrastructure without sharing one `GameDefinition`, turn economy, or rules implementation.
 
 ## Public repository controls
 
@@ -63,13 +67,13 @@ The first slice should include:
 - a small resource model used by deployment or abilities
 - movement, line of sight, attacks, health, defeat, effects, and victory through authoritative actions
 - at least one simple ability that proves actions are not limited to generic attacks
-- a complete beginning-to-end duel against deterministic Theo and another human seat
+- a complete beginning-to-end duel against deterministic Theo and another authenticated human seat
 - a dedicated browser surface with functional silhouettes and UI rather than final art
 - replay, resume, Workers eviction recovery, and player-specific legal-action projections
 
 Do not turn MM-0001 into the open world, campaign layer, full content roster, randomized loot system, generated-story system, or D&D rules engine. Preserve those directions through explicit encounter configuration, content definitions, and separate game or campaign wrappers.
 
-`TC-0001` map/movement/Canvas and `TC-0002` deterministic combat are complete repository proofs. `GF-0004` standalone Cloudflare and Discord canaries remain paused until the repository owner is available for deployment setup. They remain unresolved external checkpoints and must not be claimed from repository validation.
+`TC-0001` map/movement/Canvas and `TC-0002` deterministic combat are complete repository proofs. `GF-0004` website OAuth, Discord Activity client authentication, signed GameFrame sessions, and authenticated human invitations are repository-complete. Live Cloudflare deployment and real Discord desktop/mobile canaries remain owner-controlled external checkpoints and must not be claimed from repository validation.
 
 ## Development and validation posture
 
