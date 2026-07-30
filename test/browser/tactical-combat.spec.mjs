@@ -111,8 +111,9 @@ test("two browser seats share and advance one combat match", async ({ browser })
   try {
     await alpha.goto("/combat.html?player=combat-alpha");
     await alpha.locator("#combat-human").click();
-    const invite = await alpha.locator("#combat-invite-link").inputValue();
-    expect(invite).toContain("combat.html");
+    const inviteInput = alpha.locator("#combat-invite-link");
+    await expect(inviteInput).toHaveValue(/combat\.html.*match=/);
+    const invite = await inviteInput.inputValue();
 
     await beta.goto(invite);
     await expect(beta.locator("#combat-status")).toContainText("Opponent");
