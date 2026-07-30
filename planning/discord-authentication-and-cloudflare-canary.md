@@ -34,6 +34,20 @@ The browser never stores the website OAuth access token. Game commands and WebSo
 
 The server and browser Activity boundaries are implemented, pinned, bundled locally, and repository-tested. A complete Activity is still not claimed until the deployed build performs this handshake through an actual Discord client.
 
+### Authenticated human multiplayer
+
+1. An authenticated inviter requests `POST /api/invitations` for a supported game.
+2. GameFrame creates an HMAC-signed invitation containing a random invitation ID, random nonce, game, inviter, issue time, expiry, and optional target Discord identity.
+3. The invitation URL carries the signed token but no player ID.
+4. The recipient opens the dedicated claim page and completes website or Activity authentication before claim code loads.
+5. `POST /api/invitations/claim` verifies the token and authenticated principal.
+6. A serialized invitation Durable Object grants the first valid claimant the second seat.
+7. GameFrame creates the actual match with exactly the verified inviter and claimant player IDs.
+8. Interrupted claim-to-match initialization is repaired idempotently on retry or participant status read.
+9. Both participants receive only a server-generated resume path.
+
+Discord-authenticated users cannot directly create a human opponent by naming another player ID. Direct creation permits only the authenticated principal and stable agent `theo`. Trusted local development retains synthetic seats for Playwright coverage.
+
 ## Stable player identity
 
 Discord users become GameFrame players through:
@@ -123,8 +137,11 @@ Repository validation may prove:
 - signed session inspection and logout
 - official SDK ready, authorize, exchange, authenticate, and identity-correlation behavior through deterministic doubles
 - byte-for-byte Activity bundle reproducibility
+- signed invitation tamper, expiry, target, cancellation, and claim behavior
+- serialized first-claim wins and same-claimant idempotency
+- match creation with exactly the two authenticated principals
 - local-development compatibility
-- real Workers-runtime routing and cookie handling
+- real Workers-runtime routing, cookie handling, invitation persistence, eviction recovery, and match initialization
 
 Only a live canary can prove:
 
@@ -132,8 +149,9 @@ Only a live canary can prove:
 - an actual user completes website OAuth
 - the deployed cookie survives browser navigation and authorizes commands/WebSockets
 - an actual Discord Activity SDK client completes authorize/authenticate inside Discord
+- two real Discord users complete the authenticated invitation flow over the public network
 - public-network reconnect, Durable Object persistence, and Cloudflare operational behavior
 
-## Deferred secure multiplayer claim
+## Secure multiplayer status
 
-Development-browser friend links still use synthetic identities for local Playwright coverage. Discord-authenticated hosting disables those controls. Production friend play requires a signed, match-scoped invitation or seat-claim flow tied to the invited user's authenticated Discord identity; it must not re-enable URL player impersonation.
+The authenticated invitation boundary is repository-complete. Development-browser friend links remain synthetic only under the trusted local authenticator. Discord-authenticated hosting uses signed, expiring, match-scoped invitations and independently authenticated seat claims; URL player impersonation is rejected.
