@@ -1,6 +1,13 @@
 const developmentStorageKey = "scribbles-gameframe.player-id";
 let installedIdentity = null;
 
+if (!document.querySelector('link[href="/gameframe-auth.css"]')) {
+  const stylesheet = document.createElement("link");
+  stylesheet.rel = "stylesheet";
+  stylesheet.href = "/gameframe-auth.css";
+  document.head.append(stylesheet);
+}
+
 function normalizeIdentity(value) {
   const normalized = value?.trim();
   return normalized && normalized.length <= 120 ? normalized : null;
