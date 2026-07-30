@@ -190,6 +190,33 @@ async function prepareAuthoritativeState(request, predicate, options = {}) {
 async function openPreparedState(page, prepared, playerId = prepared.observation.activePlayerId ?? prepared.playerIds[0]) {
   await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.matchId)}&player=${encodeURIComponent(playerId)}`);
   await expect(page.locator("#monster-master-revision")).toHaveText(`Revision ${prepared.revision}`);
+  await expect(page.locator("#monster-master-invite-panel")).not.toHaveAttribute("open", "");
+}
+
+function coordinateVisible(coordinate, bounds) {
+  return coordinate.x >= bounds.x
+    && coordinate.y >= bounds.y
+    && coordinate.x < bounds.x + bounds.columns
+    && coordinate.y < bounds.y + bounds.rows;
+}
+
+async function panCameraToCoordinate(page, coordinate) {
+  for (let step = 0; step < 10; step += 1) {
+    const state = await diagnostics(page);
+    const bounds = state.viewport.bounds;
+    if (coordinateVisible(coordinate, bounds)) return;
+    if (coordinate.x < bounds.x) {
+      await page.getByRole("button", { name: "Pan camera west" }).click();
+    } else if (coordinate.x >= bounds.x + bounds.columns) {
+      await page.getByRole("button", { name: "Pan camera east" }).click();
+    } else if (coordinate.y < bounds.y) {
+      await page.getByRole("button", { name: "Pan camera north" }).click();
+    } else {
+      await page.getByRole("button", { name: "Pan camera south" }).click();
+    }
+  }
+  const state = await diagnostics(page);
+  expect(coordinateVisible(coordinate, state.viewport.bounds)).toBe(true);
 }
 
 test("captures Monster Master lobby, deployment, combat, and move-selection states", async ({ page }, testInfo) => {
@@ -289,5 +316,9 @@ test("captures Monster Master bounded draw", async ({ page, request }, testInfo)
   await openPreparedState(page, prepared, prepared.playerIds[0]);
   await expect(page.locator("#monster-master-status")).toContainText("draw");
   await expect(page.locator("#monster-master-effects .victory")).toContainText("draw");
+  const survivingUnit = prepared.observation.board.units.find((unit) => unit.ownerId === prepared.playerIds[0])
+    ?? prepared.observation.board.units[0];
+  expect(survivingUnit).toBeDefined();
+  await panCameraToCoordinate(page, survivingUnit.position);
   await capture(page, testInfo, "30-monster-master-draw");
 });
