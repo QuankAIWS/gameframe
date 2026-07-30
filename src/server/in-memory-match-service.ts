@@ -5,6 +5,11 @@ import type {
   CheckersState,
 } from "../games/checkers/index.ts";
 import type {
+  TacticalMovementAction,
+  TacticalMovementObservation,
+  TacticalMovementState,
+} from "../games/tactical-core/index.ts";
+import type {
   TicTacToeAction,
   TicTacToeObservation,
   TicTacToeState,
@@ -14,21 +19,27 @@ import {
   CheckersMatchService,
   type PublicCheckersMatchView,
 } from "./checkers-match-service.ts";
+import {
+  TacticalMovementMatchService,
+  type PublicTacticalMovementMatchView,
+} from "./tactical-movement-match-service.ts";
 import { TicTacToeMatchService, type PublicMatchView } from "./tic-tac-toe-match-service.ts";
 
-export type SupportedGameId = "tic-tac-toe" | "american-checkers";
+export type SupportedGameId = "tic-tac-toe" | "american-checkers" | "tactical-movement-canary";
 
 export type PublicGameMatchView =
   | ({ gameId: "tic-tac-toe" } & PublicMatchView)
-  | ({ gameId: "american-checkers" } & PublicCheckersMatchView);
+  | ({ gameId: "american-checkers" } & PublicCheckersMatchView)
+  | ({ gameId: "tactical-movement-canary" } & PublicTacticalMovementMatchView);
 
 export interface InMemoryGameFrameServiceOptions {
   idGenerator?: () => string;
   ticTacToeTheo?: AgentPlayer<TicTacToeAction, TicTacToeObservation>;
   checkersTheo?: AgentPlayer<CheckersAction, CheckersObservation>;
+  tacticalTheo?: AgentPlayer<TacticalMovementAction, TacticalMovementObservation>;
 }
 
-export type { PublicMatchView, PublicCheckersMatchView };
+export type { PublicMatchView, PublicCheckersMatchView, PublicTacticalMovementMatchView };
 
 export class InMemoryTicTacToeService extends TicTacToeMatchService {
   constructor(theo?: AgentPlayer<TicTacToeAction, TicTacToeObservation>) {
@@ -48,10 +59,20 @@ export class InMemoryCheckersService extends CheckersMatchService {
   }
 }
 
+export class InMemoryTacticalMovementService extends TacticalMovementMatchService {
+  constructor(theo?: AgentPlayer<TacticalMovementAction, TacticalMovementObservation>) {
+    super({
+      store: new InMemoryMatchSnapshotStore<TacticalMovementState, TacticalMovementAction>(),
+      ...(theo ? { theo } : {}),
+    });
+  }
+}
+
 export class InMemoryGameFrameService {
   readonly #idGenerator: () => string;
   readonly #ticTacToe: TicTacToeMatchService;
   readonly #checkers: CheckersMatchService;
+  readonly #tactical: TacticalMovementMatchService;
   readonly #matchGames = new Map<string, SupportedGameId>();
 
   constructor(options: InMemoryGameFrameServiceOptions = {}) {
@@ -63,6 +84,10 @@ export class InMemoryGameFrameService {
     this.#checkers = new CheckersMatchService({
       store: new InMemoryMatchSnapshotStore<CheckersState, CheckersAction>(),
       ...(options.checkersTheo ? { theo: options.checkersTheo } : {}),
+    });
+    this.#tactical = new TacticalMovementMatchService({
+      store: new InMemoryMatchSnapshotStore<TacticalMovementState, TacticalMovementAction>(),
+      ...(options.tacticalTheo ? { theo: options.tacticalTheo } : {}),
     });
   }
 
@@ -81,7 +106,9 @@ export class InMemoryGameFrameService {
 
     const view = normalizedGameId === "tic-tac-toe"
       ? await this.#ticTacToe.createMatch(playerIds, matchId)
-      : await this.#checkers.createMatch(playerIds, matchId);
+      : normalizedGameId === "american-checkers"
+        ? await this.#checkers.createMatch(playerIds, matchId)
+        : await this.#tactical.createMatch(playerIds, matchId);
     this.#matchGames.set(matchId, normalizedGameId);
     return { gameId: normalizedGameId, ...view } as PublicGameMatchView;
   }
@@ -90,7 +117,9 @@ export class InMemoryGameFrameService {
     const gameId = this.#gameFor(matchId);
     const view = gameId === "tic-tac-toe"
       ? await this.#ticTacToe.view(matchId, playerId)
-      : await this.#checkers.view(matchId, playerId);
+      : gameId === "american-checkers"
+        ? await this.#checkers.view(matchId, playerId)
+        : await this.#tactical.view(matchId, playerId);
     return { gameId, ...view } as PublicGameMatchView;
   }
 
@@ -109,9 +138,16 @@ export class InMemoryGameFrameService {
       });
       return { gameId, ...view };
     }
-    const view = await this.#checkers.submitAction({
+    if (gameId === "american-checkers") {
+      const view = await this.#checkers.submitAction({
+        ...input,
+        action: parseCheckersAction(input.action),
+      });
+      return { gameId, ...view };
+    }
+    const view = await this.#tactical.submitAction({
       ...input,
-      action: parseCheckersAction(input.action),
+      action: parseTacticalMovementAction(input.action),
     });
     return { gameId, ...view };
   }
@@ -127,7 +163,13 @@ export class InMemoryGameFrameService {
   }
 
   #normalizeGameId(gameId: string): SupportedGameId {
-    if (gameId === "tic-tac-toe" || gameId === "american-checkers") return gameId;
+    if (
+      gameId === "tic-tac-toe"
+      || gameId === "american-checkers"
+      || gameId === "tactical-movement-canary"
+    ) {
+      return gameId;
+    }
     const error = new Error(`Unsupported game: ${gameId}`);
     Object.assign(error, { code: "unknown_game" });
     throw error;
@@ -138,6 +180,11 @@ function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {};
+}
+
+function coordinate(value: unknown): { x: number; y: number } {
+  const input = record(value);
+  return { x: Number(input.x), y: Number(input.y) };
 }
 
 function parseTicTacToeAction(value: unknown): TicTacToeAction {
@@ -158,5 +205,18 @@ function parseCheckersAction(value: unknown): CheckersAction {
     capturedPieceIds: Array.isArray(action.capturedPieceIds)
       ? action.capturedPieceIds.map((pieceId) => String(pieceId))
       : [],
+  };
+}
+
+function parseTacticalMovementAction(value: unknown): TacticalMovementAction {
+  const action = record(value);
+  const unitId = String(action.unitId ?? "");
+  if (action.type === "end-activation") return { type: "end-activation", unitId };
+  return {
+    type: "move",
+    unitId,
+    from: coordinate(action.from),
+    path: Array.isArray(action.path) ? action.path.map(coordinate) : [],
+    movementCost: Number(action.movementCost),
   };
 }
