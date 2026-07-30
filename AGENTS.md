@@ -1,19 +1,24 @@
 # AGENTS.md — Scribbles GameFrame
 
-Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate gameplay objective is the first playable Monster Master duel, built on the deterministic multiplayer, tactical combat, browser, Workers-runtime, agent, Discord identity, and authenticated invitation contracts already validated in the repository.
+Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate gameplay objective is to validate, review, and merge the first playable Monster Master duel built on the deterministic multiplayer, tactical combat, browser, Workers-runtime, agent, Discord identity, and authenticated invitation contracts already proven in the repository.
 
 ## Startup
 
 1. Read this file.
-2. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, `planning/development-workflow.md`, `planning/discord-authentication-and-cloudflare-canary.md`, `planning/authenticated-match-invitations.md`, and `planning/tactical-battler-rpg-foundation.md`.
+2. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, `planning/development-workflow.md`, `planning/discord-authentication-and-cloudflare-canary.md`, `planning/authenticated-match-invitations.md`, `planning/tactical-battler-rpg-foundation.md`, `planning/monster-master-rules.md`, and `planning/browser-journey-matrix.md`.
 3. Inspect the affected code and tests before editing.
+4. For MM-0001 continuation, read `planning/validation/2026-07-30-monster-master-first-playable.md` and PR #39 before expanding scope.
 
 ## Canonical commands
 
 ```bash
 npm test
 npm run test:workerd
+npm run check:activity
+npm run check:browser
 npm run test:browser
+npm run test:visual
+npm run test:visual-baseline
 npm run validate
 npm run dev
 ```
@@ -57,19 +62,28 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 
 ## Current active lane
 
-`GF-0010 / MM-0001`: build the first playable two-player Monster Master duel as a separate game definition over the validated tactical substrate.
+`GF-0010 / MM-0001`: review and freeze the repository-complete first playable Monster Master candidate on PR #39.
 
-The first slice should include:
+The candidate now includes:
 
-- one Master and a small roster of monsters for each player
-- explicit deployment zones and a bounded deployment phase
-- stable unit archetypes and content IDs
-- a small resource model used by deployment or abilities
-- movement, line of sight, attacks, health, defeat, effects, and victory through authoritative actions
-- at least one simple ability that proves actions are not limited to generic attacks
-- a complete beginning-to-end duel against deterministic Theo and another authenticated human seat
-- a dedicated browser surface with functional silhouettes and UI rather than final art
-- replay, resume, Workers eviction recovery, and player-specific legal-action projections
+- separate `monster-master-duel` rules and service boundaries
+- one Warden Master, Stone Bulwark, and Emberling per player
+- alternating deployment zones and complete deployment-to-combat progression
+- stable content IDs and deterministic initiative
+- movement, line of sight, attacks, health, defeat, Master victory, and bounded draw
+- command energy, round regeneration, and Warden `Mend`
+- deterministic Theo and complete self-play
+- local and Durable Object persistence, replay, resume, and player-specific projections
+- signed hosted invitation integration and local two-browser play
+- dedicated Canvas UI, camera controls, mobile deployment, recovery handling, and curated visual evidence
+
+The immediate remaining gates are:
+
+- exact-head canonical validation after documentation and visual-review corrections
+- final curated artifact inspection with globally unique evidence names
+- owner-controlled local gameplay and subjective presentation review
+- merge after the exact validated head is unchanged
+- deployed Cloudflare and real Discord website/Activity canaries when the owner is available
 
 Do not turn MM-0001 into the open world, campaign layer, full content roster, randomized loot system, generated-story system, or D&D rules engine. Preserve those directions through explicit encounter configuration, content definitions, and separate game or campaign wrappers.
 
@@ -77,10 +91,11 @@ Do not turn MM-0001 into the open world, campaign layer, full content roster, ra
 
 ## Development and validation posture
 
-- Develop every feature on a dedicated branch and keep its pull request in draft while implementation is active.
+- Develop every feature on a dedicated branch and keep its pull request in draft while implementation or review is active.
 - Run targeted tests while iterating and run the complete `npm run validate` suite before pushing any branch head represented as locally verified.
 - Record the exact validated commit SHA and execution environment in the pull request. A local statement is evidence of development verification, not canonical CI.
 - Ordinary branch pushes and pull-request updates must not start GitHub Actions. GitHub-hosted validation is reserved for completed feature candidates and major milestones.
 - When a feature is complete, update it from `main`, run the complete suite locally again, push the final head, and freeze the branch.
 - Start `Canonical Validation` either by manual workflow dispatch or by applying the `canonical-validation` label to the frozen pull request. Merge only after its `validate` job passes, and rerun it if the branch changes afterward.
+- Use the separate `visual-review` label when a curated screenshot artifact is required. Inspect the actual artifact; a successful capture job is not itself visual approval.
 - Real Discord, deployed Cloudflare, and Scribbles Runtime behavior require compact external canaries and must not be claimed from local tests or the repository-only canonical suite.
