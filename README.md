@@ -28,7 +28,7 @@ Implemented in the validated platform proofs:
 - Responsive browser and tactical Canvas surfaces
 - Real Playwright browser acceptance through the ordinary application boundary
 - Risk-based browser journey ledger covering current controls and outstanding states
-- Deliberate 23-file curated visual-review artifacts
+- Deliberate 30-file curated visual-review artifacts
 - Four canonical Ubuntu/Chromium visual baselines for stable shell states
 - Real Workers-runtime persistence, eviction, competing-write, hibernating-WebSocket, authentication, Activity, invitation, and Monster Master tests
 
@@ -68,14 +68,15 @@ Monster Master MM-0001 candidate:
 - Separate `monster-master-duel` game definition over the shared tactical substrate
 - Alternating left/right deployment zones for one Warden Master, one Stone Bulwark, and one Emberling per player
 - Stable content IDs, health, movement, initiative, attack range, attack damage, and deterministic activation order
-- Movement, line of sight, attacks, health, defeat, immediate Master-defeat victory, and bounded round-cap draws
+- Movement, line of sight, attacks, health, ordinary defeat, immediate Master-defeat victory, and a draw completed at the configured final round
 - Visible command energy with bounded regeneration
 - Warden Master `Mend`, proving friendly targeting, resource expenditure, healing, and non-generic primary actions
 - Deterministic Theo deployment and combat decisions with complete bounded self-play
 - Replay, configured encounter restoration, in-memory HTTP service, Durable Object persistence, and player-specific observations
 - Dedicated `/monster-master.html` Canvas surface with deployment, movement, attacks, Mend, roster, effects, camera controls, resume, mobile deployment, and local or signed hosted invitations
-- Browser journeys for attack, Mend, defeat, victory, draw, command regeneration, stale-revision recovery, unauthorized access, wrong-game resume, failed creation, navigation, diagnostics, and setup reset
-- Curated desktop, mobile, deployment, combat activation, and movement-option review states
+- Collapsed local second-seat invitation disclosure that remains available without dominating active combat
+- Browser journeys for attack, Mend, defeat, victory, draw, command regeneration, stale-revision recovery, unauthorized access, wrong-game resume, failed creation, navigation, diagnostics, invite disclosure, and setup reset
+- Curated desktop, mobile, deployment, movement, attack, Mend, ordinary-defeat, winner-relative victory, and round-24 draw review states
 
 Agent-provider proof:
 
@@ -99,11 +100,11 @@ Secure delivery proof:
 Browser quality proof:
 
 - A durable journey matrix inventories every current player-facing control and security-sensitive transition
-- Forty-three Playwright interaction journeys cover game navigation, diagnostics, setup reset, camera controls, logout, clipboard, invitation cancellation, multiplayer, resume, mobile layout, authoritative Monster Master outcomes, and failure recovery
-- A deliberate label-triggered visual-review lane captures 23 synthetic desktop, mobile, game, tactical, authentication, invitation, and Monster Master screenshots with seven-day retention
+- Forty-four Playwright interaction journeys cover game navigation, diagnostics, setup reset, camera controls, logout, clipboard, invitation cancellation and disclosure, multiplayer, resume, mobile layout, authoritative Monster Master outcomes, and failure recovery
+- A deliberate label-triggered visual-review lane captures 30 synthetic desktop, mobile, game, tactical, authentication, invitation, and Monster Master screenshots with seven-day retention
 - Four stable shell compositions are protected by canonical screenshot comparison
 - Dynamic Canvas and match states remain in curated review rather than brittle pixel baselines
-- Screenshot review corrected tactical badge overlap, unbounded legal-action lists, Checkers capture timing, Monster Master phase guidance, asynchronous capture timing, and globally duplicated capture IDs
+- Screenshot review corrected tactical badge overlap, unbounded legal-action lists, Checkers capture timing, Monster Master phase guidance, asynchronous capture timing, globally duplicated capture IDs, combat invite clutter, completed-state help copy, redundant outcome evidence, and a round-cap off-by-one
 
 The active repository candidate is MM-0001: the first playable Monster Master duel in the monster-master tactical battler foundation. Repository validation and curated rendering are separate from owner-controlled Cloudflare deployment, live Discord website/Activity canaries, and subjective gameplay review. Those external and human results are not claimed here.
 
@@ -120,7 +121,7 @@ The active repository candidate is MM-0001: the first playable Monster Master du
 - Official Discord Activity SDK client handshake validated and merged on July 30, 2026
 - Authenticated human-match invitation boundary validated and merged on July 30, 2026
 - Browser journey, curated visual review, and stable visual baselines validated and merged on July 30, 2026
-- MM-0001 first-playable repository candidate validated on its feature branch on July 30, 2026; merge and live canaries remain pending
+- MM-0001 first-playable repository candidate reached a green feature-branch checkpoint on July 30, 2026; the later visual-hardening head requires renewed exact-head validation before merge
 
 Durable evidence:
 
