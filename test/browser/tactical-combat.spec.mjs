@@ -15,6 +15,14 @@ async function createCombat(request, playerIds) {
   return response.json();
 }
 
+async function viewAs(request, matchId, playerId) {
+  const response = await request.get(`/api/matches/${encodeURIComponent(matchId)}`, {
+    headers: playerHeaders(playerId),
+  });
+  expect(response.status()).toBe(200);
+  return response.json();
+}
+
 async function submit(request, view, playerId, action) {
   const response = await request.post(`/api/matches/${encodeURIComponent(view.matchId)}/actions`, {
     headers: playerHeaders(playerId),
@@ -54,11 +62,14 @@ function approachMove(view) {
 async function prepareLegalAttack(request) {
   let view = await createCombat(request, ["browser-alpha", "browser-beta"]);
   for (let step = 0; step < 40; step += 1) {
-    if (view.observation.legalActions.some((action) => action.type === "attack")) return view;
     const playerId = view.observation.activePlayerId;
+    view = await viewAs(request, view.matchId, playerId);
+    if (view.observation.legalActions.some((action) => action.type === "attack")) return view;
+
     const move = approachMove(view);
     if (move) view = await submit(request, view, playerId, move);
     if (view.observation.legalActions.some((action) => action.type === "attack")) return view;
+
     const end = view.observation.legalActions.find((action) => action.type === "end-activation");
     expect(end).toBeDefined();
     view = await submit(request, view, playerId, end);
