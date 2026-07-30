@@ -109,6 +109,21 @@ export function createGameFrameServer(
         });
       }
 
+      if (request.method === "GET" && url.pathname === "/api/session") {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        return json(response, 200, {
+          authenticated: true,
+          playerId: principal.playerId,
+          source: principal.source,
+          displayName: principal.displayName ?? null,
+          avatarUrl: principal.avatarUrl ?? null,
+        });
+      }
+
+      if (request.method === "POST" && url.pathname === "/auth/logout") {
+        return json(response, 200, { authenticated: false });
+      }
+
       if (request.method === "POST" && url.pathname === "/api/matches") {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
         const body = await readJson(request);
@@ -141,7 +156,7 @@ export function createGameFrameServer(
         return json(response, 200, view);
       }
 
-      if (url.pathname.startsWith("/api/")) {
+      if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) {
         return json(response, 404, { error: "not_found" });
       }
 
