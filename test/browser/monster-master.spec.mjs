@@ -36,9 +36,9 @@ async function clickBoardCoordinate(page, coordinate) {
   });
 }
 
-async function deploySelectedUnit(page, playerId) {
+async function deploySelectedUnit(page) {
   const state = await diagnostics(page);
-  const view = await viewAs(page, state.matchId, playerId);
+  const view = await viewAs(page, state.matchId, state.playerId);
   expect(view.gameId).toBe(gameId);
   const bounds = state.viewport.bounds;
   const selectedUnitId = state.selectedUnitId;
@@ -55,8 +55,7 @@ async function deploySelectedUnit(page, playerId) {
 }
 
 test("deploys a full roster, advances combat against Theo, and resumes the duel", async ({ page }) => {
-  const playerId = "monster-master-human";
-  await page.goto(`/monster-master.html?player=${playerId}`);
+  await page.goto("/monster-master.html?player=monster-master-human");
   await page.locator("#monster-master-theo").click();
 
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 0");
@@ -65,7 +64,7 @@ test("deploys a full roster, advances combat against Theo, and resumes the duel"
   await expect(page.locator("#monster-master-status")).toContainText("Deploy Alpha Warden Master");
 
   for (let deployment = 1; deployment <= 3; deployment += 1) {
-    await deploySelectedUnit(page, playerId);
+    await deploySelectedUnit(page);
     await expect(page.locator("#monster-master-revision")).toHaveText(`Revision ${deployment * 2}`);
   }
 
@@ -83,10 +82,10 @@ test("deploys a full roster, advances combat against Theo, and resumes the duel"
   await page.locator("#monster-master-end-activation").click();
   await expect(page.locator("#monster-master-active-unit")).toContainText("Alpha Warden Master");
   const matchId = (await diagnostics(page)).matchId;
-  const revision = await page.locator("#monster-master-revision-small").textContent();
+  const resumedRevision = await page.locator("#monster-master-revision-small").textContent();
 
   await page.reload();
-  await expect(page.locator("#monster-master-revision-small")).toHaveText(revision);
+  await expect(page.locator("#monster-master-revision-small")).toHaveText(resumedRevision);
   await expect(page).toHaveURL(new RegExp(`match=${matchId}`));
   await expect(page.locator("#monster-master-phase")).toHaveText("Combat");
 });
@@ -106,9 +105,10 @@ test("two browser seats alternate Monster Master deployment on one match", async
     await beta.goto(invite);
     await expect(beta.locator("#monster-master-status")).toContainText("Opponent");
 
-    await deploySelectedUnit(alpha, "monster-alpha");
+    await deploySelectedUnit(alpha);
     await expect(beta.locator("#monster-master-status")).toContainText("Deploy Beta Warden Master");
-    await deploySelectedUnit(beta, "guest-");
+    await deploySelectedUnit(beta);
+    await expect(alpha.locator("#monster-master-status")).toContainText("Deploy Alpha Stone Bulwark");
   } finally {
     await alphaContext.close();
     await betaContext.close();
