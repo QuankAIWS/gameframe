@@ -29,9 +29,7 @@ async function readJson(request: IncomingMessage): Promise<Record<string, unknow
   let body = "";
   for await (const chunk of request) {
     body += chunk;
-    if (body.length > 65_536) {
-      throw new Error("Request body is too large.");
-    }
+    if (body.length > 65_536) throw new Error("Request body is too large.");
   }
   return body ? JSON.parse(body) as Record<string, unknown> : {};
 }
@@ -105,6 +103,7 @@ export function createGameFrameServer(
             "american-checkers",
             "tactical-movement-canary",
             "tactical-combat-canary",
+            "monster-master-duel",
           ],
         });
       }
@@ -141,10 +140,7 @@ export function createGameFrameServer(
         return json(response, 200, view);
       }
 
-      if (url.pathname.startsWith("/api/")) {
-        return json(response, 404, { error: "not_found" });
-      }
-
+      if (url.pathname.startsWith("/api/")) return json(response, 404, { error: "not_found" });
       return await serveStatic(url.pathname, response);
     } catch (caught) {
       const error = caught as ApiError;
