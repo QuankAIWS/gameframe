@@ -24,8 +24,11 @@ The matrix is risk-based rather than combinatorial. Every meaningful player cont
 | Main lobby | Select American Checkers | Interaction; visual review | Covered interaction; visual review pending |
 | Main lobby | Open Tactical Movement | Interaction | Pending direct navigation journey |
 | Tactical Movement | Open other games | Interaction | Pending |
+| Tactical Combat | Open Monster Master | Interaction | Link present; direct navigation assertion pending |
 | Tactical Combat | Open movement canary | Interaction | Pending |
 | Tactical Combat | Open other games | Interaction | Pending |
+| Monster Master | Open Tactical Combat | Interaction | Link present; direct navigation assertion pending |
+| Monster Master | Open other games | Interaction | Link present; direct navigation assertion pending |
 | Active match | Back to setup | Interaction | Pending |
 | Diagnostics closed | Open diagnostics | Interaction; visual review | Pending |
 | Diagnostics open | Close diagnostics | Interaction | Pending |
@@ -127,6 +130,29 @@ The matrix is risk-based rather than combinatorial. Every meaningful player cont
 | Active match | Refresh and resume | Interaction | Covered |
 | Mobile match | Tap action, target, and end activation | Mobile interaction | Layout covered; explicit touch journey pending |
 
+## Monster Master journeys
+
+| State | Control or transition | Required evidence | Status |
+|---|---|---|---|
+| Lobby | Duel Theo | Interaction; visual review | Covered journey; curated capture added |
+| Lobby | Duel friend in local development | Two-context | Covered alternating deployment journey |
+| Deployment | Select each roster unit | Interaction; visual review | Default and sequential selection covered through full deployment |
+| Deployment | Commit highlighted Canvas coordinate | Pointer; service-backed | Covered for all three alpha deployments |
+| Deployment | Opposing seat receives next legal deployment | Two-context | Covered |
+| Combat start | Initiative roster, command energy, budgets, and active unit | Interaction; visual review | Covered assertions; curated capture added |
+| Move action | Show legal destinations and commit | Interaction; visual review | Covered |
+| Attack action | Show legal targets and commit damage | Interaction; visual review | Backend covered; dedicated browser journey pending |
+| Mend ability | Spend command and heal a legal friendly target | Interaction; visual review | Backend covered; dedicated browser-seeded journey pending |
+| Activation | End activation and allow deterministic Theo response | Interaction | Covered |
+| Command regeneration | New round updates both command displays | Interaction | Backend covered; browser assertion pending |
+| Defeat | Remove defeated monster and present effect | Interaction; visual review | Pending browser-seeded journey |
+| Master defeat | Immediate victory and disabled controls | Interaction; visual review | Rules covered; browser journey pending |
+| Round cap | Bounded draw presentation | Interaction; visual review | Rules covered; browser journey pending |
+| Camera | Pan, center active, center field, zoom in, and zoom out | Interaction | Zoom in and Canvas coordinate mapping covered; full control audit pending |
+| Active duel | Refresh and resume exact revision | Interaction | Covered |
+| Hosted human duel | Signed invitation creates and resumes both verified seats | Interaction; external canary | Signed boundary covered; live two-user canary pending |
+| Mobile duel | Deployment and controls remain usable without overflow | Mobile | Layout covered; explicit mobile deployment pending |
+
 ## Connectivity, stale state, and failure journeys
 
 | State | Control or transition | Required evidence | Status |
@@ -160,6 +186,11 @@ The manual visual workflow should produce a small named set rather than screensh
 15. Secure invitation dialog
 16. Invitation claim success
 17. Invitation claim error
+18. Monster Master — desktop lobby
+19. Monster Master — mobile lobby
+20. Monster Master — deployment and starting zone
+21. Monster Master — combat activation
+22. Monster Master — movement options
 
 ## Narrow visual-baseline candidates
 
@@ -172,6 +203,8 @@ Only stable compositions should become pixel comparisons:
 - Initial Checkers board
 - Tactical Movement shell with deterministic initial camera
 - Tactical Combat shell with deterministic initial activation
+
+Monster Master remains curated-only until the first rendered review confirms that the shell, deployment framing, and Canvas composition are stable enough for a narrow accepted baseline.
 
 Dynamic identifiers, status timestamps, profile names, and Canvas animation frames must be masked or fixed before baseline acceptance.
 
