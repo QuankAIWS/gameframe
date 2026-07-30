@@ -1,6 +1,11 @@
 import type { CheckersAction, CheckersState } from "../games/checkers/index.ts";
+import type {
+  TacticalMovementAction,
+  TacticalMovementState,
+} from "../games/tactical-core/index.ts";
 import type { TicTacToeAction, TicTacToeState } from "../games/tic-tac-toe/index.ts";
 import { CheckersMatchService } from "../server/checkers-match-service.ts";
+import { TacticalMovementMatchService } from "../server/tactical-movement-match-service.ts";
 import { TicTacToeMatchService } from "../server/tic-tac-toe-match-service.ts";
 import {
   DurableObjectMatchStore,
@@ -9,7 +14,7 @@ import {
 import { errorResponse, json, readJson } from "./http-utils.ts";
 import type { DurableStorageLike } from "./runtime-contracts.ts";
 
-export type DurableGameId = "tic-tac-toe" | "american-checkers";
+export type DurableGameId = "tic-tac-toe" | "american-checkers" | "tactical-movement-canary";
 
 export interface GameFrameMatchObjectRuntimeOptions {
   onMatchUpdated?: (matchId: string) => Promise<void> | void;
@@ -24,6 +29,7 @@ export class GameFrameMatchObjectRuntime {
   readonly #storage: DurableStorageLike;
   readonly #ticTacToe: TicTacToeMatchService;
   readonly #checkers: CheckersMatchService;
+  readonly #tactical: TacticalMovementMatchService;
   readonly #onMatchUpdated: (matchId: string) => Promise<void> | void;
   #tail: Promise<void> = Promise.resolve();
 
@@ -41,6 +47,10 @@ export class GameFrameMatchObjectRuntime {
       store: new DurableObjectMatchStore<CheckersState, CheckersAction>(storage),
       idGenerator,
     });
+    this.#tactical = new TacticalMovementMatchService({
+      store: new DurableObjectMatchStore<TacticalMovementState, TacticalMovementAction>(storage),
+      idGenerator,
+    });
     this.#onMatchUpdated = options.onMatchUpdated ?? (() => undefined);
   }
 
@@ -55,7 +65,9 @@ export class GameFrameMatchObjectRuntime {
     const gameId = await this.#gameFor(matchId);
     const view = gameId === "tic-tac-toe"
       ? await this.#ticTacToe.view(matchId, playerId)
-      : await this.#checkers.view(matchId, playerId);
+      : gameId === "american-checkers"
+        ? await this.#checkers.view(matchId, playerId)
+        : await this.#tactical.view(matchId, playerId);
     return { gameId, ...view };
   }
 
@@ -72,7 +84,9 @@ export class GameFrameMatchObjectRuntime {
         const gameId = this.#normalizeGameId(String(body.gameId ?? "tic-tac-toe"));
         const view = gameId === "tic-tac-toe"
           ? await this.#ticTacToe.createMatch(playerIds, matchId)
-          : await this.#checkers.createMatch(playerIds, matchId);
+          : gameId === "american-checkers"
+            ? await this.#checkers.createMatch(playerIds, matchId)
+            : await this.#tactical.createMatch(playerIds, matchId);
         await this.#notify(matchId);
         return json(201, { gameId, ...view });
       }
@@ -99,10 +113,15 @@ export class GameFrameMatchObjectRuntime {
               ...common,
               action: parseTicTacToeAction(body.action),
             })
-          : await this.#checkers.submitAction({
-              ...common,
-              action: parseCheckersAction(body.action),
-            });
+          : gameId === "american-checkers"
+            ? await this.#checkers.submitAction({
+                ...common,
+                action: parseCheckersAction(body.action),
+              })
+            : await this.#tactical.submitAction({
+                ...common,
+                action: parseTacticalMovementAction(body.action),
+              });
         await this.#notify(matchId);
         return json(200, { gameId, ...view });
       }
@@ -124,7 +143,13 @@ export class GameFrameMatchObjectRuntime {
   }
 
   #normalizeGameId(gameId: string): DurableGameId {
-    if (gameId === "tic-tac-toe" || gameId === "american-checkers") return gameId;
+    if (
+      gameId === "tic-tac-toe"
+      || gameId === "american-checkers"
+      || gameId === "tactical-movement-canary"
+    ) {
+      return gameId;
+    }
     const error = new Error(`Unsupported game: ${gameId}`);
     Object.assign(error, { code: "unknown_game" });
     throw error;
@@ -145,6 +170,11 @@ function record(value: unknown): Record<string, unknown> {
     : {};
 }
 
+function coordinate(value: unknown): { x: number; y: number } {
+  const input = record(value);
+  return { x: Number(input.x), y: Number(input.y) };
+}
+
 function parseTicTacToeAction(value: unknown): TicTacToeAction {
   const action = record(value);
   return { type: "place", cell: Number(action.cell) };
@@ -160,6 +190,19 @@ function parseCheckersAction(value: unknown): CheckersAction {
     capturedPieceIds: Array.isArray(action.capturedPieceIds)
       ? action.capturedPieceIds.map((pieceId) => String(pieceId))
       : [],
+  };
+}
+
+function parseTacticalMovementAction(value: unknown): TacticalMovementAction {
+  const action = record(value);
+  const unitId = String(action.unitId ?? "");
+  if (action.type === "end-activation") return { type: "end-activation", unitId };
+  return {
+    type: "move",
+    unitId,
+    from: coordinate(action.from),
+    path: Array.isArray(action.path) ? action.path.map(coordinate) : [],
+    movementCost: Number(action.movementCost),
   };
 }
 
