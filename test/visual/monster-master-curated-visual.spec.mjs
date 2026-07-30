@@ -238,7 +238,7 @@ test("captures Monster Master lobby, deployment, combat, and move-selection stat
   }
   await expect(page.locator("#monster-master-phase")).toHaveText("Combat");
   await expect(page.locator("#monster-master-help")).toHaveText(
-    "Use the action controls and highlighted battlefield cells to resolve the duel.",
+    "Battlefield actions, targets, and resolved outcomes appear here.",
   );
   await capture(page, testInfo, "22-monster-master-combat-activation");
 
