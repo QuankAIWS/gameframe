@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   MatchInvitationTokenCodec,
   discordTargetPlayerId,
+  isInvitationGameId,
   requireInvitationTarget,
   resumePathForGame,
 } from "./match-invitation.ts";
@@ -32,6 +33,26 @@ test("signed invitation claims round-trip and retain an optional Discord target"
   assert.match(issued.claims.nonce, /^[A-Za-z0-9_-]+$/);
   assert.equal(discordTargetPlayerId("222"), "discord:222");
   assert.equal(discordTargetPlayerId(""), undefined);
+});
+
+test("Monster Master invitations are supported by the signed invitation boundary", async () => {
+  const codec = new MatchInvitationTokenCodec(secret, {
+    now: () => 1_000_000,
+    randomBytes: deterministicBytes,
+  });
+  const issued = await codec.issue({
+    invitationId: "monster-master-invite",
+    gameId: "monster-master-duel",
+    inviterPlayerId: "discord:111",
+    ttlSeconds: 3600,
+  });
+
+  assert.equal(isInvitationGameId("monster-master-duel"), true);
+  assert.equal((await codec.verify(issued.token)).gameId, "monster-master-duel");
+  assert.equal(
+    resumePathForGame("monster-master-duel", "duel 1"),
+    "/monster-master.html?match=duel%201",
+  );
 });
 
 test("invitation tokens reject tampering and expiry", async () => {
@@ -98,9 +119,14 @@ test("invitation resume paths never contain a player identity", () => {
     resumePathForGame("tactical-combat-canary", "match-4"),
     "/combat.html?match=match-4",
   );
+  assert.equal(
+    resumePathForGame("monster-master-duel", "match-5"),
+    "/monster-master.html?match=match-5",
+  );
   for (const path of [
     resumePathForGame("tic-tac-toe", "m"),
     resumePathForGame("tactical-combat-canary", "m"),
+    resumePathForGame("monster-master-duel", "m"),
   ]) {
     assert.doesNotMatch(path, /player=/);
   }
