@@ -7,7 +7,7 @@ function playerHeaders(playerId) {
 }
 
 async function viewAs(page, matchId, playerId) {
-  const response = await page.request.get(`/api/matches/${encodeURIComponent(matchId)}`, {
+  const response = await page.context().request.get(`/api/matches/${encodeURIComponent(matchId)}`, {
     headers: playerHeaders(playerId),
   });
   expect(response.status()).toBe(200);
