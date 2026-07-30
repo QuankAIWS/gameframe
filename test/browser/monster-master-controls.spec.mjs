@@ -104,6 +104,6 @@ test("Back to setup stops the active surface and allows a fresh duel", async ({ 
   await expect(page).not.toHaveURL(/match=/);
 
   await page.locator("#monster-master-theo").click();
-  const secondMatchId = (await diagnostics(page)).matchId;
-  expect(secondMatchId).not.toBe(firstMatchId);
+  await expect.poll(async () => (await diagnostics(page)).matchId).not.toBe(firstMatchId);
+  await expect(page.locator("#monster-master-match")).toBeVisible();
 });
