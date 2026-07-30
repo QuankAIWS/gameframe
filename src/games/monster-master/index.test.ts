@@ -4,6 +4,7 @@ import { MatchSession } from "../../platform/match-session.ts";
 import {
   DeterministicMonsterMasterPlayer,
   MONSTER_MASTER_MAX_COMMAND,
+  MONSTER_MASTER_MAX_ROUNDS,
   activeMonsterMasterUnitId,
   cloneMonsterMasterState,
   createMonsterMasterState,
@@ -195,6 +196,22 @@ test("command energy restores at a new round up to its cap", () => {
   assert.equal(next.lastEffects.filter((effect) => effect.type === "command-restored").length, 1);
 });
 
+test("bounded draw completes at the end of the configured final round", () => {
+  const state = combatScenario();
+  state.activationOrder = ["alpha-master", "beta-master"];
+  state.activeActivationIndex = 1;
+  state.round = MONSTER_MASTER_MAX_ROUNDS;
+  state.maxRounds = MONSTER_MASTER_MAX_ROUNDS;
+  const end = firstAction(state, "beta", "end-activation");
+  const next = apply(state, "beta", end);
+
+  assert.equal(next.round, MONSTER_MASTER_MAX_ROUNDS);
+  assert.equal(next.draw, true);
+  assert.equal(monsterMasterDefinition.getStatus(next).lifecycle, "completed");
+  assert.equal(next.lastEffects.some((effect) => effect.type === "round-started"), false);
+  assert.deepEqual(next.lastEffects.map((effect) => effect.type), ["activation-ended", "duel-completed"]);
+});
+
 test("movement and primary actions may be used in either order but only once", () => {
   let state = combatScenario();
   const attack = firstAction(state, "alpha", "attack");
@@ -269,5 +286,5 @@ test("deterministic Monster Master self-play completes within the action bound",
 
   assert.equal(monsterMasterDefinition.getStatus(state).lifecycle, "completed");
   assert.ok(state.winnerPlayerId || state.draw);
-  assert.ok(state.round <= state.maxRounds + 1);
+  assert.ok(state.round <= state.maxRounds);
 });
