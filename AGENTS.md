@@ -1,11 +1,11 @@
 # AGENTS.md — Scribbles GameFrame
 
-Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate objective is now the first substantial original tactical game, built on the deterministic multiplayer, browser, Workers-runtime, and agent contracts proven by Tic-Tac-Toe and American Checkers.
+Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate objective is now the first substantial original tactical game, built on the deterministic multiplayer, browser, Workers-runtime, agent, map, movement, and camera contracts proven by the completed platform canaries.
 
 ## Startup
 
 1. Read this file.
-2. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, `planning/development-workflow.md`, and `planning/tactical-battler-rpg-foundation.md`.
+2. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, `planning/development-workflow.md`, `planning/tactical-battler-rpg-foundation.md`, `planning/tactical-core-contract.md`, and `planning/tactical-canvas-canary.md`.
 3. Inspect the affected code and tests before editing.
 
 ## Canonical commands
@@ -38,7 +38,8 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 - Discord, Cloudflare, and Scribbles Runtime integrations must enter through explicit adapters. Do not scatter vendor SDK calls through game logic.
 - Event history, revision checks, idempotency, and visibility are correctness requirements, not deployment polish.
 - HTTP owns commands; WebSockets are projection-only. Do not introduce a second mutation path without preserving the same validation and idempotency contracts.
-- The tactical renderer must consume authoritative map and unit state; camera position, interpolation, and transient effects remain presentation state.
+- The tactical renderer consumes authoritative map, unit, combat, effect, and visibility projections; camera position, interpolation, hover, animation, and transient particles remain presentation state.
+- Tactical movement and combat actions must remain complete structured commands validated against the current legal-action set.
 
 ## Public repository controls
 
@@ -52,11 +53,13 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 
 ## Current active lane
 
-`GF-0010 / TC-0001`: begin the monster-master tactical battler foundation with camera-independent square-grid map state, a larger map than the visible viewport, pan and bounded zoom, unit selection, legal movement, path presentation, authoritative turn actions, replay, reconnect, and a minimal renderer/HUD boundary.
+`GF-0010 / TC-0002`: build the bounded tactical combat foundation on top of the completed TC-0001 map, weighted movement, complete path actions, service, Canvas camera, browser input, replay, and Workers-runtime contracts.
 
-Do not expand the first slice into full combat, complex action points, reactions, elevation, destructible terrain, generated campaigns, or Total War-scale formations. Preserve those later directions through clean data boundaries rather than implementing them prematurely.
+The first TC-0002 slice should define deterministic initiative ordering, activation progression, a simple move-plus-primary-action budget, orthogonal or explicitly defined attack range, line-of-sight rules, hit and damage resolution, unit defeat, structured effects, and combat victory. It should include deterministic agents, replay, service, browser, and Workers-runtime proofs before monster-master content is added.
 
-`GF-0007` is the completed repository-side Checkers generalization proof. `GF-0004` standalone Cloudflare and Discord canaries remain paused until the repository owner is available for deployment setup. They remain unresolved external checkpoints and must not be claimed from repository validation.
+Do not expand TC-0002 into reactions, opportunity attacks, overwatch, facing, elevation, destructible terrain, complex action-point economies, status-effect catalogs, generated campaigns, or Total War-scale formations. Preserve those directions through explicit extension points rather than implementing them prematurely.
+
+`TC-0001` is complete and durably validated. `GF-0004` standalone Cloudflare and Discord canaries remain paused until the repository owner is available for deployment setup. They remain unresolved external checkpoints and must not be claimed from repository validation.
 
 ## Development and validation posture
 
