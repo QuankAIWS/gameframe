@@ -139,6 +139,7 @@ describe("GameFrame real workerd runtime", () => {
       "tic-tac-toe",
       "american-checkers",
       "tactical-movement-canary",
+      "tactical-combat-canary",
     ]);
   });
 
