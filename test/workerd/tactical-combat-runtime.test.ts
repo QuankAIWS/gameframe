@@ -92,13 +92,19 @@ describe("tactical combat in the real workerd runtime", () => {
 
     const restoredResponse = await workerFetch(
       `/api/matches/${encodeURIComponent(created.matchId)}`,
-      "beta",
+      "alpha",
     );
     expect(restoredResponse.status).toBe(200);
     const restored = await restoredResponse.json() as TacticalCombatMatchView;
     expect(restored.revision).toBe(advanced.revision);
     expect(restored.observation.board).toEqual(advanced.observation.board);
     expect(restored.observation.legalActions).toEqual(advanced.observation.legalActions);
+
+    const betaView = await workerFetch(
+      `/api/matches/${encodeURIComponent(created.matchId)}`,
+      "beta",
+    ).then((response) => response.json() as Promise<TacticalCombatMatchView>);
+    expect(betaView.observation.legalActions.length).toBeGreaterThan(0);
   });
 
   it("commits Theo's complete multi-action activation before persistence", async () => {
