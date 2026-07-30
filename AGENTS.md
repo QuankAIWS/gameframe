@@ -1,11 +1,11 @@
 # AGENTS.md — Scribbles GameFrame
 
-Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate objective is to prove the complete multiplayer and integration architecture with small, deterministic games before expanding into tactical, chess, RPG, or RTS modules.
+Scribbles GameFrame is the publicly viewable, proprietary game platform used by Theo and the wider Scribbles architecture. It is not a generalized public game engine, plugin marketplace, or production SaaS platform. The immediate objective is now the first substantial original tactical game, built on the deterministic multiplayer, browser, Workers-runtime, and agent contracts proven by Tic-Tac-Toe and American Checkers.
 
 ## Startup
 
 1. Read this file.
-2. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, and `planning/development-workflow.md`.
+2. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, `planning/development-workflow.md`, and `planning/tactical-battler-rpg-foundation.md`.
 3. Inspect the affected code and tests before editing.
 
 ## Canonical commands
@@ -38,6 +38,7 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 - Discord, Cloudflare, and Scribbles Runtime integrations must enter through explicit adapters. Do not scatter vendor SDK calls through game logic.
 - Event history, revision checks, idempotency, and visibility are correctness requirements, not deployment polish.
 - HTTP owns commands; WebSockets are projection-only. Do not introduce a second mutation path without preserving the same validation and idempotency contracts.
+- The tactical renderer must consume authoritative map and unit state; camera position, interpolation, and transient effects remain presentation state.
 
 ## Public repository controls
 
@@ -51,11 +52,11 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 
 ## Current active lane
 
-`GF-0006`: implement American Checkers as the first nontrivial reusable game-module proof. Use an 8x8 board and explicitly test dark-square movement, mandatory captures, multi-jump continuation, promotion, king movement and captures, win conditions, draw or no-progress policy, replay, observations, deterministic opponents, and compatibility with the versioned mock-agent contract.
+`GF-0010 / TC-0001`: begin the monster-master tactical battler foundation with camera-independent square-grid map state, a larger map than the visible viewport, pan and bounded zoom, unit selection, legal movement, path presentation, authoritative turn actions, replay, reconnect, and a minimal renderer/HUD boundary.
 
-`GF-0005` is canonically complete. The version-1 decision protocol and fixtures in `planning/agent-decision-protocol.md` and `test/fixtures/agent-decision/` are the compatibility boundary for future Runtime work.
+Do not expand the first slice into full combat, complex action points, reactions, elevation, destructible terrain, generated campaigns, or Total War-scale formations. Preserve those later directions through clean data boundaries rather than implementing them prematurely.
 
-`GF-0004` standalone Cloudflare and Discord canaries are paused until the repository owner is available for deployment setup. They remain unresolved external checkpoints and must not be claimed from repository validation. See `planning/decisions/0009-defer-external-canaries-without-blocking-development.md`.
+`GF-0007` is the completed repository-side Checkers generalization proof. `GF-0004` standalone Cloudflare and Discord canaries remain paused until the repository owner is available for deployment setup. They remain unresolved external checkpoints and must not be claimed from repository validation.
 
 ## Development and validation posture
 
