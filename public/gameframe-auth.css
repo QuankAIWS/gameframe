@@ -4,7 +4,8 @@
   user-select: none;
 }
 
-#gameframe-auth-gate {
+#gameframe-auth-gate,
+.gameframe-invite-dialog {
   position: fixed;
   inset: 0;
   z-index: 10000;
@@ -15,8 +16,14 @@
   backdrop-filter: blur(12px);
 }
 
-.gameframe-auth-card {
-  width: min(100%, 32rem);
+#gameframe-auth-gate[hidden],
+.gameframe-invite-dialog[hidden] {
+  display: none;
+}
+
+.gameframe-auth-card,
+.gameframe-invite-card {
+  width: min(100%, 36rem);
   padding: clamp(1.5rem, 4vw, 2.5rem);
   border: 1px solid rgba(139, 156, 255, 0.35);
   border-radius: 1.25rem;
@@ -25,12 +32,14 @@
   color: #f5f7ff;
 }
 
-.gameframe-auth-card h1 {
+.gameframe-auth-card h1,
+.gameframe-invite-card h2 {
   margin: 0.25rem 0 0.75rem;
   font-size: clamp(1.7rem, 5vw, 2.35rem);
 }
 
-.gameframe-auth-card p {
+.gameframe-auth-card p,
+.gameframe-invite-card p {
   line-height: 1.6;
   color: #c7cdec;
 }
@@ -57,15 +66,19 @@
   min-height: 2.9rem;
   margin-top: 0.5rem;
   padding: 0.75rem 1.1rem;
+  border: 0;
   border-radius: 0.75rem;
   background: #5865f2;
   color: white;
   font-weight: 800;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .gameframe-auth-button:focus-visible,
-.gameframe-session-badge button:focus-visible {
+.gameframe-session-badge button:focus-visible,
+.gameframe-invite-card button:focus-visible,
+.gameframe-invite-card input:focus-visible {
   outline: 3px solid #d9ddff;
   outline-offset: 3px;
 }
@@ -133,11 +146,68 @@
   cursor: pointer;
 }
 
+.gameframe-invite-link-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  margin-top: 0.45rem;
+}
+
+.gameframe-invite-link-row input {
+  min-width: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(160, 174, 255, 0.35);
+  border-radius: 0.65rem;
+  background: #080d1c;
+  color: #e9ecff;
+}
+
+.gameframe-invite-card button {
+  border: 1px solid rgba(160, 174, 255, 0.35);
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.9rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f7ff;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.gameframe-invite-card button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gameframe-invite-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.2rem;
+}
+
+.gameframe-invite-note {
+  margin: 0.7rem 0 0;
+  font-size: 0.82rem;
+  color: #9ea7cf;
+}
+
+.invite-claim-shell {
+  min-height: 100vh;
+  display: grid;
+  align-content: center;
+}
+
+.invite-claim-panel {
+  max-width: 42rem;
+}
+
 @media (max-width: 640px) {
   .gameframe-session-badge {
     position: static;
     width: calc(100% - 1rem);
     margin: 0.5rem;
     max-width: none;
+  }
+
+  .gameframe-invite-link-row {
+    grid-template-columns: 1fr;
   }
 }
