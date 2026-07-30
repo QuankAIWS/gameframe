@@ -58,7 +58,7 @@ The active development lane is the larger-field monster-master tactical battler 
 - Complete Tic-Tac-Toe browser proof validated and merged on July 29, 2026
 - Versioned agent decision contract and durable mock provider validated and merged on July 29, 2026
 - American Checkers rules module validated and merged on July 29, 2026
-- American Checkers full-stack repository proof completed through PR #23; final durable evidence is recorded after its frozen merge
+- American Checkers full-stack repository proof validated and merged on July 30, 2026
 
 Durable evidence:
 
@@ -66,6 +66,7 @@ Durable evidence:
 - `planning/validation/2026-07-29-tic-tac-toe-browser-proof.md`
 - `planning/validation/2026-07-29-agent-decision-contract.md`
 - `planning/validation/2026-07-29-american-checkers-rules.md`
+- `planning/validation/2026-07-30-american-checkers-full-stack.md`
 
 Not yet claimed:
 
