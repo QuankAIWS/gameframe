@@ -22,15 +22,17 @@ GameFrame remains the authority for sessions, seats, legal actions, revisions, s
 
 The browser never stores the website OAuth access token. Game commands and WebSocket upgrades continue to use the signed GameFrame session.
 
-### Discord Activity server boundary
+### Discord Activity
 
 1. `GET /auth/discord/activity/config` returns the Discord application ID, requested scopes, and a signed transaction state.
 2. The response sets a secure, HTTP-only, `SameSite=None`, `Partitioned` transaction cookie scoped to `<client-id>.discordsays.com`.
-3. The Activity client uses the Embedded App SDK to authorize and sends the returned code and state to `POST /auth/discord/activity/session`.
-4. GameFrame validates the transaction, performs the server-side code exchange, fetches `/users/@me`, enforces the allowlist, and issues a partitioned signed GameFrame session.
-5. The response returns Discord's short-lived bearer token to the Activity client only so it can finish `commands.authenticate`; GameFrame does not persist that token.
+3. The committed browser bundle initializes Discord's official Embedded App SDK and awaits SDK readiness.
+4. The Activity client requests an authorization code through `commands.authorize` and sends the code and state to `POST /auth/discord/activity/session`.
+5. GameFrame validates the transaction, performs the server-side code exchange, fetches `/users/@me`, enforces the allowlist, and issues a partitioned signed GameFrame session.
+6. The response returns Discord's short-lived bearer token to the Activity client only so it can finish `commands.authenticate`; GameFrame does not persist that token.
+7. The client requires the SDK user ID to match the signed `discord:<user-id>` GameFrame principal before any game code loads.
 
-The backend Activity exchange and session boundary are implemented and Workers-runtime tested. The actual Embedded App SDK browser handshake must be bundled into the Activity client and browser-tested before a complete Discord Activity launch is claimed.
+The server and browser Activity boundaries are implemented, pinned, bundled locally, and repository-tested. A complete Activity is still not claimed until the deployed build performs this handshake through an actual Discord client.
 
 ## Stable player identity
 
@@ -76,7 +78,7 @@ https://scribbles-gameframe.<workers-subdomain>.workers.dev/auth/discord/callbac
 
 The URI must exactly match the origin that users open. A later custom domain requires adding its callback separately.
 
-For a Discord Activity, configure the Activity URL mapping to the deployed GameFrame origin and use the same application ID. The Activity path must not be called complete until the Embedded App SDK client bootstrap has exchanged a real code against `/auth/discord/activity/session` and established the partitioned GameFrame cookie inside Discord.
+For a Discord Activity, configure the Activity URL mapping to the deployed GameFrame origin and use the same application ID. The Activity canary must launch through a real Discord client and prove the committed SDK bundle can complete authorize, server exchange, authenticate, and signed GameFrame session establishment inside Discord.
 
 ## Windows deployment commands
 
@@ -119,6 +121,8 @@ Repository validation may prove:
 - allowlist denial
 - website and Activity cookie attributes
 - signed session inspection and logout
+- official SDK ready, authorize, exchange, authenticate, and identity-correlation behavior through deterministic doubles
+- byte-for-byte Activity bundle reproducibility
 - local-development compatibility
 - real Workers-runtime routing and cookie handling
 
