@@ -134,18 +134,27 @@ function distanceToEnemyMaster(view, action) {
   );
 }
 
-function chooseDeterministicAction(view, { passiveCombat = false } = {}) {
+function chooseDeterministicAction(
+  view,
+  { passiveCombat = false, avoidMasterAttacks = false } = {},
+) {
   if (view.observation.phase === "deployment") return chooseDeployment(view);
   const actions = view.observation.legalActions;
   if (passiveCombat) return actions.find((action) => action.type === "end-activation");
 
-  const enemyMasterAttack = actions.find((action) => (
-    action.type === "attack"
-    && view.observation.board.units.find((unit) => unit.id === action.targetUnitId)?.role === "master"
-  ));
-  if (enemyMasterAttack) return enemyMasterAttack;
+  if (!avoidMasterAttacks) {
+    const enemyMasterAttack = actions.find((action) => (
+      action.type === "attack"
+      && view.observation.board.units.find((unit) => unit.id === action.targetUnitId)?.role === "master"
+    ));
+    if (enemyMasterAttack) return enemyMasterAttack;
+  }
 
-  const attack = actions.find((action) => action.type === "attack");
+  const attack = actions.find((action) => (
+    action.type === "attack"
+    && (!avoidMasterAttacks
+      || view.observation.board.units.find((unit) => unit.id === action.targetUnitId)?.role !== "master")
+  ));
   if (attack) return attack;
 
   const mend = [...actions]
@@ -285,35 +294,42 @@ test("captures Monster Master Mend targeting and result", async ({ page, request
   await capture(page, testInfo, "27-monster-master-mend-result");
 });
 
-test("captures Monster Master defeat aftermath", async ({ page, request }, testInfo) => {
+test("captures ordinary Monster Master defeat aftermath", async ({ page, request }, testInfo) => {
   const prepared = await prepareAuthoritativeState(
     request,
-    (view) => view.observation.lastEffects.some((effect) => effect.type === "unit-defeated"),
+    (view) => (
+      view.observation.status.lifecycle === "active"
+      && view.observation.lastEffects.some((effect) => effect.type === "unit-defeated" && effect.role !== "master")
+    ),
+    { avoidMasterAttacks: true },
   );
   await openPreparedState(page, prepared, prepared.playerIds[0]);
+  await expect(page.locator("#monster-master-status")).not.toContainText("won the duel");
   await expect(page.locator("#monster-master-roster-list .is-defeated")).toHaveCount(prepared.observation.defeatedUnitIds.length);
   await expect(page.locator("#monster-master-effects .defeat")).toContainText("defeated");
   await capture(page, testInfo, "28-monster-master-defeat");
 });
 
-test("captures Monster Master victory", async ({ page, request }, testInfo) => {
+test("captures Monster Master victory from the winner's seat", async ({ page, request }, testInfo) => {
   const prepared = await prepareAuthoritativeState(
     request,
     (view) => view.observation.status.lifecycle === "completed" && Boolean(view.observation.status.winnerPlayerId),
   );
-  await openPreparedState(page, prepared, prepared.playerIds[0]);
-  await expect(page.locator("#monster-master-status")).toContainText("won the duel");
+  await openPreparedState(page, prepared, prepared.observation.status.winnerPlayerId);
+  await expect(page.locator("#monster-master-status")).toHaveText("Your Warden won the duel.");
   await expect(page.locator("#monster-master-effects .victory")).toBeVisible();
   await capture(page, testInfo, "29-monster-master-victory");
 });
 
-test("captures Monster Master bounded draw", async ({ page, request }, testInfo) => {
+test("captures Monster Master bounded draw at the configured final round", async ({ page, request }, testInfo) => {
   const prepared = await prepareAuthoritativeState(
     request,
     (view) => view.observation.status.lifecycle === "completed" && view.observation.status.draw,
     { passiveCombat: true },
   );
+  expect(prepared.observation.round).toBe(24);
   await openPreparedState(page, prepared, prepared.playerIds[0]);
+  await expect(page.locator("#monster-master-round")).toHaveText("24");
   await expect(page.locator("#monster-master-status")).toContainText("draw");
   await expect(page.locator("#monster-master-effects .victory")).toContainText("draw");
   const survivingUnit = prepared.observation.board.units.find((unit) => unit.ownerId === prepared.playerIds[0])
