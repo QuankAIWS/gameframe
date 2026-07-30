@@ -69,7 +69,7 @@ test("exercises tactical camera controls and navigation", async ({ page }) => {
   await page.getByRole("button", { name: "Zoom in" }).click();
   await expect(viewport).toContainText("1.25×");
   await page.getByRole("button", { name: "Zoom out" }).click();
-  await expect(viewport).toContainText("1×");
+  await expect(viewport).toContainText("1.00×");
 
   await page.getByRole("button", { name: "Pan camera west" }).click();
   await page.getByRole("button", { name: "Pan camera north" }).click();
