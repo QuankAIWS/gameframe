@@ -1,4 +1,5 @@
 import { establishGameFrameIdentity } from "./gameframe-auth.js";
+import { installAuthenticatedInvitationFlow } from "./secure-match-invite.js";
 
 const launcher = [...document.querySelectorAll('script[type="module"][src="/auth-launcher.js"]')].at(-1);
 const entry = launcher?.dataset.entry;
@@ -21,18 +22,4 @@ if (identity.source === "discord") {
 }
 
 await import(entry);
-
-if (identity.source === "discord") {
-  const unsupportedHumanControls = [
-    ["#create-human-match", "Verified friend invites are not enabled on this staging build yet."],
-    ["#tactical-human", "Verified friend invites are not enabled on this staging build yet."],
-    ["#combat-human", "Verified friend invites are not enabled on this staging build yet."],
-  ];
-  for (const [selector, title] of unsupportedHumanControls) {
-    const control = document.querySelector(selector);
-    if (!control) continue;
-    control.disabled = true;
-    control.title = title;
-    control.setAttribute("aria-disabled", "true");
-  }
-}
+installAuthenticatedInvitationFlow({ identity, entry });
