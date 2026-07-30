@@ -1,14 +1,16 @@
 import { DurableObject } from "cloudflare:workers";
 import { json } from "./http-utils.ts";
+import { InvitationObjectRuntime } from "./invitation-object-runtime.ts";
 import { GameFrameMatchObjectRuntime } from "./match-object-runtime.ts";
 import { MatchSocketHub } from "./match-socket-hub.ts";
 import { createGameFrameWorker } from "./worker-router.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
 // The class name remains migration-stable for the existing Durable Object binding.
-// Its internal runtime now dispatches every supported GameFrame game.
+// Its internal runtime now dispatches every supported GameFrame game and invitation rendezvous.
 export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEnv> {
   readonly #runtime: GameFrameMatchObjectRuntime;
+  readonly #invitations: InvitationObjectRuntime;
   readonly #sockets: MatchSocketHub;
 
   constructor(ctx: DurableObjectState, env: GameFrameWorkerEnv) {
@@ -16,6 +18,7 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
     this.#runtime = new GameFrameMatchObjectRuntime(ctx.storage, undefined, {
       onMatchUpdated: async (matchId) => this.#sockets.broadcast(matchId),
     });
+    this.#invitations = new InvitationObjectRuntime(ctx.storage);
     this.#sockets = new MatchSocketHub(ctx, (matchId, playerId) => (
       this.#runtime.view(matchId, playerId)
     ));
@@ -23,6 +26,9 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/invitation/")) {
+      return this.#invitations.fetch(request);
+    }
     if (request.method === "GET" && url.pathname === "/events") {
       if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
         return json(426, {
