@@ -67,6 +67,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
               "american-checkers",
               "tactical-movement-canary",
               "tactical-combat-canary",
+              "monster-master-duel",
             ],
           });
         }
@@ -123,10 +124,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
           }));
         }
 
-        if (url.pathname.startsWith("/api/")) {
-          return json(404, { error: "not_found" });
-        }
-
+        if (url.pathname.startsWith("/api/")) return json(404, { error: "not_found" });
         return env.ASSETS
           ? env.ASSETS.fetch(request)
           : new Response("Static assets binding is unavailable.", { status: 404 });
