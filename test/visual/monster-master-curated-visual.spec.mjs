@@ -63,6 +63,7 @@ async function deploySelectedUnit(page) {
   ));
   expect(action).toBeDefined();
   await clickBoardCoordinate(page, action.position);
+  await expect.poll(async () => (await diagnostics(page)).revision).toBeGreaterThan(state.revision);
 }
 
 test("captures Monster Master lobby, deployment, combat, and move-selection states", async ({ page }, testInfo) => {
