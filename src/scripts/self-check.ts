@@ -296,9 +296,10 @@ assert.match(multiGameService, /InMemoryTacticalCombatService/);
 assert.match(multiGameService, /parseTacticalCombatAction/);
 
 const combatRules = await read("src/games/tactical-combat/index.ts");
-assert.match(combatRules, /gameId: "tactical-combat-canary"/);
+assert.match(combatRules, /TACTICAL_COMBAT_GAME_ID = "tactical-combat-canary"/);
+assert.match(combatRules, /gameId: TACTICAL_COMBAT_GAME_ID/);
 assert.match(combatRules, /DeterministicTacticalCombatPlayer/);
-assert.match(combatRules, /lineOfSightCoordinates/);
+assert.match(combatRules, /tacticalCombatLineOfSight/);
 assert.match(combatRules, /primaryActionAvailable/);
 assert.match(combatRules, /unit-defeated/);
 assert.match(combatRules, /combat-completed/);
