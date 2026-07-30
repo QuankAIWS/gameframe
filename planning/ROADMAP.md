@@ -18,11 +18,11 @@ Current proof boundary:
 
 - Local deterministic, HTTP integration, browser syntax, and repository validation are implemented.
 - Initial canonical validation completed successfully on July 27, 2026; see `planning/validation/2026-07-27-canonical-baseline.md`.
-- Deployed Cloudflare, Discord Activity, and Scribbles Runtime canaries remain pending.
+- Deployed Cloudflare, live Discord Activity, and Scribbles Runtime canaries remain pending.
 
 ## Active platform-proof sequence
 
-The accepted near-term order is recorded in [`planning/decisions/0007-platform-proof-sequence-and-mock-agents.md`](decisions/0007-platform-proof-sequence-and-mock-agents.md). The scheduling amendment in [`planning/decisions/0009-defer-external-canaries-without-blocking-development.md`](decisions/0009-defer-external-canaries-without-blocking-development.md) pauses external deployment canaries without blocking repository development. Tic-tac-toe proves the browser and repository stack, American Checkers proves that the game-module and agent contracts generalize, and the monster-master battler remains the first substantial original game.
+The accepted near-term order is recorded in [`planning/decisions/0007-platform-proof-sequence-and-mock-agents.md`](decisions/0007-platform-proof-sequence-and-mock-agents.md). The scheduling amendment in [`planning/decisions/0009-defer-external-canaries-without-blocking-development.md`](decisions/0009-defer-external-canaries-without-blocking-development.md) allowed repository development to continue while owner-controlled deployment access was unavailable. Tic-tac-toe proves the browser and repository stack, American Checkers proves that the game-module and agent contracts generalize, and the monster-master battler remains the first substantial original game.
 
 ### GF-0002 — Cloudflare match runtime
 
@@ -49,7 +49,7 @@ Repository implementation:
 - HMAC-signed session cookies shared by HTTPS commands and WebSocket upgrades
 - Discord Activity cookie attributes and expiry/tamper validation
 
-The repository-level runtime proof is complete. Live environment behavior remains separate and is exercised by the paused standalone deployment canary in `GF-0004` when deployment access and owner availability permit it.
+The repository-level runtime proof is complete. Live environment behavior remains separate and is exercised by `GF-0004` after owner-controlled Cloudflare and Discord configuration.
 
 ### GF-0003 — Complete tic-tac-toe browser proof — Complete
 
@@ -69,17 +69,40 @@ Canonically validated implementation:
 
 The frozen candidate passed GitHub-hosted Canonical Validation run #36 (`30492977351`) and was squash-merged as `42d6cd3da2f4a1b110fa3debd9df9da016fb2351`. See [`planning/validation/2026-07-29-tic-tac-toe-browser-proof.md`](validation/2026-07-29-tic-tac-toe-browser-proof.md). No deployed Cloudflare behavior is claimed by this milestone.
 
-### GF-0004 — Standalone deployment and Discord delivery canaries — Paused
+### GF-0004 — Secure Cloudflare and Discord delivery — Repository ready; live canaries pending
 
-Validate GameFrame without requiring a live Scribbles Runtime:
+The production-shaped delivery boundaries are implemented and canonically validated:
 
-- Deploy the standalone browser client, Worker routes, and Durable Object runtime
-- Verify persistence, reconnect, WebSocket projection, and recovery in the deployed environment
-- Add Discord authorization-code exchange and verified user lookup
-- Issue signed Activity sessions
-- Validate launch context, participant mapping, invite or resume, and desktop/mobile Activity behavior
+- Stateless Discord website OAuth with signed browser-bound state
+- Server-side authorization-code exchange and verified `/users/@me` lookup
+- Stable `discord:<user-id>` GameFrame principals
+- Fail-closed staging allowlist
+- Secure signed website sessions and partitioned Discord Activity sessions
+- Official Discord Embedded App SDK ready/authorize/exchange/authenticate browser handshake
+- Strict equality between the SDK user and signed GameFrame principal
+- Signed expiring human-match invitations with serialized second-seat claims
+- Direct Discord human-seat spoofing rejection
+- Authenticated inviter and claimant browser surfaces
+- Real Workers-runtime persistence, eviction recovery, and invitation-to-match initialization
+- Required Cloudflare secrets and Worker-first `/auth/*` routing
 
-The first canaries may use human seats and deterministic in-process opponents. This lane is paused until the repository owner is available for deployment-account setup, secrets, and live environment verification. It remains an unresolved external checkpoint and may resume between later repository milestones. Repository, browser, Workers-runtime, mock-agent, checkers, and tactical development may continue without claiming this evidence.
+Durable evidence:
+
+- [`planning/validation/2026-07-30-discord-authentication-boundary.md`](validation/2026-07-30-discord-authentication-boundary.md)
+- [`planning/validation/2026-07-30-discord-activity-client.md`](validation/2026-07-30-discord-activity-client.md)
+- [`planning/validation/2026-07-30-authenticated-match-invitations.md`](validation/2026-07-30-authenticated-match-invitations.md)
+
+The remaining work is external validation, not a temporary authentication implementation:
+
+- Configure the Discord application, exact website callback URI, and Activity URL mapping
+- Configure the required Cloudflare bindings and deploy validated `main`
+- Complete website OAuth with real allowlisted Discord users
+- Launch the Activity through real Discord desktop and mobile clients
+- Verify authenticated human invitations, commands, WebSockets, reconnect, refresh, and resume over the public network
+- Verify Durable Object persistence across eviction and ordinary redeployment
+- Review Cloudflare logs, quotas, and operational behavior
+
+No deployed or live Discord behavior is claimed until those canaries run. Repository development may continue while owner-controlled setup is pending.
 
 ### GF-0005 — Versioned agent decision contract and mock connector — Complete
 
@@ -135,7 +158,7 @@ Repository proof:
 - Real Workers-runtime Checkers persistence and legal-action recovery after Durable Object eviction
 - Existing Tic-Tac-Toe, authentication, WebSocket, and browser regressions retained
 
-The repository-side milestone is complete after the frozen PR #23 candidate passes canonical validation and merges. Standalone Cloudflare deployment and Discord Activity canaries remain separately paused under `GF-0004`; they are not implied by this repository proof.
+The repository-side milestone is complete after the frozen PR #23 candidate passes canonical validation and merges. Standalone Cloudflare deployment and live Discord Activity canaries remain separately pending under `GF-0004`; they are not implied by this repository proof.
 
 ### GF-0008 — Scribbles Runtime adapter for Theo — Available when Runtime is ready
 
@@ -147,7 +170,7 @@ Retain deterministic fallback behavior and fail closed on malformed, stale, ille
 
 Build the first substantial original GameFrame game now that the platform has survived browser acceptance, the mock-agent boundary, American Checkers, larger-field tactical movement, and deterministic tactical combat.
 
-The paused external canary does not block repository development, but deployed tactical behavior must not be claimed until the relevant external lane is resumed and proven.
+The pending external canary does not block repository development, but deployed tactical behavior must not be claimed until the relevant external lane is run and proven.
 
 The production direction favors tactical-RPG-style maneuver over an immediately engaged tiny arena: small active forces move across a larger map with approach routes, objectives, terrain positions, camera panning, and room for scouting or repositioning. Compact boards remain supported for tests, tutorials, puzzles, quick matches, and RPG rooms.
 
@@ -165,7 +188,7 @@ Active milestone:
 Later sequence:
 
 - `MM-0002`: Theo and generic decision-provider tactical observation and legal-action integration beyond the deterministic fallback proof
-- `MM-0003`: Discord multiplayer canary
+- `MM-0003`: live Discord multiplayer canary using the validated GF-0004 identity and invitation boundary
 - `MM-0004`: second-theme proof without tactical-rule changes
 
 Monster Master, future RPG encounters, and D&D-style encounters may reuse map, encounter, replay, identity, storage, service, projection, and rendering infrastructure without sharing a single game definition, turn economy, action schema, or rules implementation.
