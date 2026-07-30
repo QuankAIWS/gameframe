@@ -18,6 +18,7 @@ export interface MatchSnapshot<State, Action = unknown> {
   gameId: string;
   playerIds: readonly PlayerId[];
   revision: number;
+  initialState?: State;
   state: State;
   events: readonly MatchEvent<Action>[];
   rejectedActions: readonly PersistedRejectedAction[];
@@ -35,7 +36,7 @@ export class MatchSession<State, Action, Observation> {
   readonly #matchId: MatchId;
   readonly #definition: GameDefinition<State, Action, Observation>;
   readonly #playerIds: readonly PlayerId[];
-  readonly #initialState: State;
+  #initialState: State;
   readonly #now: () => Date;
   #state: State;
   #revision = 0;
@@ -127,6 +128,7 @@ export class MatchSession<State, Action, Observation> {
       gameId: this.#definition.gameId,
       playerIds: [...this.#playerIds],
       revision: this.#revision,
+      initialState: this.#definition.cloneState(this.#initialState),
       state: this.#definition.cloneState(this.#state),
       events: structuredClone(this.#events),
       rejectedActions: [...this.#rejected.entries()].map(([actionId, result]) => ({
@@ -161,6 +163,15 @@ export class MatchSession<State, Action, Observation> {
     }
     if (snapshot.revision !== events.length) {
       throw new Error("Snapshot revision does not match its event history.");
+    }
+
+    if (snapshot.initialState !== undefined) {
+      this.#initialState = this.#definition.cloneState(snapshot.initialState);
+    } else if (snapshot.revision === 0 && events.length === 0) {
+      // A revision-zero snapshot may intentionally seed a configured scenario instead of
+      // using the game definition's ordinary default setup. Persist that setup as the
+      // replay origin so later snapshots can reconstruct the exact encounter.
+      this.#initialState = this.#definition.cloneState(snapshot.state);
     }
 
     this.#events = events;
