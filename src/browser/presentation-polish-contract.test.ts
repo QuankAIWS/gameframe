@@ -45,7 +45,7 @@ test("Monster Master uses a presentation-only four-corner dimetric projection wi
   assert.match(script, /function rotateBy/);
   assert.match(script, /CORNER_NAMES = \["Northwest", "Northeast", "Southeast", "Southwest"\]/);
   assert.match(script, /gameframe:monster-camera-rotated/);
-  assert.match(script, /data-billboard/);
+  assert.match(script, /dataset\.billboard/);
   assert.match(script, /camera-facing/);
   assert.match(script, /function wallOpacity/);
   assert.match(script, /ProjectionAwareWebSocket/);
