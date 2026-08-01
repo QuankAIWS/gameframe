@@ -6,6 +6,8 @@ This document records the intended product and architecture sequence for expandi
 
 It is a forward design constraint, not a claim that the described tactical, visual, RPG, Discord, Cloudflare, or model-backed capabilities are already implemented. Concrete mechanics may evolve through playtesting, but future work should preserve the boundaries and sequencing defined here unless a later decision record explicitly supersedes them.
 
+The RPG Game Master runtime boundary is defined in [RPG GM Runtime Boundary](./rpg-gm-runtime-boundary.md).
+
 ## Decision summary
 
 The first substantial game built on GameFrame should be a compact turn-based tactical battler rather than a real-time strategy game or a fully generative tabletop RPG.
@@ -41,7 +43,7 @@ GameFrame multiplayer infrastructure
         -> Theo and Discord multiplayer canaries
         -> theme and asset abstraction
         -> RPG encounter wrapper and campaign persistence
-        -> bounded Game Director and generated campaigns
+        -> separate bounded RPG GM runtime and generated campaigns
         -> eventual real-time strategy experiments
 ```
 
@@ -49,7 +51,9 @@ GameFrame multiplayer infrastructure
 
 ### One authoritative rules path
 
-GameFrame remains authoritative for all game state. Browsers, Discord transports, Scribbles Runtime, Theo, deterministic bots, and model-backed agents submit intentions. They do not directly mutate board state.
+GameFrame remains authoritative for all game state. Browsers, Discord transports, Theo through Scribbles Runtime, deterministic bots, the separate RPG GM runtime, and other model-backed agents submit intentions. They do not directly mutate board state.
+
+Scribbles Runtime participates in this path only as Theo's runtime and connector. It is not the host or lifecycle owner of the RPG GM.
 
 The authoritative tactical module owns:
 
@@ -68,13 +72,17 @@ The authoritative tactical module owns:
 
 Theo remains a registered nonhuman player. He receives only the observation available to his seat and submits one of the legal actions exposed by GameFrame.
 
-Theo must not receive unrevealed terrain, hidden units, secret objectives, enemy plans, private Game Director notes, or future encounter information. A deterministic fallback can act for Theo when Scribbles Runtime or a model provider is unavailable.
+Theo must not receive unrevealed terrain, hidden units, secret objectives, enemy plans, private RPG GM notes, or future encounter information. A deterministic fallback can act for Theo when Scribbles Runtime or a model provider is unavailable.
 
-### The Game Director is separate from Theo
+### The RPG GM is separate from Theo and Scribbles Runtime
 
-The later RPG Game Director should be a dedicated, bounded system role hosted through Scribbles Runtime. It may narrate scenes, portray nonplayer characters, translate freeform intentions into structured proposals, and request permitted campaign operations.
+The later RPG Game Master or Game Director is a dedicated, bounded system role hosted by its own RPG GM project and runtime.
 
-It is not another path around the rules engine. The Director may propose operations such as:
+It is not a configured Scribbles agent, Scribbles subagent, or Scribbles-hosted lifecycle. It may reuse selected orchestration patterns, model-provider abstractions, testing concepts, or other technology from Scribbles, but shared technology does not imply shared runtime ownership.
+
+The RPG GM runtime may narrate scenes, portray nonplayer characters, translate freeform intentions into structured proposals, maintain campaign-specific continuity, and request permitted campaign operations through explicit GameFrame interfaces.
+
+It is not another path around the rules engine. The RPG GM may propose operations such as:
 
 - Reveal a room that the campaign state permits the party to enter
 - Instantiate an encounter from an approved template
@@ -84,6 +92,8 @@ It is not another path around the rules engine. The Director may propose operati
 - Advance a quest phase after its conditions are satisfied
 
 It may not directly assign arbitrary health, equipment, victory, movement, or map state.
+
+Theo and the RPG GM may communicate through explicit cross-project contracts when a campaign requires it. Neither runtime receives direct access to the other's internal databases, private prompt state, queues, or lifecycle controls.
 
 ### Mechanics and presentation are independent
 
@@ -131,6 +141,8 @@ public/ or a later client package
 ```
 
 The tactical core must not depend on monster-specific terminology. The monster-master game depends on the tactical core and supplies its own content, setup, objectives, and special rules.
+
+The RPG GM runtime is not placed under `src/agents/` in this repository. GameFrame should expose stable RPG-facing APIs and schemas without absorbing the separate runtime's orchestration, memory, or prompt system.
 
 ## First game: monster-master tactical duel
 
@@ -377,11 +389,15 @@ The later RPG layer adds persistent and noncombat systems around the tactical en
 - Quests and campaign events
 - Rest, recovery, and injuries
 - Campaign-specific hidden information
-- Game Director operations
+- RPG GM operations
 
-When combat begins, the campaign layer produces an encounter configuration for the tactical module. When combat ends, the tactical module returns committed outcomes such as survivors, injuries, consumed resources, recovered items, and world events.
+The RPG layer and Game Master belong to their own project and runtime. GameFrame provides authoritative game capabilities and stable interfaces; it does not need to host the RPG agent's memory, context compiler, long-horizon planning, or model lifecycle.
+
+When combat begins, the RPG runtime produces an encounter configuration for the tactical module through an authorized GameFrame contract. When combat ends, the tactical module returns committed outcomes such as survivors, injuries, consumed resources, recovered items, and world events.
 
 The RPG campaign state must not reconstruct combat by parsing narration. It consumes authoritative tactical results.
+
+Scribbles Runtime may allow Theo to join the campaign as a player through its own GameFrame connector. That does not make Scribbles Runtime the campaign or RPG GM owner.
 
 ## Milestone sequence
 
@@ -427,16 +443,18 @@ The RPG campaign state must not reconstruct combat by parsing narration. It cons
 
 ### RPG-0001 - Encounter wrapper
 
-- Persist a small party outside combat.
-- Enter a tactical encounter from campaign state.
+- Establish the separate RPG project and runtime boundary.
+- Persist a small party outside combat in the RPG-owned store.
+- Enter a tactical encounter from campaign state through an authorized GameFrame contract.
 - Resolve the battle through the tactical module.
 - Return authoritative results to the campaign.
 
-### RPG-0002 - Bounded Game Director
+### RPG-0002 - Bounded RPG GM runtime
 
-- Add Director narration and structured campaign operations.
+- Add the separate RPG GM runtime with narration and structured campaign operations.
 - Keep rules, hidden-state access, and mutation capabilities explicitly constrained.
-- Prove that Theo can participate without receiving Director-only information.
+- Prove that Theo can participate through Scribbles Runtime without receiving RPG-GM-only information.
+- Prove that neither runtime requires direct access to the other's private state.
 
 ### RPG-0003 - Generated theme and chapter proof
 
@@ -459,6 +477,8 @@ The tactical foundation is not considered established until it can demonstrate:
 - A second theme applied without tactical-rule modification
 - Test coverage for stale, duplicate, illegal, out-of-turn, and unauthorized commands
 
+The tactical foundation does not need the RPG GM runtime to satisfy these criteria.
+
 ## Open design decisions
 
 The following remain provisional and should be settled through narrow prototypes or playtesting rather than assumption:
@@ -472,11 +492,15 @@ The following remain provisional and should be settled through narrow prototypes
 - Exact Canvas asset dimensions and miniature anchoring convention
 - Whether multi-cell units are required before the RPG layer
 - The first two theme aesthetics
+- Exact cross-project API between GameFrame and the separate RPG GM runtime
+- Exact optional communication contract between Theo and the RPG GM
 
-These decisions may change without invalidating the larger architecture, provided the single-authority, semantic-presentation, and shared-tactical-core invariants remain intact.
+These decisions may change without invalidating the larger architecture, provided the single-authority, semantic-presentation, shared-tactical-core, and separate-runtime invariants remain intact.
 
 ## Consequence
 
 The compact tactical arena is no longer merely an isolated game planned before the RPG. It is the deliberate combat foundation for the RPG campaign platform and a lower-risk stepping stone toward later real-time strategy work.
 
 Implementation should optimize first for deterministic correctness, replayability, player-specific observations, and enjoyable small battles. Generative content is an enrichment layer added after the tactical loop is proven; it is not a prerequisite for the first playable battler.
+
+The RPG GM remains a separate future project. GameFrame should be designed so that project can use its capabilities cleanly without forcing Scribbles Runtime to host it or forcing GameFrame to absorb agent-runtime responsibilities.
