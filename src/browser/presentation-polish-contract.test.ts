@@ -23,7 +23,7 @@ test("board-game presentation polish is loaded before the authoritative browser 
   assert.match(packageJson.scripts["check:browser"], /public\/game-polish\.js/);
 });
 
-test("Monster Master movement polish consumes exact movement effects without changing game authority", async () => {
+test("Monster Master uses a presentation-only dimetric projection with exact path motion", async () => {
   const html = await read("public/monster-master.html");
   const script = await read("public/monster-master-motion.js");
   const styles = await read("public/monster-master-motion.css");
@@ -32,11 +32,24 @@ test("Monster Master movement polish consumes exact movement effects without cha
   assert.match(html, /href="\/monster-master-motion\.css"/);
   assert.match(html, /src="\/monster-master-motion\.js"/);
   assert.ok(html.indexOf("/monster-master-motion.js") < html.indexOf("/auth-launcher.js"));
+  assert.match(script, /function worldToScreen/);
+  assert.match(script, /function screenToWorld/);
+  assert.match(script, /function screenToTile/);
+  assert.match(script, /\(x - y\) \* frame\.halfWidth/);
+  assert.match(script, /\(x \+ y\) \* frame\.halfHeight/);
+  assert.match(script, /ProjectionAwareWebSocket/);
   assert.match(script, /effect\.type !== "unit-moved"/);
   assert.match(script, /effect\.path/);
   assert.match(script, /gameframe:monster-animation/);
+  assert.match(script, /pointerdown/);
+  assert.match(script, /const pointers = new Map/);
+  assert.match(script, /function wheel/);
+  assert.match(script, /function zoomAt/);
+  assert.match(script, /function dispatchCoordinate/);
   assert.match(script, /prefers-reduced-motion/);
   assert.doesNotMatch(script, /\/api\/matches\/.*actions/);
+  assert.match(styles, /data-projection-ready/);
+  assert.match(styles, /3\/4 TACTICAL VIEW/);
   assert.match(styles, /#monster-master-motion-canvas/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-motion\.js/);
 });
