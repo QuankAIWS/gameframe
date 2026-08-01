@@ -66,3 +66,37 @@ test("Monster Master uses a presentation-only four-corner dimetric projection wi
   assert.match(rotationStyles, /data-rotating/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-rotation\.js/);
 });
+
+test("Monster Master uses a viewport-filling shell with a contextual HUD and command deck", async () => {
+  const html = await read("public/monster-master.html");
+  const script = await read("public/monster-master-shell.js");
+  const styles = await read("public/monster-master-shell.css");
+  const packageJson = JSON.parse(await read("package.json"));
+
+  assert.match(html, /href="\/monster-master-shell\.css"/);
+  assert.match(html, /src="\/monster-master-shell\.js"/);
+  assert.ok(html.indexOf("/monster-master-shell.js") < html.indexOf("/monster-master-rotation.js"));
+  assert.ok(html.indexOf("/monster-master-shell.js") < html.indexOf("/auth-launcher.js"));
+  assert.match(html, /id="monster-master-unit-hud"/);
+  assert.match(html, /class="monster-master-command-deck"/);
+  assert.match(html, /id="monster-master-open-roster"/);
+  assert.match(html, /id="monster-master-open-intel"/);
+  assert.match(html, /data-hotkey="1"/);
+  assert.match(html, /data-hotkey="5"/);
+  assert.match(script, /monster-master-match-active/);
+  assert.match(script, /const actionShortcuts = new Map/);
+  assert.match(script, /new MutationObserver/);
+  assert.match(script, /function syncHud/);
+  assert.match(script, /function openDrawer/);
+  assert.match(script, /window\.gameFrameMonsterShell/);
+  assert.doesNotMatch(script, /window\.fetch\s*=/);
+  assert.doesNotMatch(script, /\/api\/matches\/.*actions/);
+  assert.match(styles, /height: 100dvh/);
+  assert.match(styles, /overflow: hidden/);
+  assert.match(styles, /\.monster-master-game-grid/);
+  assert.match(styles, /\.monster-master-command-deck/);
+  assert.match(styles, /\.monster-master-unit-hud/);
+  assert.match(styles, /monster-master-roster-open/);
+  assert.match(styles, /monster-master-intel-open/);
+  assert.match(packageJson.scripts["check:browser"], /public\/monster-master-shell\.js/);
+});
