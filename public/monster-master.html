@@ -63,28 +63,7 @@
 
         <div id="monster-master-status" class="status" role="status" aria-live="polite">Loading duel state…</div>
 
-        <details id="monster-master-utility-menu" class="monster-master-utility-menu">
-          <summary aria-label="Open duel menu">Duel menu</summary>
-          <div class="monster-master-utility-popover">
-            <div class="actions tactical-actions">
-              <button id="monster-master-new-match" class="secondary-button" type="button">Back to setup</button>
-            </div>
-
-            <details id="monster-master-invite-panel" class="invite-panel monster-master-invite-panel" hidden>
-              <summary>Second-player duel invite</summary>
-              <p>This local-development link carries a synthetic seat. Hosted Discord delivery uses a signed authenticated invitation.</p>
-              <div class="invite-controls">
-                <input id="monster-master-invite-link" type="text" readonly aria-label="Second-player duel invite link">
-                <button id="monster-master-copy-invite" class="secondary-button" type="button">Copy invite</button>
-              </div>
-            </details>
-
-            <details class="diagnostics">
-              <summary>Duel diagnostics</summary>
-              <pre id="monster-master-details" class="details"></pre>
-            </details>
-          </div>
-        </details>
+        <button id="monster-master-new-match" class="secondary-button monster-master-exit-button" type="button" aria-label="Back to setup">Setup</button>
       </div>
 
       <div class="monster-master-game-grid tactical-layout combat-layout">
@@ -170,6 +149,20 @@
           </div>
 
           <div id="monster-master-effects" class="combat-effects" aria-live="polite"></div>
+
+          <details id="monster-master-invite-panel" class="invite-panel monster-master-invite-panel" hidden>
+            <summary>Second-player duel invite</summary>
+            <p>This local-development link carries a synthetic seat. Hosted Discord delivery uses a signed authenticated invitation.</p>
+            <div class="invite-controls">
+              <input id="monster-master-invite-link" type="text" readonly aria-label="Second-player duel invite link">
+              <button id="monster-master-copy-invite" class="secondary-button" type="button">Copy invite</button>
+            </div>
+          </details>
+
+          <details class="diagnostics monster-master-diagnostics">
+            <summary>Duel diagnostics</summary>
+            <pre id="monster-master-details" class="details"></pre>
+          </details>
         </aside>
 
         <section class="monster-master-command-deck" aria-label="Duel command deck">
