@@ -189,3 +189,72 @@ test("Monster Master supports wheel zoom and drag pan after rotating", async ({ 
   const afterPan = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera());
   expect(Math.abs(afterPan.centerX - beforePan.centerX) + Math.abs(afterPan.centerY - beforePan.centerY)).toBeGreaterThan(0.5);
 });
+
+test("Monster Master fills the viewport and synchronizes the active-unit command HUD", async ({ page, request }) => {
+  const prepared = await prepareMonsterMasterMove(request);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
+
+  await expect(page.locator("body")).toHaveClass(/monster-master-match-active/);
+  await expect(page.locator("#monster-master-unit-hud")).toBeVisible();
+  await expect(page.locator("#monster-master-hud-name")).toHaveText(
+    await page.locator("#monster-master-active-unit").textContent(),
+  );
+  await expect(page.locator("#monster-master-hud-health")).not.toHaveText("—");
+  await expect(page.locator("#monster-master-hud-move")).toHaveText(/Available|Used/);
+  await expect(page.locator("#monster-master-hud-primary")).toHaveText(/Available|Used/);
+
+  const geometry = await page.evaluate(() => {
+    const frame = document.querySelector(".combat-canvas-frame").getBoundingClientRect();
+    const deck = document.querySelector(".monster-master-command-deck").getBoundingClientRect();
+    const scrolling = document.scrollingElement;
+    return {
+      viewportHeight: window.innerHeight,
+      viewportWidth: window.innerWidth,
+      scrollHeight: scrolling.scrollHeight,
+      scrollWidth: scrolling.scrollWidth,
+      frameHeight: frame.height,
+      frameWidth: frame.width,
+      deckBottom: deck.bottom,
+    };
+  });
+  expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.viewportHeight + 2);
+  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.viewportWidth + 2);
+  expect(geometry.frameHeight).toBeGreaterThan(430);
+  expect(geometry.frameWidth).toBeGreaterThan(620);
+  expect(geometry.deckBottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
+
+  await page.keyboard.press("2");
+  await expect(page.locator("#monster-master-select-move")).toHaveAttribute("aria-pressed", "true");
+});
+
+test("Monster Master mobile shell keeps gameplay bounded and exposes roster and unit drawers", async ({ page, request }) => {
+  const prepared = await prepareMonsterMasterMove(request);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
+
+  const dimensions = await page.evaluate(() => ({
+    viewportHeight: window.innerHeight,
+    viewportWidth: window.innerWidth,
+    scrollHeight: document.scrollingElement.scrollHeight,
+    scrollWidth: document.scrollingElement.scrollWidth,
+  }));
+  expect(dimensions.scrollHeight).toBeLessThanOrEqual(dimensions.viewportHeight + 2);
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.viewportWidth + 2);
+  await expect(page.locator(".monster-master-command-deck")).toBeVisible();
+
+  await page.locator("#monster-master-open-roster").click();
+  await expect(page.locator("body")).toHaveClass(/monster-master-roster-open/);
+  await expect(page.locator("#monster-master-open-roster")).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#monster-master-roster-rail")).toBeInViewport();
+
+  await page.locator("#monster-master-drawer-backdrop").click({ position: { x: 360, y: 420 } });
+  await expect(page.locator("body")).not.toHaveClass(/monster-master-roster-open/);
+
+  await page.locator("#monster-master-open-intel").click();
+  await expect(page.locator("body")).toHaveClass(/monster-master-intel-open/);
+  await expect(page.locator("#monster-master-open-intel")).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#monster-master-unit-hud")).toBeInViewport();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("body")).not.toHaveClass(/monster-master-intel-open/);
+});
