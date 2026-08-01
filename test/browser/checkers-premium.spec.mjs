@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
 
+test("selecting Checkers exposes the premium board title as a real heading", async ({ page }) => {
+  await page.goto("/?player=checkers-heading-contract");
+  await page.locator("#select-checkers").click();
+  await expect(page.getByRole("heading", { name: "American Checkers" })).toBeVisible();
+  await expect(page.locator("body")).toHaveClass(/checkers-premium-active/);
+});
+
 test("premium Checkers skin preserves authoritative selection and movement", async ({ page }) => {
   await page.goto("/?game=american-checkers&player=browser-checkers-premium");
   await page.locator("#challenge-theo").click();

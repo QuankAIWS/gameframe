@@ -48,7 +48,7 @@ function ensureBoardShell() {
     heading = document.createElement("div");
     heading.className = "checkers-board-heading";
     heading.innerHTML = `
-      <span class="checkers-board-title">American Checkers</span>
+      <h3 class="checkers-board-title">American Checkers</h3>
       <span id="checkers-board-state" class="checkers-board-state">Authoritative match</span>
     `;
     boardWrap.insertBefore(heading, shell);
@@ -229,9 +229,9 @@ function updateCheckersPresentation() {
   renderCapturedSummary(blackPlayerCard, "red", Math.max(0, 12 - redPieces));
   renderCapturedSummary(redPlayerCard, "black", Math.max(0, 12 - blackPieces));
 
+  const statusCopy = status?.textContent?.trim() || "Authoritative match";
   const turnCopy = rail?.querySelector("#checkers-turn-copy");
   const boardState = boardWrap?.querySelector("#checkers-board-state");
-  const statusCopy = status?.textContent?.trim() || "Authoritative match";
   if (turnCopy) turnCopy.textContent = statusCopy;
   if (boardState) boardState.textContent = statusCopy;
   if (rail) {
