@@ -1,5 +1,16 @@
 .combat-canvas-frame {
   position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 72%, rgba(54, 112, 150, 0.2), transparent 48%),
+    linear-gradient(180deg, #101929 0%, #070c15 72%, #04070d 100%);
+}
+
+.combat-canvas-frame[data-projection-ready="true"] #monster-master-canvas {
+  opacity: 0;
+  cursor: crosshair;
+  touch-action: none;
 }
 
 #monster-master-motion-canvas {
@@ -7,11 +18,36 @@
   inset: 0;
   z-index: 4;
   display: block;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
 }
 
-#monster-master-motion-canvas[hidden] {
-  display: none;
+.combat-canvas-frame[data-projection-ready="true"]::before {
+  content: "3/4 TACTICAL VIEW";
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  padding: 6px 9px;
+  border: 1px solid rgba(135, 202, 244, 0.34);
+  border-radius: 999px;
+  background: rgba(7, 12, 22, 0.72);
+  color: #cdefff;
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+
+.combat-canvas-frame[data-dragging="true"],
+.combat-canvas-frame[data-dragging="true"] #monster-master-canvas {
+  cursor: grabbing;
+}
+
+.combat-canvas-frame:focus-within {
+  box-shadow: inset 0 0 0 3px rgba(112, 216, 255, 0.78);
 }
 
 .combat-canvas-frame[data-animating="true"] {
@@ -37,6 +73,19 @@
   font-weight: 850;
   letter-spacing: 0.12em;
   pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+
+@media (max-width: 650px) {
+  .combat-canvas-frame[data-projection-ready="true"]::before,
+  .combat-canvas-frame[data-animating="true"]::after {
+    top: 8px;
+    padding: 5px 7px;
+    font-size: 0.56rem;
+  }
+
+  .combat-canvas-frame[data-projection-ready="true"]::before { left: 8px; }
+  .combat-canvas-frame[data-animating="true"]::after { right: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
