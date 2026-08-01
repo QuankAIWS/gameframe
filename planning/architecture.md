@@ -18,7 +18,21 @@ Scribbles Runtime ┘                 ▼
           tic-tac-toe / tactics        Theo / solver / bot
 ```
 
-Scribbles Runtime is the integration host. Theo is the public-facing agent and registered GameFrame player represented by that integration.
+Scribbles Runtime is the integration host for Theo. Theo is the public-facing agent and registered GameFrame player represented by that integration.
+
+Scribbles Runtime is not the host of the future RPG Game Master. The RPG GM belongs to a separate project and runtime that will use its own constrained GameFrame adapter. See [RPG GM Runtime Boundary](./rpg-gm-runtime-boundary.md).
+
+```text
+Theo
+  ↕ Scribbles Runtime
+  ↕ constrained Theo player adapter
+GameFrame authoritative services
+
+RPG GM
+  ↕ separate RPG GM runtime
+  ↕ constrained campaign/GameFrame adapter
+GameFrame authoritative services
+```
 
 ## Game definition contract
 
@@ -44,7 +58,7 @@ The platform owns:
 
 ## Authority
 
-The server is authoritative. Browser code, Discord clients, Scribbles Runtime, and Theo's model output are untrusted callers. They may request only actions the current game definition exposes as legal. Neither the runtime nor Theo owns dice, clocks, turn order, health, movement, or victory state.
+The server is authoritative. Browser code, Discord clients, Scribbles Runtime, the separate RPG GM runtime, and model output are untrusted callers. They may request only actions the current game definition exposes as legal. Neither agent runtime owns dice, clocks, turn order, health, movement, or victory state.
 
 ## First-slice persistence
 
@@ -56,6 +70,8 @@ GF-0001 uses an in-memory repository so the contracts can be tested without depl
 - Discord Activity is a host adapter around that client.
 - Cloudflare is an intended public edge and match-runtime option, not a dependency of game rules.
 - Scribbles Runtime connects through a constrained player adapter, receives Theo's structured observations, and submits actions on Theo's behalf.
+- The future RPG GM runtime connects through a separate campaign adapter and remains outside Scribbles Runtime.
+- No integration receives direct authority over GameFrame state or direct access to another runtime's private storage and prompt lifecycle.
 
 ## Command and projection split
 
@@ -97,6 +113,8 @@ Discord SDK authorize
 ```
 
 The local Node adapter uses `x-gameframe-player-id` only as an explicit development authenticator. The Cloudflare entry point rejects public game API requests until a production verifier is installed. Scribbles Runtime uses a separate service principal bound only to Theo's stable `theo` player identity.
+
+A future RPG GM runtime must use its own service principal and narrowly scoped authorization. It must not impersonate Theo or reuse Theo's principal.
 
 ## Activity sessions
 
