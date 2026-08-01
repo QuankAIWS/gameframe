@@ -58,7 +58,9 @@ The platform owns:
 
 ## Authority
 
-The server is authoritative. Browser code, Discord clients, Scribbles Runtime, the separate RPG GM runtime, and model output are untrusted callers. They may request only actions the current game definition exposes as legal. Neither agent runtime owns dice, clocks, turn order, health, movement, or victory state.
+The server is authoritative for mechanics and state represented through GameFrame contracts. Browser code, Discord clients, Scribbles Runtime, the separate RPG GM runtime, and model output are untrusted callers. They may request only actions or operations that the relevant GameFrame contract permits. Neither agent runtime owns GameFrame dice, clocks, turn order, health, movement, victory, or committed encounter state.
+
+Narrative and campaign state that has not been promoted into a GameFrame contract remains owned by the separate RPG project. GameFrame authority does not silently expand to every fact described during an RPG campaign.
 
 ## First-slice persistence
 
@@ -72,6 +74,18 @@ GF-0001 uses an in-memory repository so the contracts can be tested without depl
 - Scribbles Runtime connects through a constrained player adapter, receives Theo's structured observations, and submits actions on Theo's behalf.
 - The future RPG GM runtime connects through a separate campaign adapter and remains outside Scribbles Runtime.
 - No integration receives direct authority over GameFrame state or direct access to another runtime's private storage and prompt lifecycle.
+- The default architecture does not require a private Theo-runtime-to-RPG-runtime connection. Theo and the GM ordinarily interact through campaign-visible Discord activity and GameFrame interfaces.
+
+## RPG campaign experience direction
+
+The separate runtime boundary does not decide how game-heavy the RPG product becomes.
+
+Two directions remain under consideration:
+
+1. **Discord-first illustrated campaign** — narration, dialogue, improvisation, and most noncombat play remain in Discord; GameFrame is invoked mainly for tactical encounters and selected structured mechanics. Modular portraits, cards, prepared asset libraries, local ComfyUI generation, and optional cloud generation enrich the campaign without requiring a graphical overworld.
+2. **Game-heavy hybrid RPG platform** — GameFrame expands beyond tactical encounters into persistent exploration, characters, inventory, equipment, dialogue, quests, factions, campaign state, and broader graphical interaction.
+
+Both directions use the same separate RPG GM runtime and the same authoritative GameFrame encounter foundation. The choice is unresolved and must be evaluated through bounded prototypes. See [RPG Campaign Experience Directions](./rpg-campaign-experience-directions.md).
 
 ## Command and projection split
 
