@@ -8,6 +8,8 @@ It is a forward design constraint, not a claim that the described tactical, visu
 
 The RPG Game Master runtime boundary is defined in [RPG GM Runtime Boundary](./rpg-gm-runtime-boundary.md).
 
+The unresolved choice between a Discord-first illustrated campaign and a game-heavy hybrid RPG platform is defined in [RPG Campaign Experience Directions](./rpg-campaign-experience-directions.md).
+
 ## Decision summary
 
 The first substantial game built on GameFrame should be a compact turn-based tactical battler rather than a real-time strategy game or a fully generative tabletop RPG.
@@ -26,7 +28,7 @@ The tactical battler establishes the deterministic combat substrate needed by bo
 
 The first concrete game should use a monster-master theme: each player controls a master and deploys monster cubes that become tactical units. This theme naturally exercises summoning, deployment, resources, rosters, unit ownership, and combat without requiring the exploration, dialogue, persistence, and open-ended adjudication of a full RPG.
 
-The RPG campaign platform should later wrap this tactical system. It should not invent a second combat engine.
+Both candidate RPG directions should reuse this tactical system. Neither direction should invent a second combat engine.
 
 ## Why the tactical battler precedes real-time strategy
 
@@ -42,8 +44,9 @@ GameFrame multiplayer infrastructure
         -> monster-master battler
         -> Theo and Discord multiplayer canaries
         -> theme and asset abstraction
-        -> RPG encounter wrapper and campaign persistence
-        -> separate bounded RPG GM runtime and generated campaigns
+        -> RPG encounter wrapper
+        -> separate bounded RPG GM runtime
+        -> evaluate Discord-first illustrated and game-heavy hybrid campaign proofs
         -> eventual real-time strategy experiments
 ```
 
@@ -51,7 +54,9 @@ GameFrame multiplayer infrastructure
 
 ### One authoritative rules path
 
-GameFrame remains authoritative for all game state. Browsers, Discord transports, Theo through Scribbles Runtime, deterministic bots, the separate RPG GM runtime, and other model-backed agents submit intentions. They do not directly mutate board state.
+GameFrame remains authoritative for mechanics and state explicitly represented through GameFrame contracts. Browsers, Discord transports, Theo through Scribbles Runtime, deterministic bots, the separate RPG GM runtime, and other model-backed agents submit intentions. They do not directly mutate GameFrame state.
+
+Narrative and campaign state that has not been promoted into a GameFrame contract remains owned by the separate RPG project.
 
 Scribbles Runtime participates in this path only as Theo's runtime and connector. It is not the host or lifecycle owner of the RPG GM.
 
@@ -91,9 +96,11 @@ It is not another path around the rules engine. The RPG GM may propose operation
 - Offer legal choices
 - Advance a quest phase after its conditions are satisfied
 
-It may not directly assign arbitrary health, equipment, victory, movement, or map state.
+It may not directly assign arbitrary GameFrame health, equipment, victory, movement, or map state.
 
-Theo and the RPG GM may communicate through explicit cross-project contracts when a campaign requires it. Neither runtime receives direct access to the other's internal databases, private prompt state, queues, or lifecycle controls.
+The default design does not require a private Theo-runtime-to-RPG-runtime connection. Theo and the RPG GM ordinarily interact through campaign-visible Discord activity and GameFrame interfaces. A direct typed contract may be added only after a concrete use case demonstrates that those shared surfaces are insufficient.
+
+Neither runtime receives direct access to the other's internal databases, private prompt state, queues, or lifecycle controls.
 
 ### Mechanics and presentation are independent
 
@@ -104,6 +111,8 @@ An item can retain one stable mechanical definition while campaigns supply diffe
 ### The ordinary browser remains the base client
 
 The tactical interface should be an ordinary responsive browser client. Discord Activity delivery wraps that client rather than creating a second user interface implementation.
+
+This browser-first tactical rule does not decide whether the wider campaign is primarily played through Discord or through a broader GameFrame RPG client.
 
 ## Proposed module boundaries
 
@@ -353,6 +362,10 @@ Reserved for high-value moments:
 
 Ordinary movement, attacks, doors, and generic loot should use deterministic presentation. Image generation latency or quota exhaustion must never block legal gameplay.
 
+The wider RPG asset system may combine modular portrait composition, card and frame templates, prepared campaign libraries, local ComfyUI or equivalent generation on an operator-controlled GPU, and optional cloud providers. Accepted outputs should be cached against stable campaign entities and workflow or model versions.
+
+Unexpected image generation should normally be asynchronous. Text, deterministic compositions, or prepared placeholders allow the campaign to continue while a final asset renders.
+
 ### Visual recipes
 
 A reskinned item should retain a stable mechanical reference and attach presentation data, for example:
@@ -376,28 +389,52 @@ A reskinned item should retain a stable mechanical reference and attach presenta
 
 The renderer composes approved silhouettes, materials, overlays, palettes, and effects. It does not execute arbitrary model-written Canvas code.
 
-## RPG extension
+## RPG extension directions
 
-The later RPG layer adds persistent and noncombat systems around the tactical encounter engine:
+The tactical encounter engine is common to two unresolved campaign directions.
 
-- World locations and transitions
-- Persistent characters and progression
-- Inventory and equipment
-- Exploration and fog of war
-- Dialogue and social actions
-- Factions and reputation
-- Quests and campaign events
-- Rest, recovery, and injuries
-- Campaign-specific hidden information
-- RPG GM operations
+### Direction A — Discord-first illustrated campaign
 
-The RPG layer and Game Master belong to their own project and runtime. GameFrame provides authoritative game capabilities and stable interfaces; it does not need to host the RPG agent's memory, context compiler, long-horizon planning, or model lifecycle.
+Most narration, dialogue, exploration, improvisation, NPC interaction, and campaign continuity remain in Discord and the separate RPG runtime.
 
-When combat begins, the RPG runtime produces an encounter configuration for the tactical module through an authorized GameFrame contract. When combat ends, the tactical module returns committed outcomes such as survivors, injuries, consumed resources, recovered items, and world events.
+GameFrame is invoked primarily for:
 
-The RPG campaign state must not reconstruct combat by parsing narration. It consumes authoritative tactical results.
+- tactical combat and other spatial encounters;
+- authoritative encounter maps, participants, actions, effects, objectives, and results;
+- selected character, inventory, equipment, check, or item-card systems only when repeated use justifies structured implementation.
+
+The Discord campaign can be enriched with modular portraits, scene art, location cards, maps, letters, item and spell cards, faction symbols, generated handouts, prepared asset libraries, local ComfyUI generation, and optional cloud generation.
+
+This path does not require a simulated graphical overworld or a GameFrame entity for every improvised narrative object.
+
+### Direction B — Game-heavy hybrid RPG platform
+
+GameFrame expands beyond tactical encounters to implement substantial persistent and noncombat systems such as:
+
+- world locations and transitions;
+- persistent characters and progression;
+- inventory and equipment;
+- exploration and fog of war;
+- dialogue and social actions;
+- factions and reputation;
+- quests and campaign events;
+- rest, recovery, and injuries;
+- campaign-specific hidden information;
+- shops, objects, interaction state, and broader graphical campaign presentation.
+
+Discord remains a supported social and narrative surface, but GameFrame becomes a larger part of ordinary campaign play.
+
+### Shared encounter boundary
+
+The RPG layer and Game Master belong to their own project and runtime. GameFrame provides authoritative game capabilities and stable interfaces; it does not host the RPG agent's memory, context compiler, long-horizon planning, or model lifecycle.
+
+When a structured encounter begins, the RPG runtime produces an encounter configuration through an authorized GameFrame contract. When the encounter ends, GameFrame returns committed outcomes such as survivors, injuries, consumed resources, recovered items, objectives, and other supported events.
+
+The RPG campaign state must not reconstruct GameFrame results by parsing narration. It consumes authoritative results.
 
 Scribbles Runtime may allow Theo to join the campaign as a player through its own GameFrame connector. That does not make Scribbles Runtime the campaign or RPG GM owner.
+
+The two campaign directions, their costs, and their prototype criteria are defined in [RPG Campaign Experience Directions](./rpg-campaign-experience-directions.md). Neither is selected by this foundation document.
 
 ## Milestone sequence
 
@@ -456,7 +493,14 @@ Scribbles Runtime may allow Theo to join the campaign as a player through its ow
 - Prove that Theo can participate through Scribbles Runtime without receiving RPG-GM-only information.
 - Prove that neither runtime requires direct access to the other's private state.
 
-### RPG-0003 - Generated theme and chapter proof
+### RPG-0003 - Campaign-direction prototypes
+
+- Prove one short Discord-first illustrated campaign slice with recurring NPCs, generated or composed assets, and one tactical encounter.
+- Prove one bounded game-heavy location slice with navigation, one NPC interaction, one item or inventory interaction, one campaign flag, and one tactical encounter transition.
+- Compare player clarity, enjoyment, improvisational freedom, implementation cost, operational complexity, and actual use of Discord versus the GameFrame client.
+- Record a product-direction decision only after both prototypes provide sufficient evidence.
+
+### RPG-0004 - Generated theme and chapter proof
 
 - Generate a bounded theme manifest and chapter configuration.
 - Cache outputs and use deterministic fallbacks.
@@ -477,7 +521,7 @@ The tactical foundation is not considered established until it can demonstrate:
 - A second theme applied without tactical-rule modification
 - Test coverage for stale, duplicate, illegal, out-of-turn, and unauthorized commands
 
-The tactical foundation does not need the RPG GM runtime to satisfy these criteria.
+The tactical foundation does not need the RPG GM runtime or a selected campaign direction to satisfy these criteria.
 
 ## Open design decisions
 
@@ -493,14 +537,18 @@ The following remain provisional and should be settled through narrow prototypes
 - Whether multi-cell units are required before the RPG layer
 - The first two theme aesthetics
 - Exact cross-project API between GameFrame and the separate RPG GM runtime
-- Exact optional communication contract between Theo and the RPG GM
+- Whether any direct Theo-runtime-to-RPG-runtime contract is actually necessary
+- Discord-first illustrated versus game-heavy hybrid campaign direction
+- Which noncombat mechanics provide enough repeated value to justify GameFrame ownership
 
 These decisions may change without invalidating the larger architecture, provided the single-authority, semantic-presentation, shared-tactical-core, and separate-runtime invariants remain intact.
 
 ## Consequence
 
-The compact tactical arena is no longer merely an isolated game planned before the RPG. It is the deliberate combat foundation for the RPG campaign platform and a lower-risk stepping stone toward later real-time strategy work.
+The compact tactical arena is no longer merely an isolated game planned before the RPG. It is the deliberate combat foundation for either future RPG campaign direction and a lower-risk stepping stone toward later real-time strategy work.
 
 Implementation should optimize first for deterministic correctness, replayability, player-specific observations, and enjoyable small battles. Generative content is an enrichment layer added after the tactical loop is proven; it is not a prerequisite for the first playable battler.
 
 The RPG GM remains a separate future project. GameFrame should be designed so that project can use its capabilities cleanly without forcing Scribbles Runtime to host it or forcing GameFrame to absorb agent-runtime responsibilities.
+
+Future work must preserve both the Discord-first illustrated and game-heavy hybrid campaign directions until a deliberate prototype-backed decision selects one or defines a staged combination.
