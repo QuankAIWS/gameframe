@@ -18,6 +18,10 @@
   cursor: wait;
 }
 
+.combat-canvas-frame[data-animating="true"] #monster-master-canvas {
+  pointer-events: none;
+}
+
 .combat-canvas-frame[data-animating="true"]::after {
   content: "RESOLVING MOVEMENT";
   position: absolute;
