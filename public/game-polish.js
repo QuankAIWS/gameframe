@@ -1,4 +1,5 @@
 import "./checkers-premium.js";
+import "./checkers-premium-layout.js";
 
 const board = document.querySelector("#board");
 const boardWrap = board?.closest(".board-wrap");
