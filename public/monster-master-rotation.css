@@ -1,0 +1,85 @@
+.combat-canvas-frame[data-projection-ready="true"]::before {
+  content: "ROTATABLE 3/4 VIEW · " attr(data-camera-corner);
+  text-transform: uppercase;
+}
+
+.combat-canvas-frame[data-rotating="true"],
+.combat-canvas-frame[data-rotating="true"] #monster-master-canvas {
+  cursor: progress;
+}
+
+.combat-canvas-frame[data-rotating="true"] #monster-master-canvas {
+  pointer-events: none;
+}
+
+.monster-master-rotation-controls {
+  display: grid;
+  grid-template-columns: minmax(42px, auto) minmax(112px, 1fr) minmax(42px, auto);
+  align-items: stretch;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+}
+
+.monster-master-rotation-controls button,
+.monster-master-camera-corner {
+  min-height: 40px;
+  border: 1px solid rgba(135, 202, 244, 0.28);
+  border-radius: 10px;
+  background: rgba(9, 17, 30, 0.88);
+  color: #d8f2ff;
+}
+
+.monster-master-rotation-controls button {
+  padding: 0.35rem 0.65rem;
+  font-size: 1.15rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.monster-master-rotation-controls button:hover,
+.monster-master-rotation-controls button:focus-visible {
+  border-color: rgba(135, 202, 244, 0.72);
+  background: rgba(18, 39, 59, 0.94);
+  outline: none;
+}
+
+.monster-master-camera-corner {
+  display: grid;
+  place-items: center;
+  padding: 0.35rem 0.55rem;
+  color: #a9dff7;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.combat-canvas-frame[data-camera-corner="northwest"] #monster-master-motion-canvas,
+.combat-canvas-frame[data-camera-corner="northeast"] #monster-master-motion-canvas,
+.combat-canvas-frame[data-camera-corner="southeast"] #monster-master-motion-canvas,
+.combat-canvas-frame[data-camera-corner="southwest"] #monster-master-motion-canvas {
+  image-rendering: auto;
+}
+
+@media (max-width: 650px) {
+  .monster-master-rotation-controls {
+    grid-template-columns: 44px minmax(96px, 1fr) 44px;
+  }
+
+  .monster-master-camera-corner {
+    font-size: 0.61rem;
+  }
+
+  .combat-canvas-frame[data-projection-ready="true"]::before {
+    max-width: calc(100% - 16px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combat-canvas-frame[data-rotating="true"] #monster-master-motion-canvas {
+    transition: none;
+  }
+}
