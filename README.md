@@ -1,8 +1,10 @@
 # Scribbles GameFrame
 
-Scribbles GameFrame is the deterministic multiplayer game platform for the Scribbles architecture. It owns game sessions, legal-action validation, event history, player observations, browser delivery, and the integration boundaries for Discord Activities and Scribbles Runtime. Individual games remain explicit modules rather than being forced into one generalized rules engine.
+Scribbles GameFrame is the deterministic multiplayer game platform for the Scribbles architecture. It owns game sessions, legal-action validation, event history, player observations, browser delivery, and explicit integration boundaries for Discord Activities, Scribbles Runtime, and the future separate RPG Game Master runtime. Individual games remain explicit modules rather than being forced into one generalized rules engine.
 
 Theo is the public-facing Scribbles agent and the first registered nonhuman GameFrame player. The platform proof now includes complete Tic-Tac-Toe and American Checkers paths, a versioned decision-provider contract, a larger-field tactical map and movement client, a complete deterministic tactical combat stack, production-shaped Cloudflare/Discord identity and multiplayer boundaries, and a browser-journey and visual-regression foundation for future game surfaces.
+
+The RPG Game Master is not hosted through Scribbles Runtime. It belongs to a separate future project and runtime. The unresolved choice between a Discord-first illustrated campaign and a game-heavy hybrid RPG platform is documented in `planning/rpg-campaign-experience-directions.md`.
 
 ## Current status
 
@@ -129,9 +131,11 @@ Not yet claimed:
 - Public-network authenticated human multiplayer and WebSocket recovery
 - Remote decision-provider network transport and authentication
 - Live Scribbles Runtime integration controlling Theo
+- Any implemented or deployed RPG GM runtime
 - Production recovery, quota, observability, and durability behavior
 - Final Monster Master rules, content, balance, or art
 - Open-world campaign behavior or D&D rules
+- A selected Discord-first or game-heavy RPG campaign direction
 
 ## Run locally
 
@@ -194,8 +198,14 @@ Security vulnerabilities should be reported through the private process in `SECU
 
 ## Repository relationship
 
-Scribbles GameFrame and Scribbles Runtime are peer systems. GameFrame remains independently testable with deterministic or mock participants. Scribbles Runtime integrates through the explicit versioned decision-provider contract and acts on behalf of Theo; it does not become the game authority or the player identity.
+Scribbles GameFrame, Scribbles Runtime, and the future RPG Game Master runtime are separate systems with explicit adapters and authority boundaries.
+
+- GameFrame remains independently testable with deterministic or mock participants and owns only the mechanics and state represented through GameFrame contracts.
+- Scribbles Runtime integrates through the versioned decision-provider contract and acts on behalf of Theo as a player. It does not host the RPG GM or own RPG campaign state.
+- The separate RPG GM runtime owns campaign narration, continuity, NPC orchestration, freeform intent interpretation, and campaign state outside GameFrame-owned mechanics. It submits bounded encounter or campaign operations and consumes committed GameFrame results.
 
 Monster Master, future RPG encounters, and D&D-style encounters may reuse map, encounter, replay, service, storage, projection, identity, invitation, browser-journey, visual-review, and rendering infrastructure while retaining separate game definitions, turn structures, action economies, content models, and rules.
+
+The future campaign may be primarily Discord-based with generated and composed visual assets plus GameFrame tactical encounters, or it may evolve into a more game-heavy hybrid RPG platform. Both remain exploratory directions rather than current implementation commitments.
 
 See `AGENTS.md` before consequential development work.
