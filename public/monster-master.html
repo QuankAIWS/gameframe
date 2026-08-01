@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/combat.css">
   <link rel="stylesheet" href="/monster-master.css">
   <link rel="stylesheet" href="/monster-master-motion.css">
+  <link rel="stylesheet" href="/monster-master-rotation.css">
 </head>
 <body>
   <main class="shell tactical-shell combat-shell monster-master-shell">
@@ -111,9 +112,9 @@
             <button id="monster-master-end-activation" type="button" class="combat-action-button combat-end-button">End activation</button>
           </div>
           <div class="tactical-canvas-frame combat-canvas-frame">
-            <canvas id="monster-master-canvas" width="960" height="720" tabindex="0" aria-label="Scrollable Monster Master battlefield"></canvas>
+            <canvas id="monster-master-canvas" width="960" height="720" tabindex="0" aria-label="Scrollable and rotatable Monster Master battlefield"></canvas>
           </div>
-          <p id="monster-master-help" class="board-help">Battlefield actions, targets, and resolved outcomes appear here.</p>
+          <p id="monster-master-help" class="board-help">Drag to pan, wheel or pinch to zoom, and use the corner controls to rotate the battlefield.</p>
           <div id="monster-master-options" class="tactical-destinations combat-options monster-master-options" aria-label="Legal duel actions"></div>
           <div id="monster-master-effects" class="combat-effects" aria-live="polite"></div>
         </div>
@@ -138,7 +139,7 @@
       </details>
     </section>
   </main>
-  <script type="module" src="/monster-master-motion.js"></script>
+  <script type="module" src="/monster-master-rotation.js"></script>
   <script type="module" src="/auth-launcher.js" data-entry="/monster-master-app.js"></script>
 </body>
 </html>
