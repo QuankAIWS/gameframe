@@ -60,7 +60,18 @@ async function prepareMonsterMasterMove(request) {
   throw new Error("Monster Master did not reach a legal movement action.");
 }
 
+async function centerBattlefieldInViewport(page) {
+  const canvas = page.locator("#monster-master-canvas");
+  await canvas.evaluate((element) => element.scrollIntoView({ block: "center", inline: "center" }));
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box.x + box.width / 2).toBeGreaterThan(0);
+  expect(box.y + box.height / 2).toBeGreaterThan(0);
+  return box;
+}
+
 async function projectedPoint(page, coordinate) {
+  await centerBattlefieldInViewport(page);
   return page.evaluate((target) => {
     const canvas = document.querySelector("#monster-master-canvas");
     const rect = canvas.getBoundingClientRect();
@@ -127,8 +138,7 @@ test("Monster Master projection round-trips tiles and supports wheel zoom and dr
   expect(roundTrip).toEqual({ x: 11, y: 11 });
 
   const beforeZoom = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera().zoom);
-  const box = await canvas.boundingBox();
-  expect(box).not.toBeNull();
+  const box = await centerBattlefieldInViewport(page);
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.wheel(0, -320);
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterProjection.getCamera().zoom)).toBeGreaterThan(beforeZoom);
