@@ -195,13 +195,26 @@ Monster Master, future RPG encounters, and D&D-style encounters may reuse map, e
 
 Potential later scale variants may use larger battlefields, more units, squad entities, open-world maps, NPC interaction, or encounter transitions. Those possibilities should influence clean encounter and content boundaries but must not expand the first playable duel into a full campaign before the tactical loop is proven.
 
-### GF-0011 — RPG encounter and campaign foundation
+### GF-0011 — RPG encounter foundation and campaign-direction evaluation
 
-Wrap the tactical core with persistent party, exploration, inventory, quest, dialogue, and campaign state. Enter combat through a structured encounter configuration and return authoritative tactical outcomes to the campaign rather than reconstructing results from narration.
+The RPG Game Master belongs to a separate project and runtime. Scribbles Runtime remains responsible only for Theo and Theo's constrained GameFrame player connector. The binding ownership boundary is recorded in [`planning/rpg-gm-runtime-boundary.md`](rpg-gm-runtime-boundary.md).
 
-A future open-world layer may place NPCs, points of interest, dialogue, and encounter triggers on larger semantic maps. It should launch explicit encounter definitions rather than blending exploration narration and combat authority into one unbounded state machine.
+GameFrame should first expose an authorized RPG encounter contract that can:
 
-After the encounter wrapper is proven, add a bounded Game Director hosted through Scribbles Runtime. The Director narrates, portrays nonplayer characters, and proposes permitted campaign operations; GameFrame remains the rules authority, and Theo remains a player without access to Director-only or hidden campaign information.
+- receive a bounded encounter configuration from the separate RPG runtime;
+- create the appropriate tactical or D&D-style game definition;
+- preserve participants, identities, hidden information, legal actions, replay, reconnect, and persistence;
+- return committed survivors, injuries, consumed resources, recovered items, objectives, and other supported outcomes;
+- allow the RPG runtime to continue campaign narration from authoritative results rather than parsing combat prose.
+
+The broader campaign experience remains deliberately undecided between two directions documented in [`planning/rpg-campaign-experience-directions.md`](rpg-campaign-experience-directions.md):
+
+1. **Discord-first illustrated campaign** — most narration, dialogue, exploration, improvisation, and campaign continuity remain in Discord and the RPG runtime. GameFrame is invoked mainly for tactical encounters and selected structured mechanics. Modular portraits, item cards, prepared asset libraries, local ComfyUI generation, and optional cloud generation enrich the Discord experience.
+2. **Game-heavy hybrid RPG platform** — GameFrame expands into persistent exploration, locations, character sheets, inventory, equipment, dialogue, quests, factions, progression, and broader graphical campaign interaction in addition to tactical combat.
+
+Neither direction is selected at this stage. Near-term work should preserve both by keeping encounter contracts transport-neutral, keeping campaign and GameFrame ownership explicit, and avoiding assumptions that all noncombat RPG state must either remain in Discord or immediately become a GameFrame subsystem.
+
+A later product-direction decision should follow bounded prototypes and actual play evidence. The tactical foundation does not depend on that decision.
 
 D&D-style encounters should be implemented as a separate rules definition or family of definitions. They may reuse the platform and tactical substrate while retaining their own initiative, actions, reactions, conditions, resources, character data, and licensing boundary.
 
