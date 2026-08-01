@@ -60,6 +60,15 @@ async function prepareMonsterMasterMove(request) {
   throw new Error("Monster Master did not reach a legal movement action.");
 }
 
+async function projectedPoint(page, coordinate) {
+  return page.evaluate((target) => {
+    const canvas = document.querySelector("#monster-master-canvas");
+    const rect = canvas.getBoundingClientRect();
+    const point = window.gameFrameMonsterProjection.worldToScreen(target);
+    return { x: rect.left + point.x, y: rect.top + point.y };
+  }, coordinate);
+}
+
 test("Tic-Tac-Toe presents a board-level result and starts a rematch", async ({ page, request }) => {
   const { view, players } = await completeTicTacToe(request);
   await page.goto(`/?match=${encodeURIComponent(view.matchId)}&player=${encodeURIComponent(players[0])}`);
@@ -84,16 +93,51 @@ test("Checkers exposes a visible movement animation after a committed turn", asy
   await expect(page.locator("#board")).toHaveAttribute("data-last-animation-steps", /^[1-9]\d*$/);
 });
 
-test("Monster Master animates the exact committed movement path", async ({ page, request }) => {
+test("Monster Master animates the exact committed movement path in three-quarter view", async ({ page, request }) => {
   const prepared = await prepareMonsterMasterMove(request);
   const move = prepared.view.observation.legalActions.find((action) => action.type === "move");
   await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
 
+  const projectedCanvas = page.locator("#monster-master-motion-canvas");
+  await expect(projectedCanvas).toBeVisible();
+  await expect(projectedCanvas).toHaveAttribute("data-projection", "dimetric");
+  await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-projection-ready", "true");
+
   await page.locator("#monster-master-select-move").click();
-  await page.locator(`#monster-master-options button[data-destination="${move.path.at(-1).x},${move.path.at(-1).y}"]`).click();
+  const point = await projectedPoint(page, move.path.at(-1));
+  await page.mouse.click(point.x, point.y);
 
   await expect(page.locator("#monster-master-canvas")).toHaveAttribute(
     "data-last-animation-steps",
     String(move.path.length),
   );
+});
+
+test("Monster Master projection round-trips tiles and supports wheel zoom and drag pan", async ({ page, request }) => {
+  const prepared = await prepareMonsterMasterMove(request);
+  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
+
+  const canvas = page.locator("#monster-master-canvas");
+  await expect(canvas).toHaveAttribute("data-projection", "dimetric");
+
+  const roundTrip = await page.evaluate(() => {
+    const point = window.gameFrameMonsterProjection.worldToScreen({ x: 11, y: 11 });
+    return window.gameFrameMonsterProjection.screenToTile(point);
+  });
+  expect(roundTrip).toEqual({ x: 11, y: 11 });
+
+  const beforeZoom = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera().zoom);
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, -320);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterProjection.getCamera().zoom)).toBeGreaterThan(beforeZoom);
+
+  const beforePan = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera());
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.55);
+  await page.mouse.down({ button: "middle" });
+  await page.mouse.move(box.x + box.width * 0.62, box.y + box.height * 0.63, { steps: 6 });
+  await page.mouse.up({ button: "middle" });
+  const afterPan = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera());
+  expect(Math.abs(afterPan.centerX - beforePan.centerX) + Math.abs(afterPan.centerY - beforePan.centerY)).toBeGreaterThan(0.5);
 });
