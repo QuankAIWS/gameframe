@@ -80,6 +80,13 @@ async function projectedPoint(page, coordinate) {
   }, coordinate);
 }
 
+async function setCameraQuarter(page, quarter) {
+  await page.evaluate((targetQuarter) => {
+    window.gameFrameMonsterProjection.setRotation(targetQuarter, { animate: false });
+  }, quarter);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterProjection.getCamera().quarter)).toBe(quarter);
+}
+
 test("Tic-Tac-Toe presents a board-level result and starts a rematch", async ({ page, request }) => {
   const { view, players } = await completeTicTacToe(request);
   await page.goto(`/?match=${encodeURIComponent(view.matchId)}&player=${encodeURIComponent(players[0])}`);
@@ -104,16 +111,18 @@ test("Checkers exposes a visible movement animation after a committed turn", asy
   await expect(page.locator("#board")).toHaveAttribute("data-last-animation-steps", /^[1-9]\d*$/);
 });
 
-test("Monster Master animates the exact committed movement path in three-quarter view", async ({ page, request }) => {
+test("Monster Master animates the exact committed movement path in rotatable three-quarter view", async ({ page, request }) => {
   const prepared = await prepareMonsterMasterMove(request);
   const move = prepared.view.observation.legalActions.find((action) => action.type === "move");
   await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
 
   const projectedCanvas = page.locator("#monster-master-motion-canvas");
   await expect(projectedCanvas).toBeVisible();
-  await expect(projectedCanvas).toHaveAttribute("data-projection", "dimetric");
+  await expect(projectedCanvas).toHaveAttribute("data-projection", "rotatable-dimetric");
+  await expect(projectedCanvas).toHaveAttribute("data-billboard", "camera-facing");
   await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-projection-ready", "true");
 
+  await setCameraQuarter(page, 2);
   await page.locator("#monster-master-select-move").click();
   const point = await projectedPoint(page, move.path.at(-1));
   await page.mouse.click(point.x, point.y);
@@ -124,18 +133,47 @@ test("Monster Master animates the exact committed movement path in three-quarter
   );
 });
 
-test("Monster Master projection round-trips tiles and supports wheel zoom and drag pan", async ({ page, request }) => {
+test("Monster Master round-trips tiles from all four corners", async ({ page, request }) => {
   const prepared = await prepareMonsterMasterMove(request);
   await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
 
   const canvas = page.locator("#monster-master-canvas");
-  await expect(canvas).toHaveAttribute("data-projection", "dimetric");
+  await expect(canvas).toHaveAttribute("data-projection", "rotatable-dimetric");
+  await expect(page.locator("#monster-master-camera-corner")).toBeVisible();
 
-  const roundTrip = await page.evaluate(() => {
-    const point = window.gameFrameMonsterProjection.worldToScreen({ x: 11, y: 11 });
-    return window.gameFrameMonsterProjection.screenToTile(point);
-  });
-  expect(roundTrip).toEqual({ x: 11, y: 11 });
+  for (const quarter of [0, 1, 2, 3]) {
+    await setCameraQuarter(page, quarter);
+    const roundTrip = await page.evaluate(() => {
+      const point = window.gameFrameMonsterProjection.worldToScreen({ x: 11, y: 11 });
+      return window.gameFrameMonsterProjection.screenToTile(point);
+    });
+    expect(roundTrip).toEqual({ x: 11, y: 11 });
+    await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-camera-quarter", String(quarter));
+  }
+});
+
+test("Monster Master rotation controls cycle corners while preserving camera center and zoom", async ({ page, request }) => {
+  const prepared = await prepareMonsterMasterMove(request);
+  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
+
+  await setCameraQuarter(page, 0);
+  const before = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera());
+  await page.locator("#monster-master-rotate-right").click();
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterProjection.getCamera().quarter)).toBe(1);
+  await expect(page.locator("#monster-master-camera-corner")).toHaveText("Northeast");
+  const after = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera());
+  expect(after.centerX).toBeCloseTo(before.centerX, 6);
+  expect(after.centerY).toBeCloseTo(before.centerY, 6);
+  expect(after.zoom).toBeCloseTo(before.zoom, 6);
+
+  await page.locator("#monster-master-rotate-left").click();
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterProjection.getCamera().quarter)).toBe(0);
+});
+
+test("Monster Master supports wheel zoom and drag pan after rotating", async ({ page, request }) => {
+  const prepared = await prepareMonsterMasterMove(request);
+  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
+  await setCameraQuarter(page, 3);
 
   const beforeZoom = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera().zoom);
   const box = await centerBattlefieldInViewport(page);
