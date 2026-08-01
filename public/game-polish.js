@@ -1,3 +1,5 @@
+import "./checkers-premium.js";
+
 const board = document.querySelector("#board");
 const boardWrap = board?.closest(".board-wrap");
 const status = document.querySelector("#status");
