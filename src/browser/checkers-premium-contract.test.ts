@@ -26,7 +26,7 @@ test("premium Checkers presentation uses modular pre-rendered assets without rep
   assert.match(styles, /assets\/checkers\/board-frame\.webp/);
   assert.match(styles, /assets\/checkers\/board-surface\.webp/);
   assert.match(styles, /assets\/checkers\/checkers-atlas\.webp/);
-  assert.match(styles, /background-position: 100% 0%/);
+  assert.match(styles, /background-position:\s*100% 0%/);
   assert.match(styles, /\.checkers-intel-rail/);
   assert.match(styles, /\.checkers-board-shell/);
   assert.match(styles, /prefers-reduced-motion/);
