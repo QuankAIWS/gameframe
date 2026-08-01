@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("selecting Checkers exposes the premium board title as a real heading", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?player=checkers-heading-contract");
   await page.locator("#select-checkers").click();
   await expect(page.getByRole("heading", { name: "American Checkers" })).toBeVisible();
