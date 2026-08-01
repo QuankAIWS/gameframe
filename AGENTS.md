@@ -5,7 +5,7 @@ Scribbles GameFrame is the publicly viewable, proprietary game platform used by 
 ## Startup
 
 1. Read this file.
-2. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, `planning/development-workflow.md`, `planning/discord-authentication-and-cloudflare-canary.md`, `planning/authenticated-match-invitations.md`, and `planning/tactical-battler-rpg-foundation.md`.
+2. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, `planning/development-workflow.md`, `planning/discord-authentication-and-cloudflare-canary.md`, `planning/authenticated-match-invitations.md`, `planning/tactical-battler-rpg-foundation.md`, `planning/rpg-gm-runtime-boundary.md`, and `planning/rpg-campaign-experience-directions.md`.
 3. Inspect the affected code and tests before editing.
 
 ## Canonical commands
@@ -25,25 +25,31 @@ Playwright browser acceptance requires a compatible Chromium installation. Use `
 ## Canonical identity model
 
 - Scribbles GameFrame is the game platform, package, service, and deployment.
-- Scribbles Runtime is the peer runtime that hosts agent capabilities and model access.
+- Scribbles Runtime is the peer runtime that hosts Theo and Theo's player-facing GameFrame connector.
+- The future RPG Game Master is a separate project and runtime. It is not hosted, spawned, supervised, or persisted by Scribbles Runtime.
 - Theo is the public-facing agent, user-visible opponent, and registered GameFrame player with stable player ID `theo`.
 - Discord users receive stable GameFrame player IDs in the form `discord:<discord-user-id>`.
+- The RPG GM must use its own narrowly scoped service identity and must not impersonate Theo or reuse Theo's principal.
 - Discord display names and avatars are presentation metadata, not authorization keys.
-- Use the current Scribbles platform and runtime names consistently while preserving Theo as the agent identity.
+- Use the current Scribbles platform and runtime names consistently while preserving Theo and the RPG GM as separate identities and lifecycle owners.
 
 ## Architectural boundaries
 
 - `src/platform` owns transport-neutral game and match contracts.
 - `src/games/*` owns game-specific state, rules, observations, and legal actions.
-- `src/agents` owns nonhuman decision contracts. Theo is a participant through an adapter, not the authority for game mechanics.
+- `src/agents` owns nonhuman decision contracts used by GameFrame games. Theo is a participant through an adapter, not the authority for game mechanics. The RPG GM runtime does not live under `src/agents`.
 - `src/server` owns the current local authoritative process boundary. Browser clients never mutate state directly.
-- Discord, Cloudflare, and Scribbles Runtime integrations must enter through explicit adapters. Do not scatter vendor SDK calls through game logic.
-- Discord authenticates external users; GameFrame issues its own signed session and remains the authority for seats, commands, and match state.
+- Discord, Cloudflare, Scribbles Runtime, and the future RPG GM runtime must enter through explicit adapters. Do not scatter vendor SDK calls through game logic.
+- GameFrame is authoritative only for mechanics and state explicitly represented through its contracts. Narrative and campaign state outside those contracts remains owned by the separate RPG project.
+- Discord authenticates external users; GameFrame issues its own signed session and remains the authority for seats, commands, and GameFrame-owned state.
 - Hosted human-versus-human seats require signed, expiring invitation claims by independently authenticated principals. Never restore URL player impersonation or caller-supplied Discord seats.
 - Event history, revision checks, idempotency, and visibility are correctness requirements, not deployment polish.
 - HTTP owns commands; WebSockets are projection-only. Do not introduce a second mutation path without preserving the same validation and idempotency contracts.
 - Tactical renderers consume authoritative map, unit, action, effect, and visibility state. Camera position, interpolation, hover previews, and transient animation remain presentation state.
 - Monster Master, future RPG encounters, and D&D-style encounters may share map, encounter, replay, service, storage, projection, identity, invitation, and rendering infrastructure without sharing one `GameDefinition`, turn economy, or rules implementation.
+- The RPG campaign product direction remains unresolved between a Discord-first illustrated campaign and a game-heavy hybrid RPG platform. Do not implement either direction as an assumed requirement without an approved slice.
+- Generated portraits, cards, scene art, local ComfyUI output, and cloud-generated media are enrichment layers. They must be cached and must not block legal gameplay.
+- Do not create a direct private Theo-runtime-to-RPG-runtime dependency without a demonstrated use case and an explicit typed contract.
 
 ## Public repository controls
 
@@ -71,7 +77,7 @@ The first slice should include:
 - a dedicated browser surface with functional silhouettes and UI rather than final art
 - replay, resume, Workers eviction recovery, and player-specific legal-action projections
 
-Do not turn MM-0001 into the open world, campaign layer, full content roster, randomized loot system, generated-story system, or D&D rules engine. Preserve those directions through explicit encounter configuration, content definitions, and separate game or campaign wrappers.
+Do not turn MM-0001 into the open world, campaign layer, full content roster, randomized loot system, generated-story system, or D&D rules engine. Preserve those directions through explicit encounter configuration, content definitions, separate game or campaign wrappers, and the documented unresolved RPG product-direction evaluation.
 
 `TC-0001` map/movement/Canvas and `TC-0002` deterministic combat are complete repository proofs. `GF-0004` website OAuth, Discord Activity client authentication, signed GameFrame sessions, and authenticated human invitations are repository-complete. Live Cloudflare deployment and real Discord desktop/mobile canaries remain owner-controlled external checkpoints and must not be claimed from repository validation.
 
@@ -83,4 +89,4 @@ Do not turn MM-0001 into the open world, campaign layer, full content roster, ra
 - Ordinary branch pushes and pull-request updates must not start GitHub Actions. GitHub-hosted validation is reserved for completed feature candidates and major milestones.
 - When a feature is complete, update it from `main`, run the complete suite locally again, push the final head, and freeze the branch.
 - Start `Canonical Validation` either by manual workflow dispatch or by applying the `canonical-validation` label to the frozen pull request. Merge only after its `validate` job passes, and rerun it if the branch changes afterward.
-- Real Discord, deployed Cloudflare, and Scribbles Runtime behavior require compact external canaries and must not be claimed from local tests or the repository-only canonical suite.
+- Real Discord, deployed Cloudflare, Scribbles Runtime, and future RPG GM runtime behavior require compact external canaries and must not be claimed from local tests or the repository-only canonical suite.
