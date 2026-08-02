@@ -6,8 +6,9 @@ Scribbles GameFrame is the publicly viewable, proprietary game platform used by 
 
 1. Read this file.
 2. Read `planning/ROADMAP.md`, `planning/architecture.md`, `planning/testing-strategy.md`, `planning/development-workflow.md`, `planning/discord-authentication-and-cloudflare-canary.md`, `planning/authenticated-match-invitations.md`, `planning/tactical-battler-rpg-foundation.md`, `planning/monster-master-rules.md`, and `planning/browser-journey-matrix.md`.
-3. Inspect the affected code and tests before editing.
-4. For MM-0001 continuation, read `planning/validation/2026-07-30-monster-master-first-playable.md` and PR #39 before expanding scope.
+3. For visual-production work, also read `planning/visual-asset-build-contract.md`, `planning/clockwork-eclipse-checkers-visual-pipeline.md`, and `planning/decisions/0010-clockwork-eclipse-checkers-presentation.md`.
+4. Inspect the affected code and tests before editing.
+5. For MM-0001 continuation, read `planning/validation/2026-07-30-monster-master-first-playable.md` and PR #39 before expanding scope.
 
 ## Canonical commands
 
@@ -88,6 +89,24 @@ The immediate remaining gates are:
 Do not turn MM-0001 into the open world, campaign layer, full content roster, randomized loot system, generated-story system, or D&D rules engine. Preserve those directions through explicit encounter configuration, content definitions, and separate game or campaign wrappers.
 
 `TC-0001` map/movement/Canvas and `TC-0002` deterministic combat are complete repository proofs. `GF-0004` website OAuth, Discord Activity client authentication, signed GameFrame sessions, and authenticated human invitations are repository-complete. Live Cloudflare deployment and real Discord desktop/mobile canaries remain owner-controlled external checkpoints and must not be claimed from repository validation.
+
+## Clockwork Eclipse visual continuation
+
+The dedicated visual-production branch is based on PR #39 head `7e079bdfc6d847661e18e147522a459d6998e5a4`. Its first documentation slice selects Clockwork Eclipse as the American Checkers theme and defines the reusable asset-build contract.
+
+Visual implementation must preserve the existing authoritative Checkers rules, legal actions, identity, HTTP commands, projections, invitations, resume behavior, and stable selectors. The intended active-match shell uses `100dvh`, disables document-level gameplay scrolling, keeps the board dominant, and converts secondary information to bounded drawers or overlays at narrow widths.
+
+Generated imagery is source material, not a production asset. Production work must proceed through approved lossless masters, a committed manifest, deterministic derivatives, automated image checks, reproducibility verification, browser journeys, curated screenshots, and direct screenshot inspection.
+
+The intended future command surface is:
+
+```bash
+npm run assets:check
+npm run assets:build
+npm run assets:verify
+```
+
+Do not add these commands as no-op placeholders. Implement them only with real source masters, deterministic transforms, pinned tooling, and meaningful failure behavior. Image generation must remain outside canonical CI.
 
 ## Development and validation posture
 

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" data-asset-id="turn-dial" data-background="transparent">
+
+<defs>
+  <radialGradient id="steel" cx="38%" cy="30%">
+    <stop offset="0" stop-color="#355078"/><stop offset=".45" stop-color="#17243a"/><stop offset="1" stop-color="#050811"/>
+  </radialGradient>
+  <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#fff0a8"/><stop offset=".28" stop-color="#d9a83f"/><stop offset=".62" stop-color="#7a4814"/><stop offset="1" stop-color="#f1ca68"/>
+  </linearGradient>
+  <radialGradient id="obsidian"><stop offset="0" stop-color="#253044"/><stop offset=".55" stop-color="#070a10"/><stop offset="1" stop-color="#000"/></radialGradient>
+  <filter id="soft"><feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#000" flood-opacity=".65"/></filter>
+</defs>
+
+<g filter="url(#soft)">
+<circle cx="256" cy="256" r="218" fill="url(#steel)" stroke="url(#brass)" stroke-width="12"/>
+<circle cx="256" cy="256" r="176" fill="#111a29" stroke="#d7aa49" stroke-width="6"/>
+<g stroke="#e3b753" stroke-width="4"><path d="M256 62v18" transform="rotate(0 256 256)"/><path d="M256 62v18" transform="rotate(15 256 256)"/><path d="M256 62v18" transform="rotate(30 256 256)"/><path d="M256 62v18" transform="rotate(45 256 256)"/><path d="M256 62v18" transform="rotate(60 256 256)"/><path d="M256 62v18" transform="rotate(75 256 256)"/><path d="M256 62v18" transform="rotate(90 256 256)"/><path d="M256 62v18" transform="rotate(105 256 256)"/><path d="M256 62v18" transform="rotate(120 256 256)"/><path d="M256 62v18" transform="rotate(135 256 256)"/><path d="M256 62v18" transform="rotate(150 256 256)"/><path d="M256 62v18" transform="rotate(165 256 256)"/><path d="M256 62v18" transform="rotate(180 256 256)"/><path d="M256 62v18" transform="rotate(195 256 256)"/><path d="M256 62v18" transform="rotate(210 256 256)"/><path d="M256 62v18" transform="rotate(225 256 256)"/><path d="M256 62v18" transform="rotate(240 256 256)"/><path d="M256 62v18" transform="rotate(255 256 256)"/><path d="M256 62v18" transform="rotate(270 256 256)"/><path d="M256 62v18" transform="rotate(285 256 256)"/><path d="M256 62v18" transform="rotate(300 256 256)"/><path d="M256 62v18" transform="rotate(315 256 256)"/><path d="M256 62v18" transform="rotate(330 256 256)"/><path d="M256 62v18" transform="rotate(345 256 256)"/></g>
+<circle cx="256" cy="256" r="132" fill="#182234" stroke="#7f6330" stroke-width="4"/>
+<ellipse cx="256" cy="256" rx="174" ry="70" fill="none" stroke="#d6a84a" stroke-width="4" transform="rotate(18 256 256)"/>
+<path d="M246 256L115 318L236 240Z" fill="url(#brass)" stroke="#fff0a8" stroke-width="3"/>
+<circle cx="256" cy="256" r="14" fill="url(#brass)"/>
+<path d="M173 135a68 68 0 0 0 57 109a52 52 0 1 1-57-109z" fill="#eef3f7" opacity=".88"/>
+</g></svg>

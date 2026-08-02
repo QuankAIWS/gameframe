@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" data-asset-id="shell-background" data-background="opaque">
+<defs><radialGradient id="bg"><stop offset="0" stop-color="#15233a"/><stop offset="1" stop-color="#03060b"/></radialGradient><pattern id="stars" width="128" height="128" patternUnits="userSpaceOnUse"><circle cx="18" cy="25" r="1.6" fill="#d8aa4b"/><circle cx="88" cy="77" r="1" fill="#f0cf7b"/><path d="M0 110Q64 34 128 104M24 0Q70 60 105 128" fill="none" stroke="#b47d2d" stroke-width="1" opacity=".28"/><circle cx="64" cy="64" r="30" fill="none" stroke="#c08b35" opacity=".18"/></pattern></defs>
+<rect width="1024" height="1024" fill="url(#bg)"/><rect width="1024" height="1024" fill="url(#stars)"/>
+</svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" data-asset-id="piece-solar-king" data-background="transparent">
+<defs>
+<radialGradient id="sun" cx="38%" cy="32%"><stop offset="0" stop-color="#fff8b5"/><stop offset=".25" stop-color="#ffc43d"/><stop offset=".68" stop-color="#b94713"/><stop offset="1" stop-color="#3b0705"/></radialGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff2a1"/><stop offset=".3" stop-color="#dfaa32"/><stop offset=".64" stop-color="#8a4b10"/><stop offset="1" stop-color="#ffd86b"/></linearGradient>
+<radialGradient id="red"><stop offset="0" stop-color="#8f251a"/><stop offset=".65" stop-color="#3b0c0d"/><stop offset="1" stop-color="#120305"/></radialGradient>
+<filter id="soft"><feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#000" flood-opacity=".65"/></filter>
+</defs>
+<g filter="url(#soft)">
+<circle cx="256" cy="256" r="205" fill="url(#red)" stroke="#2a0807" stroke-width="16"/>
+<circle cx="256" cy="256" r="182" fill="none" stroke="url(#gold)" stroke-width="10"/>
+<circle cx="256" cy="256" r="151" fill="#260807" stroke="#d79022" stroke-width="9"/>
+<g fill="#f3bd3c" transform="translate(256 256)">
+<path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(0.0)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(22.5)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(45.0)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(67.5)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(90.0)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(112.5)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(135.0)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(157.5)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(180.0)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(202.5)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(225.0)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(247.5)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(270.0)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(292.5)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(315.0)"/><path d="M-8 -156L0 -190L8 -156L0 -132Z" transform="rotate(337.5)"/>
+</g>
+<circle cx="256" cy="256" r="93" fill="url(#sun)" stroke="#ffdd75" stroke-width="8"/>
+<ellipse cx="256" cy="256" rx="137" ry="77" fill="none" stroke="#e2ac38" stroke-width="5" transform="rotate(16 256 256)"/>
+<circle cx="365" cy="318" r="12" fill="url(#gold)"/><circle cx="151" cy="194" r="10" fill="url(#gold)"/>
+<circle cx="256" cy="256" r="201" fill="none" stroke="#f5c658" stroke-width="4" opacity=".8"/>
+<g transform="translate(256 122)" fill="url(#gold)" stroke="#fff1a6" stroke-width="3">
+<path d="M-76 26L-60-26L-20 5L0-48L22 5L62-28L78 26L60 52H-60Z"/>
+<circle cx="-60" cy="-26" r="9"/><circle cx="0" cy="-48" r="10"/><circle cx="62" cy="-28" r="9"/>
+</g><circle cx="256" cy="256" r="169" fill="none" stroke="#f0ca67" stroke-width="5" stroke-dasharray="4 10"/></g></svg>
