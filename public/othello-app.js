@@ -1,3 +1,18 @@
+const referenceStyles = [
+  "/othello-reference-core.css",
+  "/othello-reference-neon.css",
+  "/othello-reference-garden.css",
+  "/othello-reference-responsive.css",
+];
+for (const href of referenceStyles) {
+  if (!document.head.querySelector(`link[href="${href}"]`)) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    document.head.append(link);
+  }
+}
+
 const SIZE = 8;
 const DARK = 1;
 const LIGHT = -1;
@@ -33,8 +48,8 @@ const themeInfo = {
     title: "Neon Circuit",
     description: "Signal. Polarity. Control.",
     color: "#020712",
-    darkTurn: "Magenta has the circuit",
-    lightTurn: "Cyan has the circuit",
+    darkTurn: "Magenta holds the circuit",
+    lightTurn: "Light answers the pattern",
   },
   garden: {
     title: "Living Garden",
@@ -156,7 +171,10 @@ function playOneMove(animate = true) {
 
 function setPreviewState(name) {
   state = createState();
-  const moves = name === "late" ? 48 : name === "midgame" ? 27 : 0;
+  const numeric = Number.parseInt(name, 10);
+  const moves = Number.isFinite(numeric)
+    ? Math.max(0, Math.min(60, numeric))
+    : name === "late" ? 48 : name === "midgame" ? 27 : 0;
   for (let index = 0; index < moves && !state.complete; index += 1) playOneMove(false);
   flipAnimation = null;
   updateUi();
@@ -216,8 +234,9 @@ function hash(row, column, salt = 0) {
 }
 
 function boardMetrics() {
-  if (theme === "neon") return { margin: 92, boardSize: 776, cell: 97 };
-  return { margin: 76, boardSize: 808, cell: 101 };
+  if (theme === "neon") return { margin: 72, boardSize: 816, cell: 102 };
+  if (theme === "garden") return { margin: 72, boardSize: 816, cell: 102 };
+  return { margin: 72, boardSize: 816, cell: 102 };
 }
 
 function drawObsidianBackground(ctx, time) {
@@ -250,14 +269,24 @@ function drawNeonBackground(ctx, time) {
   ctx.fillRect(0, 0, 960, 960);
 
   ctx.save();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "rgba(77,225,255,.1)";
-  for (let x = 28; x < 960; x += 62) {
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = "rgba(77,225,255,.055)";
+  for (let x = 18; x < 960; x += 84) {
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 960); ctx.stroke();
   }
-  for (let y = 28; y < 960; y += 62) {
+  for (let y = 18; y < 960; y += 84) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(960, y); ctx.stroke();
   }
+
+  ctx.strokeStyle = "rgba(255,62,207,.18)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, 118); ctx.lineTo(122, 118); ctx.lineTo(174, 66); ctx.lineTo(318, 66);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(82,231,255,.18)";
+  ctx.beginPath();
+  ctx.moveTo(960, 118); ctx.lineTo(838, 118); ctx.lineTo(786, 66); ctx.lineTo(642, 66);
+  ctx.stroke();
 
   const sweep = (time * .14) % 1180 - 120;
   const sweepGradient = ctx.createLinearGradient(0, sweep - 70, 0, sweep + 70);
@@ -359,7 +388,6 @@ function drawBoardFoundation(ctx, time) {
     }
   }
 
-  if (theme === "neon") drawNeonCoordinates(ctx, margin, cell);
   ctx.restore();
 }
 
@@ -378,22 +406,6 @@ function drawMossSpeckle(ctx, margin, boardSize) {
     ctx.ellipse(x, y, 1 + hash(i, 13) * 2.4, .8 + hash(i, 14) * 1.8, angle, 0, Math.PI * 2);
     ctx.fill();
   }
-}
-
-function drawNeonCoordinates(ctx, margin, cell) {
-  ctx.save();
-  ctx.fillStyle = "rgba(90,233,255,.82)";
-  ctx.font = "600 17px Inter, system-ui, sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  for (let column = 0; column < SIZE; column += 1) {
-    ctx.fillText(String(column + 1), margin + (column + .5) * cell, margin - 42);
-  }
-  ctx.textAlign = "right";
-  for (let row = 0; row < SIZE; row += 1) {
-    ctx.fillText(String.fromCharCode(65 + row), margin - 36, margin + (row + .5) * cell);
-  }
-  ctx.restore();
 }
 
 function drawCell(ctx, x, y, size, row, column, time) {
