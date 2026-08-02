@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b12">
+  <title>Othello Atelier · Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/othello.css">
+</head>
+<body>
+  <main class="othello-shell">
+    <header class="othello-header">
+      <div>
+        <p class="eyebrow">SCRIBBLES GAMEFRAME · PROCEDURAL VISUAL PROOF</p>
+        <h1>Othello Atelier</h1>
+        <p class="subtitle">One deterministic game. Three code-drawn worlds. No bespoke gameplay imagery.</p>
+      </div>
+      <a class="back-link" href="/">GameFrame home</a>
+    </header>
+
+    <nav class="theme-switcher" aria-label="Visual theme">
+      <button class="theme-button" data-theme="obsidian" aria-pressed="true">
+        <span class="theme-swatch obsidian-swatch"></span>
+        <span><strong>Obsidian & Ivory</strong><small>Material, depth, restraint</small></span>
+      </button>
+      <button class="theme-button" data-theme="neon" aria-pressed="false">
+        <span class="theme-swatch neon-swatch"></span>
+        <span><strong>Neon Circuit</strong><small>Glow, pulses, energy</small></span>
+      </button>
+      <button class="theme-button" data-theme="garden" aria-pressed="false">
+        <span class="theme-swatch garden-swatch"></span>
+        <span><strong>Living Garden</strong><small>Organic texture, ambient life</small></span>
+      </button>
+    </nav>
+
+    <section class="game-stage" aria-label="Othello match">
+      <aside class="score-rail score-rail-dark">
+        <p class="rail-label">NORTH</p>
+        <div class="player-token dark-token" aria-hidden="true"></div>
+        <strong id="dark-score">2</strong>
+        <span>Dark</span>
+        <div id="dark-turn" class="turn-marker">ACTIVE</div>
+      </aside>
+
+      <div class="board-column">
+        <div class="board-frame">
+          <canvas id="othello-board" width="960" height="960" aria-label="Interactive Othello board"></canvas>
+          <div id="board-announcement" class="board-announcement" hidden></div>
+        </div>
+        <div class="match-strip">
+          <div>
+            <span class="strip-label">TURN</span>
+            <strong id="turn-copy">Dark shapes the field</strong>
+          </div>
+          <div class="move-stat">
+            <span class="strip-label">MOVE</span>
+            <strong id="move-number">0 / 60</strong>
+          </div>
+          <div class="move-stat">
+            <span class="strip-label">LEGAL</span>
+            <strong id="legal-count">4</strong>
+          </div>
+        </div>
+      </div>
+
+      <aside class="score-rail score-rail-light">
+        <p class="rail-label">SOUTH</p>
+        <div class="player-token light-token" aria-hidden="true"></div>
+        <strong id="light-score">2</strong>
+        <span>Light</span>
+        <div id="light-turn" class="turn-marker">WAITING</div>
+      </aside>
+    </section>
+
+    <section class="control-deck">
+      <div class="control-copy">
+        <p class="section-label">VISUAL LAB</p>
+        <strong id="theme-title">Obsidian & Ivory</strong>
+        <span id="theme-description">Carved stone, polished mineral discs, restrained highlights, and deliberate physical weight.</span>
+      </div>
+      <div class="controls">
+        <button id="new-game" type="button">New game</button>
+        <button id="demo-move" type="button">Play one move</button>
+        <button id="toggle-hints" type="button" aria-pressed="true">Hints on</button>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="/othello-app.js"></script>
+</body>
+</html>
