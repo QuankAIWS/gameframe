@@ -5,6 +5,11 @@ const referenceStyles = [
   "/othello-reference-responsive.css",
   "/othello-fidelity-neon.css",
   "/othello-fidelity-garden.css",
+  "/othello-bake3-neon.css",
+  "/othello-bake3-garden.css",
+  "/othello-bake4-neon.css",
+  "/othello-bake4-garden.css",
+  "/othello-bake4-responsive.css",
 ];
 for (const href of referenceStyles) {
   if (!document.head.querySelector(`link[href="${href}"]`)) {
@@ -13,6 +18,23 @@ for (const href of referenceStyles) {
     link.href = href;
     document.head.append(link);
   }
+}
+
+const emblemSvg = document.querySelector(".brand-emblem svg");
+if (emblemSvg && !emblemSvg.querySelector("#neon-cyan-orb")) {
+  emblemSvg.insertAdjacentHTML("afterbegin", `
+    <defs>
+      <radialGradient id="neon-cyan-orb" cx="32%" cy="25%" r="78%">
+        <stop offset="0" stop-color="#f2ffff"/><stop offset=".12" stop-color="#68f4ff"/>
+        <stop offset=".48" stop-color="#0e8194"/><stop offset=".82" stop-color="#062432"/>
+        <stop offset="1" stop-color="#52e7ff"/>
+      </radialGradient>
+      <radialGradient id="neon-magenta-orb" cx="34%" cy="26%" r="78%">
+        <stop offset="0" stop-color="#fff1fc"/><stop offset=".12" stop-color="#ff6bdd"/>
+        <stop offset=".5" stop-color="#8f176f"/><stop offset=".84" stop-color="#300a2b"/>
+        <stop offset="1" stop-color="#ec3cc4"/>
+      </radialGradient>
+    </defs>`);
 }
 
 const SIZE = 8;
@@ -261,3 +283,4 @@ function drawObsidianBackground(ctx, time) {
   }
   ctx.restore();
 }
+
