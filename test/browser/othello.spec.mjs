@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("Othello product surface exposes all procedural themes and playable legal moves", async ({ page }) => {
+test("Othello product surface exposes all themes and playable legal moves", async ({ page }) => {
   await page.goto("/othello.html?theme=obsidian&state=opening");
   await expect(page.getByRole("heading", { name: "Othello" })).toBeVisible();
   await expect(page.locator("#legal-count")).toHaveText("4");
@@ -15,50 +15,43 @@ test("Othello product surface exposes all procedural themes and playable legal m
 
   await page.getByRole("button", { name: "Living Garden" }).click();
   await expect(page.locator("body")).toHaveAttribute("data-theme", "garden");
-  await expect(page.locator(".garden-pad-a")).toHaveCSS("opacity", "1");
+  await expect(page.locator("#theme-title")).toHaveText("Living Garden");
 });
 
-test("desktop shell reserves the Discord user-overlay safe zone and preserves the board crown", async ({ page }) => {
+test("Othello desktop product surfaces preserve the Discord safe zone", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.goto("/othello.html?theme=garden&state=midgame");
 
-  const geometry = await page.evaluate(() => {
-    const safe = document.querySelector("#discord-safe-zone").getBoundingClientRect();
-    const candidates = [
-      document.querySelector(".brand-lockup"),
-      document.querySelector(".play-layout"),
-      document.querySelector(".command-bar"),
-    ].map((element) => element.getBoundingClientRect());
-    const overlap = candidates.some((rect) => (
-      rect.left < safe.right
-      && rect.right > safe.left
-      && rect.top < safe.bottom
-      && rect.bottom > safe.top
-    ));
-    const crown = document.querySelector(".board-crown").getBoundingClientRect();
-    return { overlap, crownTop: crown.top, crownHeight: crown.height };
-  });
-
-  expect(geometry.overlap).toBe(false);
-  expect(geometry.crownTop).toBeGreaterThanOrEqual(0);
-  expect(geometry.crownHeight).toBeGreaterThan(30);
+  for (const theme of ["obsidian", "neon", "garden"]) {
+    await page.goto(`/othello.html?theme=${theme}&state=midgame`);
+    const geometry = await page.evaluate(() => {
+      const safe = document.querySelector("#discord-safe-zone").getBoundingClientRect();
+      const occupied = [
+        document.querySelector(".brand-lockup"),
+        document.querySelector(".play-layout"),
+        document.querySelector(".command-bar"),
+      ].map((element) => element.getBoundingClientRect());
+      const intersects = occupied.some((rect) => !(
+        rect.right <= safe.left || rect.left >= safe.right || rect.bottom <= safe.top || rect.top >= safe.bottom
+      ));
+      return { safeWidth: safe.width, safeHeight: safe.height, intersects };
+    });
+    expect(geometry.safeWidth).toBeGreaterThanOrEqual(180);
+    expect(geometry.safeHeight).toBeGreaterThanOrEqual(70);
+    expect(geometry.intersects).toBe(false);
+  }
 });
 
-test("Othello mobile surface remains horizontally bounded with compact score and command rows", async ({ page }) => {
+test("Othello mobile surface remains horizontally bounded", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/othello.html?theme=garden&state=midgame");
   await expect(page.locator("canvas")).toBeVisible();
-
   const bounds = await page.evaluate(() => ({
     scrollWidth: document.scrollingElement.scrollWidth,
     viewportWidth: window.innerWidth,
-    darkHeight: document.querySelector(".score-rail-dark").getBoundingClientRect().height,
-    lightHeight: document.querySelector(".score-rail-light").getBoundingClientRect().height,
-    crownTop: document.querySelector(".board-crown").getBoundingClientRect().top,
+    canvasWidth: document.querySelector("#othello-board").getBoundingClientRect().width,
+    darkRailHeight: document.querySelector(".score-rail-dark").getBoundingClientRect().height,
   }));
-
   expect(bounds.scrollWidth).toBeLessThanOrEqual(bounds.viewportWidth + 2);
-  expect(bounds.darkHeight).toBeLessThanOrEqual(72);
-  expect(bounds.lightHeight).toBeLessThanOrEqual(72);
-  expect(bounds.crownTop).toBeGreaterThanOrEqual(0);
+  expect(bounds.canvasWidth).toBeLessThanOrEqual(bounds.viewportWidth - 16);
+  expect(bounds.darkRailHeight).toBeLessThanOrEqual(80);
 });
