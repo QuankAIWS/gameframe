@@ -2,9 +2,14 @@
 
 ## Purpose
 
-This document defines the reusable repository contract for converting approved visual source material into deterministic browser-delivery assets. It applies to Checkers, Monster Master, later tactical themes, and any other GameFrame surface that introduces authored images.
+This document defines the reusable contract for creating, retaining, finding, promoting, and delivering visual assets across GameFrame. It applies to Checkers, Monster Master, RPG campaigns, later tactical themes, and any other GameFrame surface that introduces authored or generated images.
 
 Image generation and artistic editing are creative source-production activities. They are not part of the canonical deterministic build. Repository automation begins from approved, cleaned, lossless masters.
+
+The system has two related but distinct asset paths:
+
+1. a durable generated-asset library used to retain candidates and reuse compatible art across campaigns; and
+2. a deterministic repository build that promotes approved masters into reproducible browser-delivery assets.
 
 ## Pipeline boundary
 
@@ -12,7 +17,8 @@ The required boundary is:
 
 ```text
 creative generation or acquisition
-  -> review and approval
+  -> durable candidate storage and cataloging
+  -> review, reuse classification, and approval
   -> cleanup and lossless master
   -> committed manifest
   -> deterministic build
@@ -23,9 +29,130 @@ creative generation or acquisition
 
 The deterministic build may resize, crop, pad, composite, encode, and atlas approved source masters. It may not call an image-generation service, rely on an uncommitted cache, or modify the source masters in place.
 
+## Generated-asset library
+
+Every successful generation response should be retained before review. Generation is expensive and nondeterministic enough that a discarded candidate may later prove useful as a reference, variant, background element, or source for editing.
+
+The runtime library should preserve three layers when applicable:
+
+- the original model output exactly as returned;
+- a normalized working master after approved cleanup;
+- one or more small previews or thumbnails for search and review.
+
+Objects are immutable and content-addressed. A new edit, cleanup pass, crop, or upscale creates a new object linked to its parent rather than overwriting the previous object. Exact duplicate bytes collapse to one stored object through the content hash.
+
+Rejected candidates remain cataloged as rejected rather than silently disappearing. A future storage-retention policy may garbage-collect rejected raw candidates only through an explicit, auditable rule. Accepted library assets and promoted masters are durable by default.
+
+### Catalog record
+
+Each generated or acquired asset record should include:
+
+- stable asset ID;
+- immutable object key and content hash;
+- parent asset IDs and derivation relationship;
+- creation time and requesting campaign, encounter, or operator;
+- generation provider, model identifier, model revision when exposed, and request ID when exposed;
+- prompt-schema revision;
+- complete prompt and negative prompt where supported;
+- seed, dimensions, steps, guidance, quality, output format, and other material inference settings;
+- hashes and roles of all reference images;
+- declared subject, role, environment, material, style, era, biome, faction, and mood tags;
+- intended camera, projection, direction, lighting, and transparency requirements;
+- licensing, provider terms, provenance, and attribution notes;
+- review state and review notes;
+- reuse scope and compatibility notes;
+- cleanup, crop, alpha, upscale, and compression history;
+- aliases, superseded asset IDs, and promotion status.
+
+### Generation recipe hash
+
+A canonical generation recipe should be serialized and hashed from all inputs that can materially affect output, including:
+
+- provider and model;
+- prompt-schema revision;
+- prompt and negative prompt;
+- seed;
+- dimensions and quality settings;
+- steps, guidance, strength, and similar controls;
+- ordered reference-image hashes and roles;
+- output format;
+- requested transparency or background policy.
+
+An exact recipe-hash hit is a generation-cache hit: the system returns the retained result instead of paying to invoke the model again, unless regeneration is explicitly requested.
+
+A content-hash hit is an exact duplicate-output hit: the catalog may create a new usage link, but it must not store the same bytes twice.
+
+### Cache terminology
+
+The system must distinguish three different mechanisms:
+
+- **generation cache:** exact recipe-hash reuse that avoids another model invocation;
+- **asset-library retrieval:** semantic or tagged discovery of an existing compatible asset, even when the prompt would not be identical;
+- **delivery cache:** CDN or browser caching of already selected derivatives for fast client delivery.
+
+Calling all three mechanisms “the cache” obscures cost, provenance, and invalidation behavior.
+
+## Reuse policy
+
+The library should prefer reuse before generation. Search should combine exact tags, structured filters, text search, and optional embeddings.
+
+Reuse classes are:
+
+1. **universal:** ordinary terrain and props that can cross campaigns when projection, lighting, and style are compatible;
+2. **style-pack compatible:** reusable inside a declared visual family, such as grounded medieval fantasy, painterly high fantasy, or Clockwork Eclipse;
+3. **campaign-specific:** recognizable locations, factions, heraldry, or modified assets whose identity belongs to one campaign;
+4. **identity-locked:** named characters, unique monsters, plot objects, maps, and other assets that must not be silently reassigned.
+
+An ordinary deciduous tree may be universal. An elven tree may be reusable in a non-elven forest only when its visible design does not communicate elven architecture, magic, symbols, or campaign-specific identity. The decision belongs in the asset record rather than being inferred anew on every request.
+
+Reuse ranking should consider:
+
+- requested asset role and dimensions;
+- camera and projection compatibility;
+- visual style and palette compatibility;
+- biome, season, era, material, and faction;
+- transparency and silhouette requirements;
+- intended display size;
+- prior in-product approval;
+- campaign and identity restrictions.
+
+The generation service should return an existing approved asset when it clears the configured compatibility threshold. Otherwise it may use the closest approved assets as references for a new generation or editing request.
+
+## Runtime storage boundary
+
+The generated-asset library is operational data and does not need every candidate committed to Git.
+
+A typical deployment should use:
+
+- object storage for original outputs, normalized masters, previews, and runtime derivatives;
+- a queryable metadata store for catalog records, tags, hashes, relationships, usage history, and review state;
+- optional vector search for semantic retrieval;
+- a CDN-backed immutable URL for approved runtime delivery.
+
+Object keys should include content hashes or immutable version IDs. Approved public responses should use long-lived cache headers because changing content receives a new URL rather than replacing bytes at an old URL.
+
+Secrets, private campaign material, and operator-only candidates must not be exposed through the public delivery domain merely because they share the same object store.
+
+## Promotion into the repository
+
+Runtime-library acceptance and repository promotion are separate decisions.
+
+An asset should be promoted into `art-source` when it becomes part of a versioned product surface, shared base pack, deterministic test fixture, or otherwise needs to ship and rebuild with the repository.
+
+Promotion records:
+
+- the source library asset ID and content hash;
+- the approved lossless master;
+- the exact cleanup lineage;
+- the repository semantic ID;
+- the manifest entry and integration mapping;
+- the decision that moved the asset from runtime content into a versioned product asset.
+
+Campaign-specific runtime assets may remain in object storage indefinitely without entering Git.
+
 ## Repository structure
 
-Each visual theme should use a structure equivalent to:
+Each versioned visual theme should use a structure equivalent to:
 
 ```text
 art-source/<game>/<theme>/
@@ -47,6 +174,7 @@ The committed manifest is authoritative for production transforms. Each record m
 
 - stable semantic ID;
 - source path and source hash;
+- source-library asset ID when applicable;
 - role, faction, rank, and variant where applicable;
 - approval state;
 - source dimensions;
@@ -223,6 +351,7 @@ For visual branches, the expected order is:
 
 A completed visual slice records:
 
+- source-library IDs and generation provenance when applicable;
 - exact source and manifest revision;
 - image-processing toolchain versions;
 - clean asset-build result;
