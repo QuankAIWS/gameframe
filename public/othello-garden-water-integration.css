@@ -1,0 +1,197 @@
+/* Garden water integration pass.
+   Keeps the detailed SVG craft but removes the false "waterline" from the pad
+   artwork, places all ripples behind the plants, and lets the foreground recede. */
+
+@media (min-width: 901px) {
+  body[data-theme="garden"] .scene-decoration {
+    isolation: isolate;
+  }
+
+  body[data-theme="garden"] .scene-decoration::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 35%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: .78;
+    background:
+      linear-gradient(180deg,
+        rgba(13, 55, 46, 0) 0%,
+        rgba(12, 54, 45, .08) 24%,
+        rgba(8, 44, 37, .28) 64%,
+        rgba(4, 31, 26, .48) 100%),
+      repeating-radial-gradient(
+        ellipse at 50% 112%,
+        transparent 0 39px,
+        rgba(210, 230, 218, .026) 40px 41px,
+        transparent 42px 82px
+      );
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 35%, #000 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 35%, #000 100%);
+  }
+
+  body[data-theme="garden"] .garden-ripple {
+    z-index: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    opacity: .24 !important;
+    filter: blur(1.4px) !important;
+    background:
+      radial-gradient(ellipse at center,
+        transparent 0 46%,
+        rgba(224, 237, 226, .075) 48%,
+        rgba(224, 237, 226, .034) 52%,
+        transparent 58%) !important;
+    mix-blend-mode: screen;
+  }
+
+  body[data-theme="garden"] .garden-ripple-a {
+    left: -24px !important;
+    bottom: -42px !important;
+    width: 286px !important;
+    height: 82px !important;
+  }
+
+  body[data-theme="garden"] .garden-ripple-b {
+    right: -28px !important;
+    bottom: -35px !important;
+    width: 278px !important;
+    height: 78px !important;
+  }
+
+  body[data-theme="garden"] .garden-ripple-c {
+    left: 37% !important;
+    right: auto !important;
+    bottom: -55px !important;
+    width: 330px !important;
+    height: 92px !important;
+    opacity: .1 !important;
+  }
+
+  body[data-theme="garden"] .garden-pad {
+    z-index: 1 !important;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMTUwIj4KPGRlZnM+CiAgPHBhdGggaWQ9InNoYXBlIiBkPSJNMTEwIDc3IEwxOTggMjggQzIxNyA1MSAyMTYgODIgMTk5IDEwNiBDMTcxIDE0MiAxMDMgMTUxIDQ5IDEzMiBDMTIgMTE5IC0zIDg5IDEyIDU4IEMzMSAyMCA4NyA4IDE0NCAxOCBaIi8+CiAgPGNsaXBQYXRoIGlkPSJjbGlwIj48dXNlIGhyZWY9IiNzaGFwZSIvPjwvY2xpcFBhdGg+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJwYWQiIGN4PSIzMiUiIGN5PSIyNCUiIHI9Ijg4JSI+CiAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM3MTg2NmUiLz4KICAgIDxzdG9wIG9mZnNldD0iLjI4IiBzdG9wLWNvbG9yPSIjNTg3MTViIi8+CiAgICA8c3RvcCBvZmZzZXQ9Ii42MiIgc3RvcC1jb2xvcj0iIzM2NTc0MyIvPgogICAgPHN0b3Agb2Zmc2V0PSIuODQiIHN0b3AtY29sb3I9IiMyNDQzMzQiLz4KICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzE2MzAyNiIvPgogIDwvcmFkaWFsR3JhZGllbnQ+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJyaW0iIHgxPSIuMDUiIHkxPSIuMDIiIHgyPSIuOTQiIHkyPSIuOTgiPgogICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjYzhjMzlhIiBzdG9wLW9wYWNpdHk9Ii40OCIvPgogICAgPHN0b3Agb2Zmc2V0PSIuMzQiIHN0b3AtY29sb3I9IiM3ODkwNzgiIHN0b3Atb3BhY2l0eT0iLjQyIi8+CiAgICA8c3RvcCBvZmZzZXQ9Ii43NiIgc3RvcC1jb2xvcj0iIzI5NDgzYSIgc3RvcC1vcGFjaXR5PSIuNTgiLz4KICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzBlMjcxZCIgc3RvcC1vcGFjaXR5PSIuNzIiLz4KICA8L2xpbmVhckdyYWRpZW50PgogIDxsaW5lYXJHcmFkaWVudCBpZD0ic2hlZW4iIHgxPSIuMTgiIHkxPSIuMDMiIHgyPSIuOCIgeTI9Ii45NCI+CiAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmM2YwZDEiIHN0b3Atb3BhY2l0eT0iLjE1Ii8+CiAgICA8c3RvcCBvZmZzZXQ9Ii4zNSIgc3RvcC1jb2xvcj0iI2RjZTdjNyIgc3RvcC1vcGFjaXR5PSIuMDM1Ii8+CiAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwNzE5MTAiIHN0b3Atb3BhY2l0eT0iLjA1NSIvPgogIDwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHVzZSBocmVmPSIjc2hhcGUiIGZpbGw9InVybCgjcGFkKSIgc3Ryb2tlPSJ1cmwoI3JpbSkiIHN0cm9rZS13aWR0aD0iMS43Ii8+CjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwKSI+CiAgPGVsbGlwc2UgY3g9IjcyIiBjeT0iMzIiIHJ4PSI4MiIgcnk9IjQzIiBmaWxsPSJ1cmwoI3NoZWVuKSIgdHJhbnNmb3JtPSJyb3RhdGUoLTggNzIgMzIpIi8+CiAgPGcgZmlsbD0iI2Q1ZDBhMCIgb3BhY2l0eT0iLjEyIj4KICAgIDxjaXJjbGUgY3g9IjQyIiBjeT0iNTIiIHI9IjEuMCIvPjxjaXJjbGUgY3g9IjU4IiBjeT0iMzkiIHI9Ii43Ii8+PGNpcmNsZSBjeD0iNzYiIGN5PSIzMSIgcj0iLjgiLz4KICAgIDxjaXJjbGUgY3g9IjM5IiBjeT0iOTYiIHI9Ii42Ii8+PGNpcmNsZSBjeD0iNjUiIGN5PSIxMTgiIHI9Ii45Ii8+PGNpcmNsZSBjeD0iOTMiIGN5PSIxMjciIHI9Ii42Ii8+CiAgICA8Y2lyY2xlIGN4PSIxNDMiIGN5PSIxMjMiIHI9Ii44Ii8+PGNpcmNsZSBjeD0iMTc4IiBjeT0iMTA1IiByPSIuNyIvPjxjaXJjbGUgY3g9IjE4MyIgY3k9IjUyIiByPSIuOSIvPgogIDwvZz4KPC9nPgo8ZyBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiPgogIDxwYXRoIGQ9Ik0xMTEgNzcgTDE5OCAyOCIgc3Ryb2tlPSIjZDBjNTlhIiBzdHJva2Utb3BhY2l0eT0iLjM4IiBzdHJva2Utd2lkdGg9IjEuMSIvPgogIDxwYXRoIGQ9Ik0xMTEgNzcgTDE0NCAxOCIgc3Ryb2tlPSIjMTgzYzJkIiBzdHJva2Utb3BhY2l0eT0iLjc4IiBzdHJva2Utd2lkdGg9IjEuNyIvPgogIDxwYXRoIGQ9Ik0xMTEgNzcgQzc4IDQ3IDQ4IDM0IDIyIDQ4IiBzdHJva2U9IiNiN2MyYTAiIHN0cm9rZS1vcGFjaXR5PSIuMjMiIHN0cm9rZS13aWR0aD0iLjkiLz4KICA8cGF0aCBkPSJNMTE1IDc3IEM3MyA3MiA0MSA3OSAxMyA5NCIgc3Ryb2tlPSIjYjdjMmEwIiBzdHJva2Utb3BhY2l0eT0iLjIxIiBzdHJva2Utd2lkdGg9Ii45Ii8+CiAgPHBhdGggZD0iTTExMSA3NyBDNzUgMTAwIDU2IDExOCA0OSAxMzIiIHN0cm9rZT0iI2I3YzJhMCIgc3Ryb2tlLW9wYWNpdHk9Ii4xOSIgc3Ryb2tlLXdpZHRoPSIuOSIvPgogIDxwYXRoIGQ9Ik0xMTEgNzcgQzEzMCAxMTAgMTUwIDEyNiAxNzQgMTMxIiBzdHJva2U9IiNiN2MyYTAiIHN0cm9rZS1vcGFjaXR5PSIuMTgiIHN0cm9rZS13aWR0aD0iLjkiLz4KICA8cGF0aCBkPSJNMTE1IDc3IEMxNTAgODQgMTgxIDkxIDIwMiAxMDAiIHN0cm9rZT0iI2I3YzJhMCIgc3Ryb2tlLW9wYWNpdHk9Ii4xNyIgc3Ryb2tlLXdpZHRoPSIuOSIvPgogIDxwYXRoIGQ9Ik0xMTEgNzcgQzE0NSA1NSAxNzEgNDIgMTk2IDMxIiBzdHJva2U9IiNiN2MyYTAiIHN0cm9rZS1vcGFjaXR5PSIuMTkiIHN0cm9rZS13aWR0aD0iLjkiLz4KICA8cGF0aCBkPSJNMTE1IDc3IEM5MSA2MSA3NCA1MiA1OCA0OCIgc3Ryb2tlPSIjZTZlMGI4IiBzdHJva2Utb3BhY2l0eT0iLjA4IiBzdHJva2Utd2lkdGg9Ii41NSIvPgogIDxwYXRoIGQ9Ik0xMTEgNzcgQzkwIDgyIDcwIDkxIDU1IDEwNCIgc3Ryb2tlPSIjZTZlMGI4IiBzdHJva2Utb3BhY2l0eT0iLjA3IiBzdHJva2Utd2lkdGg9Ii41NSIvPgo8L2c+CjxwYXRoIGQ9Ik0xMTIgNzYgQzEzNyA2MSAxNjAgNDMgMTg4IDMxIiBmaWxsPSJub25lIiBzdHJva2U9IiMwYTIxMTgiIHN0cm9rZS1vcGFjaXR5PSIuMjgiIHN0cm9rZS13aWR0aD0iMi4xIi8+Cjwvc3ZnPg==") !important;
+    opacity: .62 !important;
+    filter:
+      saturate(.72)
+      contrast(.9)
+      brightness(.86)
+      drop-shadow(0 8px 13px rgba(0, 16, 11, .24)) !important;
+    -webkit-mask-image: linear-gradient(to top,
+      transparent 0%,
+      rgba(0, 0, 0, .52) 13%,
+      #000 36%,
+      #000 100%);
+    mask-image: linear-gradient(to top,
+      transparent 0%,
+      rgba(0, 0, 0, .52) 13%,
+      #000 36%,
+      #000 100%);
+  }
+
+  body[data-theme="garden"] .garden-pad-a {
+    width: 216px !important;
+    left: -28px !important;
+    bottom: -10px !important;
+    opacity: .66 !important;
+    transform: rotate(-7deg) !important;
+  }
+
+  body[data-theme="garden"] .garden-pad-b {
+    width: 204px !important;
+    right: -22px !important;
+    bottom: 4px !important;
+    opacity: .62 !important;
+    transform: rotate(6deg) scaleX(-1) !important;
+  }
+
+  body[data-theme="garden"] .garden-pad-c {
+    width: 132px !important;
+    left: 12% !important;
+    bottom: -22px !important;
+    opacity: .28 !important;
+    transform: rotate(12deg) !important;
+    filter:
+      saturate(.62)
+      contrast(.86)
+      brightness(.78)
+      blur(.18px)
+      drop-shadow(0 6px 10px rgba(0, 16, 11, .18)) !important;
+  }
+
+  body[data-theme="garden"] .garden-pad-d {
+    width: 138px !important;
+    right: 15% !important;
+    bottom: -18px !important;
+    opacity: .25 !important;
+    transform: rotate(-13deg) scaleX(-1) !important;
+    filter:
+      saturate(.6)
+      contrast(.84)
+      brightness(.76)
+      blur(.22px)
+      drop-shadow(0 6px 10px rgba(0, 16, 11, .17)) !important;
+  }
+
+  body[data-theme="garden"] .garden-pad-e {
+    width: 110px !important;
+    left: 48% !important;
+    bottom: -38px !important;
+    opacity: .14 !important;
+    filter: saturate(.5) brightness(.72) blur(.45px) !important;
+  }
+
+  body[data-theme="garden"] .garden-lotus {
+    z-index: 2 !important;
+    opacity: .72 !important;
+    filter:
+      saturate(.8)
+      contrast(.92)
+      brightness(.9)
+      drop-shadow(0 7px 10px rgba(0, 13, 9, .24)) !important;
+    -webkit-mask-image: linear-gradient(to top,
+      transparent 0%,
+      rgba(0, 0, 0, .72) 12%,
+      #000 30%);
+    mask-image: linear-gradient(to top,
+      transparent 0%,
+      rgba(0, 0, 0, .72) 12%,
+      #000 30%);
+  }
+
+  body[data-theme="garden"] .garden-lotus-a {
+    width: 132px !important;
+    left: -2px !important;
+    bottom: -10px !important;
+    opacity: .74 !important;
+  }
+
+  body[data-theme="garden"] .garden-lotus-b {
+    width: 112px !important;
+    right: 8px !important;
+    bottom: 2px !important;
+    opacity: .68 !important;
+  }
+
+  body[data-theme="garden"] .garden-lotus-c {
+    width: 74px !important;
+    left: 13% !important;
+    bottom: -3px !important;
+    opacity: .34 !important;
+    filter: saturate(.65) brightness(.82) blur(.25px) !important;
+  }
+
+  body[data-theme="garden"] .garden-petal {
+    z-index: 3 !important;
+    opacity: .34 !important;
+    filter: blur(.2px);
+  }
+}
+
+@media (max-width: 900px) {
+  body[data-theme="garden"] .garden-ripple {
+    opacity: .1 !important;
+    filter: blur(1px) !important;
+  }
+}
