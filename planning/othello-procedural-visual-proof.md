@@ -11,8 +11,8 @@ The experiment remains isolated from the authoritative multiplayer service durin
 The visual target is no longer a neutral “procedural demo” shell. Each theme receives a complete product composition while preserving one rules surface and one renderer architecture:
 
 - **Obsidian & Ivory:** restrained luxury, charcoal space, bronze-gold line work, mineral pieces, framed side scores, and a lower command surface.
-- **Neon Circuit:** cyan/magenta polarity, luminous geometric panels, coordinate labels, circuit traces, legal-action nodes, and a compact cyber HUD.
-- **Living Garden:** a quiet pond composition, sage cells, charcoal leaf stones, pale lotus stones, subdued botanical ornament, and generous negative space.
+- **Neon Circuit:** cyan/magenta polarity, a centered emblem-and-title lockup, a wide luminous instrument enclosure around the square board, circuit traces, legal-action nodes, and a compact cyber HUD matching the selected first-batch reference.
+- **Living Garden:** a quiet pond composition, sage cells, charcoal leaf stones, pale lotus stones, visible lily pads, lotus blossoms, ripples, foliage, petals, subdued botanical ornament, and generous negative space.
 
 All desktop compositions reserve an explicit empty upper-right safe zone for the Discord user/profile overlay. No game control, score, title, or state indication may depend on that region.
 
@@ -34,7 +34,7 @@ All desktop compositions reserve an explicit empty upper-right safe zone for the
 | Theme | Primary rendering stress | Piece metaphor | Board treatment | Motion language |
 | --- | --- | --- | --- | --- |
 | Obsidian & Ivory | material illusion, bevel, restrained texture, shadow hierarchy | polished mineral discs | deep green-black cells in a bronze-framed physical board | weighty horizontal rotation |
-| Neon Circuit | glow, alpha layering, geometry, coordinate presentation | polarity nodes | energized cyan/magenta lattice | rapid current propagation and polarity inversion |
+| Neon Circuit | glow, alpha layering, wide instrument framing, circuit geometry | polarity nodes | energized cyan/magenta lattice inside a broad HUD enclosure | rapid current propagation and polarity inversion |
 | Living Garden | organic marks, procedural water atmosphere, calm hierarchy | leaf stones and lotus medallions | moss-edged sage garden cells | ripple, pollen drift, and gentle growth |
 
 ## Asset boundary
@@ -43,7 +43,7 @@ Permitted production inputs are source code, CSS, browser-available fonts, inlin
 
 ## Screenshot method
 
-Curated screenshots capture the same representative midgame position at desktop dimensions for all three themes. The Garden mobile state verifies the compact composition. Screenshot review checks board readability, legal-move visibility, score hierarchy, theme identity, Discord-safe spacing, viewport bounds, and whether the total interface reads as a finished game rather than a development demonstration.
+Curated screenshots use stable reference states selected to resemble the three approved concepts: move 34 for Obsidian & Ivory and move 27 for Neon Circuit and Living Garden. The Garden mobile state verifies the compact composition. Screenshot review checks board readability, legal-move visibility, score hierarchy, theme identity, Discord-safe spacing, viewport bounds, and whether the total interface reads as a finished game rather than a development demonstration.
 
 ## Promotion criteria
 
@@ -54,5 +54,5 @@ The visual proof is ready for authoritative integration when:
 3. each theme remains legible at desktop and mobile sizes;
 4. the themes are distinct beyond palette changes;
 5. the upper-right Discord-safe region remains free of required UI;
-6. screenshot review identifies no obscured state, clipped control, excessive noise, or misleading legal-action cue; and
+6. screenshot review identifies no obscured state, clipped board crown or ornament, clipped control, excessive noise, or misleading legal-action cue; and
 7. the owner judges at least one theme strong enough to continue.
