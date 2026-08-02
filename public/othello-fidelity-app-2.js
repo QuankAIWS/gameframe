@@ -162,8 +162,9 @@ function drawMossSpeckle(ctx, margin, boardSize) {
 }
 
 function drawCell(ctx, x, y, size, row, column, time) {
-  const inset = theme === "garden" ? 4 : theme === "neon" ? 3 : 2;
-  roundedRect(ctx, x + inset, y + inset, size - inset * 2, size - inset * 2, theme === "garden" ? 15 : 7);
+  const inset = theme === "garden" ? 5 : theme === "neon" ? 3 : 2;
+  const radius = theme === "garden" ? 16 : theme === "neon" ? 7 : 7;
+  roundedRect(ctx, x + inset, y + inset, size - inset * 2, size - inset * 2, radius);
   const gradient = ctx.createLinearGradient(x, y, x + size, y + size);
 
   if (theme === "obsidian") {
@@ -172,24 +173,63 @@ function drawCell(ctx, x, y, size, row, column, time) {
     gradient.addColorStop(.55, alternate ? "#16231f" : "#1b2b25");
     gradient.addColorStop(1, "#0a1210");
   } else if (theme === "neon") {
-    gradient.addColorStop(0, "rgba(12,44,63,.96)");
-    gradient.addColorStop(.48, "rgba(4,21,39,.98)");
-    gradient.addColorStop(1, "rgba(2,10,22,1)");
+    gradient.addColorStop(0, "rgba(14,48,68,.98)");
+    gradient.addColorStop(.42, "rgba(5,24,43,.99)");
+    gradient.addColorStop(1, "rgba(2,9,20,1)");
   } else {
     const tone = hash(row, column);
-    gradient.addColorStop(0, tone > .5 ? "#536b52" : "#4a624b");
-    gradient.addColorStop(.52, tone > .5 ? "#3a523f" : "#344b3a");
-    gradient.addColorStop(1, "#273d30");
+    gradient.addColorStop(0, tone > .5 ? "#60745d" : "#566d56");
+    gradient.addColorStop(.42, tone > .5 ? "#465d49" : "#3f5743");
+    gradient.addColorStop(1, "#2b4032");
   }
   ctx.fillStyle = gradient;
   ctx.fill();
+
   ctx.strokeStyle = theme === "neon"
-    ? "rgba(78,226,255,.38)"
+    ? "rgba(77,224,255,.42)"
     : theme === "garden"
-      ? "rgba(207,185,126,.21)"
+      ? "rgba(223,202,145,.24)"
       : "rgba(210,178,111,.28)";
-  ctx.lineWidth = theme === "neon" ? 2.2 : 1.2;
+  ctx.lineWidth = theme === "neon" ? 2.15 : 1.15;
   ctx.stroke();
+
+  if (theme === "garden") {
+    ctx.save();
+    roundedRect(ctx, x + inset + 2, y + inset + 2, size - (inset + 2) * 2, size - (inset + 2) * 2, radius - 2);
+    const sheen = ctx.createLinearGradient(x, y, x, y + size);
+    sheen.addColorStop(0, "rgba(255,255,240,.095)");
+    sheen.addColorStop(.28, "rgba(255,255,240,.024)");
+    sheen.addColorStop(1, "rgba(1,13,8,.16)");
+    ctx.fillStyle = sheen;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(13,32,22,.38)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(238,220,169,.07)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + size * .5, y + 14);
+    ctx.quadraticCurveTo(x + size * (.35 + hash(row, column) * .3), y + size * .5, x + size * .5, y + size - 14);
+    ctx.stroke();
+    for (let i = 0; i < 7; i += 1) {
+      const px = x + 14 + hash(row, column, 20 + i) * (size - 28);
+      const py = y + 14 + hash(row, column, 40 + i) * (size - 28);
+      ctx.fillStyle = `rgba(235,222,180,${.014 + hash(row, column, 60 + i) * .032})`;
+      ctx.beginPath(); ctx.arc(px, py, .55 + hash(row, column, 80 + i) * 1.1, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = .12;
+    ctx.strokeStyle = "rgba(237,224,181,.4)";
+    ctx.lineWidth = .65;
+    for (let i = 0; i < 4; i += 1) {
+      const offset = 18 + i * 18 + hash(row, column, 110 + i) * 9;
+      ctx.beginPath();
+      ctx.moveTo(x + 12, y + offset);
+      ctx.lineTo(x + size - 12, y + offset - 8 - hash(row, column, 130 + i) * 7);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
 
   if (theme === "obsidian") {
     ctx.strokeStyle = "rgba(255,255,255,.038)";
@@ -202,18 +242,31 @@ function drawCell(ctx, x, y, size, row, column, time) {
 
   if (theme === "neon") {
     const pulse = .45 + .55 * Math.sin(time * .002 + row * 1.3 + column * .7);
-    ctx.fillStyle = "rgba(88,232,255,.35)";
-    ctx.globalAlpha = .22 + pulse * .2;
-    ctx.fillRect(x + 9, y + 9, 4, 4);
-    ctx.fillRect(x + size - 13, y + size - 13, 4, 4);
-    ctx.globalAlpha = 1;
-  }
-
-  if (theme === "garden") {
-    ctx.strokeStyle = "rgba(229,213,164,.055)";
+    ctx.save();
+    ctx.shadowColor = "rgba(81,229,255,.5)";
+    ctx.shadowBlur = 4;
+    ctx.fillStyle = "rgba(88,232,255,.42)";
+    ctx.globalAlpha = .2 + pulse * .18;
+    ctx.fillRect(x + 8, y + 8, 4, 4);
+    ctx.fillRect(x + size - 12, y + size - 12, 4, 4);
+    ctx.globalAlpha = .25;
+    ctx.strokeStyle = "rgba(91,232,255,.58)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 8.5, y + 8.5, size - 17, size - 17);
+    const edge = ctx.createLinearGradient(x + 8, y + 8, x + size - 8, y + size - 8);
+    edge.addColorStop(0, "rgba(117,245,255,.23)");
+    edge.addColorStop(.48, "rgba(73,225,255,.015)");
+    edge.addColorStop(1, "rgba(255,60,207,.11)");
+    ctx.strokeStyle = edge;
+    ctx.globalAlpha = .7;
+    ctx.lineWidth = 1.35;
     ctx.beginPath();
-    ctx.moveTo(x + size * .5, y + 12);
-    ctx.quadraticCurveTo(x + size * (.35 + hash(row, column) * .3), y + size * .5, x + size * .5, y + size - 12);
+    ctx.moveTo(x + 12, y + size - 11);
+    ctx.lineTo(x + 12, y + 12);
+    ctx.lineTo(x + size - 11, y + 12);
     ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.restore();
   }
 }
+
