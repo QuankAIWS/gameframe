@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" data-asset-id="board-frame" data-background="transparent">
+
+<defs>
+  <radialGradient id="steel" cx="38%" cy="30%">
+    <stop offset="0" stop-color="#355078"/><stop offset=".45" stop-color="#17243a"/><stop offset="1" stop-color="#050811"/>
+  </radialGradient>
+  <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#fff0a8"/><stop offset=".28" stop-color="#d9a83f"/><stop offset=".62" stop-color="#7a4814"/><stop offset="1" stop-color="#f1ca68"/>
+  </linearGradient>
+  <radialGradient id="obsidian"><stop offset="0" stop-color="#253044"/><stop offset=".55" stop-color="#070a10"/><stop offset="1" stop-color="#000"/></radialGradient>
+  <filter id="soft"><feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#000" flood-opacity=".65"/></filter>
+</defs>
+
+<g fill="none" filter="url(#soft)">
+<rect x="30" y="30" width="964" height="964" rx="28" stroke="url(#brass)" stroke-width="34"/>
+<rect x="70" y="70" width="884" height="884" rx="14" stroke="#182a44" stroke-width="28"/>
+<rect x="94" y="94" width="836" height="836" rx="6" stroke="#e4b952" stroke-width="8"/>
+<path d="M128 72h768M128 952h768M72 128v768M952 128v768" stroke="#f4cf6c" stroke-width="4" opacity=".75"/>
+</g>
+<g>
+<g transform="translate(92 92)"><circle r="67" fill="url(#steel)" stroke="url(#brass)" stroke-width="10"/><circle r="45" fill="#05070c" stroke="#d7aa4b" stroke-width="5"/><path d="M-13-37a39 39 0 1 0 31 68a30 30 0 1 1-31-68z" fill="#f0f3f7"/><circle cx="32" cy="-25" r="8" fill="#e6b648"/></g><g transform="translate(932 92)"><circle r="67" fill="url(#steel)" stroke="url(#brass)" stroke-width="10"/><circle r="45" fill="#05070c" stroke="#d7aa4b" stroke-width="5"/><path d="M-13-37a39 39 0 1 0 31 68a30 30 0 1 1-31-68z" fill="#f0f3f7"/><circle cx="32" cy="-25" r="8" fill="#e6b648"/></g><g transform="translate(92 932)"><circle r="67" fill="url(#steel)" stroke="url(#brass)" stroke-width="10"/><circle r="45" fill="#05070c" stroke="#d7aa4b" stroke-width="5"/><path d="M-13-37a39 39 0 1 0 31 68a30 30 0 1 1-31-68z" fill="#f0f3f7"/><circle cx="32" cy="-25" r="8" fill="#e6b648"/></g><g transform="translate(932 932)"><circle r="67" fill="url(#steel)" stroke="url(#brass)" stroke-width="10"/><circle r="45" fill="#05070c" stroke="#d7aa4b" stroke-width="5"/><path d="M-13-37a39 39 0 1 0 31 68a30 30 0 1 1-31-68z" fill="#f0f3f7"/><circle cx="32" cy="-25" r="8" fill="#e6b648"/></g>
+</g>
+</svg>

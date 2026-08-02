@@ -1,0 +1,450 @@
+:root {
+  --eclipse-gold: #d9aa4c;
+  --eclipse-gold-bright: #f6d483;
+  --eclipse-ink: #05080d;
+  --eclipse-blue: #101a2b;
+  --eclipse-panel: rgba(7, 12, 20, 0.92);
+  --eclipse-copy: #f2ead8;
+  --eclipse-muted: #b8aa91;
+  --eclipse-line: rgba(217, 170, 76, 0.34);
+  --eclipse-asset-root: url("/assets/checkers/clockwork-eclipse/shell-background.svg");
+}
+
+body.checkers-premium-active {
+  background:
+    radial-gradient(circle at 50% -10%, rgba(217, 170, 76, 0.18), transparent 38rem),
+    linear-gradient(rgba(2, 6, 12, 0.52), rgba(2, 6, 12, 0.72)),
+    var(--eclipse-asset-root) center / cover fixed;
+}
+
+body.checkers-premium-running {
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.checkers-premium-running .shell {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  min-height: 0;
+  padding: clamp(8px, 1.2vw, 16px);
+  overflow: hidden;
+}
+
+body.checkers-premium-running #error-banner:not([hidden]) {
+  position: fixed;
+  inset: 10px 50% auto auto;
+  z-index: 100;
+  width: min(560px, calc(100vw - 24px));
+  transform: translateX(50%);
+}
+
+body.checkers-premium-running .checkers-premium-match.panel {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: clamp(6px, 0.8vh, 10px);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: clamp(9px, 1.2vw, 16px);
+  overflow: hidden;
+  border: 1px solid var(--eclipse-line);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(32, 43, 62, 0.34), transparent 30%),
+    rgba(4, 8, 14, 0.9);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.56), inset 0 1px rgba(255, 239, 199, 0.05);
+  backdrop-filter: blur(15px);
+}
+
+body.checkers-premium-running .match-header {
+  position: relative;
+  min-height: 48px;
+  padding: 4px 132px 8px 64px;
+  border-bottom: 1px solid var(--eclipse-line);
+}
+
+body.checkers-premium-running .match-header::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 54px;
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  background: url("/assets/checkers/clockwork-eclipse/emblem.svg") center / contain no-repeat;
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.54));
+}
+
+body.checkers-premium-running .match-header h2 {
+  margin: 0;
+  color: var(--eclipse-copy);
+  font-size: clamp(1.15rem, 2vw, 1.65rem);
+  line-height: 1.08;
+}
+
+body.checkers-premium-running .match-header .section-label {
+  margin: 0 0 3px;
+  color: var(--eclipse-gold);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+}
+
+body.checkers-premium-running .revision {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  border-color: var(--eclipse-line);
+  background: rgba(4, 8, 14, 0.76);
+  color: var(--eclipse-gold-bright);
+}
+
+body.checkers-premium-running .status {
+  min-height: 0;
+  margin: 0;
+  padding: 8px 14px 8px 48px;
+  border: 1px solid rgba(217, 170, 76, 0.28);
+  border-radius: 11px;
+  background:
+    url("/assets/checkers/clockwork-eclipse/turn-dial.svg") 7px 50% / 34px 34px no-repeat,
+    linear-gradient(90deg, rgba(217, 170, 76, 0.11), transparent 68%),
+    rgba(5, 10, 17, 0.86);
+  color: var(--eclipse-copy);
+  font-size: clamp(0.78rem, 1.2vw, 0.96rem);
+}
+
+body.checkers-premium-running .game-layout {
+  display: grid;
+  grid-template-columns: minmax(168px, 220px) minmax(360px, 1fr) minmax(184px, 246px);
+  gap: clamp(8px, 1vw, 16px);
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+body.checkers-premium-running .players,
+body.checkers-premium-running .checkers-intel-rail {
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(217, 170, 76, 0.42) rgba(4, 8, 14, 0.4);
+}
+
+body.checkers-premium-running .players {
+  position: relative;
+  display: grid;
+  grid-auto-rows: min-content;
+  align-content: start;
+  gap: 8px;
+  padding: 4px 10px 4px 16px;
+}
+
+body.checkers-premium-running .players::before,
+body.checkers-premium-running .checkers-intel-rail::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 20px;
+  pointer-events: none;
+  background: url("/assets/checkers/clockwork-eclipse/rail-flourish.svg") center / 100% 100% no-repeat;
+  opacity: 0.58;
+}
+
+body.checkers-premium-running .players::before { left: -4px; }
+body.checkers-premium-running .checkers-intel-rail::after { right: -4px; transform: scaleX(-1); }
+
+body.checkers-premium-running .player-card,
+body.checkers-premium-running .match-meta,
+body.checkers-premium-running .checkers-intel-card {
+  position: relative;
+  z-index: 1;
+}
+
+body.checkers-premium-running .player-card {
+  min-height: 72px;
+  padding: 10px;
+  border-color: rgba(217, 170, 76, 0.25);
+  background: linear-gradient(145deg, rgba(19, 29, 45, 0.9), rgba(4, 8, 14, 0.94));
+}
+
+body.checkers-premium-running .mark-badge.black,
+body.checkers-premium-running .checkers-count-dot.black,
+body.checkers-premium-running .checkers-captured-token-black,
+body.checkers-premium-running .piece-black {
+  background-image: url("/assets/checkers/clockwork-eclipse/piece-lunar.svg");
+  background-size: contain;
+  background-position: center;
+}
+
+body.checkkers-premium-running .mark-badge.red,
+body.checkers-premium-running .checkers-count-dot.red,
+body.checkers-premium-running .checkers-captured-token-red,
+body.checkers-premium-running .piece-red {
+  background-image: url("/assets/checkers/clockwork-eclipse/piece-solar.svg");
+  background-size: contain;
+  background-position: center;
+}
+
+body.checkers-premium-running .piece-black.is-king {
+  background-image: url("/assets/checkers/clockwork-eclipse/piece-lunar-king.svg");
+}
+
+body.checkers-premium-running .piece-red.is-king {
+  background-image: url("/assets/checkers/clockwork-eclipse/piece-solar-king.svg");
+}
+
+body.checkers-premium-running .checkers-captured-summary {
+  min-height: 46px;
+  padding: 13px 18px 8px;
+  border: 0;
+  background: url("/assets/checkers/clockwork-eclipse/captured-reservoir.svg") center / 100% 100% no-repeat;
+}
+
+body.checkers-premium-running .checkers-captured-label,
+body.checkers-premium-running .checkers-captured-count {
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.92);
+}
+
+body.checkers-premium-running .board-wrap {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  place-items: center;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  padding: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(217, 170, 76, 0.2);
+  background: rgba(2, 5, 10, 0.72);
+}
+
+body.checkers-premium-running .checkers-board-heading {
+  width: 100%;
+  margin: 0;
+  padding: 0 6px 4px;
+}
+
+body.checkers-premium-running .checkers-board-shell {
+  box-sizing: border-box;
+  width: auto;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  aspect-ratio: 1;
+  padding: 8.4%;
+}
+
+body.checkers-premium-running .checkers-board-shell::before {
+  background-image: url("/assets/checkers/clockwork-eclipse/board-frame.svg");
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.58));
+}
+
+body.checkers-premium-running .board-checkers {
+  background-image: url("/assets/checkers/clockwork-eclipse/board-surface.svg");
+  box-shadow: inset 0 0 0 1px rgba(2, 3, 6, 0.94), inset 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+body.checkers-premium-running .checkers-piece {
+  width: 86%;
+  filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.55));
+}
+
+body.checkers-premium-running .checkers-cell.selectable-piece {
+  box-shadow: inset 0 0 0 2px rgba(121, 201, 226, 0.58), inset 0 0 18px rgba(121, 201, 226, 0.12);
+}
+
+body.checkers-premium-running .checkers-cell.selected-piece::before {
+  inset: 7%;
+  border: 3px solid var(--eclipse-gold-bright);
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 3px rgba(11, 25, 42, 0.8), 0 0 18px rgba(246, 212, 131, 0.88), inset 0 0 12px rgba(246, 212, 131, 0.5);
+}
+
+body.checkers-premium-running .checkers-cell.legal-destination::after {
+  inset: 30%;
+  border: 2px solid rgba(246, 212, 131, 0.86);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(246, 212, 131, 0.78) 0 28%, rgba(80, 158, 205, 0.44) 31% 58%, transparent 62%);
+  box-shadow: 0 0 12px rgba(246, 212, 131, 0.58);
+}
+
+body.checkers-premium-running .board-help {
+  width: 100%;
+  margin: 2px 0 0;
+  color: var(--eclipse-muted);
+  font-size: clamp(0.66rem, 1vw, 0.78rem);
+}
+
+body.checkers-premium-running .checkers-intel-rail {
+  position: relative;
+  display: grid;
+  grid-auto-rows: min-content;
+  align-content: start;
+  gap: 8px;
+  padding: 4px 16px 4px 8px;
+}
+
+body.checkers-premium-running .checkers-intel-card {
+  padding: 10px;
+  border-color: rgba(217, 170, 76, 0.25);
+  background: linear-gradient(145deg, rgba(18, 29, 46, 0.9), rgba(4, 8, 14, 0.94));
+}
+
+body.checkers-premium-running .invite-panel {
+  position: absolute;
+  z-index: 30;
+  inset: auto 18px 64px 18px;
+  max-height: 40dvh;
+  overflow: auto;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.7);
+}
+
+body.checkers-premium-running .actions {
+  position: absolute;
+  right: clamp(12px, 1.5vw, 22px);
+  bottom: clamp(10px, 1.2vw, 16px);
+  z-index: 12;
+  margin: 0;
+}
+
+body.checkers-premium-running .actions .secondary-button {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 0.72rem;
+}
+
+body.checkers-premium-running .diagnostics {
+  position: absolute;
+  left: clamp(12px, 1.5vw, 22px);
+  bottom: clamp(10px, 1.2vw, 16px);
+  z-index: 12;
+  max-width: min(560px, 60vw);
+  margin: 0;
+  background: rgba(3, 7, 12, 0.9);
+}
+
+body.checkers-premium-running .checkers-outcome-overlay {
+  inset: 6px;
+  background: rgba(2, 5, 10, 0.82);
+}
+
+body.checkers-premium-running .checkers-outcome-card {
+  border-color: rgba(217, 170, 76, 0.58);
+  background:
+    url("/assets/checkers/clockwork-eclipse/emblem.svg") center 18px / 78px 78px no-repeat,
+    radial-gradient(circle at 50% 0%, rgba(217, 170, 76, 0.18), transparent 65%),
+    rgba(5, 10, 18, 0.97);
+  padding-top: 102px;
+}
+
+@media (max-height: 800px) and (min-width: 761px) {
+  body.checkers-premium-running .checkers-premium-match.panel { gap: 5px; padding: 8px; }
+  body.checkers-premium-running .match-header { min-height: 40px; padding-top: 2px; padding-bottom: 5px; }
+  body.checkers-premium-running .match-header::before { width: 44px; }
+  body.checkers-premium-running .status { padding-top: 6px; padding-bottom: 6px; }
+  body.checkers-premium-running .player-card { min-height: 62px; padding: 8px; }
+  body.checkers-premium-running .match-meta { font-size: 0.68rem; }
+  body.checkers-premium-running .checkers-intel-card { padding: 8px; }
+}
+
+@media (max-width: 900px) {
+  body.checkers-premium-running .game-layout {
+    grid-template-columns: minmax(145px, 190px) minmax(340px, 1fr);
+  }
+  body.checkers-premium-running .checkers-intel-rail { display: none; }
+}
+
+@media (max-width: 760px) {
+  body.checkers-premium-running .shell { padding: 5px; }
+  body.checkers-premium-running .checkers-premium-match.panel {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 5px;
+    padding: 6px;
+    border-radius: 12px;
+  }
+  body.checkers-premium-running .match-header {
+    min-height: 40px;
+    padding: 3px 72px 5px 44px;
+  }
+  body.checkers-premium-running .match-header::before { width: 38px; }
+  body.checkers-premium-running .match-header .section-label { display: none; }
+  body.checkers-premium-running .match-header h2 { font-size: 1rem; }
+  body.checkers-premium-running .revision { font-size: 0.62rem; }
+  body.checkers-premium-running .status {
+    padding: 6px 9px 6px 37px;
+    background-size: 28px 28px, auto, auto;
+    background-position: 5px 50%, 0 0, 0 0;
+    font-size: 0.74rem;
+  }
+  body.checkers-premium-running .game-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 5px;
+  }
+  body.checkers-premium-running .players {
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    padding: 0;
+    overflow: visible;
+  }
+  body.checkers-premium-running .players::before,
+  body.checkers-premium-running .match-meta,
+  body.checkers-premium-running .checkers-captured-summary { display: none; }
+  body.checkers-premium-running .player-card {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 7px;
+    min-height: 48px;
+    padding: 6px;
+    border-radius: 8px;
+  }
+  body.checkers-premium-running .mark-badge.black,
+  body.checkers-premium-running .mark-badge.red { width: 30px; height: 30px; }
+  body.checkers-premium-running .player-card small { font-size: 0.58rem; }
+  body.checkers-premium-running .player-card strong { font-size: 0.76rem; }
+  body.checkers-premium-running .board-wrap { padding: 3px; border-radius: 9px; }
+  body.checkers-premium-running .checkers-board-heading { display: none; }
+  body.checkers-premium-running .checkers-board-shell {
+    width: min(100%, calc(100dvh - 190px));
+    height: auto;
+    max-height: 100%;
+  }
+  body.checkers-premium-running .board-help { font-size: 0.63rem; }
+  body.checkers-premium-running .actions {
+    right: 8px;
+    bottom: 8px;
+  }
+  body.checkers-premium-running .actions .secondary-button {
+    max-width: 46vw;
+    min-height: 30px;
+    padding: 4px 8px;
+    font-size: 0.62rem;
+  }
+  body.checkers-premium-running .diagnostics {
+    left: 8px;
+    bottom: 8px;
+    max-width: 42vw;
+    font-size: 0.62rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.checkers-premium-running *,
+  body.checkers-premium-running *::before,
+  body.checkers-premium-running *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

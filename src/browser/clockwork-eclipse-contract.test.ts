@@ -1,0 +1,21 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { readFile } from "node:fs/promises";
+const read = (path: string) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
+test("Clockwork Eclipse uses a deterministic SVG asset pack without replacing authority", async () => {
+  const html = await read("public/index.html");
+  const css = await read("public/clockwork-eclipse.css");
+  const script = await read("scripts/clockwork-assets.mjs");
+  const manifest = JSON.parse(await read("art-source/checkers/clockwork-eclipse/manifest.json"));
+  const packageJson = JSON.parse(await read("package.json"));
+  assert.match(html, /href="\/clockwork-eclipse\.css"/);
+  assert.match(css, /100dvh/);
+  assert.match(css, /piece-lunar\.svg/);
+  assert.match(css, /piece-solar\.svg/);
+  assert.match(css, /board-frame\.svg/);
+  assert.match(css, /shell-background\.svg/);
+  assert.doesNotMatch(css, /fetch\(/);
+  assert.match(script, /external URLs are forbidden/);
+  assert.equal(manifest.assets.filter((asset: { approved: boolean }) => asset.approved).length, 11);
+  assert.match(packageJson.scripts.validate, /assets:verify/);
+});
