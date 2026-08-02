@@ -233,6 +233,14 @@ test("Monster Master mobile shell keeps gameplay bounded and exposes roster and 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
 
+  await expect(page.locator("body")).toHaveClass(/monster-master-match-active/);
+  await expect(page.locator(".monster-master-command-deck")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const scrolling = document.scrollingElement;
+    return scrolling.scrollHeight <= window.innerHeight + 2
+      && scrolling.scrollWidth <= window.innerWidth + 2;
+  })).toBe(true);
+
   const dimensions = await page.evaluate(() => ({
     viewportHeight: window.innerHeight,
     viewportWidth: window.innerWidth,
@@ -241,7 +249,6 @@ test("Monster Master mobile shell keeps gameplay bounded and exposes roster and 
   }));
   expect(dimensions.scrollHeight).toBeLessThanOrEqual(dimensions.viewportHeight + 2);
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.viewportWidth + 2);
-  await expect(page.locator(".monster-master-command-deck")).toBeVisible();
 
   await page.locator("#monster-master-open-roster").click();
   await expect(page.locator("body")).toHaveClass(/monster-master-roster-open/);
