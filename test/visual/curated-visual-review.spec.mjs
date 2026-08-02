@@ -137,7 +137,7 @@ test("captures Checkers initial and selected-piece states", async ({ page }, tes
   await page.locator("#select-checkers").click();
   await page.getByRole("button", { name: "Challenge Theo" }).click();
   await expect(page.locator(".checkers-cell")).toHaveCount(64);
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight)).toBeGreaterThan(1_100);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
   await capture(page, testInfo, "06-checkers-initial");
 
   const piece = page.locator(".checkers-cell.selectable-piece:enabled").first();
