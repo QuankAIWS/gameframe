@@ -41,6 +41,37 @@ test("Othello desktop product surfaces preserve the Discord safe zone", async ({
   }
 });
 
+test("Living Garden loads the hand-built foreground vector artwork", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.goto("/othello.html?theme=garden&state=midgame");
+
+  const artwork = await page.evaluate(() => {
+    const pad = document.querySelector(".garden-pad-a");
+    const lotus = document.querySelector(".garden-lotus-a");
+    const padStyle = getComputedStyle(pad);
+    const lotusStyle = getComputedStyle(lotus);
+    const padRect = pad.getBoundingClientRect();
+    const lotusRect = lotus.getBoundingClientRect();
+    return {
+      padImage: padStyle.backgroundImage,
+      lotusImage: lotusStyle.backgroundImage,
+      padWidth: padRect.width,
+      padHeight: padRect.height,
+      lotusWidth: lotusRect.width,
+      padInsideViewport: padRect.right > 0 && padRect.left < innerWidth && padRect.bottom > 0,
+      lotusInsideViewport: lotusRect.right > 0 && lotusRect.left < innerWidth && lotusRect.bottom > 0,
+    };
+  });
+
+  expect(artwork.padImage).toContain("data:image/svg+xml;base64");
+  expect(artwork.lotusImage).toContain("data:image/svg+xml;base64");
+  expect(artwork.padWidth).toBeGreaterThan(200);
+  expect(artwork.padHeight).toBeGreaterThan(120);
+  expect(artwork.lotusWidth).toBeGreaterThan(140);
+  expect(artwork.padInsideViewport).toBe(true);
+  expect(artwork.lotusInsideViewport).toBe(true);
+});
+
 test("Othello mobile surface remains horizontally bounded", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/othello.html?theme=garden&state=midgame");
