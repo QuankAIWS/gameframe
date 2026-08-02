@@ -9,7 +9,7 @@ const reviewStates = {
 for (const [theme, state] of Object.entries(reviewStates)) {
   test(`captures the ${theme} Othello product theme`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1080 });
-    await page.goto(`/othello.html?theme=${theme}&state=${state}`);
+    await page.goto(`/othello.html?theme=${theme}&state=${state}&snapshot=1`);
     await expect(page.locator("#othello-board")).toBeVisible();
     await expect(page.locator("body")).toHaveAttribute("data-theme", theme);
     await page.screenshot({
@@ -21,7 +21,7 @@ for (const [theme, state] of Object.entries(reviewStates)) {
 
 test("captures the Living Garden mobile composition", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/othello.html?theme=garden&state=27");
+  await page.goto("/othello.html?theme=garden&state=27&snapshot=1");
   await expect(page.locator("#othello-board")).toBeVisible();
   await expect(page.locator("body")).toHaveAttribute("data-theme", "garden");
   await page.screenshot({
