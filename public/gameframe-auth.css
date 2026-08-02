@@ -207,6 +207,10 @@
     max-width: none;
   }
 
+  body.monster-master-match-active > .gameframe-session-badge {
+    display: none;
+  }
+
   .gameframe-invite-link-row {
     grid-template-columns: 1fr;
   }
