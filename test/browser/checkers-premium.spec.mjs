@@ -19,7 +19,7 @@ test("premium Checkers skin preserves authoritative selection and movement", asy
   await expect(page.locator("#player-x .checkers-captured-summary")).toBeVisible();
 
   const blackPieceImage = await page.locator(".piece-black").first().evaluate((node) => getComputedStyle(node).backgroundImage);
-  expect(blackPieceImage).toContain("checkers-atlas.webp");
+  expect(blackPieceImage).toContain("/assets/checkers/clockwork-eclipse/piece-lunar.svg");
 
   const selectable = page.locator(".checkers-cell.selectable-piece").first();
   await expect(selectable).toBeEnabled();
