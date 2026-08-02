@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160">
+<defs>
+ <path id="p" d="M122 80 L216 30 C231 55 230 88 211 115 C182 151 111 160 55 140 C17 126 -2 96 11 62 C29 22 92 6 155 18 Z"/>
+ <clipPath id="c"><use href="#p"/></clipPath>
+ <radialGradient id="g" cx="33%" cy="24%" r="88%"><stop offset="0" stop-color="#789079"/><stop offset=".24" stop-color="#5f7864"/><stop offset=".56" stop-color="#385a45"/><stop offset=".82" stop-color="#1f4030"/><stop offset="1" stop-color="#10291e"/></radialGradient>
+ <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cfca97" stop-opacity=".55"/><stop offset=".38" stop-color="#6e896d" stop-opacity=".45"/><stop offset="1" stop-color="#0d281d" stop-opacity=".8"/></linearGradient>
+ <linearGradient id="light" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5f0c9" stop-opacity=".16"/><stop offset=".45" stop-color="#d3e1bd" stop-opacity=".035"/><stop offset="1" stop-color="#00140d" stop-opacity="0"/></linearGradient>
+</defs>
+<use href="#p" fill="url(#g)" stroke="url(#rim)" stroke-width="1.8"/>
+<g clip-path="url(#c)">
+ <ellipse cx="76" cy="32" rx="92" ry="50" fill="url(#light)" transform="rotate(-9 76 32)"/>
+ <g fill="#d9d39f" opacity=".12"><circle cx="46" cy="52" r="1.2"/><circle cx="69" cy="36" r=".8"/><circle cx="95" cy="27" r="1"/><circle cx="61" cy="121" r="1"/><circle cx="151" cy="134" r=".9"/><circle cx="191" cy="103" r="1.1"/></g>
+</g>
+<g fill="none" stroke-linecap="round">
+ <path d="M122 80 L216 30" stroke="#c9c38f" stroke-opacity=".42" stroke-width="1.25"/>
+ <path d="M122 80 L155 18" stroke="#173f2d" stroke-opacity=".65" stroke-width="1.6"/>
+ <path d="M122 80 C86 48 52 35 22 49" stroke="#c1ceb0" stroke-opacity=".22" stroke-width=".85"/>
+ <path d="M122 80 C82 75 47 82 15 99" stroke="#c1ceb0" stroke-opacity=".20" stroke-width=".85"/>
+ <path d="M122 80 C83 105 63 124 55 140" stroke="#c1ceb0" stroke-opacity=".19" stroke-width=".85"/>
+ <path d="M122 80 C143 114 164 133 189 138" stroke="#c1ceb0" stroke-opacity=".18" stroke-width=".85"/>
+ <path d="M122 80 C164 88 195 97 216 106" stroke="#c1ceb0" stroke-opacity=".17" stroke-width=".85"/>
+ <path d="M122 80 C157 57 185 43 211 32" stroke="#c1ceb0" stroke-opacity=".19" stroke-width=".85"/>
+</g>
+<path d="M123 79 C151 62 178 45 207 32" fill="none" stroke="#0a2419" stroke-opacity=".42" stroke-width="2.2"/>
+</svg>
