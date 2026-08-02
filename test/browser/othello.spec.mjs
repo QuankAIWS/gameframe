@@ -41,45 +41,57 @@ test("Othello desktop product surfaces preserve the Discord safe zone", async ({
   }
 });
 
-test("Living Garden integrates the vector foreground behind a soft pond surface", async ({ page }) => {
+test("Living Garden uses an asymmetric, subdued pond foreground", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.goto("/othello.html?theme=garden&state=midgame");
 
   const artwork = await page.evaluate(() => {
-    const pad = document.querySelector(".garden-pad-a");
-    const lotus = document.querySelector(".garden-lotus-a");
+    const leftPad = document.querySelector(".garden-pad-a");
+    const rightPad = document.querySelector(".garden-pad-b");
+    const leftLotus = document.querySelector(".garden-lotus-a");
     const ripple = document.querySelector(".garden-ripple-a");
-    const padStyle = getComputedStyle(pad);
-    const lotusStyle = getComputedStyle(lotus);
+    const leftStyle = getComputedStyle(leftPad);
+    const rightStyle = getComputedStyle(rightPad);
+    const lotusStyle = getComputedStyle(leftLotus);
     const rippleStyle = getComputedStyle(ripple);
-    const padRect = pad.getBoundingClientRect();
-    const lotusRect = lotus.getBoundingClientRect();
+    const leftRect = leftPad.getBoundingClientRect();
+    const rightRect = rightPad.getBoundingClientRect();
+    const lotusRect = leftLotus.getBoundingClientRect();
     return {
-      padImage: padStyle.backgroundImage,
+      leftImage: leftStyle.backgroundImage,
+      rightImage: rightStyle.backgroundImage,
       lotusImage: lotusStyle.backgroundImage,
-      padWidth: padRect.width,
-      padHeight: padRect.height,
-      lotusWidth: lotusRect.width,
-      padOpacity: Number.parseFloat(padStyle.opacity),
+      leftWidth: leftRect.width,
+      rightWidth: rightRect.width,
+      leftBottom: innerHeight - leftRect.bottom,
+      rightBottom: innerHeight - rightRect.bottom,
+      leftOpacity: Number.parseFloat(leftStyle.opacity),
+      rightOpacity: Number.parseFloat(rightStyle.opacity),
       rippleOpacity: Number.parseFloat(rippleStyle.opacity),
-      padZ: Number.parseInt(padStyle.zIndex, 10),
+      leftZ: Number.parseInt(leftStyle.zIndex, 10),
       rippleZ: Number.parseInt(rippleStyle.zIndex, 10),
       rippleBorder: rippleStyle.borderTopWidth,
-      padInsideViewport: padRect.right > 0 && padRect.left < innerWidth && padRect.bottom > 0,
+      leftInsideViewport: leftRect.right > 0 && leftRect.left < innerWidth && leftRect.bottom > 0,
+      rightInsideViewport: rightRect.right > 0 && rightRect.left < innerWidth && rightRect.bottom > 0,
       lotusInsideViewport: lotusRect.right > 0 && lotusRect.left < innerWidth && lotusRect.bottom > 0,
     };
   });
 
-  expect(artwork.padImage).toContain("data:image/svg+xml;base64");
-  expect(artwork.lotusImage).toContain("data:image/svg+xml;base64");
-  expect(artwork.padWidth).toBeGreaterThan(190);
-  expect(artwork.padHeight).toBeGreaterThan(110);
-  expect(artwork.lotusWidth).toBeGreaterThan(110);
-  expect(artwork.padOpacity).toBeLessThan(0.7);
-  expect(artwork.rippleOpacity).toBeLessThan(0.3);
-  expect(artwork.padZ).toBeGreaterThan(artwork.rippleZ);
+  expect(artwork.leftImage).toContain("othello-garden-lily-pad.svg");
+  expect(artwork.rightImage).toContain("othello-garden-lily-pad.svg");
+  expect(artwork.lotusImage).toContain("othello-garden-lotus.svg");
+  expect(artwork.leftWidth).toBeGreaterThan(330);
+  expect(artwork.rightWidth).toBeLessThan(250);
+  expect(artwork.leftWidth).toBeGreaterThan(artwork.rightWidth * 1.4);
+  expect(artwork.leftBottom).toBeLessThan(20);
+  expect(artwork.rightBottom).toBeGreaterThan(40);
+  expect(artwork.leftOpacity).toBeLessThan(0.55);
+  expect(artwork.rightOpacity).toBeLessThan(0.4);
+  expect(artwork.rippleOpacity).toBeLessThan(0.5);
+  expect(artwork.leftZ).toBeGreaterThan(artwork.rippleZ);
   expect(artwork.rippleBorder).toBe("0px");
-  expect(artwork.padInsideViewport).toBe(true);
+  expect(artwork.leftInsideViewport).toBe(true);
+  expect(artwork.rightInsideViewport).toBe(true);
   expect(artwork.lotusInsideViewport).toBe(true);
 });
 
