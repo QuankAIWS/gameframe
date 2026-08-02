@@ -3,54 +3,61 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#090b12">
-  <title>Othello Atelier · Scribbles GameFrame</title>
+  <meta name="theme-color" content="#080a0d">
+  <title>Othello · Scribbles GameFrame</title>
   <link rel="stylesheet" href="/othello.css">
 </head>
 <body>
-  <main class="othello-shell">
-    <header class="othello-header">
-      <div>
-        <p class="eyebrow">SCRIBBLES GAMEFRAME · PROCEDURAL VISUAL PROOF</p>
-        <h1>Othello Atelier</h1>
-        <p class="subtitle">One deterministic game. Three code-drawn worlds. No bespoke gameplay imagery.</p>
+  <main class="othello-app">
+    <header class="product-header">
+      <div class="brand-lockup">
+        <div class="brand-emblem" aria-hidden="true">
+          <svg viewBox="0 0 96 96" focusable="false">
+            <circle class="emblem-ring emblem-ring-outer" cx="48" cy="48" r="44"/>
+            <circle class="emblem-ring emblem-ring-inner" cx="48" cy="48" r="35"/>
+            <circle class="emblem-disc emblem-disc-dark" cx="39" cy="50" r="21"/>
+            <circle class="emblem-disc emblem-disc-light" cx="58" cy="47" r="19"/>
+            <path class="emblem-botanical" d="M48 12c5 7 7 13 0 20-7-7-5-13 0-20Zm-9 8c-7 2-11 7-10 14 8 0 12-5 10-14Zm18 0c7 2 11 7 10 14-8 0-12-5-10-14Z"/>
+            <path class="emblem-circuit" d="M18 48h10m40 0h10M48 18v9m0 42v9"/>
+          </svg>
+        </div>
+        <div class="brand-copy">
+          <p id="theme-title" class="theme-title">Obsidian &amp; Ivory</p>
+          <h1>Othello</h1>
+          <p id="theme-description" class="brand-motto">Strategy. Balance. Endless depth.</p>
+        </div>
       </div>
-      <a class="back-link" href="/">GameFrame home</a>
+      <div id="discord-safe-zone" class="discord-safe-zone" aria-hidden="true"></div>
     </header>
 
-    <nav class="theme-switcher" aria-label="Visual theme">
-      <button class="theme-button" data-theme="obsidian" aria-pressed="true">
-        <span class="theme-swatch obsidian-swatch"></span>
-        <span><strong>Obsidian & Ivory</strong><small>Material, depth, restraint</small></span>
-      </button>
-      <button class="theme-button" data-theme="neon" aria-pressed="false">
-        <span class="theme-swatch neon-swatch"></span>
-        <span><strong>Neon Circuit</strong><small>Glow, pulses, energy</small></span>
-      </button>
-      <button class="theme-button" data-theme="garden" aria-pressed="false">
-        <span class="theme-swatch garden-swatch"></span>
-        <span><strong>Living Garden</strong><small>Organic texture, ambient life</small></span>
-      </button>
-    </nav>
-
-    <section class="game-stage" aria-label="Othello match">
-      <aside class="score-rail score-rail-dark">
+    <section class="play-layout" aria-label="Othello match">
+      <aside class="score-rail score-rail-dark" aria-label="Dark player">
         <p class="rail-label">NORTH</p>
-        <div class="player-token dark-token" aria-hidden="true"></div>
+        <div class="player-token dark-token" aria-hidden="true">
+          <svg class="token-mark" viewBox="0 0 64 64" focusable="false"><path d="M32 12c8 7 11 14 0 23C21 26 24 19 32 12Zm-3 23c-10-2-17 2-20 11 11 5 18 1 20-11Zm6 0c10-2 17 2 20 11-11 5-18 1-20-11Z"/></svg>
+        </div>
         <strong id="dark-score">2</strong>
         <span>Dark</span>
-        <div id="dark-turn" class="turn-marker">ACTIVE</div>
+        <div id="dark-turn" class="turn-marker is-active"><i></i>ACTIVE</div>
       </aside>
 
-      <div class="board-column">
+      <section class="board-column">
         <div class="board-frame">
+          <div class="board-crown" aria-hidden="true">
+            <svg viewBox="0 0 64 64" focusable="false">
+              <path d="M32 10c7 8 9 15 0 24-9-9-7-16 0-24Zm-5 23c-10-3-18 1-22 10 12 6 20 2 22-10Zm10 0c10-3 18 1 22 10-12 6-20 2-22-10Z"/>
+            </svg>
+          </div>
           <canvas id="othello-board" width="960" height="960" aria-label="Interactive Othello board"></canvas>
           <div id="board-announcement" class="board-announcement" hidden></div>
         </div>
         <div class="match-strip">
-          <div>
-            <span class="strip-label">TURN</span>
-            <strong id="turn-copy">Dark shapes the field</strong>
+          <div class="turn-readout">
+            <span class="strip-symbol" aria-hidden="true">✦</span>
+            <span>
+              <span class="strip-label">TURN</span>
+              <strong id="turn-copy">Dark to move</strong>
+            </span>
           </div>
           <div class="move-stat">
             <span class="strip-label">MOVE</span>
@@ -61,29 +68,50 @@
             <strong id="legal-count">4</strong>
           </div>
         </div>
-      </div>
+      </section>
 
-      <aside class="score-rail score-rail-light">
+      <aside class="score-rail score-rail-light" aria-label="Light player">
         <p class="rail-label">SOUTH</p>
-        <div class="player-token light-token" aria-hidden="true"></div>
+        <div class="player-token light-token" aria-hidden="true">
+          <svg class="token-mark" viewBox="0 0 64 64" focusable="false"><path d="M32 9c7 8 8 16 0 25-8-9-7-17 0-25Zm-4 24C18 29 9 33 5 43c12 6 21 2 23-10Zm8 0c10-4 19 0 23 10-12 6-21 2-23-10ZM32 36c-9 5-13 12-10 21 9-1 14-8 10-21Zm0 0c9 5 13 12 10 21-9-1-14-8-10-21Z"/></svg>
+        </div>
         <strong id="light-score">2</strong>
         <span>Light</span>
-        <div id="light-turn" class="turn-marker">WAITING</div>
+        <div id="light-turn" class="turn-marker"><i></i>WAITING</div>
       </aside>
     </section>
 
-    <section class="control-deck">
-      <div class="control-copy">
-        <p class="section-label">VISUAL LAB</p>
-        <strong id="theme-title">Obsidian & Ivory</strong>
-        <span id="theme-description">Carved stone, polished mineral discs, restrained highlights, and deliberate physical weight.</span>
-      </div>
+    <footer class="command-bar">
+      <nav class="theme-dock" aria-label="Visual theme">
+        <button class="theme-button" data-theme="obsidian" aria-label="Obsidian and Ivory" aria-pressed="true">
+          <span class="theme-swatch obsidian-swatch" aria-hidden="true"></span>
+          <span class="theme-name">Obsidian</span>
+        </button>
+        <button class="theme-button" data-theme="neon" aria-label="Neon Circuit" aria-pressed="false">
+          <span class="theme-swatch neon-swatch" aria-hidden="true"></span>
+          <span class="theme-name">Neon</span>
+        </button>
+        <button class="theme-button" data-theme="garden" aria-label="Living Garden" aria-pressed="false">
+          <span class="theme-swatch garden-swatch" aria-hidden="true"></span>
+          <span class="theme-name">Garden</span>
+        </button>
+      </nav>
+
       <div class="controls">
-        <button id="new-game" type="button">New game</button>
-        <button id="demo-move" type="button">Play one move</button>
-        <button id="toggle-hints" type="button" aria-pressed="true">Hints on</button>
+        <button id="new-game" class="control-button secondary-control" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span>New game</span>
+        </button>
+        <button id="demo-move" class="control-button primary-control" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg>
+          <span>Play one move</span>
+        </button>
+        <button id="toggle-hints" class="control-button secondary-control" type="button" aria-pressed="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M8.5 14.5A6 6 0 1 1 15.5 14.5L14 16H10Z"/></svg>
+          <span>Hints on</span>
+        </button>
       </div>
-    </section>
+    </footer>
   </main>
   <script type="module" src="/othello-app.js"></script>
 </body>
