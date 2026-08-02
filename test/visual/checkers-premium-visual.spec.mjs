@@ -30,5 +30,9 @@ test("captures premium Checkers match and move-selection states", async ({ page 
   await capture(page, testInfo, "32-checkers-premium-move-selection");
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(() => page.evaluate(() => ({
+    width: document.documentElement.scrollWidth <= window.innerWidth + 1,
+    height: document.documentElement.scrollHeight <= window.innerHeight + 1,
+  }))).toEqual({ width: true, height: true });
   await capture(page, testInfo, "33-checkers-premium-mobile");
 });

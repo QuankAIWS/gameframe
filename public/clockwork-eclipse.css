@@ -498,3 +498,11 @@ body.checkers-premium-running .checkers-captured-count::after {
   display: none !important;
   content: none !important;
 }
+
+body.checkers-premium-running .shell {
+  position: fixed;
+  inset: 0;
+  width: auto;
+  max-width: none;
+  height: auto;
+}
