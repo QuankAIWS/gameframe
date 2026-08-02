@@ -1,0 +1,298 @@
+/* Fourth bake: denser Living Garden staging ---------------------------------- */
+@media (min-width: 901px) {
+  body[data-theme="garden"] {
+    background:
+      radial-gradient(circle at 82% -4%, rgba(255,249,220,.52), transparent 30rem),
+      radial-gradient(circle at 54% 31%, rgba(92,123,93,.22), transparent 34rem),
+      linear-gradient(180deg, #244038 0%, #102d24 48%, #061b14 100%);
+  }
+  body[data-theme="garden"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    pointer-events: none;
+    opacity: .48;
+    background:
+      linear-gradient(116deg, transparent 0 64%, rgba(255,250,226,.075) 64.3% 64.9%, transparent 65.2%),
+      linear-gradient(108deg, transparent 0 72%, rgba(255,250,226,.045) 72.3% 72.8%, transparent 73.1%),
+      repeating-radial-gradient(ellipse at 48% 86%, transparent 0 38px, rgba(218,231,205,.028) 39px 40px, transparent 41px 77px);
+  }
+  body[data-theme="garden"] .othello-app {
+    width: min(1440px, 100vw);
+    min-height: 1080px;
+    padding: 18px 34px 20px;
+    overflow: clip;
+  }
+  body[data-theme="garden"] .product-header {
+    min-height: 112px;
+    margin-bottom: 2px;
+    padding: 2px 300px 0 16px;
+  }
+  body[data-theme="garden"] .brand-lockup { gap: 15px; }
+  body[data-theme="garden"] .brand-emblem {
+    width: 82px;
+    height: 82px;
+    background: linear-gradient(160deg, rgba(18,50,38,.92), rgba(7,28,21,.94));
+    box-shadow: 0 11px 26px rgba(0,0,0,.28), inset 0 0 0 1px rgba(227,196,112,.22);
+  }
+  body[data-theme="garden"] h1 {
+    font-size: clamp(2rem, 3vw, 3rem);
+    letter-spacing: -.025em;
+    text-shadow: 0 2px 10px rgba(0,0,0,.22);
+  }
+  body[data-theme="garden"] .play-layout {
+    grid-template-columns: 210px minmax(620px, 748px) 210px;
+    gap: clamp(40px, 4.2vw, 64px);
+    margin-top: -3px;
+  }
+  body[data-theme="garden"] .board-frame {
+    position: relative;
+    padding: 15px;
+    border-radius: 40px;
+    background:
+      radial-gradient(circle at 12% 3%, rgba(170,188,112,.18), transparent 23%),
+      radial-gradient(circle at 90% 6%, rgba(166,185,108,.16), transparent 21%),
+      linear-gradient(145deg, #53694d, #1b382a 29%, #10291e 69%, #42583e);
+    box-shadow:
+      0 36px 78px rgba(0,0,0,.42),
+      0 0 0 1px rgba(223,196,119,.42),
+      0 0 0 7px rgba(9,31,22,.7),
+      inset 0 1px 0 rgba(255,255,230,.12),
+      inset 0 0 42px rgba(6,29,20,.38);
+  }
+  body[data-theme="garden"] .board-frame::before {
+    inset: -8px;
+    border-radius: 47px;
+    border: 1px solid rgba(221,190,110,.28);
+    background:
+      radial-gradient(circle at 5% 3%, rgba(218,203,135,.7) 0 2px, transparent 3px),
+      radial-gradient(circle at 9% 1%, rgba(151,173,100,.7) 0 3px, transparent 4px),
+      radial-gradient(circle at 93% 2%, rgba(213,198,130,.62) 0 2px, transparent 3px),
+      radial-gradient(circle at 97% 5%, rgba(145,168,94,.64) 0 3px, transparent 4px);
+    box-shadow: 0 0 0 4px rgba(7,27,19,.46);
+  }
+  body[data-theme="garden"] .board-frame::after {
+    inset: 7px;
+    border-radius: 35px;
+    border: 1px solid rgba(229,204,134,.24);
+    box-shadow: inset 0 0 0 3px rgba(8,29,20,.38), inset 0 0 24px rgba(5,23,17,.18);
+  }
+  body[data-theme="garden"] .board-viewport {
+    width: 100%;
+    margin: 0;
+    border-radius: 28px;
+    border-color: rgba(225,205,148,.24);
+    box-shadow: 0 22px 52px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,235,.04);
+  }
+  body[data-theme="garden"] #othello-board { border-radius: 27px; }
+  body[data-theme="garden"] .board-crown {
+    top: -8px;
+    width: 76px;
+    height: 54px;
+    border-radius: 999px 999px 48% 48%;
+    background: linear-gradient(180deg, #365541, #153625);
+    border-color: rgba(226,196,113,.58);
+    box-shadow: 0 10px 20px rgba(0,0,0,.3), inset 0 1px rgba(255,255,220,.08);
+  }
+  body[data-theme="garden"] .garden-board-ornament {
+    top: -32px;
+    width: 172px;
+    height: 112px;
+    fill: rgba(104,139,75,.74);
+    stroke: rgba(220,194,119,.55);
+    filter: drop-shadow(0 9px 10px rgba(0,0,0,.28));
+  }
+  body[data-theme="garden"] .garden-board-ornament-left { left: -31px; }
+  body[data-theme="garden"] .garden-board-ornament-right { right: -31px; }
+  body[data-theme="garden"] .garden-board-ornament circle {
+    fill: #e6b8bc;
+    stroke: rgba(255,241,226,.6);
+  }
+  body[data-theme="garden"] .score-rail {
+    min-height: 386px;
+    border-radius: 27px;
+    padding: 27px 15px 23px;
+    box-shadow: 0 28px 50px rgba(0,0,0,.27), inset 0 1px rgba(255,255,240,.07);
+    transform: translateY(16px);
+  }
+  body[data-theme="garden"] .score-rail-dark {
+    background:
+      radial-gradient(circle at 50% 25%, rgba(113,139,89,.14), transparent 45%),
+      linear-gradient(180deg, rgba(21,61,42,.97), rgba(7,31,21,.99));
+    border-color: rgba(222,192,111,.55);
+  }
+  body[data-theme="garden"] .score-rail-light {
+    background:
+      radial-gradient(circle at 50% 22%, rgba(255,255,255,.6), transparent 48%),
+      linear-gradient(180deg, #fffdf1, #e8dcc1);
+    border-color: rgba(209,177,103,.56);
+    box-shadow: 0 28px 50px rgba(0,0,0,.27), inset 0 0 0 6px rgba(255,255,255,.3), inset 0 1px rgba(255,255,255,.9);
+  }
+  body[data-theme="garden"] .player-token { width: 105px; margin-top: 27px; }
+  body[data-theme="garden"] .score-rail > strong { margin-top: 22px; font-size: 4rem; }
+  body[data-theme="garden"] .match-strip {
+    margin-top: 12px;
+    min-height: 73px;
+    padding: 11px 27px;
+    border-radius: 36px;
+    background:
+      linear-gradient(90deg, rgba(255,255,230,.03), transparent 28% 72%, rgba(255,255,230,.025)),
+      rgba(18,55,39,.94);
+    border-color: rgba(221,192,111,.47);
+    box-shadow: 0 18px 34px rgba(0,0,0,.25), inset 0 1px rgba(255,255,230,.06);
+  }
+  body[data-theme="garden"] .strip-symbol {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(226,198,113,.17), rgba(20,63,43,.9));
+    border: 1px solid rgba(224,194,109,.52);
+  }
+  body[data-theme="garden"] .command-bar {
+    width: min(700px, 62vw);
+    margin: 18px auto 0;
+    min-height: 68px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border-color: rgba(219,190,109,.2);
+    background: rgba(8,34,24,.82);
+    box-shadow: 0 20px 38px rgba(0,0,0,.28), inset 0 1px rgba(255,255,235,.04);
+    backdrop-filter: blur(9px);
+  }
+  body[data-theme="garden"] .theme-dock { gap: 6px; }
+  body[data-theme="garden"] .theme-button {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 50%;
+    padding: 4px;
+  }
+  body[data-theme="garden"] .controls { gap: 12px; }
+  body[data-theme="garden"] .control-button {
+    min-height: 46px;
+    border-radius: 999px;
+    padding-inline: 24px;
+    border-color: rgba(220,192,113,.2);
+    background: rgba(255,255,240,.025);
+  }
+
+  /* Keep all pond scenery below or beside the play surface, like the reference. */
+  body[data-theme="garden"] .garden-pad-d,
+  body[data-theme="garden"] .garden-pad-e { display: none; }
+  body[data-theme="garden"] .garden-pad-a {
+    width: 250px;
+    left: -48px;
+    bottom: -12px;
+    opacity: .72;
+    transform: rotate(-8deg);
+  }
+  body[data-theme="garden"] .garden-pad-b {
+    width: 230px;
+    right: -38px;
+    bottom: 4px;
+    opacity: .68;
+    transform: rotate(8deg) scaleX(-1);
+  }
+  body[data-theme="garden"] .garden-pad-c {
+    width: 180px;
+    left: 49%;
+    bottom: -35px;
+    opacity: .24;
+    transform: translateX(-50%) rotate(-2deg);
+  }
+  body[data-theme="garden"] .garden-lotus-a {
+    width: 158px;
+    left: 2px;
+    bottom: -9px;
+    opacity: .91;
+    filter: drop-shadow(0 12px 14px rgba(0,0,0,.36));
+  }
+  body[data-theme="garden"] .garden-lotus-b {
+    width: 132px;
+    right: 10px;
+    bottom: 12px;
+    opacity: .87;
+    filter: drop-shadow(0 12px 14px rgba(0,0,0,.34));
+  }
+  body[data-theme="garden"] .garden-lotus-c {
+    display: block;
+    width: 88px;
+    left: 13%;
+    bottom: 3px;
+    opacity: .52;
+    filter: blur(.25px) drop-shadow(0 8px 9px rgba(0,0,0,.28));
+  }
+  body[data-theme="garden"] .garden-foliage-left {
+    display: block;
+    left: -24px;
+    top: -36px;
+    width: 260px;
+    height: 310px;
+    opacity: .55;
+    filter: drop-shadow(0 10px 10px rgba(0,0,0,.22));
+  }
+  body[data-theme="garden"] .garden-foliage-right { display: none; }
+  body[data-theme="garden"] .scene-decoration::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 1;
+    background:
+      radial-gradient(ellipse at 8% 89%, rgba(144,174,118,.11) 0 8%, transparent 8.5%),
+      radial-gradient(ellipse at 23% 94%, rgba(103,139,93,.09) 0 9%, transparent 9.5%),
+      radial-gradient(ellipse at 80% 92%, rgba(121,154,105,.1) 0 8%, transparent 8.5%),
+      radial-gradient(ellipse at 96% 87%, rgba(88,126,86,.12) 0 9%, transparent 9.5%),
+      linear-gradient(180deg, transparent 0 63%, rgba(5,40,28,.18) 82%, rgba(3,25,18,.4) 100%);
+  }
+  body[data-theme="garden"] .scene-decoration::after {
+    height: 24%;
+    background:
+      repeating-radial-gradient(ellipse at 50% 100%, transparent 0 34px, rgba(223,233,208,.04) 35px 36px, transparent 37px 68px),
+      linear-gradient(180deg, transparent, rgba(4,34,24,.28));
+  }
+}
+
+@media (min-width: 901px) {
+  body[data-theme="garden"] .product-header {
+    min-height: 84px;
+    padding-top: 0;
+    margin-bottom: -4px;
+  }
+  body[data-theme="garden"] .play-layout { margin-top: -10px; }
+  body[data-theme="garden"] .match-strip { margin-top: 5px; transform: translateY(-3px); }
+  body[data-theme="garden"] .command-bar { margin-top: 4px; transform: translateY(-8px); }
+  body[data-theme="garden"] .garden-ripple-a {
+    left: -42px;
+    bottom: -52px;
+    width: 350px;
+    height: 116px;
+    opacity: .15 !important;
+  }
+  body[data-theme="garden"] .garden-ripple-b {
+    right: -48px;
+    bottom: -58px;
+    width: 380px;
+    height: 126px;
+    opacity: .14 !important;
+  }
+  body[data-theme="garden"] .garden-ripple-c {
+    left: 38%;
+    right: auto;
+    top: auto;
+    bottom: -62px;
+    width: 350px;
+    height: 105px;
+    opacity: .08 !important;
+  }
+}
+
+@media (min-width: 901px) {
+  body[data-theme="garden"] .brand-emblem {
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+}
