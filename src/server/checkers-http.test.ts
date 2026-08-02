@@ -27,6 +27,7 @@ test("HTTP health advertises every supported deterministic game", async (context
     "american-checkers",
     "tactical-movement-canary",
     "tactical-combat-canary",
+    "monster-master-duel",
   ]);
 });
 

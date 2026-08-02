@@ -4,7 +4,8 @@ export type InvitationGameId =
   | "tic-tac-toe"
   | "american-checkers"
   | "tactical-movement-canary"
-  | "tactical-combat-canary";
+  | "tactical-combat-canary"
+  | "monster-master-duel";
 
 export interface MatchInvitationClaims {
   version: 1;
@@ -75,13 +76,15 @@ export function isInvitationGameId(value: unknown): value is InvitationGameId {
   return value === "tic-tac-toe"
     || value === "american-checkers"
     || value === "tactical-movement-canary"
-    || value === "tactical-combat-canary";
+    || value === "tactical-combat-canary"
+    || value === "monster-master-duel";
 }
 
 export function resumePathForGame(gameId: InvitationGameId, matchId: string): string {
   const encodedMatchId = encodeURIComponent(matchId);
   if (gameId === "tactical-movement-canary") return `/tactical.html?match=${encodedMatchId}`;
   if (gameId === "tactical-combat-canary") return `/combat.html?match=${encodedMatchId}`;
+  if (gameId === "monster-master-duel") return `/monster-master.html?match=${encodedMatchId}`;
   return `/?match=${encodedMatchId}`;
 }
 

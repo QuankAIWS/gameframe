@@ -1,4 +1,5 @@
 import type { CheckersAction, CheckersState } from "../games/checkers/index.ts";
+import type { MonsterMasterAction, MonsterMasterState } from "../games/monster-master/index.ts";
 import type {
   TacticalCombatAction,
   TacticalCombatState,
@@ -9,6 +10,7 @@ import type {
 } from "../games/tactical-core/index.ts";
 import type { TicTacToeAction, TicTacToeState } from "../games/tic-tac-toe/index.ts";
 import { CheckersMatchService } from "../server/checkers-match-service.ts";
+import { MonsterMasterMatchService } from "../server/monster-master-match-service.ts";
 import { TacticalCombatMatchService } from "../server/tactical-combat-match-service.ts";
 import { TacticalMovementMatchService } from "../server/tactical-movement-match-service.ts";
 import { TicTacToeMatchService } from "../server/tic-tac-toe-match-service.ts";
@@ -23,7 +25,8 @@ export type DurableGameId =
   | "tic-tac-toe"
   | "american-checkers"
   | "tactical-movement-canary"
-  | "tactical-combat-canary";
+  | "tactical-combat-canary"
+  | "monster-master-duel";
 
 export interface GameFrameMatchObjectRuntimeOptions {
   onMatchUpdated?: (matchId: string) => Promise<void> | void;
@@ -40,6 +43,7 @@ export class GameFrameMatchObjectRuntime {
   readonly #checkers: CheckersMatchService;
   readonly #tactical: TacticalMovementMatchService;
   readonly #combat: TacticalCombatMatchService;
+  readonly #monsterMaster: MonsterMasterMatchService;
   readonly #onMatchUpdated: (matchId: string) => Promise<void> | void;
   #tail: Promise<void> = Promise.resolve();
 
@@ -65,6 +69,10 @@ export class GameFrameMatchObjectRuntime {
       store: new DurableObjectMatchStore<TacticalCombatState, TacticalCombatAction>(storage),
       idGenerator,
     });
+    this.#monsterMaster = new MonsterMasterMatchService({
+      store: new DurableObjectMatchStore<MonsterMasterState, MonsterMasterAction>(storage),
+      idGenerator,
+    });
     this.#onMatchUpdated = options.onMatchUpdated ?? (() => undefined);
   }
 
@@ -83,7 +91,9 @@ export class GameFrameMatchObjectRuntime {
         ? await this.#checkers.view(matchId, playerId)
         : gameId === "tactical-movement-canary"
           ? await this.#tactical.view(matchId, playerId)
-          : await this.#combat.view(matchId, playerId);
+          : gameId === "tactical-combat-canary"
+            ? await this.#combat.view(matchId, playerId)
+            : await this.#monsterMaster.view(matchId, playerId);
     return { gameId, ...view };
   }
 
@@ -104,7 +114,9 @@ export class GameFrameMatchObjectRuntime {
             ? await this.#checkers.createMatch(playerIds, matchId)
             : gameId === "tactical-movement-canary"
               ? await this.#tactical.createMatch(playerIds, matchId)
-              : await this.#combat.createMatch(playerIds, matchId);
+              : gameId === "tactical-combat-canary"
+                ? await this.#combat.createMatch(playerIds, matchId)
+                : await this.#monsterMaster.createMatch(playerIds, matchId);
         await this.#notify(matchId);
         return json(201, { gameId, ...view });
       }
@@ -141,10 +153,15 @@ export class GameFrameMatchObjectRuntime {
                   ...common,
                   action: parseTacticalMovementAction(body.action),
                 })
-              : await this.#combat.submitAction({
-                  ...common,
-                  action: parseTacticalCombatAction(body.action),
-                });
+              : gameId === "tactical-combat-canary"
+                ? await this.#combat.submitAction({
+                    ...common,
+                    action: parseTacticalCombatAction(body.action),
+                  })
+                : await this.#monsterMaster.submitAction({
+                    ...common,
+                    action: parseMonsterMasterAction(body.action),
+                  });
         await this.#notify(matchId);
         return json(200, { gameId, ...view });
       }
@@ -171,6 +188,7 @@ export class GameFrameMatchObjectRuntime {
       || gameId === "american-checkers"
       || gameId === "tactical-movement-canary"
       || gameId === "tactical-combat-canary"
+      || gameId === "monster-master-duel"
     ) {
       return gameId;
     }
@@ -243,6 +261,46 @@ function parseTacticalCombatAction(value: unknown): TacticalCombatAction {
       target: coordinate(action.target),
       range: Number(action.range),
       damage: Number(action.damage),
+    };
+  }
+  return {
+    type: "move",
+    unitId,
+    from: coordinate(action.from),
+    path: Array.isArray(action.path) ? action.path.map(coordinate) : [],
+    movementCost: Number(action.movementCost),
+  };
+}
+
+function parseMonsterMasterAction(value: unknown): MonsterMasterAction {
+  const action = record(value);
+  const unitId = String(action.unitId ?? "");
+  if (action.type === "deploy-unit") {
+    return { type: "deploy-unit", unitId, position: coordinate(action.position) };
+  }
+  if (action.type === "end-activation") return { type: "end-activation", unitId };
+  if (action.type === "attack") {
+    return {
+      type: "attack",
+      unitId,
+      targetUnitId: String(action.targetUnitId ?? ""),
+      from: coordinate(action.from),
+      target: coordinate(action.target),
+      range: Number(action.range),
+      damage: Number(action.damage),
+    };
+  }
+  if (action.type === "use-ability") {
+    return {
+      type: "use-ability",
+      abilityId: "mend",
+      unitId,
+      targetUnitId: String(action.targetUnitId ?? ""),
+      from: coordinate(action.from),
+      target: coordinate(action.target),
+      range: Number(action.range),
+      commandCost: Number(action.commandCost),
+      healing: Number(action.healing),
     };
   }
   return {

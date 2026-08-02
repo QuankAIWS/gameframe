@@ -166,7 +166,7 @@ When Scribbles Runtime is available, implement the accepted versioned decision-p
 
 Retain deterministic fallback behavior and fail closed on malformed, stale, illegal, mismatched, or unauthorized Runtime responses.
 
-### GF-0010 — Monster-master tactical battler foundation — Active
+### GF-0010 — Monster-master tactical battler foundation — Repository candidate — Active
 
 Build the first substantial original GameFrame game now that the platform has survived browser acceptance, the mock-agent boundary, American Checkers, larger-field tactical movement, and deterministic tactical combat.
 
@@ -181,9 +181,19 @@ Completed internal milestones:
 - `TC-0001` — Complete: semantic map, weighted movement, viewport and camera, selection, legal paths, service, Canvas, replay, reconnect, and Workers recovery. See [`planning/validation/2026-07-30-tactical-canvas-canary.md`](validation/2026-07-30-tactical-canvas-canary.md).
 - `TC-0002` — Complete: initiative, multi-action activations, line of sight, attacks, health, defeat, structured effects, victory, service, combat Canvas, player-specific projections, and Workers recovery. See [`planning/validation/2026-07-30-tactical-combat-stack.md`](validation/2026-07-30-tactical-combat-stack.md).
 
-Active milestone:
+Current candidate:
 
-- `MM-0001` — Active: one Master and a small monster roster per player, deployment zones, bounded resources, at least one non-generic ability, and a complete larger-field duel through rules, service, Canvas, replay, agents, and Workers runtime.
+- `MM-0001` — Repository-complete candidate: separate Monster Master rules, alternating deployment, stable three-unit rosters, deterministic initiative, movement, attacks, command energy, Warden `Mend`, defeat, Master victory, bounded draw, replay, deterministic Theo, shared HTTP dispatch, Durable Object persistence, authenticated invitations, dedicated Canvas client, mobile deployment, recovery journeys, and curated visual review.
+- Normative rules: [`planning/monster-master-rules.md`](monster-master-rules.md).
+- Repository evidence: [`planning/validation/2026-07-30-monster-master-first-playable.md`](validation/2026-07-30-monster-master-first-playable.md).
+
+MM-0001 remains a candidate rather than a shipped game until:
+
+- the final branch head passes exact-head Canonical Validation after all documentation and visual-review corrections;
+- the owner completes a direct human gameplay and presentation review;
+- the validated code is merged;
+- relevant Cloudflare and Discord canaries prove hosted behavior; and
+- balance, content quality, animation, sound, and final art receive later explicit decisions.
 
 Later sequence:
 

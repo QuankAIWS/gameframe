@@ -2,7 +2,7 @@
 
 Scribbles GameFrame is the deterministic multiplayer game platform for the Scribbles architecture. It owns game sessions, legal-action validation, event history, player observations, browser delivery, and the integration boundaries for Discord Activities and Scribbles Runtime. Individual games remain explicit modules rather than being forced into one generalized rules engine.
 
-Theo is the public-facing Scribbles agent and the first registered nonhuman GameFrame player. The platform proof now includes complete Tic-Tac-Toe and American Checkers paths, a versioned decision-provider contract, a larger-field tactical map and movement client, a complete deterministic tactical combat stack, production-shaped Cloudflare/Discord identity and multiplayer boundaries, and a browser-journey and visual-regression foundation for future game surfaces.
+Theo is the public-facing Scribbles agent and the first registered nonhuman GameFrame player. The platform proof now includes complete Tic-Tac-Toe and American Checkers paths, a versioned decision-provider contract, a larger-field tactical map and movement client, a complete deterministic tactical combat stack, production-shaped Cloudflare/Discord identity and multiplayer boundaries, and the first playable Monster Master duel.
 
 ## Current status
 
@@ -28,9 +28,9 @@ Implemented in the validated platform proofs:
 - Responsive browser and tactical Canvas surfaces
 - Real Playwright browser acceptance through the ordinary application boundary
 - Risk-based browser journey ledger covering current controls and outstanding states
-- Deliberate 18-state curated visual-review artifacts
+- Deliberate 30-file curated visual-review artifacts
 - Four canonical Ubuntu/Chromium visual baselines for stable shell states
-- Real Workers-runtime persistence, eviction, competing-write, hibernating-WebSocket, authentication, Activity, and invitation tests
+- Real Workers-runtime persistence, eviction, competing-write, hibernating-WebSocket, authentication, Activity, invitation, and Monster Master tests
 
 Tic-Tac-Toe proof:
 
@@ -63,6 +63,21 @@ Tactical foundation proof:
 - Dedicated movement and combat Canvas clients with health, initiative, legal targets, resume, invites, and mobile controls
 - Tactical movement and combat recovery after real Durable Object eviction
 
+Monster Master MM-0001 candidate:
+
+- Separate `monster-master-duel` game definition over the shared tactical substrate
+- Alternating left/right deployment zones for one Warden Master, one Stone Bulwark, and one Emberling per player
+- Stable content IDs, health, movement, initiative, attack range, attack damage, and deterministic activation order
+- Movement, line of sight, attacks, health, ordinary defeat, immediate Master-defeat victory, and a draw completed at the configured final round
+- Visible command energy with bounded regeneration
+- Warden Master `Mend`, proving friendly targeting, resource expenditure, healing, and non-generic primary actions
+- Deterministic Theo deployment and combat decisions with complete bounded self-play
+- Replay, configured encounter restoration, in-memory HTTP service, Durable Object persistence, and player-specific observations
+- Dedicated `/monster-master.html` Canvas surface with deployment, movement, attacks, Mend, roster, effects, camera controls, resume, mobile deployment, and local or signed hosted invitations
+- Collapsed local second-seat invitation disclosure that remains available without dominating active combat
+- Browser journeys for attack, Mend, defeat, victory, draw, command regeneration, stale-revision recovery, unauthorized access, wrong-game resume, failed creation, navigation, diagnostics, invite disclosure, and setup reset
+- Curated desktop, mobile, deployment, movement, attack, Mend, ordinary-defeat, winner-relative victory, and round-24 draw review states
+
 Agent-provider proof:
 
 - Version-1 decision request and response protocol
@@ -85,13 +100,13 @@ Secure delivery proof:
 Browser quality proof:
 
 - A durable journey matrix inventories every current player-facing control and security-sensitive transition
-- Twenty-two Playwright interaction journeys cover game navigation, diagnostics, setup reset, camera controls, logout, clipboard, invitation cancellation, multiplayer, resume, mobile layout, and error presentation
-- A deliberate label-triggered visual-review lane captures 18 synthetic desktop, mobile, game, tactical, authentication, and invitation states with seven-day retention
+- Forty-four Playwright interaction journeys cover game navigation, diagnostics, setup reset, camera controls, logout, clipboard, invitation cancellation and disclosure, multiplayer, resume, mobile layout, authoritative Monster Master outcomes, and failure recovery
+- A deliberate label-triggered visual-review lane captures 30 synthetic desktop, mobile, game, tactical, authentication, invitation, and Monster Master screenshots with seven-day retention
 - Four stable shell compositions are protected by canonical screenshot comparison
 - Dynamic Canvas and match states remain in curated review rather than brittle pixel baselines
-- Screenshot review corrected tactical badge overlap, unbounded legal-action lists, and Checkers capture timing
+- Screenshot review corrected tactical badge overlap, unbounded legal-action lists, Checkers capture timing, Monster Master phase guidance, asynchronous capture timing, globally duplicated capture IDs, combat invite clutter, completed-state help copy, redundant outcome evidence, and a round-cap off-by-one
 
-The active gameplay lane remains MM-0001: the first playable Monster Master duel in the monster-master tactical battler foundation. The repository is ready for owner-controlled Cloudflare deployment and live Discord website/Activity canaries; those live results are not yet claimed.
+The active repository candidate is MM-0001: the first playable Monster Master duel in the monster-master tactical battler foundation. Repository validation and curated rendering are separate from owner-controlled Cloudflare deployment, live Discord website/Activity canaries, and subjective gameplay review. Those external and human results are not claimed here.
 
 ## Canonical checkpoints
 
@@ -106,6 +121,7 @@ The active gameplay lane remains MM-0001: the first playable Monster Master duel
 - Official Discord Activity SDK client handshake validated and merged on July 30, 2026
 - Authenticated human-match invitation boundary validated and merged on July 30, 2026
 - Browser journey, curated visual review, and stable visual baselines validated and merged on July 30, 2026
+- MM-0001 first-playable repository candidate reached a green feature-branch checkpoint on July 30, 2026; the later visual-hardening head requires renewed exact-head validation before merge
 
 Durable evidence:
 
@@ -120,6 +136,7 @@ Durable evidence:
 - `planning/validation/2026-07-30-discord-activity-client.md`
 - `planning/validation/2026-07-30-authenticated-match-invitations.md`
 - `planning/validation/2026-07-30-browser-journey-visual-hardening.md`
+- `planning/validation/2026-07-30-monster-master-first-playable.md`
 
 Not yet claimed:
 
@@ -130,7 +147,7 @@ Not yet claimed:
 - Remote decision-provider network transport and authentication
 - Live Scribbles Runtime integration controlling Theo
 - Production recovery, quota, observability, and durability behavior
-- Final Monster Master rules, content, balance, or art
+- Final Monster Master rules, content, balance, animation, sound, or art
 - Open-world campaign behavior or D&D rules
 
 ## Run locally
@@ -154,6 +171,7 @@ Open these development surfaces after starting the server:
 - `http://127.0.0.1:8787/` — Tic-Tac-Toe and American Checkers
 - `http://127.0.0.1:8787/tactical.html` — larger-field movement canary
 - `http://127.0.0.1:8787/combat.html` — deterministic tactical combat canary
+- `http://127.0.0.1:8787/monster-master.html` — first playable Monster Master duel
 
 ## Repository map
 
@@ -163,6 +181,7 @@ src/games/tic-tac-toe/       compact deterministic delivery proof
 src/games/checkers/           American Checkers rules and deterministic opponent
 src/games/tactical-core/      semantic map, movement, and viewport-neutral contracts
 src/games/tactical-combat/    initiative, line of sight, combat, effects, and agents
+src/games/monster-master/     deployment, rosters, command energy, Mend, duel rules, and agents
 src/auth/                     principals, sessions, Discord OAuth/Activity, and invitations
 src/browser/                  browser integration and durable journey/visual contracts
 src/agents/                   versioned decision contracts, mocks, and agent implementations
