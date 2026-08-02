@@ -95,6 +95,27 @@ test("Living Garden uses an asymmetric, subdued pond foreground", async ({ page 
   expect(artwork.lotusInsideViewport).toBe(true);
 });
 
+test("Living Garden removes the low-fidelity card and board ornaments", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.goto("/othello.html?theme=garden&state=midgame");
+
+  const ornaments = await page.evaluate(() => ({
+    leftBoard: getComputedStyle(document.querySelector(".garden-board-ornament-left")).display,
+    rightBoard: getComputedStyle(document.querySelector(".garden-board-ornament-right")).display,
+    darkCardDecoration: getComputedStyle(document.querySelector(".score-rail-dark"), "::after").display,
+    lightCardDecoration: getComputedStyle(document.querySelector(".score-rail-light"), "::after").display,
+    darkCardContent: getComputedStyle(document.querySelector(".score-rail-dark"), "::after").content,
+    lightCardContent: getComputedStyle(document.querySelector(".score-rail-light"), "::after").content,
+  }));
+
+  expect(ornaments.leftBoard).toBe("none");
+  expect(ornaments.rightBoard).toBe("none");
+  expect(ornaments.darkCardDecoration).toBe("none");
+  expect(ornaments.lightCardDecoration).toBe("none");
+  expect(["none", "normal", ""]).toContain(ornaments.darkCardContent.replaceAll('"', ""));
+  expect(["none", "normal", ""]).toContain(ornaments.lightCardContent.replaceAll('"', ""));
+});
+
 test("Othello mobile surface remains horizontally bounded", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/othello.html?theme=garden&state=midgame");
