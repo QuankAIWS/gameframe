@@ -37,6 +37,11 @@ test("Monster Master uses one idle-on-demand Pixi WebGL battlefield", async ({ p
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterPixi?.getView?.()))).toBe(true);
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterLegacyDrawCount ?? 0)).toBe(0);
 
+  const turnPortrait = page.locator(".monster-master-turn-portrait").first();
+  await expect(turnPortrait).toBeVisible();
+  await expect.poll(() => turnPortrait.evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("creature-atlas-v1.svg");
+  await expect.poll(() => page.locator(".monster-master-unit-portrait").evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("creature-atlas-v1.svg");
+
   const webgl = await pixiCanvas.evaluate((canvas) => Boolean(
     canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl"),
   ));
@@ -111,6 +116,25 @@ test("Monster Master Pixi battlefield stays inside the mobile viewport", async (
   }));
   expect(resolution.pixelWidth / Math.max(1, resolution.clientWidth)).toBeLessThanOrEqual(1.26);
   expect(resolution.pixelHeight / Math.max(1, resolution.clientHeight)).toBeLessThanOrEqual(1.26);
+
+  const overlayGeometry = await page.evaluate(() => {
+    const camera = document.querySelector(".monster-master-camera-dock")?.getBoundingClientRect();
+    const command = document.querySelector(".monster-master-command-deck")?.getBoundingClientRect();
+    const comingSoon = document.querySelector(".gameframe-destination-links button")?.getBoundingClientRect();
+    return {
+      camera: camera ? { top: camera.top, bottom: camera.bottom, right: camera.right } : null,
+      command: command ? { top: command.top, bottom: command.bottom, right: command.right } : null,
+      comingSoonWidth: comingSoon?.width ?? 0,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+    };
+  });
+  expect(overlayGeometry.camera).not.toBeNull();
+  expect(overlayGeometry.command).not.toBeNull();
+  expect(overlayGeometry.camera.bottom).toBeLessThanOrEqual(overlayGeometry.command.top - 4);
+  expect(overlayGeometry.camera.right).toBeLessThanOrEqual(overlayGeometry.viewportWidth);
+  expect(overlayGeometry.command.bottom).toBeLessThanOrEqual(overlayGeometry.viewportHeight);
+  expect(overlayGeometry.comingSoonWidth).toBe(0);
 
   await page.screenshot({ path: testInfo.outputPath("monster-master-pixi-mobile.png"), fullPage: true });
 });
