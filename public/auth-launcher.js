@@ -34,6 +34,7 @@ if (entry === "/monster-master-app.js") {
   await import("./monster-master-polish.js");
   await import("./monster-master-correction.js");
   await import("./monster-master-overlay.js");
+  await import("./monster-master-overlay-guard.js");
 }
 await import(entry);
 installAuthenticatedInvitationFlow({ identity, entry });
