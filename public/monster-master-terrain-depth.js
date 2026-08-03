@@ -65,11 +65,31 @@ function polygon(context, points, fillStyle, strokeStyle) {
   context.stroke();
 }
 
+function interpolate(from, to, amount) {
+  return {
+    x: from.x + (to.x - from.x) * amount,
+    y: from.y + (to.y - from.y) * amount,
+  };
+}
+
+function drawStratum(context, left, front, right, lowerLeft, lowerFront, lowerRight, amount, zoom) {
+  const leftEdge = interpolate(left, lowerLeft, amount);
+  const frontEdge = interpolate(front, lowerFront, amount);
+  const rightEdge = interpolate(right, lowerRight, amount);
+  context.strokeStyle = "rgba(205, 190, 139, .14)";
+  context.lineWidth = Math.max(.75, zoom * .75);
+  context.beginPath();
+  context.moveTo(leftEdge.x, leftEdge.y);
+  context.lineTo(frontEdge.x, frontEdge.y);
+  context.lineTo(rightEdge.x, rightEdge.y);
+  context.stroke();
+}
+
 function drawWallDepth(context, center, zoom) {
   const halfWidth = 31 * zoom;
   const halfHeight = 13 * zoom;
-  const depth = 34 * zoom;
-  const shoulder = center.y + halfHeight * 0.18;
+  const depth = 31 * zoom;
+  const shoulder = center.y + halfHeight * 0.24;
   const left = { x: center.x - halfWidth, y: shoulder };
   const right = { x: center.x + halfWidth, y: shoulder };
   const front = { x: center.x, y: center.y + halfHeight };
@@ -77,11 +97,22 @@ function drawWallDepth(context, center, zoom) {
   const lowerRight = { x: right.x, y: right.y + depth };
   const lowerFront = { x: front.x, y: front.y + depth };
 
-  polygon(context, [left, front, lowerFront, lowerLeft], "rgba(41, 48, 34, .94)", "rgba(172, 154, 103, .28)");
-  polygon(context, [front, right, lowerRight, lowerFront], "rgba(25, 31, 27, .96)", "rgba(145, 132, 92, .24)");
+  const leftGradient = context.createLinearGradient(0, shoulder, 0, shoulder + depth);
+  leftGradient.addColorStop(0, "rgba(103, 101, 64, .97)");
+  leftGradient.addColorStop(.45, "rgba(74, 76, 53, .98)");
+  leftGradient.addColorStop(1, "rgba(45, 50, 40, .99)");
+  const rightGradient = context.createLinearGradient(0, shoulder, 0, shoulder + depth);
+  rightGradient.addColorStop(0, "rgba(75, 82, 59, .98)");
+  rightGradient.addColorStop(.48, "rgba(55, 63, 49, .99)");
+  rightGradient.addColorStop(1, "rgba(34, 41, 35, .99)");
 
-  context.strokeStyle = "rgba(224, 199, 132, .18)";
-  context.lineWidth = Math.max(1, zoom);
+  polygon(context, [left, front, lowerFront, lowerLeft], leftGradient, "rgba(184, 166, 111, .34)");
+  polygon(context, [front, right, lowerRight, lowerFront], rightGradient, "rgba(156, 145, 103, .3)");
+  drawStratum(context, left, front, right, lowerLeft, lowerFront, lowerRight, .42, zoom);
+  drawStratum(context, left, front, right, lowerLeft, lowerFront, lowerRight, .76, zoom);
+
+  context.strokeStyle = "rgba(224, 205, 145, .32)";
+  context.lineWidth = Math.max(1, zoom * 1.1);
   context.beginPath();
   context.moveTo(left.x, left.y);
   context.lineTo(front.x, front.y);
