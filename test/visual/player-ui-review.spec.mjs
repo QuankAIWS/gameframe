@@ -1,0 +1,51 @@
+import { test, expect } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+
+const output = "visual-results/player-ui-review";
+
+async function prepareOutput() {
+  await mkdir(output, { recursive: true });
+}
+
+async function openPlayerHub(page, viewport) {
+  await page.setViewportSize(viewport);
+  await page.goto("/?player=visual-review-player");
+  await expect(page.locator("body.gameframe-game-hub")).toBeVisible();
+  await expect(page.locator("#open-monster-master")).toBeVisible();
+  await expect(page.locator("#open-othello")).toBeVisible();
+  await expect(page.locator("#select-checkers")).toBeVisible();
+  await expect(page.locator("#select-tic-tac-toe")).toBeVisible();
+  await expect(page.locator("#open-tactical-canary")).toHaveCount(0);
+  await expect(page.getByText("Combat Canary", { exact: true })).toHaveCount(0);
+}
+
+async function openMonsterMaster(page, viewport) {
+  await page.setViewportSize(viewport);
+  await page.goto("/monster-master.html?player=visual-review-player");
+  await expect(page.locator("#monster-master-lobby")).toBeVisible();
+  await page.locator("#monster-master-theo").click();
+  await expect(page.locator("body.monster-master-match-active")).toBeVisible();
+  await expect(page.locator("#monster-master-roster-title")).toHaveText("Turn order");
+  await expect(page.locator(".monster-master-roster-rail .tactical-player-grid")).toBeHidden();
+  await expect(page.locator(".monster-master-turn-unit")).toHaveCount(6);
+  await expect(page.locator('.combat-nav a[href="/combat.html"]')).toHaveCount(0);
+  await expect(page.locator('.combat-nav a[href="/tactical.html"]')).toHaveCount(0);
+}
+
+test.beforeAll(prepareOutput);
+
+test("capture the player game hub at desktop and mobile sizes", async ({ page }) => {
+  await openPlayerHub(page, { width: 1440, height: 960 });
+  await page.screenshot({ path: `${output}/game-hub-desktop.png`, fullPage: true });
+
+  await openPlayerHub(page, { width: 390, height: 844 });
+  await page.screenshot({ path: `${output}/game-hub-mobile.png`, fullPage: true });
+});
+
+test("capture Monster Master turn order and battlefield at desktop and mobile sizes", async ({ page }) => {
+  await openMonsterMaster(page, { width: 1440, height: 960 });
+  await page.screenshot({ path: `${output}/monster-master-desktop.png`, fullPage: true });
+
+  await openMonsterMaster(page, { width: 390, height: 844 });
+  await page.screenshot({ path: `${output}/monster-master-mobile.png`, fullPage: true });
+});
