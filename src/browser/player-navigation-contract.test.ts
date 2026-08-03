@@ -37,7 +37,7 @@ test("the player hub exposes real games, a future achievements destination, and 
   assert.match(packageJson.scripts["check:browser"], /public\/game-hub\.js/);
 });
 
-test("Tic-Tac-Toe uses a real viewport noir shell and returns to the game library", async () => {
+test("Tic-Tac-Toe uses the locally iterated viewport noir shell and returns to the game library", async () => {
   const launcher = await read("public/auth-launcher.js");
   const controller = await read("public/tic-tac-toe-noir.js");
   const styles = await read("public/tic-tac-toe-noir.css");
@@ -46,19 +46,24 @@ test("Tic-Tac-Toe uses a real viewport noir shell and returns to the game librar
   assert.ok(launcher.indexOf("game-hub.js") < launcher.indexOf("tic-tac-toe-noir.js"));
   assert.ok(launcher.indexOf("tic-tac-toe-noir.js") < launcher.indexOf("await import(entry)"));
   assert.match(controller, /function isTicTacToeMatch/);
-  assert.match(controller, /board-tic-tac-toe/);
-  assert.match(controller, /tic-noir-topbar/);
-  assert.match(controller, /tic-noir-control-rail/);
+  assert.match(controller, /function installBoardFrame/);
+  assert.match(controller, /tic-noir-board-frame/);
+  assert.match(controller, /tic-noir-ambient/);
+  assert.match(controller, /tic-noir-footer/);
+  assert.match(controller, /if \(playerO\) rail\.prepend\(playerO\)/);
   assert.match(controller, /href="\/"/);
   assert.match(controller, /Back to games/);
   assert.match(controller, /copyInvite\?\.click/);
   assert.match(controller, /newMatch\?\.click/);
-  assert.match(controller, /dataset|classList\.toggle\("tic-tac-toe-noir-running"/);
+  assert.match(controller, /classList\.toggle\("tic-tac-toe-noir-running"/);
   assert.match(styles, /height: 100dvh/);
   assert.match(styles, /tic-noir-discord-safe/);
-  assert.match(styles, /grid-template-columns: minmax\(172px, 230px\) minmax\(360px, 1fr\) minmax\(190px, 250px\)/);
-  assert.match(styles, /tic-board-pulse/);
-  assert.match(styles, /tic-circuit-drift/);
+  assert.match(styles, /grid-template-columns: 210px minmax\(420px, 620px\) 210px/);
+  assert.match(styles, /\.tic-cell\.mark-x::before/);
+  assert.match(styles, /\.tic-cell\.mark-o::before/);
+  assert.match(styles, /tic-board-breathe/);
+  assert.match(styles, /tic-circuit-node/);
+  assert.match(styles, /body:not\(\.tic-tac-toe-noir-running\)/);
   assert.doesNotMatch(controller, /leaderboard|friends online|rating/i);
   assert.match(packageJson.scripts["check:browser"], /public\/tic-tac-toe-noir\.js/);
 });
