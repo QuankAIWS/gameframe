@@ -105,6 +105,17 @@ CanvasRenderingContext2D.prototype.fill = function fillMonsterMasterTerrain(...a
     const entry = projectedTerrainByFill[String(this.fillStyle).toLowerCase()];
     const bounds = entry ? projectedBounds(this) : null;
     if (entry && bounds) {
+      if (entry.objective) {
+        drawTerrainImage(
+          this,
+          entry,
+          bounds.x - bounds.width * 0.3,
+          bounds.y - bounds.height * 1.75,
+          bounds.width * 1.6,
+          bounds.height * 2.6,
+        );
+        return undefined;
+      }
       this.save();
       this.clip();
       drawTerrainImage(
@@ -116,16 +127,6 @@ CanvasRenderingContext2D.prototype.fill = function fillMonsterMasterTerrain(...a
         bounds.height * 1.7,
       );
       this.restore();
-      if (entry.objective) {
-        drawTerrainImage(
-          this,
-          entry,
-          bounds.x - bounds.width * 0.3,
-          bounds.y - bounds.height * 1.75,
-          bounds.width * 1.6,
-          bounds.height * 2.6,
-        );
-      }
       return undefined;
     }
   }
