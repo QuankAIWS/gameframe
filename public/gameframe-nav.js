@@ -78,10 +78,6 @@ const bar = installDestinationBar();
 let updatePending = false;
 function syncDestinationBar() {
   updatePending = false;
-  for (const href of navStylesheetUrls) {
-    const stylesheet = document.querySelector(`link[href="${href}"]`);
-    if (stylesheet && stylesheet !== document.head.lastElementChild) document.head.append(stylesheet);
-  }
 
   const pathname = window.location.pathname;
   const sharedMatchPanel = document.querySelector("#match-panel");
