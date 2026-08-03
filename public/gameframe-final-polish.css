@@ -1,0 +1,193 @@
+:root {
+  --gameframe-destination-height: 68px;
+}
+
+/* The shared destination bar is the stable visual frame for every game. */
+.gameframe-destination-bar {
+  height: var(--gameframe-destination-height);
+  min-height: var(--gameframe-destination-height);
+}
+.gameframe-destination-brand {
+  min-width: 240px;
+  padding-block: 8px;
+}
+.gameframe-destination-links a,
+.gameframe-destination-links button {
+  min-width: 128px;
+}
+
+/* The authenticated Discord/development identity occupies the reserved right bay. */
+.gameframe-has-destination-bar > .gameframe-session-badge {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  width: min(258px, 22vw);
+  height: 50px;
+  padding: 6px 10px;
+  overflow: hidden;
+  border: 1px solid rgba(160, 183, 191, .14);
+  border-radius: 13px;
+  background: rgba(7, 12, 15, .84);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .26);
+  backdrop-filter: blur(14px);
+}
+.gameframe-has-destination-bar > .gameframe-session-badge > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+.gameframe-has-destination-bar > .gameframe-session-badge small {
+  overflow: hidden;
+  color: #78878e;
+  font-size: .52rem;
+  letter-spacing: .08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.gameframe-has-destination-bar > .gameframe-session-badge strong {
+  overflow: hidden;
+  color: #eff4f2;
+  font-size: .72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gameframe-has-destination-bar > .gameframe-session-badge img,
+.gameframe-has-destination-bar > .gameframe-session-badge .gameframe-session-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+.gameframe-has-destination-bar > .gameframe-session-badge button {
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid rgba(160, 183, 191, .16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .025);
+  color: #96a3a8;
+  font-size: .55rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.gameframe-has-destination-bar > .gameframe-session-badge button:hover,
+.gameframe-has-destination-bar > .gameframe-session-badge button:focus-visible {
+  border-color: var(--destination-accent);
+  color: #f2f6f4;
+}
+
+/* Hub and game-menu headings stay on one deliberate left edge. */
+.gameframe-game-hub-lobby .section-heading,
+.gameframe-game-menu .section-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+  max-width: 760px;
+  margin-bottom: 18px;
+}
+.gameframe-game-hub-lobby .section-heading > *,
+.gameframe-game-menu .section-heading > * {
+  grid-column: 1;
+  margin-left: 0;
+  text-align: left;
+}
+.gameframe-game-hub-lobby .section-heading h2,
+.gameframe-game-menu .section-heading h2 {
+  font-size: clamp(1.9rem, 3.4vw, 3.2rem);
+  line-height: 1;
+}
+.gameframe-game-hub-lobby .section-heading .muted,
+.gameframe-game-menu .section-heading .muted {
+  max-width: 620px;
+  margin-top: 3px;
+  line-height: 1.55;
+}
+.gameframe-game-menu .game-menu-hero {
+  grid-template-columns: minmax(280px, 42%) minmax(0, 1fr);
+  min-height: 420px;
+}
+.gameframe-game-menu .mode-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Home is already supplied by the destination bar; match-local back links are redundant. */
+body.gameframe-has-destination-bar .tic-noir-footer > a {
+  display: none !important;
+}
+body.gameframe-has-destination-bar .tic-noir-footer {
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --gameframe-destination-height: 62px;
+  }
+  .gameframe-destination-bar {
+    height: var(--gameframe-destination-height);
+    min-height: var(--gameframe-destination-height);
+  }
+  .gameframe-destination-brand {
+    min-width: 0;
+  }
+  .gameframe-has-destination-bar > .gameframe-session-badge {
+    grid-template-columns: 27px minmax(0, 1fr);
+    gap: 5px;
+    width: 101px;
+    max-width: 101px;
+    height: 48px;
+    padding: 5px 6px;
+  }
+  .gameframe-has-destination-bar > .gameframe-session-badge img,
+  .gameframe-has-destination-bar > .gameframe-session-badge .gameframe-session-avatar {
+    width: 27px;
+    height: 27px;
+  }
+  .gameframe-has-destination-bar > .gameframe-session-badge strong {
+    font-size: .58rem;
+  }
+  .gameframe-has-destination-bar > .gameframe-session-badge button {
+    display: none;
+  }
+
+  .gameframe-game-hub-lobby .section-heading,
+  .gameframe-game-menu .section-heading {
+    margin-bottom: 14px;
+  }
+  .gameframe-game-hub-lobby .section-heading h2,
+  .gameframe-game-menu .section-heading h2 {
+    font-size: 1.8rem;
+  }
+  .gameframe-game-menu .game-menu-hero {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 18px;
+  }
+  .gameframe-game-menu .game-menu-art .game-card-visual {
+    aspect-ratio: 1.7;
+  }
+  .gameframe-game-menu .mode-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Shared Checkers and Othello surfaces remain board-first on narrow screens. */
+  body.gameframe-shared-match-running:not(.tic-tac-toe-noir-running) .game-layout {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  body.gameframe-shared-match-running:not(.tic-tac-toe-noir-running) .board-wrap,
+  body.gameframe-shared-match-running:not(.tic-tac-toe-noir-running) #board.board-checkers,
+  body.gameframe-othello-route .play-layout,
+  body.gameframe-othello-route .board-column,
+  body.gameframe-othello-route .board-frame,
+  body.gameframe-othello-route .board-viewport {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gameframe-has-destination-bar > .gameframe-session-badge,
+  .gameframe-game-menu .game-menu-hero {
+    transition: none;
+  }
+}
