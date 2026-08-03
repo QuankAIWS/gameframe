@@ -1,0 +1,34 @@
+/* The destination bar is the persistent product header. Individual games keep
+   their match headers and controls, but not a second product/navigation banner. */
+body.gameframe-has-destination-bar.gameframe-shared-match-running .shell > .hero,
+body.gameframe-has-destination-bar.gameframe-monster-route .monster-master-shell > .hero,
+body.gameframe-has-destination-bar.gameframe-othello-route .othello-app > .product-header {
+  display: none !important;
+}
+
+body.gameframe-has-destination-bar.gameframe-shared-match-running:not(.tic-tac-toe-noir-running) .shell {
+  min-height: calc(100dvh - var(--gameframe-destination-height));
+  padding-top: clamp(14px, 2vw, 26px);
+}
+
+body.gameframe-has-destination-bar.gameframe-monster-route .monster-master-shell {
+  min-height: calc(100dvh - var(--gameframe-destination-height));
+  padding-top: clamp(12px, 1.8vw, 22px);
+}
+
+body.gameframe-has-destination-bar.gameframe-monster-route #monster-master-lobby {
+  margin-top: 0;
+}
+
+/* Tic-Tac-Toe's former local top bar remains in the DOM for graceful fallback,
+   but is never shown when the universal destination bar is installed. */
+body.gameframe-has-destination-bar .tic-noir-topbar {
+  display: none !important;
+}
+
+@media (max-width: 720px) {
+  body.gameframe-has-destination-bar.gameframe-shared-match-running:not(.tic-tac-toe-noir-running) .shell,
+  body.gameframe-has-destination-bar.gameframe-monster-route .monster-master-shell {
+    padding-top: 10px;
+  }
+}

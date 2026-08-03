@@ -132,5 +132,16 @@ hintButton.addEventListener("click", () => {
 });
 
 setTheme(theme);
-setPreviewState(query.get("state") || "midgame");
+setPreviewState(query.get("state") || "start");
 requestAnimationFrame(draw);
+
+if (!document.head.querySelector('link[href="/othello-game-menu.css"]')) {
+  const menuStyles = document.createElement("link");
+  menuStyles.rel = "stylesheet";
+  menuStyles.href = "/othello-game-menu.css";
+  document.head.append(menuStyles);
+}
+const gameMenuScript = document.createElement("script");
+gameMenuScript.src = "/othello-game-menu.js";
+document.body.append(gameMenuScript);
+void import("./othello-launcher.js");

@@ -21,10 +21,20 @@ if (identity.source === "discord") {
   }
 }
 
+await import("./gameframe-nav.js");
+
+if (entry === "/app.js") {
+  await import("./game-hub.js");
+  await import("./tic-tac-toe-noir.js");
+}
+
 if (entry === "/monster-master-app.js") {
   await import("./monster-master-art.js");
   await import("./monster-master-terrain.js");
   await import("./monster-master-polish.js");
+  await import("./monster-master-correction.js");
+  await import("./monster-master-overlay.js");
+  await import("./monster-master-overlay-guard.js");
 }
 await import(entry);
 installAuthenticatedInvitationFlow({ identity, entry });
