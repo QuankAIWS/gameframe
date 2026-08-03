@@ -185,6 +185,24 @@ body.gameframe-has-destination-bar .tic-noir-footer {
   }
 }
 
+@media (max-width: 650px) {
+  /* Keep all three Monster Master header controls visible at phone width. */
+  .monster-master-match-topbar {
+    grid-template-columns: minmax(78px, 84px) minmax(0, 1fr) 62px;
+    gap: 6px;
+  }
+  .monster-master-match-topbar .status {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .monster-master-match-topbar .monster-master-exit-button {
+    width: 62px;
+    min-width: 62px;
+    padding-inline: 7px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gameframe-has-destination-bar > .gameframe-session-badge,
   .gameframe-game-menu .game-menu-hero {
