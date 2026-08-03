@@ -17,7 +17,7 @@ on:
       - ".github/workflows/build-monster-master-pixi.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: monster-master-pixi-bootstrap-${{ github.event.pull_request.number || github.ref }}
@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: Check out candidate
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -45,6 +47,17 @@ jobs:
 
       - name: Validate generated bundle
         run: node --check public/monster-master-pixi-bundle.js
+
+      - name: Commit generated dependency and bundle files
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json public/monster-master-pixi-bundle.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Pin PixiJS and commit Monster Master bundle"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
 
       - name: Upload reproducible dependency and bundle files
         uses: actions/upload-artifact@v4
