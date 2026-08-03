@@ -1,3 +1,4 @@
+window.gameFrameMonsterRendererMode = "pixi";
 const stylesheetUrl = "/monster-master-pixi.css";
 if (!document.querySelector(`link[href="${stylesheetUrl}"]`)) {
   const stylesheet = document.createElement("link");

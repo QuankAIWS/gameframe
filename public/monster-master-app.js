@@ -458,14 +458,22 @@ function drawCoordinates(layout) {
   }
 }
 
-function drawScene() {
-  if (!current) return;
-  const layout = layoutCanvas(current.observation.board.map);
-  lastCanvasLayout = layout;
-  drawGrid(current, layout);
-  drawPreview(layout);
-  drawUnits(current, layout);
-  drawCoordinates(layout);
+function renderDiagnostics(layout = null) {
+  const pixiCamera = window.gameFrameMonsterPixi?.getCamera?.();
+  const camera = pixiCamera
+    ? {
+        centerX: pixiCamera.x,
+        centerY: pixiCamera.y,
+        zoom: pixiCamera.zoom,
+        quarter: pixiCamera.quarter,
+        bounds: null,
+      }
+    : {
+        centerX: viewport.centerX,
+        centerY: viewport.centerY,
+        zoom: viewport.zoom,
+        bounds: layout?.bounds ?? null,
+      };
   details.textContent = JSON.stringify({
     gameId,
     matchId: current.matchId,
@@ -481,8 +489,24 @@ function drawScene() {
     legalActionCount: current.observation.legalActions.length,
     undeployedUnitIds: current.observation.undeployedUnitIds,
     defeatedUnitIds: current.observation.defeatedUnitIds,
-    viewport: { centerX: viewport.centerX, centerY: viewport.centerY, zoom: viewport.zoom, bounds: layout.bounds },
+    viewport: camera,
   }, null, 2);
+}
+
+function drawScene() {
+  if (!current) return;
+  if (window.gameFrameMonsterRendererMode === "pixi") {
+    renderDiagnostics();
+    return;
+  }
+  window.gameFrameMonsterLegacyDrawCount = (window.gameFrameMonsterLegacyDrawCount ?? 0) + 1;
+  const layout = layoutCanvas(current.observation.board.map);
+  lastCanvasLayout = layout;
+  drawGrid(current, layout);
+  drawPreview(layout);
+  drawUnits(current, layout);
+  drawCoordinates(layout);
+  renderDiagnostics(layout);
 }
 
 function undeployedOwnedUnits(view = current) {

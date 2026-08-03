@@ -103,6 +103,7 @@ function rosterState(activeName) {
 function syncHud() {
   syncPending = false;
   updateShellState();
+  if (window.gameFrameMonsterRendererMode === "pixi") return;
   if (!hud.root) return;
 
   const phase = source.phase?.textContent?.trim() || "—";
@@ -153,6 +154,10 @@ function syncHud() {
 }
 
 function scheduleSync() {
+  if (window.gameFrameMonsterRendererMode === "pixi") {
+    updateShellState();
+    return;
+  }
   if (syncPending) return;
   syncPending = true;
   requestAnimationFrame(syncHud);
