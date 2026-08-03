@@ -151,6 +151,8 @@ test("Monster Master uses a battlefield background with working contextual unit 
   await expect(page.locator("#monster-master-camera-dock .monster-master-camera-zoom")).toBeVisible();
   await expect(page.locator("#monster-master-camera-dock .monster-master-rotation-controls")).toBeVisible();
   await expect(page.locator("#monster-master-unit-hud .section-label")).toHaveText("DEPLOYING UNIT");
+  await expect(page.locator("#monster-master-hud-health")).toHaveText("14/14");
+  await expect(page.locator("#monster-master-hud-initiative")).toHaveText("Initiative 7");
   await expect(page.locator("#monster-master-return-active")).toHaveCount(1);
   await expect(page.locator("#monster-master-return-active")).toBeHidden();
 
@@ -162,6 +164,8 @@ test("Monster Master uses a battlefield background with working contextual unit 
   }).toBe("combat");
   await expect(page.locator("#monster-master-unit-hud")).toHaveAttribute("data-role", "emberling");
   await expect(page.locator("#monster-master-unit-hud .section-label")).toHaveText("ACTIVE UNIT");
+  await expect(page.locator("#monster-master-hud-health")).toHaveText("8/8");
+  await expect(page.locator("#monster-master-hud-initiative")).toHaveText("Initiative 9");
   await expect(page.locator("#monster-master-select-attack .monster-master-action-label")).toHaveText("Cinder Volley");
   await expect(page.locator("#monster-master-select-mend")).toBeHidden();
   await expect(page.locator('#monster-master-ability-list [data-ability-id="cinder-volley"]')).toBeVisible();
