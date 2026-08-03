@@ -1,5 +1,6 @@
-const stylesheetUrl = "/tic-tac-toe-noir.css";
-if (!document.querySelector(`link[href="${stylesheetUrl}"]`)) {
+const stylesheetUrls = ["/tic-tac-toe-noir.css", "/tic-tac-toe-universal.css"];
+for (const stylesheetUrl of stylesheetUrls) {
+  if (document.querySelector(`link[href="${stylesheetUrl}"]`)) continue;
   const stylesheet = document.createElement("link");
   stylesheet.rel = "stylesheet";
   stylesheet.href = stylesheetUrl;
