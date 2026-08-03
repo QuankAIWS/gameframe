@@ -31,7 +31,6 @@ if (entry === "/app.js") {
   await import("./monster-master-pixi-bridge.js");
   await import("./monster-master-correction.js");
   await import("./monster-master-overlay.js");
-  await import("./monster-master-overlay-guard.js");
   await import(entry);
   await import("./monster-master-pixi-bundle.js");
 } else {
