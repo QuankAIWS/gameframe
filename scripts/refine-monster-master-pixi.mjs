@@ -46,3 +46,4 @@ replaceOnce(
 
 await writeFile(path, source, "utf8");
 console.log("Applied Monster Master Pixi runtime refinements.");
+// Triggered against the latest migration head; remove this one-time script after validation.
