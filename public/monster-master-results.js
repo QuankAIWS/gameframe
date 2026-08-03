@@ -57,6 +57,12 @@ function resultFor(view) {
   return status.winnerPlayerId === view.observation.yourPlayerId ? "victory" : "defeat";
 }
 
+function statusCopy(result) {
+  if (result === "victory") return "Your force won the duel.";
+  if (result === "defeat") return "The opposing force won the duel.";
+  return "The duel ended in a draw.";
+}
+
 function renderResult(view = latestView) {
   const screen = ensureResultScreen();
   if (!screen || !view) return;
@@ -89,6 +95,8 @@ function renderResult(view = latestView) {
       : "The final round ended with both forces still standing.";
   screen.querySelector("#monster-master-result-friendly").textContent = String(friendlySurvivors);
   screen.querySelector("#monster-master-result-enemy").textContent = String(enemySurvivors);
+  const status = document.querySelector("#monster-master-status");
+  if (status) status.textContent = statusCopy(result);
   screen.hidden = false;
 
   if (changed) {
