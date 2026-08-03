@@ -22,7 +22,7 @@ async function openTic(page, viewport, player) {
 
 async function deployNextMonsterMasterUnit(page) {
   const previousRevision = await page.evaluate(() => window.gameFrameMonsterOverlay?.getView()?.revision ?? -1);
-  const action = await expect.poll(() => page.evaluate(() => {
+  await expect.poll(() => page.evaluate(() => {
     const view = window.gameFrameMonsterOverlay?.getView();
     if (!view || view.observation.phase !== "deployment") return null;
     if (view.observation.activePlayerId !== view.observation.yourPlayerId) return null;
@@ -132,7 +132,7 @@ test("Monster Master keeps its mobile setup control and session badge inside the
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 });
 
-test("Monster Master uses a battlefield background with working contextual unit and camera overlays", async ({ page }) => {
+test("Monster Master uses a battlefield background with working contextual unit and camera overlays", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/monster-master.html?player=monster-overlay-regression");
   await page.locator("#monster-master-theo").click();
@@ -150,6 +150,9 @@ test("Monster Master uses a battlefield background with working contextual unit 
   await expect(page.locator("#monster-master-camera-dock .monster-master-camera-dpad")).toBeVisible();
   await expect(page.locator("#monster-master-camera-dock .monster-master-camera-zoom")).toBeVisible();
   await expect(page.locator("#monster-master-camera-dock .monster-master-rotation-controls")).toBeVisible();
+  await expect(page.locator("#monster-master-unit-hud .section-label")).toHaveText("DEPLOYING UNIT");
+  await expect(page.locator("#monster-master-return-active")).toHaveCount(1);
+  await expect(page.locator("#monster-master-return-active")).toBeHidden();
 
   await deployNextMonsterMasterUnit(page);
   await deployNextMonsterMasterUnit(page);
@@ -158,10 +161,12 @@ test("Monster Master uses a battlefield background with working contextual unit 
     timeout: 8_000,
   }).toBe("combat");
   await expect(page.locator("#monster-master-unit-hud")).toHaveAttribute("data-role", "emberling");
+  await expect(page.locator("#monster-master-unit-hud .section-label")).toHaveText("ACTIVE UNIT");
   await expect(page.locator("#monster-master-select-attack .monster-master-action-label")).toHaveText("Cinder Volley");
   await expect(page.locator("#monster-master-select-mend")).toBeHidden();
   await expect(page.locator('#monster-master-ability-list [data-ability-id="cinder-volley"]')).toBeVisible();
   await expect(page.locator('#monster-master-ability-list [data-ability-id="mend"]')).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("monster-master-contextual-combat-desktop.png"), fullPage: true });
 
   const enemyTurn = page.locator('.monster-master-turn-unit[data-owner="enemy"]').first();
   await enemyTurn.click();
