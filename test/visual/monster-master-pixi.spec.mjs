@@ -16,6 +16,13 @@ async function selectedDeploymentAction(page) {
   });
 }
 
+async function cameraDeltaFrom(page, reference) {
+  return page.evaluate(({ x, y, quarter }) => {
+    const camera = window.gameFrameMonsterPixi.getCamera();
+    return Math.abs(camera.x - x) + Math.abs(camera.y - y) + Math.abs(camera.quarter - quarter);
+  }, reference);
+}
+
 test("Monster Master uses one idle-on-demand Pixi WebGL battlefield", async ({ page }, testInfo) => {
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -36,6 +43,8 @@ test("Monster Master uses one idle-on-demand Pixi WebGL battlefield", async ({ p
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterRendererMode)).toBe("pixi");
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterPixi?.getView?.()))).toBe(true);
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterLegacyDrawCount ?? 0)).toBe(0);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterKeyboard?.isBound ?? false)).toBe(true);
+  await expect(page.locator(".monster-master-camera-title strong")).toHaveText("WASD pan · Q/E rotate");
 
   const turnPortrait = page.locator(".monster-master-turn-portrait").first();
   await expect(turnPortrait).toBeVisible();
@@ -69,6 +78,33 @@ test("Monster Master uses one idle-on-demand Pixi WebGL battlefield", async ({ p
   );
   expect(pointAfterPan.x).toBeLessThan(pointBeforePan.x - 40);
   expect(Math.abs(pointAfterPan.y - pointBeforePan.y)).toBeLessThan(2);
+
+  for (const key of ["KeyW", "KeyA", "KeyS", "KeyD"]) {
+    await page.locator("#monster-master-center-field").click();
+    const beforeKey = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
+    await page.keyboard.press(key);
+    await expect.poll(() => cameraDeltaFrom(page, beforeKey)).toBeGreaterThan(0.1);
+  }
+
+  const quarterBeforeKeyboard = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter);
+  await page.keyboard.press("KeyE");
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter))
+    .toBe((quarterBeforeKeyboard + 1) % 4);
+  await page.keyboard.press("KeyQ");
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter))
+    .toBe(quarterBeforeKeyboard);
+
+  await page.evaluate(() => {
+    const input = document.createElement("input");
+    input.id = "monster-master-keyboard-guard";
+    document.body.append(input);
+    input.focus();
+  });
+  const beforeGuardedKey = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
+  await page.keyboard.press("KeyW");
+  await page.waitForTimeout(80);
+  expect(await cameraDeltaFrom(page, beforeGuardedKey)).toBe(0);
+  await page.locator("#monster-master-keyboard-guard").evaluate((node) => node.remove());
 
   const revisionBeforeDrag = await page.evaluate(() => window.gameFrameMonsterController.getView().revision);
   const pointBeforeDrag = await page.evaluate(
