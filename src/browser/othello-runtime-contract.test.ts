@@ -61,14 +61,14 @@ test("the actual Othello engine starts legally, flips pieces, alternates turns, 
   engine.setState(engine.createState());
 
   const opening = engine.legalMoves();
-  const openingSquares = opening.map((move: any) => `${move.row},${move.column}`).sort();
+  const openingSquares = Array.from(opening, (move: any) => `${move.row},${move.column}`).sort();
   assert.deepEqual(openingSquares, ["2,3", "3,2", "4,5", "5,4"]);
 
   assert.equal(engine.applyMove(opening[0], false), true);
   const afterFirst = engine.getState();
   assert.equal(afterFirst.move, 1);
   assert.equal(afterFirst.player, -1);
-  assert.deepEqual(engine.scores(), { dark: 4, light: 1 });
+  assert.deepEqual({ ...engine.scores() }, { dark: 4, light: 1 });
   assert.ok(engine.legalMoves().length > 0);
 
   let safety = 0;
@@ -80,7 +80,7 @@ test("the actual Othello engine starts legally, flips pieces, alternates turns, 
   }
 
   assert.equal(engine.getState().complete, true);
-  const final = engine.scores();
+  const final = { ...engine.scores() };
   assert.ok(final.dark + final.light >= 4 && final.dark + final.light <= 64);
   assert.ok(safety > 20);
 });
