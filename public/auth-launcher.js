@@ -23,6 +23,7 @@ if (identity.source === "discord") {
 
 if (entry === "/app.js") {
   await import("./game-hub.js");
+  await import("./tic-tac-toe-noir.js");
 }
 
 if (entry === "/monster-master-app.js") {
