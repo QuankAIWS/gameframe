@@ -34,6 +34,7 @@ if (entry === "/app.js") {
   await import(entry);
   await import("./monster-master-pixi-bundle.js");
   await import("./monster-master-keyboard.js");
+  await import("./monster-master-results.js");
 } else {
   await import(entry);
 }
