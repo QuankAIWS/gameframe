@@ -28,7 +28,9 @@ test("Monster Master restores visible wall height above the Pixi battlefield", a
   }));
   expect(geometry.width).toBeGreaterThan(900);
   expect(geometry.height).toBeGreaterThan(600);
-  expect(geometry.pixelWidth).toBeGreaterThan(geometry.width);
+  expect(geometry.pixelWidth).toBeGreaterThanOrEqual(geometry.width);
+  expect(geometry.pixelHeight).toBeGreaterThanOrEqual(geometry.height);
+  expect(geometry.pixelWidth / geometry.width).toBeLessThanOrEqual(1.51);
   expect(Number(geometry.zIndex)).toBeGreaterThan(1);
 
   await page.screenshot({ path: testInfo.outputPath("monster-master-terrain-depth-desktop.png"), fullPage: true });
@@ -78,6 +80,7 @@ test("Monster Master presents a terminal victory screen over the surviving battl
   await expect(page.locator("#monster-master-result-summary")).toContainText("opposing force has been eliminated");
   await expect(page.locator("#monster-master-result-friendly")).toHaveText(/^[1-3]$/);
   await expect(page.locator("#monster-master-result-enemy")).toHaveText("0");
+  await expect(page.locator("#monster-master-status")).toHaveText("Your force won the duel.");
   await expect(page.locator("#monster-master-result-rematch")).toBeVisible();
   await expect(resultScreen.getByRole("link", { name: "Return home" })).toHaveAttribute("href", "/");
   await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
