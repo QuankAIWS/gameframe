@@ -17,13 +17,16 @@ test("Monster Master loads the pinned Pixi renderer and deterministic generated 
   const terrainAtlas = await read("public/assets/monster-master/terrain-atlas-v1.svg");
   const packageJson = JSON.parse(await read("package.json"));
 
-  assert.match(launcher, /entry === "\/monster-master-app\.js"/);
-  assert.ok(launcher.indexOf("monster-master-pixi-bridge.js") < launcher.indexOf("monster-master-correction.js"));
-  assert.ok(launcher.indexOf("monster-master-overlay-guard.js") < launcher.indexOf("await import(entry)"));
-  assert.ok(launcher.indexOf("await import(entry)") < launcher.indexOf("monster-master-pixi-bundle.js"));
-  assert.doesNotMatch(launcher, /monster-master-art\.js/);
-  assert.doesNotMatch(launcher, /monster-master-terrain\.js/);
-  assert.doesNotMatch(launcher, /monster-master-polish\.js/);
+  const monsterStart = launcher.indexOf('} else if (entry === "/monster-master-app.js")');
+  const monsterEnd = launcher.indexOf("} else {", monsterStart);
+  const monsterBranch = launcher.slice(monsterStart, monsterEnd);
+  assert.ok(monsterStart >= 0 && monsterEnd > monsterStart);
+  assert.ok(monsterBranch.indexOf("monster-master-pixi-bridge.js") < monsterBranch.indexOf("monster-master-correction.js"));
+  assert.ok(monsterBranch.indexOf("monster-master-overlay-guard.js") < monsterBranch.indexOf("await import(entry)"));
+  assert.ok(monsterBranch.indexOf("await import(entry)") < monsterBranch.indexOf("monster-master-pixi-bundle.js"));
+  assert.doesNotMatch(monsterBranch, /monster-master-art\.js/);
+  assert.doesNotMatch(monsterBranch, /monster-master-terrain\.js/);
+  assert.doesNotMatch(monsterBranch, /monster-master-polish\.js/);
 
   assert.match(monsterApp, /const monsterMasterViewEvent = "gameframe:monster-master-pixi-view"/);
   assert.match(monsterApp, /window\.gameFrameMonsterController = Object\.freeze/);
