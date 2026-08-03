@@ -1,3 +1,11 @@
+const stylesheetUrl = "/monster-master-pixi.css";
+if (!document.querySelector(`link[href="${stylesheetUrl}"]`)) {
+  const stylesheet = document.createElement("link");
+  stylesheet.rel = "stylesheet";
+  stylesheet.href = stylesheetUrl;
+  document.head.append(stylesheet);
+}
+
 const coordinateEvent = "gameframe:monster-master-coordinate";
 
 function diagnostics() {
