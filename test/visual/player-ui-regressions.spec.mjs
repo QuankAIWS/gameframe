@@ -188,10 +188,25 @@ test("Monster Master uses a battlefield background with working contextual unit 
   await expect(page.locator("#monster-master-select-mend")).toBeHidden();
   await expect(page.locator('#monster-master-ability-list [data-ability-id="cinder-volley"]')).toBeVisible();
   await expect(page.locator('#monster-master-ability-list [data-ability-id="mend"]')).toHaveCount(0);
+
+  const nowTurn = page.locator(".monster-master-turn-unit.is-active");
+  await expect(nowTurn).toBeVisible();
+  await expect.poll(() => nowTurn.locator(".monster-master-turn-portrait").evaluate(
+    (node) => getComputedStyle(node).animationName,
+  )).toContain("monster-master-now-wiggle");
+
   await page.screenshot({ path: testInfo.outputPath("monster-master-contextual-combat-desktop.png"), fullPage: true });
 
   const enemyTurn = page.locator('.monster-master-turn-unit[data-owner="enemy"]').first();
   await enemyTurn.click();
+  await expect(enemyTurn).toHaveClass(/is-inspected/);
+  await expect.poll(() => enemyTurn.evaluate((node) => ({
+    content: getComputedStyle(node, "::after").content,
+    animationName: getComputedStyle(node, "::after").animationName,
+  }))).toEqual({
+    content: '"VIEWING"',
+    animationName: "monster-master-viewing-flash",
+  });
   await expect(page.locator("#monster-master-unit-hud")).toHaveAttribute("data-owner", "enemy");
   await expect(page.locator("#monster-master-return-active")).toBeVisible();
   await page.locator("#monster-master-return-active").click();
