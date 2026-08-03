@@ -43,6 +43,13 @@ test("Monster Master presents a terminal victory screen over the surviving battl
   await page.evaluate(() => {
     const view = window.gameFrameMonsterController.getView();
     const yourId = view.observation.yourPlayerId;
+    const deployedFriendly = view.observation.board.units.filter((unit) => unit.ownerId === yourId);
+    const fallback = view.observation.rosters[yourId]?.[0];
+    const friendlySurvivors = deployedFriendly.length > 0
+      ? deployedFriendly
+      : fallback
+        ? [{ ...fallback, position: { x: 3, y: 3 } }]
+        : [];
     const completed = {
       ...view,
       revision: view.revision + 1000,
@@ -50,7 +57,7 @@ test("Monster Master presents a terminal victory screen over the surviving battl
         ...view.observation,
         board: {
           ...view.observation.board,
-          units: view.observation.board.units.filter((unit) => unit.ownerId === yourId),
+          units: friendlySurvivors,
         },
         activePlayerId: null,
         activeUnitId: null,
