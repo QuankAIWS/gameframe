@@ -111,6 +111,15 @@ function moveCameraBy(deltaX, deltaY) {
   }
 }
 
+function panScreen(deltaX, deltaY) {
+  if (!Number.isFinite(deltaX) || !Number.isFinite(deltaY)) return false;
+  const camera = window.gameFrameMonsterPixi?.getCamera?.();
+  if (!camera) return false;
+  const delta = screenVectorToCameraDelta(deltaX, deltaY, camera);
+  moveCameraBy(delta.x, delta.y);
+  return true;
+}
+
 function bindCardinalCameraControls() {
   document.querySelectorAll("[data-monster-master-pan-x][data-monster-master-pan-y]").forEach((button) => {
     button.addEventListener("click", (event) => {
@@ -118,15 +127,12 @@ function bindCardinalCameraControls() {
       const rawX = Number(button.dataset.monsterMasterPanX);
       const rawY = Number(button.dataset.monsterMasterPanY);
       if (!rawX && !rawY) return;
-      const camera = window.gameFrameMonsterPixi?.getCamera?.();
-      if (!camera) return;
 
       event.preventDefault();
       event.stopImmediatePropagation();
       const screenX = rawX < 0 ? -CARDINAL_PAN_X : rawX > 0 ? CARDINAL_PAN_X : 0;
       const screenY = rawY < 0 ? -CARDINAL_PAN_Y : rawY > 0 ? CARDINAL_PAN_Y : 0;
-      const delta = screenVectorToCameraDelta(screenX, screenY, camera);
-      moveCameraBy(delta.x, delta.y);
+      panScreen(screenX, screenY);
     }, true);
   });
 }
@@ -178,11 +184,7 @@ function bindBattlefieldInput() {
     if (!drag.moved && Math.hypot(event.clientX - drag.originX, event.clientY - drag.originY) < 5) return;
     drag.moved = true;
     document.querySelector("#monster-master-pixi-canvas")?.classList.add("is-camera-dragging");
-    const camera = window.gameFrameMonsterPixi?.getCamera?.();
-    if (camera) {
-      const delta = screenVectorToCameraDelta(-deltaX, -deltaY, camera);
-      moveCameraBy(delta.x, delta.y);
-    }
+    panScreen(-deltaX, -deltaY);
     event.preventDefault();
     event.stopImmediatePropagation();
   }, true);
@@ -232,6 +234,7 @@ window.gameFrameMonsterPixiBridge = Object.freeze({
   worldToScreen,
   dispatchCoordinate,
   bindBattlefieldInput,
+  panScreen,
 });
 window.gameFrameMonsterProjection = Object.freeze({
   getCamera: projectionCamera,
