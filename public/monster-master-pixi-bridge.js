@@ -7,16 +7,6 @@ if (!document.querySelector(`link[href="${stylesheetUrl}"]`)) {
 }
 
 const coordinateEvent = "gameframe:monster-master-coordinate";
-let lastDispatchKey = "";
-let lastDispatchTime = -Infinity;
-
-function diagnostics() {
-  try {
-    return JSON.parse(document.querySelector("#monster-master-details")?.textContent || "{}");
-  } catch {
-    return {};
-  }
-}
 
 function rotateCoordinate(coordinate, map, quarter) {
   const maxX = map.width - 1;
@@ -52,65 +42,13 @@ function worldToScreen(coordinate) {
   };
 }
 
-function dispatchLegacyCoordinate(coordinate) {
-  const key = `${coordinate.x},${coordinate.y}`;
-  const now = performance.now();
-  if (key === lastDispatchKey && now - lastDispatchTime < 40) return true;
-
-  const canvas = document.querySelector("#monster-master-canvas");
-  const state = diagnostics();
-  const bounds = state.viewport?.bounds;
-  if (!canvas || !bounds) return false;
-  if (
-    coordinate.x < bounds.x
-    || coordinate.y < bounds.y
-    || coordinate.x >= bounds.x + bounds.columns
-    || coordinate.y >= bounds.y + bounds.rows
-  ) {
-    return false;
-  }
-
-  const rect = canvas.getBoundingClientRect();
-  const cellSize = Math.min(rect.width / bounds.columns, rect.height / bounds.rows);
-  const boardWidth = cellSize * bounds.columns;
-  const boardHeight = cellSize * bounds.rows;
-  const originX = (rect.width - boardWidth) / 2;
-  const originY = (rect.height - boardHeight) / 2;
-  const localX = originX + (coordinate.x - bounds.x + 0.5) * cellSize;
-  const localY = originY + (coordinate.y - bounds.y + 0.5) * cellSize;
-
-  lastDispatchKey = key;
-  lastDispatchTime = now;
-  canvas.dispatchEvent(new MouseEvent("click", {
-    bubbles: true,
-    clientX: rect.left + localX,
-    clientY: rect.top + localY,
+function dispatchCoordinate(coordinate) {
+  if (!coordinate || !Number.isFinite(coordinate.x) || !Number.isFinite(coordinate.y)) return false;
+  window.dispatchEvent(new CustomEvent(coordinateEvent, {
+    detail: { coordinate: { x: Math.round(coordinate.x), y: Math.round(coordinate.y) } },
   }));
   return true;
 }
-
-function reportUnavailableCoordinate() {
-  const status = document.querySelector("#monster-master-status");
-  if (status) status.textContent = "Center the battlefield closer to that action, then select it again.";
-}
-
-window.addEventListener(coordinateEvent, (event) => {
-  const coordinate = event.detail?.coordinate;
-  if (!coordinate) return;
-  if (!dispatchLegacyCoordinate(coordinate)) reportUnavailableCoordinate();
-});
-
-const battlefieldFrame = document.querySelector(".combat-canvas-frame");
-battlefieldFrame?.addEventListener("click", (event) => {
-  const pixiCanvas = document.querySelector("#monster-master-pixi-canvas");
-  if (!pixiCanvas || !window.gameFrameMonsterPixi?.screenToTile) return;
-  const rect = pixiCanvas.getBoundingClientRect();
-  const coordinate = window.gameFrameMonsterPixi.screenToTile({
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
-  });
-  if (coordinate && !dispatchLegacyCoordinate(coordinate)) reportUnavailableCoordinate();
-});
 
 function projectionCamera() {
   const camera = window.gameFrameMonsterPixi?.getCamera?.();
@@ -123,11 +61,10 @@ function projectionCamera() {
   };
 }
 
-const bridge = Object.freeze({
+window.gameFrameMonsterPixiBridge = Object.freeze({
   worldToScreen,
-  dispatchCoordinate: dispatchLegacyCoordinate,
+  dispatchCoordinate,
 });
-window.gameFrameMonsterPixiBridge = bridge;
 window.gameFrameMonsterProjection = Object.freeze({
   getCamera: projectionCamera,
   worldToScreen,
