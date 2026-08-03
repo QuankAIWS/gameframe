@@ -50,6 +50,32 @@ function dispatchCoordinate(coordinate) {
   return true;
 }
 
+function bindBattlefieldInput() {
+  const frame = document.querySelector(".combat-canvas-frame");
+  if (!frame || frame.dataset.pixiInputBound === "true") return;
+  frame.dataset.pixiInputBound = "true";
+  frame.addEventListener("click", (event) => {
+    const renderer = window.gameFrameMonsterPixi;
+    const canvas = document.querySelector("#monster-master-pixi-canvas");
+    if (!renderer?.screenToTile || !canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (
+      event.clientX < rect.left
+      || event.clientY < rect.top
+      || event.clientX > rect.right
+      || event.clientY > rect.bottom
+    ) return;
+    const coordinate = renderer.screenToTile({
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    });
+    if (!coordinate) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    dispatchCoordinate(coordinate);
+  }, true);
+}
+
 function projectionCamera() {
   const camera = window.gameFrameMonsterPixi?.getCamera?.();
   if (!camera) return null;
@@ -64,9 +90,12 @@ function projectionCamera() {
 window.gameFrameMonsterPixiBridge = Object.freeze({
   worldToScreen,
   dispatchCoordinate,
+  bindBattlefieldInput,
 });
 window.gameFrameMonsterProjection = Object.freeze({
   getCamera: projectionCamera,
   worldToScreen,
   render: () => window.gameFrameMonsterPixi?.render?.(),
 });
+
+bindBattlefieldInput();
