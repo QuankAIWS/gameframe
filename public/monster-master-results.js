@@ -11,6 +11,7 @@ let latestView = null;
 let resultSignature = "";
 let lockedMatchId = null;
 let lockedRevision = -1;
+let reassertingStatus = false;
 
 function ensureResultScreen() {
   const match = document.querySelector("#monster-master-match");
@@ -65,6 +66,15 @@ function statusCopy(result) {
   return "The duel ended in a draw.";
 }
 
+function setTerminalStatus(result) {
+  const status = document.querySelector("#monster-master-status");
+  const copy = statusCopy(result);
+  if (!status || status.textContent === copy) return;
+  reassertingStatus = true;
+  status.textContent = copy;
+  reassertingStatus = false;
+}
+
 function resetResult() {
   const screen = ensureResultScreen();
   if (screen) {
@@ -109,8 +119,7 @@ function renderResult(view = latestView) {
       : "The final round ended with both forces still standing.";
   screen.querySelector("#monster-master-result-friendly").textContent = String(friendlySurvivors);
   screen.querySelector("#monster-master-result-enemy").textContent = String(enemySurvivors);
-  const status = document.querySelector("#monster-master-status");
-  if (status) status.textContent = statusCopy(result);
+  setTerminalStatus(result);
   screen.hidden = false;
 
   if (changed) {
@@ -126,7 +135,10 @@ function capture(candidate) {
       : null;
   if (!view) return;
   const revision = Number(view.revision) || 0;
-  if (lockedMatchId === view.matchId && revision < lockedRevision) return;
+  if (lockedMatchId === view.matchId && revision < lockedRevision) {
+    renderResult(latestView);
+    return;
+  }
 
   latestView = view;
   if (resultFor(view)) {
@@ -138,6 +150,15 @@ function capture(candidate) {
 
 window.addEventListener(viewEvent, (event) => capture(event.detail?.view));
 document.querySelector("#monster-master-new-match")?.addEventListener("click", resetResult);
+
+const statusNode = document.querySelector("#monster-master-status");
+if (statusNode) {
+  new MutationObserver(() => {
+    if (reassertingStatus || !latestView || !resultFor(latestView)) return;
+    setTerminalStatus(resultFor(latestView));
+  }).observe(statusNode, { childList: true, subtree: true, characterData: true });
+}
+
 queueMicrotask(() => {
   const current = window.gameFrameMonsterController?.getView?.();
   if (current) capture(current);
