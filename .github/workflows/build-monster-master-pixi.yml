@@ -1,0 +1,51 @@
+name: Build Monster Master Pixi Candidate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/monster-master-pixi-renderer
+    paths:
+      - "src/browser/monster-master-pixi-entry.js"
+      - "scripts/build-monster-master-pixi.mjs"
+      - ".github/workflows/build-monster-master-pixi.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-master-pixi-bootstrap-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve pinned Pixi dependency
+        run: npm install pixi.js@8.19.0 --save-exact
+
+      - name: Build browser bundle
+        run: node scripts/build-monster-master-pixi.mjs
+
+      - name: Validate generated bundle
+        run: node --check public/monster-master-pixi-bundle.js
+
+      - name: Upload reproducible dependency and bundle files
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-master-pixi-bootstrap-${{ github.run_id }}
+          path: |
+            package.json
+            package-lock.json
+            public/monster-master-pixi-bundle.js
+          if-no-files-found: error
+          retention-days: 3
