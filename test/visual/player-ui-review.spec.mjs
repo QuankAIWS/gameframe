@@ -25,10 +25,10 @@ async function openPlayerHub(page, viewport) {
   await expect(page.locator(".hero")).toBeHidden();
   await expect(page.locator(".game-grid .game-card")).toHaveCount(4);
   await expect(page.locator(".game-card-play")).toHaveCount(4);
-  await expect(page.locator('.game-card-play[href="/monster-master.html"]')).toHaveCount(1);
-  await expect(page.locator('.game-card-play[href="/othello.html"]')).toHaveCount(1);
-  await expect(page.locator('.game-card-play[href="/?game=american-checkers&menu=1"]')).toHaveCount(1);
-  await expect(page.locator('.game-card-play[href="/?game=tic-tac-toe&menu=1"]')).toHaveCount(1);
+  await expect(page.locator('.game-card[href="/monster-master.html"]')).toHaveCount(1);
+  await expect(page.locator('.game-card[href="/othello.html"]')).toHaveCount(1);
+  await expect(page.locator('.game-card[href="/?game=american-checkers&menu=1"]')).toHaveCount(1);
+  await expect(page.locator('.game-card[href="/?game=tic-tac-toe&menu=1"]')).toHaveCount(1);
   await expect(page.locator(".mode-grid")).toBeHidden();
   await expect(page.locator("#open-tactical-canary")).toHaveCount(0);
   await expect(page.getByText("Combat Canary", { exact: true })).toHaveCount(0);
@@ -62,6 +62,7 @@ async function openOthello(page, viewport) {
   await page.setViewportSize(viewport);
   await page.goto("/othello.html?player=othello-review-player");
   await expectDestinationBar(page, "othello-obsidian");
+  await expect(page.locator(".othello-app > .product-header")).toBeHidden();
   await expect(page.locator("#othello-game-menu")).toBeVisible();
   await expect(page.locator("#dark-score")).toHaveText("2");
   await expect(page.locator("#light-score")).toHaveText("2");
@@ -84,6 +85,7 @@ async function openMonsterMaster(page, viewport) {
   await page.setViewportSize(viewport);
   await page.goto("/monster-master.html?player=visual-review-player");
   await expectDestinationBar(page, "monster");
+  await expect(page.locator(".monster-master-shell > .hero")).toBeHidden();
   await expect(page.locator("#monster-master-lobby")).toBeVisible();
   await page.locator("#monster-master-theo").click();
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
