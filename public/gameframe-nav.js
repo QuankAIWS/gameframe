@@ -1,8 +1,9 @@
-const navStylesheetUrl = "/gameframe-nav.css";
-if (!document.querySelector(`link[href="${navStylesheetUrl}"]`)) {
+const navStylesheetUrls = ["/gameframe-nav.css", "/gameframe-nav-integrations.css"];
+for (const href of navStylesheetUrls) {
+  if (document.querySelector(`link[href="${href}"]`)) continue;
   const stylesheet = document.createElement("link");
   stylesheet.rel = "stylesheet";
-  stylesheet.href = navStylesheetUrl;
+  stylesheet.href = href;
   document.head.append(stylesheet);
 }
 
@@ -73,14 +74,24 @@ const bar = installDestinationBar();
 let updatePending = false;
 function syncDestinationBar() {
   updatePending = false;
+  for (const href of navStylesheetUrls) {
+    const stylesheet = document.querySelector(`link[href="${href}"]`);
+    if (stylesheet && stylesheet !== document.head.lastElementChild) document.head.append(stylesheet);
+  }
+
+  const pathname = window.location.pathname;
+  const sharedMatchPanel = document.querySelector("#match-panel");
+  const sharedMatchRunning = Boolean(sharedMatchPanel && !sharedMatchPanel.hidden);
+  document.body.classList.toggle("gameframe-shared-match-running", sharedMatchRunning);
+  document.body.classList.toggle("gameframe-monster-route", pathname.includes("monster-master"));
+  document.body.classList.toggle("gameframe-othello-route", pathname.includes("othello"));
+
   const theme = navigationTheme();
-  const stylesheet = document.querySelector(`link[href="${navStylesheetUrl}"]`);
-  if (stylesheet && stylesheet !== document.head.lastElementChild) document.head.append(stylesheet);
   if (bar.dataset.theme !== theme) bar.dataset.theme = theme;
   const title = bar.querySelector("[data-gameframe-destination-title]");
   const nextTitle = gameLabel();
   if (title && title.textContent !== nextTitle) title.textContent = nextTitle;
-  const atHome = window.location.pathname === "/" && !document.body.classList.contains("tic-tac-toe-noir-running")
+  const atHome = pathname === "/" && !document.body.classList.contains("tic-tac-toe-noir-running")
     && (document.querySelector("#lobby") && !document.querySelector("#lobby")?.hidden)
     && !document.body.classList.contains("gameframe-game-menu");
   bar.querySelector("[data-gameframe-home]")?.classList.toggle("is-active", Boolean(atHome));
