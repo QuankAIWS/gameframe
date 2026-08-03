@@ -29,9 +29,8 @@ if (entry === "/app.js") {
 }
 
 if (entry === "/monster-master-app.js") {
-  await import("./monster-master-art.js");
-  await import("./monster-master-terrain.js");
-  await import("./monster-master-polish.js");
+  await import("./monster-master-pixi-bundle.js");
+  await import("./monster-master-pixi-bridge.js");
   await import("./monster-master-correction.js");
   await import("./monster-master-overlay.js");
   await import("./monster-master-overlay-guard.js");
