@@ -23,6 +23,7 @@ if (identity.source === "discord") {
 
 if (entry === "/monster-master-app.js") {
   await import("./monster-master-art.js");
+  await import("./monster-master-terrain.js");
 }
 await import(entry);
 installAuthenticatedInvitationFlow({ identity, entry });
