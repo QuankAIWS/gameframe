@@ -8,12 +8,14 @@ on:
     paths:
       - "src/browser/monster-master-pixi-entry.js"
       - "scripts/build-monster-master-pixi.mjs"
+      - "scripts/refine-monster-master-pixi.mjs"
       - ".github/workflows/build-monster-master-pixi.yml"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - "src/browser/monster-master-pixi-entry.js"
       - "scripts/build-monster-master-pixi.mjs"
+      - "scripts/refine-monster-master-pixi.mjs"
       - ".github/workflows/build-monster-master-pixi.yml"
 
 permissions:
@@ -42,20 +44,29 @@ jobs:
       - name: Resolve pinned Pixi dependency
         run: npm install pixi.js@8.19.0 --save-exact
 
+      - name: Apply one-time runtime refinements
+        if: github.event_name == 'push'
+        run: |
+          if grep -q 'viewSignature: ""' src/browser/monster-master-pixi-entry.js; then
+            echo "Pixi runtime refinements are already applied."
+          else
+            node scripts/refine-monster-master-pixi.mjs
+          fi
+
       - name: Build browser bundle
         run: node scripts/build-monster-master-pixi.mjs
 
       - name: Validate generated bundle
         run: node --check public/monster-master-pixi-bundle.js
 
-      - name: Commit generated dependency and bundle files
+      - name: Commit generated renderer files
         if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json public/monster-master-pixi-bundle.js
+          git add package.json package-lock.json src/browser/monster-master-pixi-entry.js public/monster-master-pixi-bundle.js
           if ! git diff --cached --quiet; then
-            git commit -m "Pin PixiJS and commit Monster Master bundle"
+            git commit -m "Refine and rebuild Monster Master Pixi runtime"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
 
@@ -66,6 +77,7 @@ jobs:
           path: |
             package.json
             package-lock.json
+            src/browser/monster-master-pixi-entry.js
             public/monster-master-pixi-bundle.js
           if-no-files-found: error
           retention-days: 3
