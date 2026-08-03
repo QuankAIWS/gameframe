@@ -1,0 +1,58 @@
+name: Player UI Review
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "public/**"
+      - "test/visual/player-ui-review.spec.mjs"
+      - "playwright.visual.config.mjs"
+      - "package.json"
+      - ".github/workflows/player-ui-review.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: player-ui-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: self-hosted
+    timeout-minutes: 30
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Browser syntax gate
+        run: npm run check:browser
+
+      - name: Player navigation contracts
+        run: node --experimental-strip-types --test src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts
+
+      - name: Capture player UI screenshots
+        run: npx playwright test test/visual/player-ui-review.spec.mjs --config playwright.visual.config.mjs
+
+      - name: Upload player UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-ui-review-${{ github.run_id }}
+          path: |
+            visual-results/player-ui-review
+            visual-results/**/*.zip
+            visual-results/**/*.png
+          if-no-files-found: warn
+          retention-days: 10
