@@ -6,6 +6,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - "public/**"
+      - "scripts/build-monster-master-pixi.mjs"
+      - "src/browser/monster-master-pixi-entry.js"
       - "src/browser/player-navigation-contract.test.ts"
       - "src/browser/monster-master-art-contract.test.ts"
       - "src/browser/othello-runtime-contract.test.ts"
@@ -13,6 +15,7 @@ on:
       - "test/visual/player-ui-regressions.spec.mjs"
       - "playwright.visual.config.mjs"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/player-ui-review.yml"
 
 permissions:
@@ -39,6 +42,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify committed Pixi bundle
+        run: npm run check:monster-master-pixi
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
