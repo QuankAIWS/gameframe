@@ -1,3 +1,11 @@
+const polishStylesheetUrl = "/monster-master-polish.css";
+if (!document.querySelector(`link[href="${polishStylesheetUrl}"]`)) {
+  const stylesheet = document.createElement("link");
+  stylesheet.rel = "stylesheet";
+  stylesheet.href = polishStylesheetUrl;
+  document.head.append(stylesheet);
+}
+
 const creatureAtlasUrl = "/assets/monster-master/creature-atlas-v1.svg";
 const body = document.body;
 const match = document.querySelector("#monster-master-match");
