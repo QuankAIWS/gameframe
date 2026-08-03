@@ -14,19 +14,18 @@
 }
 
 .gameframe-game-hub-lobby .game-card {
-  cursor: default;
+  cursor: pointer;
 }
 .gameframe-game-hub-lobby .game-card:hover,
+.gameframe-game-hub-lobby .game-card:focus-visible,
 .gameframe-game-hub-lobby .game-card:focus-within {
-  transform: none;
-  border-color: rgba(164, 185, 192, .24);
-  box-shadow: 0 22px 54px rgba(0, 0, 0, .28), inset 0 1px rgba(255, 255, 255, .035);
-}
-.gameframe-game-hub-lobby .game-card:has(.game-card-play:hover),
-.gameframe-game-hub-lobby .game-card:has(.game-card-play:focus-visible) {
   transform: translateY(-4px);
   border-color: color-mix(in srgb, var(--hub-accent) 64%, white 8%);
   box-shadow: 0 28px 70px rgba(0, 0, 0, .4), 0 0 26px color-mix(in srgb, var(--hub-accent) 11%, transparent);
+}
+.gameframe-game-hub-lobby .game-card:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--hub-accent) 72%, white 12%);
+  outline-offset: 4px;
 }
 
 .game-card-play {
