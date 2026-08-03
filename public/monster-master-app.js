@@ -882,10 +882,8 @@ function actionAt(coordinate) {
   }) ?? null;
 }
 
-function handleCanvasClick(event) {
-  if (!current || requestPending) return;
-  const coordinate = canvasCoordinate(event);
-  if (!coordinate) return;
+function handleBattlefieldCoordinate(coordinate) {
+  if (!current || requestPending || !coordinate) return;
   const clickedUnit = current.observation.board.units.find(
     (unit) => unit.position.x === coordinate.x && unit.position.y === coordinate.y,
   );
@@ -905,6 +903,10 @@ function handleCanvasClick(event) {
   }
   const action = actionAt(coordinate);
   if (action) void submitAction(action);
+}
+
+function handleCanvasClick(event) {
+  handleBattlefieldCoordinate(canvasCoordinate(event));
 }
 
 function handleCanvasMove(event) {
@@ -1039,6 +1041,15 @@ centerField.addEventListener("click", () => centerViewport({ x: 11.5, y: 11.5 })
 zoomIn.addEventListener("click", () => changeZoom(0.25));
 zoomOut.addEventListener("click", () => changeZoom(-0.25));
 canvas.addEventListener("click", handleCanvasClick);
+window.addEventListener("gameframe:monster-master-coordinate", (event) => {
+  const coordinate = event.detail?.coordinate;
+  if (
+    !coordinate
+    || !Number.isFinite(coordinate.x)
+    || !Number.isFinite(coordinate.y)
+  ) return;
+  handleBattlefieldCoordinate({ x: Math.round(coordinate.x), y: Math.round(coordinate.y) });
+});
 canvas.addEventListener("pointermove", handleCanvasMove);
 canvas.addEventListener("pointerleave", () => {
   if (previewAction) {
