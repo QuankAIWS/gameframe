@@ -16,6 +16,11 @@
         && row.every((cell) => cell === DARK || cell === LIGHT || cell === EMPTY));
   }
 
+  function markStorageUnavailable() {
+    document.body.dataset.gameframeStorageUnavailable = "true";
+    delete document.body.dataset.gameframeMatchPersisted;
+  }
+
   function readSave() {
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
@@ -23,26 +28,34 @@
       if (saved.mode !== "theo" && saved.mode !== "local") return null;
       return saved;
     } catch {
+      markStorageUnavailable();
       return null;
     }
   }
 
   function persist() {
-    if (!mode || snapshotMode) return;
-    localStorage.setItem(storageKey, JSON.stringify({
-      version: 1,
-      mode,
-      theme,
-      hints,
-      state: {
-        board: state.board,
-        player: state.player,
-        move: state.move,
-        complete: state.complete,
-        lastMove: state.lastMove,
-      },
-    }));
-    document.body.dataset.gameframeMatchPersisted = "true";
+    if (!mode || snapshotMode) return false;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({
+        version: 1,
+        mode,
+        theme,
+        hints,
+        state: {
+          board: state.board,
+          player: state.player,
+          move: state.move,
+          complete: state.complete,
+          lastMove: state.lastMove,
+        },
+      }));
+      document.body.dataset.gameframeMatchPersisted = "true";
+      delete document.body.dataset.gameframeStorageUnavailable;
+      return true;
+    } catch {
+      markStorageUnavailable();
+      return false;
+    }
   }
 
   function restore(saved) {
@@ -136,7 +149,7 @@
     <div class="othello-game-menu-card">
       <p class="othello-menu-kicker">OTHELLO</p>
       <h2 id="othello-game-menu-title">Choose how to play</h2>
-      <p>Begin from the standard opening position. Local matches are saved automatically in this browser.</p>
+      <p>Begin from the standard opening position. Local matches are saved automatically when browser storage is available.</p>
       <div class="othello-menu-actions">
         <button id="othello-play-theo" type="button">
           <strong>Challenge Theo</strong>
@@ -210,5 +223,6 @@
       const saved = readSave();
       if (saved) restore(saved);
     },
+    persist,
   });
 })();
