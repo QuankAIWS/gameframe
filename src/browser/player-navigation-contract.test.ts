@@ -26,6 +26,7 @@ test("the player hub is a real game library with one semantic card-wide link per
   assert.match(navigation, /gameframe-nav-integrations\.css/);
   assert.match(navigation, /gameframe-final-polish\.css/);
   assert.match(navigation, /gameframe-shared-match-running/);
+  assert.doesNotMatch(navigation, /stylesheet !== document\.head\.lastElementChild/);
   assert.match(navigationStyles, /position: sticky/);
   assert.match(navigationStyles, /gameframe-destination-session-space/);
   assert.match(navigationIntegrations, /gameframe-monster-route/);
@@ -66,7 +67,7 @@ test("the player hub is a real game library with one semantic card-wide link per
   assert.match(packageJson.scripts["check:browser"], /public\/game-hub\.js/);
 });
 
-test("Tic-Tac-Toe uses the universal destination bar and keeps its reviewed noir viewport", async () => {
+test("Tic-Tac-Toe uses the universal destination bar and restores the shared DOM when inactive", async () => {
   const launcher = await read("public/auth-launcher.js");
   const navigation = await read("public/gameframe-nav.js");
   const navigationStyles = await read("public/gameframe-nav.css");
@@ -87,6 +88,11 @@ test("Tic-Tac-Toe uses the universal destination bar and keeps its reviewed noir
   assert.match(finalPolish, /justify-content: flex-end/);
 
   assert.match(controller, /function isTicTacToeMatch/);
+  assert.match(controller, /function uninstallPresentation/);
+  assert.match(controller, /frame\.replaceWith\(board\)/);
+  assert.match(controller, /players\.insertBefore\(playerO, matchMeta\)/);
+  assert.match(controller, /if \(!active\) \{\n    uninstallPresentation\(\)/);
+  assert.match(controller, /document\.querySelector\("#gameframe-destination-bar"\)/);
   assert.match(controller, /board-tic-tac-toe/);
   assert.match(controller, /tic-noir-control-rail/);
   assert.match(controller, /playerO/);
