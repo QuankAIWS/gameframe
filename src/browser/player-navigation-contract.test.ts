@@ -10,6 +10,7 @@ test("the player hub is a real game library with one semantic card-wide link per
   const navigationStyles = await read("public/gameframe-nav.css");
   const navigationIntegrations = await read("public/gameframe-nav-integrations.css");
   const finalPolish = await read("public/gameframe-final-polish.css");
+  const sessionOverride = await read("public/gameframe-session-override.css");
   const hub = await read("public/game-hub.js");
   const hubStyles = await read("public/game-hub.css");
   const hubShellStyles = await read("public/game-hub-shell.css");
@@ -25,6 +26,7 @@ test("the player hub is a real game library with one semantic card-wide link per
   assert.doesNotMatch(navigation, />Games</);
   assert.match(navigation, /gameframe-nav-integrations\.css/);
   assert.match(navigation, /gameframe-final-polish\.css/);
+  assert.match(navigation, /gameframe-session-override\.css/);
   assert.match(navigation, /gameframe-shared-match-running/);
   assert.doesNotMatch(navigation, /stylesheet !== document\.head\.lastElementChild/);
   assert.match(navigationStyles, /position: sticky/);
@@ -36,6 +38,8 @@ test("the player hub is a real game library with one semantic card-wide link per
   assert.match(finalPolish, /gameframe-game-hub-lobby \.section-heading/);
   assert.match(finalPolish, /gameframe-game-menu \.game-menu-hero/);
   assert.match(finalPolish, /gameframe-session-badge/);
+  assert.match(sessionOverride, /gameframe-has-destination-bar\.monster-master-match-active/);
+  assert.match(sessionOverride, /display: grid !important/);
 
   assert.match(hub, /href: "\/monster-master\.html"/);
   assert.match(hub, /href: "\/othello\.html"/);
@@ -73,6 +77,7 @@ test("Tic-Tac-Toe uses the universal destination bar and restores the shared DOM
   const navigationStyles = await read("public/gameframe-nav.css");
   const navigationIntegrations = await read("public/gameframe-nav-integrations.css");
   const finalPolish = await read("public/gameframe-final-polish.css");
+  const universalStyles = await read("public/tic-tac-toe-universal.css");
   const controller = await read("public/tic-tac-toe-noir.js");
   const styles = await read("public/tic-tac-toe-noir.css");
   const packageJson = JSON.parse(await read("package.json"));
@@ -86,7 +91,10 @@ test("Tic-Tac-Toe uses the universal destination bar and restores the shared DOM
   assert.match(navigationIntegrations, /\.tic-noir-topbar/);
   assert.match(finalPolish, /\.tic-noir-footer > a/);
   assert.match(finalPolish, /justify-content: flex-end/);
+  assert.match(universalStyles, /grid-template-rows: minmax\(0, 1fr\) 48px/);
+  assert.match(universalStyles, /grid-template-rows: auto 44px/);
 
+  assert.match(controller, /tic-tac-toe-universal\.css/);
   assert.match(controller, /function isTicTacToeMatch/);
   assert.match(controller, /function uninstallPresentation/);
   assert.match(controller, /frame\.replaceWith\(board\)/);
@@ -120,6 +128,8 @@ test("Monster Master uses one objective rendering, a player-relative turn queue,
   assert.match(navigationIntegrations, /\.monster-master-shell > \.hero/);
   assert.match(finalPolish, /body\.gameframe-othello-route \.board-viewport/);
   assert.match(finalPolish, /#board\.board-checkers/);
+  assert.match(finalPolish, /monster-master-match-topbar/);
+  assert.match(finalPolish, /monster-master-exit-button/);
   assert.match(terrain, /if \(entry\.objective\) \{/);
   assert.match(terrain, /return undefined;\n      \}\n      this\.save\(\)/);
   assert.doesNotMatch(terrain, /this\.restore\(\);\n      if \(entry\.objective\)/);
