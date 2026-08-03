@@ -8,18 +8,24 @@ on:
     paths:
       - "src/browser/monster-master-pixi-entry.js"
       - "public/monster-master-app.js"
+      - "public/auth-launcher.js"
+      - "public/monster-master-pixi-bridge.js"
       - "scripts/build-monster-master-pixi.mjs"
       - "scripts/refine-monster-master-pixi.mjs"
       - "scripts/refine-monster-master-input.mjs"
+      - "scripts/refine-monster-master-state-channel.mjs"
       - ".github/workflows/build-monster-master-pixi.yml"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - "src/browser/monster-master-pixi-entry.js"
       - "public/monster-master-app.js"
+      - "public/auth-launcher.js"
+      - "public/monster-master-pixi-bridge.js"
       - "scripts/build-monster-master-pixi.mjs"
       - "scripts/refine-monster-master-pixi.mjs"
       - "scripts/refine-monster-master-input.mjs"
+      - "scripts/refine-monster-master-state-channel.mjs"
       - ".github/workflows/build-monster-master-pixi.yml"
 
 permissions:
@@ -61,6 +67,11 @@ jobs:
           else
             node scripts/refine-monster-master-input.mjs
           fi
+          if grep -q 'window.gameFrameMonsterController = Object.freeze' public/monster-master-app.js; then
+            echo "Direct controller-to-Pixi state channel is already applied."
+          else
+            node scripts/refine-monster-master-state-channel.mjs
+          fi
 
       - name: Build browser bundle
         run: node scripts/build-monster-master-pixi.mjs
@@ -69,15 +80,17 @@ jobs:
         run: |
           node --check public/monster-master-pixi-bundle.js
           node --check public/monster-master-app.js
+          node --check public/auth-launcher.js
+          node --check public/monster-master-pixi-bridge.js
 
       - name: Commit generated renderer files
         if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json src/browser/monster-master-pixi-entry.js public/monster-master-pixi-bundle.js public/monster-master-app.js
+          git add package.json package-lock.json src/browser/monster-master-pixi-entry.js public/monster-master-pixi-bundle.js public/monster-master-app.js public/auth-launcher.js public/monster-master-pixi-bridge.js
           if ! git diff --cached --quiet; then
-            git commit -m "Complete direct Monster Master Pixi input path"
+            git commit -m "Connect Monster Master controller directly to Pixi"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
 
@@ -91,5 +104,7 @@ jobs:
             src/browser/monster-master-pixi-entry.js
             public/monster-master-pixi-bundle.js
             public/monster-master-app.js
+            public/auth-launcher.js
+            public/monster-master-pixi-bridge.js
           if-no-files-found: error
           retention-days: 3
