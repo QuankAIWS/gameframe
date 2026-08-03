@@ -26,13 +26,18 @@ const playerO = document.querySelector("#player-o");
 const gameLayout = matchPanel?.querySelector(".game-layout");
 
 let syncPending = false;
+let presentationInstalled = false;
 
 function isTicTacToeMatch() {
   return Boolean(matchPanel && !matchPanel.hidden && board?.classList.contains("board-tic-tac-toe"));
 }
 
 function installTopbar() {
-  if (!matchPanel || matchPanel.querySelector(".tic-noir-topbar")) return;
+  if (!matchPanel || document.querySelector("#gameframe-destination-bar")) {
+    matchPanel?.querySelector(".tic-noir-topbar")?.remove();
+    return;
+  }
+  if (matchPanel.querySelector(".tic-noir-topbar")) return;
   const topbar = document.createElement("header");
   topbar.className = "tic-noir-topbar";
   topbar.innerHTML = `
@@ -127,12 +132,36 @@ function installFooter() {
 }
 
 function installPresentation() {
+  if (presentationInstalled) return;
   installTopbar();
   installAmbientCircuits();
   installBoardFrame();
   installPlayerTelemetry();
   installControlRail();
   installFooter();
+  presentationInstalled = true;
+}
+
+function uninstallPresentation() {
+  if (!presentationInstalled && !matchPanel?.querySelector(".tic-noir-board-frame, .tic-noir-control-rail, .tic-noir-footer")) return;
+
+  matchPanel?.querySelector(".tic-noir-topbar")?.remove();
+  matchPanel?.querySelectorAll(".tic-noir-ambient").forEach((node) => node.remove());
+  matchPanel?.querySelector(".tic-noir-footer")?.remove();
+  players?.querySelector(".tic-noir-turn-signal")?.remove();
+
+  const rail = gameLayout?.querySelector(".tic-noir-control-rail");
+  if (playerO && players && rail?.contains(playerO)) {
+    const matchMeta = players.querySelector(".match-meta");
+    players.insertBefore(playerO, matchMeta);
+  }
+  rail?.remove();
+
+  const frame = boardWrap?.querySelector(".tic-noir-board-frame");
+  if (frame && board) frame.replaceWith(board);
+  boardWrap?.querySelector(".tic-noir-board-kicker")?.remove();
+  boardHelp?.classList.remove("tic-noir-board-status");
+  presentationInstalled = false;
 }
 
 function mirrorState() {
@@ -164,11 +193,16 @@ function mirrorState() {
 
 function syncPresentation() {
   syncPending = false;
-  installPresentation();
   const active = isTicTacToeMatch();
   document.body.classList.toggle("tic-tac-toe-noir-running", active);
   if (hero) hero.setAttribute("aria-hidden", String(active));
-  if (!active) return;
+
+  if (!active) {
+    uninstallPresentation();
+    return;
+  }
+
+  installPresentation();
   if (matchLabel) matchLabel.textContent = "LIVE MATCH";
   if (matchTitle) matchTitle.textContent = "Tic-Tac-Toe";
   if (newMatch) newMatch.textContent = "Match setup";
@@ -192,5 +226,9 @@ for (const node of [lobby, matchPanel, board, status, revision, connection, matc
   });
 }
 
-window.gameFrameTicTacToeNoir = Object.freeze({ sync: syncPresentation, isActive: isTicTacToeMatch });
+window.gameFrameTicTacToeNoir = Object.freeze({
+  sync: syncPresentation,
+  isActive: isTicTacToeMatch,
+  uninstall: uninstallPresentation,
+});
 syncPresentation();
