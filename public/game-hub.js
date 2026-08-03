@@ -18,6 +18,8 @@ const lobbyTitle = document.querySelector("#lobby-title");
 const tacticalLink = document.querySelector("#open-tactical-canary");
 const ticTacToe = document.querySelector("#select-tic-tac-toe");
 const checkers = document.querySelector("#select-checkers");
+const hubTitle = "GameFrame Arcade";
+const hubCopy = "Pick a finished game, choose an opponent, and start playing. Internal movement and combat harnesses stay out of the player menu.";
 
 function directGameCard({ id, href, badge, title, description, accent }) {
   const link = document.createElement("a");
@@ -94,11 +96,9 @@ let brandSyncPending = false;
 function syncHubBrand() {
   brandSyncPending = false;
   if (!lobby || lobby.hidden) return;
-  if (gameTitle) gameTitle.textContent = "GameFrame Arcade";
-  if (heroCopy) {
-    heroCopy.textContent = "Pick a finished game, choose an opponent, and start playing. Internal movement and combat harnesses stay out of the player menu.";
-  }
-  document.title = "Scribbles GameFrame";
+  if (gameTitle && gameTitle.textContent !== hubTitle) gameTitle.textContent = hubTitle;
+  if (heroCopy && heroCopy.textContent !== hubCopy) heroCopy.textContent = hubCopy;
+  if (document.title !== "Scribbles GameFrame") document.title = "Scribbles GameFrame";
 }
 function scheduleBrandSync() {
   if (brandSyncPending) return;
