@@ -1,0 +1,157 @@
+@import url("/othello-garden-delicacy.css");
+@import url("/othello-garden-water-integration.css");
+@import url("/othello-garden-ornament-cleanup.css");
+
+/* Final containment and mobile recovery for layered fidelity styles. */
+html, body { overflow-x: hidden; }
+.scene-decoration { overflow: hidden; }
+.othello-app { max-width: 100vw; }
+
+@media (max-width: 900px) {
+  .othello-app {
+    width: 100%;
+    max-width: 100vw;
+    padding: 10px 10px 20px;
+    overflow: hidden;
+  }
+  .product-header { width: 100%; max-width: 100%; }
+  .play-layout {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap: 8px;
+  }
+  .board-column {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .board-frame {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    aspect-ratio: 1;
+    padding: 7px;
+  }
+  .board-viewport {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    aspect-ratio: 1;
+    margin: 0;
+  }
+  #othello-board { width: 100%; height: 100%; max-width: 100%; }
+  .score-rail { min-width: 0; }
+  .command-bar { width: 100%; max-width: 100%; margin-inline: 0; }
+}
+
+@media (max-width: 540px) {
+  body[data-theme="neon"] .othello-app,
+  body[data-theme="garden"] .othello-app { padding-inline: 8px; }
+  body[data-theme="neon"] .play-layout,
+  body[data-theme="garden"] .play-layout { width: 100%; }
+  body[data-theme="neon"] .board-frame,
+  body[data-theme="garden"] .board-frame { width: 100%; max-width: 100%; padding: 6px; }
+  body[data-theme="neon"] .board-viewport,
+  body[data-theme="garden"] .board-viewport { width: 100%; max-width: 100%; }
+  body[data-theme="garden"] .scene-decoration > *,
+  body[data-theme="neon"] .scene-decoration > * { max-width: 100vw; }
+}
+
+@media (max-width: 900px) {
+  body[data-theme="neon"] .play-layout,
+  body[data-theme="garden"] .play-layout {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr) !important;
+    justify-content: stretch;
+  }
+  body[data-theme="neon"] .board-column,
+  body[data-theme="garden"] .board-column {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  body[data-theme="neon"] .board-frame,
+  body[data-theme="garden"] .board-frame {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    aspect-ratio: 1 !important;
+    padding: 7px !important;
+  }
+  body[data-theme="neon"] .board-viewport,
+  body[data-theme="garden"] .board-viewport {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 !important;
+    margin: 0 !important;
+  }
+  body[data-theme="neon"] #othello-board,
+  body[data-theme="garden"] #othello-board {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  body[data-theme="neon"] .score-rail,
+  body[data-theme="garden"] .score-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 900px) {
+  body[data-theme="neon"] .score-rail,
+  body[data-theme="garden"] .score-rail {
+    min-height: 68px !important;
+    max-height: 76px !important;
+    height: 72px !important;
+    padding: 8px 10px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    border-radius: 15px !important;
+    transform: none !important;
+  }
+  body[data-theme="neon"] .score-rail .rail-label,
+  body[data-theme="garden"] .score-rail .rail-label { display: none !important; }
+  body[data-theme="neon"] .score-rail .player-token,
+  body[data-theme="garden"] .score-rail .player-token {
+    width: 38px !important;
+    height: 38px !important;
+    margin: 0 !important;
+    flex: 0 0 38px !important;
+  }
+  body[data-theme="neon"] .score-rail > strong,
+  body[data-theme="garden"] .score-rail > strong {
+    margin: 0 0 0 auto !important;
+    font-size: 2rem !important;
+    line-height: 1 !important;
+  }
+  body[data-theme="neon"] .score-rail > span,
+  body[data-theme="garden"] .score-rail > span { display: none !important; }
+  body[data-theme="neon"] .turn-marker,
+  body[data-theme="garden"] .turn-marker {
+    margin: 0 !important;
+    padding: 4px 7px !important;
+    font-size: .52rem !important;
+  }
+  body[data-theme="garden"] .score-rail::after,
+  body[data-theme="neon"] .score-rail::after { display: none !important; }
+  body[data-theme="garden"] .brand-emblem,
+  body[data-theme="neon"] .brand-emblem {
+    border-radius: 50% !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}

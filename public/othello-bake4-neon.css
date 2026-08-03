@@ -1,0 +1,254 @@
+/* Fourth bake: structural Neon Circuit fidelity ------------------------------- */
+@media (min-width: 901px) {
+  body[data-theme="neon"] {
+    background:
+      radial-gradient(circle at 50% 12%, rgba(28,103,149,.22), transparent 31rem),
+      radial-gradient(circle at 0 54%, rgba(131,18,115,.12), transparent 31rem),
+      radial-gradient(circle at 100% 58%, rgba(12,116,145,.14), transparent 31rem),
+      linear-gradient(180deg, #030916 0%, #020711 55%, #02050c 100%);
+  }
+  body[data-theme="neon"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    pointer-events: none;
+    opacity: .48;
+    background:
+      linear-gradient(135deg, transparent 0 15%, rgba(255,63,207,.055) 15.15% 15.28%, transparent 15.42% 100%),
+      linear-gradient(225deg, transparent 0 14%, rgba(74,231,255,.065) 14.15% 14.28%, transparent 14.42% 100%),
+      repeating-linear-gradient(90deg, transparent 0 47px, rgba(95,218,255,.018) 48px 49px),
+      repeating-linear-gradient(0deg, transparent 0 47px, rgba(95,218,255,.014) 48px 49px);
+  }
+  body[data-theme="neon"] .othello-app {
+    width: min(1440px, 100vw);
+    min-height: 1080px;
+    padding: 0 26px 22px;
+    overflow: clip;
+  }
+  body[data-theme="neon"] .product-header {
+    position: relative;
+    min-height: 148px;
+    margin: 0 -26px 2px;
+    padding: 20px 310px 10px;
+    isolation: isolate;
+  }
+  body[data-theme="neon"] .product-header::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0 250px 0;
+    clip-path: polygon(8% 0, 92% 0, 100% 70%, 94% 100%, 6% 100%, 0 70%);
+    background:
+      linear-gradient(90deg, transparent 0 3%, rgba(255,62,209,.24) 3.2% 3.35%, transparent 3.6% 96.4%, rgba(76,229,255,.25) 96.65% 96.8%, transparent 97%),
+      linear-gradient(180deg, rgba(4,17,31,.98), rgba(2,9,18,.96));
+    border-bottom: 1px solid rgba(81,225,255,.17);
+    box-shadow: 0 12px 36px rgba(0,0,0,.45), inset 0 -1px rgba(255,255,255,.025);
+  }
+  body[data-theme="neon"] .product-header::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 9px;
+    width: min(720px, 54vw);
+    height: 2px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, transparent, #ff4bd4 15%, transparent 42%, transparent 58%, #58edff 85%, transparent);
+    filter: drop-shadow(0 0 7px rgba(88,237,255,.45));
+    opacity: .8;
+  }
+  body[data-theme="neon"] .brand-lockup {
+    min-width: 570px;
+    gap: 24px;
+    transform: translateY(-1px);
+  }
+  body[data-theme="neon"] .brand-emblem {
+    width: 94px;
+    height: 94px;
+    border-width: 1px;
+    box-shadow:
+      0 0 0 4px rgba(4,15,29,.85),
+      0 0 0 5px rgba(86,232,255,.3),
+      0 0 30px rgba(73,224,255,.22),
+      inset 0 0 22px rgba(255,67,210,.12);
+  }
+  body[data-theme="neon"] h1 {
+    font-size: clamp(3rem, 4.8vw, 4.55rem);
+    letter-spacing: .2em;
+    text-shadow: 0 0 12px rgba(212,248,255,.3), 0 0 28px rgba(82,229,255,.12);
+  }
+  body[data-theme="neon"] .theme-title {
+    margin-top: 8px;
+    letter-spacing: .48em;
+    font-size: .68rem;
+  }
+  body[data-theme="neon"] .play-layout {
+    width: 100%;
+    grid-template-columns: 226px minmax(650px, 810px) 226px;
+    gap: clamp(28px, 2.4vw, 40px);
+    align-items: center;
+    margin-top: -1px;
+  }
+  body[data-theme="neon"] .board-column {
+    width: 100%;
+    min-width: 0;
+  }
+  body[data-theme="neon"] .board-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1.115 / 1;
+    max-height: 724px;
+    border-radius: 30px;
+    background:
+      linear-gradient(105deg, rgba(255,65,209,.45), transparent 8% 91%, rgba(75,231,255,.52)),
+      linear-gradient(180deg, rgba(7,28,48,.98), rgba(2,10,20,.99));
+    box-shadow:
+      0 34px 76px rgba(0,0,0,.57),
+      -8px 0 25px rgba(255,49,202,.11),
+      8px 0 25px rgba(64,225,255,.14),
+      inset 0 0 0 1px rgba(123,239,255,.16),
+      inset 0 0 55px rgba(27,113,150,.09);
+    padding: 18px 46px 18px;
+  }
+  body[data-theme="neon"] .board-frame::before {
+    inset: -10px -14px;
+    border-radius: 39px;
+    border: 1px solid rgba(91,229,255,.17);
+    background:
+      linear-gradient(90deg, rgba(255,62,209,.95), transparent 9% 91%, rgba(75,231,255,.95)) left bottom / 100% 2px no-repeat,
+      linear-gradient(180deg, rgba(255,255,255,.035), transparent 20% 82%, rgba(255,255,255,.02));
+    box-shadow: inset 0 0 0 7px rgba(1,8,16,.67), 0 0 18px rgba(64,224,255,.08);
+  }
+  body[data-theme="neon"] .board-frame::after {
+    inset: 8px 22px;
+    border-radius: 25px;
+    border-color: rgba(77,225,255,.24);
+    box-shadow: inset 0 0 0 1px rgba(255,64,207,.08), inset 0 0 34px rgba(58,220,255,.045);
+  }
+  body[data-theme="neon"] .board-viewport {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border-radius: 18px;
+    border: 1px solid rgba(88,229,255,.35);
+    box-shadow:
+      inset 0 0 0 5px rgba(1,10,20,.66),
+      inset 0 0 24px rgba(65,224,255,.08),
+      0 0 0 1px rgba(255,65,210,.08),
+      0 20px 50px rgba(0,0,0,.5);
+  }
+  body[data-theme="neon"] #othello-board { border-radius: 17px; }
+  body[data-theme="neon"] .score-rail {
+    min-height: 414px;
+    max-height: 430px;
+    padding: 30px 16px 26px;
+    border-radius: 34px;
+    background:
+      radial-gradient(circle at 50% 37%, rgba(25,102,128,.11), transparent 34%),
+      linear-gradient(180deg, rgba(5,18,32,.95), rgba(2,8,17,.98));
+    box-shadow:
+      0 28px 52px rgba(0,0,0,.44),
+      inset 0 0 0 5px rgba(1,8,16,.62),
+      inset 0 0 0 6px currentColor,
+      inset 0 0 28px rgba(71,223,255,.035);
+    transform: translateY(18px);
+  }
+  body[data-theme="neon"] .score-rail-dark { color: rgba(255,73,211,.32); }
+  body[data-theme="neon"] .score-rail-light { color: rgba(78,232,255,.32); }
+  body[data-theme="neon"] .score-rail::before,
+  body[data-theme="neon"] .score-rail::after { opacity: .42; }
+  body[data-theme="neon"] .player-token {
+    width: 116px;
+    margin-top: 26px;
+    box-shadow:
+      0 0 0 1px currentColor,
+      0 0 25px currentColor,
+      inset -16px -18px 24px rgba(0,0,0,.58),
+      inset 8px 7px 12px rgba(255,255,255,.11);
+  }
+  body[data-theme="neon"] .score-rail > strong { margin-top: 24px; font-size: 4.25rem; }
+  body[data-theme="neon"] .score-rail > span { letter-spacing: .2em; text-transform: uppercase; }
+  body[data-theme="neon"] .match-strip {
+    margin-top: 12px;
+    min-height: 65px;
+    padding: 10px 26px 10px 28px;
+    border-radius: 17px;
+    border-color: rgba(75,225,255,.18);
+    background:
+      linear-gradient(90deg, rgba(255,62,209,.035), transparent 26% 72%, rgba(76,229,255,.035)),
+      rgba(2,10,19,.96);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.018), 0 14px 28px rgba(0,0,0,.28);
+  }
+  body[data-theme="neon"] .command-bar {
+    position: relative;
+    width: calc(100% + 52px);
+    margin: 12px -26px -22px;
+    min-height: 98px;
+    padding: 16px 70px 18px;
+    border-radius: 34px 34px 0 0;
+    border-top: 1px solid rgba(75,226,255,.18);
+    background:
+      linear-gradient(110deg, rgba(255,57,205,.07), transparent 25%),
+      linear-gradient(250deg, rgba(73,226,255,.08), transparent 25%),
+      linear-gradient(180deg, rgba(4,16,29,.99), rgba(1,5,11,1));
+    box-shadow: 0 -12px 32px rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.025);
+  }
+  body[data-theme="neon"] .command-bar::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #ff4bd4, transparent 31% 69%, #59efff);
+    opacity: .72;
+  }
+  body[data-theme="neon"] .theme-dock {
+    min-width: 206px;
+    padding: 0;
+    gap: 8px;
+  }
+  body[data-theme="neon"] .theme-button {
+    width: 56px;
+    height: 48px;
+    min-width: 56px;
+    border-radius: 16px;
+    box-shadow: inset 0 0 14px rgba(255,255,255,.02);
+  }
+  body[data-theme="neon"] .controls {
+    width: min(930px, 75vw);
+    grid-template-columns: minmax(175px,.85fr) minmax(300px,1.4fr) minmax(175px,.85fr);
+  }
+  body[data-theme="neon"] .control-button { min-height: 56px; }
+}
+
+@media (min-width: 901px) {
+  /* Center the full title lockup while retaining an empty right overlay column. */
+  body[data-theme="neon"] .product-header {
+    width: calc(100% + 52px);
+    margin-inline: -26px;
+    padding: 18px 0 10px;
+    grid-template-columns: minmax(220px,1fr) auto minmax(220px,1fr);
+  }
+  body[data-theme="neon"] .brand-lockup {
+    grid-column: 2;
+    min-width: 0;
+    width: auto;
+    transform: none;
+  }
+  body[data-theme="neon"] .discord-safe-zone {
+    grid-column: 3;
+    width: min(250px, 18vw);
+    min-width: 0;
+  }
+}
+
+@media (min-width: 901px) {
+  body[data-theme="neon"] .brand-emblem {
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+}

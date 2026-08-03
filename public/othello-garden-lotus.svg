@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 150">
+<defs>
+ <radialGradient id="leaf" cx="40%" cy="30%" r="78%"><stop offset="0" stop-color="#718b6d"/><stop offset=".55" stop-color="#3c6148"/><stop offset="1" stop-color="#153326"/></radialGradient>
+ <linearGradient id="petal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffaf7"/><stop offset=".38" stop-color="#efd2d4"/><stop offset=".78" stop-color="#cf94a3"/><stop offset="1" stop-color="#7d4d61"/></linearGradient>
+ <linearGradient id="petal2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffefa"/><stop offset=".52" stop-color="#e6bdc4"/><stop offset="1" stop-color="#a76579"/></linearGradient>
+ <radialGradient id="center" cx="45%" cy="38%" r="70%"><stop offset="0" stop-color="#fff2ad"/><stop offset=".45" stop-color="#cfb355"/><stop offset="1" stop-color="#6f571f"/></radialGradient>
+</defs>
+<path d="M18 126 C31 94 59 80 91 87 C76 115 49 132 18 126Z" fill="url(#leaf)" stroke="#91a47b" stroke-opacity=".35" stroke-width="1.2"/>
+<path d="M162 126 C149 94 121 80 89 87 C104 115 131 132 162 126Z" fill="url(#leaf)" stroke="#91a47b" stroke-opacity=".35" stroke-width="1.2"/>
+<g stroke="#a7657a" stroke-opacity=".48" stroke-width=".8">
+ <path d="M90 116 C73 94 72 57 90 20 C108 57 107 94 90 116Z" fill="url(#petal2)"/>
+ <path d="M86 118 C58 101 44 70 52 39 C79 55 92 85 86 118Z" fill="url(#petal)"/>
+ <path d="M94 118 C122 101 136 70 128 39 C101 55 88 85 94 118Z" fill="url(#petal)"/>
+ <path d="M78 122 C46 116 25 93 24 64 C55 68 79 90 78 122Z" fill="url(#petal2)"/>
+ <path d="M102 122 C134 116 155 93 156 64 C125 68 101 90 102 122Z" fill="url(#petal2)"/>
+ <path d="M84 122 C63 110 56 83 65 61 C84 76 92 99 84 122Z" fill="url(#petal)"/>
+ <path d="M96 122 C117 110 124 83 115 61 C96 76 88 99 96 122Z" fill="url(#petal)"/>
+ <path d="M90 123 C77 108 76 88 90 68 C104 88 103 108 90 123Z" fill="#f8e2e3"/>
+</g>
+<g fill="none" stroke="#fff" stroke-opacity=".22" stroke-width=".55"><path d="M90 105 C86 78 88 48 90 24"/><path d="M78 109 C64 87 56 63 54 44"/><path d="M102 109 C116 87 124 63 126 44"/></g>
+<circle cx="90" cy="112" r="12" fill="url(#center)" stroke="#ead17d" stroke-opacity=".55"/>
+</svg>

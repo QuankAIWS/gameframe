@@ -1,0 +1,210 @@
+/* Garden foreground integration, second pass.
+   Asymmetric, low-contrast pond staging with no hard waterline. */
+
+@media (min-width: 901px) {
+  body[data-theme="garden"] .scene-decoration::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 34% 18% at 6% 94%, rgba(116, 150, 120, .13), transparent 72%),
+      radial-gradient(ellipse 25% 14% at 95% 94%, rgba(126, 156, 130, .085), transparent 72%),
+      linear-gradient(180deg, transparent 0 76%, rgba(5, 39, 29, .11) 86%, rgba(3, 25, 19, .44) 100%);
+    opacity: 1;
+  }
+
+  body[data-theme="garden"] .scene-decoration::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 25%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 18% 5% at 7% 91%, rgba(218, 226, 198, .055), transparent 72%),
+      radial-gradient(ellipse 13% 4% at 92% 92%, rgba(218, 226, 198, .04), transparent 72%);
+    opacity: .72;
+    filter: blur(7px);
+  }
+
+  body[data-theme="garden"] .garden-pad {
+    display: none !important;
+    z-index: 2 !important;
+    overflow: visible !important;
+    height: auto !important;
+    aspect-ratio: 240 / 160;
+    background-image: url("/othello-garden-lily-pad.svg") !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: contain !important;
+    fill: none !important;
+    stroke: none !important;
+    transform-origin: 50% 56%;
+    mix-blend-mode: normal;
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.94) 0 72%, rgba(0,0,0,.63) 100%);
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,.94) 0 72%, rgba(0,0,0,.63) 100%);
+  }
+
+  body[data-theme="garden"] .garden-pad > * {
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+
+  body[data-theme="garden"] .garden-pad-a {
+    display: block !important;
+    width: 370px !important;
+    left: -72px !important;
+    right: auto !important;
+    bottom: 2px !important;
+    opacity: .44 !important;
+    transform: rotate(-7deg) !important;
+    filter:
+      saturate(.74)
+      brightness(.82)
+      contrast(.88)
+      blur(.25px)
+      drop-shadow(0 13px 14px rgba(0, 18, 12, .35)) !important;
+  }
+
+  body[data-theme="garden"] .garden-pad-b {
+    display: block !important;
+    width: 222px !important;
+    left: auto !important;
+    right: -4px !important;
+    bottom: 55px !important;
+    opacity: .29 !important;
+    transform: rotate(9deg) scaleX(-1) !important;
+    filter:
+      saturate(.67)
+      brightness(.78)
+      contrast(.84)
+      blur(.4px)
+      drop-shadow(0 10px 12px rgba(0, 16, 11, .28)) !important;
+  }
+
+  body[data-theme="garden"] .garden-pad-c,
+  body[data-theme="garden"] .garden-pad-d,
+  body[data-theme="garden"] .garden-pad-e {
+    display: none !important;
+  }
+
+  body[data-theme="garden"] .garden-lotus {
+    display: none !important;
+    z-index: 3 !important;
+    overflow: visible !important;
+    height: auto !important;
+    aspect-ratio: 180 / 150;
+    background-image: url("/othello-garden-lotus.svg") !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: contain !important;
+    fill: none !important;
+    stroke: none !important;
+    transform-origin: 50% 72%;
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.98) 0 76%, rgba(0,0,0,.7) 100%);
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,.98) 0 76%, rgba(0,0,0,.7) 100%);
+  }
+
+  body[data-theme="garden"] .garden-lotus > * {
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+
+  body[data-theme="garden"] .garden-lotus-a {
+    display: block !important;
+    width: 172px !important;
+    left: 14px !important;
+    right: auto !important;
+    bottom: 61px !important;
+    opacity: .48 !important;
+    transform: rotate(-4deg) !important;
+    filter:
+      saturate(.78)
+      brightness(.86)
+      contrast(.9)
+      blur(.35px)
+      drop-shadow(0 11px 13px rgba(0, 16, 11, .31)) !important;
+  }
+
+  body[data-theme="garden"] .garden-lotus-b {
+    display: block !important;
+    width: 104px !important;
+    left: auto !important;
+    right: 24px !important;
+    bottom: 72px !important;
+    opacity: .36 !important;
+    transform: rotate(4deg) !important;
+    filter:
+      saturate(.72)
+      brightness(.82)
+      contrast(.87)
+      blur(.45px)
+      drop-shadow(0 8px 10px rgba(0, 15, 10, .25)) !important;
+  }
+
+  body[data-theme="garden"] .garden-lotus-c {
+    display: none !important;
+  }
+
+  /* Contact shadows and a suggestion of displaced water sit behind the plants.
+     There is deliberately no full-width line and no ring drawn over a pad. */
+  body[data-theme="garden"] .garden-ripple {
+    display: none !important;
+    z-index: 1 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    pointer-events: none;
+  }
+
+  body[data-theme="garden"] .garden-ripple-a {
+    display: block !important;
+    left: -38px !important;
+    right: auto !important;
+    bottom: 26px !important;
+    width: 330px !important;
+    height: 76px !important;
+    opacity: .42 !important;
+    border-radius: 50% !important;
+    background:
+      radial-gradient(ellipse at center, rgba(0, 14, 9, .28) 0 29%, rgba(0, 14, 9, .10) 51%, transparent 72%),
+      radial-gradient(ellipse at center, transparent 0 58%, rgba(193, 207, 188, .075) 60%, transparent 64%) !important;
+    filter: blur(5px) !important;
+    transform: rotate(-3deg) !important;
+  }
+
+  body[data-theme="garden"] .garden-ripple-b {
+    display: block !important;
+    left: auto !important;
+    right: -20px !important;
+    bottom: 61px !important;
+    width: 230px !important;
+    height: 55px !important;
+    opacity: .29 !important;
+    border-radius: 50% !important;
+    background:
+      radial-gradient(ellipse at center, rgba(0, 14, 9, .23) 0 27%, rgba(0, 14, 9, .08) 50%, transparent 71%),
+      radial-gradient(ellipse at center, transparent 0 59%, rgba(193, 207, 188, .055) 61%, transparent 65%) !important;
+    filter: blur(5px) !important;
+    transform: rotate(4deg) !important;
+  }
+
+  body[data-theme="garden"] .garden-ripple-c {
+    display: none !important;
+  }
+
+  body[data-theme="garden"] .garden-petal {
+    z-index: 2 !important;
+    opacity: .18 !important;
+    filter: blur(.45px) saturate(.72) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  body[data-theme="garden"] .garden-pad,
+  body[data-theme="garden"] .garden-lotus,
+  body[data-theme="garden"] .garden-ripple {
+    display: none !important;
+  }
+}

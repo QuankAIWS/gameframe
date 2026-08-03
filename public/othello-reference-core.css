@@ -1,0 +1,117 @@
+/* Exact-reference fidelity pass ------------------------------------------------ */
+.scene-decoration {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.scene-decoration > * { position: absolute; opacity: 0; transition: opacity 240ms ease; }
+
+/* Let the crown and botanical frame ornaments sit outside the clipped board. */
+.board-frame {
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 12px;
+}
+.board-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid var(--line-soft);
+  background: #0b0d10;
+  box-shadow:
+    0 26px 68px rgba(0,0,0,.55),
+    0 0 0 8px rgba(10,11,13,.66),
+    0 0 0 9px var(--line-soft),
+    inset 0 1px 0 rgba(255,255,255,.05);
+}
+.board-frame::before,
+.board-frame::after {
+  inset: 3px;
+  z-index: 5;
+  border-radius: 30px;
+}
+.board-frame::after { inset: 8px; border-radius: 26px; }
+.board-crown {
+  top: 1px;
+  width: 62px;
+  height: 45px;
+  transform: translate(-50%, -55%);
+  z-index: 12;
+}
+.board-crown svg { width: 32px; height: 32px; }
+#othello-board { border-radius: 23px; }
+.board-announcement { z-index: 10; }
+
+.garden-board-ornament {
+  display: none;
+  position: absolute;
+  z-index: 10;
+  top: -20px;
+  width: 145px;
+  height: 95px;
+  overflow: visible;
+  fill: rgba(115,139,82,.72);
+  stroke: rgba(207,182,111,.62);
+  stroke-width: 1.3;
+  filter: drop-shadow(0 8px 10px rgba(0,0,0,.3));
+  pointer-events: none;
+}
+.garden-board-ornament-left { left: -8px; }
+.garden-board-ornament-right { right: -8px; }
+
+/* Obsidian & Ivory: match the sparse black field and fine upper-right flourish. */
+body[data-theme="obsidian"] .obsidian-safe-corner {
+  opacity: .72;
+  top: 30px;
+  right: 34px;
+  width: 250px;
+  height: 155px;
+  border-top: 1px solid rgba(205,169,101,.28);
+  border-right: 1px solid rgba(205,169,101,.28);
+}
+body[data-theme="obsidian"] .obsidian-safe-corner::before,
+body[data-theme="obsidian"] .obsidian-safe-corner::after {
+  content: "";
+  position: absolute;
+  border: 1px solid rgba(205,169,101,.5);
+  transform: rotate(45deg);
+}
+body[data-theme="obsidian"] .obsidian-safe-corner::before { width: 8px; height: 8px; right: -5px; top: -5px; }
+body[data-theme="obsidian"] .obsidian-safe-corner::after { width: 4px; height: 4px; right: 5px; top: -3px; }
+body[data-theme="obsidian"] .product-header { min-height: 126px; }
+body[data-theme="obsidian"] .brand-lockup {
+  align-items: flex-start;
+  gap: 13px;
+  padding-left: clamp(6px, 2vw, 24px);
+}
+body[data-theme="obsidian"] .brand-emblem { width: 86px; height: 86px; margin-top: 0; }
+body[data-theme="obsidian"] .brand-copy { padding-top: 12px; }
+body[data-theme="obsidian"] .theme-title { order: 2; margin-top: 8px; }
+body[data-theme="obsidian"] .brand-copy { display: flex; flex-direction: column; }
+body[data-theme="obsidian"] h1 { order: 1; font-size: clamp(2.8rem, 4.7vw, 4.5rem); letter-spacing: .065em; }
+body[data-theme="obsidian"] .brand-motto { order: 3; margin-top: 18px; color: #a88f63; }
+body[data-theme="obsidian"] .play-layout { margin-top: -44px; }
+body[data-theme="obsidian"] .board-frame::before {
+  border-color: rgba(205,169,101,.56);
+  box-shadow: inset 0 0 0 3px rgba(4,5,6,.88), 0 0 0 1px rgba(205,169,101,.08);
+}
+body[data-theme="obsidian"] .board-frame::after { border-color: rgba(238,211,154,.24); }
+body[data-theme="obsidian"] .board-viewport {
+  border-color: rgba(205,169,101,.34);
+  box-shadow:
+    0 30px 76px rgba(0,0,0,.58),
+    0 0 0 8px rgba(7,8,9,.76),
+    0 0 0 9px rgba(205,169,101,.26),
+    inset 0 1px 0 rgba(255,255,255,.045);
+}
+body[data-theme="obsidian"] .score-rail { border-radius: 20px; }
+body[data-theme="obsidian"] .score-rail::before,
+body[data-theme="obsidian"] .score-rail::after { left: 22px; right: 22px; }
+body[data-theme="obsidian"] .match-strip { border-radius: 15px; }
+body[data-theme="obsidian"] .command-bar { border-radius: 28px; }

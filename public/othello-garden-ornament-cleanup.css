@@ -1,0 +1,41 @@
+/* Living Garden ornament cleanup.
+   Removes the four low-fidelity decorations that were competing with the board:
+   the clipped flower clusters below both player cards and the two pasted-on
+   corner stems above the board. The board crown remains as the single focal ornament. */
+
+html body[data-theme="garden"] .score-rail.score-rail-dark::after,
+html body[data-theme="garden"] .score-rail.score-rail-light::after {
+  content: none !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html body[data-theme="garden"] .garden-board-ornament,
+html body[data-theme="garden"] .garden-board-ornament-left,
+html body[data-theme="garden"] .garden-board-ornament-right {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  filter: none !important;
+}
+
+/* Close the visual gap left by the discarded card-base decals without adding
+   another decorative object. The cards now terminate in a clean framed edge. */
+html body[data-theme="garden"] .score-rail {
+  overflow: hidden !important;
+}
+
+html body[data-theme="garden"] .score-rail-dark,
+html body[data-theme="garden"] .score-rail-light {
+  padding-bottom: 27px !important;
+}
+
+/* Keep the top board edge deliberately quiet. The central crown and frame
+   provide enough hierarchy on their own. */
+html body[data-theme="garden"] .board-frame {
+  isolation: isolate;
+}
