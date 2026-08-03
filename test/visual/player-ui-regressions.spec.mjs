@@ -9,16 +9,50 @@ async function expectStyledDestinationBar(page, theme) {
   await expect.poll(() => page.locator("#gameframe-session-badge").evaluate((node) => getComputedStyle(node).position)).toBe("fixed");
 }
 
-test("Tic-Tac-Toe keeps only the styled universal destination bar", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/?game=tic-tac-toe&menu=1&player=tic-style-regression");
+async function openTic(page, viewport, player) {
+  await page.setViewportSize(viewport);
+  await page.goto(`/?game=tic-tac-toe&menu=1&player=${player}`);
   await page.locator("#challenge-theo").click();
-
   await expect(page.locator("body.tic-tac-toe-noir-running")).toBeVisible();
   await expectStyledDestinationBar(page, "tic");
   await expect(page.locator(".tic-noir-topbar")).toHaveCount(0);
   await expect(page.locator(".tic-noir-board-frame")).toBeVisible();
   await expect(page.locator(".tic-noir-control-rail")).toBeVisible();
+}
+
+test("Tic-Tac-Toe keeps only the styled universal destination bar on mobile", async ({ page }) => {
+  await openTic(page, { width: 390, height: 844 }, "tic-style-regression-mobile");
+
+  const board = await page.locator(".tic-noir-board-frame").boundingBox();
+  if (!board) throw new Error("Tic mobile board did not produce layout bounds.");
+  expect(board.width).toBeGreaterThanOrEqual(330);
+  expect(board.height).toBeGreaterThanOrEqual(330);
+});
+
+test("Tic-Tac-Toe uses a two-row desktop viewport with an unclipped board and telemetry", async ({ page }) => {
+  await openTic(page, { width: 1440, height: 960 }, "tic-style-regression-desktop");
+
+  const rows = await page.locator("#match-panel").evaluate((node) =>
+    getComputedStyle(node).gridTemplateRows.split(/\s+/).filter(Boolean),
+  );
+  expect(rows).toHaveLength(2);
+
+  const board = await page.locator(".tic-noir-board-frame").boundingBox();
+  const firstPlayer = await page.locator("#player-x").boundingBox();
+  const secondPlayer = await page.locator("#player-o").boundingBox();
+  const footer = await page.locator(".tic-noir-footer").boundingBox();
+  if (!board || !firstPlayer || !secondPlayer || !footer) {
+    throw new Error("Tic desktop composition did not produce complete layout bounds.");
+  }
+
+  expect(board.width).toBeGreaterThanOrEqual(460);
+  expect(board.width).toBeLessThanOrEqual(700);
+  expect(board.height).toBeGreaterThanOrEqual(460);
+  expect(firstPlayer.height).toBeGreaterThanOrEqual(70);
+  expect(secondPlayer.height).toBeGreaterThanOrEqual(70);
+  expect(footer.height).toBeLessThanOrEqual(64);
+  expect(board.y).toBeGreaterThanOrEqual(80);
+  expect(board.y + board.height).toBeLessThanOrEqual(footer.y);
 });
 
 test("Checkers never inherits Tic-Tac-Toe presentation wrappers", async ({ page }) => {
