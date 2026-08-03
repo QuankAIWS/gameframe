@@ -7,6 +7,8 @@ if (!document.querySelector(`link[href="${stylesheetUrl}"]`)) {
 }
 
 const coordinateEvent = "gameframe:monster-master-coordinate";
+let lastDispatchKey = "";
+let lastDispatchTime = -Infinity;
 
 function diagnostics() {
   try {
@@ -51,6 +53,10 @@ function worldToScreen(coordinate) {
 }
 
 function dispatchLegacyCoordinate(coordinate) {
+  const key = `${coordinate.x},${coordinate.y}`;
+  const now = performance.now();
+  if (key === lastDispatchKey && now - lastDispatchTime < 40) return true;
+
   const canvas = document.querySelector("#monster-master-canvas");
   const state = diagnostics();
   const bounds = state.viewport?.bounds;
@@ -72,6 +78,9 @@ function dispatchLegacyCoordinate(coordinate) {
   const originY = (rect.height - boardHeight) / 2;
   const localX = originX + (coordinate.x - bounds.x + 0.5) * cellSize;
   const localY = originY + (coordinate.y - bounds.y + 0.5) * cellSize;
+
+  lastDispatchKey = key;
+  lastDispatchTime = now;
   canvas.dispatchEvent(new MouseEvent("click", {
     bubbles: true,
     clientX: rect.left + localX,
@@ -80,13 +89,27 @@ function dispatchLegacyCoordinate(coordinate) {
   return true;
 }
 
+function reportUnavailableCoordinate() {
+  const status = document.querySelector("#monster-master-status");
+  if (status) status.textContent = "Center the battlefield closer to that action, then select it again.";
+}
+
 window.addEventListener(coordinateEvent, (event) => {
   const coordinate = event.detail?.coordinate;
   if (!coordinate) return;
-  if (!dispatchLegacyCoordinate(coordinate)) {
-    const status = document.querySelector("#monster-master-status");
-    if (status) status.textContent = "Center the battlefield closer to that action, then select it again.";
-  }
+  if (!dispatchLegacyCoordinate(coordinate)) reportUnavailableCoordinate();
+});
+
+const battlefieldFrame = document.querySelector(".combat-canvas-frame");
+battlefieldFrame?.addEventListener("click", (event) => {
+  const pixiCanvas = document.querySelector("#monster-master-pixi-canvas");
+  if (!pixiCanvas || !window.gameFrameMonsterPixi?.screenToTile) return;
+  const rect = pixiCanvas.getBoundingClientRect();
+  const coordinate = window.gameFrameMonsterPixi.screenToTile({
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
+  });
+  if (coordinate && !dispatchLegacyCoordinate(coordinate)) reportUnavailableCoordinate();
 });
 
 function projectionCamera() {
