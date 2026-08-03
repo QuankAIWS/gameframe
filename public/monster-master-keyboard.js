@@ -6,6 +6,14 @@ if (!document.querySelector(`link[href="${stylesheetUrl}"]`)) {
   document.head.append(stylesheet);
 }
 
+const PAN_STEP_X = 108;
+const PAN_STEP_Y = 54;
+const panVectors = Object.freeze({
+  KeyW: { x: 0, y: -PAN_STEP_Y },
+  KeyA: { x: -PAN_STEP_X, y: 0 },
+  KeyS: { x: 0, y: PAN_STEP_Y },
+  KeyD: { x: PAN_STEP_X, y: 0 },
+});
 const panControls = Object.freeze({
   KeyW: '[data-monster-master-pan-x="0"][data-monster-master-pan-y="-3"]',
   KeyA: '[data-monster-master-pan-x="-3"][data-monster-master-pan-y="0"]',
@@ -28,6 +36,13 @@ function clickEnabledControl(selector) {
   if (!(control instanceof HTMLButtonElement) || control.disabled || control.hidden) return false;
   control.click();
   return true;
+}
+
+function panCamera(code) {
+  const vector = panVectors[code];
+  if (!vector) return false;
+  if (window.gameFrameMonsterPixiBridge?.panScreen?.(vector.x, vector.y)) return true;
+  return clickEnabledControl(panControls[code]);
 }
 
 function rotateCamera(delta) {
@@ -53,9 +68,8 @@ function handleKeydown(event) {
     || !matchIsActive()
   ) return;
 
-  const panSelector = panControls[event.code];
-  if (panSelector) {
-    if (clickEnabledControl(panSelector)) event.preventDefault();
+  if (panVectors[event.code]) {
+    if (panCamera(event.code)) event.preventDefault();
     return;
   }
 
