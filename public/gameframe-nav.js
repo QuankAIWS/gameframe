@@ -1,4 +1,8 @@
-const navStylesheetUrls = ["/gameframe-nav.css", "/gameframe-nav-integrations.css"];
+const navStylesheetUrls = [
+  "/gameframe-nav.css",
+  "/gameframe-nav-integrations.css",
+  "/gameframe-final-polish.css",
+];
 for (const href of navStylesheetUrls) {
   if (document.querySelector(`link[href="${href}"]`)) continue;
   const stylesheet = document.createElement("link");
