@@ -6,15 +6,20 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - "public/**"
+      - "planning/monster-master-rules.md"
       - "scripts/build-monster-master-pixi.mjs"
       - "src/browser/monster-master-pixi-entry.js"
       - "src/browser/player-navigation-contract.test.ts"
       - "src/browser/monster-master-art-contract.test.ts"
       - "src/browser/othello-runtime-contract.test.ts"
+      - "src/games/monster-master/index.ts"
+      - "src/games/monster-master/index.test.ts"
+      - "src/games/monster-master/repository-contract.test.ts"
       - "test/visual/player-ui-review.spec.mjs"
       - "test/visual/player-ui-regressions.spec.mjs"
       - "test/visual/monster-master-pixi.spec.mjs"
       - "test/visual/monster-master-cardinal-camera.spec.mjs"
+      - "test/visual/monster-master-results-and-depth.spec.mjs"
       - "playwright.visual.config.mjs"
       - "package.json"
       - "package-lock.json"
@@ -54,11 +59,11 @@ jobs:
       - name: Browser syntax gate
         run: npm run check:browser
 
-      - name: Player navigation and game contracts
-        run: node --experimental-strip-types --test src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/othello-runtime-contract.test.ts
+      - name: Player navigation, game, and Monster Master rule contracts
+        run: node --experimental-strip-types --test src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/othello-runtime-contract.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts
 
       - name: Capture player UI screenshots and cross-game regressions
-        run: npx playwright test test/visual/player-ui-review.spec.mjs test/visual/player-ui-regressions.spec.mjs test/visual/monster-master-pixi.spec.mjs test/visual/monster-master-cardinal-camera.spec.mjs --config playwright.visual.config.mjs
+        run: npx playwright test test/visual/player-ui-review.spec.mjs test/visual/player-ui-regressions.spec.mjs test/visual/monster-master-pixi.spec.mjs test/visual/monster-master-cardinal-camera.spec.mjs test/visual/monster-master-results-and-depth.spec.mjs --config playwright.visual.config.mjs
 
       - name: Upload player UI screenshots
         if: always()
