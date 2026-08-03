@@ -44,9 +44,13 @@ function worldToScreen(coordinate) {
 
 function dispatchCoordinate(coordinate) {
   if (!coordinate || !Number.isFinite(coordinate.x) || !Number.isFinite(coordinate.y)) return false;
-  window.dispatchEvent(new CustomEvent(coordinateEvent, {
-    detail: { coordinate: { x: Math.round(coordinate.x), y: Math.round(coordinate.y) } },
-  }));
+  const normalized = { x: Math.round(coordinate.x), y: Math.round(coordinate.y) };
+  const controller = window.gameFrameMonsterController;
+  if (controller?.handleCoordinate) {
+    controller.handleCoordinate(normalized);
+    return true;
+  }
+  window.dispatchEvent(new CustomEvent(coordinateEvent, { detail: { coordinate: normalized } }));
   return true;
 }
 

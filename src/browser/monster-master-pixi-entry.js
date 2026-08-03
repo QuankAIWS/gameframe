@@ -555,38 +555,11 @@ function bindCameraControls() {
   ensureRotationControls();
 }
 
-function interceptState() {
-  const nativeFetch = window.fetch.bind(window);
-  window.fetch = async (...args) => {
-    const response = await nativeFetch(...args);
-    try {
-      const clone = response.clone();
-      if ((clone.headers.get("content-type") ?? "").includes("application/json")) captureView(await clone.json());
-    } catch {
-      // Renderer observation never changes request authority.
-    }
-    return response;
-  };
-
-  const NativeWebSocket = window.WebSocket;
-  if (NativeWebSocket) {
-    class PixiProjectionWebSocket extends NativeWebSocket {
-      constructor(...args) {
-        super(...args);
-        this.addEventListener("message", (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            if (message?.type === "match_state") captureView(message.view);
-          } catch {
-            // Ignore non-state messages.
-          }
-        });
-      }
-    }
-    window.WebSocket = PixiProjectionWebSocket;
-  }
+function subscribeToController() {
+  window.addEventListener(VIEW_EVENT, (event) => captureView(event.detail?.view));
+  const current = window.gameFrameMonsterController?.getView?.();
+  if (current) captureView(current);
 }
-
 async function initialize() {
   const frame = document.querySelector(".combat-canvas-frame");
   const originalCanvas = document.querySelector("#monster-master-canvas");
@@ -639,8 +612,12 @@ async function initialize() {
   scheduleRender();
 }
 
-interceptState();
-const ready = initialize().then(() => true).catch((error) => {
+subscribeToController();
+const ready = initialize().then(() => {
+  const current = window.gameFrameMonsterController?.getView?.();
+  if (current) captureView(current);
+  return true;
+}).catch((error) => {
   console.error("Monster Master Pixi initialization failed.", error);
   document.body.classList.add("monster-master-pixi-failed");
   return false;

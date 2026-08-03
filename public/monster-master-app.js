@@ -3,6 +3,7 @@ import { gameFrameFetch } from "./gameframe-auth.js";
 const gameId = "monster-master-duel";
 const theoPlayerId = "theo";
 const recentMatchStorageKey = "scribbles-gameframe.recent-monster-master-match";
+const monsterMasterViewEvent = "gameframe:monster-master-pixi-view";
 const identity = window.gameFrameIdentity;
 const playerId = identity.playerId;
 
@@ -714,6 +715,7 @@ function render(view) {
   persistMatch(view.matchId);
   updateUrl(view.matchId);
   startProjection(view.matchId);
+  window.dispatchEvent(new CustomEvent(monsterMasterViewEvent, { detail: { view } }));
 }
 
 function setBusy(busy) {
@@ -904,6 +906,11 @@ function handleBattlefieldCoordinate(coordinate) {
   const action = actionAt(coordinate);
   if (action) void submitAction(action);
 }
+
+window.gameFrameMonsterController = Object.freeze({
+  getView: () => current,
+  handleCoordinate: (coordinate) => handleBattlefieldCoordinate(coordinate),
+});
 
 function handleCanvasClick(event) {
   handleBattlefieldCoordinate(canvasCoordinate(event));

@@ -26,14 +26,15 @@ await import("./gameframe-nav.js");
 if (entry === "/app.js") {
   await import("./game-hub.js");
   await import("./tic-tac-toe-noir.js");
-}
-
-if (entry === "/monster-master-app.js") {
+  await import(entry);
+} else if (entry === "/monster-master-app.js") {
   await import("./monster-master-pixi-bridge.js");
-  await import("./monster-master-pixi-bundle.js");
   await import("./monster-master-correction.js");
   await import("./monster-master-overlay.js");
   await import("./monster-master-overlay-guard.js");
+  await import(entry);
+  await import("./monster-master-pixi-bundle.js");
+} else {
+  await import(entry);
 }
-await import(entry);
 installAuthenticatedInvitationFlow({ identity, entry });
