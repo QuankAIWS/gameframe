@@ -25,7 +25,9 @@ const state = {
   frame: null,
   originalCanvas: null,
   view: null,
+  viewSignature: "",
   diagnostics: {},
+  diagnosticsSignature: "",
   hover: null,
   renderQueued: false,
   terrainSignature: "",
@@ -84,8 +86,13 @@ function captureView(candidate) {
   const view = isMonsterView(candidate) ? candidate : isMonsterView(candidate?.view) ? candidate.view : null;
   if (!view) return;
 
+  const signature = `${view.matchId}:${view.revision}`;
+  const changed = signature !== state.viewSignature;
   const previousActive = state.view?.observation?.activeUnitId;
   state.view = view;
+  if (!changed) return;
+  state.viewSignature = signature;
+
   const nextActive = view.observation.activeUnitId;
   if (!previousActive || previousActive !== nextActive) {
     const unit = units().find((candidateUnit) => candidateUnit.id === nextActive);
@@ -110,6 +117,10 @@ function diagnostics() {
   } catch {
     return {};
   }
+}
+
+function diagnosticsSignature(value) {
+  return `${value.actionMode ?? ""}:${value.selectedUnitId ?? ""}`;
 }
 
 function map() {
@@ -598,6 +609,7 @@ async function initialize() {
     powerPreference: "high-performance",
   });
   state.app = app;
+  app.renderer.resize(Math.max(1, frame.clientWidth), Math.max(1, frame.clientHeight));
   app.canvas.id = "monster-master-pixi-canvas";
   app.canvas.className = "monster-master-pixi-canvas";
   app.canvas.setAttribute("aria-label", "GPU-accelerated Monster Master battlefield");
@@ -613,7 +625,11 @@ async function initialize() {
   const detailNode = document.querySelector("#monster-master-details");
   if (detailNode) {
     new MutationObserver(() => {
-      state.diagnostics = diagnostics();
+      const next = diagnostics();
+      const signature = diagnosticsSignature(next);
+      if (signature === state.diagnosticsSignature) return;
+      state.diagnostics = next;
+      state.diagnosticsSignature = signature;
       scheduleRender();
     }).observe(detailNode, { childList: true, subtree: true, characterData: true });
   }
@@ -624,9 +640,14 @@ async function initialize() {
 }
 
 interceptState();
-await initialize();
+const ready = initialize().then(() => true).catch((error) => {
+  console.error("Monster Master Pixi initialization failed.", error);
+  document.body.classList.add("monster-master-pixi-failed");
+  return false;
+});
 
 window.gameFrameMonsterPixi = Object.freeze({
+  ready,
   getView: () => state.view,
   getCamera: () => ({ ...state.camera }),
   getPerformance: () => ({ ...state.performance }),
