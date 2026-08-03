@@ -12,6 +12,9 @@ async function openPlayerHub(page, viewport) {
   await page.goto("/?player=visual-review-player");
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
   await expect(page.locator(".game-hub-topbar")).toBeVisible();
+  await expect(page.locator(".hero > .eyebrow")).toBeHidden();
+  await expect(page.locator(".hero > #game-title")).toBeHidden();
+  await expect(page.locator(".hero > #hero-copy")).toBeHidden();
   await expect(page.locator("#game-hub-achievements")).toBeVisible();
   await expect(page.locator("#game-hub-achievements")).toBeDisabled();
   await expect(page.locator("#game-hub-achievements")).toContainText("Coming soon");
@@ -23,6 +26,21 @@ async function openPlayerHub(page, viewport) {
   await expect(page.locator(".game-card-visual")).toHaveCount(4);
   await expect(page.locator("#open-tactical-canary")).toHaveCount(0);
   await expect(page.getByText("Combat Canary", { exact: true })).toHaveCount(0);
+}
+
+async function openTicTacToe(page, viewport) {
+  await page.setViewportSize(viewport);
+  await page.goto("/?player=tic-noir-review-player");
+  await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
+  await page.locator("#select-tic-tac-toe").click();
+  await page.locator("#challenge-theo").click();
+  await expect(page.locator("body.tic-tac-toe-noir-running")).toBeVisible();
+  await expect(page.locator(".tic-noir-topbar")).toBeVisible();
+  await expect(page.locator('.tic-noir-topbar a[href="/"]')).toHaveCount(2);
+  await expect(page.locator(".tic-noir-control-rail")).toBeVisible();
+  await expect(page.locator("#board.board-tic-tac-toe")).toBeVisible();
+  await expect(page.locator("#board .tic-cell")).toHaveCount(9);
+  await expect(page.locator(".hero")).toBeHidden();
 }
 
 async function openMonsterMaster(page, viewport) {
@@ -46,6 +64,14 @@ test("capture the player game hub at desktop and mobile sizes", async ({ page })
 
   await openPlayerHub(page, { width: 390, height: 844 });
   await page.screenshot({ path: `${output}/game-hub-mobile.png`, fullPage: true });
+});
+
+test("capture Tic-Tac-Toe noir at desktop and mobile sizes", async ({ page }) => {
+  await openTicTacToe(page, { width: 1440, height: 960 });
+  await page.screenshot({ path: `${output}/tic-tac-toe-desktop.png`, fullPage: true });
+
+  await openTicTacToe(page, { width: 390, height: 844 });
+  await page.screenshot({ path: `${output}/tic-tac-toe-mobile.png`, fullPage: true });
 });
 
 test("capture Monster Master turn order and battlefield at desktop and mobile sizes", async ({ page }) => {
