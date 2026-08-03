@@ -10,6 +10,7 @@ test("the player hub exposes real games, a future achievements destination, and 
   const hubStyles = await read("public/game-hub.css");
   const hubShellStyles = await read("public/game-hub-shell.css");
   const hubCardStyles = await read("public/game-hub-cards.css");
+  const ticStyles = await read("public/tic-tac-toe-noir.css");
   const packageJson = JSON.parse(await read("package.json"));
 
   assert.ok(launcher.indexOf("game-hub.js") < launcher.indexOf("await import(entry)"));
@@ -31,7 +32,35 @@ test("the player hub exposes real games, a future achievements destination, and 
   assert.match(hubCardStyles, /creature-atlas-v1\.svg/);
   assert.match(hubCardStyles, /piece-solar\.svg/);
   assert.match(hubCardStyles, /hub-tic-grid/);
+  assert.match(ticStyles, /\.gameframe-game-hub-lobby \.hero > \.eyebrow/);
+  assert.match(ticStyles, /display: none !important/);
   assert.match(packageJson.scripts["check:browser"], /public\/game-hub\.js/);
+});
+
+test("Tic-Tac-Toe uses a real viewport noir shell and returns to the game library", async () => {
+  const launcher = await read("public/auth-launcher.js");
+  const controller = await read("public/tic-tac-toe-noir.js");
+  const styles = await read("public/tic-tac-toe-noir.css");
+  const packageJson = JSON.parse(await read("package.json"));
+
+  assert.ok(launcher.indexOf("game-hub.js") < launcher.indexOf("tic-tac-toe-noir.js"));
+  assert.ok(launcher.indexOf("tic-tac-toe-noir.js") < launcher.indexOf("await import(entry)"));
+  assert.match(controller, /function isTicTacToeMatch/);
+  assert.match(controller, /board-tic-tac-toe/);
+  assert.match(controller, /tic-noir-topbar/);
+  assert.match(controller, /tic-noir-control-rail/);
+  assert.match(controller, /href="\/"/);
+  assert.match(controller, /Back to games/);
+  assert.match(controller, /copyInvite\?\.click/);
+  assert.match(controller, /newMatch\?\.click/);
+  assert.match(controller, /dataset|classList\.toggle\("tic-tac-toe-noir-running"/);
+  assert.match(styles, /height: 100dvh/);
+  assert.match(styles, /tic-noir-discord-safe/);
+  assert.match(styles, /grid-template-columns: minmax\(172px, 230px\) minmax\(360px, 1fr\) minmax\(190px, 250px\)/);
+  assert.match(styles, /tic-board-pulse/);
+  assert.match(styles, /tic-circuit-drift/);
+  assert.doesNotMatch(controller, /leaderboard|friends online|rating/i);
+  assert.match(packageJson.scripts["check:browser"], /public\/tic-tac-toe-noir\.js/);
 });
 
 test("Monster Master uses one objective rendering and a player-relative turn queue", async () => {
