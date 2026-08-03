@@ -33,6 +33,7 @@ if (entry === "/app.js") {
   await import("./monster-master-overlay.js");
   await import(entry);
   await import("./monster-master-pixi-bundle.js");
+  await import("./monster-master-keyboard.js");
 } else {
   await import(entry);
 }
