@@ -53,15 +53,60 @@ test("Monster Master uses one idle-on-demand Pixi WebGL battlefield", async ({ p
   const idleAfter = await page.evaluate(() => window.gameFrameMonsterPixi.getPerformance().renders);
   expect(idleAfter - idleBefore).toBeLessThanOrEqual(1);
 
+  const cameraReference = { x: 11.5, y: 11.5 };
   const cameraBefore = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
+  const pointBeforePan = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+    cameraReference,
+  );
   const rendersBeforePan = await page.evaluate(() => window.gameFrameMonsterPixi.getPerformance().renders);
   await page.locator('[data-monster-master-pan-x="3"][data-monster-master-pan-y="0"]').click();
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().x)).toBeGreaterThan(cameraBefore.x);
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getPerformance().renders)).toBeGreaterThan(rendersBeforePan);
+  const pointAfterPan = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+    cameraReference,
+  );
+  expect(pointAfterPan.x).toBeLessThan(pointBeforePan.x - 40);
+  expect(Math.abs(pointAfterPan.y - pointBeforePan.y)).toBeLessThan(2);
+
+  const revisionBeforeDrag = await page.evaluate(() => window.gameFrameMonsterController.getView().revision);
+  const pointBeforeDrag = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+    cameraReference,
+  );
+  const canvasBounds = await pixiCanvas.boundingBox();
+  expect(canvasBounds).not.toBeNull();
+  const dragStart = {
+    x: canvasBounds.x + canvasBounds.width * 0.58,
+    y: canvasBounds.y + canvasBounds.height * 0.52,
+  };
+  await page.mouse.move(dragStart.x, dragStart.y);
+  await page.mouse.down();
+  await page.mouse.move(dragStart.x + 60, dragStart.y + 24, { steps: 4 });
+  await page.mouse.up();
+  const pointAfterDrag = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+    cameraReference,
+  );
+  expect(pointAfterDrag.x).toBeGreaterThan(pointBeforeDrag.x + 40);
+  expect(pointAfterDrag.y).toBeGreaterThan(pointBeforeDrag.y + 12);
+  expect(await page.evaluate(() => window.gameFrameMonsterController.getView().revision)).toBe(revisionBeforeDrag);
 
   const quarterBefore = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter);
   await page.locator("#monster-master-rotate-right").click();
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter)).not.toBe(quarterBefore);
+  const pointBeforeNorthPan = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+    cameraReference,
+  );
+  await page.locator('[data-monster-master-pan-x="0"][data-monster-master-pan-y="-3"]').click();
+  const pointAfterNorthPan = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+    cameraReference,
+  );
+  expect(Math.abs(pointAfterNorthPan.x - pointBeforeNorthPan.x)).toBeLessThan(2);
+  expect(pointAfterNorthPan.y).toBeGreaterThan(pointBeforeNorthPan.y + 20);
 
   await page.locator("#monster-master-center-field").click();
   const previousRevision = await page.evaluate(() => window.gameFrameMonsterController.getView().revision);
