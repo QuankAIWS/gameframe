@@ -2,22 +2,17 @@ import { test, expect } from "@playwright/test";
 
 async function selectedDeploymentAction(page) {
   return page.evaluate(() => {
-    const view = window.gameFrameMonsterPixi?.getView?.();
-    const camera = window.gameFrameMonsterPixi?.getCamera?.();
+    const view = window.gameFrameMonsterController?.getView?.();
     let diagnostics = {};
     try {
       diagnostics = JSON.parse(document.querySelector("#monster-master-details")?.textContent || "{}");
     } catch {
       diagnostics = {};
     }
-    if (!view || !camera || !diagnostics.selectedUnitId) return null;
-    return view.observation.legalActions
-      .filter((action) => action.type === "deploy-unit" && action.unitId === diagnostics.selectedUnitId)
-      .sort((left, right) => {
-        const leftDistance = Math.abs(left.position.x - camera.x) + Math.abs(left.position.y - camera.y);
-        const rightDistance = Math.abs(right.position.x - camera.x) + Math.abs(right.position.y - camera.y);
-        return leftDistance - rightDistance;
-      })[0] ?? null;
+    if (!view || !diagnostics.selectedUnitId) return null;
+    return view.observation.legalActions.find(
+      (action) => action.type === "deploy-unit" && action.unitId === diagnostics.selectedUnitId,
+    ) ?? null;
   });
 }
 
@@ -27,8 +22,10 @@ test("Monster Master uses an idle-on-demand Pixi WebGL battlefield", async ({ pa
 
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/monster-master.html?player=monster-pixi-regression");
-  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
   await page.locator("#monster-master-theo").click();
+  await expect(page.locator("body.monster-master-match-active")).toBeVisible();
+  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
 
   const pixiCanvas = page.locator("#monster-master-pixi-canvas");
   const legacyCanvas = page.locator("#monster-master-canvas");
@@ -61,18 +58,27 @@ test("Monster Master uses an idle-on-demand Pixi WebGL battlefield", async ({ pa
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter)).not.toBe(quarterBefore);
 
   await page.locator("#monster-master-center-field").click();
-  const previousRevision = await page.evaluate(() => window.gameFrameMonsterPixi.getView().revision);
+  const previousRevision = await page.evaluate(() => window.gameFrameMonsterController.getView().revision);
   await page.locator('#monster-master-options [data-action-kind="deploy-unit"]').first().click();
   await expect.poll(() => selectedDeploymentAction(page)).not.toBeNull();
   const action = await selectedDeploymentAction(page);
-  const point = await page.evaluate(
-    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+
+  const roundTrip = await page.evaluate((coordinate) => {
+    const point = window.gameFrameMonsterPixiBridge.worldToScreen(coordinate);
+    return {
+      point,
+      picked: point ? window.gameFrameMonsterPixi.screenToTile(point) : null,
+    };
+  }, action.position);
+  expect(roundTrip.point).not.toBeNull();
+  expect(roundTrip.picked).toEqual(action.position);
+
+  const dispatched = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.dispatchCoordinate(coordinate),
     action.position,
   );
-  const bounds = await pixiCanvas.boundingBox();
-  if (!bounds || !point) throw new Error("Pixi battlefield did not provide deployment coordinates.");
-  await page.mouse.click(bounds.x + point.x, bounds.y + point.y);
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getView().revision), {
+  expect(dispatched).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterController.getView().revision), {
     timeout: 8_000,
   }).toBeGreaterThan(previousRevision);
 
@@ -87,8 +93,10 @@ test("Monster Master uses an idle-on-demand Pixi WebGL battlefield", async ({ pa
 test("Monster Master Pixi battlefield stays inside the mobile viewport", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/monster-master.html?player=monster-pixi-mobile");
-  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
   await page.locator("#monster-master-theo").click();
+  await expect(page.locator("body.monster-master-match-active")).toBeVisible();
+  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
   await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 
