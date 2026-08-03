@@ -101,9 +101,10 @@ test("the player flow uses universal navigation, game-specific menus, and storag
   assert.doesNotMatch(navigation, />Games</);
   assert.match(navigation, /gameframe:before-home/);
 
+  assert.match(hub, /document\.createElement\("a"\)/);
+  assert.match(hub, /card\.href = game\.href/);
   assert.match(hub, /class=\"game-card-play\"/);
-  assert.match(hub, /function activateLibraryCard/);
-  assert.match(hub, /playLink\.click\(\)/);
+  assert.doesNotMatch(hub, /activateLibraryCard|playLink\.click/);
   assert.match(hub, /\?game=tic-tac-toe&menu=1/);
   assert.match(hub, /\?game=american-checkers&menu=1/);
   assert.match(hub, /modeGrid\.hidden = true/);
