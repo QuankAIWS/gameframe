@@ -45,6 +45,9 @@ test("Monster Master loads the pinned Pixi renderer and deterministic generated 
   assert.doesNotMatch(pixiSource, /function interceptState/);
   assert.doesNotMatch(pixiSource, /window\.fetch = async/);
   assert.match(pixiSource, /const ready = initialize\(\)\.then/);
+  assert.match(pixiSource, /const width = Math\.max\(1, state\.frame\.clientWidth\)/);
+  assert.match(pixiSource, /state\.app\.renderer\.resize\(Math\.max\(1, frame\.clientWidth\)/);
+  assert.doesNotMatch(pixiSource, /renderer\.width \/ 2/);
   assert.match(pixiSource, /creature-atlas-v1\.svg/);
   assert.match(pixiSource, /terrain-atlas-v1\.svg/);
   assert.match(pixiSource, /const terrain = new Container/);
