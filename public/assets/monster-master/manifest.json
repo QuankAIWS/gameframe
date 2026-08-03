@@ -1,8 +1,13 @@
 {
-  "version": 1,
-  "source": "generated-creature-atlas-v1",
-  "atlas": "/assets/monster-master/creature-atlas-v1.svg",
-  "cell": { "width": 96, "height": 96 },
+  "version": 2,
+  "sources": [
+    "generated-creature-atlas-v1",
+    "generated-ruined-caldera-terrain-atlas-v1"
+  ],
+  "creatureAtlas": "/assets/monster-master/creature-atlas-v1.svg",
+  "creatureCell": { "width": 96, "height": 96 },
+  "terrainAtlas": "/assets/monster-master/terrain-atlas-v1.svg",
+  "terrainCell": { "width": 64, "height": 64 },
   "creatures": {
     "warden-master-v1": {
       "role": "master",
@@ -22,5 +27,13 @@
       "anchor": { "x": 0.5, "y": 0.88 },
       "battlefieldScale": 1.14
     }
+  },
+  "terrain": {
+    "floor-a": { "column": 0, "row": 0, "semantic": "floor" },
+    "floor-b": { "column": 1, "row": 0, "semantic": "floor" },
+    "difficult-rootstone": { "column": 2, "row": 0, "semantic": "difficult" },
+    "wall-rubble-a": { "column": 0, "row": 1, "semantic": "wall" },
+    "wall-rubble-b": { "column": 1, "row": 1, "semantic": "wall" },
+    "central-command-shrine": { "column": 2, "row": 1, "semantic": "objective" }
   }
 }
