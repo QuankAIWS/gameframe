@@ -9,7 +9,6 @@ if (!document.querySelector(`link[href="${stylesheetUrl}"]`)) {
 const hero = document.querySelector(".hero");
 const lobby = document.querySelector("#lobby");
 const matchPanel = document.querySelector("#match-panel");
-const matchHeader = matchPanel?.querySelector(".match-header");
 const matchTitle = document.querySelector("#match-title");
 const matchLabel = document.querySelector("#match-label");
 const board = document.querySelector("#board");
@@ -31,6 +30,7 @@ function installMatchTopbar() {
   if (!matchPanel || matchPanel.querySelector(".tic-noir-topbar")) return;
   const topbar = document.createElement("header");
   topbar.className = "tic-noir-topbar";
+  topbar.hidden = true;
   topbar.innerHTML = `
     <a class="tic-noir-brand" href="/" aria-label="Back to the GameFrame game library">
       <span class="tic-noir-brand-mark" aria-hidden="true">S</span>
@@ -54,6 +54,7 @@ function installControlRail() {
   if (!gameLayout || gameLayout.querySelector(".tic-noir-control-rail")) return;
   const rail = document.createElement("aside");
   rail.className = "tic-noir-control-rail";
+  rail.hidden = true;
   rail.setAttribute("aria-label", "Match controls and connection information");
   rail.innerHTML = `
     <section class="tic-noir-control-card tic-noir-turn-card">
@@ -102,7 +103,11 @@ function syncPresentation() {
   installMatchTopbar();
   installControlRail();
   const active = isTicTacToeMatch();
+  const topbar = matchPanel?.querySelector(".tic-noir-topbar");
+  const rail = matchPanel?.querySelector(".tic-noir-control-rail");
   document.body.classList.toggle("tic-tac-toe-noir-running", active);
+  if (topbar) topbar.hidden = !active;
+  if (rail) rail.hidden = !active;
   if (hero) hero.setAttribute("aria-hidden", String(active));
   if (!active) return;
   if (matchLabel) matchLabel.textContent = "LIVE MATCH";
