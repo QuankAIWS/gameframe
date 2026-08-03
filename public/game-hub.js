@@ -105,29 +105,12 @@ function artwork(accent) {
   `;
 }
 
-function activateLibraryCard(card) {
-  const playLink = card.querySelector(".game-card-play");
-  if (!playLink) return;
-
-  card.tabIndex = 0;
-  card.setAttribute("role", "link");
-  card.setAttribute("aria-label", playLink.getAttribute("aria-label") || "Open game menu");
-
-  card.addEventListener("click", (event) => {
-    if (event.target.closest("a, button, input, select, textarea")) return;
-    playLink.click();
-  });
-  card.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    playLink.click();
-  });
-}
-
 function createLibraryCard(game) {
-  const card = document.createElement("article");
+  const card = document.createElement("a");
   card.id = `game-card-${game.id}`;
   card.className = `game-card game-hub-${game.accent}`;
+  card.href = game.href;
+  card.setAttribute("aria-label", `Open the ${game.title} game menu`);
   card.innerHTML = `
     ${artwork(game.accent)}
     <span class="game-card-body">
@@ -136,11 +119,10 @@ function createLibraryCard(game) {
       <small class="game-card-description">${game.description}</small>
     </span>
     <span class="game-card-footer">
-      <a class="game-card-play" href="${game.href}" aria-label="Open the ${game.title} game menu">Play now</a>
+      <span class="game-card-play">Play now</span>
       <span class="game-card-arrow" aria-hidden="true">›</span>
     </span>
   `;
-  activateLibraryCard(card);
   return card;
 }
 
