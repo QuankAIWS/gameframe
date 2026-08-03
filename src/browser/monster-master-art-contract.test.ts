@@ -17,8 +17,8 @@ test("Monster Master loads the pinned Pixi renderer and deterministic generated 
   const packageJson = JSON.parse(await read("package.json"));
 
   assert.match(launcher, /entry === "\/monster-master-app\.js"/);
-  assert.ok(launcher.indexOf("monster-master-pixi-bundle.js") < launcher.indexOf("monster-master-pixi-bridge.js"));
-  assert.ok(launcher.indexOf("monster-master-pixi-bridge.js") < launcher.indexOf("monster-master-correction.js"));
+  assert.ok(launcher.indexOf("monster-master-pixi-bridge.js") < launcher.indexOf("monster-master-pixi-bundle.js"));
+  assert.ok(launcher.indexOf("monster-master-pixi-bundle.js") < launcher.indexOf("monster-master-correction.js"));
   assert.ok(launcher.indexOf("monster-master-overlay-guard.js") < launcher.indexOf("await import(entry)"));
   assert.doesNotMatch(launcher, /monster-master-art\.js/);
   assert.doesNotMatch(launcher, /monster-master-terrain\.js/);
@@ -28,6 +28,9 @@ test("Monster Master loads the pinned Pixi renderer and deterministic generated 
   assert.match(pixiSource, /preference: "webgl"/);
   assert.match(pixiSource, /autoStart: false/);
   assert.match(pixiSource, /resolution: Math\.min/);
+  assert.match(pixiSource, /viewSignature/);
+  assert.match(pixiSource, /diagnosticsSignature/);
+  assert.match(pixiSource, /const ready = initialize\(\)\.then/);
   assert.match(pixiSource, /creature-atlas-v1\.svg/);
   assert.match(pixiSource, /terrain-atlas-v1\.svg/);
   assert.match(pixiSource, /const terrain = new Container/);
