@@ -1,0 +1,15 @@
+/* The local Tic header is a fallback only. When GameFrame navigation is present,
+   the match uses a two-row viewport: gameplay plus the compact setup footer. */
+body.gameframe-has-destination-bar.tic-tac-toe-noir-running #match-panel.panel {
+  grid-template-rows: minmax(0, 1fr) 48px;
+}
+
+body.gameframe-has-destination-bar.tic-tac-toe-noir-running .tic-noir-topbar {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  body.gameframe-has-destination-bar.tic-tac-toe-noir-running #match-panel.panel {
+    grid-template-rows: auto 44px;
+  }
+}
