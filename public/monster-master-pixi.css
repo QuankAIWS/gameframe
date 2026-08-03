@@ -1,0 +1,80 @@
+body.monster-master-pixi-ready .combat-canvas-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: inherit;
+  background: #07101a;
+  box-shadow: none;
+}
+
+body.monster-master-pixi-ready .monster-master-pixi-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  outline: none;
+  cursor: grab;
+  touch-action: none;
+}
+
+body.monster-master-pixi-ready .monster-master-pixi-canvas:active {
+  cursor: grabbing;
+}
+
+body.monster-master-pixi-ready .monster-master-legacy-canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: -2 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.monster-master-pixi-ready #monster-master-motion-canvas {
+  display: none !important;
+}
+
+body.monster-master-pixi-ready .monster-master-battlefield-stage,
+body.monster-master-pixi-ready .monster-master-game-grid {
+  background: transparent;
+}
+
+body.monster-master-pixi-ready .monster-master-battlefield-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 42%, transparent 0 32%, rgba(3, 8, 14, .16) 68%, rgba(2, 5, 10, .58) 100%),
+    linear-gradient(180deg, rgba(10, 20, 31, .08), rgba(2, 5, 9, .32));
+}
+
+body.monster-master-pixi-ready .monster-master-match-topbar,
+body.monster-master-pixi-ready .monster-master-rail,
+body.monster-master-pixi-ready .monster-master-command-deck,
+body.monster-master-pixi-ready .monster-master-camera-dock,
+body.monster-master-pixi-ready .monster-master-mobile-rail-controls,
+body.monster-master-pixi-ready .board-help {
+  z-index: 4;
+}
+
+@media (max-width: 900px) {
+  body.monster-master-pixi-ready .monster-master-pixi-canvas {
+    cursor: default;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.monster-master-pixi-ready .monster-master-pixi-canvas {
+    scroll-behavior: auto;
+  }
+}
