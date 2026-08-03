@@ -135,12 +135,14 @@ async function openMonsterMaster(page, viewport) {
   await openMonsterMasterLobby(page, viewport);
   await page.locator("#monster-master-theo").click();
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
+  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
   await expect(page.locator("#monster-master-roster-title")).toHaveText("Turn order");
   await expect(page.locator(".monster-master-roster-rail .tactical-player-grid")).toBeHidden();
   await expect(page.locator(".monster-master-turn-unit")).toHaveCount(6);
   await expect(page.locator('.combat-nav a[href="/combat.html"]')).toHaveCount(0);
   await expect(page.locator('.combat-nav a[href="/tactical.html"]')).toHaveCount(0);
-  await expect(page.locator("#monster-master-canvas")).toBeVisible();
+  await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
+  await expect(page.locator("#monster-master-canvas")).toBeHidden();
 }
 
 test.beforeAll(prepareOutput);
