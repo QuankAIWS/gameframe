@@ -76,9 +76,10 @@ function syncDestinationBar() {
   const theme = navigationTheme();
   const stylesheet = document.querySelector(`link[href="${navStylesheetUrl}"]`);
   if (stylesheet && stylesheet !== document.head.lastElementChild) document.head.append(stylesheet);
-  bar.dataset.theme = theme;
+  if (bar.dataset.theme !== theme) bar.dataset.theme = theme;
   const title = bar.querySelector("[data-gameframe-destination-title]");
-  if (title) title.textContent = gameLabel();
+  const nextTitle = gameLabel();
+  if (title && title.textContent !== nextTitle) title.textContent = nextTitle;
   const atHome = window.location.pathname === "/" && !document.body.classList.contains("tic-tac-toe-noir-running")
     && (document.querySelector("#lobby") && !document.querySelector("#lobby")?.hidden)
     && !document.body.classList.contains("gameframe-game-menu");
