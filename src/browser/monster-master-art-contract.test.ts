@@ -16,8 +16,13 @@ test("Monster Master loads deterministic generated creature art before the gamep
   assert.match(renderer, /creature-atlas-v1\.svg/);
   assert.match(renderer, /CanvasRenderingContext2D\.prototype\.fillText/);
   assert.match(renderer, /this\.canvas\?\.id !== "monster-master-canvas"/);
+  assert.match(renderer, /CanvasRenderingContext2D\.prototype\.fill/);
+  assert.match(renderer, /monster-master-motion-canvas/);
+  assert.match(renderer, /function projectedCreature/);
   assert.match(renderer, /this\.drawImage/);
   assert.match(renderer, /this\.scale\(-1, 1\)/);
+  assert.match(renderer, /if \(projected && atlasReady\)/);
+  assert.match(renderer, /return nativeFill\.apply\(this, args\)/);
   assert.match(renderer, /monster-master-unit-hud/);
   assert.match(atlas, /data:image\/webp;base64,/);
   assert.equal(manifest.version, 1);
