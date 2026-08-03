@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const read = (path: string) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 
-test("Monster Master loads the pinned Pixi renderer and deterministic generated art before gameplay", async () => {
+test("Monster Master loads the pinned Pixi renderer and deterministic generated art after the authoritative controller", async () => {
   const launcher = await read("public/auth-launcher.js");
   const monsterApp = await read("public/monster-master-app.js");
   const pixiSource = await read("src/browser/monster-master-pixi-entry.js");
@@ -18,16 +18,18 @@ test("Monster Master loads the pinned Pixi renderer and deterministic generated 
   const packageJson = JSON.parse(await read("package.json"));
 
   assert.match(launcher, /entry === "\/monster-master-app\.js"/);
-  assert.ok(launcher.indexOf("monster-master-pixi-bridge.js") < launcher.indexOf("monster-master-pixi-bundle.js"));
-  assert.ok(launcher.indexOf("monster-master-pixi-bundle.js") < launcher.indexOf("monster-master-correction.js"));
+  assert.ok(launcher.indexOf("monster-master-pixi-bridge.js") < launcher.indexOf("monster-master-correction.js"));
   assert.ok(launcher.indexOf("monster-master-overlay-guard.js") < launcher.indexOf("await import(entry)"));
+  assert.ok(launcher.indexOf("await import(entry)") < launcher.indexOf("monster-master-pixi-bundle.js"));
   assert.doesNotMatch(launcher, /monster-master-art\.js/);
   assert.doesNotMatch(launcher, /monster-master-terrain\.js/);
   assert.doesNotMatch(launcher, /monster-master-polish\.js/);
 
-  assert.match(monsterApp, /function handleBattlefieldCoordinate/);
-  assert.match(monsterApp, /gameframe:monster-master-coordinate/);
-  assert.match(monsterApp, /handleBattlefieldCoordinate\(\{ x: Math\.round/);
+  assert.match(monsterApp, /const monsterMasterViewEvent = "gameframe:monster-master-pixi-view"/);
+  assert.match(monsterApp, /window\.gameFrameMonsterController = Object\.freeze/);
+  assert.match(monsterApp, /getView: \(\) => current/);
+  assert.match(monsterApp, /handleCoordinate: \(coordinate\) => handleBattlefieldCoordinate/);
+  assert.match(monsterApp, /new CustomEvent\(monsterMasterViewEvent/);
 
   assert.match(pixiSource, /from "pixi\.js"/);
   assert.match(pixiSource, /preference: "webgl"/);
@@ -35,6 +37,10 @@ test("Monster Master loads the pinned Pixi renderer and deterministic generated 
   assert.match(pixiSource, /resolution: Math\.min/);
   assert.match(pixiSource, /viewSignature/);
   assert.match(pixiSource, /diagnosticsSignature/);
+  assert.match(pixiSource, /function subscribeToController/);
+  assert.match(pixiSource, /window\.gameFrameMonsterController\?\.getView/);
+  assert.doesNotMatch(pixiSource, /function interceptState/);
+  assert.doesNotMatch(pixiSource, /window\.fetch = async/);
   assert.match(pixiSource, /const ready = initialize\(\)\.then/);
   assert.match(pixiSource, /creature-atlas-v1\.svg/);
   assert.match(pixiSource, /terrain-atlas-v1\.svg/);
@@ -47,7 +53,8 @@ test("Monster Master loads the pinned Pixi renderer and deterministic generated 
   assert.match(pixiSource, /window\.gameFrameMonsterPixi/);
 
   assert.match(pixiBridge, /monster-master-pixi\.css/);
-  assert.match(pixiBridge, /gameframe:monster-master-coordinate/);
+  assert.match(pixiBridge, /controller\?\.handleCoordinate/);
+  assert.match(pixiBridge, /renderer\.screenToTile/);
   assert.match(pixiBridge, /function dispatchCoordinate/);
   assert.doesNotMatch(pixiBridge, /dispatchLegacyCoordinate/);
   assert.match(pixiBridge, /window\.gameFrameMonsterProjection/);
