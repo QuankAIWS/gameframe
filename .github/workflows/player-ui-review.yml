@@ -9,7 +9,7 @@ on:
       - "src/browser/player-navigation-contract.test.ts"
       - "src/browser/monster-master-art-contract.test.ts"
       - "src/browser/othello-runtime-contract.test.ts"
-      - "test/visual/player-ui-review.spec.mjs"
+      - "test/visual/**"
       - "playwright.visual.config.mjs"
       - "package.json"
       - ".github/workflows/player-ui-review.yml"
@@ -48,8 +48,8 @@ jobs:
       - name: Player navigation and game contracts
         run: node --experimental-strip-types --test src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/othello-runtime-contract.test.ts
 
-      - name: Capture player UI screenshots
-        run: npx playwright test test/visual/player-ui-review.spec.mjs --config playwright.visual.config.mjs
+      - name: Capture player UI screenshots and cross-game regressions
+        run: npx playwright test test/visual --config playwright.visual.config.mjs
 
       - name: Upload player UI screenshots
         if: always()
