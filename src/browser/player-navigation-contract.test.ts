@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const read = (path: string) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 
-test("the player hub is a real game library with one card-wide launch action per game", async () => {
+test("the player hub is a real game library with one semantic card-wide link per game", async () => {
   const launcher = await read("public/auth-launcher.js");
   const navigation = await read("public/gameframe-nav.js");
   const navigationStyles = await read("public/gameframe-nav.css");
@@ -34,13 +34,12 @@ test("the player hub is a real game library with one card-wide launch action per
   assert.match(hub, /href: "\/othello\.html"/);
   assert.match(hub, /\?game=american-checkers&menu=1/);
   assert.match(hub, /\?game=tic-tac-toe&menu=1/);
+  assert.match(hub, /document\.createElement\("a"\)/);
+  assert.match(hub, /card\.href = game\.href/);
+  assert.match(hub, /setAttribute\("aria-label", `Open the \$\{game\.title\} game menu`\)/);
   assert.match(hub, /class="game-card-play"/);
   assert.match(hub, /Play now/);
-  assert.match(hub, /function activateLibraryCard/);
-  assert.match(hub, /card\.tabIndex = 0/);
-  assert.match(hub, /setAttribute\("role", "link"\)/);
-  assert.match(hub, /playLink\.click\(\)/);
-  assert.match(hub, /event\.target\.closest/);
+  assert.doesNotMatch(hub, /activateLibraryCard|playLink\.click/);
   assert.match(hub, /modeGrid\.hidden = true/);
   assert.match(hub, /game-menu-hero/);
   assert.match(hub, /Choose how to play/);
@@ -53,6 +52,7 @@ test("the player hub is a real game library with one card-wide launch action per
   assert.match(hubShellStyles, /game-hub-discord-safe/);
   assert.match(hubCardStyles, /creature-atlas-v1\.svg/);
   assert.match(hubCardStyles, /piece-solar\.svg/);
+  assert.match(hubCardStyles, /text-decoration: none/);
   assert.match(hubFlowStyles, /cursor: pointer/);
   assert.match(hubFlowStyles, /game-card:focus-visible/);
   assert.match(hubFlowStyles, /game-menu-hero/);
