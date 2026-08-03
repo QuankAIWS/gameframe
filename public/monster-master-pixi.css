@@ -22,7 +22,8 @@ body.monster-master-pixi-ready .monster-master-pixi-canvas {
   touch-action: none;
 }
 
-body.monster-master-pixi-ready .monster-master-pixi-canvas:active {
+body.monster-master-pixi-ready .monster-master-pixi-canvas:active,
+body.monster-master-pixi-ready .monster-master-pixi-canvas.is-camera-dragging {
   cursor: grabbing;
 }
 
@@ -189,13 +190,17 @@ body.monster-master-pixi-ready .monster-master-turn-unit.is-inspected .monster-m
     padding-inline: 10px;
   }
 
-  body.monster-master-pixi-ready .monster-master-match-topbar .status {
-    display: -webkit-box;
+  body.monster-master-match-active.monster-master-pixi-ready .monster-master-match-topbar .status {
+    display: -webkit-box !important;
+    min-height: 40px;
+    max-height: 44px;
+    padding: 5px 7px;
     overflow: hidden;
-    white-space: normal;
+    white-space: normal !important;
+    text-overflow: clip !important;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-    line-height: 1.18;
+    line-height: 1.2;
   }
 
   body.monster-master-pixi-ready .monster-master-camera-dock {
