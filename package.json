@@ -24,11 +24,11 @@
     "check:browser": "node --check scripts/clockwork-assets.mjs && node --check public/discord-activity-bootstrap.js && node --check public/gameframe-auth.js && node --check public/secure-match-invite.js && node --check public/invite-app.js && node --check public/auth-launcher.js && node --check public/gameframe-nav.js && node --check public/app.js && node --check public/game-hub.js && node --check public/game-polish.js && node --check public/tic-tac-toe-noir.js && node --check public/checkers-premium.js && node --check public/checkers-premium-layout.js && node --check public/othello-fidelity-app-1.js && node --check public/othello-fidelity-app-2.js && node --check public/othello-fidelity-app-3.js && node --check public/othello-fidelity-app-4.js && node --check public/othello-game-menu.js && node --check public/othello-launcher.js && node --check public/tactical-app.js && node --check public/combat-app.js && node --check public/monster-master-motion.js && node --check public/monster-master-shell.js && node --check public/monster-master-rotation.js && node --check public/monster-master-art.js && node --check public/monster-master-terrain.js && node --check public/monster-master-polish.js && node --check public/monster-master-correction.js && node --check public/monster-master-overlay.js && node --check public/monster-master-overlay-guard.js && node --check public/monster-master-app.js"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "0.19.0",
+    "@cloudflare/vitest-pool-workers": "0.20.1",
     "@discord/embedded-app-sdk": "2.5.0",
-    "@playwright/test": "1.61.1",
+    "@playwright/test": "1.62.1",
     "esbuild": "0.28.1",
     "vitest": "4.1.10",
-    "wrangler": "4.115.0"
+    "wrangler": "4.118.0"
   }
 }
