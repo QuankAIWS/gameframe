@@ -10,11 +10,17 @@ async function prepareOutput() {
 async function openPlayerHub(page, viewport) {
   await page.setViewportSize(viewport);
   await page.goto("/?player=visual-review-player");
-  await expect(page.locator("body.gameframe-game-hub")).toBeVisible();
+  await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
+  await expect(page.locator(".game-hub-topbar")).toBeVisible();
+  await expect(page.locator("#game-hub-achievements")).toBeVisible();
+  await expect(page.locator("#game-hub-achievements")).toBeDisabled();
+  await expect(page.locator("#game-hub-achievements")).toContainText("Coming soon");
   await expect(page.locator("#open-monster-master")).toBeVisible();
   await expect(page.locator("#open-othello")).toBeVisible();
   await expect(page.locator("#select-checkers")).toBeVisible();
   await expect(page.locator("#select-tic-tac-toe")).toBeVisible();
+  await expect(page.locator(".game-grid .game-card")).toHaveCount(4);
+  await expect(page.locator(".game-card-visual")).toHaveCount(4);
   await expect(page.locator("#open-tactical-canary")).toHaveCount(0);
   await expect(page.getByText("Combat Canary", { exact: true })).toHaveCount(0);
 }
