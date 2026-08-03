@@ -114,7 +114,7 @@ test("Tic-Tac-Toe uses the universal destination bar and restores the shared DOM
   assert.match(packageJson.scripts["check:browser"], /public\/tic-tac-toe-noir\.js/);
 });
 
-test("Monster Master uses Pixi, a player-relative turn queue, and no duplicate product header", async () => {
+test("Monster Master uses Pixi, a player-relative turn queue, and no duplicate renderer observers", async () => {
   const launcher = await read("public/auth-launcher.js");
   const navigationIntegrations = await read("public/gameframe-nav-integrations.css");
   const finalPolish = await read("public/gameframe-final-polish.css");
@@ -130,6 +130,7 @@ test("Monster Master uses Pixi, a player-relative turn queue, and no duplicate p
   assert.ok(monsterBranch.indexOf("monster-master-pixi-bridge.js") < monsterBranch.indexOf("monster-master-correction.js"));
   assert.ok(monsterBranch.indexOf("monster-master-correction.js") < monsterBranch.indexOf("await import(entry)"));
   assert.ok(monsterBranch.indexOf("await import(entry)") < monsterBranch.indexOf("monster-master-pixi-bundle.js"));
+  assert.doesNotMatch(monsterBranch, /monster-master-overlay-guard\.js/);
   assert.doesNotMatch(monsterBranch, /monster-master-polish\.js|monster-master-terrain\.js|monster-master-art\.js/);
 
   assert.match(navigationIntegrations, /\.monster-master-shell > \.hero/);
@@ -144,7 +145,9 @@ test("Monster Master uses Pixi, a player-relative turn queue, and no duplicate p
   assert.match(correction, /BLUE · YOU/);
   assert.match(correction, /RED · ENEMY/);
   assert.match(correction, /dataset\.monsterFriendlySeat/);
-  assert.match(correction, /installCanvasColorRemap\("fillStyle"\)/);
+  assert.match(correction, /const monsterViewEvent = "gameframe:monster-master-pixi-view"/);
+  assert.doesNotMatch(correction, /installCanvasColorRemap/);
+  assert.doesNotMatch(correction, /window\.fetch = async/);
   assert.match(correction, /combat-nav a\[href="\/combat\.html"\]/);
   assert.match(correctionStyles, /monster-master-turn-unit\.is-friendly/);
   assert.match(correctionStyles, /monster-master-turn-unit\.is-enemy/);
