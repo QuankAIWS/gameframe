@@ -37,7 +37,11 @@ async function openTicTacToe(page, viewport) {
   await expect(page.locator("body.tic-tac-toe-noir-running")).toBeVisible();
   await expect(page.locator(".tic-noir-topbar")).toBeVisible();
   await expect(page.locator('.tic-noir-topbar a[href="/"]')).toHaveCount(2);
-  await expect(page.locator(".tic-noir-control-rail")).toBeVisible();
+  await expect(page.locator(".tic-noir-board-frame")).toBeVisible();
+  await expect(page.locator(".tic-noir-board-kicker")).toBeVisible();
+  await expect(page.locator(".tic-noir-control-rail #player-o")).toBeVisible();
+  await expect(page.locator(".tic-noir-footer")).toBeVisible();
+  await expect(page.locator('.tic-noir-footer a[href="/"]')).toHaveText("Back to games");
   await expect(page.locator("#board.board-tic-tac-toe")).toBeVisible();
   await expect(page.locator("#board .tic-cell")).toHaveCount(9);
   await expect(page.locator(".hero")).toBeHidden();
