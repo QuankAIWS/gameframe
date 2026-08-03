@@ -7,15 +7,19 @@ on:
       - agent/monster-master-pixi-renderer
     paths:
       - "src/browser/monster-master-pixi-entry.js"
+      - "public/monster-master-app.js"
       - "scripts/build-monster-master-pixi.mjs"
       - "scripts/refine-monster-master-pixi.mjs"
+      - "scripts/refine-monster-master-input.mjs"
       - ".github/workflows/build-monster-master-pixi.yml"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - "src/browser/monster-master-pixi-entry.js"
+      - "public/monster-master-app.js"
       - "scripts/build-monster-master-pixi.mjs"
       - "scripts/refine-monster-master-pixi.mjs"
+      - "scripts/refine-monster-master-input.mjs"
       - ".github/workflows/build-monster-master-pixi.yml"
 
 permissions:
@@ -44,7 +48,7 @@ jobs:
       - name: Resolve pinned Pixi dependency
         run: npm install pixi.js@8.19.0 --save-exact
 
-      - name: Apply one-time runtime refinements
+      - name: Apply one-time renderer refinements
         if: github.event_name == 'push'
         run: |
           if grep -q 'viewSignature: ""' src/browser/monster-master-pixi-entry.js; then
@@ -52,25 +56,32 @@ jobs:
           else
             node scripts/refine-monster-master-pixi.mjs
           fi
+          if grep -q 'function handleBattlefieldCoordinate' public/monster-master-app.js; then
+            echo "Direct battlefield coordinate input is already applied."
+          else
+            node scripts/refine-monster-master-input.mjs
+          fi
 
       - name: Build browser bundle
         run: node scripts/build-monster-master-pixi.mjs
 
-      - name: Validate generated bundle
-        run: node --check public/monster-master-pixi-bundle.js
+      - name: Validate generated runtime
+        run: |
+          node --check public/monster-master-pixi-bundle.js
+          node --check public/monster-master-app.js
 
       - name: Commit generated renderer files
         if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json src/browser/monster-master-pixi-entry.js public/monster-master-pixi-bundle.js
+          git add package.json package-lock.json src/browser/monster-master-pixi-entry.js public/monster-master-pixi-bundle.js public/monster-master-app.js
           if ! git diff --cached --quiet; then
-            git commit -m "Refine and rebuild Monster Master Pixi runtime"
+            git commit -m "Complete direct Monster Master Pixi input path"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
 
-      - name: Upload reproducible dependency and bundle files
+      - name: Upload reproducible renderer files
         uses: actions/upload-artifact@v4
         with:
           name: monster-master-pixi-bootstrap-${{ github.run_id }}
@@ -79,5 +90,6 @@ jobs:
             package-lock.json
             src/browser/monster-master-pixi-entry.js
             public/monster-master-pixi-bundle.js
+            public/monster-master-app.js
           if-no-files-found: error
           retention-days: 3
