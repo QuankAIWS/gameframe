@@ -4,9 +4,12 @@ import { readFile } from "node:fs/promises";
 
 const read = (path: string) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 
-test("Monster Master loads the pinned Pixi renderer and deterministic generated art after the authoritative controller", async () => {
+test("Monster Master uses one authoritative controller and one on-demand Pixi renderer", async () => {
   const launcher = await read("public/auth-launcher.js");
   const monsterApp = await read("public/monster-master-app.js");
+  const monsterShell = await read("public/monster-master-shell.js");
+  const correction = await read("public/monster-master-correction.js");
+  const overlay = await read("public/monster-master-overlay.js");
   const pixiSource = await read("src/browser/monster-master-pixi-entry.js");
   const pixiBridge = await read("public/monster-master-pixi-bridge.js");
   const pixiStyles = await read("public/monster-master-pixi.css");
@@ -22,8 +25,9 @@ test("Monster Master loads the pinned Pixi renderer and deterministic generated 
   const monsterBranch = launcher.slice(monsterStart, monsterEnd);
   assert.ok(monsterStart >= 0 && monsterEnd > monsterStart);
   assert.ok(monsterBranch.indexOf("monster-master-pixi-bridge.js") < monsterBranch.indexOf("monster-master-correction.js"));
-  assert.ok(monsterBranch.indexOf("monster-master-overlay-guard.js") < monsterBranch.indexOf("await import(entry)"));
+  assert.ok(monsterBranch.indexOf("monster-master-overlay.js") < monsterBranch.indexOf("await import(entry)"));
   assert.ok(monsterBranch.indexOf("await import(entry)") < monsterBranch.indexOf("monster-master-pixi-bundle.js"));
+  assert.doesNotMatch(monsterBranch, /monster-master-overlay-guard\.js/);
   assert.doesNotMatch(monsterBranch, /monster-master-art\.js/);
   assert.doesNotMatch(monsterBranch, /monster-master-terrain\.js/);
   assert.doesNotMatch(monsterBranch, /monster-master-polish\.js/);
@@ -33,6 +37,22 @@ test("Monster Master loads the pinned Pixi renderer and deterministic generated 
   assert.match(monsterApp, /getView: \(\) => current/);
   assert.match(monsterApp, /handleCoordinate: \(coordinate\) => handleBattlefieldCoordinate/);
   assert.match(monsterApp, /new CustomEvent\(monsterMasterViewEvent/);
+  assert.match(monsterApp, /function renderDiagnostics\(layout = null\)/);
+  assert.match(monsterApp, /if \(window\.gameFrameMonsterRendererMode === "pixi"\) \{\n    renderDiagnostics\(\);\n    return;/);
+  assert.match(monsterApp, /window\.gameFrameMonsterLegacyDrawCount/);
+
+  assert.match(monsterShell, /if \(window\.gameFrameMonsterRendererMode === "pixi"\) return/);
+  assert.match(monsterShell, /if \(window\.gameFrameMonsterRendererMode === "pixi"\) \{\n    updateShellState\(\);\n    return;/);
+
+  for (const presentation of [correction, overlay]) {
+    assert.match(presentation, /const monsterViewEvent = "gameframe:monster-master-pixi-view"/);
+    assert.match(presentation, /window\.addEventListener\(monsterViewEvent/);
+    assert.match(presentation, /window\.gameFrameMonsterController\?\.getView/);
+    assert.doesNotMatch(presentation, /window\.fetch = async/);
+    assert.doesNotMatch(presentation, /class MonsterMaster.*Socket extends/);
+  }
+  assert.doesNotMatch(correction, /installCanvasColorRemap/);
+  assert.doesNotMatch(correction, /CanvasRenderingContext2D\.prototype/);
 
   assert.match(pixiSource, /from "pixi\.js"/);
   assert.match(pixiSource, /preference: "webgl"/);
@@ -58,6 +78,7 @@ test("Monster Master loads the pinned Pixi renderer and deterministic generated 
   assert.match(pixiSource, /requestAnimationFrame\(render\)/);
   assert.match(pixiSource, /window\.gameFrameMonsterPixi/);
 
+  assert.match(pixiBridge, /^window\.gameFrameMonsterRendererMode = "pixi";/);
   assert.match(pixiBridge, /monster-master-pixi\.css/);
   assert.match(pixiBridge, /controller\?\.handleCoordinate/);
   assert.match(pixiBridge, /renderer\.screenToTile/);
@@ -87,4 +108,5 @@ test("Monster Master loads the pinned Pixi renderer and deterministic generated 
   assert.match(packageJson.scripts.validate, /check:monster-master-pixi/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-pixi-bundle\.js/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-pixi-bridge\.js/);
+  assert.doesNotMatch(packageJson.scripts["check:browser"], /monster-master-overlay-guard/);
 });
