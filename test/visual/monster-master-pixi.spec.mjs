@@ -16,7 +16,7 @@ async function selectedDeploymentAction(page) {
   });
 }
 
-test("Monster Master uses an idle-on-demand Pixi WebGL battlefield", async ({ page }, testInfo) => {
+test("Monster Master uses one idle-on-demand Pixi WebGL battlefield", async ({ page }, testInfo) => {
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
 
@@ -35,6 +35,7 @@ test("Monster Master uses an idle-on-demand Pixi WebGL battlefield", async ({ pa
   await expect(page.locator("#monster-master-motion-canvas")).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterRendererMode)).toBe("pixi");
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterPixi?.getView?.()))).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterLegacyDrawCount ?? 0)).toBe(0);
 
   const webgl = await pixiCanvas.evaluate((canvas) => Boolean(
     canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl"),
@@ -81,6 +82,7 @@ test("Monster Master uses an idle-on-demand Pixi WebGL battlefield", async ({ pa
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterController.getView().revision), {
     timeout: 8_000,
   }).toBeGreaterThan(previousRevision);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterLegacyDrawCount ?? 0)).toBe(0);
 
   const performance = await page.evaluate(() => window.gameFrameMonsterPixi.getPerformance());
   expect(performance.renders).toBeGreaterThan(0);
@@ -98,6 +100,7 @@ test("Monster Master Pixi battlefield stays inside the mobile viewport", async (
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
   await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterLegacyDrawCount ?? 0)).toBe(0);
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 
   const resolution = await page.locator("#monster-master-pixi-canvas").evaluate((canvas) => ({
