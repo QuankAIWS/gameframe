@@ -89,7 +89,24 @@ window.addEventListener(coordinateEvent, (event) => {
   }
 });
 
-window.gameFrameMonsterPixiBridge = Object.freeze({
+function projectionCamera() {
+  const camera = window.gameFrameMonsterPixi?.getCamera?.();
+  if (!camera) return null;
+  return {
+    centerX: camera.x,
+    centerY: camera.y,
+    zoom: camera.zoom,
+    quarter: camera.quarter,
+  };
+}
+
+const bridge = Object.freeze({
   worldToScreen,
   dispatchCoordinate: dispatchLegacyCoordinate,
+});
+window.gameFrameMonsterPixiBridge = bridge;
+window.gameFrameMonsterProjection = Object.freeze({
+  getCamera: projectionCamera,
+  worldToScreen,
+  render: () => window.gameFrameMonsterPixi?.render?.(),
 });
