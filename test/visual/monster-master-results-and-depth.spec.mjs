@@ -85,8 +85,11 @@ test("Monster Master presents a terminal victory screen over the surviving battl
   await expect(resultScreen.getByRole("link", { name: "Return home" })).toHaveAttribute("href", "/");
   await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
 
+  await page.waitForTimeout(900);
+  await expect(resultScreen).toBeVisible();
+  await expect(page.locator("#monster-master-status")).toHaveText("Your force won the duel.");
   await page.screenshot({ path: testInfo.outputPath("monster-master-victory-desktop.png"), fullPage: true });
 
-  await page.evaluate(() => window.gameFrameMonsterResults.capture(window.gameFrameMonsterController.getView()));
+  await page.evaluate(() => window.gameFrameMonsterResults.reset());
   await expect(resultScreen).toBeHidden();
 });
