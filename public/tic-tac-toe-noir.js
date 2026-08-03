@@ -12,13 +12,18 @@ const matchPanel = document.querySelector("#match-panel");
 const matchTitle = document.querySelector("#match-title");
 const matchLabel = document.querySelector("#match-label");
 const board = document.querySelector("#board");
+const boardWrap = board?.closest(".board-wrap");
 const boardHelp = document.querySelector("#board-help");
 const status = document.querySelector("#status");
 const revision = document.querySelector("#revision");
 const connection = document.querySelector("#connection");
+const matchId = document.querySelector("#match-id");
 const invitePanel = document.querySelector("#invite-panel");
 const copyInvite = document.querySelector("#copy-invite");
 const newMatch = document.querySelector("#new-match");
+const players = matchPanel?.querySelector(".players");
+const playerO = document.querySelector("#player-o");
+const gameLayout = matchPanel?.querySelector(".game-layout");
 
 let syncPending = false;
 
@@ -26,21 +31,17 @@ function isTicTacToeMatch() {
   return Boolean(matchPanel && !matchPanel.hidden && board?.classList.contains("board-tic-tac-toe"));
 }
 
-function installMatchTopbar() {
+function installTopbar() {
   if (!matchPanel || matchPanel.querySelector(".tic-noir-topbar")) return;
   const topbar = document.createElement("header");
   topbar.className = "tic-noir-topbar";
-  topbar.hidden = true;
   topbar.innerHTML = `
     <a class="tic-noir-brand" href="/" aria-label="Back to the GameFrame game library">
       <span class="tic-noir-brand-mark" aria-hidden="true">S</span>
-      <span>
-        <small>SCRIBBLES GAMEFRAME</small>
-        <strong>TIC-TAC-TOE</strong>
-      </span>
+      <span><small>SCRIBBLES GAMEFRAME</small><strong>TIC-TAC-TOE</strong></span>
     </a>
     <nav class="tic-noir-nav" aria-label="Tic-Tac-Toe navigation">
-      <a href="/">Back to games</a>
+      <a href="/">Games</a>
       <button class="tic-noir-setup-top" type="button">Match setup</button>
     </nav>
     <span class="tic-noir-discord-safe" aria-hidden="true"></span>
@@ -49,48 +50,111 @@ function installMatchTopbar() {
   topbar.querySelector(".tic-noir-setup-top")?.addEventListener("click", () => newMatch?.click());
 }
 
+function installAmbientCircuits() {
+  if (!matchPanel || matchPanel.querySelector(".tic-noir-ambient")) return;
+  for (const side of ["left", "right"]) {
+    const ambient = document.createElement("div");
+    ambient.className = `tic-noir-ambient tic-noir-ambient-${side}`;
+    ambient.setAttribute("aria-hidden", "true");
+    ambient.innerHTML = "<i></i><i></i><i></i>";
+    matchPanel.append(ambient);
+  }
+}
+
+function installBoardFrame() {
+  if (!boardWrap || !board || boardWrap.querySelector(".tic-noir-board-frame")) return;
+  const kicker = document.createElement("div");
+  kicker.className = "tic-noir-board-kicker";
+  kicker.innerHTML = '<span>LIVE MATCH</span><i></i><small id="tic-noir-board-revision">REV —</small>';
+
+  const frame = document.createElement("div");
+  frame.className = "tic-noir-board-frame";
+  frame.innerHTML = `
+    <span class="tic-noir-corner tic-noir-corner-tl" aria-hidden="true"></span>
+    <span class="tic-noir-corner tic-noir-corner-tr" aria-hidden="true"></span>
+    <span class="tic-noir-corner tic-noir-corner-bl" aria-hidden="true"></span>
+    <span class="tic-noir-corner tic-noir-corner-br" aria-hidden="true"></span>
+  `;
+  board.before(kicker, frame);
+  frame.append(board);
+  boardHelp?.classList.add("tic-noir-board-status");
+}
+
+function installPlayerTelemetry() {
+  if (!players || players.querySelector(".tic-noir-turn-signal")) return;
+  const signal = document.createElement("section");
+  signal.className = "tic-noir-turn-signal";
+  signal.innerHTML = `
+    <small>TURN SIGNAL</small>
+    <strong id="tic-noir-turn-copy">Awaiting match state</strong>
+    <span>Choose an open cell</span>
+  `;
+  players.append(signal);
+}
+
 function installControlRail() {
-  const gameLayout = matchPanel?.querySelector(".game-layout");
   if (!gameLayout || gameLayout.querySelector(".tic-noir-control-rail")) return;
   const rail = document.createElement("aside");
   rail.className = "tic-noir-control-rail";
-  rail.hidden = true;
-  rail.setAttribute("aria-label", "Match controls and connection information");
+  rail.setAttribute("aria-label", "Match connection and invite controls");
   rail.innerHTML = `
-    <section class="tic-noir-control-card tic-noir-turn-card">
-      <small>TURN SIGNAL</small>
-      <strong id="tic-noir-turn-copy">Awaiting match state</strong>
-    </section>
-    <section class="tic-noir-control-card">
+    <section class="tic-noir-system-card">
       <small>SYSTEM</small>
-      <dl class="tic-noir-system-list">
-        <div><dt>Revision</dt><dd id="tic-noir-revision">—</dd></div>
+      <dl>
         <div><dt>Updates</dt><dd id="tic-noir-connection">—</dd></div>
+        <div><dt>Revision</dt><dd id="tic-noir-revision">—</dd></div>
+        <div><dt>Match</dt><dd id="tic-noir-match-id">—</dd></div>
       </dl>
     </section>
-    <section class="tic-noir-control-card tic-noir-rules">
-      <small>OBJECTIVE</small>
-      <p>Complete a line of three marks horizontally, vertically, or diagonally.</p>
-    </section>
-    <div class="tic-noir-actions">
-      <button id="tic-noir-invite" type="button">Copy player invite</button>
-      <button id="tic-noir-setup" type="button">Match setup</button>
-      <a href="/">Back to games</a>
-    </div>
+    <button id="tic-noir-invite" type="button">Copy player invite</button>
   `;
   gameLayout.append(rail);
+  if (playerO) rail.prepend(playerO);
   rail.querySelector("#tic-noir-invite")?.addEventListener("click", () => copyInvite?.click());
-  rail.querySelector("#tic-noir-setup")?.addEventListener("click", () => newMatch?.click());
+}
+
+function installFooter() {
+  if (!matchPanel || matchPanel.querySelector(".tic-noir-footer")) return;
+  const footer = document.createElement("footer");
+  footer.className = "tic-noir-footer";
+  footer.innerHTML = `
+    <a href="/">Back to games</a>
+    <span aria-hidden="true"></span>
+    <button type="button">Match setup</button>
+  `;
+  footer.querySelector("button")?.addEventListener("click", () => newMatch?.click());
+  matchPanel.append(footer);
+}
+
+function installPresentation() {
+  installTopbar();
+  installAmbientCircuits();
+  installBoardFrame();
+  installPlayerTelemetry();
+  installControlRail();
+  installFooter();
 }
 
 function mirrorState() {
+  const statusText = status?.textContent?.trim() || "Awaiting match state";
+  const revisionText = revision?.textContent?.replace(/^Revision\s*/i, "") || "—";
+  const connectionText = connection?.textContent?.trim() || "—";
+  const matchText = matchId?.textContent?.trim() || "—";
   const turnCopy = document.querySelector("#tic-noir-turn-copy");
+  const boardRevision = document.querySelector("#tic-noir-board-revision");
   const revisionCopy = document.querySelector("#tic-noir-revision");
   const connectionCopy = document.querySelector("#tic-noir-connection");
+  const matchCopy = document.querySelector("#tic-noir-match-id");
   const invite = document.querySelector("#tic-noir-invite");
-  if (turnCopy) turnCopy.textContent = status?.textContent?.trim() || "Awaiting match state";
-  if (revisionCopy) revisionCopy.textContent = revision?.textContent?.replace(/^Revision\s*/i, "") || "—";
-  if (connectionCopy) connectionCopy.textContent = connection?.textContent?.trim() || "—";
+
+  if (turnCopy) turnCopy.textContent = statusText;
+  if (boardRevision) boardRevision.textContent = `REV ${revisionText}`;
+  if (revisionCopy) revisionCopy.textContent = revisionText;
+  if (connectionCopy) connectionCopy.textContent = connectionText;
+  if (matchCopy) matchCopy.textContent = matchText;
+  if (boardHelp) {
+    boardHelp.innerHTML = `<span class="tic-noir-status-dot" aria-hidden="true"></span><strong>${statusText}</strong><span>${connectionText}</span>`;
+  }
   if (invite) {
     const available = Boolean(invitePanel && !invitePanel.hidden && copyInvite && !copyInvite.disabled);
     invite.disabled = !available;
@@ -100,20 +164,14 @@ function mirrorState() {
 
 function syncPresentation() {
   syncPending = false;
-  installMatchTopbar();
-  installControlRail();
+  installPresentation();
   const active = isTicTacToeMatch();
-  const topbar = matchPanel?.querySelector(".tic-noir-topbar");
-  const rail = matchPanel?.querySelector(".tic-noir-control-rail");
   document.body.classList.toggle("tic-tac-toe-noir-running", active);
-  if (topbar) topbar.hidden = !active;
-  if (rail) rail.hidden = !active;
   if (hero) hero.setAttribute("aria-hidden", String(active));
   if (!active) return;
   if (matchLabel) matchLabel.textContent = "LIVE MATCH";
   if (matchTitle) matchTitle.textContent = "Tic-Tac-Toe";
   if (newMatch) newMatch.textContent = "Match setup";
-  if (boardHelp && !boardHelp.textContent?.trim()) boardHelp.textContent = "Choose an open cell.";
   mirrorState();
 }
 
@@ -124,7 +182,7 @@ function scheduleSync() {
 }
 
 const observer = new MutationObserver(scheduleSync);
-for (const node of [lobby, matchPanel, board, status, revision, connection, invitePanel].filter(Boolean)) {
+for (const node of [lobby, matchPanel, board, status, revision, connection, matchId, invitePanel].filter(Boolean)) {
   observer.observe(node, {
     attributes: true,
     attributeFilter: ["hidden", "class", "disabled"],
