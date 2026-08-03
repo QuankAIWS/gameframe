@@ -11,6 +11,7 @@ const ui = {
   roster: document.querySelector("#monster-master-roster-list"),
   intel: document.querySelector("#monster-master-intel-rail"),
   hud: document.querySelector("#monster-master-unit-hud"),
+  hudLabel: document.querySelector("#monster-master-unit-hud .section-label"),
   hudName: document.querySelector("#monster-master-hud-name"),
   hudGlyph: document.querySelector("#monster-master-hud-glyph"),
   hudHealth: document.querySelector("#monster-master-hud-health"),
@@ -107,6 +108,15 @@ function unitById(unitId, view = latestView) {
 
 function activeUnit(view = latestView) {
   return unitById(view?.observation?.activeUnitId, view);
+}
+
+function deploymentSelectedUnitId(view = latestView) {
+  if (view?.observation?.phase !== "deployment") return null;
+  try {
+    const diagnostics = JSON.parse(document.querySelector("#monster-master-details")?.textContent || "{}");
+    if (diagnostics.selectedUnitId) return diagnostics.selectedUnitId;
+  } catch { /* Diagnostics are optional presentation data. */ }
+  return view.observation.legalActions.find((action) => action.type === "deploy-unit")?.unitId ?? null;
 }
 
 function friendlyPlayerId(view = latestView) {
@@ -241,10 +251,12 @@ function abilityActionButton(trait, inspectedIsActive) {
 function renderUnitCard() {
   if (!latestView || !ui.hud) return;
   const activeId = latestView.observation.activeUnitId;
-  const unit = unitById(inspectedUnitId ?? activeId) ?? activeUnit();
+  const deploymentId = deploymentSelectedUnitId();
+  const referenceId = activeId ?? deploymentId;
+  const unit = unitById(inspectedUnitId ?? referenceId) ?? activeUnit();
   const presentation = roleFor(unit);
   const friendly = unit?.ownerId === friendlyPlayerId();
-  const inspectedIsActive = Boolean(unit && unit.id === activeId);
+  const inspectedIsActive = Boolean(unit && unit.id === referenceId);
   const command = unit ? latestView.observation.commandByPlayer?.[unit.ownerId] ?? 0 : 0;
   const phase = latestView.observation.phase === "combat"
     ? `Round ${latestView.observation.round}`
@@ -255,6 +267,7 @@ function renderUnitCard() {
   ui.hud.dataset.role = unit?.role ?? "unknown";
   ui.hud.dataset.owner = unit ? (friendly ? "friendly" : "enemy") : "none";
   ui.hud.dataset.inspected = String(!inspectedIsActive);
+  setText(ui.hudLabel, activeId ? "ACTIVE UNIT" : "DEPLOYING UNIT");
   setText(ui.hudGlyph, presentation.glyph);
   setText(ui.hudName, unit ? presentation.label : "No active unit");
   setText(ui.hudHealth, health);
@@ -275,7 +288,10 @@ function renderUnitCard() {
   const inspection = ensureInspectionControls();
   setText(inspection?.querySelector("#monster-master-unit-summary"), presentation.summary);
   const returnButton = inspection?.querySelector("#monster-master-return-active");
-  if (returnButton) returnButton.hidden = inspectedIsActive;
+  if (returnButton) {
+    returnButton.hidden = inspectedIsActive || !referenceId;
+    returnButton.textContent = activeId ? "Return to active unit" : "Return to selected unit";
+  }
 
   const kit = ensureAbilityList();
   setText(kit?.querySelector("#monster-master-ability-owner"), unit ? presentation.label : "—");
@@ -426,6 +442,30 @@ if (NativeWebSocket) {
 
 const rosterObserver = new MutationObserver(scheduleRender);
 if (ui.roster) rosterObserver.observe(ui.roster, { childList: true, subtree: true });
+
+const sourceObserver = new MutationObserver(scheduleRender);
+for (const node of [
+  document.querySelector("#monster-master-active-unit"),
+  document.querySelector("#monster-master-phase"),
+  document.querySelector("#monster-master-options"),
+  document.querySelector("#monster-master-move-budget"),
+  document.querySelector("#monster-master-primary-budget"),
+  document.querySelector("#monster-master-alpha-command"),
+  document.querySelector("#monster-master-beta-command"),
+  ui.deploy,
+  ui.move,
+  ui.attack,
+  ui.mend,
+  ui.end,
+].filter(Boolean)) {
+  sourceObserver.observe(node, {
+    attributes: true,
+    attributeFilter: ["disabled", "hidden", "aria-pressed"],
+    childList: true,
+    subtree: true,
+    characterData: true,
+  });
+}
 
 window.gameFrameMonsterOverlay = Object.freeze({
   capture,
