@@ -85,12 +85,13 @@ test("the actual Othello engine starts legally, flips pieces, alternates turns, 
   assert.ok(safety > 20);
 });
 
-test("the player flow uses universal navigation, game-specific menus, and a functional Othello controller", async () => {
+test("the player flow uses universal navigation, game-specific menus, and storage-independent Othello turns", async () => {
   const launcher = await read("public/auth-launcher.js");
   const navigation = await read("public/gameframe-nav.js");
   const hub = await read("public/game-hub.js");
   const app4 = await read("public/othello-fidelity-app-4.js");
   const othelloMenu = await read("public/othello-game-menu.js");
+  const browserRegression = await read("test/browser/othello-gameplay.spec.mjs");
   const packageJson = JSON.parse(await read("package.json"));
 
   assert.ok(launcher.indexOf("gameframe-nav.js") < launcher.indexOf("await import(entry)"));
@@ -101,21 +102,31 @@ test("the player flow uses universal navigation, game-specific menus, and a func
   assert.match(navigation, /gameframe:before-home/);
 
   assert.match(hub, /class=\"game-card-play\"/);
+  assert.match(hub, /function activateLibraryCard/);
+  assert.match(hub, /playLink\.click\(\)/);
   assert.match(hub, /\?game=tic-tac-toe&menu=1/);
   assert.match(hub, /\?game=american-checkers&menu=1/);
   assert.match(hub, /modeGrid\.hidden = true/);
   assert.match(hub, /Choose how to play/);
-  assert.doesNotMatch(hub, /game-hub-topbar/);
+  assert.match(hub, /game-hub-topbar/);
 
   assert.match(app4, /query\.get\("state"\) \|\| "start"/);
   assert.match(app4, /othello-game-menu\.js/);
   assert.match(app4, /othello-launcher\.js/);
   assert.match(othelloMenu, /Challenge Theo/);
   assert.match(othelloMenu, /Pass &amp; play/);
-  assert.match(othelloMenu, /localStorage\.setItem/);
+  assert.match(othelloMenu, /function markStorageUnavailable/);
+  assert.match(othelloMenu, /try \{\n      localStorage\.setItem/);
+  assert.match(othelloMenu, /catch \{\n      markStorageUnavailable\(\)/);
   assert.match(othelloMenu, /scheduleTheoTurn/);
   assert.match(othelloMenu, /state\.player === LIGHT/);
   assert.match(othelloMenu, /demoMove\?\.remove/);
+  assert.match(othelloMenu, /document\.addEventListener\("gameframe:before-home", persist\)/);
+
+  assert.match(browserRegression, /pass-and-play alternates legal turns/);
+  assert.match(browserRegression, /persistence is unavailable/);
+  assert.match(browserRegression, /Storage\.prototype\.setItem/);
+  assert.match(browserRegression, /"2 \/ 60"/);
 
   for (const file of [
     "public/gameframe-nav.js",
