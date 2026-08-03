@@ -9,6 +9,8 @@ if (!document.querySelector(`link[href="${stylesheetUrl}"]`)) {
 const viewEvent = "gameframe:monster-master-pixi-view";
 let latestView = null;
 let resultSignature = "";
+let lockedMatchId = null;
+let lockedRevision = -1;
 
 function ensureResultScreen() {
   const match = document.querySelector("#monster-master-match");
@@ -40,7 +42,7 @@ function ensureResultScreen() {
   `;
   match.append(screen);
   screen.querySelector("#monster-master-result-rematch")?.addEventListener("click", () => {
-    screen.hidden = true;
+    resetResult();
     document.querySelector("#monster-master-new-match")?.click();
   });
   return screen;
@@ -61,6 +63,18 @@ function statusCopy(result) {
   if (result === "victory") return "Your force won the duel.";
   if (result === "defeat") return "The opposing force won the duel.";
   return "The duel ended in a draw.";
+}
+
+function resetResult() {
+  const screen = ensureResultScreen();
+  if (screen) {
+    screen.hidden = true;
+    screen.removeAttribute("data-result");
+  }
+  latestView = null;
+  resultSignature = "";
+  lockedMatchId = null;
+  lockedRevision = -1;
 }
 
 function renderResult(view = latestView) {
@@ -111,17 +125,19 @@ function capture(candidate) {
       ? candidate.view
       : null;
   if (!view) return;
+  const revision = Number(view.revision) || 0;
+  if (lockedMatchId === view.matchId && revision < lockedRevision) return;
+
   latestView = view;
+  if (resultFor(view)) {
+    lockedMatchId = view.matchId;
+    lockedRevision = revision;
+  }
   renderResult(view);
 }
 
 window.addEventListener(viewEvent, (event) => capture(event.detail?.view));
-document.querySelector("#monster-master-new-match")?.addEventListener("click", () => {
-  const screen = ensureResultScreen();
-  if (screen) screen.hidden = true;
-  latestView = null;
-  resultSignature = "";
-});
+document.querySelector("#monster-master-new-match")?.addEventListener("click", resetResult);
 queueMicrotask(() => {
   const current = window.gameFrameMonsterController?.getView?.();
   if (current) capture(current);
@@ -130,5 +146,6 @@ queueMicrotask(() => {
 window.gameFrameMonsterResults = Object.freeze({
   capture,
   render: renderResult,
+  reset: resetResult,
   getView: () => latestView,
 });
