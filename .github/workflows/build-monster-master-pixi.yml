@@ -14,6 +14,7 @@ on:
       - "scripts/refine-monster-master-pixi.mjs"
       - "scripts/refine-monster-master-input.mjs"
       - "scripts/refine-monster-master-state-channel.mjs"
+      - "scripts/refine-monster-master-pixi-camera.mjs"
       - ".github/workflows/build-monster-master-pixi.yml"
   pull_request:
     types: [opened, synchronize, reopened]
@@ -26,6 +27,7 @@ on:
       - "scripts/refine-monster-master-pixi.mjs"
       - "scripts/refine-monster-master-input.mjs"
       - "scripts/refine-monster-master-state-channel.mjs"
+      - "scripts/refine-monster-master-pixi-camera.mjs"
       - ".github/workflows/build-monster-master-pixi.yml"
 
 permissions:
@@ -72,6 +74,11 @@ jobs:
           else
             node scripts/refine-monster-master-state-channel.mjs
           fi
+          if grep -q 'const width = Math.max(1, state.frame.clientWidth)' src/browser/monster-master-pixi-entry.js; then
+            echo "Logical camera dimensions are already applied."
+          else
+            node scripts/refine-monster-master-pixi-camera.mjs
+          fi
 
       - name: Build browser bundle
         run: node scripts/build-monster-master-pixi.mjs
@@ -90,7 +97,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package.json package-lock.json src/browser/monster-master-pixi-entry.js public/monster-master-pixi-bundle.js public/monster-master-app.js public/auth-launcher.js public/monster-master-pixi-bridge.js
           if ! git diff --cached --quiet; then
-            git commit -m "Connect Monster Master controller directly to Pixi"
+            git commit -m "Normalize Monster Master Pixi camera space"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
 
