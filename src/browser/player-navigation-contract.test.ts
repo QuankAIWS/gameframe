@@ -4,66 +4,75 @@ import { readFile } from "node:fs/promises";
 
 const read = (path: string) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 
-test("the player hub exposes real games, a future achievements destination, and no internal canaries", async () => {
+test("the player hub is a real game library with one explicit launch action per game", async () => {
   const launcher = await read("public/auth-launcher.js");
+  const navigation = await read("public/gameframe-nav.js");
+  const navigationStyles = await read("public/gameframe-nav.css");
   const hub = await read("public/game-hub.js");
   const hubStyles = await read("public/game-hub.css");
   const hubShellStyles = await read("public/game-hub-shell.css");
   const hubCardStyles = await read("public/game-hub-cards.css");
-  const ticStyles = await read("public/tic-tac-toe-noir.css");
+  const hubFlowStyles = await read("public/game-hub-flow.css");
   const packageJson = JSON.parse(await read("package.json"));
 
+  assert.ok(launcher.indexOf("gameframe-nav.js") < launcher.indexOf("game-hub.js"));
   assert.ok(launcher.indexOf("game-hub.js") < launcher.indexOf("await import(entry)"));
+  assert.match(navigation, /data-gameframe-home/);
+  assert.match(navigation, /Achievements/);
+  assert.match(navigation, /Coming soon/);
+  assert.doesNotMatch(navigation, />Games</);
+  assert.match(navigationStyles, /position: sticky/);
+  assert.match(navigationStyles, /gameframe-destination-session-space/);
+
   assert.match(hub, /href: "\/monster-master\.html"/);
   assert.match(hub, /href: "\/othello\.html"/);
-  assert.match(hub, /Clockwork Checkers/);
-  assert.match(hub, /Tic-Tac-Toe/);
-  assert.match(hub, /id="game-hub-achievements"/);
-  assert.match(hub, /Coming soon/);
-  assert.match(hub, /game-card-visual/);
-  assert.match(hub, /game-hub-shell\.css/);
-  assert.match(hub, /game-hub-cards\.css/);
+  assert.match(hub, /\?game=american-checkers&menu=1/);
+  assert.match(hub, /\?game=tic-tac-toe&menu=1/);
+  assert.match(hub, /class="game-card-play"/);
+  assert.match(hub, /Play now/);
+  assert.match(hub, /modeGrid\.hidden = true/);
+  assert.match(hub, /game-menu-hero/);
+  assert.match(hub, /Choose how to play/);
   assert.match(hub, /tacticalLink\?\.remove\(\)/);
   assert.doesNotMatch(hub, /href: "\/tactical\.html"/);
   assert.doesNotMatch(hub, /href: "\/combat\.html"/);
+  assert.doesNotMatch(hub, /game-hub-topbar/);
+
   assert.match(hubStyles, /game-hub-monster/);
-  assert.match(hubShellStyles, /game-hub-topbar/);
   assert.match(hubShellStyles, /game-hub-discord-safe/);
   assert.match(hubCardStyles, /creature-atlas-v1\.svg/);
   assert.match(hubCardStyles, /piece-solar\.svg/);
-  assert.match(hubCardStyles, /hub-tic-grid/);
-  assert.match(ticStyles, /\.gameframe-game-hub-lobby \.hero > \.eyebrow/);
-  assert.match(ticStyles, /display: none !important/);
+  assert.match(hubFlowStyles, /game-card-play/);
+  assert.match(hubFlowStyles, /game-menu-hero/);
+  assert.match(packageJson.scripts["check:browser"], /public\/gameframe-nav\.js/);
   assert.match(packageJson.scripts["check:browser"], /public\/game-hub\.js/);
 });
 
-test("Tic-Tac-Toe uses the locally iterated viewport noir shell and returns to the game library", async () => {
+test("Tic-Tac-Toe uses the universal destination bar and keeps its reviewed noir viewport", async () => {
   const launcher = await read("public/auth-launcher.js");
+  const navigation = await read("public/gameframe-nav.js");
+  const navigationStyles = await read("public/gameframe-nav.css");
   const controller = await read("public/tic-tac-toe-noir.js");
   const styles = await read("public/tic-tac-toe-noir.css");
   const packageJson = JSON.parse(await read("package.json"));
 
-  assert.ok(launcher.indexOf("game-hub.js") < launcher.indexOf("tic-tac-toe-noir.js"));
+  assert.ok(launcher.indexOf("gameframe-nav.js") < launcher.indexOf("tic-tac-toe-noir.js"));
   assert.ok(launcher.indexOf("tic-tac-toe-noir.js") < launcher.indexOf("await import(entry)"));
+  assert.match(navigation, /navigationTheme/);
+  assert.match(navigation, /TIC-TAC-TOE/);
+  assert.match(navigationStyles, /body\.tic-tac-toe-noir-running \.tic-noir-topbar/);
+  assert.match(navigationStyles, /grid-template-rows: minmax\(0, 1fr\) 48px/);
+
   assert.match(controller, /function isTicTacToeMatch/);
-  assert.match(controller, /function installBoardFrame/);
-  assert.match(controller, /tic-noir-board-frame/);
-  assert.match(controller, /tic-noir-ambient/);
-  assert.match(controller, /tic-noir-footer/);
-  assert.match(controller, /if \(playerO\) rail\.prepend\(playerO\)/);
-  assert.match(controller, /href="\/"/);
-  assert.match(controller, /Back to games/);
+  assert.match(controller, /board-tic-tac-toe/);
+  assert.match(controller, /tic-noir-control-rail/);
+  assert.match(controller, /playerO/);
+  assert.match(controller, /gameLayout\.append\(rail\)/);
   assert.match(controller, /copyInvite\?\.click/);
   assert.match(controller, /newMatch\?\.click/);
-  assert.match(controller, /classList\.toggle\("tic-tac-toe-noir-running"/);
   assert.match(styles, /height: 100dvh/);
-  assert.match(styles, /tic-noir-discord-safe/);
-  assert.match(styles, /grid-template-columns: 210px minmax\(420px, 620px\) 210px/);
-  assert.match(styles, /\.tic-cell\.mark-x::before/);
-  assert.match(styles, /\.tic-cell\.mark-o::before/);
   assert.match(styles, /tic-board-breathe/);
   assert.match(styles, /tic-circuit-node/);
-  assert.match(styles, /body:not\(\.tic-tac-toe-noir-running\)/);
   assert.doesNotMatch(controller, /leaderboard|friends online|rating/i);
   assert.match(packageJson.scripts["check:browser"], /public\/tic-tac-toe-noir\.js/);
 });

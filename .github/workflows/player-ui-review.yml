@@ -6,6 +6,9 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - "public/**"
+      - "src/browser/player-navigation-contract.test.ts"
+      - "src/browser/monster-master-art-contract.test.ts"
+      - "src/browser/othello-runtime-contract.test.ts"
       - "test/visual/player-ui-review.spec.mjs"
       - "playwright.visual.config.mjs"
       - "package.json"
@@ -39,8 +42,8 @@ jobs:
       - name: Browser syntax gate
         run: npm run check:browser
 
-      - name: Player navigation contracts
-        run: node --experimental-strip-types --test src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts
+      - name: Player navigation and game contracts
+        run: node --experimental-strip-types --test src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/othello-runtime-contract.test.ts
 
       - name: Capture player UI screenshots
         run: npx playwright test test/visual/player-ui-review.spec.mjs --config playwright.visual.config.mjs

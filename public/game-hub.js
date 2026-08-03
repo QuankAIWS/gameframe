@@ -1,4 +1,4 @@
-const stylesheetUrls = ["/game-hub.css", "/game-hub-shell.css", "/game-hub-cards.css"];
+const stylesheetUrls = ["/game-hub.css", "/game-hub-shell.css", "/game-hub-cards.css", "/game-hub-flow.css"];
 for (const stylesheetUrl of stylesheetUrls) {
   if (document.querySelector(`link[href="${stylesheetUrl}"]`)) continue;
   const stylesheet = document.createElement("link");
@@ -14,19 +14,51 @@ const gameGrid = document.querySelector(".game-grid");
 const modeGrid = document.querySelector(".mode-grid");
 const lobby = document.querySelector("#lobby");
 const lobbyMessage = document.querySelector("#lobby-message");
-const gameTitle = document.querySelector("#game-title");
-const heroCopy = document.querySelector("#hero-copy");
-const eyebrow = document.querySelector(".hero .eyebrow");
 const sectionLabel = document.querySelector("#lobby .section-label");
 const lobbyTitle = document.querySelector("#lobby-title");
 const tacticalLink = document.querySelector("#open-tactical-canary");
-const ticTacToe = document.querySelector("#select-tic-tac-toe");
-const checkers = document.querySelector("#select-checkers");
-const identity = window.gameFrameIdentity;
-const playerLabel = identity?.source === "discord"
-  ? (identity.displayName || identity.playerId || "Scribbler")
-  : "Scribbler";
-const hubCopy = "Choose a game, pick an opponent, and start playing.";
+const parameters = new URLSearchParams(window.location.search);
+const requestedGame = parameters.get("game");
+const requestedMenuGame = requestedGame || "tic-tac-toe";
+const menuGame = parameters.get("menu") === "1"
+  && (requestedMenuGame === "tic-tac-toe" || requestedMenuGame === "american-checkers")
+  ? requestedMenuGame
+  : null;
+
+const games = [
+  {
+    id: "monster-master",
+    href: "/monster-master.html",
+    kicker: "TACTICAL DUEL",
+    title: "Monster Master",
+    description: "Command a hand-illustrated creature squad through an initiative-driven battle.",
+    accent: "monster",
+  },
+  {
+    id: "othello",
+    href: "/othello.html",
+    kicker: "STRATEGY",
+    title: "Othello",
+    description: "Control the board across three complete visual themes.",
+    accent: "othello",
+  },
+  {
+    id: "american-checkers",
+    href: "/?game=american-checkers&menu=1",
+    kicker: "CLOCKWORK ECLIPSE",
+    title: "Clockwork Checkers",
+    description: "Mandatory captures, multi-jumps, kings, and a complete match flow.",
+    accent: "checkers",
+  },
+  {
+    id: "tic-tac-toe",
+    href: "/?game=tic-tac-toe&menu=1",
+    kicker: "QUICK MATCH",
+    title: "Tic-Tac-Toe",
+    description: "A fast duel against Theo or another player.",
+    accent: "tic",
+  },
+];
 
 function artwork(accent) {
   if (accent === "monster") {
@@ -73,152 +105,98 @@ function artwork(accent) {
   `;
 }
 
-function cardMarkup({ kicker, title, description, accent, actionLabel }) {
-  return `
-    ${artwork(accent)}
+function createLibraryCard(game) {
+  const card = document.createElement("article");
+  card.id = `game-card-${game.id}`;
+  card.className = `game-card game-hub-${game.accent}`;
+  card.innerHTML = `
+    ${artwork(game.accent)}
     <span class="game-card-body">
-      <small class="game-card-kicker">${kicker}</small>
-      <strong>${title}</strong>
-      <small class="game-card-description">${description}</small>
+      <small class="game-card-kicker">${game.kicker}</small>
+      <strong>${game.title}</strong>
+      <small class="game-card-description">${game.description}</small>
     </span>
     <span class="game-card-footer">
-      <span>${actionLabel}</span>
+      <a class="game-card-play" href="${game.href}" aria-label="Open the ${game.title} game menu">Play now</a>
       <span class="game-card-arrow" aria-hidden="true">›</span>
     </span>
   `;
-}
-
-function directGameCard({ id, href, kicker, title, description, accent }) {
-  const link = document.createElement("a");
-  link.id = id;
-  link.className = `game-card game-hub-direct-card game-hub-${accent}`;
-  link.href = href;
-  link.setAttribute("aria-label", `Open ${title}`);
-  link.innerHTML = cardMarkup({
-    kicker,
-    title,
-    description,
-    accent,
-    actionLabel: "Play now",
-  });
-  return link;
-}
-
-function prepareLocalCard(card, { kicker, title, description, accent }) {
-  if (!card) return null;
-  card.className = `game-card game-hub-local-card game-hub-${accent}${card.classList.contains("is-selected") ? " is-selected" : ""}`;
-  card.setAttribute("aria-label", `Select ${title}`);
-  card.innerHTML = cardMarkup({
-    kicker,
-    title,
-    description,
-    accent,
-    actionLabel: "Select game",
-  });
   return card;
 }
 
-function installTopBar() {
-  if (!hero || hero.querySelector(".game-hub-topbar")) return;
-  hero.id = "gameframe-home";
-  const topbar = document.createElement("div");
-  topbar.className = "game-hub-topbar";
-  topbar.innerHTML = `
-    <a class="game-hub-brand" href="#gameframe-home" aria-label="GameFrame home">
-      <span class="game-hub-brand-mark" aria-hidden="true">S</span>
-      <span>
-        <small>SCRIBBLES</small>
-        <strong>GAME<span>FRAME</span></strong>
-      </span>
-    </a>
-    <nav class="game-hub-nav" aria-label="GameFrame sections">
-      <a href="#gameframe-home">Home</a>
-      <a class="is-active" href="#lobby">Games</a>
-      <button id="game-hub-achievements" type="button" disabled aria-disabled="true">
-        <span>Achievements</span>
-        <small>Coming soon</small>
-      </button>
-    </nav>
-    <span class="game-hub-discord-safe" aria-hidden="true"></span>
-  `;
-  hero.prepend(topbar);
-}
+function installGameMenu() {
+  if (!menuGame || !lobby || !modeGrid) return;
+  const selected = games.find((game) => game.id === menuGame);
+  if (!selected) return;
 
-function installModeHeading() {
-  if (!modeGrid || modeGrid.previousElementSibling?.classList.contains("game-hub-mode-heading")) return;
-  const heading = document.createElement("div");
-  heading.className = "game-hub-mode-heading";
-  heading.innerHTML = `
-    <span>
-      <small>MATCH SETUP</small>
-      <strong>Choose how to play</strong>
-    </span>
-    <small>Tic-Tac-Toe and Checkers can launch here. Monster Master and Othello open their dedicated game screens.</small>
-  `;
-  modeGrid.before(heading);
-}
-
-if (gameGrid) {
+  document.body.classList.add("gameframe-game-menu");
+  document.body.dataset.gameframeMenuGame = selected.accent;
+  gameGrid.hidden = true;
+  modeGrid.hidden = false;
   tacticalLink?.remove();
-  const monsterMaster = directGameCard({
-    id: "open-monster-master",
-    href: "/monster-master.html",
-    kicker: "TACTICAL DUEL",
-    title: "Monster Master",
-    description: "Command a hand-illustrated creature squad through an initiative-driven battle.",
-    accent: "monster",
-  });
-  const othello = directGameCard({
-    id: "open-othello",
-    href: "/othello.html",
-    kicker: "STRATEGY",
-    title: "Othello",
-    description: "Control the board across three complete visual themes.",
-    accent: "othello",
-  });
-  const preparedCheckers = prepareLocalCard(checkers, {
-    kicker: "CLOCKWORK ECLIPSE",
-    title: "Clockwork Checkers",
-    description: "Mandatory captures, multi-jumps, kings, and a complete match flow.",
-    accent: "checkers",
-  });
-  const preparedTicTacToe = prepareLocalCard(ticTacToe, {
-    kicker: "QUICK MATCH",
-    title: "Tic-Tac-Toe",
-    description: "A fast duel against Theo or another player.",
-    accent: "tic",
-  });
-  gameGrid.replaceChildren(monsterMaster, othello, preparedCheckers, preparedTicTacToe);
-}
 
-installTopBar();
-installModeHeading();
-if (sectionLabel) sectionLabel.textContent = "GAME LIBRARY";
-if (lobbyTitle) lobbyTitle.textContent = "Choose your game";
-
-let brandSyncPending = false;
-function syncHubBrand() {
-  brandSyncPending = false;
-  const active = Boolean(lobby && !lobby.hidden);
-  document.body.classList.toggle("gameframe-game-hub-lobby", active);
-  if (!active) return;
-  if (eyebrow && eyebrow.textContent !== "WELCOME BACK") eyebrow.textContent = "WELCOME BACK";
-  if (gameTitle && gameTitle.textContent !== playerLabel) gameTitle.textContent = playerLabel;
-  if (heroCopy && heroCopy.textContent !== hubCopy) heroCopy.textContent = hubCopy;
-  if (lobbyMessage && lobbyMessage.textContent === "Preparing the browser client…") {
-    lobbyMessage.textContent = "Select a game to continue.";
+  let menu = lobby.querySelector(".game-menu-hero");
+  if (!menu) {
+    menu = document.createElement("section");
+    menu.className = `game-menu-hero game-menu-${selected.accent}`;
+    menu.innerHTML = `
+      <a class="game-menu-back" href="/">← Back to library</a>
+      <div class="game-menu-art">${artwork(selected.accent)}</div>
+      <div class="game-menu-copy">
+        <small>${selected.kicker}</small>
+        <h2>${selected.title}</h2>
+        <p>${selected.description}</p>
+      </div>
+    `;
+    modeGrid.before(menu);
   }
-  if (document.title !== "Scribbles GameFrame") document.title = "Scribbles GameFrame";
-}
-function scheduleBrandSync() {
-  if (brandSyncPending) return;
-  brandSyncPending = true;
-  requestAnimationFrame(syncHubBrand);
+
+  if (sectionLabel) sectionLabel.textContent = "GAME MENU";
+  if (lobbyTitle) lobbyTitle.textContent = "Choose how to play";
+  if (lobbyMessage) lobbyMessage.textContent = "Start a match with Theo or invite another player.";
 }
 
-const observer = new MutationObserver(scheduleBrandSync);
-for (const node of [lobby, gameTitle, heroCopy, lobbyMessage].filter(Boolean)) {
-  observer.observe(node, { attributes: true, childList: true, subtree: true, characterData: true });
+function installLibrary() {
+  if (!gameGrid) return;
+  tacticalLink?.remove();
+  gameGrid.replaceChildren(...games.map(createLibraryCard));
+  gameGrid.hidden = false;
+  if (modeGrid) modeGrid.hidden = true;
+  if (sectionLabel) sectionLabel.textContent = "GAME LIBRARY";
+  if (lobbyTitle) lobbyTitle.textContent = "Choose your game";
+  if (lobbyMessage) lobbyMessage.textContent = "Open a game menu to choose an opponent and start playing.";
 }
 
-syncHubBrand();
+hero?.querySelector(".game-hub-topbar")?.remove();
+if (menuGame) installGameMenu();
+else installLibrary();
+
+let syncPending = false;
+function syncHubState() {
+  syncPending = false;
+  const lobbyVisible = Boolean(lobby && !lobby.hidden);
+  document.body.classList.toggle("gameframe-game-hub-lobby", lobbyVisible);
+  document.body.classList.toggle("gameframe-game-menu", lobbyVisible && Boolean(menuGame));
+  if (lobbyVisible && menuGame) document.body.dataset.gameframeMenuGame = games.find((game) => game.id === menuGame)?.accent || "hub";
+  else delete document.body.dataset.gameframeMenuGame;
+  if (lobbyVisible) {
+    const expectedMessage = menuGame
+      ? "Start a match with Theo or invite another player."
+      : "Open a game menu to choose an opponent and start playing.";
+    if (lobbyMessage && lobbyMessage.textContent !== expectedMessage) lobbyMessage.textContent = expectedMessage;
+    document.title = menuGame
+      ? `${games.find((game) => game.id === menuGame)?.title || "Game"} · Scribbles GameFrame`
+      : "Scribbles GameFrame";
+  }
+  window.gameFrameDestinationBar?.sync?.();
+}
+function scheduleHubState() {
+  if (syncPending) return;
+  syncPending = true;
+  requestAnimationFrame(syncHubState);
+}
+
+const observer = new MutationObserver(scheduleHubState);
+if (lobby) observer.observe(lobby, { attributes: true, attributeFilter: ["hidden"] });
+if (lobbyMessage) observer.observe(lobbyMessage, { childList: true, characterData: true, subtree: true });
+syncHubState();

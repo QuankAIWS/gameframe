@@ -21,6 +21,8 @@ if (identity.source === "discord") {
   }
 }
 
+await import("./gameframe-nav.js");
+
 if (entry === "/app.js") {
   await import("./game-hub.js");
   await import("./tic-tac-toe-noir.js");
