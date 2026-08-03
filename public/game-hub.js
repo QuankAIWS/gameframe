@@ -105,6 +105,25 @@ function artwork(accent) {
   `;
 }
 
+function activateLibraryCard(card) {
+  const playLink = card.querySelector(".game-card-play");
+  if (!playLink) return;
+
+  card.tabIndex = 0;
+  card.setAttribute("role", "link");
+  card.setAttribute("aria-label", playLink.getAttribute("aria-label") || "Open game menu");
+
+  card.addEventListener("click", (event) => {
+    if (event.target.closest("a, button, input, select, textarea")) return;
+    playLink.click();
+  });
+  card.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    playLink.click();
+  });
+}
+
 function createLibraryCard(game) {
   const card = document.createElement("article");
   card.id = `game-card-${game.id}`;
@@ -121,6 +140,7 @@ function createLibraryCard(game) {
       <span class="game-card-arrow" aria-hidden="true">›</span>
     </span>
   `;
+  activateLibraryCard(card);
   return card;
 }
 
@@ -164,7 +184,7 @@ function installLibrary() {
   if (modeGrid) modeGrid.hidden = true;
   if (sectionLabel) sectionLabel.textContent = "GAME LIBRARY";
   if (lobbyTitle) lobbyTitle.textContent = "Choose your game";
-  if (lobbyMessage) lobbyMessage.textContent = "Open a game menu to choose an opponent and start playing.";
+  if (lobbyMessage) lobbyMessage.textContent = "Select a game to open its menu.";
 }
 
 hero?.querySelector(".game-hub-topbar")?.remove();
@@ -182,7 +202,7 @@ function syncHubState() {
   if (lobbyVisible) {
     const expectedMessage = menuGame
       ? "Start a match with Theo or invite another player."
-      : "Open a game menu to choose an opponent and start playing.";
+      : "Select a game to open its menu.";
     if (lobbyMessage && lobbyMessage.textContent !== expectedMessage) lobbyMessage.textContent = expectedMessage;
     document.title = menuGame
       ? `${games.find((game) => game.id === menuGame)?.title || "Game"} · Scribbles GameFrame`
