@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "source": "generated-creature-atlas-v1",
+  "atlas": "/assets/monster-master/creature-atlas-v1.svg",
+  "cell": { "width": 96, "height": 96 },
+  "creatures": {
+    "warden-master-v1": {
+      "role": "master",
+      "column": 0,
+      "anchor": { "x": 0.5, "y": 0.88 },
+      "battlefieldScale": 1.34
+    },
+    "stone-bulwark-v1": {
+      "role": "bulwark",
+      "column": 1,
+      "anchor": { "x": 0.5, "y": 0.88 },
+      "battlefieldScale": 1.48
+    },
+    "emberling-skirmisher-v1": {
+      "role": "emberling",
+      "column": 2,
+      "anchor": { "x": 0.5, "y": 0.88 },
+      "battlefieldScale": 1.14
+    }
+  }
+}
