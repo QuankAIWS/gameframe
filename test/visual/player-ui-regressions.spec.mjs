@@ -69,3 +69,24 @@ test("Checkers never inherits Tic-Tac-Toe presentation wrappers", async ({ page 
   await expect(page.locator(".tic-noir-control-rail")).toHaveCount(0);
   await expect(page.locator(".tic-noir-footer")).toHaveCount(0);
 });
+
+test("Monster Master keeps its mobile setup control and session badge inside the viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/monster-master.html?player=monster-mobile-regression");
+  await page.locator("#monster-master-theo").click();
+
+  await expect(page.locator("body.monster-master-match-active")).toBeVisible();
+  await expectStyledDestinationBar(page, "monster");
+  await expect(page.locator("#gameframe-session-badge")).toBeVisible();
+
+  const setup = await page.locator("#monster-master-new-match").boundingBox();
+  const status = await page.locator("#monster-master-status").boundingBox();
+  const viewport = page.viewportSize();
+  if (!setup || !status || !viewport) throw new Error("Monster Master mobile header did not produce layout bounds.");
+
+  expect(setup.width).toBeGreaterThanOrEqual(56);
+  expect(setup.x).toBeGreaterThanOrEqual(0);
+  expect(setup.x + setup.width).toBeLessThanOrEqual(viewport.width);
+  expect(status.width).toBeGreaterThanOrEqual(130);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+});
