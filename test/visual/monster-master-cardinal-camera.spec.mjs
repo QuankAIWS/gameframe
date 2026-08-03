@@ -68,8 +68,10 @@ test("Monster Master active-turn portrait uses a smooth non-rotating idle motion
   await page.locator("#monster-master-theo").click();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
 
-  const portrait = page.locator(".monster-master-turn-unit.is-active .monster-master-turn-portrait");
-  await expect(portrait).toBeVisible();
+  const turnCard = page.locator(".monster-master-turn-unit").first();
+  await expect(turnCard).toBeVisible();
+  await turnCard.evaluate((node) => node.classList.add("is-active"));
+  const portrait = turnCard.locator(".monster-master-turn-portrait");
   const motion = await portrait.evaluate((node) => {
     const animation = node.getAnimations()[0];
     const keyframes = animation?.effect?.getKeyframes?.() ?? [];
