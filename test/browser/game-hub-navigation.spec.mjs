@@ -6,8 +6,8 @@ test("the complete game cards open their game-specific menus", async ({ page }) 
   await expect(page.locator(".mode-grid")).toBeHidden();
 
   const ticCard = page.locator("#game-card-tic-tac-toe");
-  await expect(ticCard).toHaveAttribute("role", "link");
-  await expect(ticCard).toHaveAttribute("tabindex", "0");
+  await expect(ticCard).toHaveAttribute("href", "/?game=tic-tac-toe&menu=1");
+  await expect(ticCard.locator(".game-card-play")).toHaveText("Play now");
   await ticCard.locator(".game-card-body").click();
   await expect(page).toHaveURL(/game=tic-tac-toe&menu=1/);
   await expect(page.locator("body.gameframe-game-menu")).toBeVisible();
