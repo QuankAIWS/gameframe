@@ -372,12 +372,13 @@ function cameraPoint() {
 }
 
 function applyCamera() {
-  if (!state.layers || !state.app) return;
-  const renderer = state.app.renderer;
+  if (!state.layers || !state.app || !state.frame) return;
+  const width = Math.max(1, state.frame.clientWidth);
+  const height = Math.max(1, state.frame.clientHeight);
   const center = cameraPoint();
   state.layers.world.scale.set(state.camera.zoom);
-  state.layers.world.x = renderer.width / 2 - center.x * state.camera.zoom;
-  state.layers.world.y = renderer.height * 0.48 - center.y * state.camera.zoom;
+  state.layers.world.x = width / 2 - center.x * state.camera.zoom;
+  state.layers.world.y = height * 0.48 - center.y * state.camera.zoom;
 }
 
 function scheduleRender() {
@@ -606,7 +607,12 @@ async function initialize() {
       scheduleRender();
     }).observe(detailNode, { childList: true, subtree: true, characterData: true });
   }
-  state.resizeObserver = new ResizeObserver(() => scheduleRender());
+  state.resizeObserver = new ResizeObserver(() => {
+    if (state.app) {
+      state.app.renderer.resize(Math.max(1, frame.clientWidth), Math.max(1, frame.clientHeight));
+    }
+    scheduleRender();
+  });
   state.resizeObserver.observe(frame);
   document.body.classList.add("monster-master-pixi-ready");
   scheduleRender();
