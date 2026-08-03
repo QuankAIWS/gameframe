@@ -1,0 +1,195 @@
+body.gameframe-game-hub {
+  --hub-panel: rgba(8, 14, 27, .88);
+  --hub-line: rgba(119, 153, 216, .26);
+  --hub-text: #f4f8ff;
+  --hub-muted: #9eb0cf;
+  background:
+    radial-gradient(circle at 12% 6%, rgba(46, 121, 214, .22), transparent 33rem),
+    radial-gradient(circle at 90% 14%, rgba(196, 47, 95, .13), transparent 30rem),
+    linear-gradient(150deg, #050812 0%, #08101d 46%, #04070e 100%);
+}
+
+body.gameframe-game-hub::before {
+  opacity: .16;
+  background-size: 44px 44px;
+}
+
+.gameframe-game-hub .shell {
+  width: min(1180px, calc(100% - 32px));
+  padding-top: clamp(40px, 7vh, 78px);
+}
+
+.gameframe-game-hub .hero {
+  max-width: 900px;
+  margin-bottom: 30px;
+}
+
+.gameframe-game-hub .hero h1 {
+  max-width: 900px;
+  font-size: clamp(3rem, 8vw, 6.4rem);
+  letter-spacing: -.065em;
+}
+
+.gameframe-game-hub .hero-copy {
+  max-width: 700px;
+  color: var(--hub-muted);
+  font-size: clamp(.95rem, 1.5vw, 1.08rem);
+}
+
+.gameframe-game-hub #lobby {
+  position: relative;
+  overflow: hidden;
+  border-color: var(--hub-line);
+  background:
+    linear-gradient(135deg, rgba(17, 27, 48, .92), rgba(5, 10, 20, .95)),
+    var(--hub-panel);
+  box-shadow: 0 36px 100px rgba(0, 0, 0, .46);
+}
+
+.gameframe-game-hub #lobby::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(107, 176, 255, .08), transparent 30%, transparent 70%, rgba(255, 79, 130, .055)),
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+  background-size: auto, 24px 24px, 24px 24px;
+}
+
+.gameframe-game-hub #lobby > * {
+  position: relative;
+  z-index: 1;
+}
+
+.gameframe-game-hub .game-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.gameframe-game-hub .game-card {
+  position: relative;
+  align-items: center;
+  min-height: 136px;
+  overflow: hidden;
+  border-color: rgba(118, 146, 201, .26);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 6% 20%, var(--hub-accent-soft, rgba(75, 151, 255, .14)), transparent 45%),
+    linear-gradient(145deg, rgba(19, 31, 54, .95), rgba(7, 12, 23, .97));
+  color: var(--hub-text);
+  text-decoration: none;
+  box-shadow: inset 0 1px rgba(255,255,255,.035);
+}
+
+.gameframe-game-hub .game-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  opacity: .8;
+  background: linear-gradient(90deg, transparent, var(--hub-accent, #68b5ff), transparent);
+}
+
+.gameframe-game-hub .game-card:hover,
+.gameframe-game-hub .game-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--hub-accent, #68b5ff) 70%, white 10%);
+  background:
+    radial-gradient(circle at 6% 20%, var(--hub-accent-soft, rgba(75, 151, 255, .2)), transparent 52%),
+    linear-gradient(145deg, rgba(25, 42, 72, .98), rgba(8, 15, 29, .98));
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .34), inset 0 1px rgba(255,255,255,.06);
+}
+
+.gameframe-game-hub .game-card.is-selected {
+  border-color: var(--hub-accent, #68b5ff);
+  background:
+    radial-gradient(circle at 8% 18%, var(--hub-accent-soft, rgba(75, 151, 255, .25)), transparent 55%),
+    linear-gradient(145deg, rgba(28, 48, 80, .98), rgba(9, 17, 31, .98));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hub-accent, #68b5ff) 30%, transparent), 0 18px 46px rgba(0, 0, 0, .3);
+}
+
+.gameframe-game-hub .game-hub-monster { --hub-accent: #62b7ff; --hub-accent-soft: rgba(42, 137, 224, .22); }
+.gameframe-game-hub .game-hub-othello { --hub-accent: #d7e6ff; --hub-accent-soft: rgba(210, 226, 255, .12); }
+.gameframe-game-hub .game-hub-checkers { --hub-accent: #ffbd65; --hub-accent-soft: rgba(255, 157, 69, .16); }
+.gameframe-game-hub .game-hub-tic { --hub-accent: #f45b8e; --hub-accent-soft: rgba(244, 64, 128, .16); }
+
+.gameframe-game-hub .game-glyph {
+  flex-basis: 54px;
+  width: 54px;
+  height: 54px;
+  border-color: color-mix(in srgb, var(--hub-accent, #68b5ff) 48%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--hub-accent, #68b5ff) 12%, transparent);
+  color: var(--hub-accent, #dce6ff);
+  font-size: .92rem;
+  letter-spacing: -.04em;
+}
+
+.gameframe-game-hub .game-glyph.checkers-glyph {
+  border-color: color-mix(in srgb, var(--hub-accent) 48%, transparent);
+  background: color-mix(in srgb, var(--hub-accent) 12%, transparent);
+  color: var(--hub-accent);
+}
+
+.gameframe-game-hub .game-card-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.gameframe-game-hub .game-card-kicker {
+  margin-bottom: 5px !important;
+  color: var(--hub-accent, #8fc8ff) !important;
+  font-size: .58rem !important;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.gameframe-game-hub .game-card strong {
+  margin-bottom: 5px;
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+}
+
+.gameframe-game-hub .game-card small:not(.game-card-kicker) {
+  max-width: 37rem;
+  color: var(--hub-muted);
+}
+
+.gameframe-game-hub .game-card-arrow {
+  align-self: flex-start;
+  color: var(--hub-accent, #9bcfff);
+  font-size: 1.1rem;
+  opacity: .75;
+}
+
+.gameframe-game-hub .mode-grid {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(120, 150, 205, .18);
+}
+
+.gameframe-game-hub .mode-card {
+  min-height: 102px;
+  border-radius: 17px;
+  background: rgba(8, 15, 28, .72);
+}
+
+.gameframe-game-hub .mode-card strong {
+  margin-bottom: 4px;
+}
+
+.gameframe-game-hub .section-heading {
+  max-width: 780px;
+}
+
+@media (max-width: 760px) {
+  .gameframe-game-hub .game-grid,
+  .gameframe-game-hub .mode-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gameframe-game-hub .game-card {
+    min-height: 116px;
+  }
+}
