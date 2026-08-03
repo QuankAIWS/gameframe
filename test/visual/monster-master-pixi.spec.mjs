@@ -166,10 +166,17 @@ test("Monster Master Pixi battlefield stays inside the mobile viewport", async (
     const camera = document.querySelector(".monster-master-camera-dock")?.getBoundingClientRect();
     const command = document.querySelector(".monster-master-command-deck")?.getBoundingClientRect();
     const comingSoon = document.querySelector(".gameframe-destination-links button")?.getBoundingClientRect();
+    const status = document.querySelector("#monster-master-status");
+    const statusStyle = status ? getComputedStyle(status) : null;
     return {
       camera: camera ? { top: camera.top, bottom: camera.bottom, right: camera.right } : null,
       command: command ? { top: command.top, bottom: command.bottom, right: command.right } : null,
       comingSoonWidth: comingSoon?.width ?? 0,
+      status: status ? {
+        height: status.getBoundingClientRect().height,
+        whiteSpace: statusStyle.whiteSpace,
+        lineClamp: statusStyle.webkitLineClamp,
+      } : null,
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
     };
@@ -180,6 +187,10 @@ test("Monster Master Pixi battlefield stays inside the mobile viewport", async (
   expect(overlayGeometry.camera.right).toBeLessThanOrEqual(overlayGeometry.viewportWidth);
   expect(overlayGeometry.command.bottom).toBeLessThanOrEqual(overlayGeometry.viewportHeight);
   expect(overlayGeometry.comingSoonWidth).toBe(0);
+  expect(overlayGeometry.status).not.toBeNull();
+  expect(overlayGeometry.status.height).toBeGreaterThanOrEqual(40);
+  expect(overlayGeometry.status.whiteSpace).toBe("normal");
+  expect(overlayGeometry.status.lineClamp).toBe("2");
 
   await page.screenshot({ path: testInfo.outputPath("monster-master-pixi-mobile.png"), fullPage: true });
 });
