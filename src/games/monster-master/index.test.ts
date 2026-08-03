@@ -160,8 +160,29 @@ test("Mend is unavailable at full health, without command, outside range, or wit
   assert.equal(monsterMasterDefinition.listLegalActions(state, "alpha").some((action) => action.type === "use-ability"), false);
 });
 
-test("defeating the opposing Master immediately wins the duel", () => {
+test("defeating the opposing Master does not end the duel while another enemy survives", () => {
   let state = combatScenario();
+  const target = monsterMasterUnit(state, "beta-master");
+  target.health = 3;
+  const attack = monsterMasterDefinition.listLegalActions(state, "alpha")
+    .find((action) => action.type === "attack" && action.targetUnitId === "beta-master");
+  assert.ok(attack && attack.type === "attack");
+
+  state = apply(state, "alpha", attack);
+  assert.equal(state.winnerPlayerId, null);
+  assert.equal(monsterMasterDefinition.getStatus(state).lifecycle, "active");
+  assert.equal(state.board.units.some((unit) => unit.id === "beta-master"), false);
+  assert.ok(state.board.units.some((unit) => unit.ownerId === "beta"));
+  assert.deepEqual(state.lastEffects.map((effect) => effect.type), [
+    "unit-damaged",
+    "unit-defeated",
+  ]);
+});
+
+test("defeating the final opposing unit wins the duel", () => {
+  let state = combatScenario();
+  state.board.units = state.board.units.filter((unit) => unit.ownerId === "alpha" || unit.id === "beta-master");
+  state.defeatedUnitIds = ["beta-bulwark", "beta-emberling"];
   const target = monsterMasterUnit(state, "beta-master");
   target.health = 3;
   const attack = monsterMasterDefinition.listLegalActions(state, "alpha")
@@ -171,8 +192,7 @@ test("defeating the opposing Master immediately wins the duel", () => {
   state = apply(state, "alpha", attack);
   assert.equal(state.winnerPlayerId, "alpha");
   assert.equal(monsterMasterDefinition.getStatus(state).lifecycle, "completed");
-  assert.equal(state.board.units.some((unit) => unit.id === "beta-master"), false);
-  assert.ok(state.board.units.some((unit) => unit.ownerId === "beta"));
+  assert.equal(state.board.units.some((unit) => unit.ownerId === "beta"), false);
   assert.deepEqual(state.lastEffects.map((effect) => effect.type), [
     "unit-damaged",
     "unit-defeated",
@@ -229,6 +249,8 @@ test("movement and primary actions may be used in either order but only once", (
 
 test("configured Monster Master encounters replay and restore from their actual initial state", () => {
   const scenario = combatScenario();
+  scenario.board.units = scenario.board.units.filter((unit) => unit.ownerId === "alpha" || unit.id === "beta-master");
+  scenario.defeatedUnitIds = ["beta-bulwark", "beta-emberling"];
   monsterMasterUnit(scenario, "beta-master").health = 3;
   const session = new MatchSession({
     matchId: "monster-master-scenario",
@@ -248,7 +270,7 @@ test("configured Monster Master encounters replay and restore from their actual 
     .find((action) => action.type === "attack" && action.targetUnitId === "beta-master");
   assert.ok(attack);
   const accepted = session.submit({
-    actionId: "scenario-master-defeat",
+    actionId: "scenario-final-defeat",
     playerId: "alpha",
     expectedRevision: 0,
     action: attack,
