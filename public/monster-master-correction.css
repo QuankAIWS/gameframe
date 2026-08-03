@@ -1,0 +1,257 @@
+body.monster-master-match-active,
+body[data-monster-master-state] {
+  --monster-blue: #43a7ff;
+  --monster-blue-soft: rgba(49, 142, 226, .18);
+  --monster-red: #f0527d;
+  --monster-red-soft: rgba(225, 56, 100, .16);
+  --monster-panel: rgba(7, 13, 24, .92);
+  --monster-panel-strong: rgba(10, 18, 33, .97);
+  --monster-line: rgba(106, 142, 201, .28);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(37, 112, 210, .2), transparent 34rem),
+    radial-gradient(circle at 92% 12%, rgba(205, 48, 91, .12), transparent 31rem),
+    linear-gradient(155deg, #040711 0%, #07101d 48%, #03060c 100%);
+}
+
+.combat-nav a[href="/combat.html"],
+.combat-nav a[href="/tactical.html"] {
+  display: none !important;
+}
+
+body.monster-master-match-active #monster-master-match.monster-master-game-shell {
+  border: 1px solid rgba(108, 147, 214, .26);
+  background:
+    linear-gradient(180deg, rgba(8, 15, 28, .98), rgba(4, 8, 15, .99)),
+    #050a12;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .55);
+}
+
+.monster-master-match-topbar {
+  border-bottom-color: rgba(112, 150, 215, .24);
+  background: rgba(5, 10, 19, .94);
+}
+
+.monster-master-match-topbar .status {
+  border-color: rgba(95, 145, 217, .22);
+  background: linear-gradient(90deg, rgba(37, 93, 157, .24), rgba(20, 31, 51, .35));
+}
+
+.monster-master-rail,
+.monster-master-command-deck {
+  border-color: var(--monster-line);
+  background: var(--monster-panel);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .025), 0 14px 38px rgba(0, 0, 0, .28);
+}
+
+.monster-master-roster-rail {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.monster-master-roster-rail > .tactical-player-grid {
+  display: none !important;
+}
+
+.monster-master-roster {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+.monster-master-roster h3 {
+  margin: 0;
+  padding: 2px 2px 8px;
+  color: #dce9ff;
+  font-size: .78rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.monster-master-roster h3::after {
+  content: "BLUE = YOU   /   RED = ENEMY";
+  display: block;
+  margin-top: 6px;
+  color: #7085a7;
+  font-size: .48rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+#monster-master-roster-list {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.monster-master-turn-unit {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: 36px 46px minmax(0, 1fr) !important;
+  grid-template-rows: auto !important;
+  align-items: center;
+  gap: 9px !important;
+  min-height: 62px;
+  padding: 7px 9px 7px 7px !important;
+  overflow: hidden;
+  border: 1px solid rgba(103, 131, 181, .22) !important;
+  border-radius: 13px !important;
+  background: linear-gradient(135deg, rgba(17, 27, 46, .95), rgba(6, 11, 21, .96)) !important;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+
+.monster-master-turn-unit::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--turn-color);
+}
+
+.monster-master-turn-unit.is-friendly {
+  --turn-color: var(--monster-blue);
+  border-color: rgba(66, 160, 242, .31) !important;
+  background:
+    linear-gradient(90deg, var(--monster-blue-soft), transparent 52%),
+    linear-gradient(135deg, rgba(17, 27, 46, .95), rgba(6, 11, 21, .96)) !important;
+}
+
+.monster-master-turn-unit.is-enemy {
+  --turn-color: var(--monster-red);
+  border-color: rgba(232, 73, 116, .28) !important;
+  background:
+    linear-gradient(90deg, var(--monster-red-soft), transparent 52%),
+    linear-gradient(135deg, rgba(17, 27, 46, .95), rgba(6, 11, 21, .96)) !important;
+}
+
+.monster-master-turn-unit.is-active {
+  transform: translateX(3px);
+  border-color: var(--turn-color) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--turn-color) 32%, transparent), 0 10px 28px rgba(0,0,0,.3);
+}
+
+.monster-master-turn-unit.is-next {
+  opacity: .92;
+}
+
+.monster-master-turn-slot {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  min-height: 34px;
+  border: 1px solid color-mix(in srgb, var(--turn-color) 42%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--turn-color) 12%, rgba(5,10,18,.85));
+  color: color-mix(in srgb, var(--turn-color) 80%, white 20%);
+  font-size: .52rem;
+  font-weight: 950;
+  letter-spacing: .04em;
+}
+
+.monster-master-turn-portrait {
+  width: 44px !important;
+  height: 48px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background-color: rgba(3, 7, 14, .62) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.055);
+}
+
+.monster-master-turn-copy {
+  min-width: 0;
+}
+
+.monster-master-turn-copy strong,
+.monster-master-turn-copy small {
+  display: block;
+}
+
+.monster-master-turn-copy strong {
+  overflow: hidden;
+  color: #f1f6ff;
+  font-size: .76rem;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monster-master-turn-copy small {
+  margin-top: 5px;
+  overflow: hidden;
+  color: #8093b4;
+  font-size: .48rem;
+  font-weight: 800;
+  letter-spacing: .035em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monster-master-turn-unit.is-friendly .monster-master-turn-copy small {
+  color: #7ebdec;
+}
+
+.monster-master-turn-unit.is-enemy .monster-master-turn-copy small {
+  color: #dc839f;
+}
+
+.monster-master-unit-hud,
+.monster-master-resource,
+.monster-master-intel-rail .monster-master-meta div,
+.monster-master-intel-rail .combat-effects,
+.monster-master-command-deck {
+  background-color: rgba(7, 13, 24, .86);
+}
+
+body[data-monster-friendly-seat="alpha"] .monster-master-unit-hud[data-owner="alpha"],
+body[data-monster-friendly-seat="beta"] .monster-master-unit-hud[data-owner="beta"] {
+  border-color: rgba(67, 167, 255, .48);
+  background:
+    radial-gradient(circle at 12% 12%, rgba(49, 150, 235, .2), transparent 55%),
+    rgba(9, 18, 33, .9);
+}
+
+body[data-monster-friendly-seat="alpha"] .monster-master-unit-hud[data-owner="beta"],
+body[data-monster-friendly-seat="beta"] .monster-master-unit-hud[data-owner="alpha"] {
+  border-color: rgba(240, 82, 125, .42);
+  background:
+    radial-gradient(circle at 12% 12%, rgba(222, 58, 104, .17), transparent 55%),
+    rgba(16, 13, 26, .9);
+}
+
+.monster-master-battlefield-stage .combat-canvas-frame {
+  border: 1px solid rgba(102, 145, 209, .27);
+  background: #040811;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.02), 0 18px 48px rgba(0,0,0,.34);
+}
+
+.monster-master-command-deck .combat-action-button {
+  border-color: rgba(104, 137, 190, .28);
+  background: linear-gradient(145deg, rgba(17, 28, 48, .94), rgba(7, 13, 24, .96));
+}
+
+.monster-master-command-deck .combat-action-button:hover:not(:disabled),
+.monster-master-command-deck .combat-action-button:focus-visible,
+.monster-master-command-deck .combat-action-button[aria-pressed="true"] {
+  border-color: rgba(83, 169, 244, .68);
+  background: linear-gradient(145deg, rgba(28, 55, 87, .97), rgba(8, 17, 31, .98));
+}
+
+.monster-master-command-deck .monster-master-mend-button:hover:not(:disabled),
+.monster-master-command-deck .monster-master-mend-button[aria-pressed="true"] {
+  border-color: rgba(87, 221, 160, .62);
+}
+
+.monster-master-command-deck .combat-end-button:hover:not(:disabled) {
+  border-color: rgba(255, 184, 83, .58);
+}
+
+@media (max-width: 900px) {
+  .monster-master-turn-unit {
+    grid-template-columns: 34px 42px minmax(0, 1fr) !important;
+    min-height: 58px;
+  }
+
+  .monster-master-turn-copy small {
+    font-size: .46rem;
+  }
+}
