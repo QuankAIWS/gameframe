@@ -125,6 +125,7 @@ type EncounterRecord = {
   fingerprint: string;
   handle: RpgEncounterHandle;
   request: Record<string, unknown>;
+  serviceId: string;
 };
 
 export type InMemoryRpgServiceOptions = {
@@ -156,11 +157,14 @@ export class InMemoryRpgService {
   ): Promise<RpgCampaignAttached> {
     const request = normalizeAttachRequest(requestValue);
     const principal = normalizePrincipal(principalValue);
+    if (principal.kind !== "player") {
+      throw forbidden("Campaign attachment requires a player principal.");
+    }
     const campaign = this.#getCampaign(request.campaignId);
     requireActiveCampaign(campaign);
 
     const projection = projectVisibleEvents(campaign, principal);
-    if (principal.kind === "player" && !projection.activeMember) {
+    if (!projection.activeMember) {
       throw forbidden("The authenticated player is not an active campaign member.");
     }
 
@@ -193,7 +197,7 @@ export class InMemoryRpgService {
       throw forbidden("The authenticated player cannot submit campaign actions.");
     }
 
-    const receiptKey = `${campaign.campaignId}\0${envelope.commandId}`;
+    const receiptKey = `${campaign.campaignId}\0${principal.playerId}\0${envelope.commandId}`;
     const fingerprint = stableJson(envelope);
     const receipt = this.#commandReceipts.get(receiptKey);
     if (receipt) {
@@ -286,7 +290,7 @@ export class InMemoryRpgService {
     }
 
     const fingerprint = stableJson(request);
-    const receiptKey = `${campaign.campaignId}\0${request.idempotencyKey}`;
+    const receiptKey = `${campaign.campaignId}\0${principal.serviceId}\0${request.idempotencyKey}`;
     const existingReceipt = this.#encounterIdempotency.get(receiptKey);
     if (existingReceipt) {
       if (existingReceipt.fingerprint !== fingerprint) {
@@ -317,6 +321,7 @@ export class InMemoryRpgService {
       fingerprint,
       handle: structuredClone(handle),
       request: structuredClone(request),
+      serviceId: principal.serviceId,
     };
     this.#encounters.set(request.encounterId, entry);
     this.#encounterIdempotency.set(receiptKey, entry);
@@ -339,6 +344,9 @@ export class InMemoryRpgService {
         message: `Encounter not found: ${encounterId}`,
         status: 404,
       });
+    }
+    if (record.serviceId !== principal.serviceId) {
+      throw forbidden("Encounter belongs to a different runtime service principal.");
     }
     return structuredClone(record.handle);
   }
