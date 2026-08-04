@@ -15,6 +15,7 @@ on:
       - "src/server/rpg-http-server.test.ts"
       - "src/server/rpg-choice-outcome-http.test.ts"
       - "src/server/rpg-choice-outcome-authority.test.ts"
+      - "src/server/rpg-choice-consequence-authority.test.ts"
   workflow_dispatch:
 
 permissions:
@@ -56,3 +57,4 @@ jobs:
           src/server/rpg-http-server.test.ts
           src/server/rpg-choice-outcome-http.test.ts
           src/server/rpg-choice-outcome-authority.test.ts
+          src/server/rpg-choice-consequence-authority.test.ts
