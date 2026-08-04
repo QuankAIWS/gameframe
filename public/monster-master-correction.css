@@ -43,6 +43,20 @@ body.monster-master-match-active #monster-master-match.monster-master-game-shell
   box-shadow: inset 0 1px rgba(255, 255, 255, .025), 0 14px 38px rgba(0, 0, 0, .28);
 }
 
+.monster-master-command-deck {
+  position: relative;
+  z-index: 5;
+  isolation: isolate;
+  pointer-events: auto;
+}
+
+.monster-master-command-deck .monster-master-options,
+.monster-master-command-deck .monster-master-options button {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
+
 .monster-master-roster-rail {
   grid-template-rows: auto minmax(0, 1fr);
 }
@@ -132,6 +146,17 @@ body.monster-master-match-active #monster-master-match.monster-master-game-shell
 
 .monster-master-turn-unit.is-next {
   opacity: .92;
+}
+
+.monster-master-turn-unit.is-defeated {
+  --turn-color: #6d7890;
+  opacity: .58;
+  filter: grayscale(.55);
+  order: 2;
+}
+
+.monster-master-turn-unit.is-defeated .monster-master-turn-portrait {
+  filter: grayscale(1) brightness(.65);
 }
 
 .monster-master-turn-slot {
