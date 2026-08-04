@@ -24,7 +24,13 @@ if (tests.length === 0) {
 const result = spawnSync(
   process.execPath,
   ["--experimental-strip-types", "--test", ...tests],
-  { stdio: "inherit" },
+  {
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY: "1",
+    },
+  },
 );
 
 process.exit(result.status ?? 1);
