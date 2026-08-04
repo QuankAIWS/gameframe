@@ -125,9 +125,21 @@ body:not(.monster-master-match-active) .monster-master-status-toast {
 
 @media (max-width: 900px) {
   .monster-master-status-toast {
-    top: 48px;
-    max-width: calc(100% - 24px);
-    padding: 7px 10px;
+    top: 9px;
+    left: 9px;
+    width: auto;
+    max-width: calc(100% - 104px);
+    padding: 6px 9px;
+    transform: translateY(-8px);
+  }
+
+  .monster-master-status-toast.is-visible {
+    transform: translateY(0);
+  }
+
+  body.monster-master-hints-ready .monster-master-board-briefing.monster-master-hint-layer #monster-master-status {
+    font-size: .66rem;
+    line-height: 1.25;
   }
 
   .monster-master-hints-toggle {
@@ -138,8 +150,8 @@ body:not(.monster-master-match-active) .monster-master-status-toast {
 
 @media (max-width: 520px) {
   .monster-master-status-toast {
-    top: 45px;
-    max-width: calc(100% - 18px);
+    max-width: calc(100% - 94px);
+    padding: 6px 8px;
   }
 
   .monster-master-hints-toggle {
