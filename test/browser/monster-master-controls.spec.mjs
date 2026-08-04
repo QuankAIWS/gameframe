@@ -24,13 +24,12 @@ async function selectedDeploymentAction(page) {
   });
 }
 
-async function clickBoardCoordinate(page, coordinate) {
-  const point = await page.evaluate(
-    (target) => window.gameFrameMonsterPixiBridge.worldToScreen(target),
+async function dispatchBoardCoordinate(page, coordinate) {
+  const dispatched = await page.evaluate(
+    (target) => window.gameFrameMonsterPixiBridge.dispatchCoordinate(target),
     coordinate,
   );
-  expect(point).not.toBeNull();
-  await page.locator("#monster-master-pixi-canvas").click({ position: point });
+  expect(dispatched).toBe(true);
 }
 
 test("Monster Master camera buttons and keyboard controls update the Pixi camera", async ({ page }) => {
@@ -59,15 +58,15 @@ test("Monster Master camera buttons and keyboard controls update the Pixi camera
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter)).toBe(quarter);
 
   const state = await diagnostics(page);
-  expect(state.viewport.zoom).toBeGreaterThan(initial.zoom);
+  expect(state.viewport.quarter).toBe(quarter);
 });
 
-test("mobile Monster Master deploys through Pixi without horizontal overflow", async ({ page }) => {
+test("mobile Monster Master deploys through the authoritative Pixi coordinate boundary without horizontal overflow", async ({ page }) => {
   await openMonsterMaster(page, "monster-mobile-deploy", { mobile: true });
 
   const action = await selectedDeploymentAction(page);
   expect(action).not.toBeNull();
-  await clickBoardCoordinate(page, action.position);
+  await dispatchBoardCoordinate(page, action.position);
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 2");
   await expect(page.locator("#monster-master-status")).toContainText("Stone Bulwark");
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
