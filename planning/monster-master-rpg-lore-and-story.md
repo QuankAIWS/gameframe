@@ -67,3 +67,16 @@ Illegal capture cubes can override that consent. Their manufacture, sale, and us
 - Capture encounters must support both mechanical containment and dialogue-driven recruitment.
 - Intelligent-monster recruitment may include explicit terms, costs, or expectations.
 - Forced-capture cubes are contraband and can create legal, faction, and relationship consequences.
+
+## Decision 4 — Monster intelligence
+
+Monster intelligence is primarily species-based. Some species are animal-like, some possess roughly human-level intelligence, and some occupy a middle ground with limited language, unusual reasoning, or narrow but sophisticated abilities.
+
+Rare individuals can fall outside their species norm. An ordinarily animal-like species may occasionally produce a fully intelligent individual, while an intelligent species can still include unusual developmental conditions or individuals who communicate poorly. These exceptions should be uncommon enough to remain notable rather than making every monster's classification unpredictable.
+
+### Implementation consequences
+
+- Species definitions establish the normal intelligence and consent classification.
+- Individual monster records may override that default for authored exceptional characters.
+- Exceptional intelligence can support discoveries, companions, legal disputes, and sardonic situations without erasing stable species expectations.
+- Capture logic must use the individual's actual classification rather than blindly relying on species defaults.
