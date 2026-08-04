@@ -10,8 +10,8 @@ import {
   type AuthenticatedPrincipal,
   type RequestAuthenticator,
 } from "../auth/request-authenticator.ts";
+import { GuardedInMemoryRpgService } from "../rpg/guarded-in-memory-rpg-service.ts";
 import {
-  InMemoryRpgService,
   RPG_CAMPAIGN_PROTOCOL_VERSION,
   RPG_ENCOUNTER_PROTOCOL_VERSION,
   RpgServiceError,
@@ -139,7 +139,7 @@ function errorStatus(error: ApiError): number {
 export function createGameFrameServer(
   matchService = new InMemoryGameFrameService(),
   authenticator: RequestAuthenticator = new DevelopmentHeaderAuthenticator(),
-  rpgService = new InMemoryRpgService(),
+  rpgService = new GuardedInMemoryRpgService(),
 ) {
   return createServer(async (request, response) => {
     try {
