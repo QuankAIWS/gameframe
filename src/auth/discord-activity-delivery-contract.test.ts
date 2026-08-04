@@ -30,7 +30,8 @@ test("Discord Activity client uses the pinned official SDK through a reproducibl
   assert.equal(packageLock.packages[""].devDependencies.esbuild, "0.28.1");
   assert.equal(packageJson.scripts["build:activity"], "node scripts/build-activity-bundle.mjs");
   assert.equal(packageJson.scripts["check:activity"], "node scripts/build-activity-bundle.mjs --check");
-  assert.match(packageJson.scripts.validate, /npm run check:activity/);
+  assert.match(packageJson.scripts["validate:core"], /npm run check:activity/);
+  assert.match(packageJson.scripts.validate, /npm run validate:core/);
 
   assert.match(source, /@discord\/embedded-app-sdk/);
   assert.match(source, /new DiscordSDK\(clientId\)/);
