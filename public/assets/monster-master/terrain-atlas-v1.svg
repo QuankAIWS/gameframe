@@ -1,28 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="128" viewBox="0 0 192 128">
   <defs>
-    <linearGradient id="grass-a" x1="0" y1="0" x2="0.9" y2="1">
-      <stop offset="0" stop-color="#7d8353"/>
-      <stop offset="0.48" stop-color="#687348"/>
-      <stop offset="1" stop-color="#4f5d3d"/>
+    <linearGradient id="grass-a" x1="0" y1="0" x2=".88" y2="1">
+      <stop offset="0" stop-color="#7b8255"/>
+      <stop offset=".54" stop-color="#68734b"/>
+      <stop offset="1" stop-color="#566242"/>
     </linearGradient>
-    <linearGradient id="grass-b" x1="0.1" y1="0" x2="0.8" y2="1">
-      <stop offset="0" stop-color="#85875a"/>
-      <stop offset="0.5" stop-color="#6d754b"/>
-      <stop offset="1" stop-color="#536140"/>
+    <linearGradient id="grass-b" x1=".12" y1="0" x2=".82" y2="1">
+      <stop offset="0" stop-color="#7d8358"/>
+      <stop offset=".55" stop-color="#6a744d"/>
+      <stop offset="1" stop-color="#576443"/>
     </linearGradient>
     <linearGradient id="rough" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#776f4f"/>
-      <stop offset="0.56" stop-color="#5f6044"/>
-      <stop offset="1" stop-color="#474c39"/>
+      <stop offset="0" stop-color="#746f50"/>
+      <stop offset=".58" stop-color="#5e6146"/>
+      <stop offset="1" stop-color="#494f3a"/>
     </linearGradient>
-    <linearGradient id="stone-top" x1="0" y1="0" x2="0.8" y2="1">
-      <stop offset="0" stop-color="#9a9a78"/>
-      <stop offset="0.5" stop-color="#777a63"/>
-      <stop offset="1" stop-color="#555d51"/>
+    <linearGradient id="stone-top" x1="0" y1="0" x2=".82" y2="1">
+      <stop offset="0" stop-color="#9c9b7c"/>
+      <stop offset=".48" stop-color="#7d8069"/>
+      <stop offset="1" stop-color="#60685b"/>
     </linearGradient>
     <linearGradient id="objective" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#596f60"/>
-      <stop offset="1" stop-color="#354d48"/>
+      <stop offset="0" stop-color="#5a7060"/>
+      <stop offset="1" stop-color="#384f49"/>
     </linearGradient>
     <clipPath id="cell-0"><rect width="64" height="64"/></clipPath>
     <clipPath id="cell-1"><rect x="64" width="64" height="64"/></clipPath>
@@ -33,51 +33,46 @@
   </defs>
 
   <g clip-path="url(#cell-0)">
-    <path d="M32 14 62 32 32 50 2 32Z" fill="url(#grass-a)" stroke="#9a9b68" stroke-opacity=".42"/>
-    <path d="M13 31c7-6 15-8 24-6 7 1 12 0 17-3-2 6-8 9-17 9-9-1-16 1-24 6Z" fill="#a4a66f" opacity=".16"/>
-    <path d="M8 34c8 1 14 4 20 9M42 18c-5 4-8 8-9 13" fill="none" stroke="#394733" stroke-opacity=".24" stroke-width="1.2"/>
-    <circle cx="22" cy="29" r="1.4" fill="#b9b682" opacity=".36"/>
-    <circle cx="43" cy="37" r="1.2" fill="#394637" opacity=".4"/>
+    <path d="M32 14 62 32 32 50 2 32Z" fill="url(#grass-a)" stroke="#a4a477" stroke-opacity=".15"/>
+    <path d="M8 34c8-5 15-6 23-3 8 3 16 2 25-3-5 6-13 9-23 7-9-2-17 0-25 5Z" fill="#b4b27d" opacity=".08"/>
+    <path d="M15 29c5 1 9 3 13 6M39 22c-3 3-5 6-6 10" fill="none" stroke="#3d4b37" stroke-opacity=".14" stroke-width="1.1"/>
+    <circle cx="22" cy="37" r="1.1" fill="#c1bc85" opacity=".22"/>
   </g>
 
   <g clip-path="url(#cell-1)">
-    <path d="M96 14 126 32 96 50 66 32Z" fill="url(#grass-b)" stroke="#9b9a6c" stroke-opacity=".38"/>
-    <path d="M73 34c9-3 17-3 25 0 8 2 14 2 21-1-5 6-12 8-21 6-9-3-17-2-25 2Z" fill="#414d39" opacity=".2"/>
-    <path d="M77 27c6 2 12 2 18 0 8-3 15-2 22 1" fill="none" stroke="#c0ba7f" stroke-opacity=".16" stroke-width="1.4"/>
-    <circle cx="87" cy="39" r="1.3" fill="#b7b278" opacity=".3"/>
-    <circle cx="109" cy="25" r="1.5" fill="#3e4a38" opacity=".36"/>
+    <path d="M96 14 126 32 96 50 66 32Z" fill="url(#grass-b)" stroke="#a5a477" stroke-opacity=".13"/>
+    <path d="M72 34c9-2 17-1 24 2 8 3 16 2 24-2-5 5-12 7-21 6-10-2-18 0-27 3Z" fill="#3e4c39" opacity=".11"/>
+    <path d="M80 26c6 2 12 2 18 0 7-2 13-2 19 1" fill="none" stroke="#d0ca91" stroke-opacity=".09" stroke-width="1.1"/>
+    <circle cx="108" cy="38" r="1.1" fill="#394737" opacity=".2"/>
   </g>
 
   <g clip-path="url(#cell-2)">
-    <path d="M160 14 190 32 160 50 130 32Z" fill="url(#rough)" stroke="#a29a70" stroke-opacity=".42"/>
-    <path d="M137 33c7-7 14-9 22-5 8 3 15 2 23-3-3 8-10 12-21 10-8-2-16 0-24 6Z" fill="#403f33" opacity=".3"/>
-    <path d="m147 27 5-3 5 3-4 4Zm17 10 5-3 5 3-4 4Zm-18 3 4-2 4 2-3 3Z" fill="#b0a77a" opacity=".48"/>
-    <path d="M136 36c9-1 17 1 24 5" fill="none" stroke="#332f2a" stroke-opacity=".45" stroke-width="1.2"/>
+    <path d="M160 14 190 32 160 50 130 32Z" fill="url(#rough)" stroke="#aaa175" stroke-opacity=".2"/>
+    <path d="M136 35c7-8 15-10 23-6 8 4 16 3 24-3-4 8-12 12-23 10-8-2-16 0-24 6Z" fill="#3f4034" opacity=".25"/>
+    <path d="m146 28 5-3 5 3-4 4Zm18 10 5-3 5 3-4 4Zm-17 2 4-2 4 2-3 3Z" fill="#b6ad7d" opacity=".38"/>
+    <path d="M136 38c9-2 18 0 26 5" fill="none" stroke="#302e28" stroke-opacity=".34" stroke-width="1.1"/>
   </g>
 
   <g clip-path="url(#cell-3)">
-    <path d="M32 77 62 96 32 115 2 96Z" fill="url(#stone-top)" stroke="#b4ad82" stroke-opacity=".52"/>
-    <path d="M7 96c6-7 13-10 21-8 7 2 14 1 22-4 2 5-1 9-8 12 8 1 13 5 15 11-8-3-15-3-22 0-9 3-18 1-28-5Z" fill="#4b544a" opacity=".48"/>
-    <g fill="#9b9a7c" stroke="#4d554b" stroke-width="1">
-      <path d="m13 95 6-5 7 2 1 7-7 4-7-3Z"/>
-      <path d="m25 88 7-5 8 3 1 7-7 5-8-3Z"/>
-      <path d="m38 91 6-4 8 3 1 7-7 5-8-4Z"/>
-      <path d="m22 101 7-4 8 3-1 7-8 3-7-4Z"/>
-      <path d="m37 102 6-4 8 3-1 7-7 3-7-4Z"/>
-    </g>
-    <path d="M11 98c12-3 24-2 38 3" fill="none" stroke="#d0c89b" stroke-opacity=".32" stroke-width="1.2"/>
+    <path d="M32 82 62 96 32 110 2 96Z" fill="url(#stone-top)" stroke="#c0b994" stroke-opacity=".4"/>
+    <path d="M32 82 47 89 34 96 18 89Z" fill="#aaa98a" opacity=".42"/>
+    <path d="m47 89 15 7-15 7-13-7Z" fill="#878b74" opacity=".5"/>
+    <path d="M18 89 34 96 20 104 2 96Z" fill="#8f9278" opacity=".43"/>
+    <path d="m34 96 13 7-15 7-12-6Z" fill="#737b68" opacity=".5"/>
+    <path d="M32 82v6m15 1-6 4M18 89l6 4m10 3-5 5m18 2-7 3" fill="none" stroke="#4a5248" stroke-opacity=".38" stroke-width="1"/>
+    <path d="M7 96c13-4 27-3 46 1" fill="none" stroke="#d6cfaa" stroke-opacity=".2" stroke-width="1.1"/>
   </g>
 
   <g clip-path="url(#cell-4)">
-    <path d="M96 78 126 96 96 114 66 96Z" fill="#55604d" stroke="#9c9b72" stroke-opacity=".34"/>
-    <path d="M76 96c6-7 13-9 21-6 7 3 13 2 19-3-2 8-9 12-19 10-8-2-15 1-21 7Z" fill="#394338" opacity=".36"/>
-    <path d="m88 91 8-5 8 5-8 5Zm-9 7 6-4 6 4-6 4Zm24 1 6-4 6 4-6 4Z" fill="#88906b" opacity=".52"/>
+    <path d="M96 82 126 96 96 110 66 96Z" fill="#59634f" stroke="#a4a27a" stroke-opacity=".18"/>
+    <path d="M73 97c7-7 14-8 22-5 8 3 15 2 23-3-3 7-10 10-20 9-9-2-17 1-25 6Z" fill="#394339" opacity=".3"/>
+    <path d="m88 92 8-4 8 4-8 4Zm-8 7 6-3 6 3-6 3Zm23 0 6-3 6 3-6 3Z" fill="#8f9671" opacity=".42"/>
   </g>
 
   <g clip-path="url(#cell-5)">
-    <path d="M160 78 190 96 160 114 130 96Z" fill="url(#objective)" stroke="#74cbe0" stroke-opacity=".56"/>
-    <path d="M160 83 181 96 160 109 139 96Z" fill="none" stroke="#62d5ef" stroke-opacity=".72" stroke-width="1.5"/>
-    <circle cx="160" cy="96" r="7" fill="#4dc5df" opacity=".16" stroke="#7cecff" stroke-width="1.2"/>
-    <path d="m160 88 3 5 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1Z" fill="#9cf4ff" opacity=".76"/>
+    <path d="M160 78 190 96 160 114 130 96Z" fill="url(#objective)" stroke="#75ccdf" stroke-opacity=".46"/>
+    <path d="M160 83 181 96 160 109 139 96Z" fill="none" stroke="#63d7ef" stroke-opacity=".66" stroke-width="1.4"/>
+    <circle cx="160" cy="96" r="7" fill="#4dc5df" opacity=".14" stroke="#7cecff" stroke-width="1.1"/>
+    <path d="m160 88 3 5 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1Z" fill="#9cf4ff" opacity=".72"/>
   </g>
 </svg>
