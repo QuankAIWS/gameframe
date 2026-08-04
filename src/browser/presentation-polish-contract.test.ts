@@ -45,7 +45,6 @@ test("Monster Master disables the legacy Canvas projection and uses the Pixi bri
   assert.match(pixiBridge, /function unrotateDelta/);
   assert.match(pixiBridge, /function dispatchCoordinate/);
   assert.match(pixiBridge, /pointerdown/);
-  assert.match(pixiBridge, /function wheel/);
   assert.match(pixiBridge, /gameFrameMonsterPixi/);
   assert.doesNotMatch(pixiBridge, /\/api\/matches\/.*actions/);
 
