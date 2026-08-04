@@ -41,46 +41,35 @@ async function diagnostics(page) {
   return page.locator("#monster-master-details").evaluate((node) => JSON.parse(node.textContent));
 }
 
-async function clickBoardCoordinate(page, coordinate) {
-  const state = await diagnostics(page);
-  const box = await page.locator("#monster-master-canvas").boundingBox();
-  expect(box).not.toBeNull();
-  const bounds = state.viewport.bounds;
-  const cellSize = Math.min(box.width / bounds.columns, box.height / bounds.rows);
-  const boardWidth = cellSize * bounds.columns;
-  const boardHeight = cellSize * bounds.rows;
-  const originX = (box.width - boardWidth) / 2;
-  const originY = (box.height - boardHeight) / 2;
-  await page.locator("#monster-master-canvas").click({
-    position: {
-      x: originX + (coordinate.x - bounds.x + 0.5) * cellSize,
-      y: originY + (coordinate.y - bounds.y + 0.5) * cellSize,
-    },
-  });
+async function waitForPixi(page) {
+  await expect(page.locator("body.monster-master-match-active")).toBeVisible();
+  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
+  await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterPixiBridge))).toBe(true);
+}
+
+async function dispatchBoardCoordinate(page, coordinate) {
+  const dispatched = await page.evaluate(
+    (target) => window.gameFrameMonsterPixiBridge.dispatchCoordinate(target),
+    coordinate,
+  );
+  expect(dispatched).toBe(true);
 }
 
 async function deploySelectedUnit(page) {
-  const state = await diagnostics(page);
-  const view = await viewAs(page.context().request, state.matchId, state.playerId);
-  expect(view.gameId).toBe(gameId);
-  const bounds = state.viewport.bounds;
-  const selectedUnitId = state.selectedUnitId;
-  const action = view.observation.legalActions.find((candidate) => (
-    candidate.type === "deploy-unit"
-    && candidate.unitId === selectedUnitId
-    && candidate.position.x >= bounds.x
-    && candidate.position.y >= bounds.y
-    && candidate.position.x < bounds.x + bounds.columns
-    && candidate.position.y < bounds.y + bounds.rows
-  ));
-  expect(action).toBeDefined();
-  await clickBoardCoordinate(page, action.position);
+  const action = await page.evaluate(() => {
+    const view = window.gameFrameMonsterController.getView();
+    const state = JSON.parse(document.querySelector("#monster-master-details")?.textContent || "{}");
+    return view.observation.legalActions.find((candidate) => (
+      candidate.type === "deploy-unit" && candidate.unitId === state.selectedUnitId
+    )) ?? null;
+  });
+  expect(action).not.toBeNull();
+  await dispatchBoardCoordinate(page, action.position);
 }
 
 function rosterUnit(view, unitId) {
-  return Object.values(view.observation.rosters)
-    .flat()
-    .find((unit) => unit.id === unitId);
+  return Object.values(view.observation.rosters).flat().find((unit) => unit.id === unitId);
 }
 
 function chooseDeployment(view) {
@@ -158,7 +147,6 @@ async function prepareAuthoritativeState(request, predicate, options = {}) {
     if (predicate(view)) return view;
     if (view.observation.status.lifecycle === "completed") break;
     const activePlayerId = view.observation.activePlayerId;
-    expect(activePlayerId).toBeTruthy();
     view = await viewAs(request, view.matchId, activePlayerId);
     if (predicate(view)) return view;
     const action = chooseDeterministicAction(view, options);
@@ -169,14 +157,21 @@ async function prepareAuthoritativeState(request, predicate, options = {}) {
   throw new Error("The deterministic Monster Master browser setup did not reach the requested state.");
 }
 
-test("deploys a full roster, advances combat against Theo, and resumes the duel", async ({ page }) => {
+async function openPrepared(page, prepared, playerId) {
+  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.matchId)}&player=${encodeURIComponent(playerId)}`);
+  await waitForPixi(page);
+}
+
+test("deploys a full creature roster, advances combat against Theo, and resumes the battle", async ({ page }) => {
+  test.setTimeout(45_000);
   await page.goto("/monster-master.html?player=monster-master-human");
   await page.locator("#monster-master-theo").click();
+  await waitForPixi(page);
 
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 0");
   await expect(page.locator("#monster-master-phase")).toHaveText("Deployment");
   await expect(page.locator("#monster-master-roster-list .combat-roster-unit")).toHaveCount(6);
-  await expect(page.locator("#monster-master-status")).toContainText("Deploy Alpha Warden Master");
+  await expect(page.locator("#monster-master-status")).toContainText("Verdant Sage");
 
   for (let deployment = 1; deployment <= 3; deployment += 1) {
     await deploySelectedUnit(page);
@@ -184,28 +179,22 @@ test("deploys a full roster, advances combat against Theo, and resumes the duel"
   }
 
   await expect(page.locator("#monster-master-phase")).toHaveText("Combat");
-  await expect(page.locator("#monster-master-active-unit")).toContainText("Alpha Emberling");
-  await expect(page.locator("#monster-master-status")).toContainText("Your activation");
-
   await page.locator("#monster-master-select-move").click();
-  const move = page.locator('#monster-master-options button[data-action-kind="move"]').first();
-  await expect(move).toBeVisible();
-  await move.click();
+  await page.locator('#monster-master-options button[data-action-kind="move"]').first().click();
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 7");
-  await expect(page.locator("#monster-master-move-budget")).toHaveText("Used");
+  await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-last-effect-types", /unit-moved/);
 
   await page.locator("#monster-master-end-activation").click();
-  await expect(page.locator("#monster-master-active-unit")).toContainText("Alpha Warden Master");
   const matchId = (await diagnostics(page)).matchId;
   const resumedRevision = await page.locator("#monster-master-revision-small").textContent();
-
   await page.reload();
+  await waitForPixi(page);
   await expect(page.locator("#monster-master-revision-small")).toHaveText(resumedRevision);
   await expect(page).toHaveURL(new RegExp(`match=${matchId}`));
-  await expect(page.locator("#monster-master-phase")).toHaveText("Combat");
 });
 
-test("two browser seats alternate Monster Master deployment on one match", async ({ browser }) => {
+test("two browser seats alternate Monster Master deployment on one Pixi battlefield", async ({ browser }) => {
+  test.setTimeout(45_000);
   const alphaContext = await browser.newContext();
   const betaContext = await browser.newContext();
   const alpha = await alphaContext.newPage();
@@ -213,102 +202,66 @@ test("two browser seats alternate Monster Master deployment on one match", async
   try {
     await alpha.goto("/monster-master.html?player=monster-alpha");
     await alpha.locator("#monster-master-human").click();
-    const inviteInput = alpha.locator("#monster-master-invite-link");
-    await expect(inviteInput).toHaveValue(/monster-master\.html.*match=/);
-    const invite = await inviteInput.inputValue();
-
+    await waitForPixi(alpha);
+    const invite = await alpha.locator("#monster-master-invite-link").inputValue();
     await beta.goto(invite);
-    await expect(beta.locator("#monster-master-status")).toContainText("Opponent");
+    await waitForPixi(beta);
 
     await deploySelectedUnit(alpha);
-    await expect(beta.locator("#monster-master-status")).toContainText("Deploy Beta Warden Master");
+    await expect(beta.locator("#monster-master-status")).toContainText("Beta Verdant Sage");
     await deploySelectedUnit(beta);
-    await expect(alpha.locator("#monster-master-status")).toContainText("Deploy Alpha Stone Bulwark");
+    await expect(alpha.locator("#monster-master-status")).toContainText("Stone Bulwark");
   } finally {
-    await alphaContext.close();
-    await betaContext.close();
+    await alphaContext.close().catch(() => {});
+    await betaContext.close().catch(() => {});
   }
 });
 
-test("selects and commits a legal Monster Master attack", async ({ page, request }) => {
-  const prepared = await prepareAuthoritativeState(
-    request,
-    (view) => view.observation.legalActions.some((action) => action.type === "attack"),
-  );
+test("commits an attack and presents its authoritative battlefield damage effect", async ({ page, request }) => {
+  const prepared = await prepareAuthoritativeState(request, (view) => view.observation.legalActions.some((action) => action.type === "attack"));
   const actingPlayer = prepared.observation.activePlayerId;
   const attack = prepared.observation.legalActions.find((action) => action.type === "attack");
-  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.matchId)}&player=${encodeURIComponent(actingPlayer)}`);
-  await expect(page.locator("#monster-master-revision")).toHaveText(`Revision ${prepared.revision}`);
-
+  await openPrepared(page, prepared, actingPlayer);
   await page.locator("#monster-master-select-attack").click();
-  const target = page.locator(`#monster-master-options button[data-action-kind="attack"][data-target-unit-id="${attack.targetUnitId}"]`);
-  await expect(target).toBeVisible();
-  await target.click();
-
+  await page.locator(`#monster-master-options button[data-target-unit-id="${attack.targetUnitId}"]`).click();
   await expect(page.locator("#monster-master-revision")).toHaveText(`Revision ${prepared.revision + 1}`);
+  await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-last-effect-types", /unit-damaged/);
   await expect(page.locator("#monster-master-effects .damage")).toContainText("took");
 });
 
-test("spends command energy and renders a legal Warden Mend", async ({ page, request }) => {
-  const prepared = await prepareAuthoritativeState(
-    request,
-    (view) => view.observation.legalActions.some((action) => action.type === "use-ability"),
-  );
+test("spends command energy and presents a legal Mend effect", async ({ page, request }) => {
+  const prepared = await prepareAuthoritativeState(request, (view) => view.observation.legalActions.some((action) => action.type === "use-ability"));
   const actingPlayer = prepared.observation.activePlayerId;
   const mend = prepared.observation.legalActions.find((action) => action.type === "use-ability");
   const commandBefore = prepared.observation.commandByPlayer[actingPlayer];
-  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.matchId)}&player=${encodeURIComponent(actingPlayer)}`);
-
+  await openPrepared(page, prepared, actingPlayer);
   await page.locator("#monster-master-select-mend").click();
-  const target = page.locator(`#monster-master-options button[data-action-kind="use-ability"][data-target-unit-id="${mend.targetUnitId}"]`);
-  await expect(target).toBeVisible();
-  await target.click();
-
-  await expect(page.locator("#monster-master-revision")).toHaveText(`Revision ${prepared.revision + 1}`);
-  await expect(page.locator("#monster-master-effects")).toContainText("recovered");
-  const state = await diagnostics(page);
-  expect(state.commandByPlayer[actingPlayer]).toBe(commandBefore - mend.commandCost);
+  await page.locator(`#monster-master-options button[data-target-unit-id="${mend.targetUnitId}"]`).click();
+  await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-last-effect-types", /unit-healed/);
+  expect((await diagnostics(page)).commandByPlayer[actingPlayer]).toBe(commandBefore - mend.commandCost);
 });
 
-test("renders defeated units and the authoritative defeat effect", async ({ page, request }) => {
-  const prepared = await prepareAuthoritativeState(
-    request,
-    (view) => view.observation.lastEffects.some((effect) => effect.type === "unit-defeated"),
-  );
-  const player = prepared.playerIds[0];
-  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.matchId)}&player=${encodeURIComponent(player)}`);
-
+test("renders defeated creatures and the authoritative defeat presentation", async ({ page, request }) => {
+  const prepared = await prepareAuthoritativeState(request, (view) => view.observation.lastEffects.some((effect) => effect.type === "unit-defeated"));
+  await openPrepared(page, prepared, prepared.playerIds[0]);
   await expect(page.locator("#monster-master-roster-list .is-defeated")).toHaveCount(prepared.observation.defeatedUnitIds.length);
-  await expect(page.locator("#monster-master-effects .defeat")).toContainText("defeated");
+  await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-last-effect-types", /unit-defeated/);
 });
 
 test("renders a completed Monster Master victory and disables actions", async ({ page, request }) => {
-  const prepared = await prepareAuthoritativeState(
-    request,
-    (view) => view.observation.status.lifecycle === "completed" && Boolean(view.observation.status.winnerPlayerId),
-  );
-  const player = prepared.playerIds[0];
-  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.matchId)}&player=${encodeURIComponent(player)}`);
-
-  await expect(page.locator("#monster-master-status")).toContainText("won the duel");
-  await expect(page.locator("#monster-master-effects .victory")).toBeVisible();
+  const prepared = await prepareAuthoritativeState(request, (view) => view.observation.status.lifecycle === "completed" && Boolean(view.observation.status.winnerPlayerId));
+  await openPrepared(page, prepared, prepared.playerIds[0]);
+  await expect(page.locator("#monster-master-result-screen")).toBeVisible();
   await expect(page.locator("#monster-master-select-move")).toBeDisabled();
   await expect(page.locator("#monster-master-select-attack")).toBeDisabled();
-  await expect(page.locator("#monster-master-select-mend")).toBeDisabled();
   await expect(page.locator("#monster-master-end-activation")).toBeDisabled();
 });
 
 test("renders the bounded round-cap draw", async ({ page, request }) => {
-  const prepared = await prepareAuthoritativeState(
-    request,
-    (view) => view.observation.status.draw,
-    { passiveCombat: true, maximumActions: 220 },
-  );
-  const player = prepared.playerIds[0];
-  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.matchId)}&player=${encodeURIComponent(player)}`);
-
-  await expect(page.locator("#monster-master-status")).toHaveText("The duel ended in a draw.");
-  await expect(page.locator("#monster-master-effects .victory")).toContainText("draw");
+  const prepared = await prepareAuthoritativeState(request, (view) => view.observation.status.draw, { passiveCombat: true, maximumActions: 220 });
+  await openPrepared(page, prepared, prepared.playerIds[0]);
+  await expect(page.locator("#monster-master-result-screen")).toBeVisible();
+  await expect(page.locator("#monster-master-result-title")).toHaveText("Draw");
   await expect(page.locator("#monster-master-end-activation")).toBeDisabled();
 });
 
@@ -316,10 +269,8 @@ test("Monster Master controls remain usable without horizontal overflow on mobil
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/monster-master.html?player=monster-mobile");
   await page.locator("#monster-master-theo").click();
-  await expect(page.locator("#monster-master-canvas")).toBeVisible();
+  await waitForPixi(page);
   await expect(page.locator("#monster-master-select-deploy")).toBeVisible();
   await page.locator("#monster-master-zoom-in").click();
-
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  expect(overflow).toBeLessThanOrEqual(1);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 });

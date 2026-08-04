@@ -1,0 +1,181 @@
+body.monster-master-match-active .monster-master-result-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: clamp(18px, 5vw, 72px);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(231, 195, 112, .16), transparent 32rem),
+    rgba(2, 6, 10, .72);
+  backdrop-filter: blur(7px) saturate(.82);
+}
+
+body.monster-master-match-active .monster-master-result-screen[hidden] {
+  display: none !important;
+}
+
+.monster-master-result-panel {
+  position: relative;
+  width: min(560px, 100%);
+  overflow: hidden;
+  padding: clamp(24px, 5vw, 46px);
+  border: 1px solid rgba(229, 202, 137, .46);
+  border-radius: 24px;
+  background:
+    linear-gradient(145deg, rgba(48, 53, 38, .96), rgba(9, 14, 12, .98)),
+    #0b100d;
+  box-shadow:
+    0 32px 100px rgba(0, 0, 0, .68),
+    inset 0 1px rgba(255, 246, 213, .08);
+  color: #eee5c9;
+  text-align: center;
+}
+
+.monster-master-result-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 18% auto;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(241, 205, 117, .9), transparent);
+}
+
+.monster-master-result-screen[data-result="victory"] .monster-master-result-panel {
+  border-color: rgba(239, 207, 123, .72);
+  box-shadow: 0 34px 110px rgba(0, 0, 0, .72), 0 0 52px rgba(215, 174, 76, .18);
+}
+
+.monster-master-result-screen[data-result="defeat"] .monster-master-result-panel {
+  border-color: rgba(224, 93, 112, .54);
+  background: linear-gradient(145deg, rgba(61, 38, 38, .97), rgba(13, 12, 13, .99));
+}
+
+.monster-master-result-eyebrow {
+  margin: 0 0 8px;
+  color: #bda469;
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+
+.monster-master-result-title {
+  margin: 0;
+  color: #fff8df;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.6rem, 8vw, 5rem);
+  line-height: .94;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+  text-shadow: 0 5px 30px rgba(0, 0, 0, .55);
+}
+
+.monster-master-result-screen[data-result="defeat"] .monster-master-result-title {
+  color: #ffd9d9;
+}
+
+.monster-master-result-summary {
+  max-width: 42ch;
+  margin: 18px auto 0;
+  color: #cfc5a8;
+  font-size: clamp(.84rem, 2vw, 1rem);
+  line-height: 1.6;
+}
+
+.monster-master-result-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 24px 0;
+}
+
+.monster-master-result-stat {
+  padding: 12px;
+  border: 1px solid rgba(226, 201, 140, .2);
+  border-radius: 13px;
+  background: rgba(4, 8, 7, .38);
+}
+
+.monster-master-result-stat small,
+.monster-master-result-stat strong {
+  display: block;
+}
+
+.monster-master-result-stat small {
+  color: #998e71;
+  font-size: .56rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.monster-master-result-stat strong {
+  margin-top: 4px;
+  color: #f0e6c7;
+  font-size: 1.05rem;
+}
+
+.monster-master-result-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.monster-master-result-actions button,
+.monster-master-result-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 128px;
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 1px solid rgba(229, 203, 139, .36);
+  border-radius: 11px;
+  background: rgba(27, 31, 23, .88);
+  color: #e7ddbd;
+  cursor: pointer;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.monster-master-result-actions .is-primary {
+  border-color: rgba(239, 205, 119, .68);
+  background: linear-gradient(145deg, #87672f, #4f3c21);
+  color: #fff7dc;
+}
+
+.monster-master-result-actions button:hover,
+.monster-master-result-actions button:focus-visible,
+.monster-master-result-actions a:hover,
+.monster-master-result-actions a:focus-visible {
+  border-color: #efd080;
+  outline: none;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 520px) {
+  body.monster-master-match-active .monster-master-result-screen {
+    padding: 12px;
+  }
+
+  .monster-master-result-panel {
+    padding: 24px 18px;
+    border-radius: 18px;
+  }
+
+  .monster-master-result-stats {
+    margin-block: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monster-master-result-actions button,
+  .monster-master-result-actions a {
+    transition: none;
+  }
+}

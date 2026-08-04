@@ -114,25 +114,30 @@ test("Tic-Tac-Toe uses the universal destination bar and restores the shared DOM
   assert.match(packageJson.scripts["check:browser"], /public\/tic-tac-toe-noir\.js/);
 });
 
-test("Monster Master uses one objective rendering, a player-relative turn queue, and no duplicate product header", async () => {
+test("Monster Master uses Pixi, a player-relative turn queue, and no duplicate renderer observers", async () => {
   const launcher = await read("public/auth-launcher.js");
   const navigationIntegrations = await read("public/gameframe-nav-integrations.css");
   const finalPolish = await read("public/gameframe-final-polish.css");
-  const terrain = await read("public/monster-master-terrain.js");
   const correction = await read("public/monster-master-correction.js");
   const correctionStyles = await read("public/monster-master-correction.css");
+  const pixiSource = await read("src/browser/monster-master-pixi-entry.js");
   const packageJson = JSON.parse(await read("package.json"));
 
-  assert.ok(launcher.indexOf("monster-master-polish.js") < launcher.indexOf("monster-master-correction.js"));
-  assert.ok(launcher.indexOf("monster-master-correction.js") < launcher.indexOf("await import(entry)"));
+  const monsterStart = launcher.indexOf('} else if (entry === "/monster-master-app.js")');
+  const monsterEnd = launcher.indexOf("} else {", monsterStart);
+  const monsterBranch = launcher.slice(monsterStart, monsterEnd);
+  assert.ok(monsterStart >= 0 && monsterEnd > monsterStart);
+  assert.ok(monsterBranch.indexOf("monster-master-pixi-bridge.js") < monsterBranch.indexOf("monster-master-correction.js"));
+  assert.ok(monsterBranch.indexOf("monster-master-correction.js") < monsterBranch.indexOf("await import(entry)"));
+  assert.ok(monsterBranch.indexOf("await import(entry)") < monsterBranch.indexOf("monster-master-pixi-bundle.js"));
+  assert.doesNotMatch(monsterBranch, /monster-master-overlay-guard\.js/);
+  assert.doesNotMatch(monsterBranch, /monster-master-polish\.js|monster-master-terrain\.js|monster-master-art\.js/);
+
   assert.match(navigationIntegrations, /\.monster-master-shell > \.hero/);
   assert.match(finalPolish, /body\.gameframe-othello-route \.board-viewport/);
   assert.match(finalPolish, /#board\.board-checkers/);
   assert.match(finalPolish, /monster-master-match-topbar/);
   assert.match(finalPolish, /monster-master-exit-button/);
-  assert.match(terrain, /if \(entry\.objective\) \{/);
-  assert.match(terrain, /return undefined;\n      \}\n      this\.save\(\)/);
-  assert.doesNotMatch(terrain, /this\.restore\(\);\n      if \(entry\.objective\)/);
 
   assert.match(correction, /function turnOrder\(view\)/);
   assert.match(correction, /right\.initiative - left\.initiative/);
@@ -140,10 +145,17 @@ test("Monster Master uses one objective rendering, a player-relative turn queue,
   assert.match(correction, /BLUE · YOU/);
   assert.match(correction, /RED · ENEMY/);
   assert.match(correction, /dataset\.monsterFriendlySeat/);
-  assert.match(correction, /installCanvasColorRemap\("fillStyle"\)/);
+  assert.match(correction, /const monsterViewEvent = "gameframe:monster-master-pixi-view"/);
+  assert.doesNotMatch(correction, /installCanvasColorRemap/);
+  assert.doesNotMatch(correction, /window\.fetch = async/);
   assert.match(correction, /combat-nav a\[href="\/combat\.html"\]/);
   assert.match(correctionStyles, /monster-master-turn-unit\.is-friendly/);
   assert.match(correctionStyles, /monster-master-turn-unit\.is-enemy/);
   assert.match(correctionStyles, /monster-master-roster-rail > \.tactical-player-grid/);
+
+  assert.match(pixiSource, /function subscribeToController/);
+  assert.match(pixiSource, /autoStart: false/);
+  assert.match(pixiSource, /preference: "webgl"/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-correction\.js/);
+  assert.match(packageJson.scripts["check:monster-master-pixi"], /build-monster-master-pixi/);
 });

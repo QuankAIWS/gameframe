@@ -586,12 +586,12 @@ function applyMove(state: MonsterMasterState, action: TacticalMoveAction): void 
   }];
 }
 
-function completeIfMasterDefeated(
+function completeIfOpponentEliminated(
   state: MonsterMasterState,
-  defeated: MonsterMasterUnit,
+  defeatedOwnerId: PlayerId,
   attackerOwnerId: PlayerId,
 ): void {
-  if (defeated.role !== "master") return;
+  if (state.board.units.some((unit) => unit.ownerId === defeatedOwnerId)) return;
   state.winnerPlayerId = attackerOwnerId;
   state.lastEffects.push({
     type: "duel-completed",
@@ -621,7 +621,7 @@ function applyAttack(state: MonsterMasterState, action: MonsterMasterAttackActio
       targetUnitId: target.id,
       role: target.role,
     });
-    completeIfMasterDefeated(state, target, source.ownerId);
+    completeIfOpponentEliminated(state, target.ownerId, source.ownerId);
   }
 }
 

@@ -20,41 +20,55 @@ async function openTic(page, viewport, player) {
   await expect(page.locator(".tic-noir-control-rail")).toBeVisible();
 }
 
-async function deployNextMonsterMasterUnit(page) {
-  const previousRevision = await page.evaluate(() => window.gameFrameMonsterOverlay?.getView()?.revision ?? -1);
-  await expect.poll(() => page.evaluate(() => {
-    const view = window.gameFrameMonsterOverlay?.getView();
-    if (!view || view.observation.phase !== "deployment") return null;
-    if (view.observation.activePlayerId !== view.observation.yourPlayerId) return null;
-    const camera = window.gameFrameMonsterProjection?.getCamera?.();
-    const actions = view.observation.legalActions.filter((candidate) => candidate.type === "deploy-unit");
-    if (!actions.length) return null;
-    return actions.sort((left, right) => {
-      const leftDistance = Math.abs(left.position.x - camera.centerX) + Math.abs(left.position.y - camera.centerY);
-      const rightDistance = Math.abs(right.position.x - camera.centerX) + Math.abs(right.position.y - camera.centerY);
-      return leftDistance - rightDistance;
-    })[0];
-  }), { timeout: 8_000 }).not.toBeNull();
-
-  const selectedAction = await page.evaluate(() => {
-    const view = window.gameFrameMonsterOverlay.getView();
-    const camera = window.gameFrameMonsterProjection.getCamera();
-    return view.observation.legalActions
-      .filter((candidate) => candidate.type === "deploy-unit")
-      .sort((left, right) => {
-        const leftDistance = Math.abs(left.position.x - camera.centerX) + Math.abs(left.position.y - camera.centerY);
-        const rightDistance = Math.abs(right.position.x - camera.centerX) + Math.abs(right.position.y - camera.centerY);
-        return leftDistance - rightDistance;
-      })[0];
+async function visibleDeploymentAction(page) {
+  return page.evaluate(() => {
+    const view = window.gameFrameMonsterController?.getView?.();
+    const canvas = document.querySelector("#monster-master-pixi-canvas");
+    let diagnostics = {};
+    try {
+      diagnostics = JSON.parse(document.querySelector("#monster-master-details")?.textContent || "{}");
+    } catch {
+      diagnostics = {};
+    }
+    if (!view || !canvas || !diagnostics.selectedUnitId) return null;
+    const rect = canvas.getBoundingClientRect();
+    const actions = view.observation.legalActions.filter(
+      (action) => action.type === "deploy-unit" && action.unitId === diagnostics.selectedUnitId,
+    );
+    for (const action of actions) {
+      const point = window.gameFrameMonsterPixiBridge?.worldToScreen?.(action.position);
+      if (!point) continue;
+      const clientX = rect.left + point.x;
+      const clientY = rect.top + point.y;
+      if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) continue;
+      const target = document.elementFromPoint(clientX, clientY);
+      if (target?.id !== "monster-master-pixi-canvas") continue;
+      const picked = window.gameFrameMonsterPixi?.screenToTile?.(point);
+      if (picked?.x !== action.position.x || picked?.y !== action.position.y) continue;
+      return { action, point };
+    }
+    return null;
   });
+}
 
-  const option = page.locator(`#monster-master-options [data-action-kind="deploy-unit"]`).first();
-  await option.click();
-  const point = await page.evaluate((coordinate) => window.gameFrameMonsterProjection.worldToScreen(coordinate), selectedAction.position);
-  const canvas = await page.locator("#monster-master-canvas").boundingBox();
-  if (!canvas) throw new Error("Monster Master canvas did not produce layout bounds.");
-  await page.mouse.click(canvas.x + point.x, canvas.y + point.y);
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterOverlay?.getView()?.revision ?? -1), {
+async function deployNextMonsterMasterUnit(page) {
+  await expect.poll(() => page.evaluate(() => {
+    const view = window.gameFrameMonsterController?.getView?.();
+    return Boolean(
+      view
+      && view.observation.phase === "deployment"
+      && view.observation.activePlayerId === view.observation.yourPlayerId
+    );
+  }), { timeout: 8_000 }).toBe(true);
+
+  const previousRevision = await page.evaluate(() => window.gameFrameMonsterController.getView().revision);
+  await page.locator('#monster-master-options [data-action-kind="deploy-unit"]').first().click();
+  await expect.poll(() => visibleDeploymentAction(page), { timeout: 8_000 }).not.toBeNull();
+  const target = await visibleDeploymentAction(page);
+  const canvas = await page.locator("#monster-master-pixi-canvas").boundingBox();
+  if (!canvas || !target) throw new Error("No unobstructed Pixi deployment tile was available.");
+  await page.mouse.click(canvas.x + target.point.x, canvas.y + target.point.y);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterController?.getView()?.revision ?? -1), {
     timeout: 8_000,
   }).toBeGreaterThan(previousRevision);
 }
@@ -112,17 +126,21 @@ test("Checkers never inherits Tic-Tac-Toe presentation wrappers", async ({ page 
 test("Monster Master keeps its mobile setup control and session badge inside the viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/monster-master.html?player=monster-mobile-regression");
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
   await page.locator("#monster-master-theo").click();
 
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expectStyledDestinationBar(page, "monster");
   await expect(page.locator("#gameframe-session-badge")).toBeVisible();
   await expect(page.locator("body.monster-master-overlay-ready")).toBeVisible();
+  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
 
-  const setup = await page.locator("#monster-master-new-match").boundingBox();
+  const setupControl = page.locator("#gameframe-destination-bar #monster-master-new-match");
+  await expect(setupControl).toBeVisible();
+  const setup = await setupControl.boundingBox();
   const status = await page.locator("#monster-master-status").boundingBox();
   const viewport = page.viewportSize();
-  if (!setup || !status || !viewport) throw new Error("Monster Master mobile header did not produce layout bounds.");
+  if (!setup || !status || !viewport) throw new Error("Monster Master mobile navigation did not produce layout bounds.");
 
   expect(setup.width).toBeGreaterThanOrEqual(52);
   expect(setup.x).toBeGreaterThanOrEqual(0);
@@ -135,8 +153,10 @@ test("Monster Master keeps its mobile setup control and session badge inside the
 test("Monster Master uses a battlefield background with working contextual unit and camera overlays", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/monster-master.html?player=monster-overlay-regression");
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
   await page.locator("#monster-master-theo").click();
   await expect(page.locator("body.monster-master-overlay-ready")).toBeVisible();
+  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
 
   const match = await page.locator("#monster-master-match").boundingBox();
   const battlefield = await page.locator(".monster-master-battlefield-stage").boundingBox();
@@ -159,7 +179,7 @@ test("Monster Master uses a battlefield background with working contextual unit 
   await deployNextMonsterMasterUnit(page);
   await deployNextMonsterMasterUnit(page);
   await deployNextMonsterMasterUnit(page);
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterOverlay?.getView()?.observation.phase), {
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterController?.getView()?.observation.phase), {
     timeout: 8_000,
   }).toBe("combat");
   await expect(page.locator("#monster-master-unit-hud")).toHaveAttribute("data-role", "emberling");
@@ -170,10 +190,25 @@ test("Monster Master uses a battlefield background with working contextual unit 
   await expect(page.locator("#monster-master-select-mend")).toBeHidden();
   await expect(page.locator('#monster-master-ability-list [data-ability-id="cinder-volley"]')).toBeVisible();
   await expect(page.locator('#monster-master-ability-list [data-ability-id="mend"]')).toHaveCount(0);
+
+  const nowTurn = page.locator(".monster-master-turn-unit.is-active");
+  await expect(nowTurn).toBeVisible();
+  await expect.poll(() => nowTurn.locator(".monster-master-turn-portrait").evaluate(
+    (node) => getComputedStyle(node).animationName,
+  )).toContain("monster-master-now-wiggle");
+
   await page.screenshot({ path: testInfo.outputPath("monster-master-contextual-combat-desktop.png"), fullPage: true });
 
   const enemyTurn = page.locator('.monster-master-turn-unit[data-owner="enemy"]').first();
   await enemyTurn.click();
+  await expect(enemyTurn).toHaveClass(/is-inspected/);
+  await expect.poll(() => enemyTurn.evaluate((node) => ({
+    content: getComputedStyle(node, "::after").content,
+    animationName: getComputedStyle(node, "::after").animationName,
+  }))).toEqual({
+    content: '"VIEWING"',
+    animationName: "monster-master-viewing-flash",
+  });
   await expect(page.locator("#monster-master-unit-hud")).toHaveAttribute("data-owner", "enemy");
   await expect(page.locator("#monster-master-return-active")).toBeVisible();
   await page.locator("#monster-master-return-active").click();

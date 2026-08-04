@@ -1,0 +1,113 @@
+.monster-master-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+body.monster-master-match-active #monster-master-match.monster-master-game-shell {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.gameframe-destination-links .monster-master-nav-setup {
+  display: none;
+  flex-direction: row;
+  cursor: pointer;
+  color: #dcefff;
+}
+
+body:has(#monster-master-match:not([hidden])) .gameframe-destination-links .monster-master-nav-setup,
+body.monster-master-match-active .gameframe-destination-links .monster-master-nav-setup {
+  display: inline-flex;
+}
+
+.gameframe-destination-links .monster-master-nav-setup::after {
+  content: "";
+  position: absolute;
+  inset: auto 20px 10px;
+  height: 2px;
+  background: var(--destination-accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--destination-accent) 66%, transparent);
+}
+
+.gameframe-destination-links .monster-master-nav-setup:hover,
+.gameframe-destination-links .monster-master-nav-setup:focus-visible {
+  color: #fff;
+  background: color-mix(in srgb, var(--destination-accent) 10%, transparent);
+  outline: none;
+}
+
+.monster-master-board-briefing {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label help"
+    "status help";
+  align-items: center;
+  gap: 2px 14px;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 1px solid rgba(79, 111, 164, .34);
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(10, 18, 31, .94), rgba(17, 31, 51, .88));
+  box-shadow: inset 0 1px rgba(255, 255, 255, .025);
+}
+
+.monster-master-board-briefing .section-label {
+  grid-area: label;
+  margin: 0;
+  font-size: .55rem;
+}
+
+.monster-master-board-briefing #monster-master-status {
+  grid-area: status;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #edf6ff;
+  font-size: clamp(.72rem, .82vw, .84rem);
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.monster-master-board-briefing #monster-master-help {
+  grid-area: help;
+  max-width: 330px;
+  margin: 0;
+  color: rgba(196, 214, 239, .7);
+  font-size: .66rem;
+  line-height: 1.3;
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  .monster-master-board-briefing {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "label"
+      "status";
+    min-height: 60px;
+    padding: 7px 10px;
+  }
+
+  .monster-master-board-briefing #monster-master-status {
+    display: -webkit-box;
+    min-height: 40px;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+  }
+
+  .monster-master-board-briefing #monster-master-help {
+    display: none;
+  }
+}

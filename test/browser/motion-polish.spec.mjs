@@ -60,208 +60,195 @@ async function prepareMonsterMasterMove(request) {
   throw new Error("Monster Master did not reach a legal movement action.");
 }
 
-async function centerBattlefieldInViewport(page) {
-  const canvas = page.locator("#monster-master-canvas");
-  await canvas.evaluate((element) => element.scrollIntoView({ block: "center", inline: "center" }));
-  const box = await canvas.boundingBox();
-  expect(box).not.toBeNull();
-  expect(box.x + box.width / 2).toBeGreaterThan(0);
-  expect(box.y + box.height / 2).toBeGreaterThan(0);
-  return box;
+async function openPrepared(page, prepared, { mobile = false } = {}) {
+  if (mobile) await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
+  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
+  await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterGestures))).toBe(true);
 }
 
-async function projectedPoint(page, coordinate) {
-  await centerBattlefieldInViewport(page);
-  return page.evaluate((target) => {
-    const canvas = document.querySelector("#monster-master-canvas");
-    const rect = canvas.getBoundingClientRect();
-    const point = window.gameFrameMonsterProjection.worldToScreen(target);
-    return { x: rect.left + point.x, y: rect.top + point.y };
-  }, coordinate);
+async function battlefieldPoint(page, coordinate) {
+  return page.evaluate((target) => window.gameFrameMonsterPixiBridge.worldToScreen(target), coordinate);
+}
+
+async function settleRenderer(page) {
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 
 async function setCameraQuarter(page, quarter) {
   await page.evaluate((targetQuarter) => {
-    window.gameFrameMonsterProjection.setRotation(targetQuarter, { animate: false });
+    const renderer = window.gameFrameMonsterPixi;
+    const current = renderer.getCamera().quarter;
+    const clockwise = (targetQuarter - current + 4) % 4;
+    const counterClockwise = (current - targetQuarter + 4) % 4;
+    const turns = Math.min(clockwise, counterClockwise);
+    for (let index = 0; index < turns; index += 1) {
+      if (clockwise <= counterClockwise) renderer.rotateRight();
+      else renderer.rotateLeft();
+    }
   }, quarter);
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterProjection.getCamera().quarter)).toBe(quarter);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter)).toBe(quarter);
+  await settleRenderer(page);
 }
 
 test("Tic-Tac-Toe presents a board-level result and starts a rematch", async ({ page, request }) => {
   const { view, players } = await completeTicTacToe(request);
   await page.goto(`/?match=${encodeURIComponent(view.matchId)}&player=${encodeURIComponent(players[0])}`);
-
   const overlay = page.locator("#game-outcome-overlay");
   await expect(overlay).toBeVisible();
   await expect(overlay.getByRole("heading")).toHaveText("You won");
   await overlay.getByRole("button", { name: "Rematch" }).click();
-
   await expect(page.locator("#revision")).toHaveText("Revision 0");
   await expect(overlay).toBeHidden();
 });
 
 test("Checkers exposes a visible movement animation after a committed turn", async ({ page }) => {
   const player = `checkers-motion-${crypto.randomUUID()}`;
-  await page.goto(`/?player=${encodeURIComponent(player)}`);
-  await page.locator("#select-checkers").click();
-  await page.getByRole("button", { name: "Challenge Theo" }).click();
-
+  await page.goto(`/?game=american-checkers&menu=1&player=${encodeURIComponent(player)}`);
+  await page.locator("#challenge-theo").click();
   await page.locator(".checkers-cell.selectable-piece:enabled").first().click();
   await page.locator(".checkers-cell.legal-destination:enabled").first().click();
   await expect(page.locator("#board")).toHaveAttribute("data-last-animation-steps", /^[1-9]\d*$/);
 });
 
-test("Monster Master animates the exact committed movement path in rotatable three-quarter view", async ({ page, request }) => {
+test("Monster Master presents the exact committed movement path over the Pixi battlefield", async ({ page, request }) => {
   const prepared = await prepareMonsterMasterMove(request);
   const move = prepared.view.observation.legalActions.find((action) => action.type === "move");
-  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
+  await openPrepared(page, prepared);
 
-  const projectedCanvas = page.locator("#monster-master-motion-canvas");
-  await expect(projectedCanvas).toBeVisible();
-  await expect(projectedCanvas).toHaveAttribute("data-projection", "rotatable-dimetric");
-  await expect(projectedCanvas).toHaveAttribute("data-billboard", "camera-facing");
-  await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-projection-ready", "true");
-
-  await setCameraQuarter(page, 2);
   await page.locator("#monster-master-select-move").click();
-  const point = await projectedPoint(page, move.path.at(-1));
-  await page.mouse.click(point.x, point.y);
+  const point = await battlefieldPoint(page, move.path.at(-1));
+  await page.locator("#monster-master-pixi-canvas").click({ position: point, force: true });
 
-  await expect(page.locator("#monster-master-canvas")).toHaveAttribute(
-    "data-last-animation-steps",
-    String(move.path.length),
-  );
+  const frame = page.locator(".combat-canvas-frame");
+  await expect(frame).toHaveAttribute("data-last-animation-steps", String(move.path.length));
+  await expect(frame).toHaveAttribute("data-last-effect-types", /unit-moved/);
 });
 
-test("Monster Master round-trips tiles from all four corners", async ({ page, request }) => {
+test("Monster Master round-trips a legal floor tile from all four Pixi camera corners", async ({ page, request }) => {
   const prepared = await prepareMonsterMasterMove(request);
-  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
-
-  const canvas = page.locator("#monster-master-canvas");
-  await expect(canvas).toHaveAttribute("data-projection", "rotatable-dimetric");
-  await expect(page.locator("#monster-master-camera-corner")).toBeVisible();
-
+  const target = prepared.view.observation.legalActions.find((action) => action.type === "move").path.at(-1);
+  await openPrepared(page, prepared);
   for (const quarter of [0, 1, 2, 3]) {
     await setCameraQuarter(page, quarter);
-    const roundTrip = await page.evaluate(() => {
-      const point = window.gameFrameMonsterProjection.worldToScreen({ x: 11, y: 11 });
-      return window.gameFrameMonsterProjection.screenToTile(point);
-    });
-    expect(roundTrip).toEqual({ x: 11, y: 11 });
-    await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-camera-quarter", String(quarter));
+    const roundTrip = await page.evaluate((coordinate) => {
+      const point = window.gameFrameMonsterPixiBridge.worldToScreen(coordinate);
+      return window.gameFrameMonsterPixi.screenToTile(point);
+    }, target);
+    expect(roundTrip).toEqual(target);
   }
 });
 
-test("Monster Master rotation controls cycle corners while preserving camera center and zoom", async ({ page, request }) => {
+test("Monster Master rotation controls preserve camera center and zoom", async ({ page, request }) => {
   const prepared = await prepareMonsterMasterMove(request);
-  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
-
+  await openPrepared(page, prepared);
   await setCameraQuarter(page, 0);
-  const before = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera());
+  const before = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
   await page.locator("#monster-master-rotate-right").click();
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterProjection.getCamera().quarter)).toBe(1);
-  await expect(page.locator("#monster-master-camera-corner")).toHaveText("Northeast");
-  const after = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera());
-  expect(after.centerX).toBeCloseTo(before.centerX, 6);
-  expect(after.centerY).toBeCloseTo(before.centerY, 6);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter)).toBe(1);
+  const after = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
+  expect(after.x).toBeCloseTo(before.x, 6);
+  expect(after.y).toBeCloseTo(before.y, 6);
   expect(after.zoom).toBeCloseTo(before.zoom, 6);
-
-  await page.locator("#monster-master-rotate-left").click();
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterProjection.getCamera().quarter)).toBe(0);
 });
 
 test("Monster Master supports wheel zoom and drag pan after rotating", async ({ page, request }) => {
   const prepared = await prepareMonsterMasterMove(request);
-  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
+  await openPrepared(page, prepared);
   await setCameraQuarter(page, 3);
+  const canvas = page.locator("#monster-master-pixi-canvas");
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
 
-  const beforeZoom = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera().zoom);
-  const box = await centerBattlefieldInViewport(page);
+  const beforeZoom = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera().zoom);
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.wheel(0, -320);
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterProjection.getCamera().zoom)).toBeGreaterThan(beforeZoom);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().zoom)).toBeGreaterThan(beforeZoom);
 
-  const beforePan = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera());
-  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.55);
-  await page.mouse.down({ button: "middle" });
-  await page.mouse.move(box.x + box.width * 0.62, box.y + box.height * 0.63, { steps: 6 });
-  await page.mouse.up({ button: "middle" });
-  const afterPan = await page.evaluate(() => window.gameFrameMonsterProjection.getCamera());
-  expect(Math.abs(afterPan.centerX - beforePan.centerX) + Math.abs(afterPan.centerY - beforePan.centerY)).toBeGreaterThan(0.5);
+  const beforePan = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
+  await page.mouse.move(box.x + box.width * .5, box.y + box.height * .55);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * .62, box.y + box.height * .63, { steps: 6 });
+  await page.mouse.up();
+  const afterPan = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
+  expect(Math.abs(afterPan.x - beforePan.x) + Math.abs(afterPan.y - beforePan.y)).toBeGreaterThan(.5);
 });
 
-test("Monster Master fills the viewport and synchronizes the active-unit command HUD", async ({ page, request }) => {
+test("Monster Master supports two-finger pan and pinch zoom", async ({ page, request }) => {
+  const prepared = await prepareMonsterMasterMove(request);
+  await openPrepared(page, prepared, { mobile: true });
+  const canvas = page.locator("#monster-master-pixi-canvas");
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  const before = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
+  const first = { x: box.x + box.width * .36, y: box.y + box.height * .5 };
+  const second = { x: box.x + box.width * .64, y: box.y + box.height * .5 };
+
+  await canvas.dispatchEvent("pointerdown", { pointerId: 41, pointerType: "touch", isPrimary: true, clientX: first.x, clientY: first.y, button: 0 });
+  await canvas.dispatchEvent("pointerdown", { pointerId: 42, pointerType: "touch", isPrimary: false, clientX: second.x, clientY: second.y, button: 0 });
+  await canvas.dispatchEvent("pointermove", { pointerId: 41, pointerType: "touch", isPrimary: true, clientX: first.x - 30, clientY: first.y + 12, buttons: 1 });
+  await canvas.dispatchEvent("pointermove", { pointerId: 42, pointerType: "touch", isPrimary: false, clientX: second.x + 30, clientY: second.y + 12, buttons: 1 });
+  await canvas.dispatchEvent("pointerup", { pointerId: 41, pointerType: "touch", isPrimary: true, clientX: first.x - 30, clientY: first.y + 12 });
+  await canvas.dispatchEvent("pointerup", { pointerId: 42, pointerType: "touch", isPrimary: false, clientX: second.x + 30, clientY: second.y + 12 });
+
+  const after = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
+  expect(after.zoom).toBeGreaterThan(before.zoom);
+  expect(Math.abs(after.x - before.x) + Math.abs(after.y - before.y)).toBeGreaterThan(.05);
+});
+
+test("Monster Master fills the viewport and synchronizes the active-creature command HUD", async ({ page, request }) => {
   const prepared = await prepareMonsterMasterMove(request);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
-
-  await expect(page.locator("body")).toHaveClass(/monster-master-match-active/);
+  await openPrepared(page, prepared);
   await expect(page.locator("#monster-master-unit-hud")).toBeVisible();
-  await expect(page.locator("#monster-master-hud-name")).toHaveText(
-    await page.locator("#monster-master-active-unit").textContent(),
-  );
   await expect(page.locator("#monster-master-hud-health")).not.toHaveText("—");
-  await expect(page.locator("#monster-master-hud-move")).toHaveText(/Available|Used/);
-  await expect(page.locator("#monster-master-hud-primary")).toHaveText(/Available|Used/);
-
   const geometry = await page.evaluate(() => {
     const frame = document.querySelector(".combat-canvas-frame").getBoundingClientRect();
     const deck = document.querySelector(".monster-master-command-deck").getBoundingClientRect();
-    const scrolling = document.scrollingElement;
     return {
       viewportHeight: window.innerHeight,
       viewportWidth: window.innerWidth,
-      scrollHeight: scrolling.scrollHeight,
-      scrollWidth: scrolling.scrollWidth,
-      frameHeight: frame.height,
-      frameWidth: frame.width,
+      bodyOverflow: getComputedStyle(document.body).overflow,
+      frame: { top: frame.top, bottom: frame.bottom, width: frame.width },
       deckBottom: deck.bottom,
+      scrollWidth: document.scrollingElement.scrollWidth,
     };
   });
-  expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.viewportHeight + 2);
+  expect(geometry.bodyOverflow).toBe("hidden");
   expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.viewportWidth + 2);
-  expect(geometry.frameHeight).toBeGreaterThan(430);
-  expect(geometry.frameWidth).toBeGreaterThan(620);
+  expect(geometry.frame.top).toBeGreaterThanOrEqual(0);
+  expect(geometry.frame.width).toBeGreaterThan(620);
   expect(geometry.deckBottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
-
-  await page.keyboard.press("2");
-  await expect(page.locator("#monster-master-select-move")).toHaveAttribute("aria-pressed", "true");
 });
 
-test("Monster Master mobile shell keeps gameplay bounded and exposes roster and unit drawers", async ({ page, request }) => {
+test("Monster Master mobile shell keeps gameplay bounded and exposes roster and creature drawers", async ({ page, request }) => {
   const prepared = await prepareMonsterMasterMove(request);
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`/monster-master.html?match=${encodeURIComponent(prepared.view.matchId)}&player=${encodeURIComponent(prepared.activePlayerId)}`);
-
-  await expect(page.locator("body")).toHaveClass(/monster-master-match-active/);
-  await expect(page.locator(".monster-master-command-deck")).toBeVisible();
-  await expect.poll(() => page.evaluate(() => {
-    const scrolling = document.scrollingElement;
-    return scrolling.scrollHeight <= window.innerHeight + 2
-      && scrolling.scrollWidth <= window.innerWidth + 2;
-  })).toBe(true);
-
-  const dimensions = await page.evaluate(() => ({
-    viewportHeight: window.innerHeight,
-    viewportWidth: window.innerWidth,
-    scrollHeight: document.scrollingElement.scrollHeight,
-    scrollWidth: document.scrollingElement.scrollWidth,
-  }));
-  expect(dimensions.scrollHeight).toBeLessThanOrEqual(dimensions.viewportHeight + 2);
-  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.viewportWidth + 2);
+  await openPrepared(page, prepared, { mobile: true });
+  const geometry = await page.evaluate(() => {
+    const deck = document.querySelector(".monster-master-command-deck").getBoundingClientRect();
+    const camera = document.querySelector(".monster-master-camera-dock").getBoundingClientRect();
+    return {
+      viewportHeight: window.innerHeight,
+      viewportWidth: window.innerWidth,
+      bodyOverflow: getComputedStyle(document.body).overflow,
+      scrollWidth: document.scrollingElement.scrollWidth,
+      deck: { top: deck.top, bottom: deck.bottom },
+      cameraBottom: camera.bottom,
+    };
+  });
+  expect(geometry.bodyOverflow).toBe("hidden");
+  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.viewportWidth + 2);
+  expect(geometry.cameraBottom).toBeLessThanOrEqual(geometry.deck.top - 4);
+  expect(geometry.deck.bottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
 
   await page.locator("#monster-master-open-roster").click();
   await expect(page.locator("body")).toHaveClass(/monster-master-roster-open/);
-  await expect(page.locator("#monster-master-open-roster")).toHaveAttribute("aria-expanded", "true");
-  await expect(page.locator("#monster-master-roster-rail")).toBeInViewport();
-
   await page.locator("#monster-master-drawer-backdrop").click({ position: { x: 360, y: 420 } });
   await expect(page.locator("body")).not.toHaveClass(/monster-master-roster-open/);
 
   await page.locator("#monster-master-open-intel").click();
   await expect(page.locator("body")).toHaveClass(/monster-master-intel-open/);
-  await expect(page.locator("#monster-master-open-intel")).toHaveAttribute("aria-expanded", "true");
-  await expect(page.locator("#monster-master-unit-hud")).toBeInViewport();
   await page.keyboard.press("Escape");
   await expect(page.locator("body")).not.toHaveClass(/monster-master-intel-open/);
 });

@@ -1,0 +1,242 @@
+import { test, expect } from "@playwright/test";
+
+async function selectedDeploymentAction(page) {
+  return page.evaluate(() => {
+    const view = window.gameFrameMonsterController?.getView?.();
+    let diagnostics = {};
+    try {
+      diagnostics = JSON.parse(document.querySelector("#monster-master-details")?.textContent || "{}");
+    } catch {
+      diagnostics = {};
+    }
+    if (!view || !diagnostics.selectedUnitId) return null;
+    return view.observation.legalActions.find(
+      (action) => action.type === "deploy-unit" && action.unitId === diagnostics.selectedUnitId,
+    ) ?? null;
+  });
+}
+
+async function cameraDeltaFrom(page, reference) {
+  return page.evaluate(({ x, y, quarter }) => {
+    const camera = window.gameFrameMonsterPixi.getCamera();
+    return Math.abs(camera.x - x) + Math.abs(camera.y - y) + Math.abs(camera.quarter - quarter);
+  }, reference);
+}
+
+test("Monster Master uses one idle-on-demand Pixi WebGL battlefield", async ({ page }, testInfo) => {
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto("/monster-master.html?player=monster-pixi-regression");
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
+  await page.locator("#monster-master-theo").click();
+  await expect(page.locator("body.monster-master-match-active")).toBeVisible();
+  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
+
+  const pixiCanvas = page.locator("#monster-master-pixi-canvas");
+  const legacyCanvas = page.locator("#monster-master-canvas");
+  await expect(pixiCanvas).toBeVisible();
+  await expect(legacyCanvas).toHaveClass(/monster-master-legacy-canvas/);
+  await expect.poll(() => legacyCanvas.evaluate((node) => getComputedStyle(node).visibility)).toBe("hidden");
+  await expect(page.locator("#monster-master-motion-canvas")).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterRendererMode)).toBe("pixi");
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterPixi?.getView?.()))).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterLegacyDrawCount ?? 0)).toBe(0);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterKeyboard?.isBound ?? false)).toBe(true);
+  await expect(page.locator(".monster-master-camera-title strong")).toHaveText("WASD pan · Q/E rotate");
+
+  const turnPortrait = page.locator(".monster-master-turn-portrait").first();
+  await expect(turnPortrait).toBeVisible();
+  await expect.poll(() => turnPortrait.evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("creature-atlas-v1.svg");
+  await expect.poll(() => page.locator(".monster-master-unit-portrait").evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("creature-atlas-v1.svg");
+
+  const webgl = await pixiCanvas.evaluate((canvas) => Boolean(
+    canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl"),
+  ));
+  expect(webgl).toBe(true);
+
+  await page.waitForTimeout(400);
+  const idleBefore = await page.evaluate(() => window.gameFrameMonsterPixi.getPerformance().renders);
+  await page.waitForTimeout(600);
+  const idleAfter = await page.evaluate(() => window.gameFrameMonsterPixi.getPerformance().renders);
+  expect(idleAfter - idleBefore).toBeLessThanOrEqual(1);
+
+  const cameraReference = { x: 11.5, y: 11.5 };
+  const cameraBefore = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
+  const pointBeforePan = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+    cameraReference,
+  );
+  const rendersBeforePan = await page.evaluate(() => window.gameFrameMonsterPixi.getPerformance().renders);
+  await page.locator('[data-monster-master-pan-x="3"][data-monster-master-pan-y="0"]').click();
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().x)).toBeGreaterThan(cameraBefore.x);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getPerformance().renders)).toBeGreaterThan(rendersBeforePan);
+  const pointAfterPan = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+    cameraReference,
+  );
+  expect(pointAfterPan.x).toBeLessThan(pointBeforePan.x - 40);
+  expect(Math.abs(pointAfterPan.y - pointBeforePan.y)).toBeLessThan(2);
+
+  for (const key of ["KeyW", "KeyA", "KeyS", "KeyD"]) {
+    await page.locator("#monster-master-center-field").click();
+    const beforeKey = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
+    await page.keyboard.press(key);
+    await expect.poll(() => cameraDeltaFrom(page, beforeKey)).toBeGreaterThan(0.1);
+  }
+
+  const quarterBeforeKeyboard = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter);
+  await page.keyboard.press("KeyE");
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter))
+    .toBe((quarterBeforeKeyboard + 1) % 4);
+  await page.keyboard.press("KeyQ");
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter))
+    .toBe(quarterBeforeKeyboard);
+
+  await page.evaluate(() => {
+    const input = document.createElement("input");
+    input.id = "monster-master-keyboard-guard";
+    document.body.append(input);
+    input.focus();
+  });
+  const beforeGuardedKey = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
+  await page.keyboard.press("KeyW");
+  await page.waitForTimeout(80);
+  expect(await cameraDeltaFrom(page, beforeGuardedKey)).toBe(0);
+  await page.locator("#monster-master-keyboard-guard").evaluate((node) => node.remove());
+
+  const revisionBeforeDrag = await page.evaluate(() => window.gameFrameMonsterController.getView().revision);
+  const pointBeforeDrag = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+    cameraReference,
+  );
+  const canvasBounds = await pixiCanvas.boundingBox();
+  expect(canvasBounds).not.toBeNull();
+  const dragStart = {
+    x: canvasBounds.x + canvasBounds.width * 0.58,
+    y: canvasBounds.y + canvasBounds.height * 0.52,
+  };
+  await page.mouse.move(dragStart.x, dragStart.y);
+  await page.mouse.down();
+  await page.mouse.move(dragStart.x + 60, dragStart.y + 24, { steps: 4 });
+  await page.mouse.up();
+  const pointAfterDrag = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+    cameraReference,
+  );
+  expect(pointAfterDrag.x).toBeGreaterThan(pointBeforeDrag.x + 40);
+  expect(pointAfterDrag.y).toBeGreaterThan(pointBeforeDrag.y + 12);
+  expect(await page.evaluate(() => window.gameFrameMonsterController.getView().revision)).toBe(revisionBeforeDrag);
+
+  const quarterBefore = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter);
+  await page.locator("#monster-master-rotate-right").click();
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter)).not.toBe(quarterBefore);
+  const pointBeforeNorthPan = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+    cameraReference,
+  );
+  await page.locator('[data-monster-master-pan-x="0"][data-monster-master-pan-y="-3"]').click();
+  const pointAfterNorthPan = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.worldToScreen(coordinate),
+    cameraReference,
+  );
+  expect(Math.abs(pointAfterNorthPan.x - pointBeforeNorthPan.x)).toBeLessThan(2);
+  expect(pointAfterNorthPan.y).toBeGreaterThan(pointBeforeNorthPan.y + 20);
+
+  await page.locator("#monster-master-center-field").click();
+  const previousRevision = await page.evaluate(() => window.gameFrameMonsterController.getView().revision);
+  await page.locator('#monster-master-options [data-action-kind="deploy-unit"]').first().click();
+  await expect.poll(() => selectedDeploymentAction(page)).not.toBeNull();
+  const action = await selectedDeploymentAction(page);
+
+  const roundTrip = await page.evaluate((coordinate) => {
+    const point = window.gameFrameMonsterPixiBridge.worldToScreen(coordinate);
+    return {
+      point,
+      picked: point ? window.gameFrameMonsterPixi.screenToTile(point) : null,
+    };
+  }, action.position);
+  expect(roundTrip.point).not.toBeNull();
+  expect(roundTrip.picked).toEqual(action.position);
+
+  const dispatched = await page.evaluate(
+    (coordinate) => window.gameFrameMonsterPixiBridge.dispatchCoordinate(coordinate),
+    action.position,
+  );
+  expect(dispatched).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterController.getView().revision), {
+    timeout: 8_000,
+  }).toBeGreaterThan(previousRevision);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterLegacyDrawCount ?? 0)).toBe(0);
+
+  const performance = await page.evaluate(() => window.gameFrameMonsterPixi.getPerformance());
+  expect(performance.renders).toBeGreaterThan(0);
+  expect(performance.lastRenderMs).toBeLessThan(100);
+  expect(pageErrors).toEqual([]);
+
+  await page.screenshot({ path: testInfo.outputPath("monster-master-pixi-desktop.png"), fullPage: true });
+});
+
+test("Monster Master Pixi battlefield stays inside the mobile viewport", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/monster-master.html?player=monster-pixi-mobile");
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
+  await page.locator("#monster-master-theo").click();
+  await expect(page.locator("body.monster-master-match-active")).toBeVisible();
+  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
+  await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
+  await expect(page.locator(".monster-master-hints-toggle")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterLegacyDrawCount ?? 0)).toBe(0);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+
+  const resolution = await page.locator("#monster-master-pixi-canvas").evaluate((canvas) => ({
+    clientWidth: canvas.clientWidth,
+    clientHeight: canvas.clientHeight,
+    pixelWidth: canvas.width,
+    pixelHeight: canvas.height,
+  }));
+  expect(resolution.pixelWidth / Math.max(1, resolution.clientWidth)).toBeLessThanOrEqual(1.26);
+  expect(resolution.pixelHeight / Math.max(1, resolution.clientHeight)).toBeLessThanOrEqual(1.26);
+
+  const overlayGeometry = await page.evaluate(() => {
+    const camera = document.querySelector(".monster-master-camera-dock")?.getBoundingClientRect();
+    const command = document.querySelector(".monster-master-command-deck")?.getBoundingClientRect();
+    const comingSoon = document.querySelector(".gameframe-destination-links button[disabled]")?.getBoundingClientRect();
+    const toast = document.querySelector("#monster-master-status-toast")?.getBoundingClientRect();
+    const hintToggle = document.querySelector(".monster-master-hints-toggle")?.getBoundingClientRect();
+    const status = document.querySelector("#monster-master-status");
+    const statusStyle = status ? getComputedStyle(status) : null;
+    return {
+      camera: camera ? { top: camera.top, bottom: camera.bottom, right: camera.right } : null,
+      command: command ? { top: command.top, bottom: command.bottom, right: command.right } : null,
+      comingSoonWidth: comingSoon?.width ?? 0,
+      toast: toast ? { left: toast.left, right: toast.right, top: toast.top, height: toast.height } : null,
+      hintToggle: hintToggle ? { left: hintToggle.left, right: hintToggle.right, top: hintToggle.top } : null,
+      status: status ? {
+        height: status.getBoundingClientRect().height,
+        whiteSpace: statusStyle.whiteSpace,
+      } : null,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+    };
+  });
+  expect(overlayGeometry.camera).not.toBeNull();
+  expect(overlayGeometry.command).not.toBeNull();
+  expect(overlayGeometry.camera.bottom).toBeLessThanOrEqual(overlayGeometry.command.top - 4);
+  expect(overlayGeometry.camera.right).toBeLessThanOrEqual(overlayGeometry.viewportWidth);
+  expect(overlayGeometry.command.bottom).toBeLessThanOrEqual(overlayGeometry.viewportHeight);
+  expect(overlayGeometry.comingSoonWidth).toBe(0);
+  expect(overlayGeometry.toast).not.toBeNull();
+  expect(overlayGeometry.toast.left).toBeGreaterThanOrEqual(0);
+  expect(overlayGeometry.toast.right).toBeLessThanOrEqual(overlayGeometry.viewportWidth);
+  expect(overlayGeometry.toast.height).toBeGreaterThanOrEqual(24);
+  expect(overlayGeometry.hintToggle).not.toBeNull();
+  expect(overlayGeometry.hintToggle.left).toBeGreaterThanOrEqual(0);
+  expect(overlayGeometry.hintToggle.right).toBeLessThanOrEqual(overlayGeometry.viewportWidth);
+  expect(overlayGeometry.status).not.toBeNull();
+  expect(overlayGeometry.status.height).toBeGreaterThanOrEqual(20);
+  expect(overlayGeometry.status.whiteSpace).toBe("normal");
+
+  await page.screenshot({ path: testInfo.outputPath("monster-master-pixi-mobile.png"), fullPage: true });
+});

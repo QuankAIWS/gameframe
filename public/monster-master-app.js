@@ -3,6 +3,7 @@ import { gameFrameFetch } from "./gameframe-auth.js";
 const gameId = "monster-master-duel";
 const theoPlayerId = "theo";
 const recentMatchStorageKey = "scribbles-gameframe.recent-monster-master-match";
+const monsterMasterViewEvent = "gameframe:monster-master-pixi-view";
 const identity = window.gameFrameIdentity;
 const playerId = identity.playerId;
 
@@ -457,14 +458,22 @@ function drawCoordinates(layout) {
   }
 }
 
-function drawScene() {
-  if (!current) return;
-  const layout = layoutCanvas(current.observation.board.map);
-  lastCanvasLayout = layout;
-  drawGrid(current, layout);
-  drawPreview(layout);
-  drawUnits(current, layout);
-  drawCoordinates(layout);
+function renderDiagnostics(layout = null) {
+  const pixiCamera = window.gameFrameMonsterPixi?.getCamera?.();
+  const camera = pixiCamera
+    ? {
+        centerX: pixiCamera.x,
+        centerY: pixiCamera.y,
+        zoom: pixiCamera.zoom,
+        quarter: pixiCamera.quarter,
+        bounds: null,
+      }
+    : {
+        centerX: viewport.centerX,
+        centerY: viewport.centerY,
+        zoom: viewport.zoom,
+        bounds: layout?.bounds ?? null,
+      };
   details.textContent = JSON.stringify({
     gameId,
     matchId: current.matchId,
@@ -480,8 +489,24 @@ function drawScene() {
     legalActionCount: current.observation.legalActions.length,
     undeployedUnitIds: current.observation.undeployedUnitIds,
     defeatedUnitIds: current.observation.defeatedUnitIds,
-    viewport: { centerX: viewport.centerX, centerY: viewport.centerY, zoom: viewport.zoom, bounds: layout.bounds },
+    viewport: camera,
   }, null, 2);
+}
+
+function drawScene() {
+  if (!current) return;
+  if (window.gameFrameMonsterRendererMode === "pixi") {
+    renderDiagnostics();
+    return;
+  }
+  window.gameFrameMonsterLegacyDrawCount = (window.gameFrameMonsterLegacyDrawCount ?? 0) + 1;
+  const layout = layoutCanvas(current.observation.board.map);
+  lastCanvasLayout = layout;
+  drawGrid(current, layout);
+  drawPreview(layout);
+  drawUnits(current, layout);
+  drawCoordinates(layout);
+  renderDiagnostics(layout);
 }
 
 function undeployedOwnedUnits(view = current) {
@@ -714,6 +739,7 @@ function render(view) {
   persistMatch(view.matchId);
   updateUrl(view.matchId);
   startProjection(view.matchId);
+  window.dispatchEvent(new CustomEvent(monsterMasterViewEvent, { detail: { view } }));
 }
 
 function setBusy(busy) {
@@ -882,10 +908,8 @@ function actionAt(coordinate) {
   }) ?? null;
 }
 
-function handleCanvasClick(event) {
-  if (!current || requestPending) return;
-  const coordinate = canvasCoordinate(event);
-  if (!coordinate) return;
+function handleBattlefieldCoordinate(coordinate) {
+  if (!current || requestPending || !coordinate) return;
   const clickedUnit = current.observation.board.units.find(
     (unit) => unit.position.x === coordinate.x && unit.position.y === coordinate.y,
   );
@@ -905,6 +929,15 @@ function handleCanvasClick(event) {
   }
   const action = actionAt(coordinate);
   if (action) void submitAction(action);
+}
+
+window.gameFrameMonsterController = Object.freeze({
+  getView: () => current,
+  handleCoordinate: (coordinate) => handleBattlefieldCoordinate(coordinate),
+});
+
+function handleCanvasClick(event) {
+  handleBattlefieldCoordinate(canvasCoordinate(event));
 }
 
 function handleCanvasMove(event) {
@@ -1039,6 +1072,15 @@ centerField.addEventListener("click", () => centerViewport({ x: 11.5, y: 11.5 })
 zoomIn.addEventListener("click", () => changeZoom(0.25));
 zoomOut.addEventListener("click", () => changeZoom(-0.25));
 canvas.addEventListener("click", handleCanvasClick);
+window.addEventListener("gameframe:monster-master-coordinate", (event) => {
+  const coordinate = event.detail?.coordinate;
+  if (
+    !coordinate
+    || !Number.isFinite(coordinate.x)
+    || !Number.isFinite(coordinate.y)
+  ) return;
+  handleBattlefieldCoordinate({ x: Math.round(coordinate.x), y: Math.round(coordinate.y) });
+});
 canvas.addEventListener("pointermove", handleCanvasMove);
 canvas.addEventListener("pointerleave", () => {
   if (previewAction) {

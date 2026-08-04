@@ -416,29 +416,12 @@ ui.roster?.addEventListener("keydown", (event) => {
   inspectRosterTarget(item);
 });
 
-const nativeFetch = window.fetch.bind(window);
-window.fetch = async (...args) => {
-  const response = await nativeFetch(...args);
-  try {
-    const clone = response.clone();
-    if ((clone.headers.get("content-type") ?? "").includes("application/json")) capture(await clone.json());
-  } catch { /* Presentation capture never changes request authority. */ }
-  return response;
-};
-
-const NativeWebSocket = window.WebSocket;
-if (NativeWebSocket) {
-  class MonsterMasterOverlaySocket extends NativeWebSocket {
-    constructor(...args) {
-      super(...args);
-      this.addEventListener("message", (event) => {
-        try { capture(JSON.parse(event.data)); }
-        catch { /* Ignore non-state messages. */ }
-      });
-    }
-  }
-  window.WebSocket = MonsterMasterOverlaySocket;
-}
+const monsterViewEvent = "gameframe:monster-master-pixi-view";
+window.addEventListener(monsterViewEvent, (event) => capture(event.detail?.view));
+queueMicrotask(() => {
+  const current = window.gameFrameMonsterController?.getView?.();
+  if (current) capture(current);
+});
 
 const rosterObserver = new MutationObserver(scheduleRender);
 if (ui.roster) rosterObserver.observe(ui.roster, { childList: true, subtree: true });

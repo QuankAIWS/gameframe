@@ -16,7 +16,8 @@ test("MM-0001 remains separate, deterministic, and bounded", async () => {
   assert.match(rules, /type: "use-ability"/);
   assert.match(rules, /abilityId: "mend"/);
   assert.match(rules, /commandByPlayer/);
-  assert.match(rules, /role !== "master"/);
+  assert.match(rules, /completeIfOpponentEliminated/);
+  assert.match(rules, /state\.board\.units\.some\(\(unit\) => unit\.ownerId === defeatedOwnerId\)/);
   assert.match(rules, /DeterministicMonsterMasterPlayer/);
   assert.doesNotMatch(rules, /Math\.random/);
   assert.doesNotMatch(rules, /canvas|viewport|animation|sprite/i);
@@ -26,7 +27,8 @@ test("MM-0001 remains separate, deterministic, and bounded", async () => {
   assert.match(contract, /deployment phase/i);
   assert.match(contract, /Command energy/i);
   assert.match(contract, /Mend ability/i);
-  assert.match(contract, /Defeating the opposing Master immediately wins/i);
+  assert.match(contract, /wins only after every opposing unit has been defeated/i);
+  assert.match(contract, /Warden Master does not end the duel/i);
   assert.match(contract, /D&D-style system should use its own rules definition/i);
   assert.match(contract, /Explicitly outside MM-0001/i);
 });

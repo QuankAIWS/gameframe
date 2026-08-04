@@ -94,11 +94,11 @@ The Warden Master may use `Mend` as its primary action:
 
 ## Victory and draw
 
-- Defeating the opposing Master immediately wins the duel.
-- Remaining monsters do not prevent Master-defeat victory.
-- If neither Master is defeated, the duel becomes a draw when the final activation of round 24 ends. The authoritative round remains 24; a phantom round 25 is not started.
+- A player wins only after every opposing unit has been defeated and removed from the battlefield.
+- Defeating the opposing Warden Master does not end the duel while that player still controls a living Bulwark or Emberling.
+- If neither force is eliminated, the duel becomes a draw when the final activation of round 24 ends. The authoritative round remains 24; a phantom round 25 is not started.
 
-Alternative objectives, capture points, escort rules, monster elimination, retreats, surrender, and multi-stage encounters remain future rules.
+Alternative objectives, capture points, escort rules, retreats, surrender, and multi-stage encounters remain future rules.
 
 ## Authoritative state
 

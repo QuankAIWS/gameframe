@@ -1,0 +1,234 @@
+body.monster-master-pixi-ready .combat-canvas-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(120, 146, 82, .12), transparent 52%),
+    #07101a;
+  box-shadow: none;
+}
+
+body.monster-master-pixi-ready .monster-master-pixi-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  outline: none;
+  cursor: grab;
+  touch-action: none;
+}
+
+body.monster-master-pixi-ready .monster-master-pixi-canvas:active,
+body.monster-master-pixi-ready .monster-master-pixi-canvas.is-camera-dragging {
+  cursor: grabbing;
+}
+
+body.monster-master-pixi-ready .monster-master-pixi-canvas:focus-visible {
+  outline: 2px solid rgba(112, 216, 255, .72);
+  outline-offset: -3px;
+}
+
+body.monster-master-pixi-ready .monster-master-legacy-canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: -2 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.monster-master-pixi-ready #monster-master-motion-canvas {
+  display: none !important;
+}
+
+body.monster-master-pixi-ready .monster-master-battlefield-stage,
+body.monster-master-pixi-ready .monster-master-game-grid {
+  background: transparent;
+}
+
+body.monster-master-pixi-ready .monster-master-battlefield-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 42%, transparent 0 32%, rgba(3, 8, 14, .16) 68%, rgba(2, 5, 10, .58) 100%),
+    linear-gradient(180deg, rgba(10, 20, 31, .08), rgba(2, 5, 9, .32));
+}
+
+body.monster-master-pixi-ready .monster-master-match-topbar,
+body.monster-master-pixi-ready .monster-master-rail,
+body.monster-master-pixi-ready .monster-master-command-deck,
+body.monster-master-pixi-ready .monster-master-camera-dock,
+body.monster-master-pixi-ready .monster-master-mobile-rail-controls,
+body.monster-master-pixi-ready .board-help {
+  z-index: 4;
+}
+
+/* Restore the creature identity in both compact turn cards and the unit inspector. */
+body.monster-master-pixi-ready .monster-master-turn-portrait,
+body.monster-master-pixi-ready .monster-master-unit-portrait {
+  background-color: rgba(4, 9, 13, .78) !important;
+  background-image: url("/assets/monster-master/creature-atlas-v1.svg") !important;
+  background-repeat: no-repeat !important;
+  background-size: 300% 100% !important;
+}
+
+body.monster-master-pixi-ready .monster-master-turn-portrait[data-role="master"],
+body.monster-master-pixi-ready .monster-master-unit-hud[data-role="master"] .monster-master-unit-portrait {
+  background-position: 0 50% !important;
+}
+
+body.monster-master-pixi-ready .monster-master-turn-portrait[data-role="bulwark"],
+body.monster-master-pixi-ready .monster-master-unit-hud[data-role="bulwark"] .monster-master-unit-portrait {
+  background-position: 50% 50% !important;
+}
+
+body.monster-master-pixi-ready .monster-master-turn-portrait[data-role="emberling"],
+body.monster-master-pixi-ready .monster-master-unit-hud[data-role="emberling"] .monster-master-unit-portrait {
+  background-position: 100% 50% !important;
+}
+
+body.monster-master-pixi-ready .monster-master-unit-portrait {
+  color: transparent !important;
+  text-shadow: none !important;
+}
+
+body.monster-master-pixi-ready .monster-master-turn-unit:hover .monster-master-turn-portrait,
+body.monster-master-pixi-ready .monster-master-turn-unit:focus-visible .monster-master-turn-portrait,
+body.monster-master-pixi-ready .monster-master-turn-unit.is-inspected .monster-master-turn-portrait {
+  filter: brightness(1.08) saturate(1.08);
+}
+
+/* The camera dock reads as a compact control console instead of a scattered keypad. */
+@media (min-width: 901px) {
+  body.monster-master-pixi-ready .monster-master-camera-dock {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    padding: 8px;
+  }
+
+  body.monster-master-pixi-ready .monster-master-camera-title {
+    display: none;
+  }
+
+  body.monster-master-pixi-ready .monster-master-camera-dpad {
+    grid-template-areas: "west north active south east";
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: 32px;
+    gap: 4px;
+  }
+
+  body.monster-master-pixi-ready .monster-master-camera-zoom,
+  body.monster-master-pixi-ready .monster-master-camera-dock .monster-master-rotation-controls {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 900px) {
+  body.monster-master-pixi-ready .monster-master-pixi-canvas {
+    cursor: default;
+  }
+
+  body.monster-master-pixi-ready .monster-master-camera-dock {
+    bottom: calc(136px + env(safe-area-inset-bottom, 0px));
+    min-width: 170px;
+    padding: 6px;
+  }
+
+  body.monster-master-pixi-ready .monster-master-command-deck {
+    min-height: 0;
+    max-height: 126px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.monster-master-pixi-ready .monster-master-options {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 5px;
+    min-height: 34px;
+    max-height: 38px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+  }
+
+  body.monster-master-pixi-ready .monster-master-options::before,
+  body.monster-master-pixi-ready .monster-master-options > * {
+    flex: 0 0 auto;
+  }
+
+  body.monster-master-pixi-ready .monster-master-options button {
+    min-height: 28px;
+    padding: 5px 9px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 520px) {
+  body.monster-master-match-active .gameframe-destination-bar {
+    grid-template-columns: 54px minmax(0, 1fr) 108px;
+  }
+
+  body.monster-master-match-active .gameframe-destination-links button[disabled] {
+    display: none !important;
+  }
+
+  body.monster-master-match-active .gameframe-destination-links a,
+  body.monster-master-match-active .gameframe-destination-links .monster-master-nav-setup {
+    min-width: 0;
+    padding-inline: 10px;
+  }
+
+  body.monster-master-match-active.monster-master-pixi-ready .monster-master-match-topbar .status {
+    display: -webkit-box !important;
+    min-height: 40px;
+    max-height: 44px;
+    padding: 5px 7px;
+    overflow: hidden;
+    white-space: normal !important;
+    text-overflow: clip !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-height: 1.2;
+  }
+
+  body.monster-master-pixi-ready .monster-master-camera-dock {
+    right: 7px;
+    bottom: calc(134px + env(safe-area-inset-bottom, 0px));
+    min-width: 164px;
+  }
+
+  body.monster-master-pixi-ready .monster-master-camera-zoom button,
+  body.monster-master-pixi-ready .monster-master-camera-dock .monster-master-rotation-controls button {
+    min-height: 27px;
+  }
+
+  body.monster-master-pixi-ready .monster-master-command-deck {
+    right: 6px;
+    bottom: 6px;
+    left: 6px;
+    max-height: 122px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.monster-master-pixi-ready .monster-master-pixi-canvas {
+    scroll-behavior: auto;
+  }
+
+  body.monster-master-pixi-ready .monster-master-turn-portrait {
+    transition: none;
+  }
+}

@@ -52,7 +52,6 @@ function capture(candidate) {
   document.body.dataset.monsterFriendlySeat = seat;
   setCommandLabels(seat);
   scheduleTurnOrder();
-  requestAnimationFrame(() => window.gameFrameMonsterProjection?.render?.());
 }
 
 function roleLabel(role) {
@@ -169,71 +168,12 @@ function simplifyPlayerNavigation() {
   if (rosterRail) rosterRail.setAttribute("aria-label", "Current and upcoming unit turns");
 }
 
-function canonicalColor(value) {
-  return String(value).toLowerCase().replace(/\s+/g, "");
-}
-
-const swappedColors = new Map([
-  ["#2f79c9", "#b33e62"],
-  ["#b33e62", "#2f79c9"],
-  ["rgba(78,164,255,.65)", "rgba(255,92,139,.6)"],
-  ["rgba(255,92,139,.6)", "rgba(78,164,255,.65)"],
-  ["#3e91e8", "#d04f78"],
-  ["#d04f78", "#3e91e8"],
-  ["rgba(75,173,255,.58)", "rgba(255,91,143,.54)"],
-  ["rgba(255,91,143,.54)", "rgba(75,173,255,.58)"],
-  ["#b9e1ff", "#ffc0d0"],
-  ["#ffc0d0", "#b9e1ff"],
-]);
-
-function remapCanvasColor(context, value) {
-  if (document.body.dataset.monsterFriendlySeat !== "beta") return value;
-  if (context?.canvas?.id !== "monster-master-canvas" && context?.canvas?.id !== "monster-master-motion-canvas") return value;
-  return swappedColors.get(canonicalColor(value)) ?? value;
-}
-
-function installCanvasColorRemap(property) {
-  const prototype = CanvasRenderingContext2D.prototype;
-  const descriptor = Object.getOwnPropertyDescriptor(prototype, property);
-  if (!descriptor?.get || !descriptor?.set || descriptor.configurable === false) return;
-  Object.defineProperty(prototype, property, {
-    configurable: true,
-    enumerable: descriptor.enumerable,
-    get: descriptor.get,
-    set(value) {
-      descriptor.set.call(this, remapCanvasColor(this, value));
-    },
-  });
-}
-
-installCanvasColorRemap("fillStyle");
-installCanvasColorRemap("shadowColor");
-
-const nativeFetch = window.fetch.bind(window);
-window.fetch = async (...args) => {
-  const response = await nativeFetch(...args);
-  try {
-    const clone = response.clone();
-    if ((clone.headers.get("content-type") ?? "").includes("application/json")) capture(await clone.json());
-  } catch { /* Presentation inspection never changes request authority. */ }
-  return response;
-};
-
-const NativeWebSocket = window.WebSocket;
-if (NativeWebSocket) {
-  class MonsterMasterCorrectionSocket extends NativeWebSocket {
-    constructor(...args) {
-      super(...args);
-      this.addEventListener("message", (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          capture(message);
-        } catch { /* Ignore non-state messages. */ }
-      });
-    }
-  }
-  window.WebSocket = MonsterMasterCorrectionSocket;
-}
+const monsterViewEvent = "gameframe:monster-master-pixi-view";
+window.addEventListener(monsterViewEvent, (event) => capture(event.detail?.view));
+queueMicrotask(() => {
+  const current = window.gameFrameMonsterController?.getView?.();
+  if (current) capture(current);
+});
 
 const rosterObserver = new MutationObserver(() => {
   if (!renderingTurnOrder) scheduleTurnOrder();

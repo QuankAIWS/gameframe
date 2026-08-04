@@ -1,0 +1,168 @@
+body.monster-master-hints-ready .monster-master-battlefield-stage {
+  position: relative;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+}
+
+body.monster-master-hints-ready .monster-master-board-briefing.monster-master-hint-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: block;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+body.monster-master-hints-ready .monster-master-hint-layer > .section-label {
+  display: none;
+}
+
+.monster-master-status-toast {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  width: max-content;
+  max-width: min(460px, calc(100% - 190px));
+  padding: 8px 12px;
+  transform: translate(-50%, -8px);
+  opacity: 0;
+  border: 1px solid rgba(104, 166, 216, .38);
+  border-radius: 10px;
+  background: rgba(7, 13, 21, .91);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .42), inset 0 1px rgba(255, 255, 255, .035);
+  backdrop-filter: blur(12px);
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.monster-master-status-toast.is-visible {
+  transform: translate(-50%, 0);
+  opacity: 1;
+}
+
+body.monster-master-hints-disabled .monster-master-status-toast {
+  opacity: 0 !important;
+}
+
+body.monster-master-hints-ready .monster-master-board-briefing.monster-master-hint-layer #monster-master-status {
+  display: block;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #edf6ff;
+  font-size: clamp(.7rem, .78vw, .8rem);
+  font-weight: 760;
+  line-height: 1.3;
+  white-space: normal;
+}
+
+.monster-master-hints-toggle {
+  position: absolute;
+  top: 11px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 5px 8px;
+  border: 1px solid rgba(107, 144, 190, .34);
+  border-radius: 999px;
+  background: rgba(7, 13, 21, .84);
+  color: #b9c9de;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .3);
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.monster-master-hints-toggle:hover,
+.monster-master-hints-toggle:focus-within {
+  border-color: rgba(107, 199, 255, .7);
+  color: #f2f8ff;
+}
+
+.monster-master-hints-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.monster-master-hints-check {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border: 1px solid rgba(111, 151, 198, .5);
+  border-radius: 4px;
+  background: rgba(6, 11, 18, .92);
+  color: transparent;
+  font-size: .64rem;
+  line-height: 1;
+}
+
+.monster-master-hints-toggle input:checked + .monster-master-hints-check {
+  border-color: rgba(91, 205, 255, .82);
+  background: rgba(39, 127, 177, .82);
+  color: #fff;
+}
+
+body:not(.monster-master-match-active) .monster-master-hints-toggle,
+body:not(.monster-master-match-active) .monster-master-status-toast {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .monster-master-status-toast {
+    top: 9px;
+    left: 9px;
+    width: auto;
+    max-width: calc(100% - 104px);
+    padding: 6px 9px;
+    transform: translateY(-8px);
+  }
+
+  .monster-master-status-toast.is-visible {
+    transform: translateY(0);
+  }
+
+  body.monster-master-hints-ready .monster-master-board-briefing.monster-master-hint-layer #monster-master-status {
+    font-size: .66rem;
+    line-height: 1.25;
+  }
+
+  .monster-master-hints-toggle {
+    top: 9px;
+    right: 9px;
+  }
+}
+
+@media (max-width: 520px) {
+  .monster-master-status-toast {
+    max-width: calc(100% - 94px);
+    padding: 6px 8px;
+  }
+
+  .monster-master-hints-toggle {
+    min-height: 26px;
+    padding: 4px 7px;
+    font-size: .58rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monster-master-status-toast {
+    transition: none;
+  }
+}

@@ -9,6 +9,26 @@ const closeRoster = document.querySelector("#monster-master-close-roster");
 const closeIntel = document.querySelector("#monster-master-close-intel");
 const drawerBackdrop = document.querySelector("#monster-master-drawer-backdrop");
 const utilityMenu = document.querySelector("#monster-master-utility-menu");
+let setupButton = null;
+
+function ensureSetupButton() {
+  if (setupButton?.isConnected) return setupButton;
+  setupButton = document.querySelector("#monster-master-new-match");
+  if (setupButton) return setupButton;
+
+  const destinationLinks = document.querySelector("#gameframe-destination-bar .gameframe-destination-links");
+  if (!destinationLinks) return null;
+
+  setupButton = document.createElement("button");
+  setupButton.id = "monster-master-new-match";
+  setupButton.className = "monster-master-nav-setup";
+  setupButton.type = "button";
+  setupButton.textContent = "Setup";
+  setupButton.setAttribute("aria-label", "Return to Monster Master setup");
+  destinationLinks.insertBefore(setupButton, destinationLinks.querySelector("button[disabled]"));
+  setupButton.addEventListener("click", () => queueMicrotask(updateShellState));
+  return setupButton;
+}
 
 const hud = {
   root: document.querySelector("#monster-master-unit-hud"),
@@ -45,7 +65,37 @@ const actionShortcuts = new Map([
   ["5", document.querySelector("#monster-master-end-activation")],
 ]);
 
+const trainerCopyRoots = [lobby, match].filter(Boolean);
 let syncPending = false;
+
+function trainerCopy(value) {
+  return value
+    .replaceAll("Warden Master", "Verdant Sage")
+    .replace(/\bWarden\b/g, "Sage");
+}
+
+function applyTrainerCopy() {
+  for (const root of trainerCopyRoots) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+      const next = trainerCopy(node.nodeValue ?? "");
+      if (next !== node.nodeValue) node.nodeValue = next;
+      node = walker.nextNode();
+    }
+    for (const element of root.querySelectorAll("[aria-label], [title]")) {
+      for (const attribute of ["aria-label", "title"]) {
+        const value = element.getAttribute(attribute);
+        if (!value) continue;
+        const next = trainerCopy(value);
+        if (next !== value) element.setAttribute(attribute, next);
+      }
+    }
+  }
+  if (hud.root?.dataset.role === "master" && hud.glyph?.textContent === "W") {
+    hud.glyph.textContent = "S";
+  }
+}
 
 function setText(node, value) {
   if (node && node.textContent !== value) node.textContent = value;
@@ -73,6 +123,7 @@ function openDrawer(which) {
 
 function updateShellState() {
   const active = matchActive();
+  ensureSetupButton();
   body.classList.toggle("monster-master-match-active", active);
   if (!active) {
     closeDrawers();
@@ -84,7 +135,7 @@ function roleFromName(name) {
   const normalized = name.toLowerCase();
   if (normalized.includes("bulwark")) return "bulwark";
   if (normalized.includes("emberling")) return "emberling";
-  if (normalized.includes("master")) return "master";
+  if (normalized.includes("sage") || normalized.includes("master")) return "master";
   return "unknown";
 }
 
@@ -103,6 +154,8 @@ function rosterState(activeName) {
 function syncHud() {
   syncPending = false;
   updateShellState();
+  applyTrainerCopy();
+  if (window.gameFrameMonsterRendererMode === "pixi") return;
   if (!hud.root) return;
 
   const phase = source.phase?.textContent?.trim() || "—";
@@ -128,7 +181,7 @@ function syncHud() {
     : owner === "beta"
       ? source.betaCommand?.textContent?.trim()
       : "—";
-  const glyph = role === "master" ? "W" : role === "bulwark" ? "B" : role === "emberling" ? "E" : "—";
+  const glyph = role === "master" ? "S" : role === "bulwark" ? "B" : role === "emberling" ? "E" : "—";
   const round = source.round?.textContent?.trim() || "—";
 
   hud.root.dataset.role = role;
@@ -153,6 +206,9 @@ function syncHud() {
 }
 
 function scheduleSync() {
+  updateShellState();
+  applyTrainerCopy();
+  if (window.gameFrameMonsterRendererMode === "pixi") return;
   if (syncPending) return;
   syncPending = true;
   requestAnimationFrame(syncHud);
@@ -163,6 +219,7 @@ openIntel?.addEventListener("click", () => openDrawer("intel"));
 closeRoster?.addEventListener("click", closeDrawers);
 closeIntel?.addEventListener("click", closeDrawers);
 drawerBackdrop?.addEventListener("click", closeDrawers);
+window.addEventListener("gameframe:destination-bar-ready", updateShellState);
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
@@ -217,6 +274,7 @@ window.gameFrameMonsterShell = Object.freeze({
   closeDrawers,
   openDrawer,
   isMatchActive: matchActive,
+  applyTrainerCopy,
 });
 
 syncHud();
