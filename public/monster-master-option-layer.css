@@ -1,0 +1,86 @@
+body:not(.monster-master-match-active) #monster-master-options[data-option-layer="true"] {
+  display: none !important;
+}
+
+#monster-master-options[data-option-layer="true"] {
+  box-sizing: border-box;
+  position: fixed !important;
+  z-index: 2147483000;
+  top: auto !important;
+  right: auto !important;
+  left: var(--monster-option-layer-left, 12px) !important;
+  bottom: var(--monster-option-layer-bottom, 12px) !important;
+  width: var(--monster-option-layer-width, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px);
+  max-height: min(34vh, 260px);
+  display: flex !important;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+  margin: 0 !important;
+  padding: 10px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(99, 164, 232, .52);
+  border-radius: 14px;
+  background: rgba(5, 11, 22, .97);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, .58), inset 0 1px rgba(255, 255, 255, .04);
+  pointer-events: auto !important;
+  transform: none !important;
+}
+
+#monster-master-options[data-option-layer="true"]:empty,
+#monster-master-options[data-option-layer="true"][hidden] {
+  display: none !important;
+}
+
+#monster-master-options[data-option-layer="true"] button {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 150px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid rgba(104, 146, 207, .38);
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(20, 34, 57, .98), rgba(8, 15, 28, .99));
+  color: #eaf3ff;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto !important;
+}
+
+#monster-master-options[data-option-layer="true"] button:hover,
+#monster-master-options[data-option-layer="true"] button:focus-visible {
+  border-color: rgba(83, 169, 244, .78);
+  background: linear-gradient(145deg, rgba(31, 61, 94, .99), rgba(9, 19, 35, .99));
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(67, 167, 255, .2);
+}
+
+#monster-master-options[data-option-layer="true"] .muted {
+  flex: 1 1 100%;
+  color: #8ea2c1;
+  font-size: .72rem;
+}
+
+@media (max-width: 640px) {
+  #monster-master-options[data-option-layer="true"] {
+    max-width: calc(100vw - 16px);
+    max-height: min(30vh, 220px);
+    gap: 6px;
+    padding: 8px;
+  }
+
+  #monster-master-options[data-option-layer="true"] button {
+    flex-basis: 120px;
+    min-height: 40px;
+    padding: 7px 8px;
+    font-size: .67rem;
+  }
+}
