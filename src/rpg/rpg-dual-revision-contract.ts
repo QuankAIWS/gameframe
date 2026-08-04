@@ -5,6 +5,7 @@ export type RuntimeNarrativeCommitReceipt = {
   runtimeCommitKind: RuntimeCommitKind;
   runtimeCommitId: string;
   sourceCommandId?: string;
+  sourceGameframeCoordinationRevision: number;
   previousNarrativeRevision: number;
   narrativeRevision: number;
 };
@@ -45,6 +46,7 @@ export type RpgRevisionContractErrorCode =
   | "command-conflict"
   | "coordination-mutation-conflict"
   | "runtime-link-conflict"
+  | "runtime-source-revision-conflict"
   | "narrative-link-conflict";
 
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
@@ -157,6 +159,15 @@ export class InMemoryGameFrameCoordinationLedger {
       this.#state.gameframeCoordinationRevision,
     );
     if (
+      normalized.runtimeCommit.sourceGameframeCoordinationRevision
+      !== normalized.expectedGameframeCoordinationRevision
+    ) {
+      throw new RpgRevisionContractError(
+        "runtime-source-revision-conflict",
+        `Runtime commit was derived from GameFrame coordination revision ${normalized.runtimeCommit.sourceGameframeCoordinationRevision}, but linkage expected ${normalized.expectedGameframeCoordinationRevision}.`,
+      );
+    }
+    if (
       normalized.runtimeCommit.previousNarrativeRevision
       !== this.#state.linkedNarrativeRevision
     ) {
@@ -261,6 +272,11 @@ function normalizeRuntimeCommitReceipt(
   ) {
     throw invalid("Unsupported runtime commit kind.");
   }
+  const sourceGameframeCoordinationRevision = integer(
+    receipt.sourceGameframeCoordinationRevision,
+    "sourceGameframeCoordinationRevision",
+    0,
+  );
   const previousNarrativeRevision = integer(
     receipt.previousNarrativeRevision,
     "previousNarrativeRevision",
@@ -281,6 +297,7 @@ function normalizeRuntimeCommitReceipt(
     ...(receipt.sourceCommandId
       ? { sourceCommandId: identifier(receipt.sourceCommandId, "sourceCommandId") }
       : {}),
+    sourceGameframeCoordinationRevision,
     previousNarrativeRevision,
     narrativeRevision,
   };
