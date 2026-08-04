@@ -1,0 +1,102 @@
+.monster-master-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+body.monster-master-match-active #monster-master-match.monster-master-game-shell {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.combat-nav .monster-master-nav-setup {
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid rgba(116, 171, 231, .42);
+  border-radius: 999px;
+  background: rgba(25, 45, 74, .86);
+  color: #e6f2ff;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .06);
+  cursor: pointer;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.combat-nav .monster-master-nav-setup:hover,
+.combat-nav .monster-master-nav-setup:focus-visible {
+  border-color: var(--cyan);
+  background: rgba(39, 72, 108, .96);
+  outline: none;
+}
+
+.combat-nav .monster-master-nav-setup[hidden] {
+  display: none;
+}
+
+.monster-master-board-briefing {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label help"
+    "status help";
+  align-items: center;
+  gap: 2px 14px;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 1px solid rgba(79, 111, 164, .34);
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(10, 18, 31, .94), rgba(17, 31, 51, .88));
+  box-shadow: inset 0 1px rgba(255, 255, 255, .025);
+}
+
+.monster-master-board-briefing .section-label {
+  grid-area: label;
+  margin: 0;
+  font-size: .55rem;
+}
+
+.monster-master-board-briefing #monster-master-status {
+  grid-area: status;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #edf6ff;
+  font-size: clamp(.72rem, .82vw, .84rem);
+  line-height: 1.25;
+}
+
+.monster-master-board-briefing #monster-master-help {
+  grid-area: help;
+  max-width: 330px;
+  margin: 0;
+  color: rgba(196, 214, 239, .7);
+  font-size: .66rem;
+  line-height: 1.3;
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  .monster-master-board-briefing {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "label"
+      "status";
+    min-height: 46px;
+    padding: 7px 10px;
+  }
+
+  .monster-master-board-briefing #monster-master-help {
+    display: none;
+  }
+}
