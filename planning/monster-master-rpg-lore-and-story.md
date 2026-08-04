@@ -125,3 +125,20 @@ Governments and licensing bodies use those real compatibility problems to justif
 - Adapted capture cubes form a legitimate equipment category rather than a cosmetic distinction.
 - Regional licensing restrictions should distinguish actual safety requirements from bureaucratic gatekeeping.
 - Exceptional monster Masters can succeed through compatible anatomy, adapted equipment, unusual skill, or persistence through an unnecessarily hostile licensing process.
+
+## Decision 8 — Tiered capture cube licensing
+
+Capture cube ownership and use are regulated by tier rather than being restricted entirely to professional Monster Masters.
+
+Basic domestic cubes are ordinary consumer products. People may use them to house approved household, working, or companion monsters without holding a full Master license.
+
+Higher-risk activities require progressively higher licenses. These include capturing wild monsters, transporting dangerous species, maintaining larger rosters, operating adapted or high-capacity cubes, and entering organized combat.
+
+Licensing standards vary by jurisdiction and are not always sensible. A person may legally own a cube containing an enormous docile grazing monster while needing three permits for a venomous creature the size of a shoe.
+
+### Implementation consequences
+
+- Cubes and activities need license-tier requirements rather than a single ownership flag.
+- Basic domestic cube ownership must not automatically make a character a Monster Master.
+- Wild capture, dangerous-species handling, roster capacity, and competitive battling can unlock through separate certifications.
+- Regional law may alter requirements, fees, exemptions, and enforcement.
