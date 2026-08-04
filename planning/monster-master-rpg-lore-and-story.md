@@ -110,3 +110,18 @@ Monster Masters should appear as notable NPCs and occasional player-character op
 - Character and licensing systems need an exceptional monster-Master path.
 - Monster Masters can own capture cubes and maintain their own monster roster.
 - Regional laws may impose additional restrictions or story complications on them.
+
+## Decision 7 — Cube compatibility and legal gatekeeping
+
+Monster Masters are rare for both practical and political reasons.
+
+Capture cubes were originally designed around human hands, senses, magical tolerances, and control habits. Some intelligent monster species can use them normally, while others require adapted controls, custom interfaces, or expensive specialist cubes. A few species are genuinely poor candidates for safe cube operation.
+
+Governments and licensing bodies use those real compatibility problems to justify restrictions far broader than the evidence supports. Requirements may include redundant testing, human sponsorship, species-specific permits, costly adapted equipment, and approval boards with little actual expertise.
+
+### Implementation consequences
+
+- Trainer species can affect cube-interface and equipment requirements without determining competence outright.
+- Adapted capture cubes form a legitimate equipment category rather than a cosmetic distinction.
+- Regional licensing restrictions should distinguish actual safety requirements from bureaucratic gatekeeping.
+- Exceptional monster Masters can succeed through compatible anatomy, adapted equipment, unusual skill, or persistence through an unnecessarily hostile licensing process.
