@@ -45,7 +45,7 @@ const encounter = {
   difficulty: {
     id: "normal",
     encounterPressure: "standard",
-    enemyTacticalIntensity": "competent",
+    enemyTacticalIntensity: "competent",
     defeatConsequences: "consequential",
     characterDeathRisk: "real",
     recoverySupport: "standard",
