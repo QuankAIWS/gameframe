@@ -1,104 +1,85 @@
 import { expect, test } from "@playwright/test";
 
-function playerHeaders(playerId) {
-  return { "x-gameframe-player-id": playerId };
-}
-
 async function diagnostics(page) {
   return page.locator("#monster-master-details").evaluate((node) => JSON.parse(node.textContent));
 }
 
-async function viewAs(page, matchId, playerId) {
-  const response = await page.context().request.get(`/api/matches/${encodeURIComponent(matchId)}`, {
-    headers: playerHeaders(playerId),
+async function openMonsterMaster(page, player, { mobile = false } = {}) {
+  if (mobile) await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/monster-master.html?player=${player}`);
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
+  await page.locator("#monster-master-theo").click();
+  await expect(page.locator("body.monster-master-match-active")).toBeVisible();
+  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
+  await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
+}
+
+async function selectedDeploymentAction(page) {
+  return page.evaluate(() => {
+    const view = window.gameFrameMonsterController.getView();
+    const state = JSON.parse(document.querySelector("#monster-master-details")?.textContent || "{}");
+    return view.observation.legalActions.find((action) => (
+      action.type === "deploy-unit" && action.unitId === state.selectedUnitId
+    )) ?? null;
   });
-  expect(response.status()).toBe(200);
-  return response.json();
 }
 
 async function clickBoardCoordinate(page, coordinate) {
-  const state = await diagnostics(page);
-  const box = await page.locator("#monster-master-canvas").boundingBox();
-  expect(box).not.toBeNull();
-  const bounds = state.viewport.bounds;
-  const cellSize = Math.min(box.width / bounds.columns, box.height / bounds.rows);
-  const originX = (box.width - cellSize * bounds.columns) / 2;
-  const originY = (box.height - cellSize * bounds.rows) / 2;
-  await page.locator("#monster-master-canvas").click({
-    position: {
-      x: originX + (coordinate.x - bounds.x + 0.5) * cellSize,
-      y: originY + (coordinate.y - bounds.y + 0.5) * cellSize,
-    },
-  });
+  const point = await page.evaluate(
+    (target) => window.gameFrameMonsterPixiBridge.worldToScreen(target),
+    coordinate,
+  );
+  expect(point).not.toBeNull();
+  await page.locator("#monster-master-pixi-canvas").click({ position: point });
 }
 
-async function firstVisibleDeployment(page) {
-  const state = await diagnostics(page);
-  const view = await viewAs(page, state.matchId, state.playerId);
-  const bounds = state.viewport.bounds;
-  return view.observation.legalActions.find((action) => (
-    action.type === "deploy-unit"
-    && action.unitId === state.selectedUnitId
-    && action.position.x >= bounds.x
-    && action.position.y >= bounds.y
-    && action.position.x < bounds.x + bounds.columns
-    && action.position.y < bounds.y + bounds.rows
-  ));
-}
+test("Monster Master camera buttons and keyboard controls update the Pixi camera", async ({ page }) => {
+  await openMonsterMaster(page, "monster-controls");
 
-test("Monster Master camera buttons and keyboard controls update the viewport", async ({ page }) => {
-  await page.goto("/monster-master.html?player=monster-controls");
-  await page.locator("#monster-master-theo").click();
-  await expect(page.locator("#monster-master-phase")).toHaveText("Deployment");
-
-  const initial = await diagnostics(page);
+  const initial = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
   await page.locator("#monster-master-zoom-in").click();
-  const zoomed = await diagnostics(page);
-  expect(zoomed.viewport.zoom).toBeGreaterThan(initial.viewport.zoom);
-  expect(zoomed.viewport.bounds.columns).toBeLessThan(initial.viewport.bounds.columns);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().zoom)).toBeGreaterThan(initial.zoom);
 
+  const zoomed = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
   await page.locator('[data-monster-master-pan-x="3"][data-monster-master-pan-y="0"]').click();
-  const panned = await diagnostics(page);
-  expect(panned.viewport.centerX).toBeGreaterThan(zoomed.viewport.centerX);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().x)).toBeGreaterThan(zoomed.x);
 
   await page.locator("#monster-master-center-field").click();
-  const centered = await diagnostics(page);
-  expect(centered.viewport.centerX).toBe(11.5);
-  expect(centered.viewport.centerY).toBe(11.5);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().x)).toBeCloseTo(11.5, 5);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().y)).toBeCloseTo(11.5, 5);
 
-  const canvas = page.locator("#monster-master-canvas");
-  await canvas.focus();
-  await canvas.press("ArrowLeft");
-  const keyboardPanned = await diagnostics(page);
-  expect(keyboardPanned.viewport.centerX).toBeLessThan(centered.viewport.centerX);
+  const centered = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera());
+  await page.keyboard.press("KeyA");
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().x)).not.toBe(centered.x);
 
-  await canvas.press("d");
-  await expect(page.locator("#monster-master-select-deploy")).toHaveAttribute("aria-pressed", "false");
-  await canvas.press("d");
-  await expect(page.locator("#monster-master-select-deploy")).toHaveAttribute("aria-pressed", "true");
+  const quarter = await page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter);
+  await page.keyboard.press("KeyE");
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter)).toBe((quarter + 1) % 4);
+  await page.keyboard.press("KeyQ");
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter)).toBe(quarter);
+
+  const state = await diagnostics(page);
+  expect(state.viewport.zoom).toBeGreaterThan(initial.zoom);
 });
 
-test("mobile Monster Master deploys through the Canvas without horizontal overflow", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/monster-master.html?player=monster-mobile-deploy");
-  await page.locator("#monster-master-theo").click();
+test("mobile Monster Master deploys through Pixi without horizontal overflow", async ({ page }) => {
+  await openMonsterMaster(page, "monster-mobile-deploy", { mobile: true });
 
-  const action = await firstVisibleDeployment(page);
-  expect(action).toBeDefined();
+  const action = await selectedDeploymentAction(page);
+  expect(action).not.toBeNull();
   await clickBoardCoordinate(page, action.position);
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 2");
-  await expect(page.locator("#monster-master-status")).toContainText("Deploy Alpha Stone Bulwark");
-
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  expect(overflow).toBeLessThanOrEqual(1);
+  await expect(page.locator("#monster-master-status")).toContainText("Stone Bulwark");
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 });
 
-test("Back to setup stops the active surface and allows a fresh duel", async ({ page }) => {
-  await page.goto("/monster-master.html?player=monster-reset");
-  await page.locator("#monster-master-theo").click();
+test("Setup stops the active surface and allows a fresh battle", async ({ page }) => {
+  await openMonsterMaster(page, "monster-reset");
   const firstMatchId = (await diagnostics(page)).matchId;
 
-  await page.locator("#monster-master-new-match").click();
+  const setup = page.locator("#gameframe-destination-bar #monster-master-new-match");
+  await expect(setup).toBeVisible();
+  await setup.click();
   await expect(page.locator("#monster-master-lobby")).toBeVisible();
   await expect(page.locator("#monster-master-match")).toBeHidden();
   await expect(page).not.toHaveURL(/match=/);
