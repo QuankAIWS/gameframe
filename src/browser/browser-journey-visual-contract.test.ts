@@ -23,7 +23,10 @@ test("browser journey and visual review tooling remains deliberate and durable",
     packageJson.scripts["test:visual-baseline"],
     "playwright test --config playwright.visual-baseline.config.mjs",
   );
-  assert.match(packageJson.scripts.validate, /npm run test:visual-baseline/);
+  assert.match(packageJson.scripts.validate, /npm run validate:core/);
+  assert.match(packageJson.scripts.validate, /npm run test:browser:required/);
+  assert.match(packageJson.scripts["validate:full"], /npm run test:browser/);
+  assert.match(packageJson.scripts["validate:full"], /npm run test:visual-baseline/);
 
   assert.match(workflow, /github\.event\.label\.name == 'visual-review'/);
   assert.match(workflow, /run: npm run test:visual/);
