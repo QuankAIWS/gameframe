@@ -28,6 +28,7 @@ test("Monster Master browser delivery uses authenticated GameFrame boundaries", 
   const html = await read("public/monster-master.html");
   const app = await read("public/monster-master-app.js");
   const shell = await read("public/monster-master-shell.js");
+  const trainerStyles = await read("public/monster-master-trainer.css");
   const invitations = await read("public/secure-match-invite.js");
   const combat = await read("public/combat.html");
   const packageJson = JSON.parse(await read("package.json"));
@@ -47,7 +48,9 @@ test("Monster Master browser delivery uses authenticated GameFrame boundaries", 
   assert.match(shell, /button\.id = "monster-master-new-match"/);
   assert.match(shell, /combatNav\.append\(button\)/);
   assert.match(shell, /replaceAll\("Warden Master", "Verdant Sage"\)/);
-  assert.match(shell, /setupButton\.hidden = !active/);
+  assert.doesNotMatch(shell, /setupButton\.hidden/);
+  assert.match(trainerStyles, /body\.monster-master-match-active \.combat-nav \.monster-master-nav-setup/);
+  assert.match(trainerStyles, /display: inline-flex/);
 
   assert.match(app, /const gameId = "monster-master-duel"/);
   assert.match(app, /gameFrameFetch/);
