@@ -14,6 +14,7 @@ test("Monster Master uses one authoritative controller with guarded Pixi deliver
   const hints = await read("public/monster-master-hints.js");
   const battlefieldEffects = await read("public/monster-master-battlefield-effects.js");
   const gestures = await read("public/monster-master-gestures.js");
+  const geometry = await read("src/browser/monster-master-terrain-geometry.js");
   const pixiSource = await read("src/browser/monster-master-pixi-entry.js");
   const pixiBridge = await read("public/monster-master-pixi-bridge.js");
   const pixiStyles = await read("public/monster-master-pixi.css");
@@ -44,6 +45,7 @@ test("Monster Master uses one authoritative controller with guarded Pixi deliver
   assert.match(monsterBranch, /window\.location\.reload\(\)/);
   assert.match(monsterBranch, /monster-master-legacy-fallback/);
   assert.doesNotMatch(monsterBranch, /monster-master-overlay-guard\.js/);
+  assert.doesNotMatch(monsterBranch, /monster-master-terrain-depth\.js/);
 
   assert.match(monsterApp, /const monsterMasterViewEvent = "gameframe:monster-master-pixi-view"/);
   assert.match(monsterApp, /window\.gameFrameMonsterController = Object\.freeze/);
@@ -85,22 +87,46 @@ test("Monster Master uses one authoritative controller with guarded Pixi deliver
   assert.match(gestures, /monster-master-zoom-out/);
   assert.match(gestures, /window\.gameFrameMonsterGestures/);
 
+  assert.match(geometry, /export const TILE_WIDTH = 72/);
+  assert.match(geometry, /export const TILE_HEIGHT = 36/);
+  assert.match(geometry, /export const WALL_VISUAL_HEIGHT = 29/);
+  assert.match(geometry, /export function projectCoordinate/);
+  assert.match(geometry, /export function inverseProjectPoint/);
+  assert.match(geometry, /export function exposedTerrainFaces/);
+  assert.match(geometry, /export function mapSurfacePolygon/);
+  assert.match(geometry, /export function screenVectorToCameraDelta/);
+
   assert.match(pixiSource, /from "pixi\.js"/);
+  assert.match(pixiSource, /from "\.\/monster-master-terrain-geometry\.js"/);
   assert.match(pixiSource, /preference: "webgl"/);
   assert.match(pixiSource, /autoStart: false/);
   assert.match(pixiSource, /resolution: Math\.min/);
+  assert.match(pixiSource, /worldObjects\.sortableChildren = true/);
+  assert.match(pixiSource, /mapSurfacePolygon/);
+  assert.match(pixiSource, /exposedTerrainFaces/);
+  assert.match(pixiSource, /depthIndex/);
+  assert.match(pixiSource, /getTerrainStats/);
+  assert.match(pixiSource, /getGeometrySnapshot/);
+  assert.match(pixiSource, /setGeometryDebug/);
   assert.match(pixiSource, /function subscribeToController/);
   assert.match(pixiSource, /requestAnimationFrame\(render\)/);
   assert.match(pixiSource, /window\.gameFrameMonsterPixi/);
   assert.doesNotMatch(pixiSource, /window\.fetch = async/);
+  assert.doesNotMatch(pixiSource, /TILE_WIDTH \* 1\.04/);
+  assert.doesNotMatch(pixiSource, /TILE_HEIGHT \* 1\.85/);
+  assert.doesNotMatch(pixiSource, /TILE_HEIGHT \* 2\.25/);
 
   assert.match(pixiBridge, /^window\.gameFrameMonsterRendererMode = "pixi";/);
   assert.match(pixiBridge, /controller\?\.handleCoordinate/);
-  assert.match(pixiBridge, /renderer\.screenToTile/);
+  assert.match(pixiBridge, /currentRenderer\.screenToTile/);
+  assert.match(pixiBridge, /renderer\(\)\?\.worldToScreen/);
+  assert.match(pixiBridge, /renderer\(\)\?\.panScreen/);
   assert.match(pixiBridge, /function bindBattlefieldInput/);
   assert.match(pixiBridge, /pointerdown/);
-  assert.match(pixiBridge, /panScreen/);
   assert.match(pixiBridge, /window\.gameFrameMonsterProjection/);
+  assert.doesNotMatch(pixiBridge, /const TILE_WIDTH/);
+  assert.doesNotMatch(pixiBridge, /function rotateCoordinate/);
+  assert.doesNotMatch(pixiBridge, /function project\(/);
   assert.match(pixiStyles, /monster-master-pixi-canvas/);
   assert.match(pixiStyles, /monster-master-legacy-canvas/);
   assert.match(pixiStyles, /visibility: hidden/);
@@ -138,5 +164,7 @@ test("Monster Master uses one authoritative controller with guarded Pixi deliver
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-pixi-bundle\.js/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-battlefield-effects\.js/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-gestures\.js/);
+  assert.match(packageJson.scripts["check:browser"], /src\/browser\/monster-master-terrain-geometry\.js/);
+  assert.doesNotMatch(packageJson.scripts["check:browser"], /monster-master-terrain-depth/);
   assert.doesNotMatch(packageJson.scripts["check:browser"], /monster-master-overlay-guard/);
 });
