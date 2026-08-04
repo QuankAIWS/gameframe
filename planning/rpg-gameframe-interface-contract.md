@@ -14,6 +14,7 @@ related:
   - rpg-platform-delivery-plan.md
   - tactical-battler-rpg-foundation.md
   - fixtures/rpg/v1/shared-rpg-fixtures.json
+  - fixtures/rpg/v1/campaign-revision-linkage.json
 ---
 
 # RPG GameFrame Interface Contract
@@ -76,7 +77,7 @@ RPG GM Runtime may emit semantic, audience-scoped events such as:
 - media reference with deterministic fallback;
 - recap and resume marker.
 
-GameFrame owns layout, animation, responsive behavior, accessibility, and presentation-state transitions. The runtime owns semantic content, stable references, ordering, and audience.
+GameFrame owns layout, animation, responsive behavior, accessibility, and presentation-state transitions. The runtime owns semantic content, stable references, ordering within its narrative commit, and audience intent.
 
 ### Structured projections
 
@@ -97,7 +98,7 @@ GameFrame provides launch, retrieval, cancellation, lifecycle, reconnect, and te
 
 - runtime validation at every boundary;
 - explicit payload and collection limits;
-- expected revision checks where ordering matters;
+- expected revision checks in the authority domain being mutated;
 - durable idempotency and exact retry;
 - stable machine-readable errors;
 - event-time audience authorization;
@@ -105,6 +106,47 @@ GameFrame provides launch, retrieval, cancellation, lifecycle, reconnect, and te
 - polling recovery when projections are missed;
 - no correctness dependency on a permanently connected browser or WebSocket;
 - no direct cross-repository storage access.
+
+## Revision and ordering model
+
+The term `campaignRevision` is insufficient for the production contract because the current Node prototype uses one event-count-derived number for several different concerns. Contract version 2 separates three positions:
+
+### GameFrame coordination revision
+
+`gameframeCoordinationRevision` is owned exclusively by GameFrame. It advances once for each accepted GameFrame coordination transaction, including player command acceptance, membership or seat changes, runtime presentation linkage, encounter reference changes, and other GameFrame-owned coordination mutations.
+
+A transaction that appends several presentation events advances this revision once, not once per event. Exact retry returns the original receipt without advancing it again.
+
+### GameFrame presentation sequence
+
+`presentationSequence` is owned exclusively by GameFrame. It advances once for each appended GameFrame presentation event and is the ordering basis for feed cursors, missed-event recovery, and player projections.
+
+A coordination transaction may append zero, one, or several presentation events. Encounter launch may therefore advance coordination while leaving presentation sequence unchanged.
+
+### Runtime narrative revision
+
+`narrativeRevision` is owned exclusively by RPG GM Runtime. It advances once for each accepted runtime narrative commit. GameFrame never creates or increments it.
+
+A runtime commit produces a `runtime.narrative_committed` receipt containing:
+
+- `runtimeCommitId`;
+- runtime commit kind;
+- optional `sourceCommandId`;
+- `sourceGameframeCoordinationRevision` from which the runtime work was derived;
+- previous narrative revision;
+- committed narrative revision.
+
+GameFrame may link that receipt only while its current coordination revision exactly matches `sourceGameframeCoordinationRevision`. On acceptance, GameFrame may persist `linkedNarrativeRevision` as a checkpoint or projection pointer, but that value remains a reference to runtime-owned truth rather than a second narrative authority.
+
+### Retry and conflict ownership
+
+- GameFrame owns command-ID retry and conflict behavior.
+- RPG GM Runtime owns runtime-commit-ID retry and conflict behavior.
+- GameFrame owns coordination-mutation-ID retry and conflict behavior when linking a runtime receipt.
+- A runtime commit may be linked only once for a campaign.
+- Stale GameFrame coordination, stale runtime source revision, stale narrative revision, and conflicting identifier reuse use distinct stable errors.
+
+The canonical executable cases live in `planning/fixtures/rpg/v1/campaign-revision-linkage.json`.
 
 ## First conformance fixture
 
@@ -124,19 +166,21 @@ A deterministic fixture must prove this sequence:
 
 ## Shared fixture ownership and staged completion
 
-GameFrame owns the canonical machine-readable fixtures under `planning/fixtures/rpg/v1/`. The manifest at `planning/fixtures/rpg/v1/shared-rpg-fixtures.json` is the only canonical fixture list for contract version 1. RPG GM Runtime mirrors those files exactly under `fixtures/rpg/v1/` and validates them against its deterministic in-process boundary.
+GameFrame owns the canonical machine-readable fixtures under `planning/fixtures/rpg/v1/`. The manifest at `planning/fixtures/rpg/v1/shared-rpg-fixtures.json` is the only canonical fixture list for contract version 2. RPG GM Runtime mirrors those files exactly under `fixtures/rpg/v1/` and validates them against its deterministic boundary.
 
-The initial `campaign-port-a` fixture deliberately proves only the first stable boundary vocabulary:
+The `campaign-port-a` fixture proves the first stable boundary vocabulary:
 
 - two authenticated player attachments;
 - public and player-private projection filtering;
-- a freeform command accepted at the expected revision;
+- a freeform command accepted at the expected prototype revision;
 - exact retry without duplicate event creation;
 - conflicting command reuse with a stable rejection;
 - stale revision rejection;
 - a versioned Monster Master encounter request with idempotent launch.
 
-It does not claim the complete eleven-step conformance journey. Structured choice, noncombat check, terminal encounter outcome, return-scene presentation, durable reconnect, and deployed GameFrame routes expand the same versioned fixture family in later slices.
+The `campaign-port-b` fixture adds bounded choices, a deterministic noncombat check, a terminal tactical outcome, and campaign return presentation.
+
+The `campaign-revision-linkage` fixture defines the production revision domains that supersede the prototype's ambiguous use of `campaignRevision`. Existing port-A and port-B fields remain historical compatibility inputs until the coordinated HTTP migration is implemented in both repositories.
 
 Fixture changes are canonical-first: update and validate GameFrame, merge the canonical fixture, synchronize the private runtime mirror, run the runtime fixture conformance tests, and then merge runtime changes. Neither repository maintains a second hardcoded fixture list.
 
@@ -155,7 +199,9 @@ Development player requests use `x-gameframe-player-id`. Development service req
 
 The current implementation has a 64 KiB HTTP request-body limit, campaign protocol version `1`, encounter protocol version `1`, a 2,000-character freeform action limit, at most 32 encounter participants, and at most 32 objectives. Command and encounter retries are process-memory idempotent only. The returned campaign cursor is a temporary projection marker, not yet a signed, viewer-bound durable resume cursor.
 
-This slice does not claim Durable Object persistence, restart survival, structured choice/check behavior, tactical terminal outcomes, return-scene application, browser campaign UI, or deployed Cloudflare authentication. Those remain explicit later acceptance gates.
+The current Node adapter still exposes legacy `campaignRevision` and `expectedRevision` fields whose value is derived from the event array length. Those fields are transitional prototype compatibility, not the persistence model. The coordinated HTTP migration must add the contract-version-2 positions and receipts without silently reinterpreting the old fields.
+
+This slice does not claim durable VM persistence, restart survival, browser campaign UI, or deployed Cloudflare authentication. Those remain explicit later acceptance gates.
 
 ## Delivery evidence
 
