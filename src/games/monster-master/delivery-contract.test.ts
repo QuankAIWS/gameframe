@@ -51,9 +51,11 @@ test("Monster Master browser delivery uses authenticated GameFrame boundaries", 
   assert.match(shell, /#gameframe-destination-bar \.gameframe-destination-links/);
   assert.match(shell, /destinationLinks\.insertBefore\(setupButton/);
   assert.match(shell, /window\.addEventListener\("gameframe:destination-bar-ready", updateShellState\)/);
-  assert.match(shell, /button\.hidden = !active/);
+  assert.doesNotMatch(shell, /setupButton\.hidden|button\.hidden = !active/);
   assert.match(shell, /replaceAll\("Warden Master", "Verdant Sage"\)/);
   assert.match(trainerStyles, /\.gameframe-destination-links \.monster-master-nav-setup/);
+  assert.match(trainerStyles, /body\.monster-master-match-active \.gameframe-destination-links \.monster-master-nav-setup/);
+  assert.match(trainerStyles, /display: inline-flex/);
 
   assert.match(app, /const gameId = "monster-master-duel"/);
   assert.match(app, /gameFrameFetch/);
