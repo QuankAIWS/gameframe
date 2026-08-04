@@ -16,12 +16,17 @@ on:
       - "src/games/monster-master/index.test.ts"
       - "src/games/monster-master/repository-contract.test.ts"
       - "src/games/monster-master/delivery-contract.test.ts"
+      - "test/browser/monster-master.spec.mjs"
+      - "test/browser/monster-master-controls.spec.mjs"
+      - "test/browser/motion-polish.spec.mjs"
       - "test/visual/player-ui-review.spec.mjs"
       - "test/visual/player-ui-regressions.spec.mjs"
       - "test/visual/monster-master-pixi.spec.mjs"
       - "test/visual/monster-master-cardinal-camera.spec.mjs"
       - "test/visual/monster-master-results-and-depth.spec.mjs"
       - "test/visual/monster-master-trainer-shell.spec.mjs"
+      - "THIRD_PARTY_NOTICES.md"
+      - "playwright.config.mjs"
       - "playwright.visual.config.mjs"
       - "package.json"
       - "package-lock.json"
@@ -64,6 +69,9 @@ jobs:
       - name: Player navigation, game, and Monster Master rule contracts
         run: node --experimental-strip-types --test src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/othello-runtime-contract.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/delivery-contract.test.ts
 
+      - name: Canonical Monster Master Pixi journeys
+        run: npx playwright test test/browser/monster-master.spec.mjs test/browser/monster-master-controls.spec.mjs test/browser/motion-polish.spec.mjs --config playwright.config.mjs
+
       - name: Capture player UI screenshots and cross-game regressions
         run: npx playwright test test/visual/player-ui-review.spec.mjs test/visual/player-ui-regressions.spec.mjs test/visual/monster-master-pixi.spec.mjs test/visual/monster-master-cardinal-camera.spec.mjs test/visual/monster-master-results-and-depth.spec.mjs test/visual/monster-master-trainer-shell.spec.mjs --config playwright.visual.config.mjs
 
@@ -76,5 +84,7 @@ jobs:
             visual-results/player-ui-review
             visual-results/**/*.zip
             visual-results/**/*.png
+            test-results/**/*.zip
+            test-results/**/*.png
           if-no-files-found: warn
           retention-days: 10
