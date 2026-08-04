@@ -25,7 +25,6 @@ function ensureSetupButton() {
   setupButton.type = "button";
   setupButton.textContent = "Setup";
   setupButton.setAttribute("aria-label", "Return to Monster Master setup");
-  setupButton.hidden = true;
   destinationLinks.insertBefore(setupButton, destinationLinks.querySelector("button[disabled]"));
   setupButton.addEventListener("click", () => queueMicrotask(updateShellState));
   return setupButton;
@@ -124,9 +123,8 @@ function openDrawer(which) {
 
 function updateShellState() {
   const active = matchActive();
-  const button = ensureSetupButton();
+  ensureSetupButton();
   body.classList.toggle("monster-master-match-active", active);
-  if (button) button.hidden = !active;
   if (!active) {
     closeDrawers();
     utilityMenu?.removeAttribute("open");
