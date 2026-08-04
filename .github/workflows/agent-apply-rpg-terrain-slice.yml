@@ -1,0 +1,72 @@
+name: Apply RPG terrain slice
+
+on:
+  push:
+    branches:
+      - agent/rpg-rendering-contract-terrain-geometry
+    paths:
+      - ".github/agent-payload/**"
+      - ".github/workflows/agent-apply-rpg-terrain-slice.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-rpg-terrain-slice
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out prepared branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/rpg-rendering-contract-terrain-geometry
+          fetch-depth: 0
+
+      - name: Apply prepared source package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/agent-payload/mm-slice.part* | base64 --decode > /tmp/mm-slice.tar.gz
+          tar -xzf /tmp/mm-slice.tar.gz
+          rm -rf .github/agent-payload
+          rm -f .github/workflows/agent-apply-rpg-terrain-slice.yml
+          rm -f public/monster-master-terrain-depth.js public/monster-master-terrain-depth.css
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build committed Pixi bundle
+        run: npm run build:monster-master-pixi
+
+      - name: Verify terrain geometry
+        run: node --test src/browser/monster-master-terrain-geometry.test.mjs
+
+      - name: Verify browser syntax
+        run: npm run check:browser
+
+      - name: Verify Monster Master architecture contract
+        run: node --experimental-strip-types --test src/browser/monster-master-art-contract.test.ts
+
+      - name: Verify committed Pixi bundle
+        run: npm run check:monster-master-pixi
+
+      - name: Commit prepared slice
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Define RPG rendering contract and unify terrain geometry"
+          git push origin HEAD:agent/rpg-rendering-contract-terrain-geometry
