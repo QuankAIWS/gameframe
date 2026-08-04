@@ -61,6 +61,7 @@ jobs:
           src/rpg/runtime-command-outbox.test.ts
           src/rpg/runtime-command-delivery-worker.test.ts
           src/rpg/sqlite-rpg-command-acceptance.test.ts
+          src/rpg/sqlite-rpg-runtime-linkage.test.ts
           src/server/rpg-http-server.test.ts
           src/server/rpg-live-protocol-v2-http.test.ts
           src/server/rpg-choice-outcome-http.test.ts
