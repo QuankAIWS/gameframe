@@ -15,9 +15,14 @@ body.monster-master-match-active #monster-master-match.monster-master-game-shell
 }
 
 .gameframe-destination-links .monster-master-nav-setup {
+  display: none;
   flex-direction: row;
   cursor: pointer;
   color: #dcefff;
+}
+
+body.monster-master-match-active .gameframe-destination-links .monster-master-nav-setup {
+  display: inline-flex;
 }
 
 .gameframe-destination-links .monster-master-nav-setup::after {
