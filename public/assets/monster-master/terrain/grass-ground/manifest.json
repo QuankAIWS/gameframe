@@ -17,7 +17,7 @@
     "originalDimensions": [1254, 1254],
     "preparedMasterDimensions": [2048, 2048],
     "preparedMasterSha256": "be36d4d8f882e2f09d76330d6ae00d8bd86be63ae328e5abd5f67f9bcd7b6520",
-    "runtimeSha256": "f3dc17c2bfb52a8d71eaef937fbdd54bf313abf0b2bf2035931047843954d551"
+    "runtimeSha256": "b92981c2f5e8f131ac52b29ff646c287039f1f71248dfa6654ca2e7de0b4d69d"
   },
   "rendering": {
     "renderer": "pixi",
