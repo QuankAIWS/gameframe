@@ -1,0 +1,126 @@
+---
+title: RPG GameFrame Interface Contract
+status: accepted
+document_type: contract
+owner: Scribbles GameFrame and RPG GM Runtime
+last_updated: 2026-08-03
+applies_to:
+  - scribbles-gameframe
+  - rpg-gm-runtime
+depends_on:
+  - rpg-campaign-experience-directions.md
+  - rpg-gm-runtime-boundary.md
+related:
+  - rpg-platform-delivery-plan.md
+  - tactical-battler-rpg-foundation.md
+---
+
+# RPG GameFrame Interface Contract
+
+## Purpose
+
+GameFrame must provide the complete authenticated player interface for the RPG while exchanging versioned campaign commands and presentation events with RPG GM Runtime. The contract is broader than encounter launch and must remain independently testable with deterministic fixtures.
+
+## Required client modes
+
+The first GameFrame RPG shell should support:
+
+- campaign join, seat claim, invitation, and resume;
+- scene and narration presentation;
+- NPC dialogue and speaker identity;
+- freeform player input;
+- bounded choices and confirmations;
+- character and party views;
+- inventory, equipment, abilities, conditions, quests, and objectives as structured projections;
+- checks, dice, and consequence presentation;
+- location, map, and point-of-interest views;
+- player-private and party-private information;
+- tactical encounter transition and return;
+- campaign history, recap, reconnect, and recovery.
+
+These may be separate routes or layered modes, but they remain one campaign application and one authenticated session.
+
+## Contract families
+
+### Campaign session
+
+GameFrame must be able to attach an authenticated player to an authorized campaign seat, resume an existing attachment, fetch a player-scoped campaign projection, and acknowledge a durable presentation position.
+
+### Player commands
+
+Initial commands include:
+
+- submit freeform action;
+- submit structured choice;
+- request inspection of an exposed entity or view;
+- acknowledge presentation or recap position;
+- submit GameFrame-owned mechanical actions when a structured mechanic is active.
+
+Every mutation carries a stable command ID and bounded content. Identity is derived from authenticated GameFrame context. Exact retries are idempotent; conflicting command reuse fails with a stable code.
+
+### Runtime presentation events
+
+RPG GM Runtime may emit semantic, audience-scoped events such as:
+
+- scene opened or changed;
+- narration block;
+- dialogue turn;
+- entity, item, ability, quest, objective, or handout card;
+- freeform input request;
+- bounded choice;
+- check requested, resolved, or followed by a consequence;
+- public, party-private, or player-private reveal;
+- location transition;
+- encounter requested, started, updated, completed, cancelled, or failed;
+- media reference with deterministic fallback;
+- recap and resume marker.
+
+GameFrame owns layout, animation, responsive behavior, accessibility, and presentation-state transitions. The runtime owns semantic content, stable references, ordering, and audience.
+
+### Structured projections
+
+GameFrame should receive narrow player-visible projections for repeated campaign systems rather than the runtime's full hidden semantic state. Initial projections may cover character state, party composition, known inventory, equipment, abilities, conditions, quests, objectives, current location, and exposed points of interest.
+
+### Encounter port
+
+GameFrame provides launch, retrieval, cancellation, lifecycle, reconnect, and terminal-outcome operations for tactical encounters. Launch is durable and idempotent. Terminal outcomes are structured and include objective, participant, injury or condition, resource, item, ruleset, revision, and commit data supported by the selected game.
+
+## Identity model
+
+- Human players use stable GameFrame principals derived from authenticated sessions.
+- Theo occupies an ordinary GameFrame player seat through Scribbles Runtime.
+- RPG GM Runtime uses a dedicated service principal with narrowly scoped campaign and encounter permissions.
+- Display names, avatars, client-supplied Discord IDs, and URLs are presentation or routing data, never proof of identity.
+
+## Correctness requirements
+
+- runtime validation at every boundary;
+- explicit payload and collection limits;
+- expected revision checks where ordering matters;
+- durable idempotency and exact retry;
+- stable machine-readable errors;
+- event-time audience authorization;
+- viewer-bound resumable cursors;
+- polling recovery when projections are missed;
+- no correctness dependency on a permanently connected browser or WebSocket;
+- no direct cross-repository storage access.
+
+## First conformance fixture
+
+A deterministic fixture must prove this sequence:
+
+1. Two players attach to one campaign.
+2. Both receive a public scene; one receives a private reveal.
+3. Each submits a freeform command.
+4. One player submits a bounded choice.
+5. A noncombat check resolves and presents a consequence.
+6. The runtime requests a tactical encounter.
+7. GameFrame creates one encounter despite an exact retry.
+8. Players complete the encounter.
+9. GameFrame returns a structured terminal outcome.
+10. The runtime resumes the scene and GameFrame renders it.
+11. A disconnect and resume do not duplicate commands or presentation events.
+
+## Delivery evidence
+
+A GameFrame implementation PR must identify final contract modules, schema versions, endpoint adapters, authentication expectations, bounds, retry and retention rules, fixture paths, validation commands, and the exact commit SHA validated against RPG GM Runtime fixtures.
