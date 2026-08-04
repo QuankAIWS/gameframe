@@ -37,6 +37,7 @@
       "kind": "runtime.events",
       "runtimeCommitId": "runtime-commit:present-rival-response",
       "sourceCommandId": "command:secure-academy-gate",
+      "sourceGameframeCoordinationRevision": 10,
       "expectedNarrativeRevision": 3
     },
     "expected": {
@@ -44,6 +45,7 @@
       "runtimeCommitKind": "runtime.events",
       "runtimeCommitId": "runtime-commit:present-rival-response",
       "sourceCommandId": "command:secure-academy-gate",
+      "sourceGameframeCoordinationRevision": 10,
       "previousNarrativeRevision": 3,
       "narrativeRevision": 4,
       "exactRetryReturnsSameReceipt": true
@@ -58,6 +60,7 @@
           "runtimeCommitKind": "runtime.events",
           "runtimeCommitId": "runtime-commit:present-rival-response",
           "sourceCommandId": "command:secure-academy-gate",
+          "sourceGameframeCoordinationRevision": 10,
           "previousNarrativeRevision": 3,
           "narrativeRevision": 4
         }
@@ -78,6 +81,7 @@
       "kind": "runtime.encounter_launch",
       "runtimeCommitId": "runtime-commit:launch-academy-gate",
       "sourceCommandId": "command:secure-academy-gate",
+      "sourceGameframeCoordinationRevision": 11,
       "expectedNarrativeRevision": 4
     },
     "expected": {
@@ -85,6 +89,7 @@
       "runtimeCommitKind": "runtime.encounter_launch",
       "runtimeCommitId": "runtime-commit:launch-academy-gate",
       "sourceCommandId": "command:secure-academy-gate",
+      "sourceGameframeCoordinationRevision": 11,
       "previousNarrativeRevision": 4,
       "narrativeRevision": 5,
       "exactRetryReturnsSameReceipt": true
@@ -99,6 +104,7 @@
           "runtimeCommitKind": "runtime.encounter_launch",
           "runtimeCommitId": "runtime-commit:launch-academy-gate",
           "sourceCommandId": "command:secure-academy-gate",
+          "sourceGameframeCoordinationRevision": 11,
           "previousNarrativeRevision": 4,
           "narrativeRevision": 5
         }
@@ -137,7 +143,8 @@
     "Presentation sequence advances once per appended GameFrame presentation event.",
     "Player commands never advance runtime narrative revision.",
     "Only RPG GM Runtime advances narrative revision and issues runtime commit receipts.",
-    "GameFrame links a runtime commit receipt without becoming authoritative for narrative truth.",
+    "Every runtime commit records the GameFrame coordination revision from which it was derived.",
+    "GameFrame links a runtime commit receipt only at that exact source coordination revision without becoming authoritative for narrative truth.",
     "Encounter launch may advance GameFrame coordination and runtime narrative truth without appending a presentation event.",
     "Exact retries return the original receipt and conflicting identifier reuse is rejected in the owning authority domain."
   ]
