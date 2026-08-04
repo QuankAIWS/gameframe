@@ -14,33 +14,25 @@ body.monster-master-match-active #monster-master-match.monster-master-game-shell
   grid-template-rows: minmax(0, 1fr);
 }
 
-.combat-nav .monster-master-nav-setup {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 7px 12px;
-  border: 1px solid rgba(116, 171, 231, .42);
-  border-radius: 999px;
-  background: rgba(25, 45, 74, .86);
-  color: #e6f2ff;
-  box-shadow: inset 0 1px rgba(255, 255, 255, .06);
+.gameframe-destination-links .monster-master-nav-setup {
+  flex-direction: row;
   cursor: pointer;
-  font: inherit;
-  font-size: .72rem;
-  font-weight: 800;
-  letter-spacing: .035em;
-  text-transform: uppercase;
+  color: #dcefff;
 }
 
-body.monster-master-match-active .combat-nav .monster-master-nav-setup {
-  display: inline-flex;
+.gameframe-destination-links .monster-master-nav-setup::after {
+  content: "";
+  position: absolute;
+  inset: auto 20px 10px;
+  height: 2px;
+  background: var(--destination-accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--destination-accent) 66%, transparent);
 }
 
-.combat-nav .monster-master-nav-setup:hover,
-.combat-nav .monster-master-nav-setup:focus-visible {
-  border-color: var(--cyan);
-  background: rgba(39, 72, 108, .96);
+.gameframe-destination-links .monster-master-nav-setup:hover,
+.gameframe-destination-links .monster-master-nav-setup:focus-visible {
+  color: #fff;
+  background: color-mix(in srgb, var(--destination-accent) 10%, transparent);
   outline: none;
 }
 
