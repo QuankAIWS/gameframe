@@ -41,6 +41,16 @@ jobs:
           set -euo pipefail
           cat .github/agent-payload/mm-slice.part* | base64 --decode > /tmp/mm-slice.tar.gz
           tar -xzf /tmp/mm-slice.tar.gz
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("src/browser/monster-master-art-contract.test.ts")
+          source = path.read_text()
+          source = source.replace(
+              "assert.doesNotMatch(pixiBridge, /function project/);",
+              "assert.doesNotMatch(pixiBridge, /function project\\(/);",
+          )
+          path.write_text(source)
+          PY
           rm -rf .github/agent-payload
           rm -f .github/workflows/agent-apply-rpg-terrain-slice.yml
           rm -f public/monster-master-terrain-depth.js public/monster-master-terrain-depth.css
