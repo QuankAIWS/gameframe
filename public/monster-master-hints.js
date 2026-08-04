@@ -75,7 +75,6 @@ function installHintLayer() {
   toast = document.createElement("div");
   toast.id = "monster-master-status-toast";
   toast.className = "monster-master-status-toast";
-  toast.setAttribute("aria-hidden", "true");
   status.classList.add("monster-master-status-toast-message");
   briefing.insertBefore(toast, status);
   toast.append(status);
