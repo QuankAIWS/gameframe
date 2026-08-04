@@ -109,7 +109,7 @@ GameFrame provides launch, retrieval, cancellation, lifecycle, reconnect, and te
 
 ## Revision and ordering model
 
-The term `campaignRevision` is insufficient for the production contract because the current Node prototype uses one event-count-derived number for several different concerns. Contract version 2 separates three positions:
+The term `campaignRevision` is insufficient for the production contract because it collapses coordination transactions, presentation-event ordering, and runtime narrative truth into one event-count-derived number. Contract version 2 separates three positions:
 
 ### GameFrame coordination revision
 
@@ -180,26 +180,37 @@ The `campaign-port-a` fixture proves the first stable boundary vocabulary:
 
 The `campaign-port-b` fixture adds bounded choices, a deterministic noncombat check, a terminal tactical outcome, and campaign return presentation.
 
-The `campaign-revision-linkage` fixture defines the production revision domains that supersede the prototype's ambiguous use of `campaignRevision`. Existing port-A and port-B fields remain historical compatibility inputs until the coordinated HTTP migration is implemented in both repositories.
+The `campaign-revision-linkage` fixture defines the production revision domains that supersede the prototype's ambiguous use of `campaignRevision`. Port-A and port-B remain protocol-v1 regression fixtures for the internal deterministic reducer; they are not the active runtime transport contract.
 
 Fixture changes are canonical-first: update and validate GameFrame, merge the canonical fixture, synchronize the private runtime mirror, run the runtime fixture conformance tests, and then merge runtime changes. Neither repository maintains a second hardcoded fixture list.
 
 ## Node-local HTTP slice
 
-The first executable GameFrame RPG adapter is memory-backed and seeded from the canonical `campaign-port-a` fixture. It exposes these development routes:
+The active GameFrame Node adapter is memory-backed and seeded from the canonical Monster Master reference fixture. It exposes these development routes:
 
-| Method | Route | Principal | Behavior |
+| Method | Route | Principal | Protocol-v2 behavior |
 | --- | --- | --- | --- |
-| `POST` | `/api/rpg/campaigns/{campaignId}/attach` | authenticated player | Returns the current event-time audience-filtered campaign projection. |
-| `POST` | `/api/rpg/campaigns/{campaignId}/commands` | active player member | Accepts `campaign.submit_action`, enforces expected revision, and preserves exact command retry. |
-| `POST` | `/api/rpg/encounters` | RPG runtime service | Validates campaign provenance and active player participant bindings, then creates one idempotent encounter handle. |
-| `GET` | `/api/rpg/encounters/{encounterId}` | RPG runtime service | Retrieves the current memory-backed encounter handle. |
+| `POST` | `/api/rpg/campaigns/{campaignId}/attach` | authenticated player | Returns the audience-filtered projection with all three explicit positions and a temporary position-bearing cursor. |
+| `POST` | `/api/rpg/campaigns/{campaignId}/commands` | active player member | Accepts player commands with `expectedGameframeCoordinationRevision`, commits one coordination transaction, appends zero or more presentation events, and preserves exact command retry. |
+| `POST` | `/api/rpg/campaigns/{campaignId}/events` | RPG runtime service | Links one runtime narrative receipt through a stable `coordinationMutationId`, validates its GameFrame source revision and next narrative revision, and appends the submitted presentation events atomically in the Node-local adapter. |
+| `POST` | `/api/rpg/encounters` | RPG runtime service | Links a `runtime.encounter_launch` receipt, validates campaign provenance and participant bindings, advances coordination without inventing a presentation event, and creates one idempotent encounter handle. |
+| `GET` | `/api/rpg/encounters/{encounterId}` | creating runtime service | Retrieves the current encounter handle with its linked coordination and narrative positions. |
+| `POST` | `/api/rpg/encounters/{encounterId}/complete` | GameFrame encounter-engine service | Commits one validated terminal outcome while preserving the launch linkage metadata. |
 
 Development player requests use `x-gameframe-player-id`. Development service requests use `x-gameframe-service-id`. A request claiming both identities is rejected, and service principals cannot use ordinary player-match routes. Production authentication remains the responsibility of the injected `RequestAuthenticator`.
 
-The current implementation has a 64 KiB HTTP request-body limit, campaign protocol version `1`, encounter protocol version `1`, a 2,000-character freeform action limit, at most 32 encounter participants, and at most 32 objectives. Command and encounter retries are process-memory idempotent only. The returned campaign cursor is a temporary projection marker, not yet a signed, viewer-bound durable resume cursor.
+The live boundary advertises campaign protocol version `2` and encounter protocol version `2`. Protocol-v2 responses expose `gameframeCoordinationRevision`, `presentationSequence`, and `linkedNarrativeRevision`; they do not expose `campaignRevision`. Player commands carry `expectedGameframeCoordinationRevision`. Runtime event and encounter-launch mutations carry:
 
-The current Node adapter still exposes legacy `campaignRevision` and `expectedRevision` fields whose value is derived from the event array length. Those fields are transitional prototype compatibility, not the persistence model. The coordinated HTTP migration must add the contract-version-2 positions and receipts without silently reinterpreting the old fields.
+- stable `coordinationMutationId`;
+- `expectedGameframeCoordinationRevision`;
+- a runtime-owned `runtime.narrative_committed` receipt;
+- bounded operation-specific content.
+
+Stable protocol-v2 conflicts distinguish coordination revision mismatch, runtime source-revision mismatch, narrative-link mismatch, repeated runtime-link attempts, command-ID conflict, and coordination-mutation-ID conflict. Exact retries return the original receipt or encounter handle without advancing any position again.
+
+The current implementation has a 64 KiB HTTP request-body limit, a 2,000-character freeform action limit, at most 16 runtime presentation events per transaction, at most 32 encounter participants, and at most 32 objectives. Command, runtime-link, and encounter retries remain process-memory idempotent only. The returned campaign cursor is a temporary projection marker, not yet a signed, viewer-bound durable resume cursor.
+
+`VersionedInMemoryRpgService` encapsulates the existing protocol-v1 event reducer solely to preserve deterministic port-A/port-B choice, check, outcome, and authority regression coverage during the migration. The health endpoint advertises `legacy-v1-compatibility` explicitly. New runtime integration must use protocol version 2 and must not depend on legacy `campaignRevision`, `expectedRevision`, or encounter `campaignRevision` fields.
 
 This slice does not claim durable VM persistence, restart survival, browser campaign UI, or deployed Cloudflare authentication. Those remain explicit later acceptance gates.
 
