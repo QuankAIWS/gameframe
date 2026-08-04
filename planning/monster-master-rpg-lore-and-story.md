@@ -260,3 +260,21 @@ These groups can cooperate, compete, pass responsibility to one another, or argu
 - Local guards are not expected to solve every dangerous-monster emergency.
 - Wardens need specialist training, equipment, legal powers, and recognizable roles distinct from ordinary guards.
 - Corruption, poor funding, jurisdiction disputes, and delayed responses can create scenarios without making every authority institutionally evil.
+
+## Decision 16 — Tiered emergency duty
+
+Basic domestic cube owners and nonprofessional handlers have no standing legal duty to answer emergencies merely because they own a cube or live with a monster.
+
+Licensed professional Monster Masters accept limited public-service obligations as part of higher-tier licensing. During a credible emergency, authorized guards, road patrols, wardens, or other designated officials may request—and where local law permits, direct—a Master to provide reasonable assistance within the limits of the Master's training, equipment, roster, physical condition, and license.
+
+The obligation is not unlimited. A Master is not required to knowingly sacrifice themselves or their companions, obey an obviously unqualified or unlawful order, permanently surrender a monster, or perform work materially beyond their licensed competence. Intelligent monsters retain their own agency and cannot be compelled solely because their Master received an order.
+
+Emergency service should normally include compensation, medical care, equipment-loss reimbursement, and legal protection for reasonable actions taken in good faith. Jurisdictions vary in how reliably they provide these benefits, and misuse of emergency authority can create disputes, corruption, debt, and story complications.
+
+### Implementation consequences
+
+- License tiers need explicit emergency-duty scopes and exemptions.
+- Emergency requests must identify the issuing authority, legal basis, compensation, expected task, and acceptable refusal conditions.
+- Trainer and monster condition, competence, consent, and equipment can limit required assistance.
+- Domestic ownership must not create hidden public-service obligations.
+- Emergency service can generate rewards, claims, injuries, damaged equipment, reputation changes, and later disputes over reimbursement.
