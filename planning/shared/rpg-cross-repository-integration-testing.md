@@ -129,9 +129,11 @@ During active co-development:
 - coordinated work may supply an explicit `gameframe_ref` naming a branch, tag, or commit;
 - every run resolves that ref to an exact GameFrame commit SHA and records it with the runtime SHA, fixture versions, and test evidence;
 - a failure caused by a new GameFrame change is useful integration feedback and should normally be repaired rather than hidden by reverting to an old default;
-- historical runs remain reproducible from their recorded SHAs without making those SHAs permanent compatibility commitments.
+- recorded SHAs identify the exact source used by a run, but long-term reproduction requires that the commit remain reachable or that the tested source be preserved separately.
 
 A compatibility baseline may be introduced later, after the first versioned RPG contracts and Monster Master reference chapter are complete enough to support release, rollback, or long-lived regression evidence. That later baseline is a reproducibility and release-control tool; it does not replace continued testing against current GameFrame development.
+
+For coordinated feature branches that may be squash-merged and deleted, preserve an immutable ref or archive the tested source when long-term reproduction matters. Without that preservation, the recorded SHA remains diagnostic evidence but is not by itself a guarantee that a fresh clone can retrieve the source indefinitely.
 
 ## Coordinated branch testing
 
@@ -273,4 +275,4 @@ The integration strategy is established when:
 
 ## Governing rule
 
-> Use mocks for speed, fixtures for contract stability, the current real GameFrame checkout for integration truth, workerd for Cloudflare-state truth, and deployed staging for public-system truth. Record exact SHAs for evidence without freezing an unfinished platform.
+> Use mocks for speed, fixtures for contract stability, the current real GameFrame checkout for integration truth, workerd for Cloudflare-state truth, and deployed staging for public-system truth. Record exact SHAs for evidence; preserve the tested source when long-term reproduction is required.
