@@ -5,7 +5,7 @@
   "canonicalRoot": "planning/fixtures/rpg/v1",
   "mirrorRepository": "QuankAIWS/rpg-gm-runtime",
   "mirrorRoot": "fixtures/rpg/v1",
-  "contractVersion": 1,
+  "contractVersion": 2,
   "fixtures": [
     {
       "id": "campaign-port-a",
@@ -16,6 +16,11 @@
       "id": "campaign-port-b",
       "filename": "campaign-port-b.json",
       "description": "Runtime-presented bounded choice, deterministic noncombat check and consequence, structured terminal Arena Battles outcome, and campaign return-scene cases."
+    },
+    {
+      "id": "campaign-revision-linkage",
+      "filename": "campaign-revision-linkage.json",
+      "description": "Separate GameFrame coordination revision, GameFrame presentation sequence, and RPG GM narrative revision with source-revision linkage and exact retry/conflict cases."
     }
   ]
 }

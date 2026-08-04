@@ -1,0 +1,151 @@
+{
+  "fixtureVersion": 2,
+  "contract": "rpg-dual-revision-linkage",
+  "slice": "campaign-revision-linkage",
+  "protocolVersions": {
+    "campaign": 1,
+    "encounter": 1
+  },
+  "campaignId": "campaign-monster-master-reference",
+  "startingState": {
+    "gameframe": {
+      "gameframeCoordinationRevision": 9,
+      "presentationSequence": 9,
+      "linkedNarrativeRevision": 3
+    },
+    "runtime": {
+      "narrativeRevision": 3
+    }
+  },
+  "playerCommandCase": {
+    "request": {
+      "commandId": "command:secure-academy-gate",
+      "expectedGameframeCoordinationRevision": 9,
+      "presentationEventCount": 1
+    },
+    "expected": {
+      "kind": "gameframe.command_committed",
+      "commandId": "command:secure-academy-gate",
+      "gameframeCoordinationRevision": 10,
+      "presentationSequence": 10,
+      "linkedNarrativeRevision": 3,
+      "exactRetryReturnsSameReceipt": true
+    }
+  },
+  "runtimePresentationCommitCase": {
+    "request": {
+      "kind": "runtime.events",
+      "runtimeCommitId": "runtime-commit:present-rival-response",
+      "sourceCommandId": "command:secure-academy-gate",
+      "sourceGameframeCoordinationRevision": 10,
+      "expectedNarrativeRevision": 3
+    },
+    "expected": {
+      "kind": "runtime.narrative_committed",
+      "runtimeCommitKind": "runtime.events",
+      "runtimeCommitId": "runtime-commit:present-rival-response",
+      "sourceCommandId": "command:secure-academy-gate",
+      "sourceGameframeCoordinationRevision": 10,
+      "previousNarrativeRevision": 3,
+      "narrativeRevision": 4,
+      "exactRetryReturnsSameReceipt": true
+    },
+    "gameframeLink": {
+      "request": {
+        "coordinationMutationId": "coordination:publish-rival-response",
+        "expectedGameframeCoordinationRevision": 10,
+        "presentationEventCount": 2,
+        "runtimeCommit": {
+          "kind": "runtime.narrative_committed",
+          "runtimeCommitKind": "runtime.events",
+          "runtimeCommitId": "runtime-commit:present-rival-response",
+          "sourceCommandId": "command:secure-academy-gate",
+          "sourceGameframeCoordinationRevision": 10,
+          "previousNarrativeRevision": 3,
+          "narrativeRevision": 4
+        }
+      },
+      "expected": {
+        "kind": "gameframe.runtime_link_committed",
+        "coordinationMutationId": "coordination:publish-rival-response",
+        "runtimeCommitId": "runtime-commit:present-rival-response",
+        "gameframeCoordinationRevision": 11,
+        "presentationSequence": 12,
+        "linkedNarrativeRevision": 4,
+        "exactRetryReturnsSameReceipt": true
+      }
+    }
+  },
+  "encounterLaunchCommitCase": {
+    "request": {
+      "kind": "runtime.encounter_launch",
+      "runtimeCommitId": "runtime-commit:launch-academy-gate",
+      "sourceCommandId": "command:secure-academy-gate",
+      "sourceGameframeCoordinationRevision": 11,
+      "expectedNarrativeRevision": 4
+    },
+    "expected": {
+      "kind": "runtime.narrative_committed",
+      "runtimeCommitKind": "runtime.encounter_launch",
+      "runtimeCommitId": "runtime-commit:launch-academy-gate",
+      "sourceCommandId": "command:secure-academy-gate",
+      "sourceGameframeCoordinationRevision": 11,
+      "previousNarrativeRevision": 4,
+      "narrativeRevision": 5,
+      "exactRetryReturnsSameReceipt": true
+    },
+    "gameframeLink": {
+      "request": {
+        "coordinationMutationId": "coordination:launch-academy-gate",
+        "expectedGameframeCoordinationRevision": 11,
+        "presentationEventCount": 0,
+        "runtimeCommit": {
+          "kind": "runtime.narrative_committed",
+          "runtimeCommitKind": "runtime.encounter_launch",
+          "runtimeCommitId": "runtime-commit:launch-academy-gate",
+          "sourceCommandId": "command:secure-academy-gate",
+          "sourceGameframeCoordinationRevision": 11,
+          "previousNarrativeRevision": 4,
+          "narrativeRevision": 5
+        }
+      },
+      "expected": {
+        "kind": "gameframe.runtime_link_committed",
+        "coordinationMutationId": "coordination:launch-academy-gate",
+        "runtimeCommitId": "runtime-commit:launch-academy-gate",
+        "gameframeCoordinationRevision": 12,
+        "presentationSequence": 12,
+        "linkedNarrativeRevision": 5,
+        "exactRetryReturnsSameReceipt": true
+      }
+    }
+  },
+  "conflictingRuntimeCommitReuseCase": {
+    "reusesRuntimeCommitId": "runtime-commit:launch-academy-gate",
+    "requestOverrides": {
+      "sourceCommandId": "command:different-source"
+    },
+    "expected": {
+      "code": "runtime-commit-conflict"
+    }
+  },
+  "conflictingCoordinationMutationReuseCase": {
+    "reusesCoordinationMutationId": "coordination:launch-academy-gate",
+    "requestOverrides": {
+      "expectedGameframeCoordinationRevision": 10
+    },
+    "expected": {
+      "code": "coordination-mutation-conflict"
+    }
+  },
+  "invariants": [
+    "GameFrame coordination revision advances once per accepted coordination transaction, not once per presentation event.",
+    "Presentation sequence advances once per appended GameFrame presentation event.",
+    "Player commands never advance runtime narrative revision.",
+    "Only RPG GM Runtime advances narrative revision and issues runtime commit receipts.",
+    "Every runtime commit records the GameFrame coordination revision from which it was derived.",
+    "GameFrame links a runtime commit receipt only at that exact source coordination revision without becoming authoritative for narrative truth.",
+    "Encounter launch may advance GameFrame coordination and runtime narrative truth without appending a presentation event.",
+    "Exact retries return the original receipt and conflicting identifier reuse is rejected in the owning authority domain."
+  ]
+}

@@ -35,7 +35,7 @@ function unique(values: string[], label: string): void {
 test("shared RPG fixture manifest names versioned canonical files", () => {
   const manifest = readJson("shared-rpg-fixtures.json");
   assert.equal(manifest.manifestVersion, 1);
-  assert.equal(manifest.contractVersion, 1);
+  assert.equal(manifest.contractVersion, 2);
   assert.equal(manifest.canonicalRepository, "QuankAIWS/scribbles-gameframe");
   assert.equal(manifest.canonicalRoot, "planning/fixtures/rpg/v1");
   assert.equal(manifest.mirrorRepository, "QuankAIWS/rpg-gm-runtime");
@@ -49,6 +49,7 @@ test("shared RPG fixture manifest names versioned canonical files", () => {
   const filenames = fixtures.map((entry, index) => string(entry.filename, `fixture ${index} filename`));
   unique(ids, "fixture IDs");
   unique(filenames, "fixture filenames");
+  assert.ok(ids.includes("campaign-revision-linkage"));
   for (const filename of filenames) {
     assert.match(filename, /^[A-Za-z0-9][A-Za-z0-9._-]*\.json$/);
     readJson(filename);
