@@ -18,9 +18,12 @@ assert.equal(
 assert.equal(packageJson.scripts["test:browser"], "playwright test --config playwright.config.mjs");
 assert.equal(packageJson.scripts["build:activity"], "node scripts/build-activity-bundle.mjs");
 assert.equal(packageJson.scripts["check:activity"], "node scripts/build-activity-bundle.mjs --check");
-assert.match(packageJson.scripts.validate, /npm run test:workerd/);
-assert.match(packageJson.scripts.validate, /npm run check:activity/);
-assert.match(packageJson.scripts.validate, /npm run test:browser/);
+assert.match(packageJson.scripts["validate:core"], /npm run test:workerd/);
+assert.match(packageJson.scripts["validate:core"], /npm run check:activity/);
+assert.match(packageJson.scripts.validate, /npm run validate:core/);
+assert.match(packageJson.scripts.validate, /npm run test:browser:required/);
+assert.match(packageJson.scripts["validate:full"], /npm run test:browser/);
+assert.match(packageJson.scripts["validate:full"], /npm run test:visual-baseline/);
 for (const browserEntry of [
   "public/discord-activity-bootstrap.js",
   "public/gameframe-auth.js",
@@ -36,6 +39,7 @@ assert.deepEqual(packageJson.devDependencies, {
   "@discord/embedded-app-sdk": "2.5.0",
   "@playwright/test": "1.61.1",
   esbuild: "0.28.1",
+  sharp: "0.34.3",
   vitest: "4.1.10",
   wrangler: "4.115.0",
 });

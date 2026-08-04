@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "assetId": "monster-master.cliff-face.grassland-stone.v1",
+  "family": "environment.elevation-face",
+  "role": "exposed-vertical-wall-face",
+  "status": "accepted-pilot",
+  "runtime": {
+    "path": "/assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-128.webp",
+    "format": "webp",
+    "width": 128,
+    "height": 128,
+    "repeatX": true,
+    "repeatY": true,
+    "colorSpace": "srgb",
+    "sha256": "0235286be3d0e6dd851c1ffaa9039e113a0410d964093bc31d0645fcb3082a72"
+  },
+  "source": {
+    "generationId": "cc8d58f5-4906-4c3f-bc59-1be8689c0880",
+    "originalDimensions": [
+      1269,
+      1239
+    ],
+    "originalSha256": "562241dedf217f7863fa37360fdd9ee53b4e76d7d419aafb01ba14cb92bedaba",
+    "preparedMasterDimensions": [
+      1024,
+      1024
+    ],
+    "preparedMasterSha256": "7761754c5a95f6d8d044dabe0b961b5529b0cfbf7fdb7b40f7a16ce772ab8025",
+    "horizontalSeamMethod": "mirrored-source-strip",
+    "preparedMasterPath": "public/assets/monster-master/terrain/cliff-face/source/cliff-face-grassland-stone-v1-master.png",
+    "transform": {
+      "tool": "sharp",
+      "version": "0.34.3",
+      "masterBootstrap": {
+        "input": "accepted runtime derivative",
+        "resizeKernel": "nearest",
+        "outputFormat": "png",
+        "compressionLevel": 9
+      },
+      "runtimeDerivative": {
+        "width": 128,
+        "height": 128,
+        "resizeKernel": "nearest",
+        "outputFormat": "webp",
+        "lossless": true,
+        "effort": 6
+      }
+    }
+  },
+  "rendering": {
+    "renderer": "pixi",
+    "geometryRole": "exposed-wall-face-29px",
+    "textureSpace": "global",
+    "textureMatrixScale": {
+      "x": 0.72,
+      "y": 0.24
+    },
+    "visualHeightCssPixels": 29,
+    "ownsGeometry": false,
+    "internalFacesCulled": true,
+    "gameplay": "visual-treatment-for-impassable-wall"
+  }
+}

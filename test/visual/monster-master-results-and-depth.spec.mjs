@@ -7,38 +7,59 @@ async function openMonsterMaster(page, player) {
   await page.locator("#monster-master-theo").click();
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
-  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterTerrainDepth?.getStats))).toBe(true);
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterPixi?.getTerrainStats))).toBe(true);
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterResults?.capture))).toBe(true);
 }
 
-test("Monster Master renders joined exposed wall faces above the Pixi battlefield", async ({ page }, testInfo) => {
-  await openMonsterMaster(page, "monster-terrain-depth");
+test("Monster Master renders exact joined wall geometry inside the Pixi scene", async ({ page }, testInfo) => {
+  await openMonsterMaster(page, "monster-terrain-geometry");
 
-  const depthCanvas = page.locator("#monster-master-terrain-depth-canvas");
-  await expect(depthCanvas).toBeVisible();
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterTerrainDepth.getStats().wallCount)).toBeGreaterThan(0);
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterTerrainDepth.getStats().renderedFaces)).toBeGreaterThan(0);
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterTerrainDepth.getStats().culledFaces)).toBeGreaterThan(0);
+  await expect(page.locator("#monster-master-terrain-depth-canvas")).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getTerrainStats().wallCount)).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getTerrainStats().renderedFaces)).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getTerrainStats().culledFaces)).toBeGreaterThan(0);
 
-  const depthStats = await page.evaluate(() => window.gameFrameMonsterTerrainDepth.getStats());
-  expect(depthStats.renderedFaces).toBeLessThan(depthStats.wallCount * 2);
-  expect(depthStats.renderedFaces + depthStats.culledFaces).toBeLessThanOrEqual(depthStats.wallCount * 2);
+  const result = await page.evaluate(() => {
+    const view = window.gameFrameMonsterController.getView();
+    const map = view.observation.board.map;
+    const wallIndex = map.cells.findIndex((cell) => cell.terrain === "wall");
+    const coordinate = { x: wallIndex % map.width, y: Math.floor(wallIndex / map.width) };
+    const snapshot = window.gameFrameMonsterPixi.getGeometrySnapshot(coordinate);
+    const stats = window.gameFrameMonsterPixi.getTerrainStats();
+    const canvas = document.querySelector("#monster-master-pixi-canvas");
+    return {
+      snapshot,
+      stats,
+      canvas: {
+        width: canvas.clientWidth,
+        height: canvas.clientHeight,
+        pixelWidth: canvas.width,
+        pixelHeight: canvas.height,
+      },
+    };
+  });
 
-  const geometry = await depthCanvas.evaluate((canvas) => ({
-    width: canvas.clientWidth,
-    height: canvas.clientHeight,
-    pixelWidth: canvas.width,
-    pixelHeight: canvas.height,
-    zIndex: getComputedStyle(canvas).zIndex,
-  }));
-  expect(geometry.width).toBeGreaterThan(900);
-  expect(geometry.height).toBeGreaterThan(600);
-  expect(geometry.pixelWidth).toBeGreaterThanOrEqual(geometry.width);
-  expect(geometry.pixelHeight).toBeGreaterThanOrEqual(geometry.height);
-  expect(geometry.pixelWidth / geometry.width).toBeLessThanOrEqual(1.51);
-  expect(Number(geometry.zIndex)).toBeGreaterThan(1);
+  expect(result.snapshot.terrain).toBe("wall");
+  expect(result.snapshot.visualHeight).toBe(29);
+  expect(result.snapshot.baseCenter.y - result.snapshot.topCenter.y).toBe(29);
+  expect(Math.max(...result.snapshot.topPolygon.map((point) => point.x)) - Math.min(...result.snapshot.topPolygon.map((point) => point.x))).toBe(72);
+  expect(Math.max(...result.snapshot.topPolygon.map((point) => point.y)) - Math.min(...result.snapshot.topPolygon.map((point) => point.y))).toBe(36);
+  expect(result.stats.groundObjects).toBe(1);
+  expect(result.stats.renderedFaces).toBeLessThan(result.stats.wallCount * 2);
+  expect(result.stats.renderedFaces + result.stats.culledFaces).toBeLessThanOrEqual(result.stats.wallCount * 2);
+  expect(result.stats.worldObjectCount).toBe(result.stats.terrainObjects + result.stats.unitObjects);
+  expect(result.canvas.width).toBeGreaterThan(900);
+  expect(result.canvas.height).toBeGreaterThan(600);
+  expect(result.canvas.pixelWidth).toBeGreaterThanOrEqual(result.canvas.width);
+  expect(result.canvas.pixelHeight).toBeGreaterThanOrEqual(result.canvas.height);
+  expect(result.canvas.pixelWidth / result.canvas.width).toBeLessThanOrEqual(1.51);
 
-  await page.screenshot({ path: testInfo.outputPath("monster-master-terrain-depth-desktop.png"), fullPage: true });
+  await page.evaluate(() => window.gameFrameMonsterPixi.setGeometryDebug(true));
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.isGeometryDebugEnabled())).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("monster-master-terrain-geometry-debug-desktop.png"), fullPage: true });
+
+  await page.evaluate(() => window.gameFrameMonsterPixi.setGeometryDebug(false));
+  await page.screenshot({ path: testInfo.outputPath("monster-master-terrain-geometry-desktop.png"), fullPage: true });
 });
 
 test("Monster Master presents a terminal victory screen over the surviving battlefield", async ({ page }, testInfo) => {

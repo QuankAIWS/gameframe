@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "assetId": "monster-master.grass-ground.v1",
+  "family": "environment.ground",
+  "role": "continuous-base-ground",
+  "status": "accepted-pilot",
+  "runtime": {
+    "path": "/assets/monster-master/terrain/grass-ground/grass-ground-v1-128.webp",
+    "format": "webp",
+    "width": 128,
+    "height": 128,
+    "repeat": true,
+    "colorSpace": "srgb",
+    "sha256": "ff5805cf3b272218cde2ef955afe04856e48ae5566a841069a7b04bcfc0fe58a"
+  },
+  "source": {
+    "generationId": "1b022daf-cc0e-4996-b2ef-1cc87770b0c3",
+    "originalDimensions": [
+      1254,
+      1254
+    ],
+    "preparedMasterDimensions": [
+      2048,
+      2048
+    ],
+    "preparedMasterSha256": "3249ae466f131811384ef6a9d749cdeff26d618975884a8fe67d48874fea0a7b",
+    "runtimeSha256": "ff5805cf3b272218cde2ef955afe04856e48ae5566a841069a7b04bcfc0fe58a",
+    "preparedMasterPath": "public/assets/monster-master/terrain/grass-ground/source/grass-ground-v1-master.png",
+    "transform": {
+      "tool": "sharp",
+      "version": "0.34.3",
+      "masterBootstrap": {
+        "input": "accepted runtime derivative",
+        "resizeKernel": "nearest",
+        "outputFormat": "png",
+        "compressionLevel": 9
+      },
+      "runtimeDerivative": {
+        "width": 128,
+        "height": 128,
+        "resizeKernel": "nearest",
+        "outputFormat": "webp",
+        "lossless": true,
+        "effort": 6
+      }
+    }
+  },
+  "rendering": {
+    "renderer": "pixi",
+    "presentation": "top-down material transformed by the engine into the pseudo-isometric ground plane",
+    "tileScale": 1.35,
+    "ownsGeometry": false
+  }
+}

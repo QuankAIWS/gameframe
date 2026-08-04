@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "assetId": "monster-master.raised-barrier-cap.grassland-stone.v1",
+  "family": "environment.terrain-top",
+  "role": "impassable-raised-barrier-cap",
+  "status": "accepted-pilot",
+  "runtime": {
+    "path": "/assets/monster-master/terrain/raised-barrier-cap/raised-barrier-cap-grassland-stone-v1-128.webp",
+    "format": "webp",
+    "width": 128,
+    "height": 128,
+    "repeat": true,
+    "colorSpace": "srgb",
+    "sha256": "f9315f5734d0b3d6f3a5378a97fd69a2210e0eb423b6b854f3f407d4ee2b8bf8"
+  },
+  "source": {
+    "generationId": "ff516c3c-d9d2-49b1-ac9f-98cfeab4170f",
+    "originalDimensions": [
+      1254,
+      1254
+    ],
+    "originalSha256": "24c13be1ae96801f995bc5e31666b4c55fbbc927f7554dec08c67c20131af568",
+    "preparedMasterDimensions": [
+      1024,
+      1024
+    ],
+    "preparedMasterSha256": "a482a1fbb4cca9a5810ed308e1b31bf28d82207b804e5526a32e25cd7303d5a3",
+    "runtimeSha256": "f9315f5734d0b3d6f3a5378a97fd69a2210e0eb423b6b854f3f407d4ee2b8bf8",
+    "preparedMasterPath": "public/assets/monster-master/terrain/raised-barrier-cap/source/raised-barrier-cap-grassland-stone-v1-master.png",
+    "transform": {
+      "tool": "sharp",
+      "version": "0.34.3",
+      "masterBootstrap": {
+        "input": "accepted runtime derivative",
+        "resizeKernel": "nearest",
+        "outputFormat": "png",
+        "compressionLevel": 9
+      },
+      "runtimeDerivative": {
+        "width": 128,
+        "height": 128,
+        "resizeKernel": "nearest",
+        "outputFormat": "webp",
+        "lossless": true,
+        "effort": 6
+      }
+    }
+  },
+  "rendering": {
+    "renderer": "pixi",
+    "geometryRole": "wall-top-72x36",
+    "textureSpace": "global",
+    "visualHeightCssPixels": 29,
+    "ownsGeometry": false,
+    "gameplay": "impassable"
+  }
+}

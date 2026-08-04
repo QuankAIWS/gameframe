@@ -8,7 +8,7 @@ function collectTests(directory) {
     const path = join(directory, entry);
     if (statSync(path).isDirectory()) {
       results.push(...collectTests(path));
-    } else if (entry.endsWith(".test.ts")) {
+    } else if (entry.endsWith(".test.ts") || entry.endsWith(".test.mjs")) {
       results.push(path);
     }
   }
@@ -17,7 +17,7 @@ function collectTests(directory) {
 
 const tests = collectTests("src");
 if (tests.length === 0) {
-  console.error("No TypeScript tests were found.");
+  console.error("No test files were found.");
   process.exit(1);
 }
 

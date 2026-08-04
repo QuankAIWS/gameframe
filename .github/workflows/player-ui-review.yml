@@ -7,8 +7,15 @@ on:
     paths:
       - "public/**"
       - "planning/monster-master-rules.md"
+      - "planning/monster-master/assets/**"
       - "scripts/build-monster-master-pixi.mjs"
+      - "scripts/monster-master-terrain-assets.mjs"
       - "src/browser/monster-master-pixi-entry.js"
+      - "src/browser/monster-master-ground-asset-contract.test.mjs"
+      - "src/browser/monster-master-wall-top-asset-contract.test.mjs"
+      - "src/browser/monster-master-cliff-face-asset-contract.test.mjs"
+      - "src/browser/monster-master-terrain-geometry.js"
+      - "src/browser/monster-master-terrain-geometry.test.mjs"
       - "src/browser/player-navigation-contract.test.ts"
       - "src/browser/monster-master-art-contract.test.ts"
       - "src/browser/othello-runtime-contract.test.ts"
@@ -51,7 +58,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.16.0
           cache: npm
 
       - name: Install dependencies
@@ -66,11 +73,11 @@ jobs:
       - name: Browser syntax gate
         run: npm run check:browser
 
-      - name: Player navigation, game, and Monster Master rule contracts
-        run: node --experimental-strip-types --test src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/othello-runtime-contract.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/delivery-contract.test.ts
+      - name: Player navigation, renderer geometry, asset, game, and Monster Master rule contracts
+        run: node --experimental-strip-types --test src/browser/monster-master-ground-asset-contract.test.mjs src/browser/monster-master-wall-top-asset-contract.test.mjs src/browser/monster-master-cliff-face-asset-contract.test.mjs src/browser/monster-master-terrain-geometry.test.mjs src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/othello-runtime-contract.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/delivery-contract.test.ts
 
-      - name: Canonical Monster Master Pixi journeys
-        run: npx playwright test test/browser/monster-master.spec.mjs test/browser/monster-master-controls.spec.mjs test/browser/motion-polish.spec.mjs --grep "Monster Master" --config playwright.config.mjs
+      - name: Required active-product browser smoke
+        run: npm run test:browser:required
 
       - name: Capture player UI screenshots and cross-game regressions
         run: npx playwright test test/visual/player-ui-review.spec.mjs test/visual/player-ui-regressions.spec.mjs test/visual/monster-master-pixi.spec.mjs test/visual/monster-master-cardinal-camera.spec.mjs test/visual/monster-master-results-and-depth.spec.mjs test/visual/monster-master-trainer-shell.spec.mjs --config playwright.visual.config.mjs

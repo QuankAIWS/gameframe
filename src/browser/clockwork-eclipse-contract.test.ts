@@ -17,5 +17,6 @@ test("Clockwork Eclipse uses a deterministic SVG asset pack without replacing au
   assert.doesNotMatch(css, /fetch\(/);
   assert.match(script, /external URLs are forbidden/);
   assert.equal(manifest.assets.filter((asset: { approved: boolean }) => asset.approved).length, 11);
-  assert.match(packageJson.scripts.validate, /assets:verify/);
+  assert.match(packageJson.scripts["validate:core"], /assets:verify/);
+  assert.match(packageJson.scripts.validate, /validate:core/);
 });
