@@ -52,12 +52,82 @@ jobs:
           contract.write_text(contract_source)
 
           renderer = Path("src/browser/monster-master-pixi-entry.js")
-          renderer_source = renderer.read_text().replace(
-              "  clampCamera();\n  saveCamera();\n  scheduleRender();\n}",
-              "  clampCamera();\n  saveCamera();\n  applyCamera();\n  scheduleRender();\n}",
+          source = renderer.read_text()
+          save_camera = '''function saveCamera() {
+            try {
+              localStorage.setItem(CAMERA_STORAGE_KEY, JSON.stringify(state.camera));
+            } catch {
+              // Camera persistence is optional.
+            }
+          }
+          '''
+          commit_camera = save_camera + '''
+          function commitCamera() {
+            saveCamera();
+            applyCamera();
+            scheduleRender();
+          }
+          '''
+          source = source.replace(save_camera, commit_camera, 1)
+          source = source.replace(
+              '''    saveCamera();
+              scheduleRender();
+            }, { passive: false });''',
+              '''    commitCamera();
+            }, { passive: false });''',
               1,
           )
-          renderer.write_text(renderer_source)
+          source = source.replace(
+              '''  clampCamera();
+            saveCamera();
+            scheduleRender();
+          }''',
+              '''  clampCamera();
+            commitCamera();
+          }''',
+              1,
+          )
+          source = source.replace(
+              '''  state.camera.y = unit.position.y;
+            saveCamera();
+            scheduleRender();
+          }''',
+              '''  state.camera.y = unit.position.y;
+            commitCamera();
+          }''',
+              1,
+          )
+          source = source.replace(
+              '''  state.camera.y = (sourceMap.height - 1) / 2;
+            saveCamera();
+            scheduleRender();
+          }''',
+              '''  state.camera.y = (sourceMap.height - 1) / 2;
+            commitCamera();
+          }''',
+              1,
+          )
+          source = source.replace(
+              '''  state.unitsSignature = "";
+            saveCamera();
+            scheduleRender();
+            updateCameraLabel();''',
+              '''  state.unitsSignature = "";
+            commitCamera();
+            updateCameraLabel();''',
+              1,
+          )
+          source = source.replace(
+              '''["#monster-master-zoom-in", () => { state.camera.zoom = clamp(state.camera.zoom + 0.2, 0.6, 2.4); saveCamera(); scheduleRender(); }],''',
+              '''["#monster-master-zoom-in", () => { state.camera.zoom = clamp(state.camera.zoom + 0.2, 0.6, 2.4); commitCamera(); }],''',
+              1,
+          )
+          source = source.replace(
+              '''["#monster-master-zoom-out", () => { state.camera.zoom = clamp(state.camera.zoom - 0.2, 0.6, 2.4); saveCamera(); scheduleRender(); }],''',
+              '''["#monster-master-zoom-out", () => { state.camera.zoom = clamp(state.camera.zoom - 0.2, 0.6, 2.4); commitCamera(); }],''',
+              1,
+          )
+          renderer.write_text(source)
           PY
           rm -rf .github/agent-payload
           rm -f .github/workflows/agent-apply-rpg-terrain-slice.yml
