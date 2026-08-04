@@ -42,6 +42,7 @@ No production player journey depends on Tailscale.
 - Promote repeated narrative concepts into structured GameFrame mechanics only when product value justifies schema, persistence, UI, migration, and testing cost.
 - Freeze cross-repository fixtures before production adapters.
 - Use mocks for fast runtime behavior, shared fixtures for contract stability, the actual GameFrame checkout for integration truth, local workerd for Cloudflare-state truth, and deployed staging for public-system truth.
+- During rapid co-development, test against current GameFrame `main` or an explicit coordinated branch and record the resolved SHA; do not treat an unfinished GameFrame commit as a permanent compatibility lock.
 - Every phase has an automated exit gate and a visible player journey.
 
 ## P0 — Direction, shared documents, and synchronization
@@ -111,11 +112,13 @@ Required test scaffolding:
 
 - runtime mock GameFrame port;
 - versioned shared fixtures consumed by both repositories;
-- machine-readable runtime compatibility lock for the accepted GameFrame commit;
 - runtime-owned GitHub-hosted lane that checks out and starts the actual public GameFrame repository;
-- separate scheduled watch against current GameFrame `main`.
+- default integration against current GameFrame `main` during active development;
+- explicit `gameframe_ref` support for coordinated branch work;
+- exact resolved GameFrame and runtime SHAs recorded with every integration result;
+- a compatibility baseline introduced only after the first versioned contracts and reference chapter are stable enough to justify release or rollback support.
 
-**Done when:** conformance tests cover identity, audience, bounds, stale revisions, exact retry, conflicting command reuse, reconnect, unsupported versions, and the runtime can start and interrogate the pinned actual GameFrame server on a GitHub-hosted runner.
+**Done when:** conformance tests cover identity, audience, bounds, stale revisions, exact retry, conflicting command reuse, reconnect, unsupported versions, and the runtime can start and interrogate current GameFrame `main` or an explicit coordinated ref on a GitHub-hosted runner while recording the resolved SHA.
 
 ## P4 — Prepared Monster Master pack and Arena Battles integration
 
@@ -157,7 +160,7 @@ Slice content:
 Testing:
 
 - ordinary runtime behavior remains covered by mock ports;
-- required integration uses the pinned real GameFrame checkout;
+- required integration uses current GameFrame `main` or the explicit coordinated ref and records the resolved SHA;
 - a focused local workerd lane proves Worker and Durable Object persistence;
 - deployed staging proves Discord invitation and public-network resume.
 
@@ -227,7 +230,8 @@ Theme-on-demand does not outrank the reference campaign. The bespoke Monster Mas
 - Public GameFrame repository checks use GitHub-hosted runners.
 - Routine RPG Runtime checks use GitHub-hosted runners.
 - The private runtime owns actual two-repository checkout and integration because GameFrame is public and the runtime is private.
-- Required integration uses a pinned accepted GameFrame commit; a separate scheduled watch tests current GameFrame `main`.
+- During active development, integration tracks current GameFrame `main` or an explicit coordinated ref and records the exact resolved SHA.
+- A compatibility baseline is deferred until stable versioned contracts and a reference campaign justify release or rollback support.
 - Jobs expected to exceed 30 minutes use the designated self-hosted runner only where runtime policy permits.
 - Cross-repository fixture, shared-document, and focused Node integration checks remain compact enough for ordinary pull requests.
 - Cloudflare, Discord, provider, and public-network behavior require explicit staging canaries and are not claimed by repository-only tests.
