@@ -46,7 +46,6 @@ if (entry === "/app.js") {
       await new Promise(() => {});
     }
     sessionStorage.removeItem(pixiFallbackKey);
-    await import("./monster-master-terrain-depth.js");
     await import("./monster-master-battlefield-effects.js");
     await import("./monster-master-gestures.js");
     await import("./monster-master-keyboard.js");
