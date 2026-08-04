@@ -11,12 +11,12 @@ import {
   type RequestAuthenticator,
 } from "../auth/request-authenticator.ts";
 import {
-  InMemoryRpgService,
   RPG_CAMPAIGN_PROTOCOL_VERSION,
   RPG_ENCOUNTER_PROTOCOL_VERSION,
   RpgServiceError,
   type RpgPrincipal,
 } from "../rpg/in-memory-rpg-service.ts";
+import { StrictInMemoryRpgService } from "../rpg/strict-in-memory-rpg-service.ts";
 import { InMemoryGameFrameService } from "./in-memory-match-service.ts";
 
 const publicRoot = fileURLToPath(new URL("../../public/", import.meta.url));
@@ -67,19 +67,25 @@ function matchRoute(pathname: string): { matchId: string; action: boolean } | nu
 
 function rpgCampaignRoute(
   pathname: string,
-): { campaignId: string; operation: "attach" | "commands" } | null {
-  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/(attach|commands)$/.exec(pathname);
+): { campaignId: string; operation: "attach" | "commands" | "events" } | null {
+  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/(attach|commands|events)$/.exec(pathname);
   if (!match) return null;
   return {
     campaignId: decodeURIComponent(match[1]),
-    operation: match[2] as "attach" | "commands",
+    operation: match[2] as "attach" | "commands" | "events",
   };
 }
 
-function rpgEncounterRoute(pathname: string): { encounterId?: string } | null {
-  if (pathname === "/api/rpg/encounters") return {};
-  const match = /^\/api\/rpg\/encounters\/([^/]+)$/.exec(pathname);
-  return match ? { encounterId: decodeURIComponent(match[1]) } : null;
+function rpgEncounterRoute(
+  pathname: string,
+): { encounterId?: string; operation: "collection" | "item" | "complete" } | null {
+  if (pathname === "/api/rpg/encounters") return { operation: "collection" };
+  const match = /^\/api\/rpg\/encounters\/([^/]+)(\/complete)?$/.exec(pathname);
+  if (!match) return null;
+  return {
+    encounterId: decodeURIComponent(match[1]),
+    operation: match[2] ? "complete" : "item",
+  };
 }
 
 function rpgPrincipal(principal: AuthenticatedPrincipal): RpgPrincipal {
@@ -133,7 +139,7 @@ function errorStatus(error: ApiError): number {
 export function createGameFrameServer(
   matchService = new InMemoryGameFrameService(),
   authenticator: RequestAuthenticator = new DevelopmentHeaderAuthenticator(),
-  rpgService = new InMemoryRpgService(),
+  rpgService = new StrictInMemoryRpgService(),
 ) {
   return createServer(async (request, response) => {
     try {
@@ -150,6 +156,13 @@ export function createGameFrameServer(
             campaignProtocolVersion: RPG_CAMPAIGN_PROTOCOL_VERSION,
             encounterProtocolVersion: RPG_ENCOUNTER_PROTOCOL_VERSION,
             storage: "memory",
+            capabilities: [
+              "runtime-events",
+              "bounded-choice",
+              "deterministic-check",
+              "terminal-outcome",
+              "campaign-return",
+            ],
           },
           games: [
             "tic-tac-toe",
@@ -188,12 +201,22 @@ export function createGameFrameServer(
             await rpgService.attachCampaign(body, rpgPrincipal(principal)),
           );
         }
+        if (campaignRoute.operation === "events") {
+          return json(
+            response,
+            200,
+            await rpgService.appendRuntimeEvents(body, rpgPrincipal(principal)),
+          );
+        }
         const result = await rpgService.handleCommand(body, rpgPrincipal(principal));
         return json(response, result.kind === "campaign.command_rejected" ? 409 : 200, result);
       }
 
       const encounterRoute = rpgEncounterRoute(url.pathname);
-      if (encounterRoute && request.method === "POST" && !encounterRoute.encounterId) {
+      if (
+        encounterRoute?.operation === "collection"
+        && request.method === "POST"
+      ) {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
         return json(
           response,
@@ -201,7 +224,27 @@ export function createGameFrameServer(
           await rpgService.launchEncounter(await readJson(request), rpgPrincipal(principal)),
         );
       }
-      if (encounterRoute?.encounterId && request.method === "GET") {
+      if (
+        encounterRoute?.operation === "complete"
+        && encounterRoute.encounterId
+        && request.method === "POST"
+      ) {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        return json(
+          response,
+          200,
+          await rpgService.completeEncounter(
+            encounterRoute.encounterId,
+            await readJson(request),
+            rpgPrincipal(principal),
+          ),
+        );
+      }
+      if (
+        encounterRoute?.operation === "item"
+        && encounterRoute.encounterId
+        && request.method === "GET"
+      ) {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
         return json(
           response,
