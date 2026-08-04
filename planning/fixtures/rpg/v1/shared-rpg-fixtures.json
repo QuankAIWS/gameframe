@@ -11,6 +11,11 @@
       "id": "campaign-port-a",
       "filename": "campaign-port-a.json",
       "description": "Deterministic campaign attach, scoped projection, command retry/conflict/stale revision, and encounter launch cases."
+    },
+    {
+      "id": "campaign-port-b",
+      "filename": "campaign-port-b.json",
+      "description": "Runtime-presented bounded choice, deterministic noncombat check and consequence, structured terminal Arena Battles outcome, and campaign return-scene cases."
     }
   ]
 }
