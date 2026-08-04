@@ -107,7 +107,7 @@ test("GameFrame coordinates commands and links runtime receipts without owning n
   );
 });
 
-test("GameFrame rejects stale coordination and out-of-order narrative linkage separately", () => {
+test("GameFrame rejects stale coordination, stale source, and out-of-order narrative linkage separately", () => {
   const staleCommandLedger = new InMemoryGameFrameCoordinationLedger({
     gameframeCoordinationRevision: 4,
     presentationSequence: 8,
@@ -125,6 +125,31 @@ test("GameFrame rejects stale coordination and out-of-order narrative linkage se
       && error.code === "coordination-revision-conflict",
   );
 
+  const staleSourceLedger = new InMemoryGameFrameCoordinationLedger({
+    gameframeCoordinationRevision: 4,
+    presentationSequence: 8,
+    linkedNarrativeRevision: 7,
+  });
+  assert.throws(
+    () =>
+      staleSourceLedger.acceptRuntimeLink({
+        coordinationMutationId: "coordination:stale-source",
+        expectedGameframeCoordinationRevision: 4,
+        presentationEventCount: 1,
+        runtimeCommit: {
+          kind: "runtime.narrative_committed",
+          runtimeCommitKind: "runtime.events",
+          runtimeCommitId: "runtime-commit:stale-source",
+          sourceGameframeCoordinationRevision: 3,
+          previousNarrativeRevision: 7,
+          narrativeRevision: 8,
+        },
+      }),
+    (error: unknown) =>
+      error instanceof RpgRevisionContractError
+      && error.code === "runtime-source-revision-conflict",
+  );
+
   const staleNarrativeLedger = new InMemoryGameFrameCoordinationLedger({
     gameframeCoordinationRevision: 4,
     presentationSequence: 8,
@@ -140,6 +165,7 @@ test("GameFrame rejects stale coordination and out-of-order narrative linkage se
           kind: "runtime.narrative_committed",
           runtimeCommitKind: "runtime.events",
           runtimeCommitId: "runtime-commit:stale-narrative",
+          sourceGameframeCoordinationRevision: 4,
           previousNarrativeRevision: 6,
           narrativeRevision: 7,
         },
@@ -160,6 +186,7 @@ test("GameFrame cannot link one runtime commit through two coordination mutation
     kind: "runtime.narrative_committed" as const,
     runtimeCommitKind: "runtime.events" as const,
     runtimeCommitId: "runtime-commit:single-link",
+    sourceGameframeCoordinationRevision: 2,
     previousNarrativeRevision: 1,
     narrativeRevision: 2,
   };
@@ -175,7 +202,10 @@ test("GameFrame cannot link one runtime commit through two coordination mutation
         coordinationMutationId: "coordination:second-link",
         expectedGameframeCoordinationRevision: 3,
         presentationEventCount: 1,
-        runtimeCommit,
+        runtimeCommit: {
+          ...runtimeCommit,
+          sourceGameframeCoordinationRevision: 3,
+        },
       }),
     (error: unknown) =>
       error instanceof RpgRevisionContractError
