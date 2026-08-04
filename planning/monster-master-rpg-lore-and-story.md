@@ -42,7 +42,7 @@ Trainers capture, carry, and call monsters using capture cubes. A cube contains 
 
 Capture cubes have quality tiers. As a monster becomes stronger and more accomplished, it expects better accommodations. A neglected monster becomes increasingly irritated and may eventually refuse to leave its cube until its trainer provides an acceptable upgrade.
 
-Entry-level cubes provide basic shelter. Premium cubes can contain extravagant customized residences. A high-level monster may reasonably demand a mansion, luxury furnishings, servants or automated amenities, and unnecessary fixtures such as gold toilets.
+Entry-level cubes provide basic shelter. Premium cubes can contain extravagant customized residences. A high-level monster may reasonably demand a mansion, luxury furnishings, automated amenities, and unnecessary fixtures such as gold toilets.
 
 Cube expectations create a recurring progression cost, relationship pressure, status symbol, and source of dry comedy. They should matter without becoming constant inventory maintenance.
 
