@@ -42,6 +42,16 @@ function assertV2Position(
 }
 
 test("live RPG HTTP protocol v2 separates coordination, presentation, and narrative positions", async (context) => {
+  const priorCompatibility = process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY;
+  delete process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY;
+  context.after(() => {
+    if (priorCompatibility === undefined) {
+      delete process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY;
+    } else {
+      process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY = priorCompatibility;
+    }
+  });
+
   const server = createGameFrameServer();
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   context.after(() => server.close());
@@ -54,6 +64,20 @@ test("live RPG HTTP protocol v2 separates coordination, presentation, and narrat
   assert.equal(health.rpg.encounterProtocolVersion, 2);
   assert.ok(health.rpg.capabilities.includes("dual-revision-linkage"));
   assert.ok(health.rpg.capabilities.includes("runtime-commit-receipts"));
+  assert.equal(health.rpg.capabilities.includes("legacy-v1-compatibility"), false);
+
+  const rejectedLegacy = await playerFetch(
+    `${base}/api/rpg/campaigns/${campaignId}/attach`,
+    "player:ada",
+    {
+      protocolVersion: 1,
+      kind: "campaign.attach",
+      campaignId,
+      connectionId: "connection:legacy:rejected",
+    },
+  );
+  assert.equal(rejectedLegacy.status, 400);
+  assert.equal((await rejectedLegacy.json()).error, "unsupported-protocol-version");
 
   const attachResponse = await playerFetch(
     `${base}/api/rpg/campaigns/${campaignId}/attach`,
@@ -124,6 +148,14 @@ test("live RPG HTTP protocol v2 separates coordination, presentation, and narrat
       },
     ],
   };
+
+  const unauthorizedEvents = await serviceFetch(
+    `${base}/api/rpg/campaigns/${campaignId}/events`,
+    "other-runtime-service",
+    runtimeEvents,
+  );
+  assert.equal(unauthorizedEvents.status, 403);
+
   const eventsResponse = await serviceFetch(
     `${base}/api/rpg/campaigns/${campaignId}/events`,
     "rpg-gm-runtime",
@@ -216,6 +248,14 @@ test("live RPG HTTP protocol v2 separates coordination, presentation, and narrat
       assetIds: ["battlefield:academy-gate:v1"],
     },
   };
+
+  const unauthorizedLaunch = await serviceFetch(
+    `${base}/api/rpg/encounters`,
+    "other-runtime-service",
+    encounterRequest,
+  );
+  assert.equal(unauthorizedLaunch.status, 403);
+
   const launchResponse = await serviceFetch(
     `${base}/api/rpg/encounters`,
     "rpg-gm-runtime",
@@ -241,4 +281,10 @@ test("live RPG HTTP protocol v2 separates coordination, presentation, and narrat
   );
   assert.equal(fetched.status, 200);
   assert.deepEqual(await fetched.json(), launched);
+
+  const unauthorizedFetch = await serviceFetch(
+    `${base}/api/rpg/encounters/${encodeURIComponent(String(encounterRequest.encounterId))}`,
+    "other-runtime-service",
+  );
+  assert.equal(unauthorizedFetch.status, 403);
 });
