@@ -60,10 +60,18 @@ test("Node RPG HTTP boundary resolves a bounded choice and resumes after a termi
   const base = `http://127.0.0.1:${address.port}`;
 
   const health = await fetch(`${base}/api/health`).then((response) => response.json());
-  assert.deepEqual(
-    health.rpg.capabilities,
-    ["runtime-events", "bounded-choice", "deterministic-check", "terminal-outcome", "campaign-return"],
-  );
+  for (const capability of [
+    "runtime-events",
+    "bounded-choice",
+    "deterministic-check",
+    "terminal-outcome",
+    "campaign-return",
+    "dual-revision-linkage",
+    "runtime-commit-receipts",
+    "legacy-v1-compatibility",
+  ]) {
+    assert.ok(health.rpg.capabilities.includes(capability), `Missing RPG capability: ${capability}`);
+  }
 
   const initialAction = {
     protocolVersion: 1,
