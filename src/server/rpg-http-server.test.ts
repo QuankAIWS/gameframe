@@ -140,6 +140,18 @@ test("Node RPG HTTP boundary executes campaign-port-a through encounter launch",
   );
   assert.equal(outsider.status, 403);
 
+  const serviceAttach = await serviceFetch(
+    `${base}/api/rpg/campaigns/${campaignId}/attach`,
+    "rpg-gm-runtime",
+    jsonBody({
+      protocolVersion: 1,
+      kind: "campaign.attach",
+      campaignId,
+      connectionId: "connection:runtime",
+    }),
+  );
+  assert.equal(serviceAttach.status, 403);
+
   const acceptedResponse = await playerFetch(
     `${base}/api/rpg/campaigns/${campaignId}/commands`,
     "player:ada",
@@ -157,6 +169,29 @@ test("Node RPG HTTP boundary executes campaign-port-a through encounter launch",
   );
   assert.equal(retryResponse.status, 200);
   assert.deepEqual(await retryResponse.json(), accepted);
+
+  const afterRetry = await playerFetch(
+    `${base}/api/rpg/campaigns/${campaignId}/attach`,
+    "player:ada",
+    jsonBody({
+      protocolVersion: 1,
+      kind: "campaign.attach",
+      campaignId,
+      connectionId: "connection:ada:after-retry",
+    }),
+  ).then((response) => response.json());
+  assert.equal(
+    afterRetry.events.filter((event: { type: string }) => event.type === "campaign.action_submitted").length,
+    1,
+  );
+
+  const crossPrincipalRetry = await playerFetch(
+    `${base}/api/rpg/campaigns/${campaignId}/commands`,
+    "player:bryn",
+    jsonBody(command),
+  );
+  assert.equal(crossPrincipalRetry.status, 409);
+  assert.equal((await crossPrincipalRetry.json()).code, "revision-conflict");
 
   const conflictResponse = await playerFetch(
     `${base}/api/rpg/campaigns/${campaignId}/commands`,
@@ -210,6 +245,12 @@ test("Node RPG HTTP boundary executes campaign-port-a through encounter launch",
   );
   assert.equal(fetched.status, 200);
   assert.deepEqual(await fetched.json(), launched);
+
+  const wrongServiceFetch = await serviceFetch(
+    `${base}/api/rpg/encounters/${encounter.encounterId}`,
+    "other-runtime-service",
+  );
+  assert.equal(wrongServiceFetch.status, 403);
 });
 
 test("development auth rejects ambiguous player and service claims", async (context) => {
