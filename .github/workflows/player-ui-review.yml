@@ -19,14 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Check out repair branch
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: agent/rpg-rendering-contract-terrain-geometry
           fetch-depth: 0
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.16.0
           cache: npm
@@ -36,49 +34,40 @@ jobs:
           npm ci
           npm install --save-dev --save-exact sharp@0.34.3
 
-      - name: Repair review findings
+      - name: Repair code and validation discovery
         run: |
-          cat > /tmp/repair-terrain-foundation.mjs <<'NODE'
-          import { readFile, writeFile } from "node:fs/promises";
-
-          async function replaceOnce(path, before, after) {
-            const source = await readFile(path, "utf8");
-            if (!source.includes(before)) {
-              throw new Error(`Expected text not found in ${path}: ${before}`);
-            }
-            const updated = source.replace(before, after);
-            if (updated === source) throw new Error(`No change made to ${path}`);
-            await writeFile(path, updated);
+          node <<'NODE'
+          const fs = require("node:fs");
+          function replace(path, before, after) {
+            const source = fs.readFileSync(path, "utf8");
+            if (!source.includes(before)) throw new Error(`Missing expected text in ${path}`);
+            fs.writeFileSync(path, source.replace(before, after));
           }
-
-          await replaceOnce(
+          replace(
             "src/browser/monster-master-pixi-entry.js",
             "if (!sourceMap || !state.layers) return;",
             "if (!sourceMap || !state.layers || !state.textures) return;",
           );
-
-          await replaceOnce(
+          replace(
             "scripts/run-tests.mjs",
-            "} else if (entry.endsWith(\".test.ts\")) {",
-            "} else if (entry.endsWith(\".test.ts\") || entry.endsWith(\".test.mjs\")) {",
+            '} else if (entry.endsWith(".test.ts")) {',
+            '} else if (entry.endsWith(".test.ts") || entry.endsWith(".test.mjs")) {',
           );
-          await replaceOnce(
+          replace(
             "scripts/run-tests.mjs",
             "No TypeScript tests were found.",
             "No test files were found.",
           );
-
           const packagePath = "package.json";
-          const packageJson = JSON.parse(await readFile(packagePath, "utf8"));
+          const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8"));
           packageJson.scripts["assets:terrain:build"] = "node scripts/monster-master-terrain-assets.mjs build";
           packageJson.scripts["assets:terrain:verify"] = "node scripts/monster-master-terrain-assets.mjs verify";
           packageJson.scripts["assets:build"] = "node scripts/clockwork-assets.mjs build && npm run assets:terrain:build";
           packageJson.scripts["assets:verify"] = "node scripts/clockwork-assets.mjs verify && npm run assets:terrain:verify";
-          await writeFile(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
+          fs.writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
           NODE
-          node /tmp/repair-terrain-foundation.mjs
 
-      - name: Add deterministic terrain asset pipeline
+      - name: Add deterministic terrain asset pipeline and committed masters
         run: |
           cat > scripts/monster-master-terrain-assets.mjs <<'NODE'
           import assert from "node:assert/strict";
@@ -115,37 +104,26 @@ jobs:
             },
           ];
 
-          function sha256(bytes) {
-            return createHash("sha256").update(bytes).digest("hex");
-          }
-
-          function setNested(target, [section, key], value) {
+          const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
+          const setNested = (target, [section, key], value) => {
             target[section] ??= {};
             target[section][key] = value;
-          }
+          };
+          const renderMaster = (runtimeBytes, asset) => sharp(runtimeBytes)
+            .resize(asset.masterWidth, asset.masterHeight, { fit: "fill", kernel: "nearest" })
+            .png({ compressionLevel: 9, adaptiveFiltering: false })
+            .toBuffer();
+          const renderRuntime = (masterBytes) => sharp(masterBytes)
+            .resize(128, 128, { fit: "fill", kernel: "nearest" })
+            .webp({ lossless: true, effort: 6 })
+            .toBuffer();
 
-          async function renderMaster(runtimeBytes, asset) {
-            return sharp(runtimeBytes)
-              .resize(asset.masterWidth, asset.masterHeight, { fit: "fill", kernel: "nearest" })
-              .png({ compressionLevel: 9, adaptiveFiltering: false })
-              .toBuffer();
-          }
-
-          async function renderRuntime(masterBytes) {
-            return sharp(masterBytes)
-              .resize(128, 128, { fit: "fill", kernel: "nearest" })
-              .webp({ lossless: true, effort: 6 })
-              .toBuffer();
-          }
-
-          async function bootstrapAsset(asset) {
-            const currentRuntime = await readFile(asset.runtimePath);
-            const masterBytes = await renderMaster(currentRuntime, asset);
+          async function bootstrap(asset) {
+            const masterBytes = await renderMaster(await readFile(asset.runtimePath), asset);
             const runtimeBytes = await renderRuntime(masterBytes);
             await mkdir(dirname(asset.masterPath), { recursive: true });
             await writeFile(asset.masterPath, masterBytes);
             await writeFile(asset.runtimePath, runtimeBytes);
-
             const manifest = JSON.parse(await readFile(asset.manifestPath, "utf8"));
             manifest.source.preparedMasterPath = asset.masterPath;
             manifest.source.preparedMasterDimensions = [asset.masterWidth, asset.masterHeight];
@@ -173,21 +151,19 @@ jobs:
             await writeFile(asset.manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
           }
 
-          async function buildAsset(asset) {
-            const masterBytes = await readFile(asset.masterPath);
-            await writeFile(asset.runtimePath, await renderRuntime(masterBytes));
+          async function build(asset) {
+            await writeFile(asset.runtimePath, await renderRuntime(await readFile(asset.masterPath)));
           }
 
-          async function verifyAsset(asset) {
+          async function verify(asset) {
             const manifest = JSON.parse(await readFile(asset.manifestPath, "utf8"));
             const masterBytes = await readFile(asset.masterPath);
             const runtimeBytes = await readFile(asset.runtimePath);
-            const rebuiltRuntime = await renderRuntime(masterBytes);
             assert.equal(manifest.source.preparedMasterPath, asset.masterPath);
             assert.equal(manifest.source.transform.tool, "sharp");
             assert.equal(manifest.source.transform.version, SHARP_VERSION);
             assert.equal(sha256(masterBytes), manifest.source.preparedMasterSha256);
-            assert.deepEqual(runtimeBytes, rebuiltRuntime, `${asset.runtimePath} is not reproducible from its committed master`);
+            assert.deepEqual(runtimeBytes, await renderRuntime(masterBytes), `${asset.runtimePath} is not reproducible`);
             assert.equal(sha256(runtimeBytes), manifest.runtime.sha256);
             const [section, key] = asset.runtimeHashLocation;
             assert.equal(sha256(runtimeBytes), manifest[section][key]);
@@ -197,18 +173,12 @@ jobs:
           if (!new Set(["bootstrap", "build", "verify"]).has(mode)) {
             throw new Error("Usage: node scripts/monster-master-terrain-assets.mjs <bootstrap|build|verify>");
           }
-          for (const asset of assets) {
-            if (mode === "bootstrap") await bootstrapAsset(asset);
-            if (mode === "build") await buildAsset(asset);
-            if (mode === "verify") await verifyAsset(asset);
-          }
+          for (const asset of assets) await ({ bootstrap, build, verify })[mode](asset);
           NODE
           node scripts/monster-master-terrain-assets.mjs bootstrap
+          npm run build:monster-master-pixi
 
-      - name: Rebuild Pixi bundle
-        run: npm run build:monster-master-pixi
-
-      - name: Install Playwright Chromium
+      - name: Install browser runtime
         run: npx playwright install --with-deps chromium
 
       - name: Focused terrain checks
@@ -218,114 +188,30 @@ jobs:
             src/browser/monster-master-terrain-geometry.test.mjs \
             src/browser/monster-master-ground-asset-contract.test.mjs \
             src/browser/monster-master-wall-top-asset-contract.test.mjs \
-            src/browser/monster-master-cliff-face-asset-contract.test.mjs
+            src/browser/monster-master-cliff-face-asset-contract.test.mjs \
+            src/browser/presentation-polish-contract.test.ts
           npm run check:monster-master-pixi
           npm run check:browser
 
       - name: Complete local validation
         run: npm run validate
 
-      - name: Restore normal Player UI Review workflow
+      - name: Restore normal review workflow
         run: |
-          cat > .github/workflows/player-ui-review.yml <<'YAML'
-          name: Player UI Review
-
-          on:
-            workflow_dispatch:
-            pull_request:
-              types: [opened, synchronize, reopened, ready_for_review]
-              paths:
-                - "public/**"
-                - "planning/monster-master-rules.md"
-                - "planning/monster-master/assets/**"
-                - "scripts/build-monster-master-pixi.mjs"
-                - "scripts/monster-master-terrain-assets.mjs"
-                - "src/browser/monster-master-pixi-entry.js"
-                - "src/browser/monster-master-ground-asset-contract.test.mjs"
-                - "src/browser/monster-master-wall-top-asset-contract.test.mjs"
-                - "src/browser/monster-master-cliff-face-asset-contract.test.mjs"
-                - "src/browser/monster-master-terrain-geometry.js"
-                - "src/browser/monster-master-terrain-geometry.test.mjs"
-                - "src/browser/player-navigation-contract.test.ts"
-                - "src/browser/monster-master-art-contract.test.ts"
-                - "src/browser/othello-runtime-contract.test.ts"
-                - "src/games/monster-master/index.ts"
-                - "src/games/monster-master/index.test.ts"
-                - "src/games/monster-master/repository-contract.test.ts"
-                - "src/games/monster-master/delivery-contract.test.ts"
-                - "test/browser/monster-master.spec.mjs"
-                - "test/browser/monster-master-controls.spec.mjs"
-                - "test/browser/motion-polish.spec.mjs"
-                - "test/visual/player-ui-review.spec.mjs"
-                - "test/visual/player-ui-regressions.spec.mjs"
-                - "test/visual/monster-master-pixi.spec.mjs"
-                - "test/visual/monster-master-cardinal-camera.spec.mjs"
-                - "test/visual/monster-master-results-and-depth.spec.mjs"
-                - "test/visual/monster-master-trainer-shell.spec.mjs"
-                - "THIRD_PARTY_NOTICES.md"
-                - "playwright.config.mjs"
-                - "playwright.visual.config.mjs"
-                - "package.json"
-                - "package-lock.json"
-                - ".github/workflows/player-ui-review.yml"
-
-          permissions:
-            contents: read
-
-          concurrency:
-            group: player-ui-review-${{ github.event.pull_request.number || github.ref }}
-            cancel-in-progress: true
-
-          jobs:
-            capture:
-              if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
-              runs-on: ubuntu-latest
-              timeout-minutes: 30
-              steps:
-                - name: Check out candidate
-                  uses: actions/checkout@v4
-
-                - name: Set up Node
-                  uses: actions/setup-node@v4
-                  with:
-                    node-version: 22
-                    cache: npm
-
-                - name: Install dependencies
-                  run: npm ci
-
-                - name: Verify committed Pixi bundle
-                  run: npm run check:monster-master-pixi
-
-                - name: Install Playwright Chromium
-                  run: npx playwright install --with-deps chromium
-
-                - name: Browser syntax gate
-                  run: npm run check:browser
-
-                - name: Player navigation, renderer geometry, asset, game, and Monster Master rule contracts
-                  run: node --experimental-strip-types --test src/browser/monster-master-ground-asset-contract.test.mjs src/browser/monster-master-wall-top-asset-contract.test.mjs src/browser/monster-master-cliff-face-asset-contract.test.mjs src/browser/monster-master-terrain-geometry.test.mjs src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/othello-runtime-contract.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/delivery-contract.test.ts
-
-                - name: Canonical Monster Master Pixi journeys
-                  run: npx playwright test test/browser/monster-master.spec.mjs test/browser/monster-master-controls.spec.mjs test/browser/motion-polish.spec.mjs --grep "Monster Master" --config playwright.config.mjs
-
-                - name: Capture player UI screenshots and cross-game regressions
-                  run: npx playwright test test/visual/player-ui-review.spec.mjs test/visual/player-ui-regressions.spec.mjs test/visual/monster-master-pixi.spec.mjs test/visual/monster-master-cardinal-camera.spec.mjs test/visual/monster-master-results-and-depth.spec.mjs test/visual/monster-master-trainer-shell.spec.mjs --config playwright.visual.config.mjs
-
-                - name: Upload player UI screenshots
-                  if: always()
-                  uses: actions/upload-artifact@v4
-                  with:
-                    name: player-ui-review-${{ github.run_id }}
-                    path: |
-                      visual-results/player-ui-review
-                      visual-results/**/*.zip
-                      visual-results/**/*.png
-                      test-results/**/*.zip
-                      test-results/**/*.png
-                    if-no-files-found: warn
-                    retention-days: 10
-          YAML
+          git show origin/main:.github/workflows/player-ui-review.yml > .github/workflows/player-ui-review.yml
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = ".github/workflows/player-ui-review.yml";
+          let source = fs.readFileSync(path, "utf8");
+          source = source
+            .replace('      - "planning/rpg-documentation-index.md"\n', "")
+            .replace('      - "planning/shared/**"\n', "")
+            .replace(
+              '      - "scripts/build-monster-master-pixi.mjs"\n',
+              '      - "scripts/build-monster-master-pixi.mjs"\n      - "scripts/monster-master-terrain-assets.mjs"\n',
+            );
+          fs.writeFileSync(path, source);
+          NODE
           rm -f .github/workflows/terrain-foundation-repair.yml
 
       - name: Commit repaired terrain foundation
