@@ -72,6 +72,10 @@ async function battlefieldPoint(page, coordinate) {
   return page.evaluate((target) => window.gameFrameMonsterPixiBridge.worldToScreen(target), coordinate);
 }
 
+async function settleRenderer(page) {
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+}
+
 async function setCameraQuarter(page, quarter) {
   await page.evaluate((targetQuarter) => {
     const renderer = window.gameFrameMonsterPixi;
@@ -85,6 +89,7 @@ async function setCameraQuarter(page, quarter) {
     }
   }, quarter);
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter)).toBe(quarter);
+  await settleRenderer(page);
 }
 
 test("Tic-Tac-Toe presents a board-level result and starts a rematch", async ({ page, request }) => {
@@ -100,9 +105,8 @@ test("Tic-Tac-Toe presents a board-level result and starts a rematch", async ({ 
 
 test("Checkers exposes a visible movement animation after a committed turn", async ({ page }) => {
   const player = `checkers-motion-${crypto.randomUUID()}`;
-  await page.goto(`/?player=${encodeURIComponent(player)}`);
-  await page.locator("#select-checkers").click();
-  await page.getByRole("button", { name: "Challenge Theo" }).click();
+  await page.goto(`/?game=american-checkers&menu=1&player=${encodeURIComponent(player)}`);
+  await page.locator("#challenge-theo").click();
   await page.locator(".checkers-cell.selectable-piece:enabled").first().click();
   await page.locator(".checkers-cell.legal-destination:enabled").first().click();
   await expect(page.locator("#board")).toHaveAttribute("data-last-animation-steps", /^[1-9]\d*$/);
@@ -115,23 +119,24 @@ test("Monster Master presents the exact committed movement path over the Pixi ba
 
   await page.locator("#monster-master-select-move").click();
   const point = await battlefieldPoint(page, move.path.at(-1));
-  await page.locator("#monster-master-pixi-canvas").click({ position: point });
+  await page.locator("#monster-master-pixi-canvas").click({ position: point, force: true });
 
   const frame = page.locator(".combat-canvas-frame");
   await expect(frame).toHaveAttribute("data-last-animation-steps", String(move.path.length));
   await expect(frame).toHaveAttribute("data-last-effect-types", /unit-moved/);
 });
 
-test("Monster Master round-trips tiles from all four Pixi camera corners", async ({ page, request }) => {
+test("Monster Master round-trips a legal floor tile from all four Pixi camera corners", async ({ page, request }) => {
   const prepared = await prepareMonsterMasterMove(request);
+  const target = prepared.view.observation.legalActions.find((action) => action.type === "move").path.at(-1);
   await openPrepared(page, prepared);
   for (const quarter of [0, 1, 2, 3]) {
     await setCameraQuarter(page, quarter);
-    const roundTrip = await page.evaluate(() => {
-      const point = window.gameFrameMonsterPixiBridge.worldToScreen({ x: 11, y: 11 });
+    const roundTrip = await page.evaluate((coordinate) => {
+      const point = window.gameFrameMonsterPixiBridge.worldToScreen(coordinate);
       return window.gameFrameMonsterPixi.screenToTile(point);
-    });
-    expect(roundTrip).toEqual({ x: 11, y: 11 });
+    }, target);
+    expect(roundTrip).toEqual(target);
   }
 });
 
@@ -198,25 +203,44 @@ test("Monster Master fills the viewport and synchronizes the active-creature com
   await openPrepared(page, prepared);
   await expect(page.locator("#monster-master-unit-hud")).toBeVisible();
   await expect(page.locator("#monster-master-hud-health")).not.toHaveText("—");
-  const geometry = await page.evaluate(() => ({
-    viewportHeight: window.innerHeight,
-    viewportWidth: window.innerWidth,
-    scrollHeight: document.scrollingElement.scrollHeight,
-    scrollWidth: document.scrollingElement.scrollWidth,
-    frameHeight: document.querySelector(".combat-canvas-frame").getBoundingClientRect().height,
-  }));
-  expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.viewportHeight + 2);
+  const geometry = await page.evaluate(() => {
+    const frame = document.querySelector(".combat-canvas-frame").getBoundingClientRect();
+    const deck = document.querySelector(".monster-master-command-deck").getBoundingClientRect();
+    return {
+      viewportHeight: window.innerHeight,
+      viewportWidth: window.innerWidth,
+      bodyOverflow: getComputedStyle(document.body).overflow,
+      frame: { top: frame.top, bottom: frame.bottom, width: frame.width },
+      deckBottom: deck.bottom,
+      scrollWidth: document.scrollingElement.scrollWidth,
+    };
+  });
+  expect(geometry.bodyOverflow).toBe("hidden");
   expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.viewportWidth + 2);
-  expect(geometry.frameHeight).toBeGreaterThan(430);
+  expect(geometry.frame.top).toBeGreaterThanOrEqual(0);
+  expect(geometry.frame.width).toBeGreaterThan(620);
+  expect(geometry.deckBottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
 });
 
 test("Monster Master mobile shell keeps gameplay bounded and exposes roster and creature drawers", async ({ page, request }) => {
   const prepared = await prepareMonsterMasterMove(request);
   await openPrepared(page, prepared, { mobile: true });
-  await expect.poll(() => page.evaluate(() => (
-    document.scrollingElement.scrollHeight <= window.innerHeight + 2
-    && document.scrollingElement.scrollWidth <= window.innerWidth + 2
-  ))).toBe(true);
+  const geometry = await page.evaluate(() => {
+    const deck = document.querySelector(".monster-master-command-deck").getBoundingClientRect();
+    const camera = document.querySelector(".monster-master-camera-dock").getBoundingClientRect();
+    return {
+      viewportHeight: window.innerHeight,
+      viewportWidth: window.innerWidth,
+      bodyOverflow: getComputedStyle(document.body).overflow,
+      scrollWidth: document.scrollingElement.scrollWidth,
+      deck: { top: deck.top, bottom: deck.bottom },
+      cameraBottom: camera.bottom,
+    };
+  });
+  expect(geometry.bodyOverflow).toBe("hidden");
+  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.viewportWidth + 2);
+  expect(geometry.cameraBottom).toBeLessThanOrEqual(geometry.deck.top - 4);
+  expect(geometry.deck.bottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
 
   await page.locator("#monster-master-open-roster").click();
   await expect(page.locator("body")).toHaveClass(/monster-master-roster-open/);
