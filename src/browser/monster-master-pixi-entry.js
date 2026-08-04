@@ -340,7 +340,7 @@ function makeTerrainDisplay(entry) {
 
 function rebuildTerrain() {
   const sourceMap = map();
-  if (!sourceMap || !state.layers) return;
+  if (!sourceMap || !state.layers || !state.textures) return;
   const signature = terrainSignature();
   if (signature === state.terrainSignature) return;
   state.terrainSignature = signature;
