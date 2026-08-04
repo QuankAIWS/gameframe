@@ -158,3 +158,16 @@ Cubes can also be illegally modified. Contraband overrides may prevent an intell
 - Restricted zones may temporarily impose certified containment requirements.
 - Dangerous-monster relocation cubes are a distinct equipment category with stricter licensing and inspection.
 - Illegal cube modifications can create rescue, smuggling, escape, and enforcement scenarios.
+
+## Decision 10 — Normal cube time with extremely rare exceptions
+
+Time passes normally inside capture cubes. Monsters sleep, eat, train, relax, become bored, and notice how long their trainer has left them inside. Cube quality therefore affects everyday life rather than providing consequence-free storage.
+
+Time-altering cubes and temporal faults exist, but they are extremely rare. They are not ordinary premium upgrades and should not become a routine way to avoid feeding, aging, training, accommodation, or relationship consequences. A legitimate slow-time cube is closer to a unique artifact, state secret, dangerous prototype, or once-in-a-campaign discovery than a luxury catalog item.
+
+### Implementation consequences
+
+- Cube occupants continue normal biological, social, and training schedules.
+- Food, comfort, neglect, and time spent inside remain meaningful.
+- Standard cube tiers must not include adjustable time rates.
+- Temporal cubes and anomalies require explicit authored exceptions and may carry serious costs, defects, or legal restrictions.
