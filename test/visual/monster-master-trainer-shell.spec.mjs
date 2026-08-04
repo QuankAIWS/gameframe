@@ -14,7 +14,7 @@ test("Monster Master presents the player as trainer and keeps Setup in the top n
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
 
-  const setup = page.locator(".combat-nav #monster-master-new-match");
+  const setup = page.locator("#gameframe-destination-bar #monster-master-new-match");
   await expect(setup).toBeVisible();
   await expect(setup).toHaveText("Setup");
   await expect(page.locator(".monster-master-board-briefing #monster-master-status")).toBeVisible();
