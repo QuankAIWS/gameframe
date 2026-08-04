@@ -87,3 +87,18 @@ test("Setup stops the active surface and allows a fresh battle", async ({ page }
   await expect.poll(async () => (await diagnostics(page)).matchId).not.toBe(firstMatchId);
   await expect(page.locator("#monster-master-match")).toBeVisible();
 });
+
+test("Monster Master uses the compatibility battlefield when the WebGL fallback is armed", async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem("gameframe:monster-master:legacy-renderer-fallback", "true");
+  });
+  await page.goto("/monster-master.html?player=monster-legacy-fallback");
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterRendererMode)).toBe("legacy");
+  await expect(page.locator("body.monster-master-legacy-fallback")).toBeVisible();
+  await expect(page.locator("#monster-master-error")).toContainText("compatibility battlefield");
+  await page.locator("#monster-master-theo").click();
+  await expect(page.locator("#monster-master-canvas")).toBeVisible();
+  await expect(page.locator("#monster-master-pixi-canvas")).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterLegacyDrawCount ?? 0)).toBeGreaterThan(0);
+});
