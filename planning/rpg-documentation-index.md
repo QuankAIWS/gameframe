@@ -34,7 +34,7 @@ Read the canonical RPG planning documents in this order:
 6. [`shared/rpg-media-theme-and-audio-pipeline.md`](shared/rpg-media-theme-and-audio-pipeline.md) — theme translation, catalogs, composition, image generation, narration audio, provenance, and fallbacks.
 7. [`shared/rpg-rendering-and-asset-contract.md`](shared/rpg-rendering-and-asset-contract.md) — Monster Master as the RPG engine reference campaign, renderer geometry, runtime asset contracts, source-master rules, and the campaign-generation blueprint.
 8. [`shared/rpg-monster-master-reference-campaign.md`](shared/rpg-monster-master-reference-campaign.md) — Monster Master: Arena Battles, Monster Master RPG, prepared asset-pack strategy, and the first complete campaign proof.
-9. [`monster-master-rpg-lore-and-story.md`](monster-master-rpg-lore-and-story.md) — owner-approved tone, player-role, lore, story, and world decisions recorded one bounded choice at a time.
+9. [`monster-master-rpg-lore-and-story.md`](monster-master-rpg-lore-and-story.md) — incremental owner-approved Monster Master fiction, tone, calling, relationship, and story decisions; speculative alternatives do not become canon.
 10. [`shared/rpg-cross-repository-integration-testing.md`](shared/rpg-cross-repository-integration-testing.md) — mock, fixture, actual GameFrame, workerd, and deployed staging test layers.
 11. [`tactical-battler-rpg-foundation.md`](tactical-battler-rpg-foundation.md) — existing tactical foundation and its role inside the wider RPG client.
 12. [`rpg-platform-delivery-plan.md`](rpg-platform-delivery-plan.md) — phased implementation and acceptance gates.
