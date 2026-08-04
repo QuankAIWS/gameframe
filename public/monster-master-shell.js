@@ -9,22 +9,27 @@ const closeRoster = document.querySelector("#monster-master-close-roster");
 const closeIntel = document.querySelector("#monster-master-close-intel");
 const drawerBackdrop = document.querySelector("#monster-master-drawer-backdrop");
 const utilityMenu = document.querySelector("#monster-master-utility-menu");
-const combatNav = document.querySelector(".combat-nav");
+let setupButton = null;
 
 function ensureSetupButton() {
-  let button = document.querySelector("#monster-master-new-match");
-  if (button || !combatNav) return button;
-  button = document.createElement("button");
-  button.id = "monster-master-new-match";
-  button.className = "monster-master-nav-setup";
-  button.type = "button";
-  button.textContent = "Setup";
-  button.setAttribute("aria-label", "Return to Monster Master setup");
-  combatNav.append(button);
-  return button;
-}
+  if (setupButton?.isConnected) return setupButton;
+  setupButton = document.querySelector("#monster-master-new-match");
+  if (setupButton) return setupButton;
 
-const setupButton = ensureSetupButton();
+  const destinationLinks = document.querySelector("#gameframe-destination-bar .gameframe-destination-links");
+  if (!destinationLinks) return null;
+
+  setupButton = document.createElement("button");
+  setupButton.id = "monster-master-new-match";
+  setupButton.className = "monster-master-nav-setup";
+  setupButton.type = "button";
+  setupButton.textContent = "Setup";
+  setupButton.setAttribute("aria-label", "Return to Monster Master setup");
+  setupButton.hidden = true;
+  destinationLinks.insertBefore(setupButton, destinationLinks.querySelector("button[disabled]"));
+  setupButton.addEventListener("click", () => queueMicrotask(updateShellState));
+  return setupButton;
+}
 
 const hud = {
   root: document.querySelector("#monster-master-unit-hud"),
@@ -119,7 +124,9 @@ function openDrawer(which) {
 
 function updateShellState() {
   const active = matchActive();
+  const button = ensureSetupButton();
   body.classList.toggle("monster-master-match-active", active);
+  if (button) button.hidden = !active;
   if (!active) {
     closeDrawers();
     utilityMenu?.removeAttribute("open");
@@ -214,7 +221,7 @@ openIntel?.addEventListener("click", () => openDrawer("intel"));
 closeRoster?.addEventListener("click", closeDrawers);
 closeIntel?.addEventListener("click", closeDrawers);
 drawerBackdrop?.addEventListener("click", closeDrawers);
-setupButton?.addEventListener("click", () => queueMicrotask(updateShellState));
+window.addEventListener("gameframe:destination-bar-ready", updateShellState);
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
