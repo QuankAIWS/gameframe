@@ -190,3 +190,21 @@ Providing good food improves satisfaction and relationships. Repeatedly relying 
 - Special meals can function as supplies, gifts, quest rewards, relationship actions, and cube upgrades.
 - Basic generated food prevents starvation but does not automatically satisfy comfort, morale, or contractual expectations.
 - Fast-time cubes consume food according to experienced interior time, making their use materially expensive.
+
+## Decision 12 — Reverse-engineered capture cube technology
+
+Modern capture cubes are mass-produced descendants of much older cube technology. Present-day engineers can manufacture reliable basic cubes because generations of craftspeople, scholars, and manufacturers have reverse-engineered repeatable portions of ancient designs.
+
+Modern cubes are cheaper, safer, easier to repair, and generally less capable than intact ancient examples. Their makers understand enough to reproduce standard interiors, containment, calling, food generation, and common upgrades, but not the deepest principles that make the technology work.
+
+Ancient cubes may contain functions that modern manufacturers cannot duplicate, including accelerated interior time, unusually large spaces, self-repair, strange environmental controls, or systems whose purpose is no longer understood. Not every ancient cube is superior; some are damaged, dangerous, badly documented, or designed for purposes that modern people would find inconvenient.
+
+The identity and intentions of the original cube makers remain undecided.
+
+### Implementation consequences
+
+- Cube definitions need an origin category such as modern, reverse-engineered premium, ancient, or experimental.
+- Modern cube progression should improve comfort and reliability without casually reproducing unique ancient functions.
+- Ancient cubes can serve as discoveries, campaign prizes, research subjects, inheritance disputes, and sources of dangerous defects.
+- Manufacturers, governments, and criminal groups have reasons to search for intact ancient cubes and lost design fragments.
+- Ancient origin lore must remain open until selected separately.
