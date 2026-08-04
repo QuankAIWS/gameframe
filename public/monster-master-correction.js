@@ -174,20 +174,32 @@ function scheduleTurnOrder() {
   requestAnimationFrame(renderTurnOrder);
 }
 
+function enableCommandDeckControls() {
+  if (!commandDeck) return;
+  const interactive = commandDeck.querySelectorAll(
+    ".monster-master-action-bar, .monster-master-options, button, a, input, select, textarea, summary",
+  );
+  interactive.forEach((node) => {
+    node.style.pointerEvents = "auto";
+  });
+}
+
 function containPixiCanvas() {
   if (battlefieldStage) {
-    battlefieldStage.style.position = "relative";
-    battlefieldStage.style.zIndex = "0";
-    battlefieldStage.style.isolation = "isolate";
-    battlefieldStage.style.overflow = "hidden";
+    battlefieldStage.style.removeProperty("position");
+    battlefieldStage.style.removeProperty("z-index");
+    battlefieldStage.style.removeProperty("isolation");
+    battlefieldStage.style.removeProperty("overflow");
     battlefieldStage.dataset.canvasContainment = "battlefield-stage";
   }
   if (commandDeck) {
-    commandDeck.style.position = "relative";
-    commandDeck.style.zIndex = "10";
-    commandDeck.style.isolation = "isolate";
-    commandDeck.style.pointerEvents = "auto";
+    commandDeck.style.removeProperty("position");
+    commandDeck.style.removeProperty("z-index");
+    commandDeck.style.removeProperty("isolation");
+    commandDeck.style.pointerEvents = "none";
     commandDeck.dataset.pointerLayer = "command-deck";
+    enableCommandDeckControls();
+    new MutationObserver(enableCommandDeckControls).observe(commandDeck, { childList: true, subtree: true });
   }
 }
 
