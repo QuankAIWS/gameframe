@@ -159,15 +159,34 @@ Cubes can also be illegally modified. Contraband overrides may prevent an intell
 - Dangerous-monster relocation cubes are a distinct equipment category with stricter licensing and inspection.
 - Illegal cube modifications can create rescue, smuggling, escape, and enforcement scenarios.
 
-## Decision 10 — Normal cube time with extremely rare exceptions
+## Decision 10 — Normal cube time with extremely rare ancient exceptions
 
-Time passes normally inside capture cubes. Monsters sleep, eat, train, relax, become bored, and notice how long their trainer has left them inside. Cube quality therefore affects everyday life rather than providing consequence-free storage.
+Time passes normally inside ordinary capture cubes. Monsters sleep, eat, train, relax, become bored, and notice how long their trainer has left them inside. Cube quality therefore affects everyday life rather than providing consequence-free storage.
 
-Time-altering cubes and temporal faults exist, but they are extremely rare. They are not ordinary premium upgrades and should not become a routine way to avoid feeding, aging, training, accommodation, or relationship consequences. A legitimate slow-time cube is closer to a unique artifact, state secret, dangerous prototype, or once-in-a-campaign discovery than a luxury catalog item.
+A very small number of ancient cubes run faster on the inside. Minutes outside can feel like hours to the occupant. These cubes are not ordinary premium upgrades or reproducible modern products. They are artifacts, closely guarded heirlooms, state secrets, unstable discoveries, or major campaign prizes.
+
+Accelerated interior time does not suspend consequences. The occupant experiences the additional time, consumes food, becomes tired, can train, and may age according to the cube's actual behavior. Long use can therefore be valuable, miserable, or dangerous depending on the cube and its condition.
 
 ### Implementation consequences
 
-- Cube occupants continue normal biological, social, and training schedules.
-- Food, comfort, neglect, and time spent inside remain meaningful.
+- Ordinary cube occupants continue normal biological, social, and training schedules.
 - Standard cube tiers must not include adjustable time rates.
-- Temporal cubes and anomalies require explicit authored exceptions and may carry serious costs, defects, or legal restrictions.
+- Ancient fast-time cubes require explicit authored records and fixed or unreliable time ratios.
+- Food use, fatigue, training, aging, and psychological effects must follow experienced interior time unless a specific artifact establishes otherwise.
+- Temporal cubes may carry serious defects, legal restrictions, ownership disputes, or maintenance requirements.
+
+## Decision 11 — Generated staples and demanded real meals
+
+Ordinary capture cubes can generate safe, nutritionally adequate basic food and water for their assigned monster. The generated diet prevents routine starvation and removes constant ration bookkeeping, but it is bland and should not count as proper care for every monster.
+
+Monsters may have favorite foods, species-specific diets, allergies, cultural expectations, and increasingly expensive tastes. Stronger or higher-status monsters can demand real meals, preferred ingredients, imported snacks, private cooks, or food that does not arrive as the same beige nutritional brick every day.
+
+Providing good food improves satisfaction and relationships. Repeatedly relying on cube staples when better care is expected can contribute to resentment and eventual refusal to deploy, especially for intelligent monsters capable of filing a detailed complaint.
+
+### Implementation consequences
+
+- Cubes need a basic food-generation capability and supported-diet classification.
+- Monster records need diet requirements, preferences, and food-satisfaction state.
+- Special meals can function as supplies, gifts, quest rewards, relationship actions, and cube upgrades.
+- Basic generated food prevents starvation but does not automatically satisfy comfort, morale, or contractual expectations.
+- Fast-time cubes consume food according to experienced interior time, making their use materially expensive.
