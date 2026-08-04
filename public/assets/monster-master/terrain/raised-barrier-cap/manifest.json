@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "assetId": "monster-master.raised-barrier-cap.grassland-stone.v1",
+  "family": "environment.terrain-top",
+  "role": "impassable-raised-barrier-cap",
+  "status": "accepted-pilot",
+  "runtime": {
+    "path": "/assets/monster-master/terrain/raised-barrier-cap/raised-barrier-cap-grassland-stone-v1-128.webp",
+    "format": "webp",
+    "width": 128,
+    "height": 128,
+    "repeat": true,
+    "colorSpace": "srgb"
+  },
+  "source": {
+    "generationId": "ff516c3c-d9d2-49b1-ac9f-98cfeab4170f",
+    "originalDimensions": [
+      1254,
+      1254
+    ],
+    "originalSha256": "24c13be1ae96801f995bc5e31666b4c55fbbc927f7554dec08c67c20131af568",
+    "preparedMasterDimensions": [
+      1024,
+      1024
+    ],
+    "preparedMasterSha256": "cadb45dedce6786b041ccf81c83ce4cabb8b8df806732b1a1cb33d801275a5dd",
+    "runtimeSha256": "5c65f0ae0beafc30f4b077b3dd1182d77eee8e5e7b2f74258353e4b26ca190e1"
+  },
+  "rendering": {
+    "renderer": "pixi",
+    "geometryRole": "wall-top-72x36",
+    "textureSpace": "global",
+    "visualHeightCssPixels": 29,
+    "ownsGeometry": false,
+    "gameplay": "impassable"
+  }
+}

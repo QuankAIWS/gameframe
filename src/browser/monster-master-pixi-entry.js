@@ -31,6 +31,7 @@ import {
 const GAME_ID = "monster-master-duel";
 const CREATURE_ATLAS = "/assets/monster-master/creature-atlas-v1.svg";
 const GRASS_GROUND_TEXTURE = "/assets/monster-master/terrain/grass-ground/grass-ground-v1-128.webp";
+const RAISED_BARRIER_CAP_TEXTURE = "/assets/monster-master/terrain/raised-barrier-cap/raised-barrier-cap-grassland-stone-v1-128.webp";
 const CREATURE_CELL = 96;
 const CAMERA_STORAGE_KEY = "gameframe:monster-master:pixi-camera";
 const VIEW_EVENT = "gameframe:monster-master-pixi-view";
@@ -184,11 +185,13 @@ function textureFromFrame(base, frame) {
 }
 
 async function loadTextures() {
-  const [creatureBase, grassGround] = await Promise.all([
+  const [creatureBase, grassGround, raisedBarrierCap] = await Promise.all([
     Assets.load(CREATURE_ATLAS),
     Assets.load(GRASS_GROUND_TEXTURE),
+    Assets.load(RAISED_BARRIER_CAP_TEXTURE),
   ]);
-  state.textures = { creatureBase, grassGround };
+  raisedBarrierCap.source.wrapMode = "repeat";
+  state.textures = { creatureBase, grassGround, raisedBarrierCap };
 }
 
 function makeLayers() {
@@ -272,10 +275,13 @@ function drawTerrainTop(graphics, entry) {
   const polygon = terrainTopPolygon(entry.coordinate, entry.cell, map(), state.camera.quarter);
   if (entry.cell?.terrain === "wall") {
     graphics.poly(flatten(polygon))
-      .fill({ color: 0x7e8068, alpha: 1 })
-      .stroke({ color: 0xc1bb93, alpha: 0.52, width: 1.2 });
-    const inset = diamondPoints(terrainTopCenter(entry.coordinate, entry.cell, map(), state.camera.quarter), TILE_WIDTH * 0.62, TILE_HEIGHT * 0.62);
-    graphics.poly(flatten(inset)).stroke({ color: 0x535d51, alpha: 0.42, width: 1 });
+      .fill({
+        texture: state.textures.raisedBarrierCap,
+        textureSpace: "global",
+        color: 0xd8cfb8,
+        alpha: 1,
+      })
+      .stroke({ color: 0xd2c59d, alpha: 0.7, width: 1.1 });
     return;
   }
 
