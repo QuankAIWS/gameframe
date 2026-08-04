@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("Monster Master presents the player as trainer and keeps Setup in the top navigation", async ({ page }, testInfo) => {
+test("Monster Master presents the player as trainer with compact optional battlefield hints", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/monster-master.html?player=monster-trainer-shell");
 
@@ -13,14 +13,39 @@ test("Monster Master presents the player as trainer and keeps Setup in the top n
   await page.locator("#monster-master-theo").click();
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
+  await expect(page.locator("body.monster-master-hints-ready")).toBeVisible();
 
   const setup = page.locator("#gameframe-destination-bar #monster-master-new-match");
+  const hints = page.locator("#monster-master-hints-enabled");
+  const toast = page.locator("#monster-master-status-toast");
   await expect(setup).toBeVisible();
   await expect(setup).toHaveText("Setup");
-  await expect(page.locator(".monster-master-board-briefing #monster-master-status")).toBeVisible();
+  await expect(page.locator(".monster-master-board-briefing")).toHaveClass(/monster-master-hint-layer/);
+  await expect(page.locator(".monster-master-hints-toggle")).toBeVisible();
+  await expect(hints).toBeChecked();
+  await expect(toast).toHaveClass(/is-visible/);
+  await expect(page.locator("#monster-master-status")).toContainText(/deployment|activation/i);
   await expect(page.locator("#monster-master-roster-list")).toContainText("Verdant Sage");
   await expect(page.locator("#monster-master-match")).not.toContainText("Warden Master");
   await expect(page.locator("#monster-master-match")).not.toContainText("Warden Duel");
+
+  const stageGeometry = await page.locator(".monster-master-battlefield-stage").evaluate((stage) => {
+    const frame = stage.querySelector(".combat-canvas-frame");
+    const layer = stage.querySelector(".monster-master-hint-layer");
+    return {
+      stageHeight: stage.getBoundingClientRect().height,
+      frameHeight: frame?.getBoundingClientRect().height ?? 0,
+      layerPosition: layer ? getComputedStyle(layer).position : "",
+    };
+  });
+  expect(Math.abs(stageGeometry.stageHeight - stageGeometry.frameHeight)).toBeLessThanOrEqual(2);
+  expect(stageGeometry.layerPosition).toBe("absolute");
+
+  await hints.uncheck();
+  await expect(page.locator("body.monster-master-hints-disabled")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("gameframe:monster-master:hints-enabled"))).toBe("false");
+  await hints.check();
+  await expect(page.locator("body.monster-master-hints-disabled")).toHaveCount(0);
 
   await page.screenshot({
     path: testInfo.outputPath("monster-master-trainer-shell-desktop.png"),
