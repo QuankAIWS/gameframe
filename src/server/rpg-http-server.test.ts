@@ -82,6 +82,19 @@ const encounter = {
   },
 };
 
+async function attach(base: string, playerId: string, connectionId: string) {
+  return await playerFetch(
+    `${base}/api/rpg/campaigns/${campaignId}/attach`,
+    playerId,
+    jsonBody({
+      protocolVersion: 1,
+      kind: "campaign.attach",
+      campaignId,
+      connectionId,
+    }),
+  );
+}
+
 test("Node RPG HTTP boundary executes campaign-port-a through encounter launch", async (context) => {
   const server = createGameFrameServer();
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -94,16 +107,7 @@ test("Node RPG HTTP boundary executes campaign-port-a through encounter launch",
   assert.equal(health.rpg.campaignProtocolVersion, 1);
   assert.equal(health.rpg.encounterProtocolVersion, 1);
 
-  const attachAda = await playerFetch(
-    `${base}/api/rpg/campaigns/${campaignId}/attach`,
-    "player:ada",
-    jsonBody({
-      protocolVersion: 1,
-      kind: "campaign.attach",
-      campaignId,
-      connectionId: "connection:ada",
-    }),
-  );
+  const attachAda = await attach(base, "player:ada", "connection:ada");
   assert.equal(attachAda.status, 200);
   const adaView = await attachAda.json();
   assert.deepEqual(
@@ -111,16 +115,7 @@ test("Node RPG HTTP boundary executes campaign-port-a through encounter launch",
     ["event-scene-gate", "event-reveal-ada"],
   );
 
-  const attachBryn = await playerFetch(
-    `${base}/api/rpg/campaigns/${campaignId}/attach`,
-    "player:bryn",
-    jsonBody({
-      protocolVersion: 1,
-      kind: "campaign.attach",
-      campaignId,
-      connectionId: "connection:bryn",
-    }),
-  );
+  const attachBryn = await attach(base, "player:bryn", "connection:bryn");
   assert.equal(attachBryn.status, 200);
   const brynView = await attachBryn.json();
   assert.deepEqual(
@@ -128,17 +123,7 @@ test("Node RPG HTTP boundary executes campaign-port-a through encounter launch",
     ["event-scene-gate"],
   );
 
-  const outsider = await playerFetch(
-    `${base}/api/rpg/campaigns/${campaignId}/attach`,
-    "player:outsider",
-    jsonBody({
-      protocolVersion: 1,
-      kind: "campaign.attach",
-      campaignId,
-      connectionId: "connection:outsider",
-    }),
-  );
-  assert.equal(outsider.status, 403);
+  assert.equal((await attach(base, "player:outsider", "connection:outsider")).status, 403);
 
   const serviceAttach = await serviceFetch(
     `${base}/api/rpg/campaigns/${campaignId}/attach`,
@@ -170,18 +155,12 @@ test("Node RPG HTTP boundary executes campaign-port-a through encounter launch",
   assert.equal(retryResponse.status, 200);
   assert.deepEqual(await retryResponse.json(), accepted);
 
-  const afterRetry = await playerFetch(
-    `${base}/api/rpg/campaigns/${campaignId}/attach`,
-    "player:ada",
-    jsonBody({
-      protocolVersion: 1,
-      kind: "campaign.attach",
-      campaignId,
-      connectionId: "connection:ada:after-retry",
-    }),
-  ).then((response) => response.json());
+  const afterRetry = await attach(base, "player:ada", "connection:ada:after-retry")
+    .then((response) => response.json());
   assert.equal(
-    afterRetry.events.filter((event: { type: string }) => event.type === "campaign.action_submitted").length,
+    afterRetry.events.filter(
+      (event: { type: string }) => event.type === "campaign.action_submitted",
+    ).length,
     1,
   );
 
@@ -196,7 +175,10 @@ test("Node RPG HTTP boundary executes campaign-port-a through encounter launch",
   const conflictResponse = await playerFetch(
     `${base}/api/rpg/campaigns/${campaignId}/commands`,
     "player:ada",
-    jsonBody({ ...command, command: { ...command.command, text: "Leave the academy grounds." } }),
+    jsonBody({
+      ...command,
+      command: { ...command.command, text: "Leave the academy grounds." },
+    }),
   );
   assert.equal(conflictResponse.status, 409);
   const conflict = await conflictResponse.json();
@@ -224,13 +206,40 @@ test("Node RPG HTTP boundary executes campaign-port-a through encounter launch",
   assert.equal(launched.state, "preparing");
   assert.equal(launched.resumeToken, "mock:encounter:academy-gate");
 
-  const retryLaunch = await serviceFetch(
+  const immediateRetry = await serviceFetch(
     `${base}/api/rpg/encounters`,
     "rpg-gm-runtime",
     jsonBody(encounter),
   );
-  assert.equal(retryLaunch.status, 200);
-  assert.deepEqual(await retryLaunch.json(), launched);
+  assert.equal(immediateRetry.status, 200);
+  assert.deepEqual(await immediateRetry.json(), launched);
+
+  const advanceResponse = await playerFetch(
+    `${base}/api/rpg/campaigns/${campaignId}/commands`,
+    "player:bryn",
+    jsonBody({
+      protocolVersion: 1,
+      commandId: "command:advance-after-encounter-launch",
+      campaignId,
+      issuedAt: "2026-08-04T12:07:00.000Z",
+      command: {
+        kind: "campaign.submit_action",
+        expectedRevision: 5,
+        visibility: "public",
+        text: "Stand ready at the gate.",
+      },
+    }),
+  );
+  assert.equal(advanceResponse.status, 200);
+  assert.equal((await advanceResponse.json()).campaignRevision, 6);
+
+  const lostResponseRetry = await serviceFetch(
+    `${base}/api/rpg/encounters`,
+    "rpg-gm-runtime",
+    jsonBody(encounter),
+  );
+  assert.equal(lostResponseRetry.status, 200);
+  assert.deepEqual(await lostResponseRetry.json(), launched);
 
   const forbiddenLaunch = await playerFetch(
     `${base}/api/rpg/encounters`,
@@ -253,19 +262,27 @@ test("Node RPG HTTP boundary executes campaign-port-a through encounter launch",
   assert.equal(wrongServiceFetch.status, 403);
 });
 
-test("development auth rejects ambiguous player and service claims", async (context) => {
+test("development auth rejects ambiguous identities and service use of player matches", async (context) => {
   const server = createGameFrameServer();
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   context.after(() => server.close());
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("Expected an internet address.");
   const base = `http://127.0.0.1:${address.port}`;
-  const response = await fetch(`${base}/api/session`, {
+
+  const ambiguous = await fetch(`${base}/api/session`, {
     headers: {
       "x-gameframe-player-id": "player:ada",
       "x-gameframe-service-id": "rpg-gm-runtime",
     },
   });
-  assert.equal(response.status, 403);
-  assert.equal((await response.json()).error, "identity_mismatch");
+  assert.equal(ambiguous.status, 403);
+  assert.equal((await ambiguous.json()).error, "identity_mismatch");
+
+  const serviceMatch = await serviceFetch(
+    `${base}/api/matches`,
+    "rpg-gm-runtime",
+    jsonBody({ playerIds: ["rpg-gm-runtime", "player:bob"] }),
+  );
+  assert.equal(serviceMatch.status, 403);
 });
