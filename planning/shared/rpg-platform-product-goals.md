@@ -3,13 +3,13 @@ title: RPG Platform Product Goals
 status: accepted
 document_type: decision
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-03
+last_updated: 2026-08-04
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
   - scribbles-runtime-theo-connector
 shared_document_id: rpg-platform-product-goals-v1
-shared_document_version: 1
+shared_document_version: 2
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-platform-product-goals.md
 mirrors:
@@ -26,7 +26,9 @@ related:
 
 ## Product statement
 
-The RPG platform is a persistent, Cloudflare-hosted, AI-directed role-playing game played entirely through GameFrame. Players may request nearly any genre, tone, or thematic inspiration, and the system should rapidly establish an original campaign presentation while preserving durable campaign continuity and authoritative mechanics.
+The RPG platform is a persistent, publicly accessible, AI-directed role-playing game played entirely through GameFrame. Players may request nearly any genre, tone, or thematic inspiration, and the system should rapidly establish an original campaign presentation while preserving durable campaign continuity and authoritative mechanics.
+
+The first production profile runs GameFrame and RPG GM Runtime as separate services on one dedicated VM and reaches ordinary players through Cloudflare Tunnel and the Cloudflare public edge. A later Cloudflare-native scale profile may move selected GameFrame responsibilities to Workers, Durable Objects, Queues, and object storage without changing the product or authority model.
 
 RPG GM Runtime is the campaign intelligence behind the experience. GameFrame is the experience presented to players.
 
@@ -46,11 +48,13 @@ GameFrame is the primary and authoritative player-facing application for:
 
 Discord may provide authentication, invitations, voice, social conversation, notifications, and links into an active campaign. Discord is not the primary gameplay surface and does not own authoritative campaign state.
 
-### Public Cloudflare deployment
+### Public Cloudflare edge
 
-The production experience is hosted through Cloudflare-facing services. Ordinary players must not require Tailscale, a private network, an operator VPN, a developer machine, or access to an internal origin.
+The production experience is publicly reachable through Cloudflare-facing services. Ordinary players must not require Tailscale, a private network, an operator VPN, a developer machine, direct access to the origin VM, or an opened router port.
 
-Tailscale is outside the product architecture. Private development access may use any operator-selected tooling, but no product workflow, invitation, recovery path, or player journey may depend on it.
+The initial deployment uses Cloudflare DNS, TLS, CDN behavior, protection, and Tunnel in front of a private GameFrame origin. Cloudflare stateful compute is a later scale option rather than a first-launch requirement.
+
+Tailscale is outside the player product architecture. Private operator administration may use Tailscale or another management tool, but no product workflow, invitation, recovery path, or player journey may depend on it.
 
 ### Persistent campaigns
 
@@ -59,9 +63,11 @@ Campaigns are durable products, not disposable model conversations. The platform
 - campaigns that continue across many sessions;
 - authoritative event history and audience-scoped secrets;
 - stable player, character, NPC, location, item, faction, quest, encounter, and asset identities;
-- deterministic retries and reconnect after client, Worker, Durable Object, or provider interruption;
+- deterministic retries and reconnect after client, tunnel, service, VM, Worker, Durable Object, or provider interruption;
 - operator inspection and correction without rewriting hidden history casually;
-- recap and resume after long periods away.
+- backup, restore, recap, and resume after long periods away.
+
+Durability is a product property independent of the selected storage adapter. Local VM persistence and later Cloudflare-native persistence must satisfy the same contract.
 
 ## Creative flexibility
 
@@ -94,7 +100,7 @@ This transformation reduces copying risk but is not a guarantee of legal clearan
 
 ### RPG GM Runtime owns
 
-- campaign truth and semantic continuity;
+- runtime-authoritative campaign truth and semantic continuity;
 - NPC motives, memories, relationships, and decisions;
 - scene intent, narration, dialogue content, and consequences;
 - interpretation of freeform player intent;
@@ -108,6 +114,7 @@ This transformation reduces copying risk but is not a guarantee of legal clearan
 - the complete authenticated interface and navigation model;
 - player command transport and server-derived identity;
 - audience-scoped projections and presentation ordering;
+- GameFrame coordination state needed for seats, commands, reconnect, and client delivery;
 - structured mechanics deliberately implemented in GameFrame;
 - tactical authority, replay, reconnect, and committed outcomes;
 - asset catalogs, visual recipes, prompt compilation, generation jobs, storage, delivery, and fallbacks;
@@ -119,6 +126,21 @@ This transformation reduces copying risk but is not a guarantee of legal clearan
 - Theo's behavior and the narrow connector that lets Theo participate through an ordinary GameFrame player seat.
 
 Theo is never the Game Master and receives no GM-only campaign state.
+
+## Deployment goals
+
+The initial production system should:
+
+1. run GameFrame and RPG GM Runtime as separately isolated services on one dedicated VM;
+2. expose only GameFrame through Cloudflare Tunnel;
+3. require no inbound router forwarding;
+4. keep the GM, databases, and administration private;
+5. persist GameFrame-owned and runtime-owned state in separate durable stores;
+6. permit independent deployment and rollback of each repository;
+7. remain within the selected Cloudflare plan by avoiding unnecessary dependency on metered stateful edge compute;
+8. retain a documented migration path to Cloudflare-native components when measured scale or availability justifies them.
+
+The VM profile is not a disposable prototype. It is the first production profile and must have authentication, backup, restore, migration, observability, and failure-recovery evidence.
 
 ## Media and audio goals
 
@@ -132,7 +154,8 @@ The platform should:
 4. cache accepted outputs against stable theme and campaign entities;
 5. preserve recipes, provenance, provider, model, workflow, prompt compiler, and moderation metadata;
 6. use placeholders or deterministic fallbacks immediately when generation is slow or unavailable;
-7. permit economical text-to-speech initially and improve quality through replaceable providers later.
+7. permit economical text-to-speech initially and improve quality through replaceable providers later;
+8. allow accepted artifacts to begin on bounded VM storage and migrate to object storage without changing their stable asset identity.
 
 Missing images, animation, music, or synthesized speech must never prevent legal campaign play.
 
@@ -148,7 +171,8 @@ The intended experience should be:
 - inspectable and recoverable by operators;
 - economical by preferring cached and deterministic work before paid generation;
 - provider-flexible for language models, image generation, audio synthesis, storage, and delivery;
-- explicit about identity, audience, authorization, provenance, and authority.
+- deployment-flexible between the initial VM profile and later Cloudflare-native scale profile;
+- explicit about identity, audience, authorization, provenance, revision, and authority.
 
 ## Non-goals
 
@@ -160,22 +184,26 @@ The product direction does not require:
 - generation of a new image for every action or object;
 - premium voice acting before the core campaign loop works;
 - Tailscale or private-network access for players;
+- router port forwarding or direct origin exposure;
+- Workers or Durable Objects as prerequisites for the first public campaign;
 - copying recognizable franchise characters, settings, logos, dialogue, or art;
-- merging RPG GM Runtime, GameFrame, and Scribbles Runtime into one service or database.
+- merging RPG GM Runtime, GameFrame, and Scribbles Runtime into one process, service, or database merely because two services initially share one VM.
 
 ## First product proof
 
 The first convincing product proof is complete when two authenticated players can:
 
-1. accept a Discord invitation and enter the same Cloudflare-hosted campaign in GameFrame;
-2. choose a requested campaign genre or inspiration and receive an original theme brief;
-3. experience multiple scenes, dialogue, freeform actions, choices, a check, and correctly scoped private information;
-4. see a mix of cached, composed, placeholder, and asynchronously generated presentation assets;
-5. hear optional economical synthesized narration without audio becoming mandatory;
-6. enter and complete a tactical encounter through the same GameFrame application;
-7. return to the campaign with the committed encounter result applied;
-8. disconnect and later resume without duplicated commands, missing campaign truth, or lost asset identity.
+1. accept a Discord invitation and enter the same public GameFrame campaign through Cloudflare Tunnel without a VPN;
+2. do so without any router port forwarding or direct public origin route;
+3. choose a requested campaign genre or inspiration and receive an original theme brief;
+4. experience multiple scenes, dialogue, freeform actions, choices, a check, and correctly scoped private information;
+5. see a mix of cached, composed, placeholder, and asynchronously generated presentation assets;
+6. hear optional economical synthesized narration without audio becoming mandatory;
+7. enter and complete a tactical encounter through the same GameFrame application;
+8. return to the campaign with the committed encounter result applied;
+9. survive GameFrame and runtime process restarts and later resume without duplicated commands, missing campaign truth, lost asset identity, or revision confusion;
+10. restore the campaign from tested backups.
 
 ## Governing rule
 
-> Build one persistent, theme-flexible RPG product: Cloudflare hosts it, Discord admits and connects players, RPG GM Runtime supplies campaign intelligence, and GameFrame delivers the entire playable experience.
+> Build one persistent, theme-flexible RPG product: Cloudflare provides the public edge, the first authoritative services run separately on one private VM, Discord admits and connects players, RPG GM Runtime supplies campaign intelligence, and GameFrame delivers the entire playable experience.
