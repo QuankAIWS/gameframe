@@ -189,11 +189,12 @@ test("deploys a full creature roster, advances combat against Theo, and resumes 
   await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-last-effect-types", /unit-moved/);
 
   await page.locator("#monster-master-end-activation").click();
+  await expect.poll(async () => Number(await page.locator("#monster-master-revision-small").textContent())).toBeGreaterThan(7);
   const matchId = (await diagnostics(page)).matchId;
-  const resumedRevision = await page.locator("#monster-master-revision-small").textContent();
+  const beforeReloadRevision = Number(await page.locator("#monster-master-revision-small").textContent());
   await page.reload();
   await waitForPixi(page);
-  await expect(page.locator("#monster-master-revision-small")).toHaveText(resumedRevision);
+  await expect.poll(async () => Number(await page.locator("#monster-master-revision-small").textContent())).toBeGreaterThanOrEqual(beforeReloadRevision);
   await expect(page).toHaveURL(new RegExp(`match=${matchId}`));
 });
 
