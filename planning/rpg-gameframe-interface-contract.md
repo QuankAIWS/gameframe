@@ -140,6 +140,23 @@ It does not claim the complete eleven-step conformance journey. Structured choic
 
 Fixture changes are canonical-first: update and validate GameFrame, merge the canonical fixture, synchronize the private runtime mirror, run the runtime fixture conformance tests, and then merge runtime changes. Neither repository maintains a second hardcoded fixture list.
 
+## Node-local HTTP slice
+
+The first executable GameFrame RPG adapter is memory-backed and seeded from the canonical `campaign-port-a` fixture. It exposes these development routes:
+
+| Method | Route | Principal | Behavior |
+| --- | --- | --- | --- |
+| `POST` | `/api/rpg/campaigns/{campaignId}/attach` | authenticated player | Returns the current event-time audience-filtered campaign projection. |
+| `POST` | `/api/rpg/campaigns/{campaignId}/commands` | active player member | Accepts `campaign.submit_action`, enforces expected revision, and preserves exact command retry. |
+| `POST` | `/api/rpg/encounters` | RPG runtime service | Validates campaign provenance and active player participant bindings, then creates one idempotent encounter handle. |
+| `GET` | `/api/rpg/encounters/{encounterId}` | RPG runtime service | Retrieves the current memory-backed encounter handle. |
+
+Development player requests use `x-gameframe-player-id`. Development service requests use `x-gameframe-service-id`. A request claiming both identities is rejected, and service principals cannot use ordinary player-match routes. Production authentication remains the responsibility of the injected `RequestAuthenticator`.
+
+The current implementation has a 64 KiB HTTP request-body limit, campaign protocol version `1`, encounter protocol version `1`, a 2,000-character freeform action limit, at most 32 encounter participants, and at most 32 objectives. Command and encounter retries are process-memory idempotent only. The returned campaign cursor is a temporary projection marker, not yet a signed, viewer-bound durable resume cursor.
+
+This slice does not claim Durable Object persistence, restart survival, structured choice/check behavior, tactical terminal outcomes, return-scene application, browser campaign UI, or deployed Cloudflare authentication. Those remain explicit later acceptance gates.
+
 ## Delivery evidence
 
 A GameFrame implementation PR must identify final contract modules, schema versions, endpoint adapters, authentication expectations, bounds, retry and retention rules, fixture paths, validation commands, and the exact commit SHA validated against RPG GM Runtime fixtures.
