@@ -1,9 +1,8 @@
 name: Integrate cliff face v1
 
 on:
-  push:
-    branches:
-      - agent/rpg-rendering-contract-terrain-geometry
+  pull_request:
+    types: [synchronize, reopened, ready_for_review]
     paths:
       - ".github/asset-payload/cliff-face-v1.trigger"
 
@@ -11,11 +10,12 @@ permissions:
   contents: write
 
 concurrency:
-  group: integrate-cliff-face-v1
+  group: integrate-cliff-face-v1-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   integrate:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
