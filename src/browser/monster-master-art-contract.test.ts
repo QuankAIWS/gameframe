@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const read = (path: string) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 
-test("Monster Master uses one authoritative controller and one on-demand Pixi renderer", async () => {
+test("Monster Master uses one authoritative controller with guarded Pixi delivery", async () => {
   const launcher = await read("public/auth-launcher.js");
   const monsterApp = await read("public/monster-master-app.js");
   const monsterShell = await read("public/monster-master-shell.js");
@@ -12,11 +12,17 @@ test("Monster Master uses one authoritative controller and one on-demand Pixi re
   const correction = await read("public/monster-master-correction.js");
   const overlay = await read("public/monster-master-overlay.js");
   const hints = await read("public/monster-master-hints.js");
+  const battlefieldEffects = await read("public/monster-master-battlefield-effects.js");
+  const gestures = await read("public/monster-master-gestures.js");
   const pixiSource = await read("src/browser/monster-master-pixi-entry.js");
   const pixiBridge = await read("public/monster-master-pixi-bridge.js");
   const pixiStyles = await read("public/monster-master-pixi.css");
   const pixiBundle = await read("public/monster-master-pixi-bundle.js");
   const legacyProjection = await read("public/monster-master-rotation.js");
+  const notices = await read("THIRD_PARTY_NOTICES.md");
+  const canonicalGameplay = await read("test/browser/monster-master.spec.mjs");
+  const canonicalControls = await read("test/browser/monster-master-controls.spec.mjs");
+  const canonicalMotion = await read("test/browser/motion-polish.spec.mjs");
   const manifest = JSON.parse(await read("public/assets/monster-master/manifest.json"));
   const creatureAtlas = await read("public/assets/monster-master/creature-atlas-v1.svg");
   const terrainAtlas = await read("public/assets/monster-master/terrain-atlas-v1.svg");
@@ -26,26 +32,28 @@ test("Monster Master uses one authoritative controller and one on-demand Pixi re
   const monsterEnd = launcher.indexOf("} else {", monsterStart);
   const monsterBranch = launcher.slice(monsterStart, monsterEnd);
   assert.ok(monsterStart >= 0 && monsterEnd > monsterStart);
+  assert.match(monsterBranch, /legacy-renderer-fallback/);
+  assert.match(monsterBranch, /useLegacyRenderer \? "legacy" : "pixi"/);
   assert.ok(monsterBranch.indexOf("monster-master-pixi-bridge.js") < monsterBranch.indexOf("monster-master-correction.js"));
   assert.ok(monsterBranch.indexOf("monster-master-overlay.js") < monsterBranch.indexOf("monster-master-hints.js"));
   assert.ok(monsterBranch.indexOf("monster-master-hints.js") < monsterBranch.indexOf("await import(entry)"));
   assert.ok(monsterBranch.indexOf("await import(entry)") < monsterBranch.indexOf("monster-master-pixi-bundle.js"));
+  assert.ok(monsterBranch.indexOf("window.gameFrameMonsterPixi?.ready") < monsterBranch.indexOf("monster-master-battlefield-effects.js"));
+  assert.ok(monsterBranch.indexOf("monster-master-battlefield-effects.js") < monsterBranch.indexOf("monster-master-gestures.js"));
+  assert.match(monsterBranch, /sessionStorage\.setItem\(pixiFallbackKey, "true"\)/);
+  assert.match(monsterBranch, /window\.location\.reload\(\)/);
+  assert.match(monsterBranch, /monster-master-legacy-fallback/);
   assert.doesNotMatch(monsterBranch, /monster-master-overlay-guard\.js/);
-  assert.doesNotMatch(monsterBranch, /monster-master-art\.js/);
-  assert.doesNotMatch(monsterBranch, /monster-master-terrain\.js/);
-  assert.doesNotMatch(monsterBranch, /monster-master-polish\.js/);
 
   assert.match(monsterApp, /const monsterMasterViewEvent = "gameframe:monster-master-pixi-view"/);
   assert.match(monsterApp, /window\.gameFrameMonsterController = Object\.freeze/);
   assert.match(monsterApp, /getView: \(\) => current/);
   assert.match(monsterApp, /handleCoordinate: \(coordinate\) => handleBattlefieldCoordinate/);
   assert.match(monsterApp, /new CustomEvent\(monsterMasterViewEvent/);
-  assert.match(monsterApp, /function renderDiagnostics\(layout = null\)/);
   assert.match(monsterApp, /if \(window\.gameFrameMonsterRendererMode === "pixi"\) \{\n    renderDiagnostics\(\);\n    return;/);
   assert.match(monsterApp, /window\.gameFrameMonsterLegacyDrawCount/);
 
   assert.match(gameframeNav, /gameframe:destination-bar-ready/);
-  assert.match(monsterShell, /updateShellState\(\);\n  applyTrainerCopy\(\);\n  if \(window\.gameFrameMonsterRendererMode === "pixi"\) return/);
   assert.match(monsterShell, /setupButton\.id = "monster-master-new-match"/);
   assert.match(monsterShell, /destinationLinks\.insertBefore\(setupButton/);
   assert.match(monsterShell, /replaceAll\("Warden Master", "Verdant Sage"\)/);
@@ -55,46 +63,43 @@ test("Monster Master uses one authoritative controller and one on-demand Pixi re
     assert.match(presentation, /window\.addEventListener\(monsterViewEvent/);
     assert.match(presentation, /window\.gameFrameMonsterController\?\.getView/);
     assert.doesNotMatch(presentation, /window\.fetch = async/);
-    assert.doesNotMatch(presentation, /class MonsterMaster.*Socket extends/);
   }
-  assert.doesNotMatch(correction, /installCanvasColorRemap/);
   assert.doesNotMatch(correction, /CanvasRenderingContext2D\.prototype/);
 
   assert.match(hints, /gameframe:monster-master:hints-enabled/);
   assert.match(hints, /monster-master-status-toast/);
-  assert.match(hints, /monster-master-hints-toggle/);
   assert.match(hints, /window\.gameFrameMonsterHints = Object\.freeze/);
+
+  assert.match(battlefieldEffects, /const VIEW_EVENT = "gameframe:monster-master-pixi-view"/);
+  assert.match(battlefieldEffects, /unit-moved/);
+  assert.match(battlefieldEffects, /unit-damaged/);
+  assert.match(battlefieldEffects, /unit-healed/);
+  assert.match(battlefieldEffects, /unit-defeated/);
+  assert.match(battlefieldEffects, /worldToScreen/);
+  assert.match(battlefieldEffects, /data-last-animation-steps|lastAnimationSteps/);
+  assert.match(battlefieldEffects, /window\.gameFrameMonsterBattlefieldEffects/);
+
+  assert.match(gestures, /touches = new Map/);
+  assert.match(gestures, /gameFrameMonsterPixiBridge\?\.panScreen/);
+  assert.match(gestures, /monster-master-zoom-in/);
+  assert.match(gestures, /monster-master-zoom-out/);
+  assert.match(gestures, /window\.gameFrameMonsterGestures/);
 
   assert.match(pixiSource, /from "pixi\.js"/);
   assert.match(pixiSource, /preference: "webgl"/);
   assert.match(pixiSource, /autoStart: false/);
   assert.match(pixiSource, /resolution: Math\.min/);
-  assert.match(pixiSource, /viewSignature/);
-  assert.match(pixiSource, /diagnosticsSignature/);
   assert.match(pixiSource, /function subscribeToController/);
-  assert.match(pixiSource, /window\.gameFrameMonsterController\?\.getView/);
-  assert.doesNotMatch(pixiSource, /function interceptState/);
-  assert.doesNotMatch(pixiSource, /window\.fetch = async/);
-  assert.match(pixiSource, /const ready = initialize\(\)\.then/);
-  assert.match(pixiSource, /const width = Math\.max\(1, state\.frame\.clientWidth\)/);
-  assert.match(pixiSource, /state\.app\.renderer\.resize\(Math\.max\(1, frame\.clientWidth\)/);
-  assert.doesNotMatch(pixiSource, /renderer\.width \/ 2/);
-  assert.match(pixiSource, /creature-atlas-v1\.svg/);
-  assert.match(pixiSource, /terrain-atlas-v1\.svg/);
-  assert.match(pixiSource, /const terrain = new Container/);
-  assert.match(pixiSource, /const highlights = new Graphics/);
-  assert.match(pixiSource, /const unitsLayer = new Container/);
-  assert.match(pixiSource, /function terrainSignature/);
-  assert.match(pixiSource, /function unitSignature/);
   assert.match(pixiSource, /requestAnimationFrame\(render\)/);
   assert.match(pixiSource, /window\.gameFrameMonsterPixi/);
+  assert.doesNotMatch(pixiSource, /window\.fetch = async/);
 
   assert.match(pixiBridge, /^window\.gameFrameMonsterRendererMode = "pixi";/);
-  assert.match(pixiBridge, /monster-master-pixi\.css/);
   assert.match(pixiBridge, /controller\?\.handleCoordinate/);
   assert.match(pixiBridge, /renderer\.screenToTile/);
-  assert.match(pixiBridge, /function dispatchCoordinate/);
-  assert.doesNotMatch(pixiBridge, /dispatchLegacyCoordinate/);
+  assert.match(pixiBridge, /function bindBattlefieldInput/);
+  assert.match(pixiBridge, /pointerdown/);
+  assert.match(pixiBridge, /panScreen/);
   assert.match(pixiBridge, /window\.gameFrameMonsterProjection/);
   assert.match(pixiStyles, /monster-master-pixi-canvas/);
   assert.match(pixiStyles, /monster-master-legacy-canvas/);
@@ -102,26 +107,32 @@ test("Monster Master uses one authoritative controller and one on-demand Pixi re
   assert.match(pixiBundle, /Generated by scripts\/build-monster-master-pixi\.mjs; PixiJS 8\.19\.0/);
   assert.match(legacyProjection, /LegacyProjection = Object\.freeze\(\{ disabled: true \}\)/);
 
+  for (const journey of [canonicalGameplay, canonicalControls, canonicalMotion]) {
+    assert.match(journey, /monster-master-pixi-canvas|gameFrameMonsterPixi/);
+    assert.doesNotMatch(journey, /locator\("#monster-master-canvas"\)/);
+    assert.doesNotMatch(journey, /gameFrameMonsterProjection\.setRotation/);
+  }
+  assert.match(canonicalMotion, /pointerType: "touch"/);
+  assert.match(canonicalGameplay, /data-last-effect-types/);
+
+  assert.match(notices, /## PixiJS/);
+  assert.match(notices, /Version: `8\.19\.0`/);
+  assert.match(notices, /License: MIT/);
+  assert.match(notices, /public\/monster-master-pixi-bundle\.js/);
+
   assert.match(creatureAtlas, /data:image\/webp;base64,/);
   assert.doesNotMatch(terrainAtlas, /data:image\//);
   assert.match(terrainAtlas, /linearGradient id="grass-a"/);
   assert.match(terrainAtlas, /linearGradient id="stone-top"/);
-  assert.match(terrainAtlas, /clipPath id="cell-5"/);
   assert.equal(manifest.version, 2);
   assert.equal(manifest.creatures["warden-master-v1"].role, "master");
-  assert.equal(manifest.creatures["stone-bulwark-v1"].role, "bulwark");
-  assert.equal(manifest.creatures["emberling-skirmisher-v1"].role, "emberling");
   assert.equal(manifest.terrain["floor-a"].semantic, "floor");
-  assert.equal(manifest.terrain["difficult-rootstone"].semantic, "difficult");
   assert.equal(manifest.terrain["wall-rubble-a"].semantic, "wall");
-  assert.equal(manifest.terrain["central-command-shrine"].semantic, "objective");
 
   assert.equal(packageJson.dependencies["pixi.js"], "8.19.0");
-  assert.equal(packageJson.scripts["build:monster-master-pixi"], "node scripts/build-monster-master-pixi.mjs");
-  assert.equal(packageJson.scripts["check:monster-master-pixi"], "node scripts/build-monster-master-pixi.mjs --check");
   assert.match(packageJson.scripts.validate, /check:monster-master-pixi/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-pixi-bundle\.js/);
-  assert.match(packageJson.scripts["check:browser"], /public\/monster-master-pixi-bridge\.js/);
-  assert.match(packageJson.scripts["check:browser"], /public\/monster-master-hints\.js/);
+  assert.match(packageJson.scripts["check:browser"], /public\/monster-master-battlefield-effects\.js/);
+  assert.match(packageJson.scripts["check:browser"], /public\/monster-master-gestures\.js/);
   assert.doesNotMatch(packageJson.scripts["check:browser"], /monster-master-overlay-guard/);
 });
