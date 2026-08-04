@@ -1,0 +1,30 @@
+{
+  "manifestVersion": 1,
+  "canonicalRepository": "QuankAIWS/scribbles-gameframe",
+  "canonicalRef": "main",
+  "canonicalRoot": "planning/shared",
+  "mirrorRepository": "QuankAIWS/rpg-gm-runtime",
+  "mirrorRoot": "docs/shared",
+  "documents": [
+    {
+      "id": "rpg-platform-product-goals-v1",
+      "filename": "rpg-platform-product-goals.md"
+    },
+    {
+      "id": "rpg-cloudflare-deployment-architecture-v1",
+      "filename": "rpg-cloudflare-deployment-architecture.md"
+    },
+    {
+      "id": "rpg-media-theme-and-audio-pipeline-v1",
+      "filename": "rpg-media-theme-and-audio-pipeline.md"
+    },
+    {
+      "id": "rpg-monster-master-reference-campaign-v1",
+      "filename": "rpg-monster-master-reference-campaign.md"
+    },
+    {
+      "id": "rpg-cross-repository-integration-testing-v1",
+      "filename": "rpg-cross-repository-integration-testing.md"
+    }
+  ]
+}
