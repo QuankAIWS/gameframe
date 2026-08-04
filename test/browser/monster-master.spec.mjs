@@ -180,7 +180,11 @@ test("deploys a full creature roster, advances combat against Theo, and resumes 
 
   await expect(page.locator("#monster-master-phase")).toHaveText("Combat");
   await page.locator("#monster-master-select-move").click();
-  await page.locator('#monster-master-options button[data-action-kind="move"]').first().click();
+  const move = await page.evaluate(() => (
+    window.gameFrameMonsterController.getView().observation.legalActions.find((action) => action.type === "move") ?? null
+  ));
+  expect(move).not.toBeNull();
+  await dispatchBoardCoordinate(page, move.path.at(-1));
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 7");
   await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-last-effect-types", /unit-moved/);
 
