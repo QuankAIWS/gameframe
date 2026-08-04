@@ -20,7 +20,7 @@
     {
       "id": "campaign-revision-linkage",
       "filename": "campaign-revision-linkage.json",
-      "description": "Explicit GameFrame coordination revision and RPG GM narrative revision linkage, exact runtime commit retry, and conflicting runtime commit reuse cases."
+      "description": "Separate GameFrame coordination revision, GameFrame presentation sequence, and RPG GM narrative revision with source-revision linkage and exact retry/conflict cases."
     }
   ]
 }
