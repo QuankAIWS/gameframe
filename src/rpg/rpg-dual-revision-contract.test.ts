@@ -3,11 +3,11 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
-  InMemoryRpgRevisionLedger,
+  InMemoryGameFrameCoordinationLedger,
   RpgRevisionContractError,
-  type GameFrameCoordinationCommand,
-  type RpgRevisionPosition,
-  type RuntimeCommitRequest,
+  type GameFrameCommandRequest,
+  type GameFrameCoordinationState,
+  type GameFrameRuntimeLinkRequest,
 } from "./rpg-dual-revision-contract.ts";
 
 type JsonRecord = Record<string, unknown>;
@@ -29,68 +29,76 @@ function readFixture(): JsonRecord {
   ) as JsonRecord;
 }
 
-test("dual revision fixture keeps GameFrame coordination and narrative truth independent", () => {
-  const fixture = readFixture();
-  assert.equal(fixture.contract, "rpg-dual-revision-linkage");
-  assert.equal(fixture.slice, "campaign-revision-linkage");
+function assertReceipt(actual: JsonRecord, expected: JsonRecord): void {
+  for (const [key, value] of Object.entries(expected)) {
+    if (key === "exactRetryReturnsSameReceipt") continue;
+    assert.deepEqual(actual[key], value, `receipt field ${key}`);
+  }
+}
 
-  const startingPosition = record(
-    fixture.startingPosition,
-    "startingPosition",
-  ) as RpgRevisionPosition;
-  const ledger = new InMemoryRpgRevisionLedger(startingPosition);
+test("GameFrame coordinates commands and links runtime receipts without owning narrative truth", () => {
+  const fixture = readFixture();
+  assert.equal(fixture.fixtureVersion, 2);
+  assert.equal(fixture.contract, "rpg-dual-revision-linkage");
+
+  const startingState = record(fixture.startingState, "startingState");
+  const ledger = new InMemoryGameFrameCoordinationLedger(
+    record(startingState.gameframe, "startingState.gameframe") as GameFrameCoordinationState,
+  );
 
   const playerCase = record(fixture.playerCommandCase, "playerCommandCase");
-  const playerPosition = ledger.acceptGameFrameCommand(
-    record(playerCase.request, "playerCommandCase.request") as GameFrameCoordinationCommand,
-  );
-  assert.deepEqual(playerPosition, record(playerCase.expected, "playerCommandCase.expected"));
+  const playerRequest = record(
+    playerCase.request,
+    "playerCommandCase.request",
+  ) as GameFrameCommandRequest;
+  const playerReceipt = ledger.acceptCommand(playerRequest);
+  assertReceipt(playerReceipt, record(playerCase.expected, "playerCommandCase.expected"));
+  assert.deepEqual(ledger.acceptCommand(playerRequest), playerReceipt);
 
-  const runtimeCase = record(fixture.runtimeEventCommitCase, "runtimeEventCommitCase");
-  const runtimeRequest = record(
-    runtimeCase.request,
-    "runtimeEventCommitCase.request",
-  ) as RuntimeCommitRequest;
-  const runtimeReceipt = ledger.acceptRuntimeCommit(runtimeRequest);
-  const runtimeExpected = record(runtimeCase.expected, "runtimeEventCommitCase.expected");
-  assert.equal(
-    runtimeReceipt.gameframeCoordinationRevision,
-    runtimeExpected.gameframeCoordinationRevision,
+  const presentationCase = record(
+    fixture.runtimePresentationCommitCase,
+    "runtimePresentationCommitCase",
   );
-  assert.equal(runtimeReceipt.narrativeRevision, runtimeExpected.narrativeRevision);
-  assert.equal(runtimeReceipt.runtimeCommitId, runtimeRequest.runtimeCommitId);
-  assert.equal(runtimeReceipt.sourceCommandId, runtimeRequest.sourceCommandId);
-  assert.deepEqual(ledger.acceptRuntimeCommit(runtimeRequest), runtimeReceipt);
+  const presentationLink = record(
+    presentationCase.gameframeLink,
+    "runtimePresentationCommitCase.gameframeLink",
+  );
+  const presentationRequest = record(
+    presentationLink.request,
+    "presentation link request",
+  ) as GameFrameRuntimeLinkRequest;
+  const presentationReceipt = ledger.acceptRuntimeLink(presentationRequest);
+  assertReceipt(
+    presentationReceipt,
+    record(presentationLink.expected, "presentation link expected"),
+  );
+  assert.deepEqual(ledger.acceptRuntimeLink(presentationRequest), presentationReceipt);
 
   const launchCase = record(fixture.encounterLaunchCommitCase, "encounterLaunchCommitCase");
+  const launchLink = record(launchCase.gameframeLink, "encounterLaunchCommitCase.gameframeLink");
   const launchRequest = record(
-    launchCase.request,
-    "encounterLaunchCommitCase.request",
-  ) as RuntimeCommitRequest;
-  const launchReceipt = ledger.acceptRuntimeCommit(launchRequest);
-  const launchExpected = record(launchCase.expected, "encounterLaunchCommitCase.expected");
+    launchLink.request,
+    "encounter launch link request",
+  ) as GameFrameRuntimeLinkRequest;
+  const launchReceipt = ledger.acceptRuntimeLink(launchRequest);
+  assertReceipt(launchReceipt, record(launchLink.expected, "launch link expected"));
   assert.equal(
-    launchReceipt.gameframeCoordinationRevision,
-    launchExpected.gameframeCoordinationRevision,
+    launchReceipt.presentationSequence,
+    presentationReceipt.presentationSequence,
+    "encounter launch is a coordination transaction without a presentation event",
   );
-  assert.equal(launchReceipt.narrativeRevision, launchExpected.narrativeRevision);
-  assert.equal(
-    launchReceipt.gameframeCoordinationRevision,
-    runtimeReceipt.gameframeCoordinationRevision,
-    "encounter launch advances narrative truth without inventing a GameFrame campaign event",
-  );
-  assert.deepEqual(ledger.acceptRuntimeCommit(launchRequest), launchReceipt);
+  assert.deepEqual(ledger.acceptRuntimeLink(launchRequest), launchReceipt);
 
   const conflictCase = record(
-    fixture.conflictingRuntimeCommitReuseCase,
-    "conflictingRuntimeCommitReuseCase",
+    fixture.conflictingCoordinationMutationReuseCase,
+    "conflictingCoordinationMutationReuseCase",
   );
   const conflictingRequest = {
     ...launchRequest,
-    ...record(conflictCase.requestOverrides, "requestOverrides"),
-  } as RuntimeCommitRequest;
+    ...record(conflictCase.requestOverrides, "coordination request overrides"),
+  } as GameFrameRuntimeLinkRequest;
   assert.throws(
-    () => ledger.acceptRuntimeCommit(conflictingRequest),
+    () => ledger.acceptRuntimeLink(conflictingRequest),
     (error: unknown) => {
       assert.ok(error instanceof RpgRevisionContractError);
       assert.equal(error.code, record(conflictCase.expected, "conflict expected").code);
@@ -99,35 +107,78 @@ test("dual revision fixture keeps GameFrame coordination and narrative truth ind
   );
 });
 
-test("dual revision ledger rejects stale positions in the correct authority domain", () => {
-  const ledger = new InMemoryRpgRevisionLedger({
+test("GameFrame rejects stale coordination and out-of-order narrative linkage separately", () => {
+  const staleCommandLedger = new InMemoryGameFrameCoordinationLedger({
     gameframeCoordinationRevision: 4,
-    narrativeRevision: 7,
+    presentationSequence: 8,
+    linkedNarrativeRevision: 7,
   });
-
   assert.throws(
     () =>
-      ledger.acceptGameFrameCommand({
+      staleCommandLedger.acceptCommand({
         commandId: "command:stale",
         expectedGameframeCoordinationRevision: 3,
-        gameframeEventCount: 1,
+        presentationEventCount: 1,
       }),
     (error: unknown) =>
       error instanceof RpgRevisionContractError
       && error.code === "coordination-revision-conflict",
   );
 
+  const staleNarrativeLedger = new InMemoryGameFrameCoordinationLedger({
+    gameframeCoordinationRevision: 4,
+    presentationSequence: 8,
+    linkedNarrativeRevision: 7,
+  });
   assert.throws(
     () =>
-      ledger.acceptRuntimeCommit({
-        kind: "runtime.events",
-        runtimeCommitId: "runtime-commit:stale-narrative",
+      staleNarrativeLedger.acceptRuntimeLink({
+        coordinationMutationId: "coordination:stale-narrative",
         expectedGameframeCoordinationRevision: 4,
-        expectedNarrativeRevision: 6,
-        gameframeEventCount: 1,
+        presentationEventCount: 1,
+        runtimeCommit: {
+          kind: "runtime.narrative_committed",
+          runtimeCommitKind: "runtime.events",
+          runtimeCommitId: "runtime-commit:stale-narrative",
+          previousNarrativeRevision: 6,
+          narrativeRevision: 7,
+        },
       }),
     (error: unknown) =>
       error instanceof RpgRevisionContractError
-      && error.code === "narrative-revision-conflict",
+      && error.code === "narrative-link-conflict",
+  );
+});
+
+test("GameFrame cannot link one runtime commit through two coordination mutations", () => {
+  const ledger = new InMemoryGameFrameCoordinationLedger({
+    gameframeCoordinationRevision: 2,
+    presentationSequence: 4,
+    linkedNarrativeRevision: 1,
+  });
+  const runtimeCommit = {
+    kind: "runtime.narrative_committed" as const,
+    runtimeCommitKind: "runtime.events" as const,
+    runtimeCommitId: "runtime-commit:single-link",
+    previousNarrativeRevision: 1,
+    narrativeRevision: 2,
+  };
+  ledger.acceptRuntimeLink({
+    coordinationMutationId: "coordination:first-link",
+    expectedGameframeCoordinationRevision: 2,
+    presentationEventCount: 1,
+    runtimeCommit,
+  });
+  assert.throws(
+    () =>
+      ledger.acceptRuntimeLink({
+        coordinationMutationId: "coordination:second-link",
+        expectedGameframeCoordinationRevision: 3,
+        presentationEventCount: 1,
+        runtimeCommit,
+      }),
+    (error: unknown) =>
+      error instanceof RpgRevisionContractError
+      && error.code === "runtime-link-conflict",
   );
 });
