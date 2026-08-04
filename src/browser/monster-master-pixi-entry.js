@@ -3,6 +3,7 @@ import {
   Assets,
   Container,
   Graphics,
+  Matrix,
   Rectangle,
   Sprite,
   Texture,
@@ -32,10 +33,12 @@ const GAME_ID = "monster-master-duel";
 const CREATURE_ATLAS = "/assets/monster-master/creature-atlas-v1.svg";
 const GRASS_GROUND_TEXTURE = "/assets/monster-master/terrain/grass-ground/grass-ground-v1-128.webp";
 const RAISED_BARRIER_CAP_TEXTURE = "/assets/monster-master/terrain/raised-barrier-cap/raised-barrier-cap-grassland-stone-v1-128.webp";
+const CLIFF_FACE_TEXTURE = "/assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-128.webp";
 const CREATURE_CELL = 96;
 const CAMERA_STORAGE_KEY = "gameframe:monster-master:pixi-camera";
 const VIEW_EVENT = "gameframe:monster-master-pixi-view";
 const GEOMETRY_DEBUG_PARAMETER = "geometryDebug";
+const CLIFF_FACE_TEXTURE_MATRIX = new Matrix().scale(0.72, 0.24);
 
 window.gameFrameMonsterRendererMode = "pixi";
 
@@ -185,13 +188,15 @@ function textureFromFrame(base, frame) {
 }
 
 async function loadTextures() {
-  const [creatureBase, grassGround, raisedBarrierCap] = await Promise.all([
+  const [creatureBase, grassGround, raisedBarrierCap, cliffFace] = await Promise.all([
     Assets.load(CREATURE_ATLAS),
     Assets.load(GRASS_GROUND_TEXTURE),
     Assets.load(RAISED_BARRIER_CAP_TEXTURE),
+    Assets.load(CLIFF_FACE_TEXTURE),
   ]);
   raisedBarrierCap.source.wrapMode = "repeat";
-  state.textures = { creatureBase, grassGround, raisedBarrierCap };
+  cliffFace.source.wrapMode = "repeat";
+  state.textures = { creatureBase, grassGround, raisedBarrierCap, cliffFace };
 }
 
 function makeLayers() {
@@ -316,15 +321,16 @@ function makeTerrainDisplay(entry) {
   if (entry.cell?.terrain === "wall") {
     const { faces } = exposedTerrainFaces(entry.coordinate, entry.cell, map(), state.camera.quarter);
     for (const face of faces) {
-      const color = face.side === "left" ? 0x485348 : 0x3a4742;
+      const tint = face.side === "left" ? 0xd8cfba : 0xb7ad9a;
       display.poly(flatten(face.points))
-        .fill({ color, alpha: 1 })
-        .stroke({ color: 0xa9a584, alpha: 0.3, width: 1 });
-      const upper = face.points[0];
-      const lower = face.points[3];
-      const seamY = upper.y + (lower.y - upper.y) * (0.42 + ((entry.coordinate.x + entry.coordinate.y) % 3) * 0.08);
-      display.moveTo(upper.x, seamY).lineTo(face.points[1].x, seamY + (face.points[1].y - upper.y))
-        .stroke({ color: 0xd2cda8, alpha: 0.12, width: 0.8 });
+        .fill({
+          texture: state.textures.cliffFace,
+          textureSpace: "global",
+          matrix: CLIFF_FACE_TEXTURE_MATRIX,
+          color: tint,
+          alpha: 1,
+        })
+        .stroke({ color: 0xbdb08e, alpha: 0.42, width: 0.9 });
     }
   }
 

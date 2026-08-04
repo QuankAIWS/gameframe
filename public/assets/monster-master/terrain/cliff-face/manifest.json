@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "assetId": "monster-master.cliff-face.grassland-stone.v1",
+  "family": "environment.elevation-face",
+  "role": "exposed-vertical-wall-face",
+  "status": "accepted-pilot",
+  "runtime": {
+    "path": "/assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-128.webp",
+    "format": "webp",
+    "width": 128,
+    "height": 128,
+    "repeatX": true,
+    "repeatY": true,
+    "colorSpace": "srgb",
+    "sha256": "4a04eff7ba89a8455db1030a9addcf8a66cbb80244cfe7ac1524446983114954"
+  },
+  "source": {
+    "generationId": "cc8d58f5-4906-4c3f-bc59-1be8689c0880",
+    "originalDimensions": [
+      1269,
+      1239
+    ],
+    "originalSha256": "562241dedf217f7863fa37360fdd9ee53b4e76d7d419aafb01ba14cb92bedaba",
+    "preparedMasterDimensions": [
+      1024,
+      1024
+    ],
+    "preparedMasterSha256": "34cd4895b2d099d6241408ef3e1507ffc5dd3a34217782c0ccfb91bea9b14cea",
+    "horizontalSeamMethod": "mirrored-source-strip"
+  },
+  "rendering": {
+    "renderer": "pixi",
+    "geometryRole": "exposed-wall-face-29px",
+    "textureSpace": "global",
+    "textureMatrixScale": {
+      "x": 0.72,
+      "y": 0.24
+    },
+    "visualHeightCssPixels": 29,
+    "ownsGeometry": false,
+    "internalFacesCulled": true,
+    "gameplay": "visual-treatment-for-impassable-wall"
+  }
+}
