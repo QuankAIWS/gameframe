@@ -28,14 +28,36 @@ if (entry === "/app.js") {
   await import("./tic-tac-toe-noir.js");
   await import(entry);
 } else if (entry === "/monster-master-app.js") {
-  await import("./monster-master-pixi-bridge.js");
+  const pixiFallbackKey = "gameframe:monster-master:legacy-renderer-fallback";
+  const useLegacyRenderer = sessionStorage.getItem(pixiFallbackKey) === "true";
+  window.gameFrameMonsterRendererMode = useLegacyRenderer ? "legacy" : "pixi";
+  if (!useLegacyRenderer) await import("./monster-master-pixi-bridge.js");
   await import("./monster-master-correction.js");
   await import("./monster-master-overlay.js");
   await import("./monster-master-hints.js");
   await import(entry);
-  await import("./monster-master-pixi-bundle.js");
-  await import("./monster-master-terrain-depth.js");
-  await import("./monster-master-keyboard.js");
+
+  if (!useLegacyRenderer) {
+    await import("./monster-master-pixi-bundle.js");
+    const pixiReady = await window.gameFrameMonsterPixi?.ready;
+    if (!pixiReady) {
+      sessionStorage.setItem(pixiFallbackKey, "true");
+      window.location.reload();
+      await new Promise(() => {});
+    }
+    sessionStorage.removeItem(pixiFallbackKey);
+    await import("./monster-master-terrain-depth.js");
+    await import("./monster-master-battlefield-effects.js");
+    await import("./monster-master-gestures.js");
+    await import("./monster-master-keyboard.js");
+  } else {
+    document.body.classList.add("monster-master-legacy-fallback");
+    const errorBanner = document.querySelector("#monster-master-error");
+    if (errorBanner) {
+      errorBanner.hidden = false;
+      errorBanner.textContent = "WebGL could not start. Monster Master is using the compatibility battlefield for this session.";
+    }
+  }
   await import("./monster-master-results.js");
 } else {
   await import(entry);
