@@ -4,16 +4,34 @@ import {
   type RpgRuntimeEventsAccepted,
 } from "./in-memory-rpg-service.ts";
 import { GuardedInMemoryRpgService } from "./guarded-in-memory-rpg-service.ts";
+import {
+  RPG_LIVE_CAMPAIGN_PROTOCOL_VERSION,
+  RPG_LIVE_ENCOUNTER_PROTOCOL_VERSION,
+  VersionedInMemoryRpgService,
+} from "./versioned-in-memory-rpg-service.ts";
 
 type JsonRecord = Record<string, unknown>;
 
 const RESERVED_CONSEQUENCE_KEYS = new Set(["choiceId", "checkId", "result"]);
 
+export const RPG_CAMPAIGN_PROTOCOL_VERSION = RPG_LIVE_CAMPAIGN_PROTOCOL_VERSION;
+export const RPG_ENCOUNTER_PROTOCOL_VERSION = RPG_LIVE_ENCOUNTER_PROTOCOL_VERSION;
+
+/**
+ * Public Node-local RPG service. Protocol v2 is the live boundary; protocol v1
+ * remains encapsulated inside the deterministic reducer for regression coverage.
+ */
+export class StrictInMemoryRpgService extends VersionedInMemoryRpgService {
+  constructor() {
+    super(new ConsequenceStrictLegacyService());
+  }
+}
+
 /**
  * Rejects runtime consequence fields that could overwrite the deterministic
  * choice/check metadata emitted by the underlying campaign service.
  */
-export class StrictInMemoryRpgService extends GuardedInMemoryRpgService {
+class ConsequenceStrictLegacyService extends GuardedInMemoryRpgService {
   override async appendRuntimeEvents(
     batchValue: unknown,
     principalValue: RpgPrincipal,
