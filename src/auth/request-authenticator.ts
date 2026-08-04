@@ -37,21 +37,49 @@ export class RejectingRequestAuthenticator implements RequestAuthenticator {
 }
 
 export class DevelopmentHeaderAuthenticator implements RequestAuthenticator {
-  readonly #headerName: string;
+  readonly #playerHeaderName: string;
+  readonly #serviceHeaderName: string;
 
-  constructor(headerName = "x-gameframe-player-id") {
-    this.#headerName = headerName;
+  constructor(
+    playerHeaderName = "x-gameframe-player-id",
+    serviceHeaderName = "x-gameframe-service-id",
+  ) {
+    this.#playerHeaderName = playerHeaderName;
+    this.#serviceHeaderName = serviceHeaderName;
   }
 
   async authenticate(request: Request): Promise<AuthenticatedPrincipal> {
-    const playerId = request.headers.get(this.#headerName)?.trim() ?? "";
+    const playerId = request.headers.get(this.#playerHeaderName)?.trim() ?? "";
+    const serviceId = request.headers.get(this.#serviceHeaderName)?.trim() ?? "";
+    if (playerId && serviceId) {
+      throw new AuthenticationError(
+        "identity_mismatch",
+        "Development requests cannot claim both player and service identities.",
+      );
+    }
+    if (serviceId) {
+      return {
+        playerId: serviceId,
+        source: "service",
+        displayName: "Development RPG service",
+      };
+    }
     if (!playerId) {
       throw new AuthenticationError(
         "authentication_required",
-        `Development requests require the ${this.#headerName} header.`,
+        `Development requests require the ${this.#playerHeaderName} or ${this.#serviceHeaderName} header.`,
       );
     }
     return { playerId, source: "development", displayName: "Development player" };
+  }
+}
+
+export function requirePlayerPrincipal(principal: AuthenticatedPrincipal): void {
+  if (principal.source === "service") {
+    throw new AuthenticationError(
+      "forbidden",
+      "Service principals cannot use player match routes.",
+    );
   }
 }
 
@@ -59,6 +87,7 @@ export function requirePrincipalSeat(
   principal: AuthenticatedPrincipal,
   playerIds: readonly string[],
 ): void {
+  requirePlayerPrincipal(principal);
   if (!playerIds.includes(principal.playerId)) {
     throw new AuthenticationError(
       "forbidden",

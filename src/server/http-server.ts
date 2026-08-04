@@ -5,9 +5,18 @@ import { fileURLToPath } from "node:url";
 import {
   DevelopmentHeaderAuthenticator,
   rejectIdentityClaim,
+  requirePlayerPrincipal,
   requirePrincipalSeat,
+  type AuthenticatedPrincipal,
   type RequestAuthenticator,
 } from "../auth/request-authenticator.ts";
+import {
+  RPG_CAMPAIGN_PROTOCOL_VERSION,
+  RPG_ENCOUNTER_PROTOCOL_VERSION,
+  RpgServiceError,
+  type RpgPrincipal,
+} from "../rpg/in-memory-rpg-service.ts";
+import { StrictInMemoryRpgService } from "../rpg/strict-in-memory-rpg-service.ts";
 import { InMemoryGameFrameService } from "./in-memory-match-service.ts";
 
 const publicRoot = fileURLToPath(new URL("../../public/", import.meta.url));
@@ -15,6 +24,8 @@ const publicRoot = fileURLToPath(new URL("../../public/", import.meta.url));
 interface ApiError extends Error {
   code?: string;
   revision?: number;
+  retryable?: boolean;
+  status?: number;
 }
 
 function json(response: ServerResponse, status: number, value: unknown): void {
@@ -54,6 +65,45 @@ function matchRoute(pathname: string): { matchId: string; action: boolean } | nu
   return { matchId: decodeURIComponent(match[1]), action: Boolean(match[2]) };
 }
 
+function rpgCampaignRoute(
+  pathname: string,
+): { campaignId: string; operation: "attach" | "commands" | "events" } | null {
+  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/(attach|commands|events)$/.exec(pathname);
+  if (!match) return null;
+  return {
+    campaignId: decodeURIComponent(match[1]),
+    operation: match[2] as "attach" | "commands" | "events",
+  };
+}
+
+function rpgEncounterRoute(
+  pathname: string,
+): { encounterId?: string; operation: "collection" | "item" | "complete" } | null {
+  if (pathname === "/api/rpg/encounters") return { operation: "collection" };
+  const match = /^\/api\/rpg\/encounters\/([^/]+)(\/complete)?$/.exec(pathname);
+  if (!match) return null;
+  return {
+    encounterId: decodeURIComponent(match[1]),
+    operation: match[2] ? "complete" : "item",
+  };
+}
+
+function rpgPrincipal(principal: AuthenticatedPrincipal): RpgPrincipal {
+  return principal.source === "service"
+    ? { kind: "runtime", serviceId: principal.playerId }
+    : { kind: "player", playerId: principal.playerId };
+}
+
+function requireCampaignPath(body: Record<string, unknown>, campaignId: string): void {
+  if (body.campaignId !== campaignId) {
+    throw new RpgServiceError({
+      code: "invalid-command",
+      message: "Campaign ID in the request body must match the route.",
+      status: 400,
+    });
+  }
+}
+
 function contentType(path: string): string {
   return ({
     ".html": "text/html; charset=utf-8",
@@ -78,6 +128,7 @@ async function serveStatic(pathname: string, response: ServerResponse): Promise<
 }
 
 function errorStatus(error: ApiError): number {
+  if (Number.isInteger(error.status)) return Number(error.status);
   if (error.code === "authentication_required") return 401;
   if (error.code === "forbidden" || error.code === "identity_mismatch") return 403;
   if (error.code === "stale_revision" || error.code === "match_exists") return 409;
@@ -86,8 +137,9 @@ function errorStatus(error: ApiError): number {
 }
 
 export function createGameFrameServer(
-  service = new InMemoryGameFrameService(),
+  matchService = new InMemoryGameFrameService(),
   authenticator: RequestAuthenticator = new DevelopmentHeaderAuthenticator(),
+  rpgService = new StrictInMemoryRpgService(),
 ) {
   return createServer(async (request, response) => {
     try {
@@ -100,6 +152,18 @@ export function createGameFrameServer(
           runtime: "node-local",
           realtime: false,
           authentication: "development-header",
+          rpg: {
+            campaignProtocolVersion: RPG_CAMPAIGN_PROTOCOL_VERSION,
+            encounterProtocolVersion: RPG_ENCOUNTER_PROTOCOL_VERSION,
+            storage: "memory",
+            capabilities: [
+              "runtime-events",
+              "bounded-choice",
+              "deterministic-check",
+              "terminal-outcome",
+              "campaign-return",
+            ],
+          },
           games: [
             "tic-tac-toe",
             "american-checkers",
@@ -125,6 +189,70 @@ export function createGameFrameServer(
         return json(response, 200, { authenticated: false });
       }
 
+      const campaignRoute = rpgCampaignRoute(url.pathname);
+      if (campaignRoute && request.method === "POST") {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        const body = await readJson(request);
+        requireCampaignPath(body, campaignRoute.campaignId);
+        if (campaignRoute.operation === "attach") {
+          return json(
+            response,
+            200,
+            await rpgService.attachCampaign(body, rpgPrincipal(principal)),
+          );
+        }
+        if (campaignRoute.operation === "events") {
+          return json(
+            response,
+            200,
+            await rpgService.appendRuntimeEvents(body, rpgPrincipal(principal)),
+          );
+        }
+        const result = await rpgService.handleCommand(body, rpgPrincipal(principal));
+        return json(response, result.kind === "campaign.command_rejected" ? 409 : 200, result);
+      }
+
+      const encounterRoute = rpgEncounterRoute(url.pathname);
+      if (
+        encounterRoute?.operation === "collection"
+        && request.method === "POST"
+      ) {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        return json(
+          response,
+          200,
+          await rpgService.launchEncounter(await readJson(request), rpgPrincipal(principal)),
+        );
+      }
+      if (
+        encounterRoute?.operation === "complete"
+        && encounterRoute.encounterId
+        && request.method === "POST"
+      ) {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        return json(
+          response,
+          200,
+          await rpgService.completeEncounter(
+            encounterRoute.encounterId,
+            await readJson(request),
+            rpgPrincipal(principal),
+          ),
+        );
+      }
+      if (
+        encounterRoute?.operation === "item"
+        && encounterRoute.encounterId
+        && request.method === "GET"
+      ) {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        return json(
+          response,
+          200,
+          await rpgService.getEncounter(encounterRoute.encounterId, rpgPrincipal(principal)),
+        );
+      }
+
       if (request.method === "POST" && url.pathname === "/api/matches") {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
         const body = await readJson(request);
@@ -133,21 +261,23 @@ export function createGameFrameServer(
           : [];
         requirePrincipalSeat(principal, playerIds);
         const gameId = String(body.gameId ?? "tic-tac-toe");
-        return json(response, 201, await service.createMatch(gameId, playerIds));
+        return json(response, 201, await matchService.createMatch(gameId, playerIds));
       }
 
       const route = matchRoute(url.pathname);
       if (route && request.method === "GET" && !route.action) {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        requirePlayerPrincipal(principal);
         rejectIdentityClaim(principal, url.searchParams.get("playerId"));
-        return json(response, 200, await service.view(route.matchId, principal.playerId));
+        return json(response, 200, await matchService.view(route.matchId, principal.playerId));
       }
 
       if (route && request.method === "POST" && route.action) {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        requirePlayerPrincipal(principal);
         const body = await readJson(request);
         rejectIdentityClaim(principal, body.playerId);
-        const view = await service.submitAction({
+        const view = await matchService.submitAction({
           matchId: route.matchId,
           playerId: principal.playerId,
           actionId: String(body.actionId ?? ""),
@@ -168,6 +298,7 @@ export function createGameFrameServer(
         error: error.code ?? "bad_request",
         message: error.message,
         revision: error.revision,
+        retryable: error.retryable,
       });
     }
   });

@@ -1,0 +1,60 @@
+name: RPG Node Contract Check
+run-name: RPG Node Contract Check · ${{ github.sha }}
+
+on:
+  pull_request:
+    branches: [main]
+    types: [labeled]
+    paths:
+      - ".github/workflows/rpg-fixture-check.yml"
+      - "planning/fixtures/rpg/**"
+      - "planning/rpg-gameframe-interface-contract.md"
+      - "src/rpg/**"
+      - "src/auth/request-authenticator.ts"
+      - "src/server/http-server.ts"
+      - "src/server/rpg-http-server.test.ts"
+      - "src/server/rpg-choice-outcome-http.test.ts"
+      - "src/server/rpg-choice-outcome-authority.test.ts"
+      - "src/server/rpg-choice-consequence-authority.test.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rpg-node-contract-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'canonical-validation'
+    name: Validate RPG fixtures and Node HTTP boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate canonical fixtures and Node HTTP behavior
+        run: >-
+          node --experimental-strip-types --test
+          src/rpg/rpg-shared-fixtures.test.ts
+          src/rpg/rpg-choice-outcome-fixture.test.ts
+          src/server/rpg-http-server.test.ts
+          src/server/rpg-choice-outcome-http.test.ts
+          src/server/rpg-choice-outcome-authority.test.ts
+          src/server/rpg-choice-consequence-authority.test.ts

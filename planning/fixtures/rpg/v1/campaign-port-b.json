@@ -1,0 +1,347 @@
+{
+  "fixtureVersion": 1,
+  "contract": "rpg-gameframe-port",
+  "slice": "campaign-port-b",
+  "extendsFixtureId": "campaign-port-a",
+  "protocolVersions": {
+    "campaign": 1,
+    "encounter": 1
+  },
+  "startingState": {
+    "campaignId": "campaign-monster-master-reference",
+    "campaignRevision": 5,
+    "afterCaseId": "submit-public-action"
+  },
+  "runtimeChoicePresentationCase": {
+    "caseId": "present-bounded-choice",
+    "principal": {
+      "kind": "runtime",
+      "serviceId": "rpg-gm-runtime"
+    },
+    "request": {
+      "protocolVersion": 1,
+      "batchId": "batch:academy-gate-choice",
+      "campaignId": "campaign-monster-master-reference",
+      "expectedRevision": 5,
+      "events": [
+        {
+          "eventId": "event-choice-academy-gate",
+          "type": "choice.presented",
+          "audience": {
+            "kind": "public"
+          },
+          "payload": {
+            "choiceId": "choice:academy-gate-approach",
+            "prompt": "How should Ada approach the sealed academy gate?",
+            "allowedPlayerIds": [
+              "player:ada"
+            ],
+            "options": [
+              {
+                "optionId": "option:inspect-runes",
+                "label": "Inspect the rain-washed runes.",
+                "check": {
+                  "checkId": "check:academy-gate-runes",
+                  "kind": "insight",
+                  "target": 12,
+                  "deterministicRoll": 11,
+                  "modifier": 3,
+                  "success": {
+                    "consequenceId": "consequence:gate-runes-understood",
+                    "text": "Ada deciphers the rival-house ward and exposes its weak point.",
+                    "flagsAdded": [
+                      "academy-gate:runes-understood"
+                    ]
+                  },
+                  "failure": {
+                    "consequenceId": "consequence:gate-runes-misread",
+                    "text": "Ada misreads the ward and alerts the rival trainer.",
+                    "flagsAdded": [
+                      "academy-gate:rival-alerted"
+                    ]
+                  }
+                }
+              },
+              {
+                "optionId": "option:force-gate",
+                "label": "Force the gate before the rival can react.",
+                "check": {
+                  "checkId": "check:academy-gate-force",
+                  "kind": "might",
+                  "target": 15,
+                  "deterministicRoll": 8,
+                  "modifier": 2,
+                  "success": {
+                    "consequenceId": "consequence:gate-forced",
+                    "text": "The gate gives way before the alarm catches.",
+                    "flagsAdded": [
+                      "academy-gate:forced"
+                    ]
+                  },
+                  "failure": {
+                    "consequenceId": "consequence:gate-held",
+                    "text": "The gate holds and the rival trainer takes position.",
+                    "flagsAdded": [
+                      "academy-gate:rival-prepared"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "createdAt": "2026-08-04T12:06:00.000Z"
+        }
+      ]
+    },
+    "expected": {
+      "kind": "campaign.events_appended",
+      "campaignRevision": 6,
+      "eventIds": [
+        "event-choice-academy-gate"
+      ],
+      "exactRetryDuplicatesEvent": false
+    }
+  },
+  "choiceCase": {
+    "caseId": "submit-bounded-choice",
+    "principal": {
+      "kind": "player",
+      "playerId": "player:ada"
+    },
+    "envelope": {
+      "protocolVersion": 1,
+      "commandId": "command:choose-inspect-runes",
+      "campaignId": "campaign-monster-master-reference",
+      "issuedAt": "2026-08-04T12:06:30.000Z",
+      "command": {
+        "kind": "campaign.submit_choice",
+        "expectedRevision": 6,
+        "choiceId": "choice:academy-gate-approach",
+        "optionId": "option:inspect-runes"
+      }
+    },
+    "expected": {
+      "kind": "campaign.command_accepted",
+      "campaignRevision": 9,
+      "eventTypes": [
+        "campaign.choice_submitted",
+        "check.resolved",
+        "campaign.consequence"
+      ],
+      "check": {
+        "checkId": "check:academy-gate-runes",
+        "target": 12,
+        "deterministicRoll": 11,
+        "modifier": 3,
+        "total": 14,
+        "result": "success"
+      },
+      "consequenceId": "consequence:gate-runes-understood",
+      "exactRetryDuplicatesEvent": false
+    }
+  },
+  "encounterCase": {
+    "caseId": "launch-arena-after-check",
+    "principal": {
+      "kind": "runtime",
+      "serviceId": "rpg-gm-runtime"
+    },
+    "request": {
+      "protocolVersion": 1,
+      "encounterId": "encounter:academy-gate",
+      "campaignId": "campaign-monster-master-reference",
+      "campaignRevision": 9,
+      "rulesetId": "monster-master-duel",
+      "idempotencyKey": "encounter:academy-gate:choice-path:v1",
+      "difficulty": {
+        "id": "normal",
+        "encounterPressure": "standard",
+        "enemyTacticalIntensity": "competent",
+        "defeatConsequences": "consequential",
+        "characterDeathRisk": "real",
+        "recoverySupport": "standard"
+      },
+      "participants": [
+        {
+          "participantId": "trainer:ada",
+          "controller": {
+            "kind": "player",
+            "playerId": "player:ada"
+          },
+          "teamId": "party:keepers",
+          "displayName": "Ada",
+          "rulesState": {
+            "creatureIds": [
+              "creature:emberling:ada"
+            ]
+          }
+        },
+        {
+          "participantId": "trainer:rival",
+          "controller": {
+            "kind": "runtime"
+          },
+          "teamId": "faction:rival-house",
+          "displayName": "Rival Trainer",
+          "rulesState": {
+            "creatureIds": [
+              "creature:bulwark:rival"
+            ]
+          }
+        }
+      ],
+      "objectives": [
+        {
+          "objectiveId": "objective:defeat-rival",
+          "kind": "defeat",
+          "description": "Defeat the rival trainer's active roster.",
+          "rules": {
+            "targetTeamId": "faction:rival-house"
+          }
+        }
+      ],
+      "battlefield": {
+        "theme": "monster-master-academy-gate",
+        "environmentTags": [
+          "rain",
+          "stone",
+          "academy"
+        ],
+        "layoutHint": "compact-duel",
+        "assetIds": [
+          "battlefield:academy-gate:v1"
+        ]
+      }
+    },
+    "expected": {
+      "state": "preparing",
+      "exactRetryReturnsSameHandle": true
+    }
+  },
+  "completionCase": {
+    "caseId": "complete-arena-encounter",
+    "principal": {
+      "kind": "runtime",
+      "serviceId": "gameframe-encounter-engine"
+    },
+    "request": {
+      "protocolVersion": 1,
+      "completionId": "completion:academy-gate:v1",
+      "encounterId": "encounter:academy-gate",
+      "outcome": {
+        "kind": "encounter.terminal_outcome",
+        "result": "victory",
+        "winnerTeamId": "party:keepers",
+        "objectiveResults": [
+          {
+            "objectiveId": "objective:defeat-rival",
+            "status": "completed"
+          }
+        ],
+        "participantResults": [
+          {
+            "participantId": "trainer:ada",
+            "status": "active",
+            "healthRemaining": 6,
+            "conditions": [
+              "condition:winded"
+            ],
+            "resourceChanges": {
+              "command-energy": -2
+            }
+          },
+          {
+            "participantId": "trainer:rival",
+            "status": "defeated",
+            "healthRemaining": 0,
+            "conditions": [],
+            "resourceChanges": {}
+          }
+        ],
+        "rewards": [
+          {
+            "rewardId": "flag:rival-gate-defeated",
+            "kind": "flag",
+            "quantity": 1
+          }
+        ],
+        "ruleset": {
+          "id": "monster-master-duel",
+          "revision": 1
+        },
+        "commit": {
+          "matchId": "match:academy-gate:v1",
+          "matchRevision": 37,
+          "eventCount": 37,
+          "completedAt": "2026-08-04T12:20:00.000Z"
+        }
+      }
+    },
+    "expected": {
+      "state": "completed",
+      "result": "victory",
+      "exactRetryReturnsSameHandle": true,
+      "conflictingRetryRejected": true
+    }
+  },
+  "resumeCase": {
+    "caseId": "resume-campaign-after-arena",
+    "principal": {
+      "kind": "runtime",
+      "serviceId": "rpg-gm-runtime"
+    },
+    "request": {
+      "protocolVersion": 1,
+      "batchId": "batch:academy-gate-return",
+      "campaignId": "campaign-monster-master-reference",
+      "expectedRevision": 9,
+      "events": [
+        {
+          "eventId": "event-encounter-academy-gate-completed",
+          "type": "encounter.completed",
+          "audience": {
+            "kind": "public"
+          },
+          "payload": {
+            "encounterId": "encounter:academy-gate",
+            "result": "victory",
+            "winnerTeamId": "party:keepers",
+            "commit": {
+              "matchId": "match:academy-gate:v1",
+              "matchRevision": 37,
+              "eventCount": 37
+            }
+          },
+          "createdAt": "2026-08-04T12:20:01.000Z"
+        },
+        {
+          "eventId": "event-scene-academy-courtyard",
+          "type": "scene.presented",
+          "audience": {
+            "kind": "public"
+          },
+          "payload": {
+            "sceneId": "scene:academy-courtyard",
+            "title": "Beyond the Gate",
+            "narration": "The ward gutters out and the academy courtyard opens beyond the defeated rival.",
+            "assetIds": [
+              "location:academy-courtyard:v1"
+            ],
+            "transition": "encounter-return"
+          },
+          "createdAt": "2026-08-04T12:20:02.000Z"
+        }
+      ]
+    },
+    "expected": {
+      "kind": "campaign.events_appended",
+      "campaignRevision": 11,
+      "eventIds": [
+        "event-encounter-academy-gate-completed",
+        "event-scene-academy-courtyard"
+      ],
+      "exactRetryDuplicatesEvent": false,
+      "playerProjectionIncludesReturnScene": true
+    }
+  }
+}
