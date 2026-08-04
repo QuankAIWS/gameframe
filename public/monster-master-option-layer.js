@@ -31,12 +31,31 @@ function renderContext() {
   ].join("|");
 }
 
+function semanticMarkup(node) {
+  if (!(node instanceof Element)) return null;
+  const clone = node.cloneNode(true);
+  if (clone instanceof Element) clone.removeAttribute("data-preview");
+  return clone.outerHTML;
+}
+
 function nodesSignature(nodes) {
   return nodes.map((node) => {
     if (node.nodeType === Node.TEXT_NODE) return `#text:${node.textContent ?? ""}`;
-    if (node instanceof Element) return node.outerHTML;
+    if (node instanceof Element) return semanticMarkup(node);
     return `${node.nodeName}:${node.textContent ?? ""}`;
   }).join("\n");
+}
+
+function synchronizeTransientState(currentNodes, nextNodes) {
+  currentNodes.forEach((currentNode, index) => {
+    const nextNode = nextNodes[index];
+    if (!(currentNode instanceof HTMLElement) || !(nextNode instanceof HTMLElement)) return;
+    if (nextNode.dataset.preview === undefined) {
+      delete currentNode.dataset.preview;
+    } else {
+      currentNode.dataset.preview = nextNode.dataset.preview;
+    }
+  });
 }
 
 function positionOptionLayer() {
@@ -83,6 +102,8 @@ function installStableOptionReconciliation() {
     if (!sameContext || !sameMarkup) {
       nativeReplaceChildren(...nextNodes);
       options.dataset.optionRenderContext = nextContext;
+    } else {
+      synchronizeTransientState(currentNodes, nextNodes);
     }
     scheduleOptionLayerPosition();
   }
