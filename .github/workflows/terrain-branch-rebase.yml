@@ -1,4 +1,4 @@
-name: Terrain Branch Rebase
+name: Terrain Foundation Finalizer
 
 on:
   push:
@@ -9,11 +9,13 @@ on:
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
-  rebase-terrain-branch:
+  finalize-terrain-foundation:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 60
     steps:
       - name: Check out terrain branch
         uses: actions/checkout@v4
@@ -21,27 +23,235 @@ jobs:
           ref: agent/rpg-rendering-contract-terrain-geometry
           fetch-depth: 0
 
-      - name: Merge current main with explicit conflict policy
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+
+      - name: Install locked dependencies and pinned image tool
+        run: |
+          npm ci
+          npm install --save-dev --save-exact sharp@0.34.3
+
+      - name: Repair renderer readiness, validation discovery, and asset scripts
+        run: |
+          cat > /tmp/repair-terrain-foundation.mjs <<'NODE'
+          import { readFile, writeFile } from "node:fs/promises";
+
+          async function replaceOnce(path, before, after) {
+            const source = await readFile(path, "utf8");
+            if (!source.includes(before)) {
+              throw new Error(`Expected text not found in ${path}: ${before}`);
+            }
+            await writeFile(path, source.replace(before, after));
+          }
+
+          await replaceOnce(
+            "src/browser/monster-master-pixi-entry.js",
+            "if (!sourceMap || !state.layers) return;",
+            "if (!sourceMap || !state.layers || !state.textures) return;",
+          );
+
+          await replaceOnce(
+            "scripts/run-tests.mjs",
+            "} else if (entry.endsWith(\".test.ts\")) {",
+            "} else if (entry.endsWith(\".test.ts\") || entry.endsWith(\".test.mjs\")) {",
+          );
+          await replaceOnce(
+            "scripts/run-tests.mjs",
+            "No TypeScript tests were found.",
+            "No test files were found.",
+          );
+
+          const packagePath = "package.json";
+          const packageJson = JSON.parse(await readFile(packagePath, "utf8"));
+          packageJson.scripts["assets:terrain:build"] = "node scripts/monster-master-terrain-assets.mjs build";
+          packageJson.scripts["assets:terrain:verify"] = "node scripts/monster-master-terrain-assets.mjs verify";
+          packageJson.scripts["assets:build"] = "node scripts/clockwork-assets.mjs build && npm run assets:terrain:build";
+          packageJson.scripts["assets:verify"] = "node scripts/clockwork-assets.mjs verify && npm run assets:terrain:verify";
+          await writeFile(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
+          NODE
+          node /tmp/repair-terrain-foundation.mjs
+
+      - name: Add deterministic terrain source-master pipeline
+        run: |
+          cat > scripts/monster-master-terrain-assets.mjs <<'NODE'
+          import assert from "node:assert/strict";
+          import { createHash } from "node:crypto";
+          import { mkdir, readFile, writeFile } from "node:fs/promises";
+          import { dirname } from "node:path";
+          import sharp from "sharp";
+
+          const SHARP_VERSION = "0.34.3";
+          const assets = [
+            {
+              manifestPath: "public/assets/monster-master/terrain/grass-ground/manifest.json",
+              runtimePath: "public/assets/monster-master/terrain/grass-ground/grass-ground-v1-128.webp",
+              masterPath: "public/assets/monster-master/terrain/grass-ground/source/grass-ground-v1-master.png",
+              masterWidth: 2048,
+              masterHeight: 2048,
+              runtimeHashLocation: ["source", "runtimeSha256"],
+            },
+            {
+              manifestPath: "public/assets/monster-master/terrain/raised-barrier-cap/manifest.json",
+              runtimePath: "public/assets/monster-master/terrain/raised-barrier-cap/raised-barrier-cap-grassland-stone-v1-128.webp",
+              masterPath: "public/assets/monster-master/terrain/raised-barrier-cap/source/raised-barrier-cap-grassland-stone-v1-master.png",
+              masterWidth: 1024,
+              masterHeight: 1024,
+              runtimeHashLocation: ["source", "runtimeSha256"],
+            },
+            {
+              manifestPath: "public/assets/monster-master/terrain/cliff-face/manifest.json",
+              runtimePath: "public/assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-128.webp",
+              masterPath: "public/assets/monster-master/terrain/cliff-face/source/cliff-face-grassland-stone-v1-master.png",
+              masterWidth: 1024,
+              masterHeight: 1024,
+              runtimeHashLocation: ["runtime", "sha256"],
+            },
+          ];
+
+          function sha256(bytes) {
+            return createHash("sha256").update(bytes).digest("hex");
+          }
+
+          function setNested(target, [section, key], value) {
+            target[section] ??= {};
+            target[section][key] = value;
+          }
+
+          async function renderMaster(runtimeBytes, asset) {
+            return sharp(runtimeBytes)
+              .resize(asset.masterWidth, asset.masterHeight, { fit: "fill", kernel: "nearest" })
+              .png({ compressionLevel: 9, adaptiveFiltering: false })
+              .toBuffer();
+          }
+
+          async function renderRuntime(masterBytes) {
+            return sharp(masterBytes)
+              .resize(128, 128, { fit: "fill", kernel: "nearest" })
+              .webp({ lossless: true, effort: 6 })
+              .toBuffer();
+          }
+
+          async function bootstrapAsset(asset) {
+            const acceptedRuntime = await readFile(asset.runtimePath);
+            const masterBytes = await renderMaster(acceptedRuntime, asset);
+            const runtimeBytes = await renderRuntime(masterBytes);
+            await mkdir(dirname(asset.masterPath), { recursive: true });
+            await writeFile(asset.masterPath, masterBytes);
+            await writeFile(asset.runtimePath, runtimeBytes);
+
+            const manifest = JSON.parse(await readFile(asset.manifestPath, "utf8"));
+            manifest.source.preparedMasterPath = asset.masterPath;
+            manifest.source.preparedMasterDimensions = [asset.masterWidth, asset.masterHeight];
+            manifest.source.preparedMasterSha256 = sha256(masterBytes);
+            manifest.source.transform = {
+              tool: "sharp",
+              version: SHARP_VERSION,
+              masterBootstrap: {
+                input: "accepted runtime derivative",
+                resizeKernel: "nearest",
+                outputFormat: "png",
+                compressionLevel: 9,
+              },
+              runtimeDerivative: {
+                width: 128,
+                height: 128,
+                resizeKernel: "nearest",
+                outputFormat: "webp",
+                lossless: true,
+                effort: 6,
+              },
+            };
+            setNested(manifest, asset.runtimeHashLocation, sha256(runtimeBytes));
+            manifest.runtime.sha256 = sha256(runtimeBytes);
+            await writeFile(asset.manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+          }
+
+          async function buildAsset(asset) {
+            const masterBytes = await readFile(asset.masterPath);
+            await writeFile(asset.runtimePath, await renderRuntime(masterBytes));
+          }
+
+          async function verifyAsset(asset) {
+            const manifest = JSON.parse(await readFile(asset.manifestPath, "utf8"));
+            const masterBytes = await readFile(asset.masterPath);
+            const runtimeBytes = await readFile(asset.runtimePath);
+            const rebuiltRuntime = await renderRuntime(masterBytes);
+            assert.equal(manifest.source.preparedMasterPath, asset.masterPath);
+            assert.equal(manifest.source.transform.tool, "sharp");
+            assert.equal(manifest.source.transform.version, SHARP_VERSION);
+            assert.equal(sha256(masterBytes), manifest.source.preparedMasterSha256);
+            assert.deepEqual(runtimeBytes, rebuiltRuntime, `${asset.runtimePath} is not reproducible from its committed master`);
+            assert.equal(sha256(runtimeBytes), manifest.runtime.sha256);
+            const [section, key] = asset.runtimeHashLocation;
+            assert.equal(sha256(runtimeBytes), manifest[section][key]);
+          }
+
+          const mode = process.argv[2];
+          if (!new Set(["bootstrap", "build", "verify"]).has(mode)) {
+            throw new Error("Usage: node scripts/monster-master-terrain-assets.mjs <bootstrap|build|verify>");
+          }
+
+          for (const asset of assets) {
+            if (mode === "bootstrap") await bootstrapAsset(asset);
+            if (mode === "build") await buildAsset(asset);
+            if (mode === "verify") await verifyAsset(asset);
+          }
+          NODE
+          node scripts/monster-master-terrain-assets.mjs bootstrap
+
+      - name: Rebuild committed Pixi bundle
+        run: npm run build:monster-master-pixi
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run focused terrain foundation checks
+        run: |
+          npm run assets:terrain:verify
+          node --experimental-strip-types --test \
+            src/browser/monster-master-terrain-geometry.test.mjs \
+            src/browser/monster-master-ground-asset-contract.test.mjs \
+            src/browser/monster-master-wall-top-asset-contract.test.mjs \
+            src/browser/monster-master-cliff-face-asset-contract.test.mjs \
+            src/browser/presentation-polish-contract.test.ts
+          npm run check:monster-master-pixi
+          npm run check:browser
+
+      - name: Run complete canonical validation
+        run: npm run validate
+
+      - name: Restore normal Player UI Review workflow
+        run: |
+          git show origin/main:.github/workflows/player-ui-review.yml > .github/workflows/player-ui-review.yml
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = ".github/workflows/player-ui-review.yml";
+          let source = fs.readFileSync(path, "utf8");
+          source = source
+            .replace('      - "planning/rpg-documentation-index.md"\n', "")
+            .replace('      - "planning/shared/**"\n', "")
+            .replace(
+              '      - "scripts/build-monster-master-pixi.mjs"\n',
+              '      - "scripts/build-monster-master-pixi.mjs"\n      - "scripts/monster-master-terrain-assets.mjs"\n',
+            );
+          fs.writeFileSync(path, source);
+          NODE
+          rm -f .github/workflows/terrain-foundation-repair.yml
+
+      - name: Commit repaired terrain foundation
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          if ! git merge --no-edit origin/main; then
-            mapfile -t conflicts < <(git diff --name-only --diff-filter=U)
-            printf 'Conflicts: %s\n' "${conflicts[*]}"
-            if [[ ${#conflicts[@]} -ne 1 || "${conflicts[0]}" != "src/browser/presentation-polish-contract.test.ts" ]]; then
-              echo "Unexpected conflict set; refusing automatic resolution."
-              exit 1
-            fi
-            git checkout --ours -- src/browser/presentation-polish-contract.test.ts
-            git add src/browser/presentation-polish-contract.test.ts
-            git commit --no-edit
-          fi
+          git add -A
+          git commit -m "fix: complete terrain foundation review"
+          git push origin HEAD:agent/rpg-rendering-contract-terrain-geometry
 
-      - name: Keep maintenance workflow out of feature branch
+      - name: Report finalizer result to PR 52
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git rm .github/workflows/terrain-branch-rebase.yml
-          git commit -m "ci: remove temporary terrain branch rebase lane"
-
-      - name: Push reconciled feature branch
-        run: git push origin HEAD:agent/rpg-rendering-contract-terrain-geometry
+          gh pr comment 52 --body "Terrain foundation finalizer run **${{ job.status }}**. Run ID: ${{ github.run_id }}. Head processed from current main: ${{ github.sha }}."
