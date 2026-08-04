@@ -11,12 +11,14 @@ import {
   type RequestAuthenticator,
 } from "../auth/request-authenticator.ts";
 import {
-  RPG_CAMPAIGN_PROTOCOL_VERSION,
-  RPG_ENCOUNTER_PROTOCOL_VERSION,
   RpgServiceError,
   type RpgPrincipal,
 } from "../rpg/in-memory-rpg-service.ts";
-import { StrictInMemoryRpgService } from "../rpg/strict-in-memory-rpg-service.ts";
+import {
+  RPG_CAMPAIGN_PROTOCOL_VERSION,
+  RPG_ENCOUNTER_PROTOCOL_VERSION,
+  StrictInMemoryRpgService,
+} from "../rpg/strict-in-memory-rpg-service.ts";
 import { InMemoryGameFrameService } from "./in-memory-match-service.ts";
 
 const publicRoot = fileURLToPath(new URL("../../public/", import.meta.url));
@@ -26,6 +28,9 @@ interface ApiError extends Error {
   revision?: number;
   retryable?: boolean;
   status?: number;
+  gameframeCoordinationRevision?: number;
+  presentationSequence?: number;
+  linkedNarrativeRevision?: number;
 }
 
 function json(response: ServerResponse, status: number, value: unknown): void {
@@ -162,6 +167,9 @@ export function createGameFrameServer(
               "deterministic-check",
               "terminal-outcome",
               "campaign-return",
+              "dual-revision-linkage",
+              "runtime-commit-receipts",
+              "legacy-v1-compatibility",
             ],
           },
           games: [
@@ -208,8 +216,17 @@ export function createGameFrameServer(
             await rpgService.appendRuntimeEvents(body, rpgPrincipal(principal)),
           );
         }
-        const result = await rpgService.handleCommand(body, rpgPrincipal(principal));
-        return json(response, result.kind === "campaign.command_rejected" ? 409 : 200, result);
+        const result = await rpgService.handleCommand(body, rpgPrincipal(principal)) as {
+          kind?: string;
+        };
+        return json(
+          response,
+          result.kind === "campaign.command_rejected"
+            || result.kind === "gameframe.command_rejected"
+            ? 409
+            : 200,
+          result,
+        );
       }
 
       const encounterRoute = rpgEncounterRoute(url.pathname);
@@ -299,6 +316,9 @@ export function createGameFrameServer(
         message: error.message,
         revision: error.revision,
         retryable: error.retryable,
+        gameframeCoordinationRevision: error.gameframeCoordinationRevision,
+        presentationSequence: error.presentationSequence,
+        linkedNarrativeRevision: error.linkedNarrativeRevision,
       });
     }
   });
