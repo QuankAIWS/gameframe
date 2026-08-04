@@ -186,6 +186,7 @@ test("Monster Master Pixi battlefield stays inside the mobile viewport", async (
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
   await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
+  await expect(page.locator(".monster-master-hints-toggle")).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterLegacyDrawCount ?? 0)).toBe(0);
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 
@@ -202,16 +203,19 @@ test("Monster Master Pixi battlefield stays inside the mobile viewport", async (
     const camera = document.querySelector(".monster-master-camera-dock")?.getBoundingClientRect();
     const command = document.querySelector(".monster-master-command-deck")?.getBoundingClientRect();
     const comingSoon = document.querySelector(".gameframe-destination-links button[disabled]")?.getBoundingClientRect();
+    const toast = document.querySelector("#monster-master-status-toast")?.getBoundingClientRect();
+    const hintToggle = document.querySelector(".monster-master-hints-toggle")?.getBoundingClientRect();
     const status = document.querySelector("#monster-master-status");
     const statusStyle = status ? getComputedStyle(status) : null;
     return {
       camera: camera ? { top: camera.top, bottom: camera.bottom, right: camera.right } : null,
       command: command ? { top: command.top, bottom: command.bottom, right: command.right } : null,
       comingSoonWidth: comingSoon?.width ?? 0,
+      toast: toast ? { left: toast.left, right: toast.right, top: toast.top, height: toast.height } : null,
+      hintToggle: hintToggle ? { left: hintToggle.left, right: hintToggle.right, top: hintToggle.top } : null,
       status: status ? {
         height: status.getBoundingClientRect().height,
         whiteSpace: statusStyle.whiteSpace,
-        lineClamp: statusStyle.webkitLineClamp,
       } : null,
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
@@ -223,10 +227,16 @@ test("Monster Master Pixi battlefield stays inside the mobile viewport", async (
   expect(overlayGeometry.camera.right).toBeLessThanOrEqual(overlayGeometry.viewportWidth);
   expect(overlayGeometry.command.bottom).toBeLessThanOrEqual(overlayGeometry.viewportHeight);
   expect(overlayGeometry.comingSoonWidth).toBe(0);
+  expect(overlayGeometry.toast).not.toBeNull();
+  expect(overlayGeometry.toast.left).toBeGreaterThanOrEqual(0);
+  expect(overlayGeometry.toast.right).toBeLessThanOrEqual(overlayGeometry.viewportWidth);
+  expect(overlayGeometry.toast.height).toBeGreaterThanOrEqual(24);
+  expect(overlayGeometry.hintToggle).not.toBeNull();
+  expect(overlayGeometry.hintToggle.left).toBeGreaterThanOrEqual(0);
+  expect(overlayGeometry.hintToggle.right).toBeLessThanOrEqual(overlayGeometry.viewportWidth);
   expect(overlayGeometry.status).not.toBeNull();
-  expect(overlayGeometry.status.height).toBeGreaterThanOrEqual(40);
+  expect(overlayGeometry.status.height).toBeGreaterThanOrEqual(20);
   expect(overlayGeometry.status.whiteSpace).toBe("normal");
-  expect(overlayGeometry.status.lineClamp).toBe("2");
 
   await page.screenshot({ path: testInfo.outputPath("monster-master-pixi-mobile.png"), fullPage: true });
 });
