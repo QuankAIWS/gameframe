@@ -10,13 +10,13 @@ import {
   type AuthenticatedPrincipal,
   type RequestAuthenticator,
 } from "../auth/request-authenticator.ts";
-import { GuardedInMemoryRpgService } from "../rpg/guarded-in-memory-rpg-service.ts";
 import {
   RPG_CAMPAIGN_PROTOCOL_VERSION,
   RPG_ENCOUNTER_PROTOCOL_VERSION,
   RpgServiceError,
   type RpgPrincipal,
 } from "../rpg/in-memory-rpg-service.ts";
+import { StrictInMemoryRpgService } from "../rpg/strict-in-memory-rpg-service.ts";
 import { InMemoryGameFrameService } from "./in-memory-match-service.ts";
 
 const publicRoot = fileURLToPath(new URL("../../public/", import.meta.url));
@@ -139,7 +139,7 @@ function errorStatus(error: ApiError): number {
 export function createGameFrameServer(
   matchService = new InMemoryGameFrameService(),
   authenticator: RequestAuthenticator = new DevelopmentHeaderAuthenticator(),
-  rpgService = new GuardedInMemoryRpgService(),
+  rpgService = new StrictInMemoryRpgService(),
 ) {
   return createServer(async (request, response) => {
     try {
