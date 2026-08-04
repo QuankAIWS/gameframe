@@ -27,6 +27,7 @@ test("Cloudflare health advertises the Monster Master authoritative runtime", as
 test("Monster Master browser delivery uses authenticated GameFrame boundaries", async () => {
   const html = await read("public/monster-master.html");
   const app = await read("public/monster-master-app.js");
+  const shell = await read("public/monster-master-shell.js");
   const invitations = await read("public/secure-match-invite.js");
   const combat = await read("public/combat.html");
   const packageJson = JSON.parse(await read("package.json"));
@@ -34,9 +35,20 @@ test("Monster Master browser delivery uses authenticated GameFrame boundaries", 
   assert.match(html, /data-entry="\/monster-master-app\.js"/);
   assert.match(html, /id="monster-master-canvas"/);
   assert.match(html, /id="monster-master-select-mend"/);
+  assert.match(html, /Take the trainer's seat/);
+  assert.match(html, /class="monster-master-board-briefing"/);
   assert.match(html, /Battlefield actions, targets, and resolved outcomes appear here\./);
+  assert.match(html, /monster-master-trainer\.css/);
   assert.match(html, /<details id="monster-master-invite-panel"/);
+  assert.doesNotMatch(html, /monster-master-match-topbar/);
+  assert.doesNotMatch(html, /Warden Duel/);
   assert.doesNotMatch(html, /Deploy your roster into the highlighted starting zone\./);
+
+  assert.match(shell, /button\.id = "monster-master-new-match"/);
+  assert.match(shell, /combatNav\.append\(button\)/);
+  assert.match(shell, /replaceAll\("Warden Master", "Verdant Sage"\)/);
+  assert.match(shell, /setupButton\.hidden = !active/);
+
   assert.match(app, /const gameId = "monster-master-duel"/);
   assert.match(app, /gameFrameFetch/);
   assert.match(app, /type === "deploy-unit"/);
