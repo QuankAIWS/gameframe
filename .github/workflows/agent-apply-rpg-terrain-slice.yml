@@ -129,8 +129,8 @@ jobs:
           )
           renderer.write_text(source)
           PY
+          git checkout HEAD -- .github/workflows/player-ui-review.yml
           rm -rf .github/agent-payload
-          rm -f .github/workflows/agent-apply-rpg-terrain-slice.yml
           rm -f public/monster-master-terrain-depth.js public/monster-master-terrain-depth.css
 
       - name: Set up Node
@@ -180,7 +180,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 10
 
-      - name: Commit validated slice
+      - name: Commit validated source slice
         shell: bash
         run: |
           set -euo pipefail
