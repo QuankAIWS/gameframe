@@ -7,7 +7,7 @@ test("keeps the local Monster Master invite available without expanding it over 
   const disclosure = page.locator("#monster-master-invite-panel");
   await expect(disclosure).toBeVisible();
   await expect(disclosure).not.toHaveAttribute("open", "");
-  await expect(disclosure.locator("summary")).toHaveText("Second-player duel invite");
+  await expect(disclosure.locator("summary")).toHaveText("Second-trainer battle invite");
 
   await disclosure.locator("summary").click();
   await expect(disclosure).toHaveAttribute("open", "");
