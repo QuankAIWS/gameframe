@@ -142,3 +142,19 @@ Licensing standards vary by jurisdiction and are not always sensible. A person m
 - Basic domestic cube ownership must not automatically make a character a Monster Master.
 - Wild capture, dangerous-species handling, roster capacity, and competitive battling can unlock through separate certifications.
 - Regional law may alter requirements, fees, exemptions, and enforcement.
+
+## Decision 9 — Monster-controlled exits and containment locks
+
+Intelligent monsters can normally leave their own capture cubes without waiting for a trainer to release them. Animal-like monsters generally cannot operate the exit controls unless specially trained or provided with an adapted interface.
+
+Exit permissions are not absolute. Lawful locking systems may be required in restricted public areas, medical quarantine, prisons, disaster response, or the relocation of dangerous monsters. Purpose-built relocation cubes prioritize secure containment over comfort and ordinary self-exit rights.
+
+Cubes can also be illegally modified. Contraband overrides may prevent an intelligent monster from leaving, bypass legal safeguards, conceal the cube's actual occupant, or permit release where local systems have imposed a safety lock.
+
+### Implementation consequences
+
+- Cube records need exit-permission and containment-lock states.
+- Intelligent monsters receive self-exit permission by default unless a lawful or illegal override is active.
+- Restricted zones may temporarily impose certified containment requirements.
+- Dangerous-monster relocation cubes are a distinct equipment category with stricter licensing and inspection.
+- Illegal cube modifications can create rescue, smuggling, escape, and enforcement scenarios.
