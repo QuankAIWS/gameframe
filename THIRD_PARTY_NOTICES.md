@@ -20,7 +20,7 @@ Scribbles GameFrame remains proprietary and all rights reserved. The following i
 - Use: WebGL battlefield rendering, scene composition, texture loading, and drawing primitives for Monster Master
 - Repository boundary: bundled into `public/monster-master-pixi-bundle.js` by `scripts/build-monster-master-pixi.mjs`; no runtime CDN is used
 
-The committed Pixi bundle can include code from PixiJS runtime dependencies recorded in `package-lock.json`, including packages licensed under permissive terms such as MIT, ISC, and BSD-3-Clause. Those dependencies include `earcut`, `eventemitter3`, `ismobilejs`, `parse-svg-path`, `tiny-lru`, `@xmldom/xmldom`, and `@webgpu/types` where applicable to the selected Pixi build. Their copyright and license terms remain with their respective authors.
+The committed Pixi bundle can include transitive runtime code under independently permissive licenses. The exact dependency graph, package versions, integrity hashes, and declared license metadata—including entries such as `earcut`, `@xmldom/xmldom`, and `@webgpu/types` in the current lockfile—are retained in `package-lock.json`. Copyright and license terms remain with their respective authors.
 
 ## esbuild
 
@@ -31,4 +31,4 @@ The committed Pixi bundle can include code from PixiJS runtime dependencies reco
 - Use: deterministic build-time bundling of the Discord Activity and Monster Master browser entries
 - Repository boundary: development dependency only; not used as runtime game authority
 
-The exact dependency graph, versions, integrity hashes, and package license metadata are retained in `package-lock.json`. Generated browser bundles are reproducibly checked during validation; they must not be edited manually or loaded from an unpinned runtime CDN.
+Generated browser bundles are reproducibly checked during validation; they must not be edited manually or loaded from an unpinned runtime CDN.
