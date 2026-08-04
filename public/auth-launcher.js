@@ -50,7 +50,9 @@ if (entry === "/app.js") {
     await import("./monster-master-battlefield-effects.js");
     await import("./monster-master-gestures.js");
     await import("./monster-master-keyboard.js");
-  } else {
+  }
+
+  if (useLegacyRenderer) {
     document.body.classList.add("monster-master-legacy-fallback");
     const errorBanner = document.querySelector("#monster-master-error");
     if (errorBanner) {
