@@ -52,4 +52,18 @@ Cube expectations create a recurring progression cost, relationship pressure, st
 - Progression and economy design must include cube purchases or upgrades.
 - Refusal to deploy is a possible consequence of severe accommodation neglect, not a random combat failure.
 - Cube interiors can become character scenes, customization spaces, rewards, and visual assets.
-- The exact capture procedure and rules for placing a new monster into a cube remain undecided.
+
+## Decision 3 — Mixed capture rules
+
+Capture depends on the monster's level of intelligence and agency.
+
+Ordinary animal-like monsters can be captured through battle by weakening them and successfully containing them in a capture cube. Intelligent monsters cannot be legitimately captured this way. They must agree to enter the cube after negotiation, recruitment, payment, friendship, intimidation, defeat, or another story-appropriate arrangement.
+
+Illegal capture cubes can override that consent. Their manufacture, sale, and use provide a straightforward criminal practice for antagonists and corrupt trainers without requiring every normal trainer to behave like a kidnapper.
+
+### Implementation consequences
+
+- Monster definitions need an intelligence or consent classification.
+- Capture encounters must support both mechanical containment and dialogue-driven recruitment.
+- Intelligent-monster recruitment may include explicit terms, costs, or expectations.
+- Forced-capture cubes are contraband and can create legal, faction, and relationship consequences.
