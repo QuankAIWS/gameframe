@@ -11,6 +11,7 @@ const roster = document.querySelector("#monster-master-roster-list");
 const rosterTitle = document.querySelector("#monster-master-roster-title");
 const openRoster = document.querySelector("#monster-master-open-roster");
 const rosterRail = document.querySelector("#monster-master-roster-rail");
+const battlefieldStage = document.querySelector(".monster-master-battlefield-stage");
 const alphaCommand = document.querySelector("#monster-master-alpha-command");
 const betaCommand = document.querySelector("#monster-master-beta-command");
 const creatureAtlasUrl = "/assets/monster-master/creature-atlas-v1.svg";
@@ -172,6 +173,14 @@ function scheduleTurnOrder() {
   requestAnimationFrame(renderTurnOrder);
 }
 
+function containPixiCanvas() {
+  if (!battlefieldStage) return;
+  battlefieldStage.style.position = "relative";
+  battlefieldStage.style.isolation = "isolate";
+  battlefieldStage.style.overflow = "hidden";
+  battlefieldStage.dataset.canvasContainment = "battlefield-stage";
+}
+
 function simplifyPlayerNavigation() {
   for (const link of document.querySelectorAll('.combat-nav a[href="/combat.html"], .combat-nav a[href="/tactical.html"]')) {
     link.remove();
@@ -195,5 +204,11 @@ const rosterObserver = new MutationObserver(() => {
 });
 if (roster) rosterObserver.observe(roster, { childList: true, subtree: true, characterData: true });
 
+containPixiCanvas();
 simplifyPlayerNavigation();
-window.gameFrameMonsterCorrection = Object.freeze({ capture, renderTurnOrder, simplifyPlayerNavigation });
+window.gameFrameMonsterCorrection = Object.freeze({
+  capture,
+  containPixiCanvas,
+  renderTurnOrder,
+  simplifyPlayerNavigation,
+});
