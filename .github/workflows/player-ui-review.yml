@@ -38,6 +38,7 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/player-ui-review.yml"
+      - ".github/workflows/terrain-foundation-repair.yml"
 
 permissions:
   contents: read
