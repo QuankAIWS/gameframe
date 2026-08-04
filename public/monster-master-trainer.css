@@ -15,6 +15,9 @@ body.monster-master-match-active #monster-master-match.monster-master-game-shell
 }
 
 .combat-nav .monster-master-nav-setup {
+  display: none;
+  align-items: center;
+  justify-content: center;
   min-height: 34px;
   padding: 7px 12px;
   border: 1px solid rgba(116, 171, 231, .42);
@@ -30,15 +33,15 @@ body.monster-master-match-active #monster-master-match.monster-master-game-shell
   text-transform: uppercase;
 }
 
+body.monster-master-match-active .combat-nav .monster-master-nav-setup {
+  display: inline-flex;
+}
+
 .combat-nav .monster-master-nav-setup:hover,
 .combat-nav .monster-master-nav-setup:focus-visible {
   border-color: var(--cyan);
   background: rgba(39, 72, 108, .96);
   outline: none;
-}
-
-.combat-nav .monster-master-nav-setup[hidden] {
-  display: none;
 }
 
 .monster-master-board-briefing {
