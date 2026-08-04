@@ -8,6 +8,13 @@ async function diagnostics(page) {
   return page.locator("#monster-master-details").evaluate((node) => JSON.parse(node.textContent));
 }
 
+async function waitForPixi(page) {
+  await expect(page.locator("body.monster-master-match-active")).toBeVisible();
+  await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
+  await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterPixiBridge))).toBe(true);
+}
+
 async function viewAs(page, matchId, playerId) {
   const response = await page.context().request.get(`/api/matches/${encodeURIComponent(matchId)}`, {
     headers: playerHeaders(playerId),
@@ -29,20 +36,12 @@ async function submit(page, view, playerId, action) {
   return response.json();
 }
 
-async function clickBoardCoordinate(page, coordinate) {
-  const state = await diagnostics(page);
-  const box = await page.locator("#monster-master-canvas").boundingBox();
-  expect(box).not.toBeNull();
-  const bounds = state.viewport.bounds;
-  const cellSize = Math.min(box.width / bounds.columns, box.height / bounds.rows);
-  const originX = (box.width - cellSize * bounds.columns) / 2;
-  const originY = (box.height - cellSize * bounds.rows) / 2;
-  await page.locator("#monster-master-canvas").click({
-    position: {
-      x: originX + (coordinate.x - bounds.x + 0.5) * cellSize,
-      y: originY + (coordinate.y - bounds.y + 0.5) * cellSize,
-    },
-  });
+async function dispatchBoardCoordinate(page, coordinate) {
+  const dispatched = await page.evaluate(
+    (target) => window.gameFrameMonsterPixiBridge.dispatchCoordinate(target),
+    coordinate,
+  );
+  expect(dispatched).toBe(true);
 }
 
 test("stale Monster Master deployment refreshes without duplicate mutation", async ({ page }) => {
@@ -54,18 +53,17 @@ test("stale Monster Master deployment refreshes without duplicate mutation", asy
   });
   await page.goto("/monster-master.html?player=monster-stale");
   await page.locator("#monster-master-theo").click();
+  await waitForPixi(page);
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 0");
 
   const browserState = await diagnostics(page);
+  expect(browserState.selectedUnitId).toBeTruthy();
   const staleView = await viewAs(page, browserState.matchId, browserState.playerId);
-  const bounds = browserState.viewport.bounds;
   const deployment = staleView.observation.legalActions.find((action) => (
     action.type === "deploy-unit"
     && action.unitId === browserState.selectedUnitId
-    && action.position.x >= bounds.x
-    && action.position.y >= bounds.y
-    && action.position.x < bounds.x + bounds.columns
-    && action.position.y < bounds.y + bounds.rows
+    && Number.isFinite(action.position?.x)
+    && Number.isFinite(action.position?.y)
   ));
   expect(deployment).toBeDefined();
 
@@ -74,7 +72,7 @@ test("stale Monster Master deployment refreshes without duplicate mutation", asy
   expect(committed.observation.board.units).toHaveLength(2);
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 0");
 
-  await clickBoardCoordinate(page, deployment.position);
+  await dispatchBoardCoordinate(page, deployment.position);
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 2");
   await expect(page.locator("#monster-master-error")).toBeHidden();
   await expect(page.locator("#monster-master-roster-list .combat-roster-unit")).toHaveCount(6);
