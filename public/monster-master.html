@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090d18">
-  <title>Monster Master Duel · Scribbles GameFrame</title>
+  <title>Monster Master · Scribbles GameFrame</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/tactical.css">
   <link rel="stylesheet" href="/combat.css">
@@ -12,98 +12,91 @@
   <link rel="stylesheet" href="/monster-master-motion.css">
   <link rel="stylesheet" href="/monster-master-rotation.css">
   <link rel="stylesheet" href="/monster-master-shell.css">
+  <link rel="stylesheet" href="/monster-master-trainer.css">
 </head>
 <body>
   <main class="shell tactical-shell combat-shell monster-master-shell">
     <header class="hero tactical-hero">
       <div>
-        <p class="eyebrow">SCRIBBLES GAMEFRAME · MM-0001</p>
+        <p class="eyebrow">SCRIBBLES GAMEFRAME · CREATURE BATTLE</p>
         <h1>Monster Master</h1>
-        <p class="hero-copy">Deploy a Warden Master and two monsters, then resolve a deterministic initiative duel with movement, attacks, command energy, and Mend.</p>
+        <p class="hero-copy">Take the trainer's seat, deploy a team of three creatures, and direct every movement, attack, and ability in a deterministic turn-based battle.</p>
       </div>
       <nav class="combat-nav" aria-label="Game navigation">
-        <a class="secondary-button tactical-home-link" href="/combat.html">Combat canary</a>
-        <a class="secondary-button tactical-home-link" href="/">Other games</a>
+        <a class="secondary-button tactical-home-link" href="/">Games</a>
       </nav>
     </header>
 
     <div id="monster-master-error" class="error-banner" role="alert" hidden></div>
 
     <section id="monster-master-lobby" class="panel tactical-lobby" aria-labelledby="monster-master-lobby-title">
-      <p class="section-label">FIRST PLAYABLE DUEL</p>
+      <p class="section-label">FIRST PLAYABLE CREATURE BATTLE</p>
       <h2 id="monster-master-lobby-title">Choose an opponent</h2>
-      <p id="monster-master-lobby-message" class="muted" role="status">Preparing the duel client…</p>
+      <p id="monster-master-lobby-message" class="muted" role="status">Preparing the battle client…</p>
       <div class="mode-grid tactical-mode-grid">
         <button id="monster-master-theo" class="mode-card" type="button">
           <span class="mode-icon" aria-hidden="true">T</span>
           <span>
-            <strong>Duel Theo</strong>
-            <small>Deploy the alpha roster against Theo's deterministic beta roster.</small>
+            <strong>Battle Theo</strong>
+            <small>Lead your alpha team against Theo's deterministic beta team.</small>
           </span>
         </button>
         <button id="monster-master-human" class="mode-card" type="button">
           <span class="mode-icon duo" aria-hidden="true">2P</span>
           <span>
-            <strong>Duel a friend</strong>
-            <small>Create a second authenticated seat and share a resumable invitation.</small>
+            <strong>Battle a friend</strong>
+            <small>Create a second authenticated trainer seat and share a resumable invitation.</small>
           </span>
         </button>
       </div>
     </section>
 
     <section id="monster-master-match" class="panel tactical-match monster-master-game-shell" hidden aria-labelledby="monster-master-match-title">
-      <div class="monster-master-match-topbar">
-        <div class="match-header tactical-match-header">
-          <div>
-            <p class="section-label">ACTIVE MONSTER MASTER DUEL</p>
-            <h2 id="monster-master-match-title">Warden Duel</h2>
-          </div>
-          <span id="monster-master-revision" class="revision">Revision —</span>
-        </div>
-
-        <div id="monster-master-status" class="status" role="status" aria-live="polite">Loading duel state…</div>
-
-        <button id="monster-master-new-match" class="secondary-button monster-master-exit-button" type="button" aria-label="Back to setup">Setup</button>
-      </div>
+      <h2 id="monster-master-match-title" class="monster-master-sr-only">Monster Master battle</h2>
 
       <div class="monster-master-game-grid tactical-layout combat-layout">
-        <aside id="monster-master-roster-rail" class="monster-master-rail monster-master-roster-rail tactical-sidebar combat-sidebar" tabindex="-1" aria-label="Duelists and roster">
-          <button id="monster-master-close-roster" class="monster-master-rail-close" type="button" aria-label="Close roster panel">×</button>
-          <div class="tactical-player-grid" aria-label="Duelists">
+        <aside id="monster-master-roster-rail" class="monster-master-rail monster-master-roster-rail tactical-sidebar combat-sidebar" tabindex="-1" aria-label="Trainers and creature teams">
+          <button id="monster-master-close-roster" class="monster-master-rail-close" type="button" aria-label="Close team panel">×</button>
+          <div class="tactical-player-grid" aria-label="Trainers">
             <article id="monster-master-player-alpha" class="player-card">
               <span class="mark-badge tactical-alpha">A</span>
-              <span><small>Alpha roster</small><strong id="monster-master-alpha-name">Player Alpha</strong></span>
+              <span><small>Alpha team</small><strong id="monster-master-alpha-name">Player Alpha</strong></span>
             </article>
             <article id="monster-master-player-beta" class="player-card">
               <span class="mark-badge tactical-beta">B</span>
-              <span><small>Beta roster</small><strong id="monster-master-beta-name">Player Beta</strong></span>
+              <span><small>Beta team</small><strong id="monster-master-beta-name">Player Beta</strong></span>
             </article>
           </div>
 
           <section class="combat-roster monster-master-roster" aria-labelledby="monster-master-roster-title">
-            <h3 id="monster-master-roster-title">Duel roster</h3>
+            <h3 id="monster-master-roster-title">Creature team</h3>
             <div id="monster-master-roster-list"></div>
           </section>
         </aside>
 
         <div class="tactical-stage combat-stage monster-master-battlefield-stage">
           <div class="monster-master-mobile-rail-controls" aria-label="Battlefield information panels">
-            <button id="monster-master-open-roster" type="button" aria-controls="monster-master-roster-rail" aria-expanded="false">Roster</button>
-            <button id="monster-master-open-intel" type="button" aria-controls="monster-master-intel-rail" aria-expanded="false">Unit</button>
+            <button id="monster-master-open-roster" type="button" aria-controls="monster-master-roster-rail" aria-expanded="false">Turns</button>
+            <button id="monster-master-open-intel" type="button" aria-controls="monster-master-intel-rail" aria-expanded="false">Creature</button>
           </div>
           <div class="tactical-canvas-frame combat-canvas-frame">
             <canvas id="monster-master-canvas" width="960" height="720" tabindex="0" aria-label="Scrollable and rotatable Monster Master battlefield"></canvas>
           </div>
-          <p id="monster-master-help" class="board-help">Battlefield actions, targets, and resolved outcomes appear here.</p>
+          <div class="monster-master-board-briefing">
+            <span class="section-label">BATTLEFIELD BRIEFING</span>
+            <strong id="monster-master-status" class="status" role="status" aria-live="polite">Loading battle state…</strong>
+            <p id="monster-master-help" class="board-help">Battlefield actions, targets, and resolved outcomes appear here.</p>
+            <span id="monster-master-revision" class="monster-master-sr-only">Revision —</span>
+          </div>
         </div>
 
-        <aside id="monster-master-intel-rail" class="monster-master-rail monster-master-intel-rail" tabindex="-1" aria-label="Active unit and battlefield controls">
-          <button id="monster-master-close-intel" class="monster-master-rail-close" type="button" aria-label="Close unit panel">×</button>
+        <aside id="monster-master-intel-rail" class="monster-master-rail monster-master-intel-rail" tabindex="-1" aria-label="Active creature and battlefield controls">
+          <button id="monster-master-close-intel" class="monster-master-rail-close" type="button" aria-label="Close creature panel">×</button>
 
           <section id="monster-master-unit-hud" class="monster-master-unit-hud" data-role="unknown" data-owner="none" aria-labelledby="monster-master-hud-name">
             <div id="monster-master-hud-glyph" class="monster-master-unit-portrait" aria-hidden="true">—</div>
             <div class="monster-master-unit-copy">
-              <p class="section-label">ACTIVE UNIT</p>
+              <p class="section-label">ACTIVE CREATURE</p>
               <h3 id="monster-master-hud-name">—</h3>
               <div class="monster-master-unit-statline">
                 <span id="monster-master-hud-initiative">Initiative —</span>
@@ -112,14 +105,14 @@
             </div>
             <div class="monster-master-health-meter">
               <span>Health</span>
-              <span class="monster-master-health-track" role="meter" aria-label="Active unit health" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0" aria-valuetext="—">
+              <span class="monster-master-health-track" role="meter" aria-label="Active creature health" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0" aria-valuetext="—">
                 <i id="monster-master-hud-health-fill"></i>
               </span>
               <strong id="monster-master-hud-health">—</strong>
             </div>
           </section>
 
-          <div class="monster-master-resource-grid" aria-label="Active unit resources">
+          <div class="monster-master-resource-grid" aria-label="Active creature resources">
             <div class="monster-master-resource"><small>Move</small><strong id="monster-master-hud-move">—</strong></div>
             <div class="monster-master-resource"><small>Primary</small><strong id="monster-master-hud-primary">—</strong></div>
             <div class="monster-master-resource"><small>Command</small><strong id="monster-master-hud-command">—</strong></div>
@@ -129,7 +122,7 @@
             <div><dt>Phase</dt><dd id="monster-master-phase">—</dd></div>
             <div><dt>Round</dt><dd id="monster-master-round">—</dd></div>
             <div><dt>Revision</dt><dd id="monster-master-revision-small">—</dd></div>
-            <div><dt>Active unit</dt><dd id="monster-master-active-unit">—</dd></div>
+            <div><dt>Active creature</dt><dd id="monster-master-active-unit">—</dd></div>
             <div><dt>Alpha command</dt><dd id="monster-master-alpha-command">—</dd></div>
             <div><dt>Beta command</dt><dd id="monster-master-beta-command">—</dd></div>
             <div><dt>Move</dt><dd id="monster-master-move-budget">—</dd></div>
@@ -151,24 +144,24 @@
           <div id="monster-master-effects" class="combat-effects" aria-live="polite"></div>
 
           <details id="monster-master-invite-panel" class="invite-panel monster-master-invite-panel" hidden>
-            <summary>Second-player duel invite</summary>
+            <summary>Second-trainer battle invite</summary>
             <p>This local-development link carries a synthetic seat. Hosted Discord delivery uses a signed authenticated invitation.</p>
             <div class="invite-controls">
-              <input id="monster-master-invite-link" type="text" readonly aria-label="Second-player duel invite link">
+              <input id="monster-master-invite-link" type="text" readonly aria-label="Second-trainer battle invite link">
               <button id="monster-master-copy-invite" class="secondary-button" type="button">Copy invite</button>
             </div>
           </details>
 
           <details class="diagnostics monster-master-diagnostics">
-            <summary>Duel diagnostics</summary>
+            <summary>Battle diagnostics</summary>
             <pre id="monster-master-details" class="details"></pre>
           </details>
         </aside>
 
-        <section class="monster-master-command-deck" aria-label="Duel command deck">
-          <div class="combat-action-bar monster-master-action-bar" aria-label="Duel actions">
+        <section class="monster-master-command-deck" aria-label="Battle command deck">
+          <div class="combat-action-bar monster-master-action-bar" aria-label="Creature actions">
             <button id="monster-master-select-deploy" type="button" class="combat-action-button" aria-label="Deploy" data-hotkey="1" data-action-icon="◆">
-              <span class="monster-master-action-label">Deploy</span><small class="monster-master-action-caption">Place roster</small>
+              <span class="monster-master-action-label">Deploy</span><small class="monster-master-action-caption">Place creature</small>
             </button>
             <button id="monster-master-select-move" type="button" class="combat-action-button" aria-label="Move" data-hotkey="2" data-action-icon="↗">
               <span class="monster-master-action-label">Move</span><small class="monster-master-action-caption">Reposition</small>
@@ -183,7 +176,7 @@
               <span class="monster-master-action-label">End</span><small class="monster-master-action-caption">Pass initiative</small>
             </button>
           </div>
-          <div id="monster-master-options" class="tactical-destinations combat-options monster-master-options" aria-label="Legal duel actions"></div>
+          <div id="monster-master-options" class="tactical-destinations combat-options monster-master-options" aria-label="Legal creature actions"></div>
         </section>
 
         <button id="monster-master-drawer-backdrop" class="monster-master-drawer-backdrop" type="button" aria-label="Close battlefield information panel"></button>
