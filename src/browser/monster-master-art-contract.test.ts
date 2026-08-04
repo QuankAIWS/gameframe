@@ -8,6 +8,7 @@ test("Monster Master uses one authoritative controller and one on-demand Pixi re
   const launcher = await read("public/auth-launcher.js");
   const monsterApp = await read("public/monster-master-app.js");
   const monsterShell = await read("public/monster-master-shell.js");
+  const gameframeNav = await read("public/gameframe-nav.js");
   const correction = await read("public/monster-master-correction.js");
   const overlay = await read("public/monster-master-overlay.js");
   const pixiSource = await read("src/browser/monster-master-pixi-entry.js");
@@ -41,9 +42,10 @@ test("Monster Master uses one authoritative controller and one on-demand Pixi re
   assert.match(monsterApp, /if \(window\.gameFrameMonsterRendererMode === "pixi"\) \{\n    renderDiagnostics\(\);\n    return;/);
   assert.match(monsterApp, /window\.gameFrameMonsterLegacyDrawCount/);
 
+  assert.match(gameframeNav, /gameframe:destination-bar-ready/);
   assert.match(monsterShell, /updateShellState\(\);\n  applyTrainerCopy\(\);\n  if \(window\.gameFrameMonsterRendererMode === "pixi"\) return/);
-  assert.match(monsterShell, /button\.id = "monster-master-new-match"/);
-  assert.match(monsterShell, /combatNav\.append\(button\)/);
+  assert.match(monsterShell, /setupButton\.id = "monster-master-new-match"/);
+  assert.match(monsterShell, /destinationLinks\.insertBefore\(setupButton/);
   assert.match(monsterShell, /replaceAll\("Warden Master", "Verdant Sage"\)/);
 
   for (const presentation of [correction, overlay]) {
