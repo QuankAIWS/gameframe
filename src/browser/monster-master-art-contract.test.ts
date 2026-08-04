@@ -41,8 +41,10 @@ test("Monster Master uses one authoritative controller and one on-demand Pixi re
   assert.match(monsterApp, /if \(window\.gameFrameMonsterRendererMode === "pixi"\) \{\n    renderDiagnostics\(\);\n    return;/);
   assert.match(monsterApp, /window\.gameFrameMonsterLegacyDrawCount/);
 
-  assert.match(monsterShell, /if \(window\.gameFrameMonsterRendererMode === "pixi"\) return/);
-  assert.match(monsterShell, /if \(window\.gameFrameMonsterRendererMode === "pixi"\) \{\n    updateShellState\(\);\n    return;/);
+  assert.match(monsterShell, /updateShellState\(\);\n  applyTrainerCopy\(\);\n  if \(window\.gameFrameMonsterRendererMode === "pixi"\) return/);
+  assert.match(monsterShell, /button\.id = "monster-master-new-match"/);
+  assert.match(monsterShell, /combatNav\.append\(button\)/);
+  assert.match(monsterShell, /replaceAll\("Warden Master", "Verdant Sage"\)/);
 
   for (const presentation of [correction, overlay]) {
     assert.match(presentation, /const monsterViewEvent = "gameframe:monster-master-pixi-view"/);
