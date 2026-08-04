@@ -74,13 +74,20 @@ function turnOrder(view) {
   const defeated = new Set(observation.defeatedUnitIds ?? []);
   const units = Object.values(observation.rosters ?? {})
     .flat()
-    .filter((unit) => !defeated.has(unit.id))
     .sort((left, right) => right.initiative - left.initiative || left.id.localeCompare(right.id));
+  const activeUnits = units.filter((unit) => !defeated.has(unit.id));
+  const defeatedUnits = units.filter((unit) => defeated.has(unit.id));
 
-  if (observation.phase !== "combat" || !observation.activeUnitId) return units;
-  const activeIndex = units.findIndex((unit) => unit.id === observation.activeUnitId);
-  if (activeIndex < 0) return units;
-  return [...units.slice(activeIndex), ...units.slice(0, activeIndex)];
+  if (observation.phase !== "combat" || !observation.activeUnitId) {
+    return [...activeUnits, ...defeatedUnits];
+  }
+  const activeIndex = activeUnits.findIndex((unit) => unit.id === observation.activeUnitId);
+  if (activeIndex < 0) return [...activeUnits, ...defeatedUnits];
+  return [
+    ...activeUnits.slice(activeIndex),
+    ...activeUnits.slice(0, activeIndex),
+    ...defeatedUnits,
+  ];
 }
 
 function unitState(view, unit) {
@@ -101,11 +108,12 @@ function renderTurnOrder() {
   if (!latestView || !roster || renderingTurnOrder) return;
 
   const ordered = turnOrder(latestView);
+  const defeated = new Set(latestView.observation.defeatedUnitIds ?? []);
   const seat = friendlySeat(latestView);
   const yourPlayerId = latestView.observation.yourPlayerId ?? window.gameFrameIdentity?.playerId;
   const signature = ordered.map((unit) => {
     const state = unitState(latestView, unit);
-    return `${unit.id}:${state.health}:${unit.initiative}`;
+    return `${unit.id}:${state.health}:${unit.initiative}:${defeated.has(unit.id)}`;
   }).join("|") + `:${latestView.observation.phase}:${latestView.observation.activeUnitId}:${seat}`;
 
   if (roster.dataset.turnOrderSignature === signature && roster.querySelector("[data-turn-unit-id]")) return;
@@ -117,23 +125,28 @@ function renderTurnOrder() {
     const state = unitState(latestView, unit);
     const role = roleFromUnit(unit);
     const friendly = unit.ownerId === yourPlayerId;
+    const isDefeated = defeated.has(unit.id);
     const item = document.createElement("div");
     item.className = `combat-roster-unit monster-master-turn-unit ${friendly ? "is-friendly" : "is-enemy"}`;
-    item.classList.toggle("is-active", unit.id === latestView.observation.activeUnitId);
-    item.classList.toggle("is-next", latestView.observation.phase === "combat" && index === 1);
+    item.classList.toggle("is-active", !isDefeated && unit.id === latestView.observation.activeUnitId);
+    item.classList.toggle("is-next", !isDefeated && latestView.observation.phase === "combat" && index === 1);
+    item.classList.toggle("is-defeated", isDefeated);
     item.dataset.turnUnitId = unit.id;
     item.dataset.role = role;
     item.dataset.owner = friendly ? "friendly" : "enemy";
+    item.dataset.unitState = isDefeated ? "defeated" : "active";
 
     const slot = document.createElement("span");
     slot.className = "monster-master-turn-slot";
-    slot.textContent = latestView.observation.phase !== "combat"
-      ? String(index + 1)
-      : index === 0
-        ? "NOW"
-        : index === 1
-          ? "NEXT"
-          : String(index + 1);
+    slot.textContent = isDefeated
+      ? "OUT"
+      : latestView.observation.phase !== "combat"
+        ? String(index + 1)
+        : index === 0
+          ? "NOW"
+          : index === 1
+            ? "NEXT"
+            : String(index + 1);
 
     const copy = document.createElement("span");
     copy.className = "monster-master-turn-copy";
@@ -141,7 +154,9 @@ function renderTurnOrder() {
     name.textContent = roleLabel(role);
     const meta = document.createElement("small");
     const health = Number.isFinite(state.health) ? `${state.health}/${state.maxHealth}` : "undeployed";
-    meta.textContent = `${friendly ? "BLUE · YOU" : "RED · ENEMY"}  •  HP ${health}  •  INIT ${unit.initiative}`;
+    meta.textContent = isDefeated
+      ? `${friendly ? "BLUE · YOU" : "RED · ENEMY"}  •  DEFEATED  •  INIT ${unit.initiative}`
+      : `${friendly ? "BLUE · YOU" : "RED · ENEMY"}  •  HP ${health}  •  INIT ${unit.initiative}`;
     copy.append(name, meta);
 
     item.append(slot, portrait(role), copy);
