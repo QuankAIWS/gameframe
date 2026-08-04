@@ -68,18 +68,7 @@ let syncPending = false;
 function trainerCopy(value) {
   return value
     .replaceAll("Warden Master", "Verdant Sage")
-    .replace(/\bWarden\b/g, "Sage")
-    .replaceAll("ACTIVE UNIT", "ACTIVE CREATURE")
-    .replaceAll("DEPLOYING UNIT", "DEPLOYING CREATURE")
-    .replaceAll("Active unit", "Active creature")
-    .replaceAll("active unit", "active creature")
-    .replaceAll("selected unit", "selected creature")
-    .replace(/\bDuelists\b/g, "Trainers")
-    .replace(/\bduelists\b/g, "trainers")
-    .replace(/\bDuels\b/g, "Battles")
-    .replace(/\bduels\b/g, "battles")
-    .replace(/\bDuel\b/g, "Battle")
-    .replace(/\bduel\b/g, "battle");
+    .replace(/\bWarden\b/g, "Sage");
 }
 
 function applyTrainerCopy() {
@@ -214,6 +203,9 @@ function syncHud() {
 }
 
 function scheduleSync() {
+  updateShellState();
+  applyTrainerCopy();
+  if (window.gameFrameMonsterRendererMode === "pixi") return;
   if (syncPending) return;
   syncPending = true;
   requestAnimationFrame(syncHud);
