@@ -18,20 +18,9 @@ function currentPair() {
   return [...touches.values()].slice(0, 2);
 }
 
-function cancelSinglePointerDrag(pointerId) {
-  if (!frame) return;
-  frame.dispatchEvent(new PointerEvent("pointercancel", {
-    bubbles: true,
-    cancelable: true,
-    pointerId,
-    pointerType: "touch",
-  }));
-}
-
 function beginGesture() {
   const [left, right] = currentPair();
   if (!left || !right) return;
-  cancelSinglePointerDrag(left.pointerId);
   gesture = {
     distance: Math.max(1, distance(left, right)),
     midpoint: midpoint(left, right),
