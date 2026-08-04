@@ -11,6 +11,7 @@ test("Monster Master uses one authoritative controller and one on-demand Pixi re
   const gameframeNav = await read("public/gameframe-nav.js");
   const correction = await read("public/monster-master-correction.js");
   const overlay = await read("public/monster-master-overlay.js");
+  const hints = await read("public/monster-master-hints.js");
   const pixiSource = await read("src/browser/monster-master-pixi-entry.js");
   const pixiBridge = await read("public/monster-master-pixi-bridge.js");
   const pixiStyles = await read("public/monster-master-pixi.css");
@@ -26,7 +27,8 @@ test("Monster Master uses one authoritative controller and one on-demand Pixi re
   const monsterBranch = launcher.slice(monsterStart, monsterEnd);
   assert.ok(monsterStart >= 0 && monsterEnd > monsterStart);
   assert.ok(monsterBranch.indexOf("monster-master-pixi-bridge.js") < monsterBranch.indexOf("monster-master-correction.js"));
-  assert.ok(monsterBranch.indexOf("monster-master-overlay.js") < monsterBranch.indexOf("await import(entry)"));
+  assert.ok(monsterBranch.indexOf("monster-master-overlay.js") < monsterBranch.indexOf("monster-master-hints.js"));
+  assert.ok(monsterBranch.indexOf("monster-master-hints.js") < monsterBranch.indexOf("await import(entry)"));
   assert.ok(monsterBranch.indexOf("await import(entry)") < monsterBranch.indexOf("monster-master-pixi-bundle.js"));
   assert.doesNotMatch(monsterBranch, /monster-master-overlay-guard\.js/);
   assert.doesNotMatch(monsterBranch, /monster-master-art\.js/);
@@ -57,6 +59,11 @@ test("Monster Master uses one authoritative controller and one on-demand Pixi re
   }
   assert.doesNotMatch(correction, /installCanvasColorRemap/);
   assert.doesNotMatch(correction, /CanvasRenderingContext2D\.prototype/);
+
+  assert.match(hints, /gameframe:monster-master:hints-enabled/);
+  assert.match(hints, /monster-master-status-toast/);
+  assert.match(hints, /monster-master-hints-toggle/);
+  assert.match(hints, /window\.gameFrameMonsterHints = Object\.freeze/);
 
   assert.match(pixiSource, /from "pixi\.js"/);
   assert.match(pixiSource, /preference: "webgl"/);
@@ -96,7 +103,10 @@ test("Monster Master uses one authoritative controller and one on-demand Pixi re
   assert.match(legacyProjection, /LegacyProjection = Object\.freeze\(\{ disabled: true \}\)/);
 
   assert.match(creatureAtlas, /data:image\/webp;base64,/);
-  assert.match(terrainAtlas, /data:image\/webp;base64,/);
+  assert.doesNotMatch(terrainAtlas, /data:image\//);
+  assert.match(terrainAtlas, /linearGradient id="grass-a"/);
+  assert.match(terrainAtlas, /linearGradient id="stone-top"/);
+  assert.match(terrainAtlas, /clipPath id="cell-5"/);
   assert.equal(manifest.version, 2);
   assert.equal(manifest.creatures["warden-master-v1"].role, "master");
   assert.equal(manifest.creatures["stone-bulwark-v1"].role, "bulwark");
@@ -112,5 +122,6 @@ test("Monster Master uses one authoritative controller and one on-demand Pixi re
   assert.match(packageJson.scripts.validate, /check:monster-master-pixi/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-pixi-bundle\.js/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-pixi-bridge\.js/);
+  assert.match(packageJson.scripts["check:browser"], /public\/monster-master-hints\.js/);
   assert.doesNotMatch(packageJson.scripts["check:browser"], /monster-master-overlay-guard/);
 });
