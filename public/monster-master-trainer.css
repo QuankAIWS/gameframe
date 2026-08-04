@@ -74,6 +74,7 @@ body.monster-master-match-active #monster-master-match.monster-master-game-shell
   color: #edf6ff;
   font-size: clamp(.72rem, .82vw, .84rem);
   line-height: 1.25;
+  white-space: normal;
 }
 
 .monster-master-board-briefing #monster-master-help {
@@ -92,8 +93,17 @@ body.monster-master-match-active #monster-master-match.monster-master-game-shell
     grid-template-areas:
       "label"
       "status";
-    min-height: 46px;
+    min-height: 60px;
     padding: 7px 10px;
+  }
+
+  .monster-master-board-briefing #monster-master-status {
+    display: -webkit-box;
+    min-height: 40px;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
   }
 
   .monster-master-board-briefing #monster-master-help {
