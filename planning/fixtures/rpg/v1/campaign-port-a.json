@@ -1,0 +1,291 @@
+{
+  "fixtureVersion": 1,
+  "contract": "rpg-gameframe-port",
+  "slice": "campaign-port-a",
+  "protocolVersions": {
+    "campaign": 1,
+    "encounter": 1
+  },
+  "campaign": {
+    "campaignId": "campaign-monster-master-reference",
+    "title": "Monster Master: First Bond",
+    "schemaVersion": 1,
+    "status": "active",
+    "revision": 4,
+    "createdAt": "2026-08-04T12:00:00.000Z",
+    "updatedAt": "2026-08-04T12:04:00.000Z",
+    "events": [
+      {
+        "eventId": "event-member-ada",
+        "sequence": 1,
+        "type": "campaign.member_added",
+        "audience": {
+          "kind": "runtime"
+        },
+        "payload": {
+          "playerId": "player:ada",
+          "displayName": "Ada",
+          "role": "player",
+          "partyIds": [
+            "party:keepers"
+          ]
+        },
+        "createdAt": "2026-08-04T12:01:00.000Z"
+      },
+      {
+        "eventId": "event-member-bryn",
+        "sequence": 2,
+        "type": "campaign.member_added",
+        "audience": {
+          "kind": "runtime"
+        },
+        "payload": {
+          "playerId": "player:bryn",
+          "displayName": "Bryn",
+          "role": "player",
+          "partyIds": [
+            "party:keepers"
+          ]
+        },
+        "createdAt": "2026-08-04T12:02:00.000Z"
+      },
+      {
+        "eventId": "event-scene-gate",
+        "sequence": 3,
+        "type": "scene.presented",
+        "audience": {
+          "kind": "public"
+        },
+        "payload": {
+          "sceneId": "scene:academy-gate",
+          "title": "The Academy Gate",
+          "narration": "Rain beads across the sealed academy gate.",
+          "assetIds": [
+            "location:academy-gate:v1"
+          ],
+          "transition": "fade"
+        },
+        "createdAt": "2026-08-04T12:03:00.000Z"
+      },
+      {
+        "eventId": "event-reveal-ada",
+        "sequence": 4,
+        "type": "campaign.reveal",
+        "audience": {
+          "kind": "player",
+          "playerId": "player:ada"
+        },
+        "payload": {
+          "revealId": "reveal:rival-sigil",
+          "text": "Ada recognizes the rival house sigil beneath the mud."
+        },
+        "createdAt": "2026-08-04T12:04:00.000Z"
+      }
+    ]
+  },
+  "sessionCases": [
+    {
+      "caseId": "attach-ada",
+      "principal": {
+        "kind": "player",
+        "playerId": "player:ada"
+      },
+      "request": {
+        "protocolVersion": 1,
+        "kind": "campaign.attach",
+        "campaignId": "campaign-monster-master-reference",
+        "connectionId": "connection:ada"
+      },
+      "expected": {
+        "kind": "campaign.attached",
+        "campaignRevision": 4,
+        "visibleEventIds": [
+          "event-scene-gate",
+          "event-reveal-ada"
+        ],
+        "hasMore": false
+      }
+    },
+    {
+      "caseId": "attach-bryn",
+      "principal": {
+        "kind": "player",
+        "playerId": "player:bryn"
+      },
+      "request": {
+        "protocolVersion": 1,
+        "kind": "campaign.attach",
+        "campaignId": "campaign-monster-master-reference",
+        "connectionId": "connection:bryn"
+      },
+      "expected": {
+        "kind": "campaign.attached",
+        "campaignRevision": 4,
+        "visibleEventIds": [
+          "event-scene-gate"
+        ],
+        "hasMore": false
+      }
+    }
+  ],
+  "commandCases": [
+    {
+      "caseId": "submit-public-action",
+      "principal": {
+        "kind": "player",
+        "playerId": "player:ada"
+      },
+      "envelope": {
+        "protocolVersion": 1,
+        "commandId": "command:open-gate",
+        "campaignId": "campaign-monster-master-reference",
+        "issuedAt": "2026-08-04T12:05:00.000Z",
+        "command": {
+          "kind": "campaign.submit_action",
+          "expectedRevision": 4,
+          "visibility": "public",
+          "text": "Inspect the academy gate."
+        }
+      },
+      "expected": {
+        "kind": "campaign.command_accepted",
+        "campaignRevision": 5
+      }
+    },
+    {
+      "caseId": "exact-retry",
+      "reusesCaseId": "submit-public-action",
+      "expected": {
+        "kind": "campaign.command_accepted",
+        "campaignRevision": 5,
+        "duplicatesEvent": false
+      }
+    },
+    {
+      "caseId": "conflicting-command-reuse",
+      "principal": {
+        "kind": "player",
+        "playerId": "player:ada"
+      },
+      "envelope": {
+        "protocolVersion": 1,
+        "commandId": "command:open-gate",
+        "campaignId": "campaign-monster-master-reference",
+        "issuedAt": "2026-08-04T12:05:30.000Z",
+        "command": {
+          "kind": "campaign.submit_action",
+          "expectedRevision": 4,
+          "visibility": "public",
+          "text": "Leave the academy grounds."
+        }
+      },
+      "expected": {
+        "kind": "campaign.command_rejected",
+        "code": "invalid-command",
+        "retryable": false
+      }
+    },
+    {
+      "caseId": "stale-revision",
+      "principal": {
+        "kind": "player",
+        "playerId": "player:bryn"
+      },
+      "envelope": {
+        "protocolVersion": 1,
+        "commandId": "command:knock-gate",
+        "campaignId": "campaign-monster-master-reference",
+        "issuedAt": "2026-08-04T12:06:00.000Z",
+        "command": {
+          "kind": "campaign.submit_action",
+          "expectedRevision": 4,
+          "visibility": "public",
+          "text": "Knock three times."
+        }
+      },
+      "expected": {
+        "kind": "campaign.command_rejected",
+        "code": "revision-conflict",
+        "retryable": true
+      }
+    }
+  ],
+  "encounterCase": {
+    "caseId": "launch-arena-encounter",
+    "principal": {
+      "kind": "runtime"
+    },
+    "request": {
+      "protocolVersion": 1,
+      "encounterId": "encounter:academy-gate",
+      "campaignId": "campaign-monster-master-reference",
+      "campaignRevision": 5,
+      "rulesetId": "monster-master-duel",
+      "idempotencyKey": "encounter:academy-gate:v1",
+      "difficulty": {
+        "id": "normal",
+        "encounterPressure": "standard",
+        "enemyTacticalIntensity": "competent",
+        "defeatConsequences": "consequential",
+        "characterDeathRisk": "real",
+        "recoverySupport": "standard"
+      },
+      "participants": [
+        {
+          "participantId": "trainer:ada",
+          "controller": {
+            "kind": "player",
+            "playerId": "player:ada"
+          },
+          "teamId": "party:keepers",
+          "displayName": "Ada",
+          "rulesState": {
+            "creatureIds": [
+              "creature:emberling:ada"
+            ]
+          }
+        },
+        {
+          "participantId": "trainer:rival",
+          "controller": {
+            "kind": "runtime"
+          },
+          "teamId": "faction:rival-house",
+          "displayName": "Rival Trainer",
+          "rulesState": {
+            "creatureIds": [
+              "creature:bulwark:rival"
+            ]
+          }
+        }
+      ],
+      "objectives": [
+        {
+          "objectiveId": "objective:defeat-rival",
+          "kind": "defeat",
+          "description": "Defeat the rival trainer's active roster.",
+          "rules": {
+            "targetTeamId": "faction:rival-house"
+          }
+        }
+      ],
+      "battlefield": {
+        "theme": "monster-master-academy-gate",
+        "environmentTags": [
+          "rain",
+          "stone",
+          "academy"
+        ],
+        "layoutHint": "compact-duel",
+        "assetIds": [
+          "battlefield:academy-gate:v1"
+        ]
+      }
+    },
+    "expected": {
+      "state": "preparing",
+      "resumeToken": "mock:encounter:academy-gate",
+      "exactRetryReturnsSameHandle": true
+    }
+  }
+}
