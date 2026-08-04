@@ -3,7 +3,7 @@ title: RPG GameFrame Interface Contract
 status: accepted
 document_type: contract
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-03
+last_updated: 2026-08-04
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
@@ -13,6 +13,7 @@ depends_on:
 related:
   - rpg-platform-delivery-plan.md
   - tactical-battler-rpg-foundation.md
+  - fixtures/rpg/v1/shared-rpg-fixtures.json
 ---
 
 # RPG GameFrame Interface Contract
@@ -120,6 +121,24 @@ A deterministic fixture must prove this sequence:
 9. GameFrame returns a structured terminal outcome.
 10. The runtime resumes the scene and GameFrame renders it.
 11. A disconnect and resume do not duplicate commands or presentation events.
+
+## Shared fixture ownership and staged completion
+
+GameFrame owns the canonical machine-readable fixtures under `planning/fixtures/rpg/v1/`. The manifest at `planning/fixtures/rpg/v1/shared-rpg-fixtures.json` is the only canonical fixture list for contract version 1. RPG GM Runtime mirrors those files exactly under `fixtures/rpg/v1/` and validates them against its deterministic in-process boundary.
+
+The initial `campaign-port-a` fixture deliberately proves only the first stable boundary vocabulary:
+
+- two authenticated player attachments;
+- public and player-private projection filtering;
+- a freeform command accepted at the expected revision;
+- exact retry without duplicate event creation;
+- conflicting command reuse with a stable rejection;
+- stale revision rejection;
+- a versioned Monster Master encounter request with idempotent launch.
+
+It does not claim the complete eleven-step conformance journey. Structured choice, noncombat check, terminal encounter outcome, return-scene presentation, durable reconnect, and deployed GameFrame routes expand the same versioned fixture family in later slices.
+
+Fixture changes are canonical-first: update and validate GameFrame, merge the canonical fixture, synchronize the private runtime mirror, run the runtime fixture conformance tests, and then merge runtime changes. Neither repository maintains a second hardcoded fixture list.
 
 ## Delivery evidence
 
