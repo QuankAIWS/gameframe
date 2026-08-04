@@ -1,0 +1,47 @@
+name: Terrain Branch Rebase
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/terrain-branch-rebase.yml
+
+permissions:
+  contents: write
+
+jobs:
+  rebase-terrain-branch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out terrain branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/rpg-rendering-contract-terrain-geometry
+          fetch-depth: 0
+
+      - name: Merge current main with explicit conflict policy
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          if ! git merge --no-edit origin/main; then
+            mapfile -t conflicts < <(git diff --name-only --diff-filter=U)
+            printf 'Conflicts: %s\n' "${conflicts[*]}"
+            if [[ ${#conflicts[@]} -ne 1 || "${conflicts[0]}" != "src/browser/presentation-polish-contract.test.ts" ]]; then
+              echo "Unexpected conflict set; refusing automatic resolution."
+              exit 1
+            fi
+            git checkout --ours -- src/browser/presentation-polish-contract.test.ts
+            git add src/browser/presentation-polish-contract.test.ts
+            git commit --no-edit
+          fi
+
+      - name: Keep maintenance workflow out of feature branch
+        run: |
+          git rm .github/workflows/terrain-branch-rebase.yml
+          git commit -m "ci: remove temporary terrain branch rebase lane"
+
+      - name: Push reconciled feature branch
+        run: git push origin HEAD:agent/rpg-rendering-contract-terrain-geometry
