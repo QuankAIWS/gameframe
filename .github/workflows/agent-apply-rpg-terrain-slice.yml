@@ -43,13 +43,21 @@ jobs:
           tar -xzf /tmp/mm-slice.tar.gz
           python - <<'PY'
           from pathlib import Path
-          path = Path("src/browser/monster-master-art-contract.test.ts")
-          source = path.read_text()
-          source = source.replace(
+
+          contract = Path("src/browser/monster-master-art-contract.test.ts")
+          contract_source = contract.read_text().replace(
               "assert.doesNotMatch(pixiBridge, /function project/);",
               "assert.doesNotMatch(pixiBridge, /function project\\(/);",
           )
-          path.write_text(source)
+          contract.write_text(contract_source)
+
+          renderer = Path("src/browser/monster-master-pixi-entry.js")
+          renderer_source = renderer.read_text().replace(
+              "  clampCamera();\n  saveCamera();\n  scheduleRender();\n}",
+              "  clampCamera();\n  saveCamera();\n  applyCamera();\n  scheduleRender();\n}",
+              1,
+          )
+          renderer.write_text(renderer_source)
           PY
           rm -rf .github/agent-payload
           rm -f .github/workflows/agent-apply-rpg-terrain-slice.yml
