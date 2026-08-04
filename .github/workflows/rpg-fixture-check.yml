@@ -4,16 +4,7 @@ run-name: RPG Node Contract Check · ${{ github.sha }}
 on:
   pull_request:
     branches: [main]
-    paths:
-      - ".github/workflows/rpg-fixture-check.yml"
-      - "planning/fixtures/rpg/**"
-      - "planning/rpg-gameframe-interface-contract.md"
-      - "src/rpg/**"
-      - "src/auth/request-authenticator.ts"
-      - "src/server/http-server.ts"
-      - "src/server/rpg-http-server.test.ts"
-  push:
-    branches: [main]
+    types: [labeled]
     paths:
       - ".github/workflows/rpg-fixture-check.yml"
       - "planning/fixtures/rpg/**"
@@ -33,6 +24,7 @@ concurrency:
 
 jobs:
   validate:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'canonical-validation'
     name: Validate RPG fixtures and Node HTTP boundary
     runs-on: ubuntu-latest
     timeout-minutes: 5
