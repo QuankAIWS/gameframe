@@ -240,3 +240,23 @@ The setting should support ordinary commerce and travel without making every jou
 - Towns need local crime and corruption profiles rather than being automatically safe zones.
 - Security, reputation, licenses, guides, and local knowledge can alter encounter likelihood or available responses.
 - Low-danger travel should still permit scams, theft, complications, and character scenes without forcing combat.
+
+## Decision 15 — Layered law enforcement
+
+Law enforcement is divided among several institutions rather than handled by one universal force.
+
+Town and city guards handle ordinary crime, public disorder, theft, fraud, local warrants, and immediate threats inside their jurisdiction. Their competence, funding, integrity, and authority vary substantially by settlement.
+
+Road patrols protect major routes, investigate banditry and fraudulent toll operations, escort dangerous shipments, maintain warning posts, and respond to incidents between settlements. Remote routes may receive irregular coverage or none at all.
+
+Licensed wardens are specialists responsible for dangerous monsters, unlawful capture, forced-capture cubes, containment failures, prohibited species, serious cube modifications, and incidents beyond the capacity of ordinary guards. Wardens may be national, regional, contracted, or attached to a licensing authority depending on the jurisdiction.
+
+These groups can cooperate, compete, pass responsibility to one another, or argue over jurisdiction while the actual problem becomes worse.
+
+### Implementation consequences
+
+- Settlements and regions need separate guard, road-patrol, and warden presence or response ratings.
+- Crimes and incidents should identify which authority normally has jurisdiction.
+- Local guards are not expected to solve every dangerous-monster emergency.
+- Wardens need specialist training, equipment, legal powers, and recognizable roles distinct from ordinary guards.
+- Corruption, poor funding, jurisdiction disputes, and delayed responses can create scenarios without making every authority institutionally evil.
