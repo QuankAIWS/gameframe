@@ -222,3 +222,21 @@ The setting should preserve this uncertainty unless a specific campaign delibera
 - Visual and mechanical variation among ancient cubes is expected rather than treated as an inconsistency.
 - Factions can dispute excavation rights, ownership, cultural inheritance, and publication of evidence.
 - No implementation identifier should silently encode one origin theory as established fact.
+
+## Decision 14 — Graduated travel danger and human threats
+
+Travel danger increases as civilization becomes thinner. Major settled roads are patrolled, maintained, and generally safe from serious wild-monster attacks. Frontier roads are less reliable, and true wilderness can be extremely dangerous due to territorial monsters, predators, hostile terrain, severe weather, ruins, and the absence of quick assistance.
+
+A safe road is not a harmless road. Travelers can still encounter bandits, thieves, fraudulent toll collectors, dishonest guides, crooked merchants, confidence schemes, staged emergencies, cube theft, and ambushes arranged by people who understand exactly how much equipment a licensed Master is carrying.
+
+Towns and cities have their own threats. Pickpockets, burglars, black-market cube dealers, corrupt officials, swindlers, organized theft rings, and predatory businesses can create trouble without involving a wild monster. Human criminals should remain genuine threats rather than always being disguises, servants, or victims of monsters.
+
+The setting should support ordinary commerce and travel without making every journey a constant battle. Danger is contextual, and many threats should be avoidable through preparation, judgment, reputation, local knowledge, or social play.
+
+### Implementation consequences
+
+- Routes and regions need a travel-danger classification tied to settlement, patrol coverage, terrain, and monster activity.
+- Encounter generation must include monster, human, social, criminal, and environmental threats.
+- Towns need local crime and corruption profiles rather than being automatically safe zones.
+- Security, reputation, licenses, guides, and local knowledge can alter encounter likelihood or available responses.
+- Low-danger travel should still permit scams, theft, complications, and character scenes without forcing combat.
