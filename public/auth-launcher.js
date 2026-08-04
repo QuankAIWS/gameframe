@@ -33,6 +33,7 @@ if (entry === "/app.js") {
   window.gameFrameMonsterRendererMode = useLegacyRenderer ? "legacy" : "pixi";
   if (!useLegacyRenderer) await import("./monster-master-pixi-bridge.js");
   await import("./monster-master-correction.js");
+  await import("./monster-master-option-layer.js");
   await import("./monster-master-overlay.js");
   await import("./monster-master-hints.js");
   await import(entry);
