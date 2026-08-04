@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "assetId": "monster-master.grass-ground.v1",
+  "family": "environment.ground",
+  "role": "continuous-base-ground",
+  "status": "accepted-pilot",
+  "runtime": {
+    "path": "/assets/monster-master/terrain/grass-ground/grass-ground-v1-128.webp",
+    "format": "webp",
+    "width": 128,
+    "height": 128,
+    "repeat": true,
+    "colorSpace": "srgb"
+  },
+  "source": {
+    "generationId": "1b022daf-cc0e-4996-b2ef-1cc87770b0c3",
+    "originalDimensions": [1254, 1254],
+    "preparedMasterDimensions": [2048, 2048],
+    "preparedMasterSha256": "be36d4d8f882e2f09d76330d6ae00d8bd86be63ae328e5abd5f67f9bcd7b6520",
+    "runtimeSha256": "f3dc17c2bfb52a8d71eaef937fbdd54bf313abf0b2bf2035931047843954d551"
+  },
+  "rendering": {
+    "renderer": "pixi",
+    "presentation": "top-down material transformed by the engine into the pseudo-isometric ground plane",
+    "tileScale": 1.35,
+    "ownsGeometry": false
+  }
+}

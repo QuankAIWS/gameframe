@@ -6,6 +6,7 @@ import {
   Rectangle,
   Sprite,
   Texture,
+  TilingSprite,
 } from "pixi.js";
 import {
   GROUND_APRON_CELLS,
@@ -29,6 +30,7 @@ import {
 
 const GAME_ID = "monster-master-duel";
 const CREATURE_ATLAS = "/assets/monster-master/creature-atlas-v1.svg";
+const GRASS_GROUND_TEXTURE = "/assets/monster-master/terrain/grass-ground/grass-ground-v1-128.webp";
 const CREATURE_CELL = 96;
 const CAMERA_STORAGE_KEY = "gameframe:monster-master:pixi-camera";
 const VIEW_EVENT = "gameframe:monster-master-pixi-view";
@@ -182,14 +184,17 @@ function textureFromFrame(base, frame) {
 }
 
 async function loadTextures() {
-  const creatureBase = await Assets.load(CREATURE_ATLAS);
-  state.textures = { creatureBase };
+  const [creatureBase, grassGround] = await Promise.all([
+    Assets.load(CREATURE_ATLAS),
+    Assets.load(GRASS_GROUND_TEXTURE),
+  ]);
+  state.textures = { creatureBase, grassGround };
 }
 
 function makeLayers() {
   const stage = new Container();
   const world = new Container();
-  const ground = new Graphics();
+  const ground = new Container();
   const highlights = new Graphics();
   const worldObjects = new Container();
   const effects = new Container();
@@ -221,25 +226,46 @@ function terrainSignature() {
 }
 
 function drawGroundPlane(sourceMap) {
-  const graphics = state.layers.ground;
-  graphics.clear();
+  const ground = state.layers.ground;
+  for (const child of ground.removeChildren()) child.destroy({ children: true });
   const apron = mapSurfacePolygon(sourceMap, state.camera.quarter, GROUND_APRON_CELLS);
   const playable = mapSurfacePolygon(sourceMap, state.camera.quarter, 0);
-
-  graphics.poly(flatten(apron))
-    .fill({ color: 0x2f4037, alpha: 1 })
+  const backdrop = new Graphics();
+  backdrop.poly(flatten(apron))
+    .fill({ color: 0x26382f, alpha: 1 })
     .stroke({ color: 0x61735c, alpha: 0.38, width: 2 });
-  graphics.poly(flatten(playable))
-    .fill({ color: 0x59694a, alpha: 0.98 })
-    .stroke({ color: 0xb0b17f, alpha: 0.2, width: 1.5 });
+  backdrop.poly(flatten(playable)).fill({ color: 0x4c633d, alpha: 1 });
+  ground.addChild(backdrop);
 
-  const center = projectCoordinate(
-    { x: (sourceMap.width - 1) / 2, y: (sourceMap.height - 1) / 2 },
-    sourceMap,
-    state.camera.quarter,
+  const xs = playable.map((point) => point.x);
+  const ys = playable.map((point) => point.y);
+  const width = Math.max(...xs) - Math.min(...xs);
+  const height = Math.max(...ys) - Math.min(...ys);
+  const materialLayer = new Container();
+  materialLayer.position.set(
+    (Math.min(...xs) + Math.max(...xs)) / 2,
+    (Math.min(...ys) + Math.max(...ys)) / 2,
   );
-  const inner = diamondPoints(center, sourceMap.width * TILE_WIDTH * 0.42, sourceMap.height * TILE_HEIGHT * 0.42);
-  graphics.poly(flatten(inner)).stroke({ color: 0xd7d19b, alpha: 0.035, width: 10 });
+  materialLayer.scale.y = height / width;
+  const side = width / Math.SQRT2;
+  const material = new TilingSprite({
+    texture: state.textures.grassGround,
+    width: side,
+    height: side,
+  });
+  material.anchor.set(0.5);
+  material.rotation = Math.PI / 4;
+  material.tileScale.set(1.35);
+  material.tilePosition.set(state.camera.quarter * 19, state.camera.quarter * -13);
+  material.eventMode = "none";
+  materialLayer.addChild(material);
+  ground.addChild(materialLayer);
+
+  const finish = new Graphics();
+  finish.poly(flatten(playable))
+    .fill({ color: 0x30482f, alpha: 0.08 })
+    .stroke({ color: 0xb0b17f, alpha: 0.2, width: 1.5 });
+  ground.addChild(finish);
 }
 
 function drawTerrainTop(graphics, entry) {
