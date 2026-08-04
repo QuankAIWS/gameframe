@@ -55,6 +55,7 @@
   "conflictingRuntimeCommitReuseCase": {
     "reusesRuntimeCommitId": "runtime-commit:launch-academy-gate",
     "requestOverrides": {
+      "kind": "runtime.events",
       "gameframeEventCount": 1
     },
     "expected": {
