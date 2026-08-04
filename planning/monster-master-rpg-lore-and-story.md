@@ -32,7 +32,7 @@ The comedy should be dry, situational, and frequently sardonic. The setting may 
 ### Implementation consequences
 
 - Trainer and monster assets remain separate families.
-- The current bootstrap presentation of the Master as a creature is not permanent lore.
+- The current bootstrap presentation of the player-side trainer as a creature is not permanent lore.
 - Future combat design must support active trainer archetypes rather than reducing every trainer to the same support unit.
 - Future story and lore decisions should be presented in small, separately approvable slices.
 
@@ -96,24 +96,24 @@ A monster's legal status can therefore change while crossing a border even thoug
 - Trainers can act as representatives where required, but intelligent monsters are not automatically treated as their property.
 - Stories can use rights disputes selectively rather than turning every session into legal administration.
 
-## Decision 6 — Rare monster Masters
+## Decision 6 — Rare nonhuman license holders
 
-Intelligent monsters can become licensed Monster Masters and operate capture cubes, but this is uncommon, legally restricted, and socially unusual.
+Intelligent monsters can hold capture-cube, handling, training, transport, and other professional license classes where local law permits, but this remains uncommon, legally restricted, and socially unusual.
 
-Some jurisdictions prohibit monster Masters entirely. Others require special licensing, a human sponsor, additional competency examinations, or species-specific approval. Even where legal, a monster commanding and housing other monsters attracts attention and may be treated as suspicious, prestigious, ridiculous, or all three at once.
+Some jurisdictions prohibit intelligent monsters from holding particular license classes entirely. Others require a human sponsor, additional competency examinations, adapted equipment, or species-specific approval. Even where legal, an intelligent monster housing, directing, or transporting other monsters attracts attention and may be treated as suspicious, prestigious, ridiculous, or all three at once.
 
-Monster Masters should appear as notable NPCs and occasional player-character options rather than being commonplace.
+Licensed intelligent monsters should appear as notable NPCs and occasional player-character options rather than being commonplace.
 
 ### Implementation consequences
 
-- Trainer identity cannot be hard-coded as human, even though humans remain the normal case.
-- Character and licensing systems need an exceptional monster-Master path.
-- Monster Masters can own capture cubes and maintain their own monster roster.
+- License-holder identity cannot be hard-coded as human, even though humans remain the normal case.
+- Character and licensing systems need an exceptional nonhuman applicant path.
+- Licensed intelligent monsters can own cubes and maintain rosters according to their license classes.
 - Regional laws may impose additional restrictions or story complications on them.
 
 ## Decision 7 — Cube compatibility and legal gatekeeping
 
-Monster Masters are rare for both practical and political reasons.
+Licensed intelligent-monster handlers remain uncommon for both practical and political reasons.
 
 Capture cubes were originally designed around human hands, senses, magical tolerances, and control habits. Some intelligent monster species can use them normally, while others require adapted controls, custom interfaces, or expensive specialist cubes. A few species are genuinely poor candidates for safe cube operation.
 
@@ -121,26 +121,26 @@ Governments and licensing bodies use those real compatibility problems to justif
 
 ### Implementation consequences
 
-- Trainer species can affect cube-interface and equipment requirements without determining competence outright.
+- Handler species can affect cube-interface and equipment requirements without determining competence outright.
 - Adapted capture cubes form a legitimate equipment category rather than a cosmetic distinction.
 - Regional licensing restrictions should distinguish actual safety requirements from bureaucratic gatekeeping.
-- Exceptional monster Masters can succeed through compatible anatomy, adapted equipment, unusual skill, or persistence through an unnecessarily hostile licensing process.
+- Exceptional nonhuman handlers can succeed through compatible anatomy, adapted equipment, unusual skill, or persistence through an unnecessarily hostile licensing process.
 
 ## Decision 8 — Tiered capture cube licensing
 
-Capture cube ownership and use are regulated by tier rather than being restricted entirely to professional Monster Masters.
+Capture cube ownership and use are regulated by license class rather than being restricted entirely to professional trainers or handlers.
 
-Basic domestic cubes are ordinary consumer products. People may use them to house approved household, working, or companion monsters without holding a full Master license.
+Basic domestic cubes are ordinary consumer products. People may use them to house approved household, working, or companion monsters under a common low-tier license or registration class.
 
-Higher-risk activities require progressively higher licenses. These include capturing wild monsters, transporting dangerous species, maintaining larger rosters, operating adapted or high-capacity cubes, and entering organized combat.
+Higher-risk activities require progressively higher licenses. These include capturing wild monsters, transporting dangerous species, maintaining larger rosters, operating adapted or high-capacity cubes, professional training, and entering organized combat.
 
 Licensing standards vary by jurisdiction and are not always sensible. A person may legally own a cube containing an enormous docile grazing monster while needing three permits for a venomous creature the size of a shoe.
 
 ### Implementation consequences
 
-- Cubes and activities need license-tier requirements rather than a single ownership flag.
-- Basic domestic cube ownership must not automatically make a character a Monster Master.
-- Wild capture, dangerous-species handling, roster capacity, and competitive battling can unlock through separate certifications.
+- Cubes and activities need license-class requirements rather than a single ownership flag.
+- Basic domestic cube ownership must not automatically confer professional authority or Monster Master status.
+- Wild capture, dangerous-species handling, roster capacity, professional training, and competitive battling can unlock through separate certifications.
 - Regional law may alter requirements, fees, exemptions, and enforcement.
 
 ## Decision 9 — Monster-controlled exits and containment locks
@@ -227,7 +227,7 @@ The setting should preserve this uncertainty unless a specific campaign delibera
 
 Travel danger increases as civilization becomes thinner. Major settled roads are patrolled, maintained, and generally safe from serious wild-monster attacks. Frontier roads are less reliable, and true wilderness can be extremely dangerous due to territorial monsters, predators, hostile terrain, severe weather, ruins, and the absence of quick assistance.
 
-A safe road is not a harmless road. Travelers can still encounter bandits, thieves, fraudulent toll collectors, dishonest guides, crooked merchants, confidence schemes, staged emergencies, cube theft, and ambushes arranged by people who understand exactly how much equipment a licensed Master is carrying.
+A safe road is not a harmless road. Travelers can still encounter bandits, thieves, fraudulent toll collectors, dishonest guides, crooked merchants, confidence schemes, staged emergencies, cube theft, and ambushes arranged by people who understand exactly how much equipment a licensed trainer or high-tier handler is carrying.
 
 Towns and cities have their own threats. Pickpockets, burglars, black-market cube dealers, corrupt officials, swindlers, organized theft rings, and predatory businesses can create trouble without involving a wild monster. Human criminals should remain genuine threats rather than always being disguises, servants, or victims of monsters.
 
@@ -263,38 +263,58 @@ These groups can cooperate, compete, pass responsibility to one another, or argu
 
 ## Decision 16 — Tiered emergency duty
 
-Basic domestic cube owners and nonprofessional handlers have no standing legal duty to answer emergencies merely because they own a cube or live with a monster.
+Basic domestic cube owners and low-tier nonprofessional handlers have no standing legal duty to answer emergencies merely because they own a cube or live with a monster.
 
-Licensed professional Monster Masters accept limited public-service obligations as part of higher-tier licensing. During a credible emergency, authorized guards, road patrols, wardens, or other designated officials may request—and where local law permits, direct—a Master to provide reasonable assistance within the limits of the Master's training, equipment, roster, physical condition, and license.
+Licensed professional trainers and higher-tier handlers accept limited public-service obligations as part of certain license classes. During a credible emergency, authorized guards, road patrols, wardens, or other designated officials may request—and where local law permits, direct—a qualified license holder to provide reasonable assistance within the limits of that person's training, equipment, roster, physical condition, and license.
 
-The obligation is not unlimited. A Master is not required to knowingly sacrifice themselves or their companions, obey an obviously unqualified or unlawful order, permanently surrender a monster, or perform work materially beyond their licensed competence. Intelligent monsters retain their own agency and cannot be compelled solely because their Master received an order.
+The obligation is not unlimited. A handler is not required to knowingly sacrifice themselves or their companions, obey an obviously unqualified or unlawful order, permanently surrender a monster, or perform work materially beyond their licensed competence. Intelligent monsters retain their own agency and cannot be compelled solely because their handler received an order.
 
 Emergency service should normally include compensation, medical care, equipment-loss reimbursement, and legal protection for reasonable actions taken in good faith. Jurisdictions vary in how reliably they provide these benefits, and misuse of emergency authority can create disputes, corruption, debt, and story complications.
 
 ### Implementation consequences
 
-- License tiers need explicit emergency-duty scopes and exemptions.
+- License classes need explicit emergency-duty scopes and exemptions.
 - Emergency requests must identify the issuing authority, legal basis, compensation, expected task, and acceptable refusal conditions.
-- Trainer and monster condition, competence, consent, and equipment can limit required assistance.
+- Handler and monster condition, competence, consent, and equipment can limit required assistance.
 - Domestic ownership must not create hidden public-service obligations.
 - Emergency service can generate rewards, claims, injuries, damaged equipment, reputation changes, and later disputes over reimbursement.
 
 ## Decision 17 — Limited emergency detention authority
 
-A professional Monster Master license does not grant general police, investigative, or arrest powers.
+A professional training or handling license does not grant general police, investigative, or arrest powers.
 
-Masters may intervene to stop an immediate threat, defend themselves or others, prevent an active theft or unlawful capture, recover a cube or occupant during an incident, and temporarily restrain a suspected offender when reasonably necessary to prevent escape or further harm until the proper authority arrives.
+Qualified license holders may intervene to stop an immediate threat, defend themselves or others, prevent an active theft or unlawful capture, recover a cube or occupant during an incident, and temporarily restrain a suspected offender when reasonably necessary to prevent escape or further harm until the proper authority arrives.
 
-That authority ends when the immediate danger and credible flight risk are controlled. Masters cannot conduct routine searches, interrogations, raids, punishment, debt collection, or seizure of unrelated property unless they hold a separate office or receive explicit lawful deputization.
+That authority ends when the immediate danger and credible flight risk are controlled. License holders cannot conduct routine searches, interrogations, raids, punishment, debt collection, or seizure of unrelated property unless they hold a separate office or receive explicit lawful deputization.
 
-Any force used must be proportionate to the threat. Called monsters operate under the same limits, and an intelligent monster is not required to participate merely because its Master chooses to intervene. Suspects, evidence, and recovered property should be transferred promptly to guards, road patrols, or wardens.
+Any force used must be proportionate to the threat. Called monsters operate under the same limits, and an intelligent monster is not required to participate merely because its handler chooses to intervene. Suspects, evidence, and recovered property should be transferred promptly to guards, road patrols, or wardens.
 
-Bad-faith detention, excessive force, fabricated evidence, or using the rule to settle private disputes can create criminal, civil, reputational, and licensing consequences. Local law may provide broader citizen-arrest rules, but the Master license itself does not turn its holder into law enforcement.
+Bad-faith detention, excessive force, fabricated evidence, or using the rule to settle private disputes can create criminal, civil, reputational, and licensing consequences. Local law may provide broader citizen-arrest rules, but a monster-related license does not turn its holder into law enforcement.
 
 ### Implementation consequences
 
-- Master licenses need a narrow emergency-intervention permission distinct from police authority.
+- Appropriate higher-tier licenses need narrow emergency-intervention permissions distinct from police authority.
 - Encounters must distinguish active threats from retrospective investigation or private retaliation.
 - Temporary restraint needs duration, transfer, reporting, evidence-preservation, and force-proportionality rules.
-- Deputization or separate employment can grant broader authority without changing the default Master role.
+- Deputization or separate employment can grant broader authority without changing the default licensed role.
 - Abuse of detention authority can affect licenses, reputation, legal exposure, and relationships with companions.
+
+## Decision 18 — License classes, qualification paths, and the Monster Master title
+
+Most people who legally own, house, transport, train, battle with, or work alongside monsters hold a license or registration of one class or another. A basic domestic license is commonplace; specialized work requires additional classes for activities such as wild capture, commercial transport, dangerous-species handling, professional training, organized battle, research, medical care, or warden service.
+
+A trainer is an ordinary profession and character role. Handler is the broad term for a person responsible for monsters under any relevant license class. Neither term implies legendary status.
+
+Monster Master is not the ordinary name for a licensed professional and is not automatically granted by any routine license. A Monster Master is a legendary figure recognized as having exceptional mastery of monsters. The title should be rare enough that meeting one is notable, and holding several advanced licenses does not by itself make someone a Monster Master.
+
+People can qualify for ordinary license classes through multiple routes. Accepted paths may include formal academies, apprenticeship under licensed professionals, military or warden training, guild instruction, regional programs, or independent study followed by a challenge examination. Regardless of route, applicants must pass the examinations, practical demonstrations, and field assessments required for the specific class.
+
+Intelligent monsters may pursue the same routes where local law permits, subject to the compatibility and gatekeeping rules already established.
+
+### Implementation consequences
+
+- Licensing must be modeled as a set of classes and certifications rather than a single Master rank.
+- Character records need separate profession, license-class, authority, and reputation fields.
+- Monster Master status must be distinct from licenses and must never be inferred merely from owning cubes or passing exams.
+- UI, dialogue, and code should use trainer, handler, license holder, specialist, or the specific profession unless legendary Monster Master status is actually intended.
+- Background selection can support academy, apprenticeship, military, warden, guild, and self-taught qualification routes while sharing class-specific competency gates.
