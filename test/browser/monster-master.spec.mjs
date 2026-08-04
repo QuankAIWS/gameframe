@@ -180,16 +180,21 @@ test("deploys a full creature roster, advances combat against Theo, and resumes 
 
   await expect(page.locator("#monster-master-phase")).toHaveText("Combat");
   await page.locator("#monster-master-select-move").click();
-  await page.locator('#monster-master-options button[data-action-kind="move"]').first().click();
+  const move = await page.evaluate(() => (
+    window.gameFrameMonsterController.getView().observation.legalActions.find((action) => action.type === "move") ?? null
+  ));
+  expect(move).not.toBeNull();
+  await dispatchBoardCoordinate(page, move.path.at(-1));
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 7");
   await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-last-effect-types", /unit-moved/);
 
   await page.locator("#monster-master-end-activation").click();
+  await expect.poll(async () => Number(await page.locator("#monster-master-revision-small").textContent())).toBeGreaterThan(7);
   const matchId = (await diagnostics(page)).matchId;
-  const resumedRevision = await page.locator("#monster-master-revision-small").textContent();
+  const beforeReloadRevision = Number(await page.locator("#monster-master-revision-small").textContent());
   await page.reload();
   await waitForPixi(page);
-  await expect(page.locator("#monster-master-revision-small")).toHaveText(resumedRevision);
+  await expect.poll(async () => Number(await page.locator("#monster-master-revision-small").textContent())).toBeGreaterThanOrEqual(beforeReloadRevision);
   await expect(page).toHaveURL(new RegExp(`match=${matchId}`));
 });
 

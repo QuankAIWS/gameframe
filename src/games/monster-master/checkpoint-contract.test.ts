@@ -81,7 +81,7 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
   assert.match(visual, /prepared\.observation\.round\)\.toBe\(24\)/);
   assert.doesNotMatch(visual, /18-monster-master-lobby-desktop/);
 
-  assert.match(navigation, /returns from Monster Master to the main game lobby/);
+  assert.match(navigation, /returns from Monster Master through the universal destination bar/);
   assert.match(navigation, /opens and closes Monster Master diagnostics/);
   assert.match(inviteDisclosure, /keeps the local Monster Master invite available without expanding it over gameplay/);
   assert.match(inviteDisclosure, /not\.toHaveAttribute\("open"/);

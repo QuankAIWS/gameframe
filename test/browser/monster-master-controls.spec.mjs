@@ -57,8 +57,7 @@ test("Monster Master camera buttons and keyboard controls update the Pixi camera
   await page.keyboard.press("KeyQ");
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi.getCamera().quarter)).toBe(quarter);
 
-  const state = await diagnostics(page);
-  expect(state.viewport.quarter).toBe(quarter);
+  await expect.poll(async () => (await diagnostics(page)).viewport.quarter).toBe(quarter);
 });
 
 test("mobile Monster Master deploys through the authoritative Pixi coordinate boundary without horizontal overflow", async ({ page }) => {
