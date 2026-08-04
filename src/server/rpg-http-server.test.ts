@@ -45,7 +45,7 @@ const encounter = {
   difficulty: {
     id: "normal",
     encounterPressure: "standard",
-    enemyTacticalIntensity: "competent",
+    enemyTacticalIntensity": "competent",
     defeatConsequences: "consequential",
     characterDeathRisk: "real",
     recoverySupport: "standard",
@@ -104,8 +104,8 @@ test("Node RPG HTTP boundary executes campaign-port-a through encounter launch",
   const base = `http://127.0.0.1:${address.port}`;
 
   const health = await fetch(`${base}/api/health`).then((response) => response.json());
-  assert.equal(health.rpg.campaignProtocolVersion, 1);
-  assert.equal(health.rpg.encounterProtocolVersion, 1);
+  assert.equal(health.rpg.campaignProtocolVersion, 2);
+  assert.equal(health.rpg.encounterProtocolVersion, 2);
 
   const attachAda = await attach(base, "player:ada", "connection:ada");
   assert.equal(attachAda.status, 200);
