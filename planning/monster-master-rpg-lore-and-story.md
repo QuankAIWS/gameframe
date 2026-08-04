@@ -95,3 +95,18 @@ A monster's legal status can therefore change while crossing a border even thoug
 - Legal status may affect travel, employment, ownership, contracts, and access to public services.
 - Trainers can act as representatives where required, but intelligent monsters are not automatically treated as their property.
 - Stories can use rights disputes selectively rather than turning every session into legal administration.
+
+## Decision 6 — Rare monster Masters
+
+Intelligent monsters can become licensed Monster Masters and operate capture cubes, but this is uncommon, legally restricted, and socially unusual.
+
+Some jurisdictions prohibit monster Masters entirely. Others require special licensing, a human sponsor, additional competency examinations, or species-specific approval. Even where legal, a monster commanding and housing other monsters attracts attention and may be treated as suspicious, prestigious, ridiculous, or all three at once.
+
+Monster Masters should appear as notable NPCs and occasional player-character options rather than being commonplace.
+
+### Implementation consequences
+
+- Trainer identity cannot be hard-coded as human, even though humans remain the normal case.
+- Character and licensing systems need an exceptional monster-Master path.
+- Monster Masters can own capture cubes and maintain their own monster roster.
+- Regional laws may impose additional restrictions or story complications on them.
