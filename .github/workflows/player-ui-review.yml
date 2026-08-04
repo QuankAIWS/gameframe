@@ -14,6 +14,7 @@ on:
       - "src/browser/monster-master-pixi-entry.js"
       - "src/browser/monster-master-ground-asset-contract.test.mjs"
       - "src/browser/monster-master-wall-top-asset-contract.test.mjs"
+      - "src/browser/monster-master-cliff-face-asset-contract.test.mjs"
       - "src/browser/monster-master-terrain-geometry.js"
       - "src/browser/monster-master-terrain-geometry.test.mjs"
       - "src/browser/player-navigation-contract.test.ts"
@@ -74,7 +75,7 @@ jobs:
         run: npm run check:browser
 
       - name: Player navigation, renderer geometry, asset, game, and Monster Master rule contracts
-        run: node --experimental-strip-types --test src/browser/monster-master-ground-asset-contract.test.mjs src/browser/monster-master-wall-top-asset-contract.test.mjs src/browser/monster-master-terrain-geometry.test.mjs src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/othello-runtime-contract.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/delivery-contract.test.ts
+        run: node --experimental-strip-types --test src/browser/monster-master-ground-asset-contract.test.mjs src/browser/monster-master-wall-top-asset-contract.test.mjs src/browser/monster-master-cliff-face-asset-contract.test.mjs src/browser/monster-master-terrain-geometry.test.mjs src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/othello-runtime-contract.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/delivery-contract.test.ts
 
       - name: Canonical Monster Master Pixi journeys
         run: npx playwright test test/browser/monster-master.spec.mjs test/browser/monster-master-controls.spec.mjs test/browser/motion-polish.spec.mjs --grep "Monster Master" --config playwright.config.mjs
