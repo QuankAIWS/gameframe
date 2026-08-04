@@ -1,41 +1,54 @@
-export type RpgRevisionPosition = {
-  gameframeCoordinationRevision: number;
-  narrativeRevision: number;
-};
-
-export type GameFrameCoordinationCommand = {
-  commandId: string;
-  expectedGameframeCoordinationRevision: number;
-  gameframeEventCount: number;
-};
-
 export type RuntimeCommitKind = "runtime.events" | "runtime.encounter_launch";
 
-export type RuntimeCommitRequest = {
-  kind: RuntimeCommitKind;
+export type RuntimeNarrativeCommitReceipt = {
+  kind: "runtime.narrative_committed";
+  runtimeCommitKind: RuntimeCommitKind;
   runtimeCommitId: string;
   sourceCommandId?: string;
-  expectedGameframeCoordinationRevision: number;
-  expectedNarrativeRevision: number;
-  gameframeEventCount: number;
+  previousNarrativeRevision: number;
+  narrativeRevision: number;
 };
 
-export type RuntimeCommitReceipt = {
-  kind: RuntimeCommitKind;
-  runtimeCommitId: string;
-  sourceCommandId?: string;
+export type GameFrameCoordinationState = {
   gameframeCoordinationRevision: number;
-  narrativeRevision: number;
+  presentationSequence: number;
+  linkedNarrativeRevision: number;
+};
+
+export type GameFrameCommandRequest = {
+  commandId: string;
+  expectedGameframeCoordinationRevision: number;
+  presentationEventCount: number;
+};
+
+export type GameFrameCommandReceipt = GameFrameCoordinationState & {
+  kind: "gameframe.command_committed";
+  commandId: string;
+};
+
+export type GameFrameRuntimeLinkRequest = {
+  coordinationMutationId: string;
+  expectedGameframeCoordinationRevision: number;
+  presentationEventCount: number;
+  runtimeCommit: RuntimeNarrativeCommitReceipt;
+};
+
+export type GameFrameRuntimeLinkReceipt = GameFrameCoordinationState & {
+  kind: "gameframe.runtime_link_committed";
+  coordinationMutationId: string;
+  runtimeCommitId: string;
 };
 
 export type RpgRevisionContractErrorCode =
   | "invalid-input"
   | "coordination-revision-conflict"
-  | "narrative-revision-conflict"
-  | "runtime-commit-conflict";
+  | "command-conflict"
+  | "coordination-mutation-conflict"
+  | "runtime-link-conflict"
+  | "narrative-link-conflict";
 
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
-const MAX_GAMEFRAME_EVENTS_PER_COMMIT = 16;
+const MAX_PRESENTATION_EVENTS_PER_TRANSACTION = 16;
 
 export class RpgRevisionContractError extends Error {
   readonly code: RpgRevisionContractErrorCode;
@@ -48,160 +61,248 @@ export class RpgRevisionContractError extends Error {
 }
 
 /**
- * Small transport-neutral ledger used to prove the split between GameFrame's
- * coordination position and RPG GM Runtime's narrative journal position.
- * Persistence adapters may replace the in-memory maps, but not these rules.
+ * GameFrame-owned coordination test ledger.
+ *
+ * It records the latest runtime narrative revision that GameFrame has linked,
+ * but it never creates or increments narrative revisions. Production
+ * persistence may replace these maps while preserving the same ownership and
+ * retry rules.
  */
-export class InMemoryRpgRevisionLedger {
-  #position: RpgRevisionPosition;
-  readonly #runtimeReceipts = new Map<
+export class InMemoryGameFrameCoordinationLedger {
+  #state: GameFrameCoordinationState;
+  readonly #commandReceipts = new Map<
     string,
-    { fingerprint: string; receipt: RuntimeCommitReceipt }
+    { fingerprint: string; receipt: GameFrameCommandReceipt }
   >();
+  readonly #coordinationReceipts = new Map<
+    string,
+    { fingerprint: string; receipt: GameFrameRuntimeLinkReceipt }
+  >();
+  readonly #linkedRuntimeCommits = new Map<string, string>();
 
-  constructor(startingPosition: RpgRevisionPosition) {
-    this.#position = normalizePosition(startingPosition);
+  constructor(startingState: GameFrameCoordinationState) {
+    this.#state = normalizeState(startingState);
   }
 
-  get position(): RpgRevisionPosition {
-    return structuredClone(this.#position);
+  get state(): GameFrameCoordinationState {
+    return structuredClone(this.#state);
   }
 
-  acceptGameFrameCommand(command: GameFrameCoordinationCommand): RpgRevisionPosition {
-    const normalized = normalizeGameFrameCommand(command);
-    if (
-      normalized.expectedGameframeCoordinationRevision
-      !== this.#position.gameframeCoordinationRevision
-    ) {
-      throw new RpgRevisionContractError(
-        "coordination-revision-conflict",
-        `Expected GameFrame coordination revision ${normalized.expectedGameframeCoordinationRevision}, actual ${this.#position.gameframeCoordinationRevision}.`,
-      );
-    }
-
-    this.#position = {
-      gameframeCoordinationRevision:
-        this.#position.gameframeCoordinationRevision + normalized.gameframeEventCount,
-      narrativeRevision: this.#position.narrativeRevision,
-    };
-    return this.position;
-  }
-
-  acceptRuntimeCommit(request: RuntimeCommitRequest): RuntimeCommitReceipt {
-    const normalized = normalizeRuntimeCommit(request);
+  acceptCommand(request: GameFrameCommandRequest): GameFrameCommandReceipt {
+    const normalized = normalizeCommandRequest(request);
     const fingerprint = stableJson(normalized);
-    const existing = this.#runtimeReceipts.get(normalized.runtimeCommitId);
+    const existing = this.#commandReceipts.get(normalized.commandId);
     if (existing) {
       if (existing.fingerprint !== fingerprint) {
         throw new RpgRevisionContractError(
-          "runtime-commit-conflict",
-          `Runtime commit ID was reused with different content: ${normalized.runtimeCommitId}.`,
+          "command-conflict",
+          `Command ID was reused with different coordination content: ${normalized.commandId}.`,
         );
       }
       return structuredClone(existing.receipt);
     }
 
-    if (
-      normalized.expectedGameframeCoordinationRevision
-      !== this.#position.gameframeCoordinationRevision
-    ) {
-      throw new RpgRevisionContractError(
-        "coordination-revision-conflict",
-        `Expected GameFrame coordination revision ${normalized.expectedGameframeCoordinationRevision}, actual ${this.#position.gameframeCoordinationRevision}.`,
-      );
-    }
-    if (normalized.expectedNarrativeRevision !== this.#position.narrativeRevision) {
-      throw new RpgRevisionContractError(
-        "narrative-revision-conflict",
-        `Expected narrative revision ${normalized.expectedNarrativeRevision}, actual ${this.#position.narrativeRevision}.`,
-      );
-    }
-
-    this.#position = {
-      gameframeCoordinationRevision:
-        this.#position.gameframeCoordinationRevision + normalized.gameframeEventCount,
-      narrativeRevision: this.#position.narrativeRevision + 1,
+    requireCoordinationRevision(
+      normalized.expectedGameframeCoordinationRevision,
+      this.#state.gameframeCoordinationRevision,
+    );
+    this.#state = {
+      gameframeCoordinationRevision: this.#state.gameframeCoordinationRevision + 1,
+      presentationSequence:
+        this.#state.presentationSequence + normalized.presentationEventCount,
+      linkedNarrativeRevision: this.#state.linkedNarrativeRevision,
     };
-    const receipt: RuntimeCommitReceipt = {
-      kind: normalized.kind,
-      runtimeCommitId: normalized.runtimeCommitId,
-      ...(normalized.sourceCommandId
-        ? { sourceCommandId: normalized.sourceCommandId }
-        : {}),
-      ...this.#position,
+    const receipt: GameFrameCommandReceipt = {
+      kind: "gameframe.command_committed",
+      commandId: normalized.commandId,
+      ...this.#state,
     };
-    this.#runtimeReceipts.set(normalized.runtimeCommitId, {
+    this.#commandReceipts.set(normalized.commandId, {
       fingerprint,
       receipt: structuredClone(receipt),
     });
     return receipt;
   }
-}
 
-function normalizePosition(position: RpgRevisionPosition): RpgRevisionPosition {
-  return {
-    gameframeCoordinationRevision: integer(
-      position?.gameframeCoordinationRevision,
-      "gameframeCoordinationRevision",
-      0,
-    ),
-    narrativeRevision: integer(position?.narrativeRevision, "narrativeRevision", 0),
-  };
-}
+  acceptRuntimeLink(
+    request: GameFrameRuntimeLinkRequest,
+  ): GameFrameRuntimeLinkReceipt {
+    const normalized = normalizeRuntimeLinkRequest(request);
+    const fingerprint = stableJson(normalized);
+    const existing = this.#coordinationReceipts.get(
+      normalized.coordinationMutationId,
+    );
+    if (existing) {
+      if (existing.fingerprint !== fingerprint) {
+        throw new RpgRevisionContractError(
+          "coordination-mutation-conflict",
+          `Coordination mutation ID was reused with different content: ${normalized.coordinationMutationId}.`,
+        );
+      }
+      return structuredClone(existing.receipt);
+    }
 
-function normalizeGameFrameCommand(
-  command: GameFrameCoordinationCommand,
-): GameFrameCoordinationCommand {
-  return {
-    commandId: identifier(command?.commandId, "commandId"),
-    expectedGameframeCoordinationRevision: integer(
-      command?.expectedGameframeCoordinationRevision,
-      "expectedGameframeCoordinationRevision",
-      0,
-    ),
-    gameframeEventCount: integer(command?.gameframeEventCount, "gameframeEventCount", 1),
-  };
-}
+    const linkedMutationId = this.#linkedRuntimeCommits.get(
+      normalized.runtimeCommit.runtimeCommitId,
+    );
+    if (linkedMutationId) {
+      throw new RpgRevisionContractError(
+        "runtime-link-conflict",
+        `Runtime commit ${normalized.runtimeCommit.runtimeCommitId} is already linked by ${linkedMutationId}.`,
+      );
+    }
 
-function normalizeRuntimeCommit(request: RuntimeCommitRequest): RuntimeCommitRequest {
-  if (request?.kind !== "runtime.events" && request?.kind !== "runtime.encounter_launch") {
-    throw invalid("Unsupported runtime commit kind.");
+    requireCoordinationRevision(
+      normalized.expectedGameframeCoordinationRevision,
+      this.#state.gameframeCoordinationRevision,
+    );
+    if (
+      normalized.runtimeCommit.previousNarrativeRevision
+      !== this.#state.linkedNarrativeRevision
+    ) {
+      throw new RpgRevisionContractError(
+        "narrative-link-conflict",
+        `Runtime commit starts at narrative revision ${normalized.runtimeCommit.previousNarrativeRevision}, but GameFrame last linked revision ${this.#state.linkedNarrativeRevision}.`,
+      );
+    }
+
+    this.#state = {
+      gameframeCoordinationRevision: this.#state.gameframeCoordinationRevision + 1,
+      presentationSequence:
+        this.#state.presentationSequence + normalized.presentationEventCount,
+      linkedNarrativeRevision: normalized.runtimeCommit.narrativeRevision,
+    };
+    const receipt: GameFrameRuntimeLinkReceipt = {
+      kind: "gameframe.runtime_link_committed",
+      coordinationMutationId: normalized.coordinationMutationId,
+      runtimeCommitId: normalized.runtimeCommit.runtimeCommitId,
+      ...this.#state,
+    };
+    this.#coordinationReceipts.set(normalized.coordinationMutationId, {
+      fingerprint,
+      receipt: structuredClone(receipt),
+    });
+    this.#linkedRuntimeCommits.set(
+      normalized.runtimeCommit.runtimeCommitId,
+      normalized.coordinationMutationId,
+    );
+    return receipt;
   }
-  const gameframeEventCount = integer(
-    request.gameframeEventCount,
-    "gameframeEventCount",
+}
+
+function normalizeState(state: GameFrameCoordinationState): GameFrameCoordinationState {
+  const gameframeCoordinationRevision = integer(
+    state?.gameframeCoordinationRevision,
+    "gameframeCoordinationRevision",
     0,
   );
-  if (gameframeEventCount > MAX_GAMEFRAME_EVENTS_PER_COMMIT) {
-    throw invalid(
-      `gameframeEventCount cannot exceed ${MAX_GAMEFRAME_EVENTS_PER_COMMIT}.`,
-    );
-  }
-  if (request.kind === "runtime.encounter_launch" && gameframeEventCount !== 0) {
-    throw invalid("runtime.encounter_launch cannot append GameFrame campaign events.");
-  }
-  if (request.kind === "runtime.events" && gameframeEventCount === 0) {
-    throw invalid("runtime.events must append at least one GameFrame campaign event.");
-  }
-
+  const presentationSequence = integer(
+    state?.presentationSequence,
+    "presentationSequence",
+    0,
+  );
+  const linkedNarrativeRevision = integer(
+    state?.linkedNarrativeRevision,
+    "linkedNarrativeRevision",
+    0,
+  );
   return {
-    kind: request.kind,
-    runtimeCommitId: identifier(request.runtimeCommitId, "runtimeCommitId"),
-    ...(request.sourceCommandId
-      ? { sourceCommandId: identifier(request.sourceCommandId, "sourceCommandId") }
-      : {}),
+    gameframeCoordinationRevision,
+    presentationSequence,
+    linkedNarrativeRevision,
+  };
+}
+
+function normalizeCommandRequest(
+  request: GameFrameCommandRequest,
+): GameFrameCommandRequest {
+  return {
+    commandId: identifier(request?.commandId, "commandId"),
     expectedGameframeCoordinationRevision: integer(
-      request.expectedGameframeCoordinationRevision,
+      request?.expectedGameframeCoordinationRevision,
       "expectedGameframeCoordinationRevision",
       0,
     ),
-    expectedNarrativeRevision: integer(
-      request.expectedNarrativeRevision,
-      "expectedNarrativeRevision",
+    presentationEventCount: boundedPresentationEventCount(
+      request?.presentationEventCount,
+    ),
+  };
+}
+
+function normalizeRuntimeLinkRequest(
+  request: GameFrameRuntimeLinkRequest,
+): GameFrameRuntimeLinkRequest {
+  return {
+    coordinationMutationId: identifier(
+      request?.coordinationMutationId,
+      "coordinationMutationId",
+    ),
+    expectedGameframeCoordinationRevision: integer(
+      request?.expectedGameframeCoordinationRevision,
+      "expectedGameframeCoordinationRevision",
       0,
     ),
-    gameframeEventCount,
+    presentationEventCount: boundedPresentationEventCount(
+      request?.presentationEventCount,
+    ),
+    runtimeCommit: normalizeRuntimeCommitReceipt(request?.runtimeCommit),
   };
+}
+
+function normalizeRuntimeCommitReceipt(
+  receipt: RuntimeNarrativeCommitReceipt,
+): RuntimeNarrativeCommitReceipt {
+  if (receipt?.kind !== "runtime.narrative_committed") {
+    throw invalid("Unsupported runtime narrative receipt kind.");
+  }
+  if (
+    receipt.runtimeCommitKind !== "runtime.events"
+    && receipt.runtimeCommitKind !== "runtime.encounter_launch"
+  ) {
+    throw invalid("Unsupported runtime commit kind.");
+  }
+  const previousNarrativeRevision = integer(
+    receipt.previousNarrativeRevision,
+    "previousNarrativeRevision",
+    0,
+  );
+  const narrativeRevision = integer(
+    receipt.narrativeRevision,
+    "narrativeRevision",
+    1,
+  );
+  if (narrativeRevision !== previousNarrativeRevision + 1) {
+    throw invalid("Runtime narrative receipt must advance exactly one revision.");
+  }
+  return {
+    kind: "runtime.narrative_committed",
+    runtimeCommitKind: receipt.runtimeCommitKind,
+    runtimeCommitId: identifier(receipt.runtimeCommitId, "runtimeCommitId"),
+    ...(receipt.sourceCommandId
+      ? { sourceCommandId: identifier(receipt.sourceCommandId, "sourceCommandId") }
+      : {}),
+    previousNarrativeRevision,
+    narrativeRevision,
+  };
+}
+
+function boundedPresentationEventCount(value: unknown): number {
+  const count = integer(value, "presentationEventCount", 0);
+  if (count > MAX_PRESENTATION_EVENTS_PER_TRANSACTION) {
+    throw invalid(
+      `presentationEventCount cannot exceed ${MAX_PRESENTATION_EVENTS_PER_TRANSACTION}.`,
+    );
+  }
+  return count;
+}
+
+function requireCoordinationRevision(expected: number, actual: number): void {
+  if (expected !== actual) {
+    throw new RpgRevisionContractError(
+      "coordination-revision-conflict",
+      `Expected GameFrame coordination revision ${expected}, actual ${actual}.`,
+    );
+  }
 }
 
 function identifier(value: unknown, label: string): string {
