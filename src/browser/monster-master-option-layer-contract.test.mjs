@@ -18,10 +18,10 @@ test("Monster Master target options use a stable body-level interaction layer", 
 
   const correctionImport = launcher.indexOf('await import("./monster-master-correction.js")');
   const optionLayerImport = launcher.indexOf('await import("./monster-master-option-layer.js")');
-  const appImport = launcher.indexOf("await import(entry)");
+  const monsterAppImport = launcher.indexOf("await import(entry)", optionLayerImport);
   assert.ok(correctionImport >= 0);
   assert.ok(optionLayerImport > correctionImport);
-  assert.ok(appImport > optionLayerImport);
+  assert.ok(monsterAppImport > optionLayerImport);
 
   assert.match(layer, /document\.body\.append\(options\)/);
   assert.match(layer, /data\.optionLayer = "true"/);
