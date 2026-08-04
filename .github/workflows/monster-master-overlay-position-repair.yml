@@ -1,0 +1,131 @@
+name: Monster Master Overlay Position Repair
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/monster-master-overlay-position-repair.yml
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/monster-master-current-browser-repairs
+          fetch-depth: 0
+
+      - name: Reconcile current main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit origin/main
+
+      - name: Remove overlay position overrides and stabilize options
+        run: |
+          node <<'NODE'
+          const { readFileSync, writeFileSync } = require("node:fs");
+
+          function replaceOnce(path, before, after) {
+            const source = readFileSync(path, "utf8");
+            if (!source.includes(before)) throw new Error(`Expected source missing from ${path}`);
+            writeFileSync(path, source.replace(before, after));
+          }
+
+          replaceOnce(
+            "public/monster-master-correction.js",
+            `function containPixiCanvas() {
+            if (battlefieldStage) {
+              battlefieldStage.style.position = "relative";
+              battlefieldStage.style.zIndex = "0";
+              battlefieldStage.style.isolation = "isolate";
+              battlefieldStage.style.overflow = "hidden";
+              battlefieldStage.dataset.canvasContainment = "battlefield-stage";
+            }
+            if (commandDeck) {
+              commandDeck.style.position = "relative";
+              commandDeck.style.zIndex = "10";
+              commandDeck.style.isolation = "isolate";
+              commandDeck.style.pointerEvents = "auto";
+              commandDeck.dataset.pointerLayer = "command-deck";
+            }
+          }`,
+            `function containPixiCanvas() {
+            if (battlefieldStage) battlefieldStage.dataset.canvasContainment = "battlefield-stage";
+            if (commandDeck) commandDeck.dataset.pointerLayer = "command-deck";
+          }`,
+          );
+
+          replaceOnce(
+            "public/monster-master-app.js",
+            "let lastActiveUnitId = null;\nlet viewport = {",
+            "let lastActiveUnitId = null;\nlet optionsRenderSignature = null;\nlet viewport = {",
+          );
+
+          replaceOnce(
+            "public/monster-master-app.js",
+            `function renderOptions() {
+            options.replaceChildren();`,
+            `function renderOptions() {
+            const signature = [
+              current?.matchId ?? "",
+              current?.revision ?? "",
+              requestPending ? "busy" : "ready",
+              activePlayerId() ?? "",
+              actionMode ?? "",
+              selectedUnitId ?? "",
+            ].join(":");
+            if (optionsRenderSignature === signature) return;
+            optionsRenderSignature = signature;
+            options.replaceChildren();`,
+          );
+          NODE
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run bounded required validation
+        id: validation
+        continue-on-error: true
+        run: npm run validate
+
+      - name: Commit corrected overlay behavior
+        if: steps.validation.outcome == 'success'
+        run: |
+          rm -f .github/workflows/monster-master-overlay-position-repair.yml
+          git add -A
+          git commit -m "fix: preserve Monster Master overlay positioning"
+          git push origin HEAD:agent/monster-master-current-browser-repairs
+
+      - name: Report result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ steps.validation.outcome }}" = "success" ]; then
+            gh pr comment 68 --body "Monster Master overlay-position repair passed bounded required validation and committed the branch. Trusted run: ${{ github.run_id }}."
+          else
+            gh pr comment 68 --body "Monster Master overlay-position repair failed bounded required validation. Trusted run: ${{ github.run_id }}."
+          fi
+
+      - name: Fail unsuccessful validation
+        if: steps.validation.outcome != 'success'
+        run: exit 1
