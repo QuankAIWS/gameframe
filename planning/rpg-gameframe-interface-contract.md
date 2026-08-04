@@ -210,7 +210,7 @@ Stable protocol-v2 conflicts distinguish coordination revision mismatch, runtime
 
 The current implementation has a 64 KiB HTTP request-body limit, a 2,000-character freeform action limit, at most 16 runtime presentation events per transaction, at most 32 encounter participants, and at most 32 objectives. Command, runtime-link, and encounter retries remain process-memory idempotent only. The returned campaign cursor is a temporary projection marker, not yet a signed, viewer-bound durable resume cursor.
 
-`VersionedInMemoryRpgService` encapsulates the existing protocol-v1 event reducer solely to preserve deterministic port-A/port-B choice, check, outcome, and authority regression coverage during the migration. The health endpoint advertises `legacy-v1-compatibility` explicitly. New runtime integration must use protocol version 2 and must not depend on legacy `campaignRevision`, `expectedRevision`, or encounter `campaignRevision` fields.
+`VersionedInMemoryRpgService` encapsulates the existing protocol-v1 event reducer solely to preserve deterministic port-A/port-B choice, check, outcome, and authority regression coverage. Protocol version 1 is rejected by the default HTTP server. Regression lanes may enable it only through the explicit `GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY=1` test configuration; while enabled, the health endpoint advertises `legacy-v1-compatibility`. New runtime integration must use protocol version 2 and must not depend on legacy `campaignRevision`, `expectedRevision`, or encounter `campaignRevision` fields.
 
 This slice does not claim durable VM persistence, restart survival, browser campaign UI, or deployed Cloudflare authentication. Those remain explicit later acceptance gates.
 
