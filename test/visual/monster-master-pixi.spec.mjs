@@ -201,7 +201,7 @@ test("Monster Master Pixi battlefield stays inside the mobile viewport", async (
   const overlayGeometry = await page.evaluate(() => {
     const camera = document.querySelector(".monster-master-camera-dock")?.getBoundingClientRect();
     const command = document.querySelector(".monster-master-command-deck")?.getBoundingClientRect();
-    const comingSoon = document.querySelector(".gameframe-destination-links button")?.getBoundingClientRect();
+    const comingSoon = document.querySelector(".gameframe-destination-links button[disabled]")?.getBoundingClientRect();
     const status = document.querySelector("#monster-master-status");
     const statusStyle = status ? getComputedStyle(status) : null;
     return {
