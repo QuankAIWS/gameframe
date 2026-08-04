@@ -20,7 +20,6 @@ function ensureSetupButton() {
   button.type = "button";
   button.textContent = "Setup";
   button.setAttribute("aria-label", "Return to Monster Master setup");
-  button.hidden = true;
   combatNav.append(button);
   return button;
 }
@@ -121,7 +120,6 @@ function openDrawer(which) {
 function updateShellState() {
   const active = matchActive();
   body.classList.toggle("monster-master-match-active", active);
-  if (setupButton) setupButton.hidden = !active;
   if (!active) {
     closeDrawers();
     utilityMenu?.removeAttribute("open");
@@ -216,6 +214,7 @@ openIntel?.addEventListener("click", () => openDrawer("intel"));
 closeRoster?.addEventListener("click", closeDrawers);
 closeIntel?.addEventListener("click", closeDrawers);
 drawerBackdrop?.addEventListener("click", closeDrawers);
+setupButton?.addEventListener("click", () => queueMicrotask(updateShellState));
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
