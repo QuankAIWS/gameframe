@@ -13,7 +13,7 @@ This accepted pilot is the top-surface material for Monster Master's impassable 
 - Geometry: engine-owned 72 × 36 top diamond, raised 29 CSS pixels
 - Gameplay meaning: impassable obstruction
 
-The source material is orthographic and contains no painted cliff edge. Pixi maps it through global texture space into exact wall-top polygons so connected barriers do not look like rows of identical miniature pictures. Exposed vertical faces remain a separate geometry and future asset family.
+The source material is orthographic and contains no painted cliff edge. Pixi maps it through global texture space into exact wall-top polygons so connected barriers share continuous material coordinates rather than restarting the source image independently. Exposed vertical faces remain a separate geometry and future asset family.
 
 ## Art intent
 
