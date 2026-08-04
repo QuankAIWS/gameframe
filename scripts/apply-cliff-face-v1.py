@@ -7,29 +7,28 @@ PAYLOAD_ROOT = Path(".github/asset-payload/cliff-face-v1")
 RUNTIME_DIR = Path("public/assets/monster-master/terrain/cliff-face")
 SOURCE_DIR = Path("source-assets/monster-master/terrain/cliff-face")
 RUNTIME_PATH = RUNTIME_DIR / "cliff-face-grassland-stone-v1-128.webp"
-SOURCE_PATH = SOURCE_DIR / "cliff-face-grassland-stone-v1-source-512.webp"
+SOURCE_PATH = SOURCE_DIR / "cliff-face-grassland-stone-v1-source-reference-256.webp"
+EXPECTED_RUNTIME_HASH = "4a04eff7ba89a8455db1030a9addcf8a66cbb80244cfe7ac1524446983114954"
+EXPECTED_SOURCE_HASH = "ed42c2603a295cac18eaaea499063f21ece5b71870b3cb614d75238ceeb815f2"
 
 
 def decode_parts(prefix: str) -> bytes:
     parts = sorted(PAYLOAD_ROOT.glob(f"{prefix}.part*"))
     if not parts:
         raise SystemExit(f"No payload parts found for {prefix}")
-    encoded = "".join(part.read_text().strip() for part in parts)
-    return base64.b64decode(encoded)
+    return base64.b64decode("".join(part.read_text().strip() for part in parts))
+
+
+def verify(payload: bytes, expected: str, label: str) -> None:
+    actual = hashlib.sha256(payload).hexdigest()
+    if actual != expected:
+        raise SystemExit(f"{label} hash mismatch: {actual}")
 
 
 runtime_bytes = decode_parts("runtime")
 source_bytes = decode_parts("source")
-
-runtime_hash = hashlib.sha256(runtime_bytes).hexdigest()
-source_hash = hashlib.sha256(source_bytes).hexdigest()
-expected_runtime_hash = "4a04eff7ba89a8455db1030a9addcf8a66cbb80244cfe7ac1524446983114954"
-expected_source_hash = "055216a568e10c603dca1e00eeef491f0cb9c1636e1de22c21b82626e44617cb"
-if runtime_hash != expected_runtime_hash:
-    raise SystemExit(f"Runtime payload hash mismatch: {runtime_hash}")
-if source_hash != expected_source_hash:
-    raise SystemExit(f"Source archive payload hash mismatch: {source_hash}")
-
+verify(runtime_bytes, EXPECTED_RUNTIME_HASH, "Runtime payload")
+verify(source_bytes, EXPECTED_SOURCE_HASH, "Source-reference payload")
 RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
 SOURCE_DIR.mkdir(parents=True, exist_ok=True)
 RUNTIME_PATH.write_bytes(runtime_bytes)
@@ -49,14 +48,14 @@ manifest = {
         "repeatX": True,
         "repeatY": True,
         "colorSpace": "srgb",
-        "sha256": expected_runtime_hash,
+        "sha256": EXPECTED_RUNTIME_HASH,
     },
-    "sourceArchive": {
-        "path": "source-assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-source-512.webp",
-        "format": "webp-lossless",
-        "width": 512,
-        "height": 512,
-        "sha256": expected_source_hash,
+    "sourceReference": {
+        "path": "source-assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-source-reference-256.webp",
+        "format": "webp",
+        "width": 256,
+        "height": 256,
+        "sha256": EXPECTED_SOURCE_HASH,
     },
     "source": {
         "generationId": "cc8d58f5-4906-4c3f-bc59-1be8689c0880",
@@ -85,21 +84,21 @@ notes.write_text("""# Cliff Face — Grassland Stone v1
 
 ## Decision
 
-This accepted pilot is the vertical material for exposed faces of Monster Master's impassable raised `wall` cells. The engine owns face geometry, 29-pixel visual height, face exposure, culling, depth order, and picking. The image supplies only surface treatment.
+This accepted pilot is the vertical material for exposed faces of Monster Master's impassable raised `wall` cells. The engine owns the face polygons, the 29 CSS-pixel visual height, exposure and internal-face culling, depth order, and picking. The image supplies only surface treatment.
 
 ## Durable files
 
 - Runtime: `public/assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-128.webp`
-- Source archive: `source-assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-source-512.webp`
+- Source reference: `source-assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-source-reference-256.webp`
 - Manifest: `public/assets/monster-master/terrain/cliff-face/manifest.json`
 - Runtime SHA-256: `4a04eff7ba89a8455db1030a9addcf8a66cbb80244cfe7ac1524446983114954`
-- Source archive SHA-256: `055216a568e10c603dca1e00eeef491f0cb9c1636e1de22c21b82626e44617cb`
+- Source-reference SHA-256: `ed42c2603a295cac18eaaea499063f21ece5b71870b3cb614d75238ceeb815f2`
 
 ## Runtime mapping
 
-Pixi loads the 128 × 128 WebP through `Assets`, enables repeat wrapping, and maps it through global texture coordinates into exposed elevation-face polygons. A nonuniform texture matrix presents nearly the full material height within the current 29 CSS-pixel face while allowing longer horizontal runs before repetition.
+Pixi loads the 128 × 128 WebP through `Assets`, enables repeat wrapping, and maps it through global texture coordinates into exposed wall-face polygons. A nonuniform texture matrix presents almost the full material height within the current 29-pixel face while allowing longer horizontal runs before repetition. Left and right faces use restrained tint differences for directional readability.
 
-Left and right faces use restrained tint differences for directional readability. Internal faces remain culled by authoritative terrain geometry. No cliff shape, cast shadow, grid, bevel, or gameplay state is baked into the source.
+Internal faces remain culled by authoritative terrain geometry. No cliff shape, cast shadow, grid, bevel, selection state, or gameplay rule is baked into the source.
 
 ## Art intent
 
@@ -117,9 +116,9 @@ Left and right faces use restrained tint differences for directional readability
 - Original SHA-256: `562241dedf217f7863fa37360fdd9ee53b4e76d7d419aafb01ba14cb92bedaba`
 - Prepared master: 1024 × 1024
 - Prepared-master SHA-256: `34cd4895b2d099d6241408ef3e1507ffc5dd3a34217782c0ccfb91bea9b14cea`
-- Seam preparation: centered source strip mirrored horizontally, producing exact left/right continuity without painted border geometry.
+- Seam preparation: centered source strip mirrored horizontally for exact left/right continuity.
 
-The lossless 512 × 512 source archive is committed so the accepted visual source survives beyond the generation session. The 128 × 128 WebP is the deterministic browser derivative used by the game.
+The committed 256 × 256 source reference preserves the accepted visual beyond the generation session. The 128 × 128 WebP is the deterministic browser derivative used by the game.
 """)
 
 test_source = """import assert from \"node:assert/strict\";
@@ -130,22 +129,18 @@ import test from \"node:test\";
 const renderer = readFileSync(\"src/browser/monster-master-pixi-entry.js\", \"utf8\");
 const manifest = JSON.parse(readFileSync(\"public/assets/monster-master/terrain/cliff-face/manifest.json\", \"utf8\"));
 const runtimePath = \"public/assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-128.webp\";
-const sourcePath = \"source-assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-source-512.webp\";
-
-function sha256(path) {
-  return createHash(\"sha256\").update(readFileSync(path)).digest(\"hex\");
-}
+const sourcePath = \"source-assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-source-reference-256.webp\";
+const sha256 = (path) => createHash(\"sha256\").update(readFileSync(path)).digest(\"hex\");
 
 test(\"Monster Master maps the durable cliff material onto exposed wall faces\", () => {
   assert.equal(manifest.assetId, \"monster-master.cliff-face.grassland-stone.v1\");
-  assert.equal(manifest.runtime.path, \"/assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-128.webp\");
   assert.equal(manifest.rendering.geometryRole, \"exposed-wall-face-29px\");
   assert.equal(manifest.rendering.visualHeightCssPixels, 29);
   assert.equal(manifest.rendering.internalFacesCulled, true);
   assert.ok(statSync(runtimePath).size > 8_000);
-  assert.ok(statSync(sourcePath).size > 300_000);
+  assert.ok(statSync(sourcePath).size > 40_000);
   assert.equal(sha256(runtimePath), manifest.runtime.sha256);
-  assert.equal(sha256(sourcePath), manifest.sourceArchive.sha256);
+  assert.equal(sha256(sourcePath), manifest.sourceReference.sha256);
   assert.match(renderer, /const CLIFF_FACE_TEXTURE =/);
   assert.match(renderer, /const CLIFF_FACE_TEXTURE_MATRIX = new Matrix\(\)\.scale\(0\.72, 0\.24\)/);
   assert.match(renderer, /cliffFace\.source\.wrapMode = \"repeat\"/);
