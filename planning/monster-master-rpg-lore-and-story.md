@@ -80,3 +80,18 @@ Rare individuals can fall outside their species norm. An ordinarily animal-like 
 - Individual monster records may override that default for authored exceptional characters.
 - Exceptional intelligence can support discoveries, companions, legal disputes, and sardonic situations without erasing stable species expectations.
 - Capture logic must use the individual's actual classification rather than blindly relying on species defaults.
+
+## Decision 5 — Patchwork legal rights
+
+Intelligent monsters are broadly recognized as persons, but their practical rights vary by kingdom, species, and local law.
+
+Some jurisdictions allow intelligent monsters to own property, earn wages, sign contracts, travel independently, and bring legal complaints. Others restrict those rights, require a human sponsor, recognize only approved species, or bury the entire question under contradictory licensing rules.
+
+A monster's legal status can therefore change while crossing a border even though its actual intelligence has not. This supports regional conflict and sardonic bureaucracy without making the setting uniformly cruel.
+
+### Implementation consequences
+
+- Regions need a compact policy describing intelligent-monster rights.
+- Legal status may affect travel, employment, ownership, contracts, and access to public services.
+- Trainers can act as representatives where required, but intelligent monsters are not automatically treated as their property.
+- Stories can use rights disputes selectively rather than turning every session into legal administration.
