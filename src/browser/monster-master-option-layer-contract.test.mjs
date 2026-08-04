@@ -24,7 +24,7 @@ test("Monster Master target options use a stable body-level interaction layer", 
   assert.ok(monsterAppImport > optionLayerImport);
 
   assert.match(layer, /document\.body\.append\(options\)/);
-  assert.match(layer, /data\.optionLayer = "true"/);
+  assert.match(layer, /options\.dataset\.optionLayer = "true"/);
   assert.match(layer, /installStableOptionReconciliation/);
   assert.match(layer, /nodesSignature\(currentNodes\) === nodesSignature\(nextNodes\)/);
   assert.match(layer, /queueMicrotask\(flushPendingOptions\)/);
@@ -40,8 +40,9 @@ test("Monster Master target options use a stable body-level interaction layer", 
 
   assert.match(browserSpec, /document\.elementFromPoint/);
   assert.match(browserSpec, /__monsterMasterStableOption/);
-  assert.match(browserSpec, /desktop target options remain stable/);
-  assert.match(browserSpec, /mobile target options remain stable/);
+  assert.match(browserSpec, /name: "desktop"/);
+  assert.match(browserSpec, /name: "mobile"/);
+  assert.match(browserSpec, /target options remain stable and physically clickable above Pixi/);
 
   assert.match(
     packageJson.scripts["test:browser:required"],
