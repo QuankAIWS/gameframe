@@ -76,6 +76,7 @@ function installDestinationBar() {
 }
 
 const bar = installDestinationBar();
+window.dispatchEvent(new CustomEvent("gameframe:destination-bar-ready", { detail: { bar } }));
 let updatePending = false;
 function syncDestinationBar() {
   updatePending = false;
