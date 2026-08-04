@@ -21,6 +21,7 @@ body.monster-master-match-active #monster-master-match.monster-master-game-shell
   color: #dcefff;
 }
 
+body:has(#monster-master-match:not([hidden])) .gameframe-destination-links .monster-master-nav-setup,
 body.monster-master-match-active .gameframe-destination-links .monster-master-nav-setup {
   display: inline-flex;
 }
