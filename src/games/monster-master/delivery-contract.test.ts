@@ -54,6 +54,7 @@ test("Monster Master browser delivery uses authenticated GameFrame boundaries", 
   assert.doesNotMatch(shell, /setupButton\.hidden|button\.hidden = !active/);
   assert.match(shell, /replaceAll\("Warden Master", "Verdant Sage"\)/);
   assert.match(trainerStyles, /\.gameframe-destination-links \.monster-master-nav-setup/);
+  assert.match(trainerStyles, /body:has\(#monster-master-match:not\(\[hidden\]\)\)/);
   assert.match(trainerStyles, /body\.monster-master-match-active \.gameframe-destination-links \.monster-master-nav-setup/);
   assert.match(trainerStyles, /display: inline-flex/);
 
