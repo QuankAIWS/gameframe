@@ -53,6 +53,7 @@ jobs:
         run: >-
           node --experimental-strip-types --test
           src/rpg/rpg-shared-fixtures.test.ts
+          src/rpg/rpg-dual-revision-contract.test.ts
           src/rpg/rpg-choice-outcome-fixture.test.ts
           src/server/rpg-http-server.test.ts
           src/server/rpg-choice-outcome-http.test.ts
