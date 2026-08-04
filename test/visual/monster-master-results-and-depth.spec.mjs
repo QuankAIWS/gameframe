@@ -11,13 +11,18 @@ async function openMonsterMaster(page, player) {
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterResults?.capture))).toBe(true);
 }
 
-test("Monster Master restores visible wall height above the Pixi battlefield", async ({ page }, testInfo) => {
+test("Monster Master renders joined exposed wall faces above the Pixi battlefield", async ({ page }, testInfo) => {
   await openMonsterMaster(page, "monster-terrain-depth");
 
   const depthCanvas = page.locator("#monster-master-terrain-depth-canvas");
   await expect(depthCanvas).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterTerrainDepth.getStats().wallCount)).toBeGreaterThan(0);
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterTerrainDepth.getStats().renderedFaces)).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterTerrainDepth.getStats().culledFaces)).toBeGreaterThan(0);
+
+  const depthStats = await page.evaluate(() => window.gameFrameMonsterTerrainDepth.getStats());
+  expect(depthStats.renderedFaces).toBeLessThan(depthStats.wallCount * 2);
+  expect(depthStats.renderedFaces + depthStats.culledFaces).toBeLessThanOrEqual(depthStats.wallCount * 2);
 
   const geometry = await depthCanvas.evaluate((canvas) => ({
     width: canvas.clientWidth,
