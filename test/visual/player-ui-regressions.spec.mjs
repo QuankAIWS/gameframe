@@ -135,10 +135,12 @@ test("Monster Master keeps its mobile setup control and session badge inside the
   await expect(page.locator("body.monster-master-overlay-ready")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
 
-  const setup = await page.locator("#monster-master-new-match").boundingBox();
+  const setupControl = page.locator("#gameframe-destination-bar #monster-master-new-match");
+  await expect(setupControl).toBeVisible();
+  const setup = await setupControl.boundingBox();
   const status = await page.locator("#monster-master-status").boundingBox();
   const viewport = page.viewportSize();
-  if (!setup || !status || !viewport) throw new Error("Monster Master mobile header did not produce layout bounds.");
+  if (!setup || !status || !viewport) throw new Error("Monster Master mobile navigation did not produce layout bounds.");
 
   expect(setup.width).toBeGreaterThanOrEqual(52);
   expect(setup.x).toBeGreaterThanOrEqual(0);
