@@ -25,7 +25,7 @@ test("Monster Master presents the player as trainer with compact optional battle
   await expect(hintControl).toBeVisible();
   await expect(hints).toBeChecked();
   await expect(toast).toHaveClass(/is-visible/);
-  await expect(page.locator("#monster-master-status")).toContainText(/deployment|activation/i);
+  await expect(page.locator("#monster-master-status")).toContainText(/deploy|activation/i);
   await expect(page.locator("#monster-master-roster-list")).toContainText("Verdant Sage");
   await expect(page.locator("#monster-master-match")).not.toContainText("Warden Master");
   await expect(page.locator("#monster-master-match")).not.toContainText("Warden Duel");
