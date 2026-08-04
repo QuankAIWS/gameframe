@@ -181,11 +181,12 @@ body.monster-master-pixi-ready .monster-master-turn-unit.is-inspected .monster-m
     grid-template-columns: 54px minmax(0, 1fr) 108px;
   }
 
-  body.monster-master-match-active .gameframe-destination-links button {
+  body.monster-master-match-active .gameframe-destination-links button[disabled] {
     display: none !important;
   }
 
-  body.monster-master-match-active .gameframe-destination-links a {
+  body.monster-master-match-active .gameframe-destination-links a,
+  body.monster-master-match-active .gameframe-destination-links .monster-master-nav-setup {
     min-width: 0;
     padding-inline: 10px;
   }
