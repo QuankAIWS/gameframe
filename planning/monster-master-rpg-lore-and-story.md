@@ -199,12 +199,26 @@ Modern cubes are cheaper, safer, easier to repair, and generally less capable th
 
 Ancient cubes may contain functions that modern manufacturers cannot duplicate, including accelerated interior time, unusually large spaces, self-repair, strange environmental controls, or systems whose purpose is no longer understood. Not every ancient cube is superior; some are damaged, dangerous, badly documented, or designed for purposes that modern people would find inconvenient.
 
-The identity and intentions of the original cube makers remain undecided.
-
 ### Implementation consequences
 
 - Cube definitions need an origin category such as modern, reverse-engineered premium, ancient, or experimental.
 - Modern cube progression should improve comfort and reliability without casually reproducing unique ancient functions.
 - Ancient cubes can serve as discoveries, campaign prizes, research subjects, inheritance disputes, and sources of dangerous defects.
 - Manufacturers, governments, and criminal groups have reasons to search for intact ancient cubes and lost design fragments.
-- Ancient origin lore must remain open until selected separately.
+
+## Decision 13 — Disputed ancient origin
+
+Nobody has proved who created the original capture cubes. Lost human empires, ancient intelligent-monster civilizations, vanished mixed societies, religious orders, and several modern states all claim some connection to the technology.
+
+The surviving evidence is contradictory. Different ancient cubes use incompatible markings, materials, interfaces, and construction methods. This may indicate several makers, regional variants, later modifications, deliberate misinformation, or one civilization changing substantially over time.
+
+Competing origin claims have political and commercial value. Museums, governments, universities, manufacturers, and species-rights movements may promote whichever interpretation best supports their authority, funding, ownership claims, or preferred version of history.
+
+The setting should preserve this uncertainty unless a specific campaign deliberately discovers stronger evidence. Even then, one discovery need not explain every ancient cube.
+
+### Implementation consequences
+
+- Ancient-cube records may carry competing provenance theories rather than one canonical maker.
+- Visual and mechanical variation among ancient cubes is expected rather than treated as an inconsistency.
+- Factions can dispute excavation rights, ownership, cultural inheritance, and publication of evidence.
+- No implementation identifier should silently encode one origin theory as established fact.
