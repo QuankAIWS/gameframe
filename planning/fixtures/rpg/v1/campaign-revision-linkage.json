@@ -1,0 +1,71 @@
+{
+  "fixtureVersion": 1,
+  "contract": "rpg-dual-revision-linkage",
+  "slice": "campaign-revision-linkage",
+  "protocolVersions": {
+    "campaign": 1,
+    "encounter": 1
+  },
+  "campaignId": "campaign-monster-master-reference",
+  "startingPosition": {
+    "gameframeCoordinationRevision": 9,
+    "narrativeRevision": 3
+  },
+  "playerCommandCase": {
+    "request": {
+      "commandId": "command:secure-academy-gate",
+      "expectedGameframeCoordinationRevision": 9,
+      "gameframeEventCount": 1
+    },
+    "expected": {
+      "gameframeCoordinationRevision": 10,
+      "narrativeRevision": 3
+    }
+  },
+  "runtimeEventCommitCase": {
+    "request": {
+      "kind": "runtime.events",
+      "runtimeCommitId": "runtime-commit:present-rival-response",
+      "sourceCommandId": "command:secure-academy-gate",
+      "expectedGameframeCoordinationRevision": 10,
+      "expectedNarrativeRevision": 3,
+      "gameframeEventCount": 2
+    },
+    "expected": {
+      "gameframeCoordinationRevision": 12,
+      "narrativeRevision": 4,
+      "exactRetryReturnsSameReceipt": true
+    }
+  },
+  "encounterLaunchCommitCase": {
+    "request": {
+      "kind": "runtime.encounter_launch",
+      "runtimeCommitId": "runtime-commit:launch-academy-gate",
+      "sourceCommandId": "command:secure-academy-gate",
+      "expectedGameframeCoordinationRevision": 12,
+      "expectedNarrativeRevision": 4,
+      "gameframeEventCount": 0
+    },
+    "expected": {
+      "gameframeCoordinationRevision": 12,
+      "narrativeRevision": 5,
+      "exactRetryReturnsSameReceipt": true
+    }
+  },
+  "conflictingRuntimeCommitReuseCase": {
+    "reusesRuntimeCommitId": "runtime-commit:launch-academy-gate",
+    "requestOverrides": {
+      "gameframeEventCount": 1
+    },
+    "expected": {
+      "code": "runtime-commit-conflict"
+    }
+  },
+  "invariants": [
+    "Player commands advance GameFrame coordination without advancing runtime narrative truth.",
+    "A runtime commit advances narrative revision exactly once and advances GameFrame coordination only by the number of GameFrame events it appends.",
+    "A runtime encounter-launch commit may advance narrative revision while leaving GameFrame event coordination unchanged.",
+    "Exact runtime commit retries return the original linkage receipt.",
+    "Conflicting reuse of a runtime commit ID is rejected."
+  ]
+}
