@@ -7,18 +7,27 @@ on:
     paths:
       - ".github/agent-payload/**"
       - ".github/workflows/agent-apply-rpg-terrain-slice.yml"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - ".github/agent-payload/**"
+      - ".github/workflows/agent-apply-rpg-terrain-slice.yml"
+      - "src/browser/monster-master-terrain-geometry.js"
+      - "src/browser/monster-master-terrain-geometry.test.mjs"
 
 permissions:
   contents: write
 
 concurrency:
-  group: apply-rpg-terrain-slice
+  group: apply-rpg-terrain-slice-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   apply:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - name: Check out prepared branch
         uses: actions/checkout@v4
@@ -60,7 +69,30 @@ jobs:
       - name: Verify committed Pixi bundle
         run: npm run check:monster-master-pixi
 
-      - name: Commit prepared slice
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run canonical Monster Master journeys
+        run: npx playwright test test/browser/monster-master.spec.mjs test/browser/monster-master-controls.spec.mjs test/browser/motion-polish.spec.mjs --grep "Monster Master" --config playwright.config.mjs
+
+      - name: Capture the complete player UI matrix
+        run: npx playwright test test/visual/player-ui-review.spec.mjs test/visual/player-ui-regressions.spec.mjs test/visual/monster-master-pixi.spec.mjs test/visual/monster-master-cardinal-camera.spec.mjs test/visual/monster-master-results-and-depth.spec.mjs test/visual/monster-master-trainer-shell.spec.mjs --config playwright.visual.config.mjs
+
+      - name: Upload validation screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpg-terrain-slice-${{ github.run_id }}
+          path: |
+            visual-results/player-ui-review
+            visual-results/**/*.zip
+            visual-results/**/*.png
+            test-results/**/*.zip
+            test-results/**/*.png
+          if-no-files-found: warn
+          retention-days: 10
+
+      - name: Commit validated slice
         shell: bash
         run: |
           set -euo pipefail
