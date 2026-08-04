@@ -68,7 +68,7 @@ Fixture validation catches schema drift without booting either full application.
 
 ### Layer 3 — Actual GameFrame Node integration
 
-A compact runtime-owned GitHub Actions job checks out the real GameFrame repository into a sibling directory, installs its pinned dependencies, starts its ordinary local HTTP server, waits for `/api/health`, and runs the runtime integration journey against the real routes and service behavior.
+A compact runtime-owned GitHub Actions job checks out the real GameFrame repository into a sibling directory, installs its repository-pinned dependencies, starts its ordinary local HTTP server, waits for `/api/health`, and runs the runtime integration journey against the real routes and service behavior.
 
 Representative workspace:
 
@@ -119,33 +119,32 @@ A staging canary must eventually prove:
 - media fallback and optional narration behavior;
 - no Tailscale dependency.
 
-## Reference pinning
+## Active-development GameFrame reference policy
 
-Required runtime integration must not float silently against GameFrame `main`.
+GameFrame is still under rapid development and does not yet provide a stable RPG compatibility target. The integration strategy must not treat an early GameFrame commit as frozen or supported indefinitely.
 
-The runtime repository should store a small machine-readable compatibility lock containing at least:
+During active co-development:
 
-- GameFrame repository;
-- accepted GameFrame commit SHA;
-- RPG contract version;
-- reference campaign fixture version.
+- ordinary runtime integration defaults to current GameFrame `main`;
+- coordinated work may supply an explicit `gameframe_ref` naming a branch, tag, or commit;
+- every run resolves that ref to an exact GameFrame commit SHA and records it with the runtime SHA, fixture versions, and test evidence;
+- a failure caused by a new GameFrame change is useful integration feedback and should normally be repaired rather than hidden by reverting to an old default;
+- historical runs remain reproducible from their recorded SHAs without making those SHAs permanent compatibility commitments.
 
-Ordinary required integration checks run against that pinned GameFrame commit. This ensures an unrelated GameFrame merge cannot unexpectedly invalidate an old runtime pull request.
-
-A separate scheduled compatibility watch may test current GameFrame `main` and report likely future incompatibility.
+A compatibility baseline may be introduced later, after the first versioned RPG contracts and Monster Master reference chapter are complete enough to support release, rollback, or long-lived regression evidence. That later baseline is a reproducibility and release-control tool; it does not replace continued testing against current GameFrame development.
 
 ## Coordinated branch testing
 
-For coordinated work across both repositories, the runtime integration workflow may accept an explicit `gameframe_ref` through manual dispatch or a controlled repository variable.
+For coordinated work across both repositories, the runtime integration workflow should accept an explicit `gameframe_ref` through manual dispatch or a controlled workflow input.
 
 The accepted order is:
 
-1. freeze shared fixtures or versioned contract changes in GameFrame;
-2. run the GameFrame repository's own focused tests;
-3. test the runtime branch against the intended GameFrame branch or commit;
+1. define or update shared fixtures and contracts on the intended GameFrame branch;
+2. run GameFrame's focused repository tests;
+3. test the runtime branch against that explicit GameFrame branch or commit;
 4. merge the canonical GameFrame change;
-5. update the runtime compatibility lock and mirrors;
-6. run the required pinned integration lane;
+5. synchronize shared documents and fixtures into the runtime as required;
+6. run runtime integration against GameFrame `main` and record the resolved SHA;
 7. merge the runtime change.
 
 Production workflows must not automatically execute untrusted public pull-request code with private runtime secrets.
@@ -172,7 +171,7 @@ Runtime CI owns:
 - checkout of the public GameFrame repository;
 - actual two-repository Node integration;
 - selected local workerd integration;
-- scheduled current-main compatibility watch;
+- current-GameFrame integration during active development;
 - shared-document synchronization and drift verification.
 
 No cross-repository secret is needed to check out public GameFrame. Real provider and Discord secrets remain excluded from ordinary pull-request integration.
@@ -207,13 +206,17 @@ Run:
 - focused runtime tests;
 - shared fixture validation;
 - shared-document drift check;
-- actual GameFrame Node integration when affected runtime, contract, adapter, or reference-fixture paths change.
+- actual GameFrame Node integration against current GameFrame `main` when affected runtime, contract, adapter, or reference-fixture paths change.
+
+### Coordinated development
+
+Run the same integration against the explicit GameFrame branch or commit being developed alongside the runtime change, then rerun against GameFrame `main` after the GameFrame side merges.
 
 ### Merge-candidate milestones
 
 Run:
 
-- the required pinned GameFrame Node integration;
+- actual GameFrame Node integration against current `main` or the explicit coordinated ref;
 - focused local Workers and Durable Objects integration;
 - recovery, retry, and reference-campaign journeys.
 
@@ -222,7 +225,7 @@ Run:
 Run:
 
 - shared-document drift against GameFrame `main`;
-- current GameFrame `main` compatibility against runtime `main`;
+- current GameFrame `main` integration against runtime `main`;
 - no provider-backed or secret-bearing work unless specifically approved.
 
 ### External canaries
@@ -236,6 +239,7 @@ Cross-repository jobs should preserve enough failure evidence to identify which 
 Useful evidence includes:
 
 - exact GameFrame and runtime commit SHAs;
+- requested GameFrame ref and resolved SHA;
 - fixture and contract versions;
 - service health responses;
 - bounded process logs;
@@ -260,13 +264,13 @@ The integration strategy is established when:
 
 1. both repositories validate the same versioned fixtures;
 2. runtime mock tests cover failure and retry behavior;
-3. a GitHub-hosted runtime job checks out and starts the pinned actual GameFrame repository;
+3. a GitHub-hosted runtime job checks out and starts current GameFrame `main` or an explicit coordinated ref and records the resolved SHA;
 4. the Monster Master reference campaign enters and exits an actual GameFrame tactical match;
 5. a local Workers/Durable Object lane proves persistence and recovery;
-6. current GameFrame `main` is watched separately from the required pinned reference;
+6. GameFrame changes that break runtime integration are detected during active development rather than hidden behind an obsolete default;
 7. a deployed staging canary proves real Discord invitation and public-network resume;
 8. no test or player journey depends on Tailscale.
 
 ## Governing rule
 
-> Use mocks for speed, fixtures for contract stability, the real GameFrame checkout for integration truth, workerd for Cloudflare-state truth, and deployed staging for public-system truth.
+> Use mocks for speed, fixtures for contract stability, the current real GameFrame checkout for integration truth, workerd for Cloudflare-state truth, and deployed staging for public-system truth. Record exact SHAs for evidence without freezing an unfinished platform.
