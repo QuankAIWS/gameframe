@@ -9,6 +9,23 @@ const closeRoster = document.querySelector("#monster-master-close-roster");
 const closeIntel = document.querySelector("#monster-master-close-intel");
 const drawerBackdrop = document.querySelector("#monster-master-drawer-backdrop");
 const utilityMenu = document.querySelector("#monster-master-utility-menu");
+const combatNav = document.querySelector(".combat-nav");
+
+function ensureSetupButton() {
+  let button = document.querySelector("#monster-master-new-match");
+  if (button || !combatNav) return button;
+  button = document.createElement("button");
+  button.id = "monster-master-new-match";
+  button.className = "monster-master-nav-setup";
+  button.type = "button";
+  button.textContent = "Setup";
+  button.setAttribute("aria-label", "Return to Monster Master setup");
+  button.hidden = true;
+  combatNav.append(button);
+  return button;
+}
+
+const setupButton = ensureSetupButton();
 
 const hud = {
   root: document.querySelector("#monster-master-unit-hud"),
@@ -45,7 +62,40 @@ const actionShortcuts = new Map([
   ["5", document.querySelector("#monster-master-end-activation")],
 ]);
 
+const trainerCopyRoots = [lobby, match].filter(Boolean);
 let syncPending = false;
+
+function trainerCopy(value) {
+  return value
+    .replaceAll("Warden Master", "Verdant Sage")
+    .replace(/\bWarden\b/g, "Sage")
+    .replace(/\bDuelists\b/g, "Trainers")
+    .replace(/\bduelists\b/g, "trainers")
+    .replace(/\bDuels\b/g, "Battles")
+    .replace(/\bduels\b/g, "battles")
+    .replace(/\bDuel\b/g, "Battle")
+    .replace(/\bduel\b/g, "battle");
+}
+
+function applyTrainerCopy() {
+  for (const root of trainerCopyRoots) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+      const next = trainerCopy(node.nodeValue ?? "");
+      if (next !== node.nodeValue) node.nodeValue = next;
+      node = walker.nextNode();
+    }
+    for (const element of root.querySelectorAll("[aria-label], [title]")) {
+      for (const attribute of ["aria-label", "title"]) {
+        const value = element.getAttribute(attribute);
+        if (!value) continue;
+        const next = trainerCopy(value);
+        if (next !== value) element.setAttribute(attribute, next);
+      }
+    }
+  }
+}
 
 function setText(node, value) {
   if (node && node.textContent !== value) node.textContent = value;
@@ -74,6 +124,7 @@ function openDrawer(which) {
 function updateShellState() {
   const active = matchActive();
   body.classList.toggle("monster-master-match-active", active);
+  if (setupButton) setupButton.hidden = !active;
   if (!active) {
     closeDrawers();
     utilityMenu?.removeAttribute("open");
@@ -84,7 +135,7 @@ function roleFromName(name) {
   const normalized = name.toLowerCase();
   if (normalized.includes("bulwark")) return "bulwark";
   if (normalized.includes("emberling")) return "emberling";
-  if (normalized.includes("master")) return "master";
+  if (normalized.includes("sage") || normalized.includes("master")) return "master";
   return "unknown";
 }
 
@@ -103,6 +154,7 @@ function rosterState(activeName) {
 function syncHud() {
   syncPending = false;
   updateShellState();
+  applyTrainerCopy();
   if (window.gameFrameMonsterRendererMode === "pixi") return;
   if (!hud.root) return;
 
@@ -129,7 +181,7 @@ function syncHud() {
     : owner === "beta"
       ? source.betaCommand?.textContent?.trim()
       : "—";
-  const glyph = role === "master" ? "W" : role === "bulwark" ? "B" : role === "emberling" ? "E" : "—";
+  const glyph = role === "master" ? "S" : role === "bulwark" ? "B" : role === "emberling" ? "E" : "—";
   const round = source.round?.textContent?.trim() || "—";
 
   hud.root.dataset.role = role;
@@ -154,10 +206,6 @@ function syncHud() {
 }
 
 function scheduleSync() {
-  if (window.gameFrameMonsterRendererMode === "pixi") {
-    updateShellState();
-    return;
-  }
   if (syncPending) return;
   syncPending = true;
   requestAnimationFrame(syncHud);
@@ -222,6 +270,7 @@ window.gameFrameMonsterShell = Object.freeze({
   closeDrawers,
   openDrawer,
   isMatchActive: matchActive,
+  applyTrainerCopy,
 });
 
 syncHud();
