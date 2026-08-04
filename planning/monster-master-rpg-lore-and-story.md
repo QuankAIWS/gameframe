@@ -278,3 +278,23 @@ Emergency service should normally include compensation, medical care, equipment-
 - Trainer and monster condition, competence, consent, and equipment can limit required assistance.
 - Domestic ownership must not create hidden public-service obligations.
 - Emergency service can generate rewards, claims, injuries, damaged equipment, reputation changes, and later disputes over reimbursement.
+
+## Decision 17 — Limited emergency detention authority
+
+A professional Monster Master license does not grant general police, investigative, or arrest powers.
+
+Masters may intervene to stop an immediate threat, defend themselves or others, prevent an active theft or unlawful capture, recover a cube or occupant during an incident, and temporarily restrain a suspected offender when reasonably necessary to prevent escape or further harm until the proper authority arrives.
+
+That authority ends when the immediate danger and credible flight risk are controlled. Masters cannot conduct routine searches, interrogations, raids, punishment, debt collection, or seizure of unrelated property unless they hold a separate office or receive explicit lawful deputization.
+
+Any force used must be proportionate to the threat. Called monsters operate under the same limits, and an intelligent monster is not required to participate merely because its Master chooses to intervene. Suspects, evidence, and recovered property should be transferred promptly to guards, road patrols, or wardens.
+
+Bad-faith detention, excessive force, fabricated evidence, or using the rule to settle private disputes can create criminal, civil, reputational, and licensing consequences. Local law may provide broader citizen-arrest rules, but the Master license itself does not turn its holder into law enforcement.
+
+### Implementation consequences
+
+- Master licenses need a narrow emergency-intervention permission distinct from police authority.
+- Encounters must distinguish active threats from retrospective investigation or private retaliation.
+- Temporary restraint needs duration, transfer, reporting, evidence-preservation, and force-proportionality rules.
+- Deputization or separate employment can grant broader authority without changing the default Master role.
+- Abuse of detention authority can affect licenses, reputation, legal exposure, and relationships with companions.
