@@ -22,6 +22,8 @@ import {
 import { InMemoryGameFrameService } from "./in-memory-match-service.ts";
 
 const publicRoot = fileURLToPath(new URL("../../public/", import.meta.url));
+const LEGACY_RPG_PROTOCOL_VERSION = 1;
+const RPG_RUNTIME_SERVICE_ID = "rpg-gm-runtime";
 
 interface ApiError extends Error {
   code?: string;
@@ -109,6 +111,40 @@ function requireCampaignPath(body: Record<string, unknown>, campaignId: string):
   }
 }
 
+function legacyRpgCompatibilityEnabled(): boolean {
+  return process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY === "1";
+}
+
+function requireRpgProtocol(body: Record<string, unknown>): void {
+  if (
+    body.protocolVersion === RPG_CAMPAIGN_PROTOCOL_VERSION
+    || body.protocolVersion === RPG_ENCOUNTER_PROTOCOL_VERSION
+  ) {
+    return;
+  }
+  if (
+    body.protocolVersion === LEGACY_RPG_PROTOCOL_VERSION
+    && legacyRpgCompatibilityEnabled()
+  ) {
+    return;
+  }
+  throw new RpgServiceError({
+    code: "unsupported-protocol-version",
+    message: `RPG protocol version ${String(body.protocolVersion)} is not available on this server.`,
+    status: 400,
+  });
+}
+
+function requireServicePrincipal(
+  principal: AuthenticatedPrincipal,
+  expectedServiceId: string,
+  message: string,
+): void {
+  if (principal.source !== "service" || principal.playerId !== expectedServiceId) {
+    throw new RpgServiceError({ code: "forbidden", message, status: 403 });
+  }
+}
+
 function contentType(path: string): string {
   return ({
     ".html": "text/html; charset=utf-8",
@@ -169,7 +205,9 @@ export function createGameFrameServer(
               "campaign-return",
               "dual-revision-linkage",
               "runtime-commit-receipts",
-              "legacy-v1-compatibility",
+              ...(legacyRpgCompatibilityEnabled()
+                ? ["legacy-v1-compatibility"]
+                : []),
             ],
           },
           games: [
@@ -201,6 +239,7 @@ export function createGameFrameServer(
       if (campaignRoute && request.method === "POST") {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
         const body = await readJson(request);
+        requireRpgProtocol(body);
         requireCampaignPath(body, campaignRoute.campaignId);
         if (campaignRoute.operation === "attach") {
           return json(
@@ -210,6 +249,11 @@ export function createGameFrameServer(
           );
         }
         if (campaignRoute.operation === "events") {
+          requireServicePrincipal(
+            principal,
+            RPG_RUNTIME_SERVICE_ID,
+            "Campaign runtime events require the RPG GM runtime service principal.",
+          );
           return json(
             response,
             200,
@@ -235,10 +279,17 @@ export function createGameFrameServer(
         && request.method === "POST"
       ) {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        requireServicePrincipal(
+          principal,
+          RPG_RUNTIME_SERVICE_ID,
+          "Encounter launch requires the RPG GM runtime service principal.",
+        );
+        const body = await readJson(request);
+        requireRpgProtocol(body);
         return json(
           response,
           200,
-          await rpgService.launchEncounter(await readJson(request), rpgPrincipal(principal)),
+          await rpgService.launchEncounter(body, rpgPrincipal(principal)),
         );
       }
       if (
@@ -247,12 +298,14 @@ export function createGameFrameServer(
         && request.method === "POST"
       ) {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        const body = await readJson(request);
+        requireRpgProtocol(body);
         return json(
           response,
           200,
           await rpgService.completeEncounter(
             encounterRoute.encounterId,
-            await readJson(request),
+            body,
             rpgPrincipal(principal),
           ),
         );
@@ -263,6 +316,11 @@ export function createGameFrameServer(
         && request.method === "GET"
       ) {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        requireServicePrincipal(
+          principal,
+          RPG_RUNTIME_SERVICE_ID,
+          "Encounter retrieval requires the RPG GM runtime service principal.",
+        );
         return json(
           response,
           200,
