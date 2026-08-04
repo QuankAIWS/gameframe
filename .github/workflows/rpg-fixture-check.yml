@@ -1,33 +1,31 @@
-name: RPG Shared Fixture Check
-run-name: RPG Shared Fixture Check · ${{ github.sha }}
+name: RPG Node Contract Check
+run-name: RPG Node Contract Check · ${{ github.sha }}
 
 on:
   pull_request:
     branches: [main]
+    types: [labeled]
     paths:
       - ".github/workflows/rpg-fixture-check.yml"
       - "planning/fixtures/rpg/**"
       - "planning/rpg-gameframe-interface-contract.md"
       - "src/rpg/**"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/rpg-fixture-check.yml"
-      - "planning/fixtures/rpg/**"
-      - "planning/rpg-gameframe-interface-contract.md"
-      - "src/rpg/**"
+      - "src/auth/request-authenticator.ts"
+      - "src/server/http-server.ts"
+      - "src/server/rpg-http-server.test.ts"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: rpg-shared-fixture-check-${{ github.event.pull_request.number || github.ref }}
+  group: rpg-node-contract-check-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   validate:
-    name: Validate canonical RPG fixtures
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'canonical-validation'
+    name: Validate RPG fixtures and Node HTTP boundary
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -48,5 +46,8 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Validate canonical fixture manifest and cases
-        run: node --experimental-strip-types --test src/rpg/rpg-shared-fixtures.test.ts
+      - name: Validate canonical fixture manifest and Node HTTP behavior
+        run: >-
+          node --experimental-strip-types --test
+          src/rpg/rpg-shared-fixtures.test.ts
+          src/server/rpg-http-server.test.ts

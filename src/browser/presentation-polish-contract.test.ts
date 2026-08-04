@@ -23,48 +23,38 @@ test("board-game presentation polish is loaded before the authoritative browser 
   assert.match(packageJson.scripts["check:browser"], /public\/game-polish\.js/);
 });
 
-test("Monster Master uses a presentation-only four-corner dimetric projection with exact path motion", async () => {
+test("Monster Master disables the legacy Canvas projection and uses the Pixi bridge", async () => {
   const html = await read("public/monster-master.html");
-  const script = await read("public/monster-master-rotation.js");
-  const baseStyles = await read("public/monster-master-motion.css");
-  const rotationStyles = await read("public/monster-master-rotation.css");
+  const legacyProjection = await read("public/monster-master-rotation.js");
+  const pixiBridge = await read("public/monster-master-pixi-bridge.js");
+  const pixiEntry = await read("src/browser/monster-master-pixi-entry.js");
   const packageJson = JSON.parse(await read("package.json"));
 
-  assert.match(html, /href="\/monster-master-motion\.css"/);
-  assert.match(html, /href="\/monster-master-rotation\.css"/);
   assert.match(html, /src="\/monster-master-rotation\.js"/);
   assert.ok(html.indexOf("/monster-master-rotation.js") < html.indexOf("/auth-launcher.js"));
-  assert.doesNotMatch(html, /src="\/monster-master-motion\.js"/);
   assert.match(html, /Scrollable and rotatable Monster Master battlefield/);
-  assert.match(script, /function worldToScreen/);
-  assert.match(script, /function screenToWorld/);
-  assert.match(script, /function screenToTile/);
-  assert.match(script, /function rotateDelta/);
-  assert.match(script, /function unrotateDelta/);
-  assert.match(script, /function rotateTo/);
-  assert.match(script, /function rotateBy/);
-  assert.match(script, /CORNER_NAMES = \["Northwest", "Northeast", "Southeast", "Southwest"\]/);
-  assert.match(script, /gameframe:monster-camera-rotated/);
-  assert.match(script, /dataset\.billboard/);
-  assert.match(script, /camera-facing/);
-  assert.match(script, /function wallOpacity/);
-  assert.match(script, /ProjectionAwareWebSocket/);
-  assert.match(script, /effect\.type !== "unit-moved"/);
-  assert.match(script, /effect\.path/);
-  assert.match(script, /gameframe:monster-animation/);
-  assert.match(script, /pointerdown/);
-  assert.match(script, /const pointers = new Map/);
-  assert.match(script, /function wheel/);
-  assert.match(script, /function zoomAt/);
-  assert.match(script, /function dispatchCoordinate/);
-  assert.match(script, /prefers-reduced-motion/);
-  assert.doesNotMatch(script, /\/api\/matches\/.*actions/);
-  assert.match(baseStyles, /data-projection-ready/);
-  assert.match(baseStyles, /#monster-master-motion-canvas/);
-  assert.match(rotationStyles, /ROTATABLE 3\/4 VIEW/);
-  assert.match(rotationStyles, /monster-master-rotation-controls/);
-  assert.match(rotationStyles, /data-rotating/);
-  assert.match(packageJson.scripts["check:browser"], /public\/monster-master-rotation\.js/);
+
+  assert.match(legacyProjection, /legacy Canvas projection is intentionally disabled/);
+  assert.match(legacyProjection, /gameFrameMonsterLegacyProjection/);
+  assert.match(legacyProjection, /disabled: true/);
+  assert.doesNotMatch(legacyProjection, /function worldToScreen/);
+  assert.doesNotMatch(legacyProjection, /\/api\/matches\/.*actions/);
+
+  assert.match(pixiBridge, /gameFrameMonsterRendererMode = "pixi"/);
+  assert.match(pixiBridge, /function worldToScreen/);
+  assert.match(pixiBridge, /function unrotateDelta/);
+  assert.match(pixiBridge, /function dispatchCoordinate/);
+  assert.match(pixiBridge, /pointerdown/);
+  assert.match(pixiBridge, /gameFrameMonsterPixi/);
+  assert.doesNotMatch(pixiBridge, /\/api\/matches\/.*actions/);
+
+  assert.match(pixiEntry, /from "pixi\.js"/);
+  assert.match(pixiEntry, /Application/);
+  assert.match(pixiEntry, /gameFrameMonsterRendererMode = "pixi"/);
+  assert.match(pixiEntry, /gameframe:monster-master-pixi-view/);
+  assert.match(packageJson.scripts["build:monster-master-pixi"], /build-monster-master-pixi\.mjs/);
+  assert.match(packageJson.scripts["check:monster-master-pixi"], /--check/);
+  assert.match(packageJson.scripts["check:browser"], /public\/monster-master-pixi-bridge\.js/);
 });
 
 test("Monster Master uses a viewport-filling shell with a contextual HUD and command deck", async () => {
