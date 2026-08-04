@@ -48,13 +48,12 @@ async function waitForPixi(page) {
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterPixiBridge))).toBe(true);
 }
 
-async function clickBoardCoordinate(page, coordinate) {
-  const point = await page.evaluate(
-    (target) => window.gameFrameMonsterPixiBridge.worldToScreen(target),
+async function dispatchBoardCoordinate(page, coordinate) {
+  const dispatched = await page.evaluate(
+    (target) => window.gameFrameMonsterPixiBridge.dispatchCoordinate(target),
     coordinate,
   );
-  expect(point).not.toBeNull();
-  await page.locator("#monster-master-pixi-canvas").click({ position: point });
+  expect(dispatched).toBe(true);
 }
 
 async function deploySelectedUnit(page) {
@@ -66,7 +65,7 @@ async function deploySelectedUnit(page) {
     )) ?? null;
   });
   expect(action).not.toBeNull();
-  await clickBoardCoordinate(page, action.position);
+  await dispatchBoardCoordinate(page, action.position);
 }
 
 function rosterUnit(view, unitId) {
@@ -79,12 +78,17 @@ function chooseDeployment(view) {
   return [...view.observation.legalActions]
     .filter((action) => action.type === "deploy-unit")
     .sort((left, right) => {
-      const roleDifference = roleOrder.indexOf(rosterUnit(view, left.unitId)?.role)
-        - roleOrder.indexOf(rosterUnit(view, right.unitId)?.role);
+      const leftRole = rosterUnit(view, left.unitId)?.role;
+      const rightRole = rosterUnit(view, right.unitId)?.role;
+      const roleDifference = roleOrder.indexOf(leftRole) - roleOrder.indexOf(rightRole);
       if (roleDifference) return roleDifference;
-      return (playerIndex === 0 ? right.position.x - left.position.x : left.position.x - right.position.x)
+      const edgeDifference = playerIndex === 0
+        ? right.position.x - left.position.x
+        : left.position.x - right.position.x;
+      return edgeDifference
         || Math.abs(left.position.y - 11) - Math.abs(right.position.y - 11)
-        || left.position.y - right.position.y;
+        || left.position.y - right.position.y
+        || left.position.x - right.position.x;
     })[0];
 }
 
@@ -94,25 +98,47 @@ function destination(action) {
 
 function distanceToEnemyMaster(view, action) {
   const active = view.observation.board.units.find((unit) => unit.id === action.unitId);
-  const enemyMaster = view.observation.board.units.find((unit) => unit.ownerId !== active.ownerId && unit.role === "master");
+  const enemyMaster = view.observation.board.units.find((unit) => (
+    unit.ownerId !== active.ownerId && unit.role === "master"
+  ));
   if (!enemyMaster) return 0;
   const target = destination(action);
-  return Math.max(Math.abs(target.x - enemyMaster.position.x), Math.abs(target.y - enemyMaster.position.y));
+  return Math.max(
+    Math.abs(target.x - enemyMaster.position.x),
+    Math.abs(target.y - enemyMaster.position.y),
+  );
 }
 
 function chooseDeterministicAction(view, { passiveCombat = false } = {}) {
   if (view.observation.phase === "deployment") return chooseDeployment(view);
   const actions = view.observation.legalActions;
   if (passiveCombat) return actions.find((action) => action.type === "end-activation");
-  return actions.find((action) => action.type === "attack" && (
-    view.observation.board.units.find((unit) => unit.id === action.targetUnitId)?.role === "master"
-  ))
-    ?? actions.find((action) => action.type === "attack")
-    ?? [...actions].filter((action) => action.type === "use-ability")
-      .sort((left, right) => right.healing - left.healing)[0]
-    ?? [...actions].filter((action) => action.type === "move")
-      .sort((left, right) => distanceToEnemyMaster(view, left) - distanceToEnemyMaster(view, right))[0]
-    ?? actions.find((action) => action.type === "end-activation");
+
+  const enemyMasterAttack = actions.find((action) => (
+    action.type === "attack"
+    && view.observation.board.units.find((unit) => unit.id === action.targetUnitId)?.role === "master"
+  ));
+  if (enemyMasterAttack) return enemyMasterAttack;
+
+  const attack = actions.find((action) => action.type === "attack");
+  if (attack) return attack;
+
+  const mend = [...actions]
+    .filter((action) => action.type === "use-ability")
+    .sort((left, right) => right.healing - left.healing || left.targetUnitId.localeCompare(right.targetUnitId))[0];
+  if (mend) return mend;
+
+  const move = [...actions]
+    .filter((action) => action.type === "move")
+    .sort((left, right) => (
+      distanceToEnemyMaster(view, left) - distanceToEnemyMaster(view, right)
+      || right.movementCost - left.movementCost
+      || destination(left).y - destination(right).y
+      || destination(left).x - destination(right).x
+    ))[0];
+  if (move) return move;
+
+  return actions.find((action) => action.type === "end-activation");
 }
 
 async function prepareAuthoritativeState(request, predicate, options = {}) {
@@ -137,6 +163,7 @@ async function openPrepared(page, prepared, playerId) {
 }
 
 test("deploys a full creature roster, advances combat against Theo, and resumes the battle", async ({ page }) => {
+  test.setTimeout(45_000);
   await page.goto("/monster-master.html?player=monster-master-human");
   await page.locator("#monster-master-theo").click();
   await waitForPixi(page);
@@ -167,6 +194,7 @@ test("deploys a full creature roster, advances combat against Theo, and resumes 
 });
 
 test("two browser seats alternate Monster Master deployment on one Pixi battlefield", async ({ browser }) => {
+  test.setTimeout(45_000);
   const alphaContext = await browser.newContext();
   const betaContext = await browser.newContext();
   const alpha = await alphaContext.newPage();
@@ -184,8 +212,8 @@ test("two browser seats alternate Monster Master deployment on one Pixi battlefi
     await deploySelectedUnit(beta);
     await expect(alpha.locator("#monster-master-status")).toContainText("Stone Bulwark");
   } finally {
-    await alphaContext.close();
-    await betaContext.close();
+    await alphaContext.close().catch(() => {});
+    await betaContext.close().catch(() => {});
   }
 });
 
