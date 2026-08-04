@@ -32,6 +32,8 @@ jobs:
     name: Validate RPG fixtures and Node HTTP boundary
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY: "1"
 
     steps:
       - name: Check out repository
