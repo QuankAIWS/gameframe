@@ -13,6 +13,7 @@ on:
       - "src/auth/request-authenticator.ts"
       - "src/server/http-server.ts"
       - "src/server/rpg-http-server.test.ts"
+      - "src/server/rpg-live-protocol-v2-http.test.ts"
       - "src/server/rpg-choice-outcome-http.test.ts"
       - "src/server/rpg-choice-outcome-authority.test.ts"
       - "src/server/rpg-choice-consequence-authority.test.ts"
@@ -31,6 +32,8 @@ jobs:
     name: Validate RPG fixtures and Node HTTP boundary
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY: "1"
 
     steps:
       - name: Check out repository
@@ -56,6 +59,7 @@ jobs:
           src/rpg/rpg-dual-revision-contract.test.ts
           src/rpg/rpg-choice-outcome-fixture.test.ts
           src/server/rpg-http-server.test.ts
+          src/server/rpg-live-protocol-v2-http.test.ts
           src/server/rpg-choice-outcome-http.test.ts
           src/server/rpg-choice-outcome-authority.test.ts
           src/server/rpg-choice-consequence-authority.test.ts
