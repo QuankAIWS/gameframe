@@ -17,11 +17,12 @@ test("Monster Master presents the player as trainer with compact optional battle
 
   const setup = page.locator("#gameframe-destination-bar #monster-master-new-match");
   const hints = page.locator("#monster-master-hints-enabled");
+  const hintControl = page.locator(".monster-master-hints-toggle");
   const toast = page.locator("#monster-master-status-toast");
   await expect(setup).toBeVisible();
   await expect(setup).toHaveText("Setup");
   await expect(page.locator(".monster-master-board-briefing")).toHaveClass(/monster-master-hint-layer/);
-  await expect(page.locator(".monster-master-hints-toggle")).toBeVisible();
+  await expect(hintControl).toBeVisible();
   await expect(hints).toBeChecked();
   await expect(toast).toHaveClass(/is-visible/);
   await expect(page.locator("#monster-master-status")).toContainText(/deployment|activation/i);
@@ -41,10 +42,12 @@ test("Monster Master presents the player as trainer with compact optional battle
   expect(Math.abs(stageGeometry.stageHeight - stageGeometry.frameHeight)).toBeLessThanOrEqual(2);
   expect(stageGeometry.layerPosition).toBe("absolute");
 
-  await hints.uncheck();
+  await hintControl.click();
+  await expect(hints).not.toBeChecked();
   await expect(page.locator("body.monster-master-hints-disabled")).toBeVisible();
   await expect.poll(() => page.evaluate(() => localStorage.getItem("gameframe:monster-master:hints-enabled"))).toBe("false");
-  await hints.check();
+  await hintControl.click();
+  await expect(hints).toBeChecked();
   await expect(page.locator("body.monster-master-hints-disabled")).toHaveCount(0);
 
   await page.screenshot({
