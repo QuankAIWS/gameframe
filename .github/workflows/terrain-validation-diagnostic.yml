@@ -1,0 +1,84 @@
+name: Terrain Validation Diagnostic
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/terrain-validation-diagnostic.yml
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out terrain branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/rpg-rendering-contract-terrain-geometry
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Capture canonical validation failure
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          npm run validate > /tmp/terrain-validate.log 2>&1
+          status=$?
+          set -e
+
+          python <<'PY'
+          from pathlib import Path
+          import re
+
+          log = Path('/tmp/terrain-validate.log').read_text(errors='replace')
+          lines = log.splitlines()
+          pattern = re.compile(r'^(not ok|# fail|# tests|# pass|Error:|AssertionError|FAIL|Tests:|error TS|npm error|\s*\d+\))', re.I)
+          filtered = [line for line in lines if pattern.search(line)]
+          tail = lines[-220:]
+          body = [
+              '## Terrain validation diagnostic',
+              '',
+              'The terrain-focused gate passed in the finalizer. This is the captured output from the repository-wide `npm run validate` failure.',
+              '',
+              '```text',
+              *filtered[-140:],
+              '',
+              '--- final log tail ---',
+              *tail,
+              '```',
+          ]
+          text = '\n'.join(body)
+          if len(text) > 60000:
+              text = text[:59500] + '\n```\n\n_Output truncated; the complete log is attached to the workflow run._'
+          Path('/tmp/terrain-comment.md').write_text(text)
+          PY
+
+          gh pr comment 52 --body-file /tmp/terrain-comment.md
+          exit "$status"
+
+      - name: Upload complete validation log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terrain-validation-diagnostic-${{ github.run_id }}
+          path: /tmp/terrain-validate.log
+          if-no-files-found: warn
+          retention-days: 3
