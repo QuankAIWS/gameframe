@@ -1,0 +1,141 @@
+name: Integrate cliff face v1
+
+on:
+  push:
+    branches:
+      - agent/rpg-rendering-contract-terrain-geometry
+    paths:
+      - "public/assets/monster-master/terrain/cliff-face/**"
+      - "source-assets/monster-master/terrain/cliff-face/**"
+      - "planning/monster-master/assets/cliff-face-grassland-stone-v1.md"
+      - "src/browser/monster-master-cliff-face-asset-contract.test.mjs"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: integrate-cliff-face-v1
+  cancel-in-progress: true
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out terrain branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/rpg-rendering-contract-terrain-geometry
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Integrate cliff-face material into Pixi
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          renderer = Path("src/browser/monster-master-pixi-entry.js")
+          source = renderer.read_text()
+
+          replacements = [
+              (
+                  "  Graphics,\n  Rectangle,",
+                  "  Graphics,\n  Matrix,\n  Rectangle,",
+              ),
+              (
+                  'const RAISED_BARRIER_CAP_TEXTURE = "/assets/monster-master/terrain/raised-barrier-cap/raised-barrier-cap-grassland-stone-v1-128.webp";\n',
+                  'const RAISED_BARRIER_CAP_TEXTURE = "/assets/monster-master/terrain/raised-barrier-cap/raised-barrier-cap-grassland-stone-v1-128.webp";\n'
+                  'const CLIFF_FACE_TEXTURE = "/assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-128.webp";\n',
+              ),
+              (
+                  'const GEOMETRY_DEBUG_PARAMETER = "geometryDebug";\n',
+                  'const GEOMETRY_DEBUG_PARAMETER = "geometryDebug";\n'
+                  'const CLIFF_FACE_TEXTURE_MATRIX = new Matrix().scale(0.72, 0.24);\n',
+              ),
+              (
+                  '''  const [creatureBase, grassGround, raisedBarrierCap] = await Promise.all([\n    Assets.load(CREATURE_ATLAS),\n    Assets.load(GRASS_GROUND_TEXTURE),\n    Assets.load(RAISED_BARRIER_CAP_TEXTURE),\n  ]);\n  raisedBarrierCap.source.wrapMode = "repeat";\n  state.textures = { creatureBase, grassGround, raisedBarrierCap };''',
+                  '''  const [creatureBase, grassGround, raisedBarrierCap, cliffFace] = await Promise.all([\n    Assets.load(CREATURE_ATLAS),\n    Assets.load(GRASS_GROUND_TEXTURE),\n    Assets.load(RAISED_BARRIER_CAP_TEXTURE),\n    Assets.load(CLIFF_FACE_TEXTURE),\n  ]);\n  raisedBarrierCap.source.wrapMode = "repeat";\n  cliffFace.source.wrapMode = "repeat";\n  state.textures = { creatureBase, grassGround, raisedBarrierCap, cliffFace };''',
+              ),
+              (
+                  '''    for (const face of faces) {\n      const color = face.side === "left" ? 0x485348 : 0x3a4742;\n      display.poly(flatten(face.points))\n        .fill({ color, alpha: 1 })\n        .stroke({ color: 0xa9a584, alpha: 0.3, width: 1 });\n      const upper = face.points[0];\n      const lower = face.points[3];\n      const seamY = upper.y + (lower.y - upper.y) * (0.42 + ((entry.coordinate.x + entry.coordinate.y) % 3) * 0.08);\n      display.moveTo(upper.x, seamY).lineTo(face.points[1].x, seamY + (face.points[1].y - upper.y))\n        .stroke({ color: 0xd2cda8, alpha: 0.12, width: 0.8 });\n    }''',
+                  '''    for (const face of faces) {\n      const tint = face.side === "left" ? 0xd8cfba : 0xb7ad9a;\n      display.poly(flatten(face.points))\n        .fill({\n          texture: state.textures.cliffFace,\n          textureSpace: "global",\n          matrix: CLIFF_FACE_TEXTURE_MATRIX,\n          color: tint,\n          alpha: 1,\n        })\n        .stroke({ color: 0xbdb08e, alpha: 0.42, width: 0.9 });\n    }''',
+              ),
+          ]
+
+          for old, new in replacements:
+              if old not in source:
+                  raise SystemExit(f"Expected renderer block not found: {old[:80]!r}")
+              source = source.replace(old, new, 1)
+
+          required = [
+              "Matrix,",
+              "const CLIFF_FACE_TEXTURE =",
+              "const CLIFF_FACE_TEXTURE_MATRIX = new Matrix().scale(0.72, 0.24);",
+              'cliffFace.source.wrapMode = "repeat";',
+              "texture: state.textures.cliffFace",
+              "matrix: CLIFF_FACE_TEXTURE_MATRIX",
+          ]
+          missing = [item for item in required if item not in source]
+          if missing:
+              raise SystemExit(f"Cliff-face renderer patch failed: {missing}")
+
+          renderer.write_text(source)
+          PY
+
+      - name: Build committed Pixi bundle
+        run: npm run build:monster-master-pixi
+
+      - name: Verify terrain asset contracts
+        run: node --test src/browser/monster-master-terrain-geometry.test.mjs src/browser/monster-master-ground-asset-contract.test.mjs src/browser/monster-master-wall-top-asset-contract.test.mjs src/browser/monster-master-cliff-face-asset-contract.test.mjs
+
+      - name: Verify browser syntax and renderer architecture
+        run: |
+          npm run check:browser
+          node --experimental-strip-types --test src/browser/monster-master-art-contract.test.ts
+          npm run check:monster-master-pixi
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Monster Master journeys
+        run: npx playwright test test/browser/monster-master.spec.mjs test/browser/monster-master-controls.spec.mjs test/browser/motion-polish.spec.mjs --grep "Monster Master" --config playwright.config.mjs
+
+      - name: Capture terrain screenshots
+        run: npx playwright test test/visual/monster-master-pixi.spec.mjs test/visual/monster-master-results-and-depth.spec.mjs --config playwright.visual.config.mjs
+
+      - name: Upload terrain screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cliff-face-v1-${{ github.run_id }}
+          path: |
+            visual-results/**/*.png
+            visual-results/**/*.zip
+            test-results/**/*.png
+            test-results/**/*.zip
+          if-no-files-found: warn
+          retention-days: 10
+
+      - name: Commit validated renderer integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/browser/monster-master-pixi-entry.js public/monster-master-pixi-bundle.js
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo "No renderer changes to commit."
+            exit 0
+          fi
+          git commit -m "Integrate grassland stone cliff-face asset"
+          git push origin HEAD:agent/rpg-rendering-contract-terrain-geometry
