@@ -490,3 +490,24 @@ A campaign does not have to use this opening. Older recruits joining the wardens
 - The opening assignment needs explicit assessment objectives, supervision boundaries, and plausible reasons for the party to assume real responsibility.
 - The guide must be useful without functioning as an invincible escort or permanent commander.
 - Alternative campaign frames remain first-class setup options rather than exceptions that break the rules.
+
+## Decision 28 — Mixed certification circuit as the first assignment
+
+The standard first field assignment is a compact certification circuit along one settled route and its nearby wilderness edge. It combines several ordinary duties rather than testing the party through one isolated exercise.
+
+The circuit normally includes inspecting a road marker, warning post, bridge, campsite, or patrol station; checking on or treating an injured, displaced, or distressed monster; completing one supervised capture of an approved Class 1 wild monster; and delivering supplies, records, medicine, repaired equipment, or another modest package to a nearby settlement or field contact.
+
+These objectives provide structure without fixing one mandatory order or solution. Players may question travelers, inspect signs, choose which problem to address first, use their own monsters and professional backgrounds, and make decisions whose consequences remain visible during the return journey and assessment.
+
+One apparently routine problem develops into the real adventure. The escalation should grow out of evidence and choices made during the circuit rather than arriving as an unrelated attack. The guide explains legal and practical context, intervenes only when responsibility requires it, and does not solve the central problem for the party.
+
+The opening remains small enough to support a compact first session or micro-campaign: one starting settlement or academy, one nearby route or wilderness location, one guide, a few connected scenes, one meaningful noncombat check, at least one social or investigative action, one bounded decision with a visible consequence, one Arena Battles encounter where appropriate, and a return scene with assessment and recap.
+
+### Implementation consequences
+
+- The default opening template needs route inspection, field-care, supervised-capture, and delivery objectives that can be reordered or approached differently.
+- At least one routine objective must contain clues leading into the central complication.
+- The GM state machine must preserve freeform investigation, bounded choices, noncombat checks, visible consequences, encounter transition, and return-scene interpretation.
+- The guide must have clear intervention triggers but leave the decisive investigation and response to the players.
+- Completion should evaluate judgment, care, evidence handling, teamwork, and legal conduct rather than requiring one perfect route through the circuit.
+- The circuit should establish reusable NPCs, a local route, and a nearby settlement without presenting itself as a generalized open-world map.
