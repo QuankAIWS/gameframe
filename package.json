@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "node --experimental-strip-types src/server/http-server.ts",
+    "start:rpg-durable": "node --experimental-strip-types src/server/run-durable-rpg-service.ts",
     "dev:cloudflare": "wrangler dev",
     "assets:check": "node scripts/clockwork-assets.mjs check",
     "assets:build": "node scripts/clockwork-assets.mjs build && npm run assets:terrain:build",

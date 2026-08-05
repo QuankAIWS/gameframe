@@ -118,6 +118,16 @@ export class DurableRpgServiceLifecycle {
     this.#state = "stopped";
   }
 
+  /** Waits for fatal termination or a concurrently requested retirement. */
+  async waitUntilTerminated(): Promise<void> {
+    if (this.#state === "created" || this.#state === "starting") {
+      throw new Error(`Durable RPG service cannot be awaited from ${this.#state}.`);
+    }
+    if (this.#state === "stopped") return;
+    await this.#loop;
+    if (this.#failure) throw this.#failure;
+  }
+
   async #runLoop(): Promise<void> {
     try {
       while (this.#state === "running" || this.#state === "retiring") {
