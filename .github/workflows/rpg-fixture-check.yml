@@ -8,12 +8,18 @@ on:
     paths:
       - ".github/workflows/rpg-fixture-check.yml"
       - "package.json"
+      - "wrangler.jsonc"
       - "deploy/systemd/**"
       - "planning/fixtures/rpg/**"
       - "planning/rpg-gameframe-interface-contract.md"
+      - "planning/rpg-signed-edge-authentication.md"
       - "planning/rpg-single-vm-deployment.md"
       - "src/rpg/**"
+      - "src/auth/hmac-proxy-request-authenticator.ts"
       - "src/auth/request-authenticator.ts"
+      - "src/cloudflare/rpg-edge-*.ts"
+      - "src/cloudflare/runtime-contracts.ts"
+      - "src/cloudflare/worker.ts"
       - "src/server/http-server.ts"
       - "src/server/durable-rpg-http-server.ts"
       - "src/server/durable-rpg-http-server.test.ts"
@@ -70,6 +76,7 @@ jobs:
       - name: Validate canonical fixtures and Node HTTP behavior
         run: >-
           node --experimental-strip-types --test
+          src/cloudflare/rpg-edge-proxy.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
           src/rpg/rpg-dual-revision-contract.test.ts
           src/rpg/rpg-choice-outcome-fixture.test.ts
