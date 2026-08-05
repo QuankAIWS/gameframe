@@ -55,7 +55,7 @@ jobs:
             echo 'value=false' >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Reassemble and verify approved package
+      - name: Reassemble and verify approved payload
         if: steps.pending.outputs.value == 'true'
         shell: bash
         run: |
@@ -63,13 +63,55 @@ jobs:
           expected_chunks=9
           actual_chunks="$(find staging/mm-rock-props/source-overlay -maxdepth 1 -type f -name 'chunk-*' | wc -l | tr -d ' ')"
           test "$actual_chunks" = "$expected_chunks"
+
           LC_ALL=C cat staging/mm-rock-props/source-overlay/chunk-* \
             | tr -d '\r\n' \
             | base64 --decode \
             > /tmp/mm-rock-overlay-final.tar.gz
-          echo '09ea02bc1fc70f1d790e2742ef5f577b0986ca003b66fb5315545ce226be1b8b  /tmp/mm-rock-overlay-final.tar.gz' \
-            | sha256sum --check --strict
-          tar -tzf /tmp/mm-rock-overlay-final.tar.gz
+
+          rm -rf /tmp/mm-rock-overlay-verified
+          mkdir -p /tmp/mm-rock-overlay-verified
+          tar -xzf /tmp/mm-rock-overlay-final.tar.gz -C /tmp/mm-rock-overlay-verified
+
+          unexpected_type="$(find /tmp/mm-rock-overlay-verified -mindepth 1 ! -type d ! -type f -print -quit)"
+          test -z "$unexpected_type"
+
+          cat > /tmp/mm-rock-files.expected <<'EOF'
+          ./package.json
+          ./planning/assets/catalogs/monster-master/prop.json
+          ./planning/monster-master/assets/README.md
+          ./planning/monster-master/assets/rock-boulder-set-v1.md
+          ./public/assets/monster-master/props/index.json
+          ./public/assets/monster-master/props/rock-boulder-set-v1/manifest.json
+          ./public/assets/monster-master/props/rock-boulder-set-v1/source/master/medium-boulder-v1-master.png
+          ./public/assets/monster-master/props/rock-boulder-set-v1/source/master/rubble-pile-v1-master.png
+          ./public/assets/monster-master/props/rock-boulder-set-v1/source/master/small-rock-v1-master.png
+          ./scripts/monster-master-rock-props.mjs
+          EOF
+          sed -i 's/^          //' /tmp/mm-rock-files.expected
+          (
+            cd /tmp/mm-rock-overlay-verified
+            find . -type f -print | LC_ALL=C sort
+          ) > /tmp/mm-rock-files.actual
+          diff -u /tmp/mm-rock-files.expected /tmp/mm-rock-files.actual
+
+          cat > /tmp/mm-rock-files.sha256 <<'EOF'
+          868d3e6944b25ee24a6a58fd3cbd55675e5de3f305eee1a4cce44de1acc78735  ./package.json
+          98d3d69602f149fe5ef0127e91a968905c9d1898287c5e4fb03c2543dcbc7b8a  ./planning/assets/catalogs/monster-master/prop.json
+          a064518d1768e2acf2c8b0150e4866036ab094249ce24ca5a8bce378b653bc7d  ./planning/monster-master/assets/README.md
+          efdf78315fa4aaa3eda6a1258edceb6e3e1bbc8f89cc0d91c3402232f6b024cc  ./planning/monster-master/assets/rock-boulder-set-v1.md
+          9adaa14d1d6c48b0408d741cba52bb89349c68d75d0b85599d0ee893b44515b4  ./public/assets/monster-master/props/index.json
+          ca8a485ef0d8f778d18a4bc1303ddb0e37e2c5378d990d9c3b01fd966c3d52ce  ./public/assets/monster-master/props/rock-boulder-set-v1/manifest.json
+          9654237ba8aa56949e50c9e29959e616d4dfb2ea7747c7623058e14caa095001  ./public/assets/monster-master/props/rock-boulder-set-v1/source/master/medium-boulder-v1-master.png
+          5eb658e2d822edfc8e0941227cd317ccbe445f195e01fa6c1864d56824f0557a  ./public/assets/monster-master/props/rock-boulder-set-v1/source/master/rubble-pile-v1-master.png
+          6e50fe930bfc7b8d1bd93bf5ae859386c5156f851c93f6e08aba12649017bd32  ./public/assets/monster-master/props/rock-boulder-set-v1/source/master/small-rock-v1-master.png
+          07c5986bea5da31e5afc7c1346744912b13d8b39fd2e6de3f6a11eb6fe22f57c  ./scripts/monster-master-rock-props.mjs
+          EOF
+          sed -i 's/^          //' /tmp/mm-rock-files.sha256
+          (
+            cd /tmp/mm-rock-overlay-verified
+            sha256sum --check --strict /tmp/mm-rock-files.sha256
+          )
 
       - name: Reset worktree to current main
         if: steps.pending.outputs.value == 'true'
@@ -81,7 +123,7 @@ jobs:
           git fetch origin main
           git reset --hard origin/main
           git clean -fdx
-          tar -xzf /tmp/mm-rock-overlay-final.tar.gz -C .
+          cp -a /tmp/mm-rock-overlay-verified/. .
 
       - name: Set up Node
         if: steps.pending.outputs.value == 'true'
