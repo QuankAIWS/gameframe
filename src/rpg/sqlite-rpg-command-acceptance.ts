@@ -12,6 +12,7 @@ const OUTBOX_TABLE = "rpg_runtime_command_outbox_v1";
 const COORDINATION_TABLE = "rpg_campaign_coordination_v1";
 const COMMAND_TABLE = "rpg_command_receipts_v1";
 const PRESENTATION_TABLE = "rpg_presentation_events_v1";
+const MEMBERSHIP_TABLE = "rpg_campaign_membership_intervals_v1";
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
 const MAX_PRESENTATION_EVENTS = 16;
 const MAX_PRESENTATION_EVENT_BYTES = 16_384;
@@ -65,6 +66,7 @@ export class SqliteRpgCommandAcceptanceError extends Error {
     | "coordination-revision-conflict"
     | "command-conflict"
     | "presentation-conflict"
+    | "player-not-authorized"
     | "corrupt-store";
 
   constructor(
@@ -124,6 +126,7 @@ export class SqliteRpgCommandAcceptanceRepository {
   readonly #insertOutbox: StatementSync;
   readonly #insertPresentation: StatementSync;
   readonly #selectPresentation: StatementSync;
+  readonly #selectActiveMembership: StatementSync;
 
   constructor(input: {
     filePath: string;
@@ -170,6 +173,24 @@ export class SqliteRpgCommandAcceptanceRepository {
         UNIQUE (campaign_id, event_id),
         FOREIGN KEY (campaign_id) REFERENCES ${COORDINATION_TABLE}(campaign_id)
       );
+      CREATE TABLE IF NOT EXISTS ${MEMBERSHIP_TABLE} (
+        campaign_id TEXT NOT NULL,
+        player_id TEXT NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('player', 'observer')),
+        party_id TEXT,
+        joined_presentation_sequence INTEGER NOT NULL CHECK (joined_presentation_sequence >= 0),
+        left_presentation_sequence INTEGER,
+        PRIMARY KEY (campaign_id, player_id, joined_presentation_sequence),
+        CHECK (
+          left_presentation_sequence IS NULL
+          OR left_presentation_sequence > joined_presentation_sequence
+        ),
+        FOREIGN KEY (campaign_id) REFERENCES ${COORDINATION_TABLE}(campaign_id)
+      );
+      CREATE INDEX IF NOT EXISTS rpg_campaign_membership_active_v1
+        ON ${MEMBERSHIP_TABLE} (
+          campaign_id, player_id, joined_presentation_sequence, left_presentation_sequence
+        );
     `);
 
     this.#selectState = this.#database.prepare(`
@@ -217,6 +238,17 @@ export class SqliteRpgCommandAcceptanceRepository {
       SELECT * FROM ${PRESENTATION_TABLE}
       WHERE campaign_id = ? AND presentation_sequence > ?
       ORDER BY presentation_sequence ASC
+    `);
+    this.#selectActiveMembership = this.#database.prepare(`
+      SELECT role FROM ${MEMBERSHIP_TABLE}
+      WHERE campaign_id = ? AND player_id = ?
+        AND joined_presentation_sequence <= ?
+        AND (
+          left_presentation_sequence IS NULL
+          OR left_presentation_sequence > ?
+        )
+      ORDER BY joined_presentation_sequence DESC
+      LIMIT 1
     `);
   }
 
@@ -300,6 +332,18 @@ export class SqliteRpgCommandAcceptanceRepository {
         );
       }
       const current = stateFromRow(stateRow);
+      const membership = this.#selectActiveMembership.get(
+        input.campaignId,
+        input.authenticatedPlayerId,
+        current.presentationSequence,
+        current.presentationSequence,
+      ) as { role: string } | undefined;
+      if (membership?.role !== "player") {
+        throw new SqliteRpgCommandAcceptanceError(
+          "player-not-authorized",
+          `Player ${input.authenticatedPlayerId} is not an active campaign player.`,
+        );
+      }
       if (
         input.expectedGameframeCoordinationRevision
         !== current.gameframeCoordinationRevision
