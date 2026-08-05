@@ -447,22 +447,46 @@ The guide is an opening structure rather than a permanent commander. Circumstanc
 - The opening guide needs qualifications, responsibility boundaries, and a planned path for player autonomy.
 - Introductory scenarios can teach travel, capture, hazards, licenses, and combat through an in-world field exercise without becoming a rigid tutorial corridor.
 
-## Decision 26 — Five-class monster hazard classification
+## Decision 26 — Official monster hazard classes and the unofficial “Class Five”
 
-Monsters are assigned a handling-hazard class that describes the precautions, licenses, facilities, and response capability normally required to manage them. Hazard class is not a combat level, rarity tier, intelligence category, or absolute measurement of power.
+The official handling-hazard system contains Classes 1 through 4. It describes the precautions, licenses, facilities, and response capability normally required to manage a monster. Hazard class is not a simple combat level, but it broadly correlates with the danger an ordinary example presents.
 
-- **Class 1 — Domestic or routinely manageable:** Species commonly kept as household, companion, agricultural, or ordinary working monsters. Standard precautions are usually sufficient. A highly trained, unusually large, enraged, diseased, or exceptional Class 1 individual can still be extremely powerful or dangerous in context.
-- **Class 2 — Potentially dangerous:** Monsters capable of causing serious injury or disruption when mishandled, frightened, territorial, or deliberately deployed. Ordinary field professionals can work with them under appropriate licenses and procedures.
-- **Class 3 — Very dangerous:** Monsters whose strength, behavior, abilities, scale, or containment needs create a substantial risk to trained personnel and the public. Specialist endorsements, stronger cubes, prepared teams, and controlled environments are normally required.
-- **Class 4 — Specialty hazard:** Monsters presenting unusual hazards that ordinary strength-based precautions do not adequately address. Examples include toxic, contagious, parasitic, psychic, temporal, spatial, corrosive, reality-distorting, environmental, or infrastructure-threatening effects. Their danger may be narrow, conditional, or difficult to detect rather than simply greater than every Class 3 monster.
-- **Class 5 — Rumor and hearsay:** Alleged, legendary, poorly documented, contradictory, or unverified monsters for which a reliable operational classification cannot yet be made. Class 5 is an uncertainty designation, not a routine highest-power license tier. Confirmed evidence may reclassify the subject into Classes 1 through 4 or establish a new specialist protocol.
+- **Class 1 — Domestic or routinely manageable:** Species commonly kept as household, companion, agricultural, or ordinary working monsters. Standard precautions are usually sufficient. Most Class 1 monsters sit below the upper combat capability of Classes 2 and 3. Exceptionally powerful Class 1 individuals can exist through age, extraordinary training, unusual size, mutation, magical development, or other exceptional circumstances, but such cases are genuinely rare and individually notable.
+- **Class 2 — Potentially dangerous:** Monsters capable of causing serious injury or disruption when mishandled, frightened, territorial, or deliberately deployed. Ordinary field professionals can work with them under appropriate licenses and procedures. Their combat capability commonly exceeds that of routine Class 1 monsters.
+- **Class 3 — Very dangerous:** Monsters whose strength, behavior, abilities, scale, or containment needs create a substantial risk to trained personnel and the public. As a rule of thumb, Class 3 contains the strongest conventional combat monsters. Specialist endorsements, stronger cubes, prepared teams, and controlled environments are normally required.
+- **Class 4 — Specialty hazard:** Monsters presenting unusual hazards that ordinary strength-based precautions do not adequately address. Examples include toxic, contagious, parasitic, psychic, temporal, spatial, corrosive, reality-distorting, environmental, or infrastructure-threatening effects. Class 4 does not mean “stronger than Class 3 in a fight.” Its danger may be narrow, conditional, difficult to detect, or catastrophic only under particular circumstances.
 
-Species receive a normal baseline classification, but individual condition, age, training, temperament, unusual abilities, location, and current circumstances can raise or lower the practical response requirement. A Class 1 monster in a crowded city, a Class 2 carrying disease, or a Class 3 near vulnerable infrastructure may require a response beyond its ordinary baseline.
+“Class Five” does not officially exist. It is an unofficial phrase found in campfire stories, conspiracy files, disputed field notes, frightened witness accounts, and perhaps a few private conversations among people who should know better. It refers to alleged monsters or phenomena that nobody has reliably documented, that no official authority admits to recognizing, and that cannot yet be placed within Classes 1 through 4.
+
+A supposed Class Five subject may be a fabrication, a mistaken sighting, a distorted account of a known monster, an undiscovered species, or something genuinely outside current understanding. The phrase exists primarily as a future plot device and source of rumors. Confirmed evidence would force authorities to classify the subject within Classes 1 through 4, create a specialist protocol, or publicly deny everything while quietly evacuating the district.
+
+Species receive a normal baseline classification, but individual condition, age, training, temperament, unusual abilities, location, and current circumstances can raise or lower the practical response requirement. A rare high-level Class 1 may rival monsters from higher classes in direct combat without changing the general expectation that Class 3 represents the conventional peak.
 
 ### Implementation consequences
 
-- Monster records need baseline hazard class, current operational class, hazard tags, confidence level, and known handling protocols.
-- Combat power and hazard class must remain separate values; neither should be automatically derived from the other.
-- Licenses and missions may reference both a maximum ordinary hazard class and specific specialty endorsements.
+- Official data models and public-facing systems should use hazard Classes 1 through 4 only.
+- Unverified “Class Five” material belongs in rumor, investigation, folklore, intelligence, or campaign-secret records rather than the official hazard-class enum.
+- Monster records need baseline hazard class, current operational class, hazard tags, known handling protocols, and exceptional-individual flags.
+- Combat power remains a separate value, but default balancing and encounter assumptions may treat Class 3 as the strongest conventional combat band.
+- Exceptionally powerful Class 1 monsters must be rare authored or generated outliers rather than a routine loophole in the classification.
 - Class 4 requires named hazard categories and countermeasures rather than one generic advanced permit.
-- Class 5 records should preserve sources, sightings, contradictions, confidence, and reclassification history so rumors can become investigations, discoveries, frauds, or genuine legendary encounters.
+
+## Decision 27 — Joint academy and warden field certification
+
+The standard first field outing is organized through an academy or licensing program and led by a veteran warden or comparably qualified field specialist.
+
+This joint structure allows the party to include recent academy graduates, older applicants, apprentices, independent candidates completing challenge examinations, former soldiers, researchers, and people with warden aspirations without requiring everyone to share the same age or institutional background.
+
+The academy or licensing body provides the educational framework, provisional credentials, assessment goals, and responsibility for the candidates. The warden or field specialist provides practical authority, route knowledge, emergency judgment, and supervision for captures or hazards beyond the party's independent license limits.
+
+The outing is a real field assignment rather than a staged classroom exercise. It may begin with a controlled objective, but weather, criminals, injured monsters, incorrect hazard reports, missing patrols, or evidence of something more serious can force the group to make genuine decisions. The guide should provide structure and context without solving the expedition for the players.
+
+A campaign does not have to use this opening. Older recruits joining the wardens, an established professional team, an unlicensed group, or another premise can begin elsewhere. The joint certification expedition is the supported default because it creates group cohesion, teaches the world naturally, and leaves room for varied character histories.
+
+### Implementation consequences
+
+- The default campaign template needs academy or licensing sponsorship plus a named veteran warden or field-specialist guide.
+- Character creation must support mixed ages, training routes, existing licenses, and warden ambitions within the same expedition.
+- The opening assignment needs explicit assessment objectives, supervision boundaries, and plausible reasons for the party to assume real responsibility.
+- The guide must be useful without functioning as an invincible escort or permanent commander.
+- Alternative campaign frames remain first-class setup options rather than exceptions that break the rules.
