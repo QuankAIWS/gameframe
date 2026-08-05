@@ -16,6 +16,7 @@ function navigationTheme() {
   const menuTheme = document.body.dataset.gameframeMenuGame;
   if (menuTheme) return menuTheme;
   const pathname = window.location.pathname;
+  if (pathname.includes("monster-master-rpg")) return "monster";
   if (pathname.includes("monster-master")) return "monster";
   if (pathname.includes("othello")) return `othello-${document.body.dataset.theme || "obsidian"}`;
   if (document.body.classList.contains("tic-tac-toe-noir-running")) return "tic";
@@ -28,6 +29,7 @@ function gameLabel() {
   if (menuTheme === "tic") return "TIC-TAC-TOE";
   if (menuTheme === "checkers") return "CLOCKWORK CHECKERS";
   const pathname = window.location.pathname;
+  if (pathname.includes("monster-master-rpg")) return "MONSTER MASTER RPG";
   if (pathname.includes("monster-master")) return "MONSTER MASTER";
   if (pathname.includes("othello")) return "OTHELLO";
   if (document.body.classList.contains("tic-tac-toe-noir-running")) return "TIC-TAC-TOE";
@@ -86,6 +88,7 @@ function syncDestinationBar() {
   const sharedMatchRunning = Boolean(sharedMatchPanel && !sharedMatchPanel.hidden);
   document.body.classList.toggle("gameframe-shared-match-running", sharedMatchRunning);
   document.body.classList.toggle("gameframe-monster-route", pathname.includes("monster-master"));
+  document.body.classList.toggle("gameframe-monster-rpg-route", pathname.includes("monster-master-rpg"));
   document.body.classList.toggle("gameframe-othello-route", pathname.includes("othello"));
 
   const theme = navigationTheme();
