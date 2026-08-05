@@ -93,8 +93,8 @@ export class DurableRpgServiceLifecycle {
       return address;
     } catch (error) {
       this.#failure = toError(error);
-      this.#state = "failed";
       await this.#closeResourcesOnce();
+      this.#state = "failed";
       throw this.#failure;
     }
   }
@@ -132,9 +132,9 @@ export class DurableRpgServiceLifecycle {
       }
     } catch (error) {
       this.#failure = toError(error);
-      this.#state = "failed";
       await this.#closeIngress();
       await this.#closeResourcesOnce();
+      this.#state = "failed";
     }
   }
 
