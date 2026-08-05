@@ -511,3 +511,41 @@ The opening remains small enough to support a compact first session or micro-cam
 - The guide must have clear intervention triggers but leave the decisive investigation and response to the players.
 - Completion should evaluate judgment, care, evidence handling, teamwork, and legal conduct rather than requiring one perfect route through the circuit.
 - The circuit should establish reusable NPCs, a local route, and a nearby settlement without presenting itself as a generalized open-world map.
+
+## Decision 29 — Replayable hybrid starter campaign
+
+The default certification expedition is a reusable campaign chassis rather than one fixed canonical mystery. Its authored structure should remain polished and recognizable while the hidden incident, evidence, motives, and consequences can differ between campaigns.
+
+The authored spine includes the joint academy-and-warden sponsorship, the veteran guide, the mixed certification circuit, the required opportunities for social play, investigation, field care, supervised capture, meaningful choice, tactical conflict where appropriate, return assessment, and a conclusion that works as either a complete one-shot or the beginning of a longer campaign.
+
+At campaign creation, the RPG GM Runtime commits a hidden incident package before meaningful investigation begins. The package should define at minimum:
+
+- the initial anomaly;
+- the underlying cause;
+- the responsible person, faction, monster, accident, or environmental force;
+- the affected monsters and people;
+- the most likely false interpretation;
+- the evidence chain and required clues;
+- the escalation event;
+- the moral or practical complication;
+- the tactical encounter condition, if one exists;
+- the viable resolution branches and consequences;
+- the optional continuation hook.
+
+The model may realize that package through names, dialogue, descriptions, local history, relationships, motives, clue presentation, secondary NPC behavior, and compatible complications. It must not rewrite committed campaign truth merely because the players investigate an unexpected lead or reject the anticipated solution.
+
+Secondary details may remain unresolved until they become relevant, especially after players commit to a route or approach, but every later detail must remain compatible with established facts, previously exposed clues, and the committed incident package. This preserves surprise and model creativity without allowing retroactive mystery construction.
+
+The hidden package is runtime-only campaign truth. It should not appear in ordinary player projections, GameFrame screens, Discord narration, or normal session recaps. A designer who knows the available pools should still be able to play without knowing which incident, culprit, evidence arrangement, or continuation hook was selected.
+
+Deterministic seeds and fixed packages are used for integration tests and reproducible acceptance journeys. Live campaigns may select from approved pools and use model realization, but the selected seed and committed package must be persisted so retries, reconnects, restarts, and later sessions do not change the mystery.
+
+### Implementation consequences
+
+- The starter must separate authored campaign spine, curated incident pools, committed hidden truth, and model-generated realization.
+- Campaign creation must persist an incident seed, package version, committed facts, required clues, allowed variations, and unresolved secondary details.
+- The GM must distinguish additive realization from forbidden revision of established truth.
+- Player-facing projections must never expose hidden incident fields before discovery.
+- A fixed deterministic starter fixture and a replayable player-facing starter can share the same chassis without being the same run.
+- New campaigns should materially vary while retaining the same instructional coverage, pacing bounds, prepared asset support, and Arena Battles handoff.
+- The ending must close the immediate incident cleanly while allowing an optional continuation hook to seed a new campaign arc.
