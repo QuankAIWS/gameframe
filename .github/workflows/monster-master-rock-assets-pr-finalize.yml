@@ -1,0 +1,83 @@
+name: Finalize approved Monster Master rock assets
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/monster-master-rock-props-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out approved feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/monster-master-rock-props-v1
+          fetch-depth: 0
+
+      - name: Stop when transfer has already been materialized
+        id: transfer
+        shell: bash
+        run: |
+          if [ -d staging/mm-rock-props/source-overlay ]; then
+            echo 'pending=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'pending=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Reassemble and verify approved package
+        if: steps.transfer.outputs.pending == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_chunks=9
+          actual_chunks="$(find staging/mm-rock-props/source-overlay -maxdepth 1 -type f -name 'chunk-*' | wc -l | tr -d ' ')"
+          test "$actual_chunks" = "$expected_chunks"
+          cat staging/mm-rock-props/source-overlay/chunk-* \
+            | tr -d '\r\n' \
+            | base64 --decode \
+            > /tmp/mm-rock-overlay-final.tar.gz
+          echo '09ea02bc1fc70f1d790e2742ef5f577b0986ca003b66fb5315545ce226be1b8b  /tmp/mm-rock-overlay-final.tar.gz' \
+            | sha256sum --check --strict
+          tar -tzf /tmp/mm-rock-overlay-final.tar.gz
+          tar -xzf /tmp/mm-rock-overlay-final.tar.gz -C .
+
+      - name: Set up Node
+        if: steps.transfer.outputs.pending == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.transfer.outputs.pending == 'true'
+        run: npm ci
+
+      - name: Build and verify approved rock assets
+        if: steps.transfer.outputs.pending == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run assets:props:build
+          npm run assets:props:verify
+          npm run check:browser
+
+      - name: Replace transfer scaffolding with clean asset commit
+        if: steps.transfer.outputs.pending == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -rf staging/mm-rock-props
+          rm -f .github/workflows/monster-master-rock-assets-finalize.yml
+          git add -A
+          git diff --cached --stat
+          git commit -m 'feat: add Monster Master rock prop assets'
+          git push origin HEAD:agent/monster-master-rock-props-v1
