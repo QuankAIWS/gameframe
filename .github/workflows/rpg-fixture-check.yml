@@ -12,13 +12,16 @@ on:
       - "deploy/systemd/**"
       - "planning/fixtures/rpg/**"
       - "planning/rpg-gameframe-interface-contract.md"
+      - "planning/rpg-player-shell.md"
       - "planning/rpg-signed-edge-authentication.md"
       - "planning/rpg-single-vm-deployment.md"
       - "public/game-hub.js"
       - "public/gameframe-nav.js"
       - "public/monster-master-rpg.html"
       - "public/monster-master-rpg.css"
+      - "public/monster-master-rpg-*.css"
       - "public/monster-master-rpg-*.js"
+      - "src/browser/monster-master-rpg-*.test.ts"
       - "src/browser/monster-master-rpg-model.test.ts"
       - "src/rpg/**"
       - "src/auth/hmac-proxy-request-authenticator.ts"
@@ -86,6 +89,7 @@ jobs:
         run: >-
           node --experimental-strip-types --test
           src/browser/monster-master-rpg-model.test.ts
+          src/browser/monster-master-rpg-choice-model.test.ts
           src/cloudflare/rpg-edge-proxy.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
           src/rpg/rpg-dual-revision-contract.test.ts
@@ -97,6 +101,7 @@ jobs:
           src/rpg/sqlite-rpg-runtime-linkage.test.ts
           src/rpg/sqlite-rpg-encounter-store.test.ts
           src/rpg/durable-rpg-campaign-service.test.ts
+          src/rpg/structured-choice-flow.test.ts
           src/server/durable-rpg-http-server.test.ts
           src/server/durable-rpg-process-config.test.ts
           src/server/durable-rpg-service-lifecycle.test.ts
