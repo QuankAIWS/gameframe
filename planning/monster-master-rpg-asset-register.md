@@ -3,9 +3,9 @@ title: Monster Master RPG Starter Asset Register
 status: active
 document_type: asset-plan
 owner: Scribbles GameFrame
-last_updated: 2026-08-04
+last_updated: 2026-08-05
 applies_to:
-  - Monster Master RPG one-shot
+  - Monster Master RPG starter catalog
   - Monster Master Arena Battles reuse
   - GameFrame RPG asset pipeline
 related:
@@ -21,14 +21,22 @@ related:
 
 ## Purpose
 
-This register is the durable planning and production ledger for the first Monster Master RPG scenario package.
+This register is the durable planning and production ledger for the reusable Monster Master RPG starter visual foundation.
 
 It has two jobs:
 
-1. define the reusable visual vocabulary required by the bespoke unauthorized-juvenile-transport package;
+1. define common visual vocabulary that supports several approved starter plot families;
 2. track every authored, reused, composed, generated, rejected, accepted, and integrated source through stable asset identities and append-only attempts.
 
 The machine-readable authority is [`assets/monster-master-rpg-asset-register.json`](assets/monster-master-rpg-asset-register.json).
+
+## No single-plot ownership
+
+No starter incident controls this register.
+
+The asset plan must not be derived from one deterministic fixture or one favored plot. The base pack should support several materially different families, including ecological creature crises, cube failures, rivalry and sabotage, public-event chaos, and human crime or false authority.
+
+A selected plot package may request additional semantic roles, but those become **family extensions** rather than the definition of the whole starter pack.
 
 ## Current production boundary
 
@@ -41,13 +49,11 @@ The current phase is manual production by the owner and assisting creative agent
 - review them through actual screenshots and playable scenes;
 - retain provenance and rejected attempts.
 
-Cloudflare-managed generation, campaign-time media queues, automatic provider routing, and RPG GM Runtime asset creation are future capabilities. They are not dependencies for the first scenario.
+Cloudflare-managed generation, campaign-time media queues, automatic provider routing, and RPG GM Runtime asset creation are future capabilities. They are not dependencies for the starter.
 
-## Scenario-package relationship
+## Resolution model
 
-The asset cut is derived from the committed plot-agent-style package in RPG GM Runtime.
-
-Events request **semantic roles**, not filenames or unique illustrations. The DM agent may realize the same event differently according to players and state, so the asset set should emphasize reusable locations, actors, props, effects, and UI treatments rather than one picture for every authored event.
+Plot and event definitions request semantic roles, not filenames or fixed illustrations.
 
 GameFrame resolves a semantic role to:
 
@@ -56,7 +62,7 @@ GameFrame resolves a semantic role to:
 3. a deterministic composition;
 4. a readable fallback.
 
-Missing optional art must not force the DM to change the plot. Required tactical readability must exist before Arena Battles launches.
+Missing optional art must not force the DM to change the selected plot. Required tactical readability must exist before Arena Battles launches.
 
 ## Governing principles
 
@@ -68,6 +74,7 @@ Missing optional art must not force the DM to change the plot. Required tactical
 - Existing Arena Battles assets are audited before duplicates are produced.
 - One accepted asset may satisfy several compatible roles when the mapping is explicit.
 - Assets support DM realization; they do not impose a scene sequence.
+- No deterministic fixture may dictate the entire asset roadmap.
 
 ## Status model
 
@@ -97,17 +104,23 @@ An asset is not `integrated` merely because a file exists. Integration requires 
 
 Existing Arena Battles terrain, interface, effects, and creatures that can satisfy a semantic role after inspection or cleanup.
 
-### P0 — Opening and investigation vocabulary
+### P0 — Shared starter foundation
 
-Required to launch the scenario, reach early agency, support the damaged-cart incident, and present basic public and player-private information.
+Required across several plot families:
 
-### P1 — Culvert and complete one-shot vocabulary
+- modular campaign locations;
+- recurring guide and local-role presentation;
+- common route, cube, field, and cargo props;
+- private observation, investigation, warning, objectives, and aftermath UI;
+- domestic creature and conventional hazard readability.
 
-Required for the juvenile encounter, contractor involvement, possible tactical handoff, and consequence-focused aftermath.
+### P1 — First family extensions
+
+Additional assets for the first two or three plot families chosen for playable coverage. These should be selected after the shared foundation is reviewed in context.
 
 ### Deferred
 
-Useful for alternate plots, recurring campaigns, audio, or presentation polish but not required for the first complete package.
+Unique art for every family, event, NPC, creature state, audio layer, or future generation system that is not required for the initial playable catalog.
 
 ## Reuse-first audit
 
@@ -118,7 +131,7 @@ Audit these current Arena Battles families before new production:
 - cliff-face material;
 - Monster Master shell and card treatment;
 - turn-order presentation;
-- generic selection, impact, status, and defeat effects;
+- generic selection, impact, status, capture, care, and defeat effects;
 - readable starter support and tracking creatures;
 - tactical objective or hazard markers that can be repaired rather than replaced.
 
@@ -126,105 +139,132 @@ Each audit result should be recorded as accepted unchanged, cleanup required, co
 
 The current Pixi geometry remains authoritative: 72×36 CSS-pixel tile projection and 29 CSS-pixel wall visual height.
 
-## P0 manual production
+## P0 shared starter foundation
 
-### Location and composition
+### Modular environments
 
 - `location.eastgate-field-station`
-  - wide reusable environment master;
-  - versions capable of clean station, abandoned-cart incident, and route-facing composition;
-  - should not bake a single fixed sequence of character placements.
+  - reusable launch, work-site, inspection, and public-service compositions;
+  - clean, busy, obstructed, and after-hours states where practical;
+  - no baked incident-specific characters or evidence.
+- `location.settled-route`
+  - roadside, farm-edge, work-zone, checkpoint, and public-event compositions;
+  - modular lanes, barriers, signs, pens, and route dressing.
 
-### Essential actors
+### Recurring and reusable people
 
 - `npc.veteran-warden-guide.portrait`
-  - Warden Pell;
-  - neutral, suspicious, and alarmed crops or expressions.
-- `npc.nervous-courier.portrait`
-  - Mara Vell;
-  - guarded, strained, and panicked crops or expressions.
+  - Warden Pell or the accepted guide continuity identity;
+  - neutral, amused, suspicious, concerned, and alarmed presentation.
+- `npc.local-worker.portrait`
+  - reusable handler, courier, farmhand, road worker, or witness fallback;
+  - not a named culprit identity.
+- `npc.rival-trainee.portrait`
+  - reusable rival or competing candidate presentation;
+  - useful beyond the sabotage family.
 
-### Modular incident props
+### Common props
 
-- `prop.supply-cart.damaged`
-  - clean and damaged-latch states;
-  - removable cargo presentation.
-- `prop.supply-crates`
-  - sealed, open, shifted, scuffed, and empty variants.
-- `prop.route-marker.tampered`
-  - clean and recently moved states;
-  - directional variants.
-- `prop.delivery-manifest`
-  - environmental prop and readable inspection view.
+- `prop.route-marker.modular`
+  - clean, moved, conflicting, temporary, warning, and fake-authority states.
+- `prop.supply-cart.modular`
+  - clean, loaded, unloaded, damaged, confiscated, and public-event variants through composition.
+- `prop.capture-cube.inspection`
+  - ordinary, suspicious, opened, tagged, and component-inspection views.
+- `prop.field-kit.modular`
+  - lawful tools, unofficial bait, care supplies, restraint tools, and repair equipment.
+- `prop.barrier.modular`
+  - route closure, crowd lane, work zone, animal pen, and false-roadblock uses.
+- `prop.license-and-cube-case`
+  - permits, registration, inspection, confiscation, and forgery presentation.
 
-### Investigation and private presentation
+### Creature coverage
+
+- `creature.domestic-worker.field`
+  - readable hauling, farm, route, or public-event worker role;
+  - calm, warning, distressed, and moving states where practical.
+- `creature.conventional-hazard.field`
+  - reusable conventional Class 2 or Class 3 threat silhouette or field role;
+  - not a fixed named species unless separately approved.
+- existing starter support and tracker creatures retained through reuse when they read clearly.
+
+### Interface and effects
 
 - `ui.private-observation`
-  - player-private expertise, instinct, temptation, or creature-reaction presentation;
-  - should not imply a mandatory clue card flow.
-- `fx.investigation-set`
-  - tracks, residue, scuffs, scent, drag marks, and attention indicators.
-
-## P1 manual production
-
-### Culvert environment
-
-- `location.old-culvert`
-  - reusable environment master;
-  - exploration and tactical compositions;
-  - readable route blockage, retreat lane, cover, and restraint debris.
-
-### Juvenile monster
-
-- `creature.dangerous-juvenile.field`
-  - Ruckmaw juvenile source master;
-  - tactical derivative;
-  - silhouette or unrevealed state;
-  - portrait crop;
-  - injured, guarded, panicked, and stabilized readability where practical.
-
-The design should communicate a frightening, physically dangerous juvenile that is defensive rather than malicious. It must not look like a harmless mascot or a generic slasher creature.
-
-### Contractor
-
-- `npc.contractor.portrait`
-  - Jory Vale;
-  - composed, defensive, desperate, and bargaining crops or expressions.
-- `npc.contractor.field`
-  - readable token or small field derivative.
-
-### Evidence and intervention props
-
-- `prop.hidden-restraint-fitting`
-  - adapted cube or restraint evidence;
-  - readable enough for close inspection.
-- `prop.restraint-rig`
-  - bad-recapture equipment and tactical obstacle.
-- `prop.bait-kit.unofficial`
-  - small reusable legal-gray bait kit.
-- `prop.culvert-restraint-debris`
-  - evidence and environmental dressing.
-
-### Tactical and aftermath UI
-
+  - expertise, instinct, temptation, creature reaction, and private warning.
 - `ui.tactical-objectives`
-  - protect, stabilize, disable, secure, and escape-lane objective markers.
-- `ui.assessment-summary`
-  - consequences, injuries, evidence, relationships, certification, and legal exposure;
-  - not a morality score or corporate performance review.
+  - protect, hold, open, disable, stabilize, secure, recover, and escape.
+- `ui.aftermath-summary`
+  - injuries, creature condition, evidence, legal exposure, relationships, resources, certification, and optional hooks.
+- `fx.investigation-set`
+  - tracks, residue, tampering, forgery, component mismatch, environmental signs, and attention indicators.
+- `fx.behavior-warning`
+  - creature refusal, agitation, attention, fear, territorial signaling, or recognition.
+- `fx.hazard-warning`
+  - public danger, equipment failure, crowd risk, route collapse, and tactical threshold.
+- `fx.containment-warning`
+  - cube mismatch, failed safeguard, unstable exit, or containment concern.
+
+## P1 family extensions
+
+P1 is deliberately divided by plot family. Production should select the first two or three families rather than automatically building all of them.
+
+### Displaced domestic migration
+
+Potential extensions:
+
+- `creature.territorial-hazard.field`;
+- `prop.roadwork-set`;
+- `prop.farm-set`;
+- herd grouping and route-blockage compositions.
+
+### Counterfeit cube recall
+
+Potential extensions:
+
+- `prop.counterfeit-components`;
+- `location.inspection-bench`;
+- `fx.cube-failure`;
+- occupant-safe recovery and registration mismatch presentation.
+
+### Rival certification sabotage
+
+Potential extensions:
+
+- `prop.assessment-marker.modular`;
+- `fx.tamper-indicator`;
+- rival sponsor or instructor portrait only when the role becomes recurring.
+
+### Festival mascot breakout
+
+Potential extensions:
+
+- `location.public-event`;
+- `creature.mascot.field`;
+- `prop.festival-dressing`;
+- `fx.crowd-hazard`.
+
+### False warden roadblock
+
+Potential extensions:
+
+- `prop.roadblock.modular`;
+- `npc.false-inspector.portrait`;
+- `fx.forgery-indicator`;
+- confiscation, rescue, and extraction compositions.
 
 ## Deferred
 
-Defer until the first complete package is playable and visually coherent:
+Defer until the shared foundation is playable and at least two families are visually proven:
 
 - unique art for every event realization;
-- station-worker portrait unless the role becomes recurring;
-- recurring rival art;
-- dedicated domestic-hauler art when an existing creature reads clearly;
-- separate academy launch, care destination, and return-assessment environments;
+- a unique named NPC for every family role;
+- a unique creature for every anomaly;
+- full interiors for every cube problem;
 - every hazard-class badge and broad icon family;
+- separate return-assessment environments;
 - bespoke audio, ambience, narration, and voice identities;
-- alternate plot-family assets;
+- blocked Class 4 specialty-hazard assets;
 - Hyperbolic Time Cube assets;
 - campaign-time generation infrastructure.
 
@@ -237,8 +277,8 @@ Each entry records:
 - stable `assetId`;
 - semantic role and family;
 - priority and lifecycle status;
-- continuity identity;
-- scenario, event, and tactical dependencies;
+- continuity identity when applicable;
+- supported plot families;
 - technical profile;
 - fallback behavior;
 - accepted attempt, when one exists.
@@ -271,7 +311,8 @@ Depending on family, evidence may include:
 - scene-composition and mobile checks;
 - tactical geometry, occlusion, and readability checks;
 - fallback validation;
-- manifest validation.
+- manifest validation;
+- proof that the asset supports more than one composition or family where claimed.
 
 ## Intended paths
 
@@ -294,16 +335,16 @@ Stable asset IDs remain independent of storage changes.
 ## First production order
 
 1. audit terrain, shell, effects, objective markers, and starter creatures;
-2. produce Eastgate Field Station as the first environment master;
-3. produce Pell and Mara portraits;
-4. produce the cart, crates, markers, manifest, and investigation indicators;
-5. integrate and review the opening in context;
-6. produce the old culvert and Ruckmaw juvenile;
-7. produce Jory and the restraint, bait, and tactical props;
-8. integrate a noncombat culvert realization and an objective-driven tactical realization;
-9. produce the assessment summary and review complete-session visual continuity;
-10. reconsider deferred assets only after the package works.
+2. produce the field-station and settled-route environment masters;
+3. produce the veteran guide and reusable local-worker portraits;
+4. produce modular route markers, cart, cube-inspection, field-kit, barrier, and license-case props;
+5. produce private observation, investigation, behavior-warning, hazard, objective, and aftermath treatments;
+6. integrate and review the shared foundation in several neutral compositions;
+7. select the first two or three plot families for playable coverage;
+8. produce only those family extensions;
+9. validate that the deterministic CI fixture works without becoming the default campaign presentation;
+10. reconsider deferred assets only after multiple families are playable.
 
 ## Governing rule
 
-> Build a reusable visual vocabulary from the committed scenario package, preserve every production attempt, and let GameFrame compose accepted assets around the DM's player-driven realization rather than illustrating a fixed scene script.
+> Build a reusable starter vocabulary first, add selected family extensions second, preserve every production attempt, and never let one plot fixture become the whole Monster Master asset pack.
