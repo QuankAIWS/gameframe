@@ -7,14 +7,16 @@ owner: Scribbles GameFrame
 last_updated: 2026-08-05
 applies_to:
   - Monster Master RPG
-  - Monster Master starter one-shot
+  - Monster Master gold-standard CampaignPackage
   - Monster Master asset production
-  - RPG plot-agent and DM-agent behavior
+  - Campaign Architect and Dungeon Master behavior
 related:
+  - monster-master-rpg-canonical-baseline.md
   - monster-master-rpg-lore-and-story.md
-  - monster-master-rpg-lore-tone-and-agent-realization.md
   - monster-master-rpg-asset-register.md
   - monster-master-rpg-npc-pool.md
+  - shared/rpg-agent-architecture-and-campaign-package.md
+  - shared/rpg-platform-roadmap.md
   - shared/rpg-event-and-plot-pool-contract.md
   - shared/rpg-monster-master-reference-campaign.md
 ---
@@ -23,69 +25,69 @@ related:
 
 ## Purpose
 
-This document controls current creative direction where earlier planning is narrower, more procedural, or overcommitted to one sample incident.
+This document controls Monster Master creative direction. Platform architecture and implementation order are controlled by the shared agent architecture and roadmap.
 
-It establishes that:
+Monster Master is the first handcrafted CampaignPackage and the gold standard for future Campaign Architect output.
 
-1. current assets are created, edited, reviewed, and integrated directly by the owner and assisting creative agent;
-2. Monster Master has broad comedic, adventurous, and horrific range rather than dry professional mystery as its default;
-3. the starter is a reusable certification chassis with several possible plot families, not one canonical incident;
-4. one selected package is committed per run before meaningful investigation;
-5. the DM agent uses the language model to adapt strongly to players while preserving the selected package's truth;
-6. deterministic CI fixtures prove contracts and do not define the product's story or asset roadmap;
-7. a curated NPC role pool supports likely people and base assets without becoming a closed cast.
+## Current creative deliverable
 
-## Current deliverable
+The immediate creative deliverable is **one complete executable Monster Master CampaignPackage**, supported by the existing lore, plot-family catalog, event pools, NPC pool, and asset register.
 
-The immediate creative deliverable is a compact **starter plot catalog** plus the shared presentation vocabulary needed to support it.
+The catalogs remain useful source material and future package templates. They are not themselves a finished campaign.
 
-The catalog should contain several materially different approved families, including combinations of:
+The first package must commit:
 
-- ecological or creature-care crises;
-- technical cube failures and illegal modifications;
-- rivalry, sabotage, and social comedy;
-- public chaos and slapstick recovery;
-- human crime, corruption, fraud, and rescue;
-- bounded horror and tactical danger;
-- specialty hazards only after their fixed rules and countermeasures are authored.
+- player-safe premise and group role;
+- setting rules and continuity invariants;
+- actual major actors, goals, fears, leverage, secrets, and limits;
+- actual locations and relationships;
+- opening situation and immediate agency;
+- hidden cause and causal history;
+- clue and evidence graph with recovery paths;
+- event eligibility and pressure state;
+- tactical thresholds and objectives;
+- consequence and resolution conditions;
+- semantic asset requirements and deterministic fallbacks;
+- forbidden retcons, package version, and provenance.
 
-No family is the canonical Monster Master starter story.
+Additional plot families become later complete packages or Campaign Architect templates after the first package and Dungeon Master loop work.
 
-Before meaningful investigation begins, RPG GM Runtime selects or receives one approved package and commits:
+## Campaign Architect and Dungeon Master roles
 
-- cause and causal history;
-- important actors, goals, fears, leverage, secrets, and limits;
-- functional spine requirements;
-- opening affordances;
-- redundant evidence relationships;
-- pressure and escalation rules;
-- state-aware event eligibility;
-- tactical launch conditions and objectives;
-- consequence and resolution ranges;
-- semantic asset roles;
-- boundaries for DM realization.
+The **Campaign Architect** is the campaign-authoring agent. Older references to a plot agent or campaign compiler describe parts of this role.
 
-The selected package is hidden structure, not an ordered scene list. The DM agent owns live narration, dialogue, pacing, event timing, freeform intent interpretation, local detail, and state-compatible adaptation. It may not replace the selected family, cause, evidence logic, established facts, or committed tactical outcomes.
+For Monster Master, the team manually performs the Campaign Architect work to establish the quality bar.
 
-## Starter family posture
+The **Dungeon Master** consumes the committed CampaignPackage and owns:
 
-The current curated catalog should support at least these distinct families:
+- narration, dialogue, pacing, and scene framing;
+- interpretation of arbitrary freeform player action;
+- state-compatible event selection;
+- NPC performance and reactions;
+- compatible local detail and incidental NPC creation;
+- consequences, checks, and tactical requests.
 
-- **displaced domestic migration** — ecological pressure, creature care, route management, community conflict, and possible territorial danger;
+The Dungeon Master may adapt strongly but may not replace the package’s cause, responsible actors, evidence logic, established facts, prior consequences, or tactical outcomes.
+
+There is no separate intro agent and no Monster Master-specific Dungeon Master implementation.
+
+## Starter family source material
+
+The current catalog contains materially different source families:
+
+- **displaced domestic migration** — ecological pressure, creature care, route management, community conflict, and territorial danger;
 - **counterfeit cube recall** — technical rescue, intelligent-occupant negotiation, black-market components, legal conflict, and funny or genuine horror;
 - **rival certification sabotage** — social comedy, competition, deception, public embarrassment, and accidental escalation;
 - **festival mascot breakout** — slapstick, crowd control, chase structure, publicity, bait, and nonlethal recovery;
 - **false warden roadblock** — human crime, forged authority, confiscation, bribery, stealth, rescue, and confrontation.
 
-A misclassified Class 4 specialty hazard remains blocked until its actual rule and countermeasure are authored.
+A misclassified Class 4 specialty hazard remains blocked until its fixed rule and countermeasure are authored.
 
-Additional families may be added later, but no single favorite incident should consume the starter identity.
+No family or deterministic fixture is the canonical Monster Master story.
 
-## NPC pool posture
+## NPC posture
 
-The starter should maintain a curated NPC role pool alongside the plot catalog.
-
-The pool should prepare likely recurring and ordinary roles such as:
+The package should draw from a curated but open NPC foundation:
 
 - veteran guide;
 - station quartermaster;
@@ -100,139 +102,102 @@ The pool should prepare likely recurring and ordinary roles such as:
 - underworld fixer or false inspector;
 - intelligent-monster citizen or professional.
 
-This gives the plot agent predictable cast vocabulary and gives GameFrame a bounded portrait-family plan.
+The Campaign Architect selects package-bearing roles and binds hidden actors, clue owners, and recurring cast before play where required.
 
-It is not a closed cast. When players seek a plausible person who was not prepared, the DM may instantiate that person, assign a stable identity and portrait family, preserve continuity, and promote them into the recurring cast if play makes them matter.
+The cast is not closed. When players seek a plausible unprepared person, the Dungeon Master may create that NPC, assign a stable identity and portrait family, preserve continuity, and promote them when play makes them important.
 
-An improvised NPC may not retroactively replace the committed culprit, decisive witness, clue owner, or secret authority unless the selected package explicitly left that role open.
+An incidental NPC may not retroactively replace a committed culprit, decisive witness, clue owner, or secret authority unless the CampaignPackage explicitly left that role open.
 
-Promotion does not require immediate unique art. The NPC may continue using a stable reusable portrait-family identity until manual production approves bespoke art.
+Promotion does not require immediate bespoke art.
 
 ## Adult-world posture
 
-Monster Master is built for adult gamers. The setting should feel like a real society rather than a hand-holding corporate training scenario or a world where everyone exists to teach one approved lesson.
+Monster Master is built for adult gamers and should feel like a society rather than a training simulation.
 
-Good, competent, brave, selfish, foolish, corrupt, compromised, and ordinary people coexist. Institutions can protect people, fail them, contradict themselves, contain decent professionals, or contain people abusing their position.
+Good, competent, brave, selfish, foolish, corrupt, compromised, and ordinary people coexist. Institutions may help, fail, contradict themselves, contain decent professionals, or contain people abusing their position.
 
-Heroic and lawful choices must be valid and rewarding where appropriate. Practical, selfish, opportunistic, illegal, reckless, avoidant, or unexpected choices may also be credible when the fiction supports them. The game should not force either moral posture.
+Heroic and lawful choices are valid and rewarding but not mandatory. Practical, selfish, opportunistic, illegal, reckless, avoidant, and unexpected actions may be credible when the fiction supports them.
 
-The world reacts through leverage, information, danger, relationships, resources, exposure, injury, reputation, legal consequences, creature welfare, and future opportunity. The DM should not preach, sanitize consequences, or treat players like children.
+Consequences arise through leverage, information, danger, relationships, resources, exposure, injury, reputation, law, creature welfare, and future opportunity. The Dungeon Master does not preach or force a preferred alignment.
 
 ## Tone
 
-Monster Master should be a good-time fantasy adventure capable of moving among:
+Monster Master can move among:
 
 - slapstick and physical comedy;
 - absurd professional titles, names, institutions, and customs;
-- jokes approaching meme energy without turning every moment into a reference;
-- sincere character relationships;
+- selective meme-adjacent concepts without constant reference spam;
+- sincere relationships;
 - unsettling monster behavior;
 - funny horror;
-- genuine dark horror;
-- exciting tactical danger;
+- genuine bounded horror;
+- tactical danger;
 - wonder and emotional weight.
 
-The setting takes continuity and consequences seriously, but it does not protect its dignity. Important, competent, respected people may have ridiculous names or titles. A frightening creature encounter may include an absurd practical problem. A ridiculous character may become genuinely heroic. A funny premise may reveal real danger.
-
-Slapstick is allowed and sometimes desirable. Borderline-meme concepts are allowed when they arise naturally and are not repeated until they become noise. The restriction is against constant gag density, empty reference spam, and comedy that prevents the players from caring.
-
-Horror should be allowed to become genuinely uncomfortable for a bounded stretch. The session should still be capable of returning to adventure, camaraderie, humor, relief, or triumph afterward.
+The setting takes continuity and consequences seriously without protecting its dignity. Comedy must not erase stakes, and horror should permit a return to adventure, camaraderie, relief, or triumph.
 
 ## Accepted character concept — the Master Baiter
 
-The setting includes a highly accomplished and widely respected monster-luring specialist commonly known as **the Master Baiter**.
+The setting includes a respected monster-luring specialist known as **the Master Baiter**.
 
-The title is funny for the obvious reason, but the character is not merely a disposable joke. He is exceptionally knowledgeable about bait, scent, sound, habitat, migration, feeding behavior, territorial displays, and nonviolent methods of drawing monsters toward or away from a location.
+The title is funny, but the character is not disposable. He is highly knowledgeable about bait, scent, sound, habitat, migration, feeding behavior, territorial displays, and nonviolent monster movement.
 
-People who know the profession treat the title and his expertise seriously. Less disciplined people struggle to do so. The joke should usually land without every character explaining it. The character must remain useful, memorable, and respected after the first laugh.
-
-He is not automatically required in the starter. Include him only when the selected package gives him a functional role.
+People in the profession treat his expertise seriously. The joke should land without every character explaining it. Include him only when a CampaignPackage gives him a functional role.
 
 ## Spine and event-pool application
 
-The certification circuit is a useful starting frame, not a mandatory lesson plan.
+The certification circuit is a useful chassis, not a mandatory lesson plan or fixed sequence.
 
-The shared spine should describe required functions and causal boundaries, such as:
+Event pools describe authored situations and state transitions. The Campaign Architect selects and binds them into a complete CampaignPackage. The Dungeon Master realizes eligible events according to package truth, current state, players, location, actors, and prior choices.
 
-- why the party is together;
-- what creates early agency;
-- when one plot package becomes committed;
-- what pressures can worsen;
-- what forms of intervention remain possible;
-- when Arena Battles becomes justified;
-- what must be resolved before the one-shot closes.
+At least one early situation should provide meaningful agency before formal briefing dominates play. Suggested approaches are examples, not buttons defining the action space.
 
-Event pools are authored situations and state transitions the DM can realize differently according to the selected package, players, location, actors, prior choices, and available assets. They are not prewritten scenes and not separate runtime subsystems.
+## Asset-production mode
 
-At least one early event should provide meaningful agency before formal briefing dominates play. Available actions may include helping, investigating, following procedure, bending a rule, taking an opportunity, refusing responsibility, or attempting something the package did not enumerate.
-
-Suggested approaches are examples, not buttons that define the action space.
-
-## Current asset-production mode
-
-The asset register is an inventory, prioritization tool, and provenance ledger for work that we create, edit, review, and integrate directly.
+The current asset register is the production inventory and provenance authority.
 
 Current production may include:
 
-- image generation performed interactively during development;
-- editing and cleaning generated or existing images;
+- interactive image generation during development;
+- editing and cleanup;
 - hand-authored interface elements and icons;
-- deterministic crops, masks, derivatives, and asset manifests;
-- reuse and improvement of existing Arena Battles assets;
-- manual review through local GameFrame screenshots and playable scenes.
+- deterministic crops, masks, derivatives, and manifests;
+- reuse and improvement of Arena Battles assets;
+- local screenshot and playable-scene review.
 
-The first asset cut should establish reusable starter vocabulary before plot-specific extensions:
+The CampaignPackage declares semantic asset needs. GameFrame resolves those needs through accepted assets, deterministic composition, generation, silhouettes, cards, or text fallback.
+
+The foundation should cover:
 
 - academy or field-station environments;
 - settled routes and modular roadside states;
 - veteran guide and reusable NPC portrait families;
-- incidental-NPC card and silhouette fallbacks;
-- modular carts, signs, cubes, field kits, barriers, and inspection props;
-- domestic and conventional hazard creature coverage;
+- incidental NPC cards and silhouettes;
+- carts, signs, cubes, field kits, barriers, and inspection props;
+- domestic and conventional hazard creatures;
 - private observation, investigation, warning, objective, and aftermath UI;
-- Arena Battles terrain and effects reused where sufficient.
+- reusable Arena Battles terrain and effects.
 
-The NPC portrait foundation should begin with Pell plus reusable service-worker, candidate/rival, care-handler, technical-specialist, guard/patrol, and trade/travel families. Civic, event, underworld, and intelligent-monster citizen families follow as P1.
-
-After that base is integrated, family-specific extensions may be produced for the first two or three selected plot families. No single plot family controls the entire asset pack.
-
-The following are future capabilities, not current dependencies:
-
-- Cloudflare-managed image generation;
-- RPG GM Runtime creating assets;
-- live campaign-time generation queues;
-- automatic prompt compilation and provider routing;
-- runtime asset replacement or generation orchestration.
+Cloudflare-backed campaign image generation is a future campaign-preparation capability. It is not required for package logic or Dungeon Master testing.
 
 ## Deterministic fixture rule
 
-A deterministic fixture may select one family for CI and cross-repository acceptance.
+A deterministic fixture may select one package for CI. It must remain test-only, noncanonical, versioned, replaceable, absent from default campaign copy, and unable to dictate the complete asset roadmap.
 
-That fixture must be:
+## Creative acceptance
 
-- explicitly marked as test-only and non-canonical;
-- replaceable through a versioned fixture change;
-- absent from default player-facing campaign copy;
-- unable to dictate the whole asset roadmap;
-- treated as one proof among several possible stories.
+Monster Master is on target when:
 
-## Creative tests
-
-A Monster Master starter is on target when:
-
-- several plot families can produce materially different sessions;
-- no one fixture is treated as the real or default story;
-- selected hidden truth remains coherent when players act unpredictably;
-- the DM adapts rather than reciting a scene outline;
-- heroic play is satisfying without being mandatory;
-- rule-bending or opportunism creates real possibilities without taking over the campaign;
-- players can laugh without being told the world is a parody;
-- horror can become genuinely uncomfortable for a bounded stretch;
-- consequences matter without becoming a lecture;
-- likely NPC roles have prepared visual coverage;
-- an unplanned lunch lady or other ordinary person can become a durable character without blocking play;
-- the session produces a memorable story rather than a sequence of instructional beats.
+- one complete CampaignPackage produces a memorable, coherent campaign;
+- package truth survives unexpected player action;
+- the Dungeon Master adapts instead of reciting a scene outline;
+- heroic, opportunistic, avoidant, and unexpected play remain credible;
+- comedy, sincerity, and horror coexist without destroying continuity;
+- likely roles have prepared visual coverage;
+- an incidental ordinary person can become a durable character;
+- the package reaches a satisfying resolution and optional continuation;
+- additional source families can later become materially different complete packages.
 
 ## Governing rule
 
-> Build several distinct starter possibilities, a reusable visual and NPC foundation, and one committed hidden package per run—without allowing a CI fixture, favored incident, or closed cast list to become the whole game.
+> Handcraft one complete Monster Master CampaignPackage with broad creative range, let the Dungeon Master adapt it around real players, and retain the catalogs as reusable source material rather than mistaking them for the finished game.
