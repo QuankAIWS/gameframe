@@ -10,7 +10,7 @@ applies_to:
   - Monster Master RPG
   - future handcrafted and generated campaigns
 shared_document_id: rpg-event-and-plot-pool-contract-v1
-shared_document_version: 3
+shared_document_version: 4
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-event-and-plot-pool-contract.md
 mirrors:
@@ -19,8 +19,7 @@ sync_policy: exact-byte-copy
 related:
   - rpg-agent-architecture-and-campaign-package.md
   - rpg-platform-roadmap.md
-  - rpg-campaign-compiler-contract.md
-  - rpg-one-shot-intro-agent-contract.md
+  - rpg-campaign-architect-contract.md
   - rpg-monster-master-reference-campaign.md
   - rpg-rendering-and-asset-contract.md
   - rpg-media-theme-and-audio-pipeline.md
