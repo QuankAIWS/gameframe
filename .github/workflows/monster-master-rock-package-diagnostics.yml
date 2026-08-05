@@ -1,0 +1,111 @@
+name: Diagnose Monster Master rock package
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: monster-master-rock-package-diagnostics
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TARGET_BRANCH: agent/mm-rock-package-diagnostics
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Decode and inspect damaged package
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_dir='public/assets/monster-master/props/rock-boulder-set-v1/source/package'
+          LC_ALL=C cat "$package_dir"/chunk-* \
+            | tr -d '\r\n' \
+            | base64 --decode \
+            > /tmp/mm-rock-source-package.tar.gz
+
+          set +e
+          gzip -dc /tmp/mm-rock-source-package.tar.gz > /tmp/mm-rock-source-package.tar
+          gzip_status=$?
+          set -e
+
+          GZIP_STATUS="$gzip_status" python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+          import os
+
+          compressed = Path('/tmp/mm-rock-source-package.tar.gz').read_bytes()
+          recovered = Path('/tmp/mm-rock-source-package.tar').read_bytes()
+          signature = b'\x89PNG\r\n\x1a\n'
+          expected = {
+              '9654237ba8aa56949e50c9e29959e616d4dfb2ea7747c7623058e14caa095001',
+              '5eb658e2d822edfc8e0941227cd317ccbe445f195e01fa6c1864d56824f0557a',
+              '6e50fe930bfc7b8d1bd93bf5ae859386c5156f851c93f6e08aba12649017bd32',
+          }
+          offsets = []
+          complete = []
+          position = 0
+          while True:
+              start = recovered.find(signature, position)
+              if start < 0:
+                  break
+              offsets.append(start)
+              cursor = start + len(signature)
+              end = None
+              while cursor + 12 <= len(recovered):
+                  length = int.from_bytes(recovered[cursor:cursor + 4], 'big')
+                  chunk_type = recovered[cursor + 4:cursor + 8]
+                  next_cursor = cursor + 12 + length
+                  if next_cursor > len(recovered):
+                      break
+                  cursor = next_cursor
+                  if chunk_type == b'IEND':
+                      end = cursor
+                      break
+              if end is not None:
+                  candidate = recovered[start:end]
+                  digest = hashlib.sha256(candidate).hexdigest()
+                  complete.append({
+                      'offset': start,
+                      'bytes': len(candidate),
+                      'sha256': digest,
+                      'approved': digest in expected,
+                  })
+              position = start + 1
+
+          diagnostics = {
+              'gzipStatus': int(os.environ['GZIP_STATUS']),
+              'compressedBytes': len(compressed),
+              'compressedSha256': hashlib.sha256(compressed).hexdigest(),
+              'recoveredBytes': len(recovered),
+              'recoveredSha256': hashlib.sha256(recovered).hexdigest(),
+              'pngSignatureOffsets': offsets,
+              'completePngCandidates': complete,
+              'approvedMatches': sorted(item['sha256'] for item in complete if item['approved']),
+              'expectedApprovedHashes': sorted(expected),
+          }
+          Path('mm-rock-package-diagnostics.json').write_text(json.dumps(diagnostics, indent=2) + '\n')
+          print(json.dumps(diagnostics, indent=2))
+          PY
+
+      - name: Publish diagnostics branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -C "$TARGET_BRANCH"
+          git add mm-rock-package-diagnostics.json
+          git commit -m 'chore: record rock package diagnostics'
+          git push --force origin "HEAD:${TARGET_BRANCH}"
