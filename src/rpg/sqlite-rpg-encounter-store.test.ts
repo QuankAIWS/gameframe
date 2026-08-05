@@ -57,35 +57,21 @@ function initialize(filePath: string): void {
         joinedPresentationSequence: 0,
       },
     ],
-    events: [
-      {
-        eventId: "event:one",
-        kind: "scene.presented",
-        audience: { kind: "public" },
-        payload: { index: 1 },
-        createdAt: "2026-08-04T22:40:01.000Z",
-      },
-      {
-        eventId: "event:two",
-        kind: "scene.presented",
-        audience: { kind: "public" },
-        payload: { index: 2 },
-        createdAt: "2026-08-04T22:40:02.000Z",
-      },
-      {
-        eventId: "event:three",
-        kind: "scene.presented",
-        audience: { kind: "public" },
-        payload: { index: 3 },
-        createdAt: "2026-08-04T22:40:03.000Z",
-      },
-    ],
+    events: [1, 2, 3].map((index) => ({
+      eventId: `event:${index}`,
+      kind: "scene.presented",
+      audience: { kind: "public" as const },
+      payload: { index },
+      createdAt: `2026-08-04T22:40:0${index}.000Z`,
+    })),
     initializedAt: "2026-08-04T22:40:00.000Z",
   });
   campaigns.close();
 }
 
-function launch(overrides: Partial<DurableEncounterLaunchRequest> = {}): DurableEncounterLaunchRequest {
+function launch(
+  overrides: Partial<DurableEncounterLaunchRequest> = {},
+): DurableEncounterLaunchRequest {
   return {
     protocolVersion: 2,
     coordinationMutationId: "coordination:encounter-one",
@@ -116,22 +102,20 @@ function launch(overrides: Partial<DurableEncounterLaunchRequest> = {}): Durable
         teamId: "team:rivals",
       },
     ],
-    objectives: [
-      { objectiveId: "objective:win", kind: "defeat-opposition" },
-    ],
+    objectives: [{ objectiveId: "objective:win", kind: "defeat-opposition" }],
     battlefield: { mapId: "academy-gate" },
     ...overrides,
   };
 }
 
-function outcome(overrides: Partial<DurableTerminalOutcome> = {}): DurableTerminalOutcome {
+function outcome(
+  overrides: Partial<DurableTerminalOutcome> = {},
+): DurableTerminalOutcome {
   return {
     kind: "encounter.terminal_outcome",
     result: "victory",
     winnerTeamId: "team:keepers",
-    objectiveResults: [
-      { objectiveId: "objective:win", status: "completed" },
-    ],
+    objectiveResults: [{ objectiveId: "objective:win", status: "completed" }],
     participantResults: [
       {
         participantId: "participant:ada",
@@ -148,9 +132,7 @@ function outcome(overrides: Partial<DurableTerminalOutcome> = {}): DurableTermin
         resourceChanges: {},
       },
     ],
-    rewards: [
-      { rewardId: "reward:crest", kind: "flag", quantity: 1 },
-    ],
+    rewards: [{ rewardId: "reward:crest", kind: "flag", quantity: 1 }],
     ruleset: { id: "monster-master-duel", revision: 1 },
     commit: {
       matchId: "match:encounter-one",
@@ -160,6 +142,40 @@ function outcome(overrides: Partial<DurableTerminalOutcome> = {}): DurableTermin
     },
     ...overrides,
   };
+}
+
+function state(filePath: string): Record<string, number> {
+  const database = new DatabaseSync(filePath);
+  try {
+    const row = database.prepare(
+      "SELECT gameframe_coordination_revision, presentation_sequence, linked_narrative_revision FROM rpg_campaign_coordination_v1 WHERE campaign_id = ?",
+    ).get("campaign-one") as Record<string, number>;
+    return { ...row };
+  } finally {
+    database.close();
+  }
+}
+
+function encounterCount(filePath: string): number {
+  const database = new DatabaseSync(filePath);
+  try {
+    const row = database.prepare(
+      "SELECT COUNT(*) AS count FROM rpg_encounters_v1",
+    ).get() as { count: number };
+    return Number(row.count);
+  } finally {
+    database.close();
+  }
+}
+
+function requireError(
+  action: () => unknown,
+  code: SqliteRpgEncounterError["code"],
+): void {
+  assert.throws(
+    action,
+    (error: unknown) => error instanceof SqliteRpgEncounterError && error.code === code,
+  );
 }
 
 test("launches durably, advances coordination once, and preserves presentation position", () => {
@@ -183,17 +199,11 @@ test("launches durably, advances coordination once, and preserves presentation p
     linkedNarrativeRevision: 1,
   });
   store.close();
-
-  const database = new DatabaseSync(filePath);
-  const state = database.prepare(
-    "SELECT gameframe_coordination_revision, presentation_sequence, linked_narrative_revision FROM rpg_campaign_coordination_v1 WHERE campaign_id = ?",
-  ).get("campaign-one") as Record<string, number>;
-  assert.deepEqual(state, {
+  assert.deepEqual(state(filePath), {
     gameframe_coordination_revision: 7,
     presentation_sequence: 3,
     linked_narrative_revision: 1,
   });
-  database.close();
 });
 
 test("returns exact launch after restart without another coordination advance", () => {
@@ -205,7 +215,6 @@ test("returns exact launch after restart without another coordination advance", 
     createdAt: "2026-08-04T22:45:00.000Z",
   });
   store.close();
-
   store = new SqliteRpgEncounterStore({ filePath });
   const retry = store.launch(launch(), {
     serviceId: "rpg-gm-runtime",
@@ -219,38 +228,26 @@ test("rejects observer participants and stale revision/narrative linkage without
   const filePath = databasePath();
   initialize(filePath);
   const store = new SqliteRpgEncounterStore({ filePath });
-  assert.throws(
+  requireError(
     () => store.launch(
       launch({
-        participants: [
-          {
-            participantId: "participant:observer",
-            controller: { kind: "player", playerId: "player:observer" },
-          },
-        ],
+        participants: [{
+          participantId: "participant:observer",
+          controller: { kind: "player", playerId: "player:observer" },
+        }],
       }),
-      {
-        serviceId: "rpg-gm-runtime",
-        createdAt: "2026-08-04T22:45:00.000Z",
-      },
+      { serviceId: "rpg-gm-runtime", createdAt: "2026-08-04T22:45:00.000Z" },
     ),
-    (error: unknown) =>
-      error instanceof SqliteRpgEncounterError
-      && error.code === "participant-not-authorized",
+    "participant-not-authorized",
   );
-  assert.throws(
+  requireError(
     () => store.launch(
       launch({ expectedGameframeCoordinationRevision: 5 }),
-      {
-        serviceId: "rpg-gm-runtime",
-        createdAt: "2026-08-04T22:45:00.000Z",
-      },
+      { serviceId: "rpg-gm-runtime", createdAt: "2026-08-04T22:45:00.000Z" },
     ),
-    (error: unknown) =>
-      error instanceof SqliteRpgEncounterError
-      && error.code === "coordination-revision-conflict",
+    "coordination-revision-conflict",
   );
-  assert.throws(
+  requireError(
     () => store.launch(
       launch({
         runtimeCommit: {
@@ -259,23 +256,12 @@ test("rejects observer participants and stale revision/narrative linkage without
           narrativeRevision: 2,
         },
       }),
-      {
-        serviceId: "rpg-gm-runtime",
-        createdAt: "2026-08-04T22:45:00.000Z",
-      },
+      { serviceId: "rpg-gm-runtime", createdAt: "2026-08-04T22:45:00.000Z" },
     ),
-    (error: unknown) =>
-      error instanceof SqliteRpgEncounterError
-      && error.code === "narrative-link-conflict",
+    "narrative-link-conflict",
   );
   store.close();
-
-  const database = new DatabaseSync(filePath);
-  const count = database.prepare("SELECT COUNT(*) AS count FROM rpg_encounters_v1").get() as {
-    count: number;
-  };
-  assert.equal(Number(count.count), 0);
-  database.close();
+  assert.equal(encounterCount(filePath), 0);
 });
 
 test("completes terminal outcome durably and returns exact completion retry", () => {
@@ -286,43 +272,27 @@ test("completes terminal outcome durably and returns exact completion retry", ()
     serviceId: "rpg-gm-runtime",
     createdAt: "2026-08-04T22:45:00.000Z",
   });
-  const completed = store.complete(
-    "encounter-one",
-    {
-      protocolVersion: 2,
-      completionId: "completion:encounter-one",
-      encounterId: "encounter-one",
-      outcome: outcome(),
-    },
-    {
-      serviceId: "gameframe-encounter-engine",
-      completedAt: "2026-08-04T22:50:00.000Z",
-    },
-  );
+  const request = {
+    protocolVersion: 2 as const,
+    completionId: "completion:encounter-one",
+    encounterId: "encounter-one",
+    outcome: outcome(),
+  };
+  const completed = store.complete("encounter-one", request, {
+    serviceId: "gameframe-encounter-engine",
+    completedAt: "2026-08-04T22:50:00.000Z",
+  });
   assert.equal(completed.state, "completed");
   assert.equal(completed.terminalOutcome?.result, "victory");
   assert.equal(completed.gameframeCoordinationRevision, 7);
   store.close();
-
   store = new SqliteRpgEncounterStore({ filePath });
-  const retry = store.complete(
-    "encounter-one",
-    {
-      protocolVersion: 2,
-      completionId: "completion:encounter-one",
-      encounterId: "encounter-one",
-      outcome: outcome(),
-    },
-    {
-      serviceId: "gameframe-encounter-engine",
-      completedAt: "2026-08-04T22:51:00.000Z",
-    },
-  );
+  const retry = store.complete("encounter-one", request, {
+    serviceId: "gameframe-encounter-engine",
+    completedAt: "2026-08-04T22:51:00.000Z",
+  });
   assert.deepEqual(retry, completed);
-  assert.deepEqual(
-    store.get("encounter-one", { serviceId: "rpg-gm-runtime" }),
-    completed,
-  );
+  assert.deepEqual(store.get("encounter-one", { serviceId: "rpg-gm-runtime" }), completed);
   store.close();
 });
 
@@ -334,7 +304,7 @@ test("rejects incomplete terminal coverage and conflicting completion reuse", ()
     serviceId: "rpg-gm-runtime",
     createdAt: "2026-08-04T22:45:00.000Z",
   });
-  assert.throws(
+  requireError(
     () => store.complete(
       "encounter-one",
       {
@@ -343,14 +313,9 @@ test("rejects incomplete terminal coverage and conflicting completion reuse", ()
         encounterId: "encounter-one",
         outcome: outcome({ participantResults: outcome().participantResults.slice(0, 1) }),
       },
-      {
-        serviceId: "gameframe-encounter-engine",
-        completedAt: "2026-08-04T22:50:00.000Z",
-      },
+      { serviceId: "gameframe-encounter-engine", completedAt: "2026-08-04T22:50:00.000Z" },
     ),
-    (error: unknown) =>
-      error instanceof SqliteRpgEncounterError
-      && error.code === "invalid-terminal-outcome",
+    "invalid-terminal-outcome",
   );
   store.complete(
     "encounter-one",
@@ -360,12 +325,9 @@ test("rejects incomplete terminal coverage and conflicting completion reuse", ()
       encounterId: "encounter-one",
       outcome: outcome(),
     },
-    {
-      serviceId: "gameframe-encounter-engine",
-      completedAt: "2026-08-04T22:50:00.000Z",
-    },
+    { serviceId: "gameframe-encounter-engine", completedAt: "2026-08-04T22:50:00.000Z" },
   );
-  assert.throws(
+  requireError(
     () => store.complete(
       "encounter-one",
       {
@@ -374,14 +336,9 @@ test("rejects incomplete terminal coverage and conflicting completion reuse", ()
         encounterId: "encounter-one",
         outcome: outcome({ result: "defeat", winnerTeamId: "team:rivals" }),
       },
-      {
-        serviceId: "gameframe-encounter-engine",
-        completedAt: "2026-08-04T22:51:00.000Z",
-      },
+      { serviceId: "gameframe-encounter-engine", completedAt: "2026-08-04T22:51:00.000Z" },
     ),
-    (error: unknown) =>
-      error instanceof SqliteRpgEncounterError
-      && error.code === "completion-conflict",
+    "completion-conflict",
   );
   store.close();
 });
@@ -390,26 +347,22 @@ test("enforces service ownership for launch, retrieval, and completion", () => {
   const filePath = databasePath();
   initialize(filePath);
   const store = new SqliteRpgEncounterStore({ filePath });
-  assert.throws(
+  requireError(
     () => store.launch(launch(), {
       serviceId: "other-runtime",
       createdAt: "2026-08-04T22:45:00.000Z",
     }),
-    (error: unknown) =>
-      error instanceof SqliteRpgEncounterError
-      && error.code === "encounter-access-denied",
+    "encounter-access-denied",
   );
   store.launch(launch(), {
     serviceId: "rpg-gm-runtime",
     createdAt: "2026-08-04T22:45:00.000Z",
   });
-  assert.throws(
+  requireError(
     () => store.get("encounter-one", { serviceId: "other-runtime" }),
-    (error: unknown) =>
-      error instanceof SqliteRpgEncounterError
-      && error.code === "encounter-access-denied",
+    "encounter-access-denied",
   );
-  assert.throws(
+  requireError(
     () => store.complete(
       "encounter-one",
       {
@@ -418,14 +371,9 @@ test("enforces service ownership for launch, retrieval, and completion", () => {
         encounterId: "encounter-one",
         outcome: outcome(),
       },
-      {
-        serviceId: "rpg-gm-runtime",
-        completedAt: "2026-08-04T22:50:00.000Z",
-      },
+      { serviceId: "rpg-gm-runtime", completedAt: "2026-08-04T22:50:00.000Z" },
     ),
-    (error: unknown) =>
-      error instanceof SqliteRpgEncounterError
-      && error.code === "encounter-access-denied",
+    "encounter-access-denied",
   );
   store.close();
 });
@@ -447,19 +395,10 @@ test("rolls back coordination and encounter custody on injected launch failure",
     /injected crash/,
   );
   store.close();
-
-  const database = new DatabaseSync(filePath);
-  const state = database.prepare(
-    "SELECT gameframe_coordination_revision, presentation_sequence, linked_narrative_revision FROM rpg_campaign_coordination_v1 WHERE campaign_id = ?",
-  ).get("campaign-one") as Record<string, number>;
-  const count = database.prepare("SELECT COUNT(*) AS count FROM rpg_encounters_v1").get() as {
-    count: number;
-  };
-  assert.deepEqual(state, {
+  assert.deepEqual(state(filePath), {
     gameframe_coordination_revision: 6,
     presentation_sequence: 3,
     linked_narrative_revision: 0,
   });
-  assert.equal(Number(count.count), 0);
-  database.close();
+  assert.equal(encounterCount(filePath), 0);
 });
