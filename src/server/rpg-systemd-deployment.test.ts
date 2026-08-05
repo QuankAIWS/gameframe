@@ -35,17 +35,22 @@ test("GameFrame RPG unit is unprivileged and limits writable state", () => {
   assert.match(unit, /^UMask=0077$/m);
 });
 
-test("environment template keeps both RPG processes on loopback", () => {
-  assert.match(environment, /^GAMEFRAME_ALLOW_DEVELOPMENT_AUTH=1$/m);
+test("environment template enables HMAC proxy auth and keeps both RPG processes on loopback", () => {
+  assert.match(environment, /^GAMEFRAME_RPG_AUTH_MODE=hmac-proxy$/m);
+  assert.match(environment, /^GAMEFRAME_RPG_PROXY_HMAC_SECRET=REPLACE_/m);
   assert.match(environment, /^GAMEFRAME_RPG_HOST=127\.0\.0\.1$/m);
   assert.match(environment, /^GAMEFRAME_RPG_PORT=8790$/m);
   assert.match(environment, /^RPG_GM_BASE_URL=http:\/\/127\.0\.0\.1:8791$/m);
   assert.match(environment, /^RPG_GM_SERVICE_TOKEN=REPLACE_/m);
+  assert.doesNotMatch(environment, /^GAMEFRAME_ALLOW_DEVELOPMENT_AUTH=1$/m);
   assert.doesNotMatch(environment, /0\.0\.0\.0/);
 });
 
-test("canonical runbook requires coordinated state backups and blocks Tunnel exposure", () => {
-  assert.match(runbook, /do not expose port `8790` through Cloudflare Tunnel/);
+test("canonical runbook routes public RPG traffic through Worker and Tunnel only", () => {
+  assert.match(runbook, /Cloudflare Worker/);
+  assert.match(runbook, /GAMEFRAME_RPG_ORIGIN_URL/);
+  assert.match(runbook, /GAMEFRAME_RPG_PROXY_HMAC_SECRET/);
+  assert.match(runbook, /origin hostname to `http:\/\/127\.0\.0\.1:8790`/);
   assert.match(runbook, /never expose port `8791` through Cloudflare Tunnel/);
   assert.match(runbook, /GameFrame SQLite database/);
   assert.match(runbook, /OpenClaw plugin-state directory/);
