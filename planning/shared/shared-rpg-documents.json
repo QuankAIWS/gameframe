@@ -1,5 +1,5 @@
 {
-  "manifestVersion": 3,
+  "manifestVersion": 4,
   "canonicalRepository": "QuankAIWS/scribbles-gameframe",
   "canonicalRef": "main",
   "canonicalRoot": "planning/shared",
@@ -31,12 +31,8 @@
       "filename": "rpg-rendering-and-asset-contract.md"
     },
     {
-      "id": "rpg-campaign-compiler-contract-v1",
-      "filename": "rpg-campaign-compiler-contract.md"
-    },
-    {
-      "id": "rpg-one-shot-intro-agent-contract-v1",
-      "filename": "rpg-one-shot-intro-agent-contract.md"
+      "id": "rpg-campaign-architect-contract-v1",
+      "filename": "rpg-campaign-architect-contract.md"
     },
     {
       "id": "rpg-event-and-plot-pool-contract-v1",
