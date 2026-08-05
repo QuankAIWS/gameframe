@@ -4,7 +4,7 @@ status: accepted
 document_type: design-direction
 authority: owner-approved
 owner: Scribbles GameFrame
-last_updated: 2026-08-04
+last_updated: 2026-08-05
 applies_to:
   - Monster Master RPG
   - Monster Master starter one-shot
@@ -12,6 +12,7 @@ applies_to:
   - RPG plot-agent and DM-agent behavior
 related:
   - monster-master-rpg-lore-and-story.md
+  - monster-master-rpg-lore-tone-and-agent-realization.md
   - monster-master-rpg-asset-register.md
   - shared/rpg-event-and-plot-pool-contract.md
   - shared/rpg-monster-master-reference-campaign.md
@@ -21,46 +22,72 @@ related:
 
 ## Purpose
 
-This document controls the current creative direction where earlier planning is narrower or more procedural.
+This document controls current creative direction where earlier planning is narrower, more procedural, or overcommitted to one sample incident.
 
-It corrects four misunderstandings:
+It establishes that:
 
 1. current assets are created, edited, reviewed, and integrated directly by the owner and assisting creative agent;
 2. Monster Master has broad comedic, adventurous, and horrific range rather than dry professional mystery as its default;
-3. the first bespoke one-shot is a manually authored example of what a future plot agent should produce, not a scene script for the DM to recite;
-4. the DM agent should use the language model to adapt strongly to players while preserving committed scenario truth.
+3. the starter is a reusable certification chassis with several possible plot families, not one canonical incident;
+4. one selected package is committed per run before meaningful investigation;
+5. the DM agent uses the language model to adapt strongly to players while preserving the selected package's truth;
+6. deterministic CI fixtures prove contracts and do not define the product's story or asset roadmap.
 
 ## Current deliverable
 
-The immediate creative deliverable is one complete **plot-agent-style scenario package** for the unauthorized juvenile transport incident.
+The immediate creative deliverable is a compact **starter plot catalog** plus the shared presentation vocabulary needed to support it.
 
-That package should define:
+The catalog should contain several materially different approved families, including combinations of:
 
-- the committed cause and causal history;
+- ecological or creature-care crises;
+- technical cube failures and illegal modifications;
+- rivalry, sabotage, and social comedy;
+- public chaos and slapstick recovery;
+- human crime, corruption, fraud, and rescue;
+- bounded horror and tactical danger;
+- specialty hazards only after their fixed rules and countermeasures are authored.
+
+No family is the canonical Monster Master starter story.
+
+Before meaningful investigation begins, RPG GM Runtime selects or receives one approved package and commits:
+
+- cause and causal history;
 - important actors, goals, fears, leverage, secrets, and limits;
-- the functional campaign spine;
+- functional spine requirements;
 - opening affordances;
 - redundant evidence relationships;
 - pressure and escalation rules;
-- a small pool of authored state-aware events;
+- state-aware event eligibility;
 - tactical launch conditions and objectives;
-- valid consequence and resolution ranges;
-- semantic asset roles and a minimum production cut;
+- consequence and resolution ranges;
+- semantic asset roles;
 - boundaries for DM realization.
 
-The package is not an ordered list of scenes. It is the hidden structure the DM agent uses to create the story around player action.
+The selected package is hidden structure, not an ordered scene list. The DM agent owns live narration, dialogue, pacing, event timing, freeform intent interpretation, local detail, and state-compatible adaptation. It may not replace the selected family, cause, evidence logic, established facts, or committed tactical outcomes.
 
-The DM agent owns live narration, dialogue, pacing, event timing, freeform intent interpretation, local detail, and state-compatible adaptation. It may not replace the cause, culprit, evidence logic, established facts, or committed tactical outcomes.
+## Starter family posture
+
+The current curated catalog should support at least these distinct families:
+
+- **displaced domestic migration** — ecological pressure, creature care, route management, community conflict, and possible territorial danger;
+- **counterfeit cube recall** — technical rescue, intelligent-occupant negotiation, black-market components, legal conflict, and funny or genuine horror;
+- **rival certification sabotage** — social comedy, competition, deception, public embarrassment, and accidental escalation;
+- **festival mascot breakout** — slapstick, crowd control, chase structure, publicity, bait, and nonlethal recovery;
+- **false warden roadblock** — human crime, forged authority, confiscation, bribery, stealth, rescue, and confrontation.
+
+A misclassified Class 4 specialty hazard remains blocked until its actual rule and countermeasure are authored.
+
+Additional families may be added later, but no single favorite incident should consume the starter identity.
 
 ## Adult-world posture
 
-Monster Master is built for adult gamers. The setting should feel like a real society rather than a hand-holding corporate training scenario or a world where everyone exists to teach a safe lesson.
+Monster Master is built for adult gamers. The setting should feel like a real society rather than a hand-holding corporate training scenario or a world where everyone exists to teach one approved lesson.
 
 Good, competent, brave, selfish, foolish, corrupt, compromised, and ordinary people coexist. Institutions can protect people, fail them, contradict themselves, contain decent professionals, or contain people abusing their position.
 
 Heroic and lawful choices must be valid and rewarding where appropriate. Practical, selfish, opportunistic, illegal, reckless, avoidant, or unexpected choices may also be credible when the fiction supports them. The game should not force either moral posture.
 
-The world reacts through leverage, information, danger, relationships, resources, exposure, injury, reputation, legal consequences, and future opportunity. The DM should not preach, sanitize consequences, or treat players like children.
+The world reacts through leverage, information, danger, relationships, resources, exposure, injury, reputation, legal consequences, creature welfare, and future opportunity. The DM should not preach, sanitize consequences, or treat players like children.
 
 ## Tone
 
@@ -90,31 +117,31 @@ The title is funny for the obvious reason, but the character is not merely a dis
 
 People who know the profession treat the title and his expertise seriously. Less disciplined people struggle to do so. The joke should usually land without every character explaining it. The character must remain useful, memorable, and respected after the first laugh.
 
-He is not automatically required in the starter package. Include him only if he has a functional role rather than because the title exists.
+He is not automatically required in the starter. Include him only when the selected package gives him a functional role.
 
 ## Spine and event-pool application
 
 The certification circuit is a useful starting frame, not a mandatory lesson plan.
 
-The spine should describe required functions and causal boundaries, such as:
+The shared spine should describe required functions and causal boundaries, such as:
 
 - why the party is together;
 - what creates early agency;
-- what incident truth is fixed;
+- when one plot package becomes committed;
 - what pressures can worsen;
 - what forms of intervention remain possible;
 - when Arena Battles becomes justified;
 - what must be resolved before the one-shot closes.
 
-Event pools are authored situations and state transitions the DM can realize differently according to players, location, actors, prior choices, and available assets. They are not prewritten scenes and not seven separate runtime systems.
+Event pools are authored situations and state transitions the DM can realize differently according to the selected package, players, location, actors, prior choices, and available assets. They are not prewritten scenes and not separate runtime subsystems.
 
-At least one early event should provide meaningful agency before formal briefing dominates play. The available actions may include helping, investigating, following procedure, bending a rule, taking an opportunity, refusing responsibility, or attempting something the package did not enumerate.
+At least one early event should provide meaningful agency before formal briefing dominates play. Available actions may include helping, investigating, following procedure, bending a rule, taking an opportunity, refusing responsibility, or attempting something the package did not enumerate.
 
 Suggested approaches are examples, not buttons that define the action space.
 
 ## Current asset-production mode
 
-The full asset register remains useful as an inventory, prioritization tool, and provenance ledger for work that we create, edit, review, and integrate directly.
+The asset register is an inventory, prioritization tool, and provenance ledger for work that we create, edit, review, and integrate directly.
 
 Current production may include:
 
@@ -125,7 +152,17 @@ Current production may include:
 - reuse and improvement of existing Arena Battles assets;
 - manual review through local GameFrame screenshots and playable scenes.
 
-The first asset cut should come from semantic roles in the completed scenario package. It should prioritize reusable locations, actors, props, effects, and UI treatments that support multiple DM realizations rather than one illustration for every possible event.
+The first asset cut should establish reusable starter vocabulary before plot-specific extensions:
+
+- academy or field-station environments;
+- settled routes and modular roadside states;
+- veteran guide and reusable local-role portraits;
+- modular carts, signs, cubes, field kits, barriers, and inspection props;
+- domestic and conventional hazard creature coverage;
+- private observation, investigation, warning, objective, and aftermath UI;
+- Arena Battles terrain and effects reused where sufficient.
+
+After that base is integrated, family-specific extensions may be produced for the first two or three selected families. No single plot family controls the entire asset pack.
 
 The following are future capabilities, not current dependencies:
 
@@ -135,38 +172,33 @@ The following are future capabilities, not current dependencies:
 - automatic prompt compilation and provider routing;
 - runtime asset replacement or generation orchestration.
 
-## Current first-package asset posture
+## Deterministic fixture rule
 
-The current minimum slice should favor:
+A deterministic fixture may select one family for CI and cross-repository acceptance.
 
-- Eastgate Field Station and damaged-cart composition;
-- Warden Pell and courier Mara Vell portraits;
-- modular cart, crate, route-marker, and manifest props;
-- player-private observation and investigation effects;
-- the old culvert;
-- the dangerous juvenile source and tactical derivative;
-- contractor Jory Vale portrait and field presence;
-- adapted restraint, recapture, bait, and objective props;
-- an aftermath summary focused on consequences rather than morality grading.
+That fixture must be:
 
-Reuse existing Arena Battles terrain, shell, turn-order treatment, generic tactical effects, and readable starter creatures where they are sufficient.
-
-Do not create unique art for every event realization. The DM should be able to compose the prepared visual vocabulary around different player-driven versions of the same package.
+- explicitly marked as test-only and non-canonical;
+- replaceable through a versioned fixture change;
+- absent from default player-facing campaign copy;
+- unable to dictate the whole asset roadmap;
+- treated as one proof among several possible stories.
 
 ## Creative tests
 
-A Monster Master session is on target when:
+A Monster Master starter is on target when:
 
-- the hidden truth remains coherent even when players act unpredictably;
+- several plot families can produce materially different sessions;
+- no one fixture is treated as the real or default story;
+- selected hidden truth remains coherent when players act unpredictably;
 - the DM adapts rather than reciting a scene outline;
 - heroic play is satisfying without being mandatory;
 - rule-bending or opportunism creates real possibilities without taking over the campaign;
 - players can laugh without being told the world is a parody;
-- capable characters may be ridiculous and ridiculous characters may be capable;
 - horror can become genuinely uncomfortable for a bounded stretch;
 - consequences matter without becoming a lecture;
 - the session produces a memorable story rather than a sequence of instructional beats.
 
 ## Governing rule
 
-> Author the world, truth, actors, pressure, affordances, consequences, and visual vocabulary; let the DM model create the story around adult players without rewriting what is true or telling them how they are supposed to behave.
+> Build several distinct starter possibilities and a reusable visual foundation, commit one hidden package per run, and never allow a CI fixture or favored incident to become the whole game.
