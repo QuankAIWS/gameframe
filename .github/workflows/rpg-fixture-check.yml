@@ -12,6 +12,8 @@ on:
       - "src/rpg/**"
       - "src/auth/request-authenticator.ts"
       - "src/server/http-server.ts"
+      - "src/server/durable-rpg-http-server.ts"
+      - "src/server/durable-rpg-http-server.test.ts"
       - "src/server/rpg-http-server.test.ts"
       - "src/server/rpg-live-protocol-v2-http.test.ts"
       - "src/server/rpg-choice-outcome-http.test.ts"
@@ -63,7 +65,9 @@ jobs:
           src/rpg/sqlite-rpg-campaign-store.test.ts
           src/rpg/sqlite-rpg-command-acceptance.test.ts
           src/rpg/sqlite-rpg-runtime-linkage.test.ts
+          src/rpg/sqlite-rpg-encounter-store.test.ts
           src/rpg/durable-rpg-campaign-service.test.ts
+          src/server/durable-rpg-http-server.test.ts
           src/server/rpg-http-server.test.ts
           src/server/rpg-live-protocol-v2-http.test.ts
           src/server/rpg-choice-outcome-http.test.ts
