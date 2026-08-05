@@ -1,0 +1,323 @@
+{
+  "protocolVersion": 4,
+  "registerId": "monster-master-product-asset-registry-v4",
+  "registerVersion": 4,
+  "lastUpdated": "2026-08-05",
+  "owner": "Scribbles GameFrame",
+  "scope": {
+    "productFamily": "Monster Master",
+    "products": [
+      "Monster Master: Arena Battles",
+      "Monster Master RPG"
+    ],
+    "covers": [
+      "shared visual identity and fallbacks",
+      "tactical terrain, props, creatures, trainers, effects, and interface",
+      "campaign scenes, portraits, player sprites, world props, maps, cards, and interface",
+      "audio and later presentation families"
+    ],
+    "excludes": [
+      "runtime-created assets as a current dependency",
+      "automatic Cloudflare generation orchestration",
+      "plot truth, clue answers, and runtime-only secrets",
+      "copying protected franchise designs"
+    ]
+  },
+  "authorityRule": "This file is the product-wide lifecycle and coverage authority. Plot-specific registers may extend it but may not redefine the foundation.",
+  "themePackId": "monster-master-core-v1",
+  "geometryProfile": "mm-isometric-72x36-wall29",
+  "currentRuntimeEvidence": {
+    "tacticalTerrain": [
+      "floor",
+      "difficult",
+      "wall",
+      "objective"
+    ],
+    "currentRoster": [
+      "human trainer compatibility unit",
+      "Stone Bulwark",
+      "Emberling Skirmisher"
+    ],
+    "currentEffects": [
+      "deploy",
+      "move",
+      "damage",
+      "heal",
+      "defeat"
+    ],
+    "currentArenaUi": [
+      "lobby",
+      "trainer cards",
+      "roster rail",
+      "active unit HUD",
+      "health and command resources",
+      "phase and round",
+      "camera controls",
+      "action deck",
+      "legal options",
+      "invite panel",
+      "result screen"
+    ],
+    "currentRpgUi": [
+      "campaign join/resume",
+      "text event feed",
+      "optional suggestions",
+      "freeform composer",
+      "revision status"
+    ],
+    "knownGaps": [
+      "no product-wide terrain and prop vocabulary",
+      "only two actual monster species",
+      "human Master is still represented through a compatibility combat content ID",
+      "no exploration player sprite system",
+      "no campaign media references or portrait/scene renderer",
+      "no complete ability, item, condition, quest, faction, map, or codex UI",
+      "current creature atlas is a three-frame pilot rather than a production roster"
+    ]
+  },
+  "priorityVocabulary": {
+    "REUSE": "audit and repair current GameFrame or Arena Battles work before replacement",
+    "P0_CORE": "shared product design system, fallbacks, player identity, and asset-pipeline foundation",
+    "P0_BATTLE": "required for a credible expanded Arena Battles vertical slice",
+    "P0_RPG": "required for a credible campaign presentation vertical slice",
+    "P1_EXPANSION": "next biomes, scenes, roster depth, NPC families, and plot extensions",
+    "P2_LATER": "audio, breadth, polish, and later system expansion",
+    "DEFERRED": "reserved concepts or assets blocked by missing rules"
+  },
+  "statusVocabulary": [
+    "planned",
+    "reuse-audit",
+    "spec-ready",
+    "queued",
+    "generating",
+    "authoring",
+    "source-ready",
+    "review",
+    "accepted",
+    "derivative-ready",
+    "integrated",
+    "rejected",
+    "failed",
+    "superseded"
+  ],
+  "familyStateContracts": {
+    "terrain": [
+      "source master",
+      "runtime derivative",
+      "repeat or transition behavior",
+      "geometry role",
+      "all four camera rotations",
+      "minimum/normal/maximum zoom",
+      "boundary/apron",
+      "mobile screenshot"
+    ],
+    "prop": [
+      "clean alpha",
+      "ground anchor",
+      "occlusion class",
+      "small/medium/large scale review",
+      "normal/damaged or open/closed states where relevant",
+      "tactical and campaign use mapping"
+    ],
+    "trainer": [
+      "portrait",
+      "roster avatar",
+      "battlefield or exploration sprite as required",
+      "stable identity",
+      "neutral and consequential expressions",
+      "injured fallback",
+      "anchor and mirror metadata"
+    ],
+    "monster": [
+      "battlefield idle",
+      "portrait",
+      "roster icon",
+      "silhouette",
+      "move",
+      "attack or ability",
+      "damage",
+      "defeat",
+      "shadow",
+      "anchor",
+      "scale",
+      "mirror or directional metadata"
+    ],
+    "scene": [
+      "wide master",
+      "desktop crop",
+      "short-desktop crop",
+      "mobile crop",
+      "Discord-safe crop",
+      "neutral base",
+      "day/night or calm/damaged overlays as needed",
+      "no baked plot-specific actors or clues"
+    ],
+    "interface": [
+      "semantic HTML/CSS authority",
+      "keyboard and touch states",
+      "hover/focus/selected/disabled/error",
+      "mobile and Discord-safe layouts",
+      "text-only fallback",
+      "reduced-motion behavior"
+    ],
+    "effect": [
+      "authoritative event mapping",
+      "timing",
+      "world anchor",
+      "team tint policy",
+      "reduced-motion alternative",
+      "no state mutation inferred from pixels"
+    ]
+  },
+  "productionWaves": [
+    {
+      "waveId": "wave-0-audit-and-contract",
+      "purpose": "Audit current terrain, creature atlas, shell, effects, and existing open asset PRs; lock naming, source profiles, and derivative schemas.",
+      "requiredFamilies": [
+        "design-system",
+        "fallback",
+        "terrain",
+        "monster",
+        "character",
+        "interface",
+        "effect"
+      ]
+    },
+    {
+      "waveId": "wave-1-cross-family-core-slice",
+      "purpose": "Prove one coherent product style across basic terrain, props, player art, new monsters, UI, scenes, and effects before mass production.",
+      "requiredAssetIds": [
+        "terrain:mm-dirt-ground-v1",
+        "terrain:mm-road-ground-v1",
+        "terrain:mm-difficult-roots-v1",
+        "terrain:mm-raised-earth-top-v1",
+        "terrain:mm-cliff-earth-face-v1",
+        "prop:mm-tree-set-v1",
+        "prop:mm-rock-boulder-set-v1",
+        "prop:mm-fence-gate-pen-set-v1",
+        "prop:mm-crate-barrel-sack-set-v1",
+        "prop:mm-route-marker-modular-v1",
+        "trainer:mm-default-player-portrait-v1",
+        "trainer:mm-default-player-field-v1",
+        "trainer:mm-default-player-exploration-v1",
+        "monster:mm-stone-bulwark-v1",
+        "monster:mm-emberling-skirmisher-v1",
+        "monster:mm-mossback-mender-v1",
+        "monster:mm-trackjaw-scout-v1",
+        "ui:mm-action-icon-core-v1",
+        "ui:mm-active-unit-hud-v1",
+        "ui:mm-selection-targeting-set-v1",
+        "scene:mm-field-station-exterior-v1",
+        "scene:mm-settled-route-v1",
+        "fx:mm-deploy-callin-v1",
+        "fx:mm-melee-attack-v1",
+        "fx:mm-heal-mend-v1"
+      ]
+    },
+    {
+      "waveId": "wave-2-expanded-battle-pack",
+      "purpose": "Add biome variation, tactical props, six-monster battle roster, objective presentation, and complete battle states.",
+      "requiredFamilies": [
+        "terrain",
+        "prop",
+        "monster",
+        "interface",
+        "effect"
+      ]
+    },
+    {
+      "waveId": "wave-3-rpg-presentation-pack",
+      "purpose": "Add reusable campaign scenes, player/NPC presentation, exploration sprites, maps, cards, and encounter transitions.",
+      "requiredFamilies": [
+        "scene",
+        "character",
+        "interface",
+        "prop",
+        "fallback"
+      ]
+    },
+    {
+      "waveId": "wave-4-selected-family-extensions",
+      "purpose": "Produce only the additional assets needed by the first selected plot families after the common pack works.",
+      "requiredFamilies": [
+        "scene",
+        "prop",
+        "monster",
+        "character",
+        "effect"
+      ]
+    }
+  ],
+  "generationAttempts": [],
+  "rules": [
+    "No recent plot, NPC list, or deterministic fixture controls the product-wide production order.",
+    "Human trainers are not monster species.",
+    "The registry includes both prepared current assets and future required families; priority controls sequence, not omission.",
+    "Every accepted source retains provenance, review notes, derivative recipe, and screenshot evidence.",
+    "Source masters and runtime derivatives remain separate.",
+    "Existing assets are audited before duplicate production.",
+    "Scenes and props are reusable layers rather than incident-specific screenshots.",
+    "Gameplay geometry and state remain authoritative in code, never in asset pixels.",
+    "Generated sources are rejected or repaired when they fail runtime-size readability, alpha, continuity, or originality."
+  ],
+  "catalogFiles": {
+    "foundation": {
+      "path": "planning/assets/catalogs/monster-master/foundation.json",
+      "assetCount": 10
+    },
+    "terrain": {
+      "path": "planning/assets/catalogs/monster-master/terrain.json",
+      "assetCount": 41
+    },
+    "prop": {
+      "path": "planning/assets/catalogs/monster-master/prop.json",
+      "assetCount": 34
+    },
+    "characters": {
+      "path": "planning/assets/catalogs/monster-master/characters.json",
+      "assetCount": 22
+    },
+    "monster": {
+      "path": "planning/assets/catalogs/monster-master/monster.json",
+      "assetCount": 12
+    },
+    "interface": {
+      "path": "planning/assets/catalogs/monster-master/interface.json",
+      "assetCount": 43
+    },
+    "scene": {
+      "path": "planning/assets/catalogs/monster-master/scene.json",
+      "assetCount": 24
+    },
+    "effect": {
+      "path": "planning/assets/catalogs/monster-master/effect.json",
+      "assetCount": 20
+    },
+    "audio": {
+      "path": "planning/assets/catalogs/monster-master/audio.json",
+      "assetCount": 10
+    }
+  },
+  "assetCounts": {
+    "total": 216,
+    "byCatalog": {
+      "foundation": 10,
+      "terrain": 41,
+      "prop": 34,
+      "characters": 22,
+      "monster": 12,
+      "interface": 43,
+      "scene": 24,
+      "effect": 20,
+      "audio": 10
+    },
+    "byPriority": {
+      "P0_CORE": 31,
+      "P0_BATTLE": 59,
+      "P0_RPG": 59,
+      "REUSE": 3,
+      "P1_EXPANSION": 52,
+      "P2_LATER": 12
+    }
+  }
+}

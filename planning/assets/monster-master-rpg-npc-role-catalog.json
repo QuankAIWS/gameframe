@@ -1,0 +1,202 @@
+{
+  "protocolVersion": 1,
+  "catalogId": "monster-master-rpg-npc-role-catalog-v1",
+  "lastUpdated": "2026-08-05",
+  "owner": "Scribbles GameFrame",
+  "campaignFamilyId": "monster-master-rpg",
+  "purpose": "Map likely starter NPC roles and emergent incidental NPCs to a bounded reusable portrait and field-token foundation.",
+  "productionAuthority": "planning/assets/monster-master-rpg-asset-register.json",
+  "rules": [
+    "This catalog plans NPC coverage; the main asset register remains lifecycle and provenance authority.",
+    "Prepared role templates are not a closed cast list.",
+    "One prepared portrait family may support several compatible roles through expression, crop, clothing, and accessory variants.",
+    "Once an incidental NPC receives a visual assignment, that assignment remains stable across later appearances.",
+    "Promotion to recurring status does not require immediate unique art.",
+    "Only NPCs likely to enter tactical space require field tokens."
+  ],
+  "namedAnchors": [
+    {
+      "npcId": "npc.warden.pell",
+      "assetRoleId": "npc.veteran-warden-guide.portrait",
+      "portraitFamilyId": "npc-family.authority-senior",
+      "priority": "P0",
+      "uniqueSourceRequired": true,
+      "fieldTokenRequired": true,
+      "expressionStates": ["neutral", "amused", "suspicious", "concerned", "alarmed"]
+    }
+  ],
+  "portraitFamilies": [
+    {
+      "portraitFamilyId": "npc-family.service-worker",
+      "priority": "P0",
+      "status": "spec-ready",
+      "initialSourceCount": 2,
+      "laterSourceCount": 4,
+      "supportedRoleIds": [
+        "npc-role.station-quartermaster",
+        "npc-role.station-cook",
+        "npc-role.local-worker"
+      ],
+      "assetRoleIds": [
+        "npc.station-quartermaster.portrait",
+        "npc.station-cook.portrait",
+        "npc.local-worker.portrait"
+      ],
+      "expressionStates": ["neutral", "amused", "guarded", "concerned", "angry", "frightened"],
+      "accessoryVariants": ["ledger and keys", "apron or food-service gear", "work gloves or route tools"],
+      "fieldTokenDefault": false,
+      "fallback": "service-worker silhouette or text card"
+    },
+    {
+      "portraitFamilyId": "npc-family.candidate-rival",
+      "priority": "P0",
+      "status": "spec-ready",
+      "initialSourceCount": 2,
+      "laterSourceCount": 4,
+      "supportedRoleIds": ["npc-role.rival-trainee"],
+      "assetRoleIds": ["npc.rival-trainee.portrait"],
+      "expressionStates": ["neutral", "smug", "amused", "annoyed", "concerned", "frightened", "injured"],
+      "accessoryVariants": ["academy gear", "field kit", "competition badge"],
+      "fieldTokenDefault": true,
+      "fallback": "candidate silhouette or text card"
+    },
+    {
+      "portraitFamilyId": "npc-family.care-handler",
+      "priority": "P0",
+      "status": "spec-ready",
+      "initialSourceCount": 2,
+      "laterSourceCount": 4,
+      "supportedRoleIds": ["npc-role.creature-medic"],
+      "assetRoleIds": ["npc.creature-medic.portrait"],
+      "expressionStates": ["neutral", "focused", "concerned", "angry", "relieved", "frightened", "injured"],
+      "accessoryVariants": ["care satchel", "stable gear", "protective gloves"],
+      "fieldTokenDefault": true,
+      "fallback": "care-specialist silhouette or text card"
+    },
+    {
+      "portraitFamilyId": "npc-family.technical-scholar",
+      "priority": "P0",
+      "status": "spec-ready",
+      "initialSourceCount": 2,
+      "laterSourceCount": 4,
+      "supportedRoleIds": ["npc-role.cube-technician"],
+      "assetRoleIds": ["npc.cube-technician.portrait"],
+      "expressionStates": ["neutral", "absorbed", "amused", "guarded", "concerned", "alarmed"],
+      "accessoryVariants": ["cube tools", "inspection lens", "notes or research folio"],
+      "fieldTokenDefault": false,
+      "fallback": "technical-specialist silhouette or text card"
+    },
+    {
+      "portraitFamilyId": "npc-family.guard-patrol",
+      "priority": "P0",
+      "status": "spec-ready",
+      "initialSourceCount": 2,
+      "laterSourceCount": 4,
+      "supportedRoleIds": ["npc-role.road-patrol"],
+      "assetRoleIds": ["npc.road-patrol.portrait"],
+      "expressionStates": ["neutral", "professional", "suspicious", "angry", "concerned", "frightened", "injured"],
+      "accessoryVariants": ["road-patrol insignia", "town-guard insignia", "junior-warden gear"],
+      "fieldTokenDefault": true,
+      "fallback": "patrol silhouette or text card"
+    },
+    {
+      "portraitFamilyId": "npc-family.trade-travel",
+      "priority": "P0",
+      "status": "spec-ready",
+      "initialSourceCount": 2,
+      "laterSourceCount": 4,
+      "supportedRoleIds": ["npc-role.trade-traveler"],
+      "assetRoleIds": ["npc.trade-traveler.portrait"],
+      "expressionStates": ["neutral", "friendly", "guarded", "annoyed", "concerned", "frightened"],
+      "accessoryVariants": ["merchant ledger", "courier satchel", "inn or caravan clothing"],
+      "fieldTokenDefault": false,
+      "fallback": "traveler silhouette or text card"
+    },
+    {
+      "portraitFamilyId": "npc-family.civic-official",
+      "priority": "P1",
+      "status": "planned",
+      "initialSourceCount": 1,
+      "laterSourceCount": 3,
+      "supportedRoleIds": ["npc-role.licensing-official"],
+      "assetRoleIds": ["npc.licensing-official.portrait"],
+      "expressionStates": ["neutral", "formal", "amused", "guarded", "annoyed", "alarmed"],
+      "accessoryVariants": ["permit folio", "inspection badge", "office seal"],
+      "fieldTokenDefault": false,
+      "fallback": "official silhouette or text card"
+    },
+    {
+      "portraitFamilyId": "npc-family.civic-event",
+      "priority": "P1",
+      "status": "planned",
+      "initialSourceCount": 1,
+      "laterSourceCount": 3,
+      "supportedRoleIds": ["npc-role.public-organizer"],
+      "assetRoleIds": ["npc.public-organizer.portrait"],
+      "expressionStates": ["neutral", "performative", "excited", "annoyed", "concerned", "panicked"],
+      "accessoryVariants": ["festival sash", "announcer notes", "sponsor badge"],
+      "fieldTokenDefault": false,
+      "fallback": "event-organizer silhouette or text card"
+    },
+    {
+      "portraitFamilyId": "npc-family.underworld",
+      "priority": "P1",
+      "status": "planned",
+      "initialSourceCount": 2,
+      "laterSourceCount": 4,
+      "supportedRoleIds": ["npc-role.underworld-fixer"],
+      "assetRoleIds": ["npc.underworld-fixer.portrait", "npc.false-inspector.portrait"],
+      "expressionStates": ["neutral", "friendly", "smug", "guarded", "angry", "frightened", "injured"],
+      "accessoryVariants": ["forged authority gear", "travel disguise", "contraband case"],
+      "fieldTokenDefault": true,
+      "fallback": "rough-traveler silhouette or text card"
+    },
+    {
+      "portraitFamilyId": "npc-family.intelligent-monster-citizen",
+      "priority": "P1",
+      "status": "planned",
+      "initialSourceCount": 2,
+      "laterSourceCount": 4,
+      "supportedRoleIds": ["npc-role.intelligent-monster-citizen"],
+      "assetRoleIds": ["npc.intelligent-monster-citizen.portrait"],
+      "expressionStates": ["neutral", "amused", "guarded", "concerned", "angry", "frightened", "injured"],
+      "accessoryVariants": ["professional gear", "travel gear", "license or office insignia"],
+      "fieldTokenDefault": true,
+      "fallback": "species-compatible portrait crop or named silhouette"
+    }
+  ],
+  "incidentalPresentation": {
+    "assetRoleId": "ui.incidental-npc-card",
+    "priority": "P0",
+    "status": "spec-ready",
+    "requiredFields": ["stable npc name", "role label", "assigned portrait family", "short manner cue"],
+    "resolutionOrder": [
+      "exact role portrait",
+      "compatible portrait-family source with accessories",
+      "composable portrait crop",
+      "named silhouette",
+      "text-only character card"
+    ],
+    "continuityRule": "Reuse the same selected portrait-family identity and crop whenever the instantiated NPC returns."
+  },
+  "fieldTokenPolicy": {
+    "defaultPortraitOnly": true,
+    "prepareForRoles": [
+      "npc-role.veteran-guide",
+      "npc-role.rival-trainee",
+      "npc-role.creature-medic",
+      "npc-role.road-patrol",
+      "npc-role.underworld-fixer",
+      "npc-role.intelligent-monster-citizen"
+    ],
+    "promotionRule": "Create a unique field token later only when campaign continuity or a tactical encounter makes the NPC operationally important."
+  },
+  "acceptance": [
+    "The initial source set covers ordinary workers and social roles, not only suspects and combatants.",
+    "The station cook or lunch lady can be represented without new art during play.",
+    "At least two visibly distinct base identities exist for each common P0 portrait family before the family is considered complete.",
+    "Accessory and expression variants remain readable at intended card size.",
+    "Incidental NPC visual assignments remain stable across repeated appearances.",
+    "A promoted NPC can continue using a family portrait until unique art is manually approved."
+  ]
+}

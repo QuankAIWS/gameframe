@@ -1,0 +1,272 @@
+{
+  "protocolVersion": 1,
+  "workOrderId": "mm-rpg-p0-style-lock-v1",
+  "status": "ready-for-interactive-production",
+  "lastUpdated": "2026-08-05",
+  "owner": "Scribbles GameFrame",
+  "productionMode": "manual-interactive",
+  "register": "planning/assets/monster-master-rpg-asset-register.json",
+  "npcRoleCatalog": "planning/assets/monster-master-rpg-npc-role-catalog.json",
+  "renderingContract": "planning/shared/rpg-rendering-and-asset-contract.md",
+  "purpose": "Lock the reusable Monster Master RPG character, environment, prop, and interface visual language before producing the full P0 family catalog.",
+  "auditFindings": {
+    "terrainPilot": "accepted-and-reproducible; do not regenerate for this batch",
+    "tacticalUnitRenderer": {
+      "atlasFramePixels": 96,
+      "displayRangeCssPixels": [82, 104],
+      "humanMasterDisplayCssPixels": 94,
+      "anchor": { "x": 0.5, "y": 0.86 },
+      "directionPolicy": "single mirror-safe field image in the current renderer"
+    },
+    "rpgShell": "text-only event presentation; source masters may be produced now, but portrait and scene runtime integration requires a later media-presentation slice",
+    "terrainBuildScript": "terrain-specific; do not reuse it as the portrait, token, prop, or scene derivative pipeline"
+  },
+  "styleInvariants": [
+    "late-1990s or early-2000s hand-illustrated fantasy PC-game character",
+    "painted, inked, cel, scanned, or gouache-like surface treatment",
+    "clear silhouettes and restrained palettes at actual display size",
+    "practical lived-in fantasy society rather than generic heroic cosplay",
+    "room for slapstick, sincere stakes, and bounded horror without making every design a joke",
+    "original designs with no direct imitation of protected creature-battling franchises"
+  ],
+  "globalRejects": [
+    "generic glossy 3D toy rendering",
+    "uncontrolled spikes, armor clutter, or microdetail",
+    "text, logos, watermarks, labels, or baked interface",
+    "incident-specific clues or characters baked into reusable environments",
+    "opaque background where alpha or clean masking is required",
+    "strong fixed cast shadows that conflict with scene lighting",
+    "cropped feet or uncertain contact point on field tokens",
+    "one identical face reused for an entire portrait family"
+  ],
+  "sourceProfiles": {
+    "portrait": {
+      "preferredMasterPixels": [1536, 2048],
+      "minimumLongEdgePixels": 1536,
+      "framing": "waist-up or bust, three-quarter view, complete head and shoulders, generous crop safety",
+      "background": "transparent preferred; otherwise flat neutral separation background suitable for masking",
+      "lighting": "soft upper-left key with restrained fill",
+      "plannedReviewDerivatives": [
+        { "width": 512, "height": 512, "role": "dialogue-card crop" },
+        { "width": 256, "height": 384, "role": "character cutout" }
+      ]
+    },
+    "fieldToken": {
+      "preferredMasterPixels": [1536, 1536],
+      "minimumPixels": [1024, 1024],
+      "framing": "full body, three-quarter downward view, feet and contact shadow fully visible",
+      "background": "transparent required after cleanup",
+      "mirrorSafe": true,
+      "anchor": { "x": 0.5, "y": 0.86 },
+      "plannedRuntimeDerivatives": [
+        { "width": 256, "height": 256, "format": "png", "role": "clean inspection derivative" },
+        { "width": 128, "height": 128, "format": "webp", "role": "candidate atlas frame" }
+      ],
+      "runtimeSimulation": {
+        "displayCssPixels": 94,
+        "tileWidthCssPixels": 72,
+        "tileHeightCssPixels": 36,
+        "wallVisualHeightCssPixels": 29
+      }
+    },
+    "environment": {
+      "preferredMasterPixels": [2560, 1440],
+      "minimumPixels": [2048, 1152],
+      "framing": "wide establishing composition with important information inside the central 70 percent",
+      "safeCrops": ["16:9", "4:3", "9:16 center crop"],
+      "characterPolicy": "no named or incident-specific characters in reusable masters",
+      "plannedRuntimeDerivatives": [
+        { "width": 1920, "height": 1080, "format": "webp" },
+        { "width": 1280, "height": 720, "format": "webp" }
+      ]
+    },
+    "prop": {
+      "preferredMasterPixels": [1024, 1024],
+      "framing": "single isolated object or deliberately separated modular set",
+      "background": "transparent required after cleanup",
+      "plannedRuntimeDerivatives": [
+        { "width": 512, "height": 512, "format": "png" },
+        { "width": 256, "height": 256, "format": "webp" },
+        { "width": 128, "height": 128, "format": "webp" }
+      ]
+    },
+    "interface": {
+      "preferredSource": "svg for geometry, icons, masks, and frames; raster material only when tactile texture is needed",
+      "requirements": [
+        "semantic HTML remains authoritative",
+        "works without decorative raster art",
+        "readable on desktop, short desktop, mobile, and Discord Activity layouts",
+        "no debug or asset-generation language in player-facing presentation"
+      ]
+    }
+  },
+  "batches": [
+    {
+      "batchId": "p0a-character-style-lock",
+      "sequence": 1,
+      "acceptanceRule": "Do not expand every portrait family until these sources establish a coherent character language at 512-pixel card review size and 94-pixel token simulation size.",
+      "jobs": [
+        {
+          "productionJobId": "job:mm-incidental-npc-card-v1",
+          "targetAssetId": "ui:mm-incidental-npc-card-v1",
+          "semanticRole": "ui.incidental-npc-card",
+          "registerState": "reserve-and-add-before-acceptance",
+          "sourceProfile": "interface",
+          "sourceMode": "authored",
+          "deliverables": ["responsive card frame", "named silhouette slot", "text-only fallback state"],
+          "notes": "Build as semantic HTML/CSS plus SVG ornament; do not make a flattened image the only source."
+        },
+        {
+          "productionJobId": "job:mm-incidental-npc-silhouette-v1",
+          "targetAssetId": "fallback:mm-incidental-npc-silhouette-v1",
+          "semanticRole": "npc.incidental.named-silhouette",
+          "registerState": "reserve-and-add-before-acceptance",
+          "sourceProfile": "portrait",
+          "sourceMode": "authored",
+          "deliverables": ["neutral human silhouette", "neutral nonhuman silhouette", "clean alpha masters"],
+          "notes": "Fallbacks must feel intentional rather than like missing-art placeholders."
+        },
+        {
+          "productionJobId": "job:mm-warden-pell-portrait-v3",
+          "targetAssetId": "portrait:mm-warden-pell-v3",
+          "semanticRole": "npc.veteran-warden-guide.portrait",
+          "registerState": "existing-spec-ready",
+          "sourceProfile": "portrait",
+          "sourceMode": "authored-or-generated",
+          "conceptPasses": 3,
+          "deliverables": ["neutral identity master", "amused expression", "concerned expression"],
+          "notes": "Lock identity only after comparing three materially different concepts. Pell must read as competent and recurring, not as a generic wizard, soldier, or disposable joke."
+        },
+        {
+          "productionJobId": "job:mm-warden-pell-field-v1",
+          "targetAssetId": "token:mm-warden-pell-field-v1",
+          "semanticRole": "npc.veteran-warden-guide.field-token",
+          "registerState": "reserve-and-add-before-acceptance",
+          "sourceProfile": "fieldToken",
+          "sourceMode": "authored-or-generated",
+          "continuityRef": "portrait:mm-warden-pell-v3",
+          "deliverables": ["full-body alpha master", "256-pixel inspection derivative", "94-pixel tactical simulation sheet"]
+        },
+        {
+          "productionJobId": "job:mm-service-worker-quartermaster-01-v1",
+          "targetAssetId": "portrait:mm-service-worker-quartermaster-01-v1",
+          "semanticRole": "npc.station-quartermaster.portrait",
+          "portraitFamilyId": "npc-family.service-worker",
+          "registerState": "reserve-and-add-before-acceptance",
+          "sourceProfile": "portrait",
+          "sourceMode": "authored-or-generated",
+          "deliverables": ["neutral identity master", "ledger-and-keys variant", "guarded expression"],
+          "notes": "First service-worker identity. It must remain usable as an equipment clerk or practical local worker without becoming one fixed personality."
+        },
+        {
+          "productionJobId": "job:mm-service-worker-cook-02-v1",
+          "targetAssetId": "portrait:mm-service-worker-cook-02-v1",
+          "semanticRole": "npc.station-cook.portrait",
+          "portraitFamilyId": "npc-family.service-worker",
+          "registerState": "reserve-and-add-before-acceptance",
+          "sourceProfile": "portrait",
+          "sourceMode": "authored-or-generated",
+          "deliverables": ["neutral identity master", "apron or food-service variant", "amused expression"],
+          "notes": "Second visibly distinct service-worker identity. This is the prepared cook or lunch-lady coverage, not a caricature and not the same face with a different hat."
+        }
+      ]
+    },
+    {
+      "batchId": "p0b-environment-style-lock",
+      "sequence": 2,
+      "acceptanceRule": "Approve only if the three masters feel like the same region while supporting materially different plot families and neutral scene composition.",
+      "jobs": [
+        {
+          "productionJobId": "job:mm-eastgate-field-station-exterior-v3",
+          "targetAssetId": "scene:mm-eastgate-field-station-v3",
+          "semanticRole": "location.eastgate-field-station",
+          "registerState": "existing-spec-ready",
+          "sourceProfile": "environment",
+          "sourceMode": "authored-or-generated",
+          "state": "exterior-day",
+          "deliverables": ["clean reusable station exterior", "composition notes for busy and obstructed variants"]
+        },
+        {
+          "productionJobId": "job:mm-eastgate-station-common-v1",
+          "targetAssetId": "scene:mm-eastgate-station-common-v1",
+          "semanticRole": "location.field-station.common-interior",
+          "registerState": "reserve-and-add-before-acceptance",
+          "sourceProfile": "environment",
+          "sourceMode": "authored-or-generated",
+          "deliverables": ["common room and cafeteria interior", "clear foreground dialogue space", "no baked NPCs"]
+        },
+        {
+          "productionJobId": "job:mm-settled-route-v1",
+          "targetAssetId": "scene:mm-settled-route-v1",
+          "semanticRole": "location.settled-route",
+          "registerState": "existing-spec-ready",
+          "sourceProfile": "environment",
+          "sourceMode": "authored-or-generated",
+          "state": "clear-road-farm-edge",
+          "deliverables": ["neutral settled route", "composition notes for checkpoint, work-zone, and public-event overlays"]
+        }
+      ]
+    },
+    {
+      "batchId": "p0c-prop-and-presentation-style-lock",
+      "sequence": 3,
+      "acceptanceRule": "Approve only if props read at 128 pixels and UI remains usable without decorative assets.",
+      "jobs": [
+        {
+          "productionJobId": "job:mm-route-marker-modular-v1",
+          "targetAssetId": "prop:mm-route-marker-modular-v1",
+          "semanticRole": "prop.route-marker.modular",
+          "registerState": "existing-spec-ready",
+          "sourceProfile": "prop",
+          "sourceMode": "authored-or-generated",
+          "deliverables": ["clean marker", "temporary warning variant", "conflicting or moved variant"],
+          "notes": "No readable text in the raster source; symbols and labels belong in GameFrame overlays."
+        },
+        {
+          "productionJobId": "job:mm-cube-inspection-v1",
+          "targetAssetId": "prop:mm-cube-inspection-v1",
+          "semanticRole": "prop.capture-cube.inspection",
+          "registerState": "existing-spec-ready",
+          "sourceProfile": "prop",
+          "sourceMode": "authored-or-generated",
+          "deliverables": ["ordinary closed cube", "opened inspection view", "separated component study"],
+          "notes": "Original Monster Master capture technology; no direct replication of protected franchise ball or device designs."
+        },
+        {
+          "productionJobId": "job:mm-private-observation-v2",
+          "targetAssetId": "ui:mm-private-observation-v2",
+          "semanticRole": "ui.private-observation",
+          "registerState": "existing-spec-ready",
+          "sourceProfile": "interface",
+          "sourceMode": "authored",
+          "deliverables": ["private observation card", "instinct variant", "warning variant", "text-only state"]
+        }
+      ]
+    }
+  ],
+  "nextQueueAfterStyleLock": [
+    "two candidate-rival identities and field tokens",
+    "two care-handler identities and field tokens",
+    "two technical-scholar identities",
+    "two guard-patrol identities and field tokens",
+    "two trade-travel identities",
+    "supply cart, field kit, barrier, and license-case props",
+    "investigation, behavior-warning, hazard, objectives, and aftermath treatments"
+  ],
+  "acceptanceEvidence": [
+    "source master retained with prompt or authoring notes and rights provenance",
+    "clean crop, alpha, and contact point where applicable",
+    "comparison sheet at actual GameFrame review sizes",
+    "no copied franchise identity, unwanted text, watermark, or baked UI",
+    "consistent sibling palette, lighting, line treatment, and material scale",
+    "desktop, short-desktop, mobile, and Discord-safe crop review for scenes and interface",
+    "94-pixel tactical simulation and occlusion review for field tokens",
+    "explicit accepted, rejected, or repair decision recorded before expansion"
+  ],
+  "blockedUntilConsumerExists": [
+    "final portrait atlas or runtime bundle schema",
+    "campaign-event media reference payload",
+    "RPG shell portrait and scene rendering hooks",
+    "automatic fallback-to-generated replacement"
+  ]
+}
