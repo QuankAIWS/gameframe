@@ -11,9 +11,9 @@ applies_to:
 related:
   - assets/monster-master-rpg-asset-register.json
   - shared/rpg-rendering-and-asset-contract.md
-  - shared/rpg-media-theme-and-audio-pipeline.md
   - shared/rpg-event-and-plot-pool-contract.md
   - shared/rpg-monster-master-reference-campaign.md
+  - monster-master-rpg-current-creative-direction.md
   - monster-master-rpg-lore-and-story.md
 ---
 
@@ -21,36 +21,62 @@ related:
 
 ## Purpose
 
-This register is the durable planning and production ledger for the Monster Master RPG starter experience.
+This register is the durable planning and production ledger for the first Monster Master RPG scenario package.
 
-It serves two related purposes:
+It has two jobs:
 
-1. define the concrete asset coverage required by the first one-shot and its approved plot pools;
-2. track every authored, reused, composed, or generated source through review, derivative production, integration, rejection, and replacement.
+1. define the reusable visual vocabulary required by the bespoke unauthorized-juvenile-transport package;
+2. track every authored, reused, composed, generated, rejected, accepted, and integrated source through stable asset identities and append-only attempts.
 
-The machine-readable authority is [`assets/monster-master-rpg-asset-register.json`](assets/monster-master-rpg-asset-register.json). This document explains how to use it and summarizes the initial production set.
+The machine-readable authority is [`assets/monster-master-rpg-asset-register.json`](assets/monster-master-rpg-asset-register.json).
+
+## Current production boundary
+
+The current phase is manual production by the owner and assisting creative agent:
+
+- generate or author source art interactively;
+- edit, clean, crop, mask, and normalize it;
+- produce deterministic derivatives;
+- integrate assets into GameFrame;
+- review them through actual screenshots and playable scenes;
+- retain provenance and rejected attempts.
+
+Cloudflare-managed generation, campaign-time media queues, automatic provider routing, and RPG GM Runtime asset creation are future capabilities. They are not dependencies for the first scenario.
+
+## Scenario-package relationship
+
+The asset cut is derived from the committed plot-agent-style package in RPG GM Runtime.
+
+Events request **semantic roles**, not filenames or unique illustrations. The DM agent may realize the same event differently according to players and state, so the asset set should emphasize reusable locations, actors, props, effects, and UI treatments rather than one picture for every authored event.
+
+GameFrame resolves a semantic role to:
+
+1. an accepted campaign asset;
+2. a compatible Arena Battles or catalog asset;
+3. a deterministic composition;
+4. a readable fallback.
+
+Missing optional art must not force the DM to change the plot. Required tactical readability must exist before Arena Battles launches.
 
 ## Governing principles
 
-- Every durable asset receives a stable semantic `assetId` before generation or integration.
-- Asset identity is independent of filename, storage path, provider, prompt, or current derivative format.
-- Source masters and runtime derivatives are separate records.
-- Rejected generation attempts remain recorded; they are evidence and may contain useful lessons.
-- An accepted asset is never silently replaced. A replacement creates a new generation attempt and an explicit supersession relationship.
-- Prepared assets are preferred for the Monster Master reference campaign. Live generation is optional enhancement, not a requirement for the one-shot.
-- Existing Arena Battles assets must be audited for reuse before generating duplicates.
-- Plot and event pools reference semantic asset roles. GameFrame resolves those roles to accepted assets or deterministic fallbacks.
+- Every durable asset receives a stable semantic `assetId` before production.
+- Asset identity is independent of filename, provider, prompt, or derivative format.
+- Source masters and runtime derivatives remain separate.
+- Rejected attempts remain recorded.
+- Accepted assets are replaced only through explicit supersession.
+- Existing Arena Battles assets are audited before duplicates are produced.
+- One accepted asset may satisfy several compatible roles when the mapping is explicit.
+- Assets support DM realization; they do not impose a scene sequence.
 
 ## Status model
-
-The register uses the following lifecycle:
 
 ```text
 planned
   -> reuse-audit
   -> spec-ready
   -> queued
-  -> generating
+  -> generating or authoring
   -> source-ready
   -> review
   -> accepted
@@ -63,216 +89,191 @@ terminal or replacement states:
   superseded
 ```
 
-### Status meaning
-
-- **planned** — identity and purpose are known; production specification is incomplete.
-- **reuse-audit** — an existing Arena Battles or catalog asset may satisfy the role and must be inspected first.
-- **spec-ready** — semantic and technical production requirements are complete.
-- **queued** — approved for an authoring, composition, or generation pass.
-- **generating** — a source attempt is in progress.
-- **source-ready** — a source master exists but has not passed review.
-- **review** — visual, technical, rights, and continuity review is active.
-- **accepted** — one source attempt is approved as the current master.
-- **derivative-ready** — normalized runtime derivatives and manifest metadata exist.
-- **integrated** — loaded by the relevant GameFrame fixture or product path and validated in context.
-- **rejected** — source attempt failed quality, continuity, technical, or rights review.
-- **failed** — production attempt did not produce a reviewable source.
-- **superseded** — a previously accepted identity or attempt has been deliberately replaced.
+An asset is not `integrated` merely because a file exists. Integration requires in-context evidence at intended display size.
 
 ## Priority model
 
-### P0 — Intro-critical
+### Reuse
 
-Required to present the opening, first decision, evidence, and basic player-private hooks. P0 must have a readable accepted asset or deterministic fallback before the intro is considered complete.
+Existing Arena Battles terrain, interface, effects, and creatures that can satisfy a semantic role after inspection or cleanup.
 
-### P1 — One-shot-critical
+### P0 — Opening and investigation vocabulary
 
-Required for the complete fixed one-shot, including investigation, confrontation, tactical handoff where used, and return assessment.
+Required to launch the scenario, reach early agency, support the damaged-cart incident, and present basic public and player-private information.
 
-### P2 — Pool coverage
+### P1 — Culvert and complete one-shot vocabulary
 
-Supports alternate accepted plot families and event-pool variation. P2 does not block the first fixed one-shot.
+Required for the juvenile encounter, contractor involvement, possible tactical handoff, and consequence-focused aftermath.
 
-### P3 — Polish and expansion
+### Deferred
 
-Improves presentation, continuity, or future chapters but is not required for the first one-shot acceptance gate.
+Useful for alternate plots, recurring campaigns, audio, or presentation polish but not required for the first complete package.
+
+## Reuse-first audit
+
+Audit these current Arena Battles families before new production:
+
+- grass ground material;
+- raised terrain cap;
+- cliff-face material;
+- Monster Master shell and card treatment;
+- turn-order presentation;
+- generic selection, impact, status, and defeat effects;
+- readable starter support and tracking creatures;
+- tactical objective or hazard markers that can be repaired rather than replaced.
+
+Each audit result should be recorded as accepted unchanged, cleanup required, continuity reference only, fallback only, or rejected for RPG use.
+
+The current Pixi geometry remains authoritative: 72×36 CSS-pixel tile projection and 29 CSS-pixel wall visual height.
+
+## P0 manual production
+
+### Location and composition
+
+- `location.eastgate-field-station`
+  - wide reusable environment master;
+  - versions capable of clean station, abandoned-cart incident, and route-facing composition;
+  - should not bake a single fixed sequence of character placements.
+
+### Essential actors
+
+- `npc.veteran-warden-guide.portrait`
+  - Warden Pell;
+  - neutral, suspicious, and alarmed crops or expressions.
+- `npc.nervous-courier.portrait`
+  - Mara Vell;
+  - guarded, strained, and panicked crops or expressions.
+
+### Modular incident props
+
+- `prop.supply-cart.damaged`
+  - clean and damaged-latch states;
+  - removable cargo presentation.
+- `prop.supply-crates`
+  - sealed, open, shifted, scuffed, and empty variants.
+- `prop.route-marker.tampered`
+  - clean and recently moved states;
+  - directional variants.
+- `prop.delivery-manifest`
+  - environmental prop and readable inspection view.
+
+### Investigation and private presentation
+
+- `ui.private-observation`
+  - player-private expertise, instinct, temptation, or creature-reaction presentation;
+  - should not imply a mandatory clue card flow.
+- `fx.investigation-set`
+  - tracks, residue, scuffs, scent, drag marks, and attention indicators.
+
+## P1 manual production
+
+### Culvert environment
+
+- `location.old-culvert`
+  - reusable environment master;
+  - exploration and tactical compositions;
+  - readable route blockage, retreat lane, cover, and restraint debris.
+
+### Juvenile monster
+
+- `creature.dangerous-juvenile.field`
+  - Ruckmaw juvenile source master;
+  - tactical derivative;
+  - silhouette or unrevealed state;
+  - portrait crop;
+  - injured, guarded, panicked, and stabilized readability where practical.
+
+The design should communicate a frightening, physically dangerous juvenile that is defensive rather than malicious. It must not look like a harmless mascot or a generic slasher creature.
+
+### Contractor
+
+- `npc.contractor.portrait`
+  - Jory Vale;
+  - composed, defensive, desperate, and bargaining crops or expressions.
+- `npc.contractor.field`
+  - readable token or small field derivative.
+
+### Evidence and intervention props
+
+- `prop.hidden-restraint-fitting`
+  - adapted cube or restraint evidence;
+  - readable enough for close inspection.
+- `prop.restraint-rig`
+  - bad-recapture equipment and tactical obstacle.
+- `prop.bait-kit.unofficial`
+  - small reusable legal-gray bait kit.
+- `prop.culvert-restraint-debris`
+  - evidence and environmental dressing.
+
+### Tactical and aftermath UI
+
+- `ui.tactical-objectives`
+  - protect, stabilize, disable, secure, and escape-lane objective markers.
+- `ui.assessment-summary`
+  - consequences, injuries, evidence, relationships, certification, and legal exposure;
+  - not a morality score or corporate performance review.
+
+## Deferred
+
+Defer until the first complete package is playable and visually coherent:
+
+- unique art for every event realization;
+- station-worker portrait unless the role becomes recurring;
+- recurring rival art;
+- dedicated domestic-hauler art when an existing creature reads clearly;
+- separate academy launch, care destination, and return-assessment environments;
+- every hazard-class badge and broad icon family;
+- bespoke audio, ambience, narration, and voice identities;
+- alternate plot-family assets;
+- Hyperbolic Time Cube assets;
+- campaign-time generation infrastructure.
 
 ## Production record split
 
 ### Asset identity
 
-The asset entry records:
+Each entry records:
 
 - stable `assetId`;
 - semantic role and family;
-- priority and current lifecycle status;
+- priority and lifecycle status;
 - continuity identity;
-- plot, event, scene, and fixture dependencies;
-- required technical profile;
+- scenario, event, and tactical dependencies;
+- technical profile;
 - fallback behavior;
-- accepted generation attempt, when one exists.
+- accepted attempt, when one exists.
 
-### Generation attempt
+### Production attempt
 
 Every source attempt records:
 
 - stable `attemptId` and target `assetId`;
 - source mode: reused, authored, composed, generated, imported, or user-supplied;
-- provider, model, workflow, prompt compiler, and recipe versions when applicable;
-- prompt or production-spec reference;
-- seed or reproducibility evidence when available;
+- provider, model, workflow, prompt, or recipe versions where applicable;
 - source-master location and content hash;
 - creation time;
-- review result, notes, and reviewer;
+- review result and notes;
 - rights and provenance notes;
 - rejection, replacement, or supersession relationship.
 
-The `generationAttempts` list begins empty. It must be appended to when production starts rather than overwriting the asset entry with informal notes.
-
-## Initial one-shot visual coverage
-
-### Campaign identity and UI
-
-- Monster Master RPG identity mark or temporary wordmark.
-- Incident scene card.
-- Player-private clue card.
-- Field assessment and return-summary card.
-- Hazard Class 1 through 4 badges.
-- Capture-cube, clue, route, care, license, and warning icons.
-
-### Locations and scene backgrounds
-
-- academy east gate or equivalent campaign launch view;
-- Eastgate Field Station exterior;
-- settled academy route;
-- damaged supply-cart incident view;
-- old culvert and roadside approach;
-- creature-care delivery destination;
-- academy or field-office return assessment.
-
-These backgrounds may initially be composed scene cards rather than fully explorable maps.
-
-### Characters
-
-- veteran warden guide portrait and tactical/field presentation;
-- nervous courier portrait;
-- station worker portrait;
-- contractor or responsible-party portrait;
-- academy assessor portrait;
-- optional rival trainee portrait.
-
-The final names and designs remain individually authored continuity identities. Generic role art may serve as a fallback until those identities are approved.
-
-### Creatures
-
-- player starter-creature role coverage through existing Arena Battles candidates or approved new assets;
-- domestic hauling or working Class 1 monster;
-- injured or distressed Class 1 field monster;
-- dangerous juvenile monster used by the fixed incident package;
-- warden or patrol companion role;
-- silhouettes for unknown or unrevealed creatures.
-
-Creature combat power and hazard class remain separate metadata. The dangerous juvenile's final class and species should be chosen by the private plot package and creature design work, not inferred from the placeholder asset name.
-
-### Tactical terrain and props
-
-- grassland ground material;
-- settled road or worn dirt material;
-- raised earth or rock top material;
-- matching cliff-face material;
-- culvert, ditch, bridge, or drainage structure;
-- damaged supply cart;
-- supply crates;
-- route markers and warning posts;
-- fences, rocks, foliage, and roadside dressing;
-- objective and hazard markers.
-
-The current isometric geometry profile remains authoritative: 72×36 CSS-pixel tile projection and 29 CSS-pixel wall visual height. Source materials must not bake incompatible isometric polygons.
-
-### Effects
-
-- tracking or scent trail;
-- clue discovery pulse;
-- hazard warning;
-- capture attempt and containment response;
-- care or healing action;
-- impact, damage, status, defeat, and encounter-return effects where existing Arena Battles effects are inadequate.
-
-### Audio and narration placeholders
-
-- academy ambience;
-- settled route ambience;
-- field-station tension bed;
-- tactical escalation stinger;
-- return-assessment cue;
-- narrator voice identity label;
-- veteran warden voice identity label.
-
-Audio entries may remain `planned` with silent fallbacks until the text-first one-shot is proven.
-
-## Reuse-first audit
-
-Before generating a new source, inspect the current Monster Master: Arena Battles repository assets for:
-
-- terrain materials and cliff-face sources;
-- creature sprites and portraits;
-- effects and status icons;
-- card frames and interface ornamentation;
-- victory, defeat, and encounter-transition presentation;
-- current game identity marks;
-- tactical props and objective markers.
-
-An existing asset may be:
-
-- accepted unchanged;
-- accepted after derivative cleanup;
-- used as a continuity reference for new source generation;
-- retained only as a fallback;
-- rejected for RPG use while remaining valid for Arena Battles.
-
-The audit result must be recorded in the register rather than implied by filename reuse.
-
-## Asset-role mapping
-
-Event and plot definitions should use semantic roles such as:
-
-```text
-location.field-station.exterior
-location.old-culvert
-npc.veteran-warden-guide.portrait
-npc.nervous-courier.portrait
-creature.domestic-hauler.field
-creature.dangerous-juvenile.field
-prop.supply-cart.damaged
-prop.route-marker.tampered
-terrain.settled-road
-ui.private-clue-card
-fx.tracking-trail
-```
-
-The register maps those roles to stable GameFrame asset IDs. One accepted asset may satisfy several compatible roles, but the mapping must be explicit.
+The attempts list is append-only.
 
 ## Acceptance evidence
 
-An asset does not reach `integrated` merely because a file exists.
+Depending on family, evidence may include:
 
-Required evidence depends on family, but may include:
+- retained source master;
+- provenance and rights notes;
+- approved crop, alpha, dimensions, anchor, pivot, and scale;
+- content hash and derivative paths;
+- no unwanted text, watermark, copied franchise design, or opaque background;
+- screenshot at intended display size;
+- scene-composition and mobile checks;
+- tactical geometry, occlusion, and readability checks;
+- fallback validation;
+- manifest validation.
 
-- source master retained and inspectable;
-- provenance and rights notes complete;
-- approved crop, alpha, dimensions, anchor, pivot, and scale profile;
-- content hash and derivative paths recorded;
-- no text, logo, watermark, or copied franchise design;
-- in-context screenshot at intended display size;
-- dark and light readability where applicable;
-- tactical geometry alignment and occlusion checks;
-- fallback verified;
-- asset-manifest validation;
-- mobile and reduced-motion behavior where relevant.
-
-## File and naming guidance
-
-The register does not force final storage paths, but the intended structure is:
+## Intended paths
 
 ```text
 source masters
@@ -284,46 +285,25 @@ runtime derivatives
 production specifications
   planning/assets/specs/monster-master-rpg/
 
-provenance and generation attempts
+provenance and attempts
   planning/assets/monster-master-rpg-asset-register.json
 ```
 
-Actual implementation may refine these paths. Stable `assetId` values must remain independent of those changes.
-
-## Update procedure
-
-When beginning an asset:
-
-1. confirm the asset entry and semantic role already exist;
-2. move it to `spec-ready` after the production specification is complete;
-3. append a generation attempt with a new `attemptId`;
-4. move the asset through queued, generating, source-ready, and review states;
-5. record rejection or acceptance without deleting the attempt;
-6. set `currentAcceptedAttemptId` only after review;
-7. record derivatives and manifest integration;
-8. mark `integrated` only after in-context evidence passes.
-
-When replacing an accepted asset:
-
-1. create a new attempt;
-2. preserve the previous accepted attempt;
-3. identify the supersession reason;
-4. validate continuity and derivative migration;
-5. change `currentAcceptedAttemptId` explicitly.
+Stable asset IDs remain independent of storage changes.
 
 ## First production order
 
-Recommended order:
-
-1. reuse audit of current terrain, creatures, effects, and UI;
-2. P0 scene cards and portraits needed for the intro;
-3. P1 supply-cart, route-marker, culvert, and dangerous-juvenile coverage;
-4. tactical terrain and field entities required by the fixed encounter;
-5. clue, hazard, care, and tracking effects;
-6. return-assessment presentation;
-7. P2 alternate plot-family coverage;
-8. audio and polish after text-first play is reliable.
+1. audit terrain, shell, effects, objective markers, and starter creatures;
+2. produce Eastgate Field Station as the first environment master;
+3. produce Pell and Mara portraits;
+4. produce the cart, crates, markers, manifest, and investigation indicators;
+5. integrate and review the opening in context;
+6. produce the old culvert and Ruckmaw juvenile;
+7. produce Jory and the restraint, bait, and tactical props;
+8. integrate a noncombat culvert realization and an objective-driven tactical realization;
+9. produce the assessment summary and review complete-session visual continuity;
+10. reconsider deferred assets only after the package works.
 
 ## Governing rule
 
-> Give every required presentation role a stable identity and fallback before production; retain every source attempt and provenance record; and promote only reviewed derivatives into the game.
+> Build a reusable visual vocabulary from the committed scenario package, preserve every production attempt, and let GameFrame compose accepted assets around the DM's player-driven realization rather than illustrating a fixed scene script.
