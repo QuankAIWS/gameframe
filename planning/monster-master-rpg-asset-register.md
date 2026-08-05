@@ -10,6 +10,8 @@ applies_to:
   - GameFrame RPG asset pipeline
 related:
   - assets/monster-master-rpg-asset-register.json
+  - monster-master-rpg-npc-pool.md
+  - assets/monster-master-rpg-npc-role-catalog.json
   - shared/rpg-rendering-and-asset-contract.md
   - shared/rpg-event-and-plot-pool-contract.md
   - shared/rpg-monster-master-reference-campaign.md
@@ -29,6 +31,8 @@ It has two jobs:
 2. track every authored, reused, composed, generated, rejected, accepted, and integrated source through stable asset identities and append-only attempts.
 
 The machine-readable authority is [`assets/monster-master-rpg-asset-register.json`](assets/monster-master-rpg-asset-register.json).
+
+The NPC role and portrait planning supplement is [`monster-master-rpg-npc-pool.md`](monster-master-rpg-npc-pool.md), with machine-readable mappings in [`assets/monster-master-rpg-npc-role-catalog.json`](assets/monster-master-rpg-npc-role-catalog.json). Those files define role coverage; this register remains lifecycle and provenance authority when NPC assets enter production.
 
 ## No single-plot ownership
 
@@ -64,6 +68,8 @@ GameFrame resolves a semantic role to:
 
 Missing optional art must not force the DM to change the selected plot. Required tactical readability must exist before Arena Battles launches.
 
+For NPCs, the fallback chain is exact role portrait, compatible portrait family with accessories, composable incidental portrait, named silhouette, then text-only character card. The selected visual identity remains stable when an NPC returns.
+
 ## Governing principles
 
 - Every durable asset receives a stable semantic `assetId` before production.
@@ -75,6 +81,8 @@ Missing optional art must not force the DM to change the selected plot. Required
 - One accepted asset may satisfy several compatible roles when the mapping is explicit.
 - Assets support DM realization; they do not impose a scene sequence.
 - No deterministic fixture may dictate the entire asset roadmap.
+- An incidental NPC may become recurring without immediate unique art.
+- Ordinary workers and social roles require planned coverage, not only suspects and combatants.
 
 ## Status model
 
@@ -109,18 +117,19 @@ Existing Arena Battles terrain, interface, effects, and creatures that can satis
 Required across several plot families:
 
 - modular campaign locations;
-- recurring guide and local-role presentation;
+- recurring guide and reusable NPC portrait-family presentation;
+- incidental-NPC card and silhouette fallback;
 - common route, cube, field, and cargo props;
 - private observation, investigation, warning, objectives, and aftermath UI;
 - domestic creature and conventional hazard readability.
 
-### P1 — First family extensions
+### P1 — First family and NPC extensions
 
-Additional assets for the first two or three plot families chosen for playable coverage. These should be selected after the shared foundation is reviewed in context.
+Additional assets for the first two or three plot families chosen for playable coverage, plus civic, event, underworld, and intelligent-monster NPC portrait families. These should be selected after the shared foundation is reviewed in context.
 
 ### Deferred
 
-Unique art for every family, event, NPC, creature state, audio layer, or future generation system that is not required for the initial playable catalog.
+Unique art for every family, event, incidental NPC, creature state, audio layer, or future generation system that is not required for the initial playable catalog.
 
 ## Reuse-first audit
 
@@ -153,15 +162,36 @@ The current Pixi geometry remains authoritative: 72×36 CSS-pixel tile projectio
 
 ### Recurring and reusable people
 
+The detailed role-to-portrait mapping is controlled by the NPC pool documents.
+
+P0 begins with:
+
 - `npc.veteran-warden-guide.portrait`
-  - Warden Pell or the accepted guide continuity identity;
-  - neutral, amused, suspicious, concerned, and alarmed presentation.
-- `npc.local-worker.portrait`
-  - reusable handler, courier, farmhand, road worker, or witness fallback;
-  - not a named culprit identity.
-- `npc.rival-trainee.portrait`
-  - reusable rival or competing candidate presentation;
-  - useful beyond the sabotage family.
+  - unique Warden Pell identity;
+  - portrait and field token.
+- `npc-family.service-worker`
+  - quartermaster, station cook or lunch lady, cafeteria worker, farmhand, road worker, stable hand, and ordinary witness;
+  - initial target of two visibly distinct source identities.
+- `npc-family.candidate-rival`
+  - rival trainee, candidate, peer, or apprentice;
+  - initial target of two identities and field tokens.
+- `npc-family.care-handler`
+  - creature medic, handler, stable specialist, or field-care worker;
+  - initial target of two identities and field tokens.
+- `npc-family.technical-scholar`
+  - cube technician, researcher, repair specialist, or inspection expert;
+  - initial target of two identities.
+- `npc-family.guard-patrol`
+  - road patrol, town guard, junior warden, or checkpoint officer;
+  - initial target of two identities and field tokens.
+- `npc-family.trade-travel`
+  - merchant, courier, innkeeper, caravan worker, or traveler;
+  - initial target of two identities.
+- `ui.incidental-npc-card`
+  - stable name, role, assigned portrait family or silhouette, and manner cue;
+  - text-only fallback permitted.
+
+An NPC promoted through play keeps the assigned portrait-family identity until unique manual art is approved.
 
 ### Common props
 
@@ -207,7 +237,15 @@ The current Pixi geometry remains authoritative: 72×36 CSS-pixel tile projectio
 
 ## P1 family extensions
 
-P1 is deliberately divided by plot family. Production should select the first two or three families rather than automatically building all of them.
+P1 is deliberately divided by plot family and additional NPC coverage. Production should select the first two or three plot families rather than automatically building all of them.
+
+### NPC portrait extensions
+
+- `npc-family.civic-official`;
+- `npc-family.civic-event`;
+- `npc-family.underworld`;
+- `npc-family.intelligent-monster-citizen`;
+- second and later identities for common P0 families.
 
 ### Displaced domestic migration
 
@@ -249,7 +287,7 @@ Potential extensions:
 Potential extensions:
 
 - `prop.roadblock.modular`;
-- `npc.false-inspector.portrait`;
+- `npc.false-inspector.portrait` through the underworld family;
 - `fx.forgery-indicator`;
 - confiscation, rescue, and extraction compositions.
 
@@ -258,6 +296,7 @@ Potential extensions:
 Defer until the shared foundation is playable and at least two families are visually proven:
 
 - unique art for every event realization;
+- unique art for every incidental NPC;
 - a unique named NPC for every family role;
 - a unique creature for every anomaly;
 - full interiors for every cube problem;
@@ -312,7 +351,8 @@ Depending on family, evidence may include:
 - tactical geometry, occlusion, and readability checks;
 - fallback validation;
 - manifest validation;
-- proof that the asset supports more than one composition or family where claimed.
+- proof that the asset supports more than one composition or family where claimed;
+- proof that recurring incidental NPCs retain stable visual assignments.
 
 ## Intended paths
 
@@ -336,15 +376,22 @@ Stable asset IDs remain independent of storage changes.
 
 1. audit terrain, shell, effects, objective markers, and starter creatures;
 2. produce the field-station and settled-route environment masters;
-3. produce the veteran guide and reusable local-worker portraits;
-4. produce modular route markers, cart, cube-inspection, field-kit, barrier, and license-case props;
-5. produce private observation, investigation, behavior-warning, hazard, objective, and aftermath treatments;
-6. integrate and review the shared foundation in several neutral compositions;
-7. select the first two or three plot families for playable coverage;
-8. produce only those family extensions;
-9. validate that the deterministic CI fixture works without becoming the default campaign presentation;
-10. reconsider deferred assets only after multiple families are playable.
+3. produce the incidental-NPC card and named-silhouette fallback;
+4. produce Pell’s unique portrait and field token;
+5. produce two service-worker identities, including quartermaster and cook/lunch-lady variants;
+6. produce two candidate/rival identities and field tokens;
+7. produce two care-handler identities and field tokens;
+8. produce two technical-specialist identities;
+9. produce two guard/patrol identities and field tokens;
+10. produce two trade/travel identities;
+11. produce modular route markers, cart, cube-inspection, field-kit, barrier, and license-case props;
+12. produce private observation, investigation, behavior-warning, hazard, objective, and aftermath treatments;
+13. integrate and review planned and improvised NPC scenes in several neutral compositions;
+14. select the first two or three plot families for playable coverage;
+15. produce only those family extensions and necessary P1 NPC families;
+16. validate that the deterministic CI fixture works without becoming the default campaign presentation;
+17. reconsider deferred assets only after multiple families and emergent NPC continuity are playable.
 
 ## Governing rule
 
-> Build a reusable starter vocabulary first, add selected family extensions second, preserve every production attempt, and never let one plot fixture become the whole Monster Master asset pack.
+> Build a reusable starter and NPC vocabulary first, add selected family extensions second, preserve every production attempt, and never let one plot fixture or one closed cast become the whole Monster Master asset pack.
