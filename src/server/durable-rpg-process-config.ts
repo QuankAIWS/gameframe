@@ -2,8 +2,17 @@ import { resolve } from "node:path";
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 8790;
-const MINIMUM_SERVICE_TOKEN_LENGTH = 32;
+const MINIMUM_SECRET_BYTES = 32;
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
+
+export type DurableRpgAuthenticationConfig =
+  | { mode: "development-header" }
+  | {
+      mode: "hmac-proxy";
+      proxyHmacSecret: string;
+      maxClockSkewMs: number;
+      maxReplayEntries: number;
+    };
 
 export type DurableRpgProcessConfig = {
   filePath: string;
@@ -13,28 +22,15 @@ export type DurableRpgProcessConfig = {
   gmServiceToken: string;
   pollIntervalMs: number;
   deliveryTimeoutMs: number;
-  developmentAuthEnabled: true;
+  authentication: DurableRpgAuthenticationConfig;
 };
 
-/**
- * Current VM entrypoint is intentionally loopback-only and development-auth
- * only. It must not be placed behind Cloudflare Tunnel until a production
- * RequestAuthenticator replaces trusted development headers.
- */
 export function parseDurableRpgProcessConfig(
   environment: NodeJS.ProcessEnv,
 ): DurableRpgProcessConfig {
-  if (environment.GAMEFRAME_ALLOW_DEVELOPMENT_AUTH !== "1") {
-    throw new Error(
-      "GAMEFRAME_ALLOW_DEVELOPMENT_AUTH=1 is required until a production identity provider is configured.",
-    );
-  }
-
   const host = requiredOrDefault(environment.GAMEFRAME_RPG_HOST, DEFAULT_HOST);
   if (!LOOPBACK_HOSTS.has(host)) {
-    throw new Error(
-      "GAMEFRAME_RPG_HOST must remain loopback-only while development header authentication is enabled.",
-    );
+    throw new Error("GAMEFRAME_RPG_HOST must remain loopback-only.");
   }
 
   const filePath = required(environment.GAMEFRAME_RPG_DATABASE_PATH, "GAMEFRAME_RPG_DATABASE_PATH");
@@ -45,10 +41,8 @@ export function parseDurableRpgProcessConfig(
     environment.RPG_GM_SERVICE_TOKEN,
     "RPG_GM_SERVICE_TOKEN",
   );
-  if (gmServiceToken.length < MINIMUM_SERVICE_TOKEN_LENGTH) {
-    throw new Error(
-      `RPG_GM_SERVICE_TOKEN must contain at least ${MINIMUM_SERVICE_TOKEN_LENGTH} characters.`,
-    );
+  if (Buffer.byteLength(gmServiceToken, "utf8") < MINIMUM_SECRET_BYTES) {
+    throw new Error(`RPG_GM_SERVICE_TOKEN must contain at least ${MINIMUM_SECRET_BYTES} bytes.`);
   }
 
   return {
@@ -71,7 +65,49 @@ export function parseDurableRpgProcessConfig(
       100,
       60_000,
     ),
-    developmentAuthEnabled: true,
+    authentication: authenticationConfig(environment),
+  };
+}
+
+function authenticationConfig(environment: NodeJS.ProcessEnv): DurableRpgAuthenticationConfig {
+  const mode = required(environment.GAMEFRAME_RPG_AUTH_MODE, "GAMEFRAME_RPG_AUTH_MODE");
+  if (mode === "development-header") {
+    if (environment.GAMEFRAME_ALLOW_DEVELOPMENT_AUTH !== "1") {
+      throw new Error(
+        "GAMEFRAME_ALLOW_DEVELOPMENT_AUTH=1 is required for development-header mode.",
+      );
+    }
+    return { mode };
+  }
+  if (mode !== "hmac-proxy") {
+    throw new Error("GAMEFRAME_RPG_AUTH_MODE must be development-header or hmac-proxy.");
+  }
+  const proxyHmacSecret = required(
+    environment.GAMEFRAME_RPG_PROXY_HMAC_SECRET,
+    "GAMEFRAME_RPG_PROXY_HMAC_SECRET",
+  );
+  if (Buffer.byteLength(proxyHmacSecret, "utf8") < MINIMUM_SECRET_BYTES) {
+    throw new Error(
+      `GAMEFRAME_RPG_PROXY_HMAC_SECRET must contain at least ${MINIMUM_SECRET_BYTES} bytes.`,
+    );
+  }
+  return {
+    mode,
+    proxyHmacSecret,
+    maxClockSkewMs: integer(
+      environment.GAMEFRAME_RPG_PROXY_MAX_CLOCK_SKEW_MS,
+      "GAMEFRAME_RPG_PROXY_MAX_CLOCK_SKEW_MS",
+      60_000,
+      1_000,
+      300_000,
+    ),
+    maxReplayEntries: integer(
+      environment.GAMEFRAME_RPG_PROXY_MAX_REPLAY_ENTRIES,
+      "GAMEFRAME_RPG_PROXY_MAX_REPLAY_ENTRIES",
+      10_000,
+      100,
+      1_000_000,
+    ),
   };
 }
 

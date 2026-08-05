@@ -1,12 +1,12 @@
 ---
 title: RPG Signed Edge Authentication
-status: implementation-ready
+status: implemented
 document_type: security_contract
 owner: Scribbles GameFrame
 last_updated: 2026-08-04
 applies_to:
   - scribbles-gameframe
-  - authenticated-edge-gateway
+  - cloudflare-worker
   - rpg-gm-runtime
 related:
   - rpg-single-vm-deployment.md
@@ -17,32 +17,62 @@ related:
 
 ## Purpose
 
-Authenticate internet-facing player requests at an edge gateway while keeping the durable GameFrame RPG service bound to loopback on the VM.
+Authenticate internet-facing player requests in the existing Scribbles GameFrame Cloudflare Worker while keeping the durable GameFrame RPG and RPG GM Runtime services bound to loopback on the VM.
 
-Cloudflare Tunnel is transport only. It does not make trusted identity headers safe. The edge gateway must authenticate the player, remove all client-supplied GameFrame identity headers, hash the exact forwarded request body, and sign the resulting claim.
+Cloudflare Tunnel is transport only. The Worker authenticates the existing Discord OAuth session, discards client identity claims, signs the exact request bytes, and forwards only the public RPG route subset to a dedicated Tunnel origin.
 
-RPG GM Runtime does not use player signatures. Its loopback service calls use a bearer token and explicit service identity.
+## Implemented request path
 
-## Modes
+```text
+browser or Discord Activity
+→ GameFrame Cloudflare Worker
+→ Discord OAuth signed session
+→ exact-body gameframe-hmac-v1 claim
+→ dedicated HTTPS Tunnel origin
+→ GameFrame RPG at 127.0.0.1:8790
+```
+
+RPG GM Runtime remains private at `127.0.0.1:8791`. It never receives public Worker or Tunnel traffic.
+
+The Worker exposes only:
+
+- `POST /api/rpg/campaigns/:campaignId/attach`;
+- `POST /api/rpg/campaigns/:campaignId/commands`.
+
+Runtime event publication, encounter launch, encounter lookup, and terminal-outcome routes are not public edge routes.
+
+## GameFrame modes
 
 GameFrame selects exactly one mode through `GAMEFRAME_RPG_AUTH_MODE`.
 
 ### `development-header`
 
 - requires `GAMEFRAME_ALLOW_DEVELOPMENT_AUTH=1`;
-- accepts the existing development identity headers;
+- accepts development identity headers;
 - remains loopback-only;
-- must not be exposed through Cloudflare Tunnel.
+- must never be a Tunnel origin.
 
 ### `hmac-proxy`
 
 - requires `GAMEFRAME_RPG_PROXY_HMAC_SECRET` of at least 32 bytes;
-- verifies signed player claims;
-- verifies the exact body digest before parsing JSON;
+- verifies signed player claims and the exact body digest before parsing JSON;
 - rejects stale timestamps, replayed nonces, mixed service/player identity, changed metadata, changed route, changed query, changed method, and changed body;
-- accepts internal service calls only with the loopback bearer token and `x-gameframe-service-id`.
+- accepts internal service calls only with the shared bearer token and `x-gameframe-service-id`.
 
-The durable service remains loopback-only in this mode. Cloudflared or another local edge component connects to loopback.
+Production uses `hmac-proxy`.
+
+## Worker session authority
+
+The Worker reuses the accepted Discord OAuth and signed-session implementation:
+
+- website OAuth authorization-code flow;
+- Discord Activity authorization-code exchange;
+- signed `gameframe_session` cookie;
+- staging allowlist or explicit `*` access policy;
+- stable player identity `discord:<discord-user-id>`;
+- signed display name and optional avatar URL.
+
+The Worker never sends the Discord access token, session token, session cookie, Worker secret, or browser `Authorization` header to the VM origin.
 
 ## Signed player headers
 
@@ -58,11 +88,11 @@ x-gameframe-display-name: <optional signed display name>
 x-gameframe-avatar-url: <optional signed HTTPS avatar URL>
 ```
 
-Player IDs use the existing GameFrame identifier grammar. Display name and avatar URL are optional but are included in the signature when present.
+The Worker generates these headers after removing all incoming `Authorization`, cookie, `x-gameframe-service-id`, and `x-gameframe-*` signature or identity claims.
 
 ## Canonical payload
 
-The signature is HMAC-SHA256 over the UTF-8 JSON encoding of this array:
+The signature is HMAC-SHA256 over the UTF-8 JSON encoding of:
 
 ```json
 [
@@ -78,21 +108,44 @@ The signature is HMAC-SHA256 over the UTF-8 JSON encoding of this array:
 ]
 ```
 
-The signature and body digest use unpadded base64url.
+The signature and digest use unpadded base64url. The Worker signs the exact bytes it forwards; it does not parse and reserialize the JSON body.
 
-The edge must sign the exact bytes it forwards. Re-serializing JSON after signing invalidates the request.
+Node contract tests compare the Worker signer byte-for-byte with the VM reference signer and then authenticate the forwarded request through the VM verifier.
+
+## Browser request requirements
+
+Public RPG mutations must:
+
+- use `POST`;
+- use `application/json`;
+- carry an exact `Origin` matching the Worker request origin;
+- remain within the bounded request-body limit;
+- carry a valid Discord session.
+
+Requests from development or service principals are rejected by the public Worker route. Cross-origin requests fail before origin fetch.
+
+## Origin and response handling
+
+Worker secrets:
+
+- `GAMEFRAME_RPG_ORIGIN_URL`: distinct HTTPS root for the Tunnel origin;
+- `GAMEFRAME_RPG_PROXY_HMAC_SECRET`: same proxy HMAC secret configured on the VM GameFrame service.
+
+The origin URL must not equal the public Worker origin. This prevents recursive Worker fetches.
+
+The Worker follows no origin redirects. It bounds response bytes and forwards only the status, sanitized JSON content type, bounded numeric `Retry-After`, and `Cache-Control: no-store`. Origin cookies and private headers are discarded.
 
 ## Replay window
 
 GameFrame accepts a bounded clock window configured by `GAMEFRAME_RPG_PROXY_MAX_CLOCK_SKEW_MS`, defaulting to 60 seconds.
 
-A verified `(player ID, nonce)` pair is accepted once during that window. Reuse is rejected. The replay cache is intentionally bounded; capacity exhaustion fails authentication closed.
+A verified `(player ID, nonce)` pair is accepted once during that window. Reuse is rejected. Replay-cache capacity exhaustion fails authentication closed.
 
-All mutation endpoints also retain their existing durable idempotency and revision checks. Authentication replay protection does not replace command, runtime-commit, or encounter idempotency.
+Durable command IDs, runtime commit IDs, revisions, and encounter IDs remain the authoritative idempotency controls. Authentication replay protection is additional and does not replace them.
 
 ## Internal service authentication
 
-RPG GM Runtime calls GameFrame over loopback with:
+RPG GM Runtime calls GameFrame with:
 
 ```text
 Authorization: Bearer <RPG_GM_SERVICE_TOKEN>
@@ -101,65 +154,36 @@ x-gameframe-service-id: rpg-gm-runtime
 
 The bearer token is compared in constant time. A request cannot combine service bearer identity with signed player headers.
 
-The same initial service token is used for GameFrame-to-GM and GM-to-GameFrame loopback calls. It is independent of the player-proxy HMAC secret and the campaign-feed cursor secret.
+The service bearer, Worker proxy HMAC secret, Worker session secret, Discord client secret, and runtime cursor secret are separate credentials.
 
-## Edge gateway obligations
+## Cloudflare Tunnel boundary
 
-Before forwarding a player request, the edge gateway must:
+The dedicated origin hostname maps to `http://127.0.0.1:8790` through cloudflared. The public GameFrame hostname remains attached to the Worker.
 
-1. authenticate the Discord/GameFrame user;
-2. resolve one stable player ID;
-3. remove every incoming `x-gameframe-*` identity or signature header;
-4. remove incoming `Authorization` and `x-gameframe-service-id` headers from public traffic;
-5. enforce the allowed RPG route and method set;
-6. preserve the exact path and query;
-7. read and bound the complete request body;
-8. compute SHA-256 over the exact forwarded bytes;
-9. generate a cryptographically random nonce;
-10. use the current edge time in Unix epoch milliseconds;
-11. sign the canonical payload;
-12. forward only to the loopback GameFrame service;
-13. never forward the HMAC secret to the browser;
-14. never route public traffic to RPG GM Runtime.
-
-## Cloudflare deployment boundary
-
-Cloudflare Tunnel may be introduced only after an edge worker or equivalent gateway implements this contract and strips untrusted headers.
-
-Allowed future route:
+Forbidden paths:
 
 ```text
-browser or Discord Activity
-→ Cloudflare edge authentication/signing gateway
-→ Cloudflare Tunnel
-→ loopback GameFrame RPG service
+browser → Tunnel → development-header GameFrame
+browser → Tunnel → RPG GM Runtime
+Worker → RPG GM Runtime
 ```
 
-Forbidden route:
-
-```text
-browser
-→ Cloudflare Tunnel
-→ development-header GameFrame service
-```
-
-RPG GM Runtime port `8791` remains loopback-only permanently.
-
-## Secret rotation
-
-Rotate secrets independently:
-
-- proxy HMAC secret: edge gateway and GameFrame;
-- service bearer token: GameFrame and RPG GM Runtime;
-- cursor HMAC secret: RPG GM Runtime only.
-
-The current implementation accepts one proxy secret and one service token at a time. Rotation therefore requires a coordinated restart. A future key-ID/key-ring extension may support overlap without downtime.
+Port `8791` remains loopback-only permanently.
 
 ## Failure behavior
 
-Authentication failures return no durable mutation and do not reveal expected signatures or secrets.
+Authentication and edge failures create no durable mutation and reveal no expected signature or secret.
 
-- missing signed player headers: `401`;
-- malformed, stale, replayed, or mismatched signed claims: `403`;
-- invalid or incomplete service bearer identity: `401` or `403`;
-- valid identity with insufficient campaign authority: existing RPG authorization response.
+- missing session or signed player headers: `401`;
+- malformed, stale, replayed, cross-origin, or mismatched claims: `403`;
+- unsupported public route: `404`;
+- unsupported method: `405`;
+- oversized request: `413`;
+- unsupported content type: `415`;
+- unavailable or invalid origin response: `502`;
+- origin timeout: `504`;
+- missing Worker or VM configuration: `503`.
+
+## Secret rotation
+
+The current implementation accepts one proxy HMAC secret and one service token at a time. Rotation requires coordinated Worker deployment and VM restart. A future key-ID/key-ring extension may support overlapping keys without downtime.

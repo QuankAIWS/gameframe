@@ -3,7 +3,7 @@ import { json } from "./http-utils.ts";
 import { InvitationObjectRuntime } from "./invitation-object-runtime.ts";
 import { GameFrameMatchObjectRuntime } from "./match-object-runtime.ts";
 import { MatchSocketHub } from "./match-socket-hub.ts";
-import { createGameFrameWorker } from "./worker-router.ts";
+import { createRpgEdgeGameFrameWorker } from "./rpg-edge-worker.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
 // The class name remains migration-stable for the existing Durable Object binding.
@@ -63,4 +63,4 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
   }
 }
 
-export default createGameFrameWorker();
+export default createRpgEdgeGameFrameWorker();

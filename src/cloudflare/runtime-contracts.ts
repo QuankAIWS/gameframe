@@ -35,6 +35,8 @@ export interface GameFrameWorkerEnv {
   DISCORD_CLIENT_ID?: string;
   DISCORD_CLIENT_SECRET?: string;
   DISCORD_ALLOWED_USER_IDS?: string;
+  GAMEFRAME_RPG_ORIGIN_URL?: string;
+  GAMEFRAME_RPG_PROXY_HMAC_SECRET?: string;
   MATCHES: DurableObjectNamespaceLike;
   ASSETS?: AssetFetcherLike;
 }

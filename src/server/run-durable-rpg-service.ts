@@ -1,13 +1,22 @@
+import { HmacProxyRequestAuthenticator } from "../auth/hmac-proxy-request-authenticator.ts";
 import { DevelopmentHeaderAuthenticator } from "../auth/request-authenticator.ts";
 import { parseDurableRpgProcessConfig } from "./durable-rpg-process-config.ts";
 import { createConfiguredDurableRpgService } from "./durable-rpg-service-lifecycle.ts";
 
 const config = parseDurableRpgProcessConfig(process.env);
+const authenticator = config.authentication.mode === "hmac-proxy"
+  ? new HmacProxyRequestAuthenticator({
+      proxySecret: config.authentication.proxyHmacSecret,
+      serviceToken: config.gmServiceToken,
+      maxClockSkewMs: config.authentication.maxClockSkewMs,
+      maxReplayEntries: config.authentication.maxReplayEntries,
+    })
+  : new DevelopmentHeaderAuthenticator();
 const lifecycle = createConfiguredDurableRpgService({
   filePath: config.filePath,
   gmBaseUrl: config.gmBaseUrl,
   gmServiceToken: config.gmServiceToken,
-  authenticator: new DevelopmentHeaderAuthenticator(),
+  authenticator,
   pollIntervalMs: config.pollIntervalMs,
   deliveryTimeoutMs: config.deliveryTimeoutMs,
 });
@@ -49,7 +58,7 @@ try {
     port: address.port,
     databasePath: config.filePath,
     gmBaseUrl: config.gmBaseUrl,
-    authentication: "development-header-loopback-only",
+    authentication: config.authentication.mode,
   })}\n`);
   await lifecycle.waitUntilTerminated();
 } catch (error) {
