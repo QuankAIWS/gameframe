@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07120d">
+  <title>Monster Master RPG · Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/monster-master-rpg.css">
+</head>
+<body class="monster-master-rpg-route">
+  <main class="mm-rpg-shell">
+    <header class="mm-rpg-hero">
+      <div>
+        <p class="mm-rpg-eyebrow">MONSTER MASTER RPG</p>
+        <h1>Campaign Console</h1>
+        <p>Resume the story, review what the Game Master presented, and tell the GM what your trainer does next.</p>
+      </div>
+      <div class="mm-rpg-identity" aria-label="Current player">
+        <span class="mm-rpg-identity-light" aria-hidden="true"></span>
+        <span>
+          <small>Signed in as</small>
+          <strong id="mm-rpg-player-name">Player</strong>
+        </span>
+      </div>
+    </header>
+
+    <div id="mm-rpg-error" class="mm-rpg-error" role="alert" hidden></div>
+
+    <section id="mm-rpg-join" class="mm-rpg-join" aria-labelledby="mm-rpg-join-title">
+      <div class="mm-rpg-join-copy">
+        <p class="mm-rpg-label">CAMPAIGN ACCESS</p>
+        <h2 id="mm-rpg-join-title">Join or resume a campaign</h2>
+        <p>Enter the campaign code supplied by the Game Master. The reference campaign remains available for local development and integration testing.</p>
+      </div>
+      <form id="mm-rpg-join-form" class="mm-rpg-join-form">
+        <label for="mm-rpg-campaign-id">Campaign code</label>
+        <div class="mm-rpg-code-row">
+          <input id="mm-rpg-campaign-id" name="campaign" autocomplete="off" spellcheck="false" maxlength="160" required>
+          <button id="mm-rpg-connect" type="submit">Open campaign</button>
+        </div>
+        <button id="mm-rpg-reference" class="mm-rpg-text-button" type="button">Use reference campaign</button>
+      </form>
+    </section>
+
+    <section id="mm-rpg-campaign" class="mm-rpg-campaign" aria-labelledby="mm-rpg-campaign-title" hidden>
+      <header class="mm-rpg-campaign-header">
+        <div>
+          <p class="mm-rpg-label">ACTIVE CAMPAIGN</p>
+          <h2 id="mm-rpg-campaign-title">Monster Master campaign</h2>
+          <p id="mm-rpg-campaign-code" class="mm-rpg-campaign-code"></p>
+        </div>
+        <div class="mm-rpg-header-actions">
+          <span id="mm-rpg-connection" class="mm-rpg-connection" data-state="connecting">Connecting</span>
+          <button id="mm-rpg-switch" class="mm-rpg-secondary" type="button">Switch campaign</button>
+        </div>
+      </header>
+
+      <div class="mm-rpg-layout">
+        <section class="mm-rpg-story" aria-labelledby="mm-rpg-story-title">
+          <div class="mm-rpg-section-heading">
+            <div>
+              <p class="mm-rpg-label">CAMPAIGN FEED</p>
+              <h3 id="mm-rpg-story-title">What has happened</h3>
+            </div>
+            <button id="mm-rpg-refresh" class="mm-rpg-icon-button" type="button" aria-label="Refresh campaign">↻</button>
+          </div>
+          <div id="mm-rpg-empty" class="mm-rpg-empty">
+            <strong>The campaign is attached.</strong>
+            <span>The Game Master has not presented a scene yet.</span>
+          </div>
+          <ol id="mm-rpg-events" class="mm-rpg-events" aria-live="polite"></ol>
+        </section>
+
+        <aside class="mm-rpg-sidebar">
+          <section class="mm-rpg-status-card">
+            <p class="mm-rpg-label">CAMPAIGN POSITION</p>
+            <dl>
+              <div><dt>Coordination</dt><dd id="mm-rpg-coordination">0</dd></div>
+              <div><dt>Presentation</dt><dd id="mm-rpg-presentation">0</dd></div>
+              <div><dt>Narrative</dt><dd id="mm-rpg-narrative">0</dd></div>
+            </dl>
+          </section>
+
+          <section class="mm-rpg-player-card">
+            <p class="mm-rpg-label">YOUR TRAINER</p>
+            <strong id="mm-rpg-sidebar-player">Player</strong>
+            <span id="mm-rpg-player-id"></span>
+            <p>Character, party, inventory, objectives, and encounter state will populate here as structured projections come online.</p>
+          </section>
+        </aside>
+      </div>
+
+      <form id="mm-rpg-action-form" class="mm-rpg-composer">
+        <div class="mm-rpg-composer-heading">
+          <div>
+            <label for="mm-rpg-action">What do you do?</label>
+            <small>Freeform public action · 2,000 characters maximum</small>
+          </div>
+          <span id="mm-rpg-count">0 / 2000</span>
+        </div>
+        <textarea id="mm-rpg-action" rows="3" maxlength="2000" placeholder="Inspect the academy gate, question the groundskeeper, call a monster, or try something unexpected…"></textarea>
+        <div class="mm-rpg-composer-actions">
+          <p id="mm-rpg-action-status" role="status">Ready for your next action.</p>
+          <div>
+            <button id="mm-rpg-discard-retry" class="mm-rpg-text-button" type="button" hidden>Discard failed action</button>
+            <button id="mm-rpg-send" type="submit">Send to Game Master</button>
+          </div>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script type="module" src="/auth-launcher.js" data-entry="/monster-master-rpg-app.js"></script>
+</body>
+</html>

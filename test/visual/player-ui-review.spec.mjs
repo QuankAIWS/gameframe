@@ -34,8 +34,9 @@ async function openPlayerHub(page, viewport) {
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
   await expectDestinationBar(page, "hub");
   await expect(page.locator(".hero")).toBeHidden();
-  await expect(page.locator(".game-grid .game-card")).toHaveCount(4);
-  await expect(page.locator(".game-card-play")).toHaveCount(4);
+  await expect(page.locator(".game-grid .game-card")).toHaveCount(5);
+  await expect(page.locator(".game-card-play")).toHaveCount(5);
+  await expect(page.locator('.game-card[href="/monster-master-rpg.html"]')).toHaveCount(1);
   await expect(page.locator('.game-card[href="/monster-master.html"]')).toHaveCount(1);
   await expect(page.locator('.game-card[href="/othello.html"]')).toHaveCount(1);
   await expect(page.locator('.game-card[href="/?game=american-checkers&menu=1"]')).toHaveCount(1);
@@ -145,6 +146,52 @@ async function openMonsterMaster(page, viewport) {
   await expect(page.locator("#monster-master-canvas")).toBeHidden();
 }
 
+async function openMonsterMasterRpg(page, viewport) {
+  const campaignId = "campaign-visual-review";
+  await page.unroute(`**/api/rpg/campaigns/${campaignId}/attach`).catch(() => undefined);
+  await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      protocolVersion: 2,
+      kind: "campaign.attached",
+      campaignId,
+      title: "The Academy Gate Incident",
+      status: "active",
+      playerId: "visual-rpg-player",
+      role: "player",
+      partyId: "party:keepers",
+      gameframeCoordinationRevision: 6,
+      presentationSequence: 8,
+      linkedNarrativeRevision: 2,
+      cursor: "visual-cursor",
+      hasMore: false,
+      events: [
+        {
+          eventId: "event:visual-scene",
+          kind: "scene.presented",
+          presentationSequence: 7,
+          payload: { narration: "Rain rattles against the academy gate while the hazard lamp flashes an unauthorized transport warning." },
+          createdAt: "2026-08-05T03:30:00.000Z",
+        },
+        {
+          eventId: "event:visual-dialogue",
+          kind: "dialogue.turn",
+          presentationSequence: 8,
+          payload: { speakerName: "Groundskeeper", dialogue: "That seal was reset less than an hour ago." },
+          createdAt: "2026-08-05T03:30:01.000Z",
+        },
+      ],
+    }),
+  }));
+  await page.setViewportSize(viewport);
+  await page.goto(`/monster-master-rpg.html?player=visual-rpg-player&campaign=${campaignId}`);
+  await expectDestinationBar(page, "monster");
+  await expect(page.locator("#mm-rpg-campaign")).toBeVisible();
+  await expect(page.locator("#mm-rpg-events .mm-rpg-event")).toHaveCount(2);
+  await expect(page.locator("#mm-rpg-action")).toBeVisible();
+}
+
 test.beforeAll(prepareOutput);
 
 test("capture the player game hub at desktop and mobile sizes", async ({ page }) => {
@@ -152,6 +199,13 @@ test("capture the player game hub at desktop and mobile sizes", async ({ page })
   await page.screenshot({ path: `${output}/game-hub-desktop.png`, fullPage: true });
   await openPlayerHub(page, mobile);
   await page.screenshot({ path: `${output}/game-hub-mobile.png`, fullPage: true });
+});
+
+test("capture the Monster Master RPG campaign shell at desktop and mobile sizes", async ({ page }) => {
+  await openMonsterMasterRpg(page, desktop);
+  await page.screenshot({ path: `${output}/monster-master-rpg-desktop.png`, fullPage: true });
+  await openMonsterMasterRpg(page, mobile);
+  await page.screenshot({ path: `${output}/monster-master-rpg-mobile.png`, fullPage: true });
 });
 
 test("capture both shared game menus at desktop and mobile sizes", async ({ page }) => {

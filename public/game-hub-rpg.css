@@ -1,0 +1,25 @@
+@media (min-width: 1181px) {
+  .gameframe-game-hub-lobby .game-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .gameframe-game-hub-lobby .game-card {
+    grid-column: span 2;
+  }
+
+  .gameframe-game-hub-lobby .game-card:nth-child(4),
+  .gameframe-game-hub-lobby .game-card:nth-child(5) {
+    grid-column: span 3;
+  }
+}
+
+#game-card-monster-master-rpg .game-card-visual-monster {
+  background:
+    radial-gradient(circle at 67% 32%, rgba(199, 245, 112, .34), transparent 24%),
+    radial-gradient(circle at 26% 84%, rgba(38, 108, 74, .7), transparent 42%),
+    linear-gradient(145deg, #152c20, #07100b 68%);
+}
+
+#game-card-monster-master-rpg .game-card-monster-creature {
+  transform: scale(1.12) translate(7%, 3%);
+}

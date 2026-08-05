@@ -1,4 +1,4 @@
-const stylesheetUrls = ["/game-hub.css", "/game-hub-shell.css", "/game-hub-cards.css", "/game-hub-flow.css"];
+const stylesheetUrls = ["/game-hub.css", "/game-hub-shell.css", "/game-hub-cards.css", "/game-hub-flow.css", "/game-hub-rpg.css"];
 for (const stylesheetUrl of stylesheetUrls) {
   if (document.querySelector(`link[href="${stylesheetUrl}"]`)) continue;
   const stylesheet = document.createElement("link");
@@ -26,6 +26,14 @@ const menuGame = parameters.get("menu") === "1"
   : null;
 
 const games = [
+  {
+    id: "monster-master-rpg",
+    href: "/monster-master-rpg.html",
+    kicker: "CAMPAIGN",
+    title: "Monster Master RPG",
+    description: "Resume a GM-driven campaign, review the story feed, and send your trainer’s next action.",
+    accent: "monster",
+  },
   {
     id: "monster-master",
     href: "/monster-master.html",
@@ -60,17 +68,17 @@ const games = [
   },
 ];
 
-function artwork(accent) {
-  if (accent === "monster") {
+function artwork(game) {
+  if (game.accent === "monster") {
     return `
       <span class="game-card-visual game-card-visual-monster" aria-hidden="true">
         <span class="game-card-atmosphere"></span>
         <span class="game-card-monster-creature"></span>
-        <span class="game-card-visual-mark">MM</span>
+        <span class="game-card-visual-mark">${game.id === "monster-master-rpg" ? "RPG" : "MM"}</span>
       </span>
     `;
   }
-  if (accent === "othello") {
+  if (game.accent === "othello") {
     return `
       <span class="game-card-visual game-card-visual-othello" aria-hidden="true">
         <span class="hub-board-grid"></span>
@@ -82,7 +90,7 @@ function artwork(accent) {
       </span>
     `;
   }
-  if (accent === "checkers") {
+  if (game.accent === "checkers") {
     return `
       <span class="game-card-visual game-card-visual-checkers" aria-hidden="true">
         <span class="hub-board-grid"></span>
@@ -112,7 +120,7 @@ function createLibraryCard(game) {
   card.href = game.href;
   card.setAttribute("aria-label", `Open the ${game.title} game menu`);
   card.innerHTML = `
-    ${artwork(game.accent)}
+    ${artwork(game)}
     <span class="game-card-body">
       <small class="game-card-kicker">${game.kicker}</small>
       <strong>${game.title}</strong>
@@ -143,7 +151,7 @@ function installGameMenu() {
     menu.className = `game-menu-hero game-menu-${selected.accent}`;
     menu.innerHTML = `
       <a class="game-menu-back" href="/">← Back to library</a>
-      <div class="game-menu-art">${artwork(selected.accent)}</div>
+      <div class="game-menu-art">${artwork(selected)}</div>
       <div class="game-menu-copy">
         <small>${selected.kicker}</small>
         <h2>${selected.title}</h2>
