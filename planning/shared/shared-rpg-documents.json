@@ -1,5 +1,5 @@
 {
-  "manifestVersion": 2,
+  "manifestVersion": 3,
   "canonicalRepository": "QuankAIWS/scribbles-gameframe",
   "canonicalRef": "main",
   "canonicalRoot": "planning/shared",
@@ -9,6 +9,14 @@
     {
       "id": "rpg-platform-product-goals-v1",
       "filename": "rpg-platform-product-goals.md"
+    },
+    {
+      "id": "rpg-agent-architecture-and-campaign-package-v1",
+      "filename": "rpg-agent-architecture-and-campaign-package.md"
+    },
+    {
+      "id": "rpg-platform-roadmap-v1",
+      "filename": "rpg-platform-roadmap.md"
     },
     {
       "id": "rpg-cloudflare-deployment-architecture-v1",

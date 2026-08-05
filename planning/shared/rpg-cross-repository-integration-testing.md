@@ -1,307 +1,340 @@
 ---
-title: RPG Cross-Repository Integration Testing
+title: RPG Cross-Repository and Agent-System Testing
 status: accepted
 document_type: architecture
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-04
+last_updated: 2026-08-05
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
   - GitHub Actions
+  - campaign agent validation
   - VM staging validation
-  - Cloudflare Tunnel validation
-  - later Cloudflare-native migration validation
+  - later Cloudflare and media validation
 shared_document_id: rpg-cross-repository-integration-testing-v1
-shared_document_version: 2
+shared_document_version: 3
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-cross-repository-integration-testing.md
 mirrors:
   - QuankAIWS/rpg-gm-runtime:docs/shared/rpg-cross-repository-integration-testing.md
 sync_policy: exact-byte-copy
 related:
+  - rpg-agent-architecture-and-campaign-package.md
+  - rpg-platform-roadmap.md
   - rpg-platform-product-goals.md
-  - rpg-cloudflare-deployment-architecture.md
+  - rpg-campaign-compiler-contract.md
   - rpg-monster-master-reference-campaign.md
-  - ../rpg-gameframe-interface-contract.md
-  - ../rpg-platform-delivery-plan.md
+  - rpg-cloudflare-deployment-architecture.md
 ---
 
-# RPG Cross-Repository Integration Testing
+# RPG Cross-Repository and Agent-System Testing
 
 ## Decision
 
-RPG GM Runtime is tested at progressively stronger boundaries: against fast mock GameFrame ports, shared contract fixtures, an actual locally started GameFrame checkout, durable local VM adapters, a deployed VM staging environment reached through Cloudflare Tunnel, and later against optional Cloudflare-native components.
+The RPG platform uses separate evidence layers for:
 
-Mocks remain necessary, but they are not proof that the two repositories integrate. A local Node integration is not proof of durable restart behavior. A deployed Cloudflare Tunnel is not proof of Durable Objects. Each layer claims only the behavior it actually exercises.
+1. CampaignPackage schema and validation;
+2. Campaign Architect behavior;
+3. Dungeon Master campaign behavior;
+4. GameFrame contract conformance;
+5. actual cross-repository integration;
+6. persistence and restart;
+7. browser player experience;
+8. VM deployment;
+9. media providers and optional Cloudflare-native migration.
 
-The private RPG GM Runtime repository owns the workflow that checks out and executes both repositories because it may read the public GameFrame repository without exposing private runtime code or credentials to GameFrame's public CI.
+Each layer claims only what it executes.
 
-## Testing ladder
+A catalog-shape test does not prove an executable CampaignPackage. A provider stub does not prove Dungeon Master quality. A transport round trip does not prove a campaign. A browser screenshot does not prove authoritative state. A VM tunnel does not prove generated media or Cloudflare-native persistence.
 
-### Layer 1 — Runtime mock port
+## Ownership
 
-Most RPG GM Runtime tests use a deterministic fake GameFrame connector.
+RPG GM Runtime owns:
 
-This layer covers:
+- CampaignPackage tests;
+- Campaign Architect tests;
+- Dungeon Master machine-play tests;
+- mock GameFrame ports;
+- checkout and execution of public GameFrame for private cross-repository integration;
+- durable runtime and two-service integration;
+- shared-document drift verification.
 
-- campaign semantics and runtime event commits;
-- freeform intent interpretation;
-- public, party, player-private, and runtime-only audience handling;
-- scene, dialogue, choice, check, media, narration, and encounter proposals;
-- exact retry and conflicting command behavior;
-- GameFrame timeout, malformed response, unavailable service, and unsupported-version handling;
-- application of structured victory, defeat, injury, reward, escape, cancellation, and draw outcomes.
+GameFrame owns:
 
-These tests should be fast, isolated, and suitable for ordinary development.
-
-### Layer 2 — Shared contract fixtures
-
-Both repositories consume versioned canonical fixtures for:
-
-- campaign attachment and resume;
-- player commands;
-- scene and dialogue presentation;
-- public and private projections;
-- choices, checks, cards, maps, recaps, media, and narration intents;
-- encounter requests, snapshots, terminal outcomes, cancellation, and acknowledgement;
-- stable errors, limits, revisions, cursors, and retry receipts.
-
-Fixture validation catches schema drift without booting either full application. Neither repository imports the other repository's private implementation.
-
-### Layer 3 — Actual GameFrame Node integration
-
-A compact runtime-owned job checks out the real GameFrame repository into a sibling directory, installs its repository-pinned dependencies, starts its ordinary local HTTP server, waits for `/api/health`, and runs the runtime integration journey against the real routes and service behavior.
-
-Representative workspace:
-
-```text
-workspace/
-  rpg-gm-runtime/
-  scribbles-gameframe/
-```
-
-The lane uses:
-
-- the real GameFrame server entry point;
-- real request authentication behavior suitable for local testing;
-- actual GameFrame serialization, validation, service, game-definition, and player-projection paths;
-- the Monster Master RPG reference fixture;
-- no Tailscale, private origin, or operator machine.
-
-The first implementation may prove GameFrame startup, health, development authentication, and an existing Arena Battles match before every RPG-specific route exists. The lane expands with the versioned RPG interface.
-
-### Layer 4 — Durable local service integration
-
-Before public VM staging, both repositories must run together with the same persistence boundaries intended for the initial production profile.
-
-This layer covers:
-
-- GameFrame durable local adapters rather than in-memory stores;
-- RPG GM Runtime durable campaign storage;
-- separate databases and migration ownership;
-- GameFrame-to-runtime authenticated private service calls;
-- command idempotency and stale revision behavior;
-- GameFrame coordination revision versus runtime narrative revision;
-- process restart and lost-response retry;
-- campaign-to-Arena-Battles-to-campaign outcome application;
-- backup creation and restore into a clean environment;
-- projection polling or WebSocket recovery after restart.
-
-The test environment may use Docker Compose or equivalent process orchestration. It must not permit either service to read the other's data volume.
-
-### Layer 5 — Deployed VM, Cloudflare Tunnel, and Discord canary
-
-Repository-local execution cannot prove public routing, real Discord clients, Tunnel behavior, production-shaped cookies, router posture, or deployed authorization.
-
-A VM staging canary proves:
-
-- the same GameFrame and runtime service topology intended for first production;
-- Cloudflare DNS, TLS, and Tunnel routing to GameFrame;
-- no public GM route and no direct public origin port;
-- Discord OAuth or Activity authentication;
-- signed invitation creation and atomic campaign-seat acceptance;
-- two public-network players joining the same campaign without a VPN;
-- reconnect and later resume after browser and service restart;
-- one reference campaign entering and returning from Arena Battles;
-- player-private projection enforcement;
-- prepared media fallback and optional narration behavior;
-- no Tailscale dependency for players.
-
-The canary must include an operator check that the home router has no application port forward and that stopping the tunnel removes public reachability without exposing a fallback origin.
-
-### Layer 6 — Optional Cloudflare-native migration validation
-
-Workers, Durable Objects, Queues, and R2 are later scale components. They receive their own tests only when a migration slice is active.
-
-This layer may cover:
-
-- Worker routing and bindings;
-- Durable Object persistence and restoration;
-- object eviction or restart;
-- hibernation-compatible WebSocket projection;
-- campaign and encounter coordination after migration;
-- Queue duplicate delivery and idempotent work;
-- object-storage persistence and stable asset retrieval;
-- export from local persistence and import into the Cloudflare target;
-- rollback or dual-read evidence where required;
-- measured plan usage, storage, duration, and cost behavior.
-
-Cloudflare-native tests do not replace the VM profile until migration acceptance criteria pass.
-
-## Active-development GameFrame reference policy
-
-GameFrame remains under rapid development and does not yet provide a stable RPG compatibility target. The integration strategy must not treat an early GameFrame commit as frozen or supported indefinitely.
-
-During active co-development:
-
-- ordinary runtime integration defaults to current GameFrame `main`;
-- coordinated work may use a reviewed canonical `agent/*` branch through the controlled `gameframe_ref` input;
-- every run resolves that ref to an exact GameFrame commit SHA and records it with the runtime SHA, fixture versions, and test evidence;
-- a failure caused by a new GameFrame change is useful integration feedback and should normally be repaired rather than hidden by reverting to an obsolete default;
-- recorded SHAs identify the exact source used by a run, but long-term reproduction requires that the commit remain reachable or that the tested source be preserved separately.
-
-A compatibility baseline may be introduced later, after the first versioned RPG contracts and Monster Master reference chapter are complete enough to support release, rollback, or long-lived regression evidence.
-
-## Coordinated branch testing
-
-For coordinated work across both repositories, the runtime integration workflow accepts a trusted canonical GameFrame branch through controlled manual input.
-
-The accepted order is:
-
-1. define or update shared fixtures and contracts on the intended GameFrame branch;
-2. run GameFrame's focused repository tests;
-3. test the runtime branch against that trusted GameFrame branch;
-4. merge the canonical GameFrame change;
-5. synchronize shared documents and fixtures into the runtime;
-6. run runtime integration against GameFrame `main` and record the resolved SHA;
-7. merge the runtime change.
-
-Production workflows must not execute arbitrary public pull-request code alongside private runtime source or secrets.
-
-## Workflow placement and permissions
-
-### GameFrame public repository
-
-GameFrame CI owns:
-
-- GameFrame unit, service, browser, visual, Worker, and Durable Object tests;
+- GameFrame unit, service, contract, browser, visual, Worker, and encounter tests;
 - shared fixture validation;
+- player-safe package preview and projection tests;
 - deterministic stub-runtime behavior;
 - public repository runner and secret-safety policy.
 
-GameFrame CI does not check out the private runtime and receives no runtime token.
+## Testing ladder
 
-### RPG GM Runtime private repository
+### Layer 1 — CampaignPackage schema and persistence
 
-Runtime CI owns:
+Prove:
 
-- runtime mock-port tests;
-- canonical fixture compatibility;
-- checkout of the public GameFrame repository;
-- actual two-repository Node integration;
-- durable local service integration;
-- current-GameFrame integration during active development;
-- shared-document synchronization and drift verification.
+- `CampaignBriefV1` and `CompiledCampaignPackageV1` bounds;
+- player-safe and runtime-only separation;
+- package validation;
+- package hash and provenance;
+- handcrafted and generated origin metadata;
+- commitment, reload, migration posture, and immutable identity;
+- player-safe preview without hidden truth;
+- exact retry and restart.
 
-All RPG GM Runtime workflows use the designated self-hosted Debian runner under repository policy. No cross-repository secret is needed to check out public GameFrame. Real provider and Discord secrets remain excluded from ordinary pull-request integration.
+Required fixtures:
 
-## First end-to-end journey
+- one complete handcrafted Monster Master package;
+- one deterministic Campaign Architect output;
+- malformed and contradictory packages;
+- partial and paraphrased secret-projection attacks.
 
-The first actual integration journey is the deterministic Monster Master RPG reference chapter:
+### Layer 2 — Campaign Architect behavior
+
+Use a deterministic or mock Campaign Architect provider before a live provider.
+
+Prove:
+
+- concise and structured briefs normalize correctly;
+- assumptions and repair requests are explicit;
+- originality transformation preserves desired experience without direct copying;
+- actors, locations, clues, events, escalation, resolution, and asset intents form a playable package;
+- unsupported mechanics are rejected or mapped to available capabilities;
+- package validation failures produce bounded repair rather than silent acceptance;
+- the same input and seed produce stable fixture output where determinism is required.
+
+Later provider-backed tests add quality evaluation without replacing schema and deterministic evidence.
+
+### Layer 3 — Dungeon Master machine-play
+
+Use a mock Dungeon Master model provider and scripted player actors against committed CampaignPackages.
+
+Required player behaviors include:
+
+- expected investigation or cooperation;
+- chaotic or unusual action;
+- refusal of the obvious assignment;
+- early correct guess;
+- missed or ignored clue;
+- social, practical, deceptive, and avoidant approaches;
+- creation and later revisit of an incidental NPC.
+
+Prove across multiple turns:
+
+- opening occurs only after package commitment;
+- package truth never changes;
+- freeform action remains primary;
+- only eligible events are selected;
+- clues and recovery paths remain coherent;
+- NPC identities, memories, promises, injuries, debts, and relationships persist;
+- public, party, player-private, and runtime-only scopes remain correct;
+- complete, partial, and paraphrased secrets do not leak;
+- checks and tactical requests follow package state;
+- exact retry does not call the provider twice or duplicate events;
+- restart and resume preserve package and campaign continuity;
+- the campaign reaches a valid resolution or tactical threshold.
+
+The harness must run at least two materially different CampaignPackages before the Dungeon Master is considered campaign-independent.
+
+### Layer 4 — Runtime mock GameFrame port
+
+Use a deterministic fake GameFrame connector for fast runtime development.
+
+Cover:
+
+- authenticated campaign attachment and player identity;
+- commands and audience-scoped presentation;
+- checks, clues, cards, maps, media, narration, and encounter proposals;
+- stable errors and bounds;
+- exact retry, conflicting IDs, stale revisions, timeout, malformed response, unavailable service, and unsupported versions;
+- structured tactical outcomes and campaign consequence application.
+
+This layer proves runtime behavior against the contract, not actual GameFrame implementation.
+
+### Layer 5 — Shared contract fixtures
+
+Both repositories consume canonical fixtures for:
+
+- CampaignPackage preview and capability declarations;
+- campaign attachment and resume;
+- player commands;
+- public and private projections;
+- scenes, dialogue, suggestions, choices, checks, clues, cards, maps, recaps, media, and narration;
+- encounter request and terminal outcomes;
+- stable errors, limits, revisions, cursors, and retry receipts.
+
+Neither repository imports the other's private implementation.
+
+### Layer 6 — Actual GameFrame Node integration
+
+A runtime-owned job checks out the real public GameFrame repository, records the exact resolved SHA, installs repository-pinned dependencies, starts the real local server, and runs focused integration against actual routes and service behavior.
+
+Prove:
+
+- real authentication adapters used for local integration;
+- actual serialization and validation;
+- command custody and runtime result linkage;
+- player audience projections;
+- actual Arena Battles launch and terminal outcome;
+- campaign return presentation;
+- current GameFrame `main` compatibility or reviewed coordinated branch compatibility.
+
+This layer must eventually use the actual handcrafted Monster Master CampaignPackage and Dungeon Master output. Existing deterministic echo journeys remain infrastructure tests and must be labeled accordingly.
+
+### Layer 7 — Durable local two-service integration
+
+Run both services with production-shaped local persistence boundaries.
+
+Cover:
+
+- separate databases and migration ownership;
+- authenticated private GameFrame-to-runtime calls;
+- package, journal, command, and outcome persistence;
+- separate GameFrame coordination and runtime narrative positions;
+- process restart and lost-response recovery;
+- backup and restore into a clean environment;
+- encounter launch, completion, consequence application, and resumed campaign;
+- no cross-service storage access.
+
+### Layer 8 — Browser campaign acceptance
+
+Use real browser journeys for:
+
+- player-safe campaign preview and confirmation;
+- membership and resume;
+- freeform input and editable suggestions;
+- public and private scenes;
+- required character, creature, clue, objective, condition, and recap views;
+- Arena Battles transition and return;
+- desktop and mobile interaction;
+- reconnect and text-first fallback.
+
+A screenshot supports presentation evidence but does not replace state assertions.
+
+### Layer 9 — VM, Cloudflare edge, and Discord canary
+
+A staging VM proves:
+
+- production service topology;
+- Cloudflare DNS, TLS, edge, and Tunnel routing to GameFrame only;
+- no public runtime route or direct origin application port;
+- real Discord authentication or Activity identity;
+- invitations and seat claim;
+- two public-network players joining without VPN;
+- browser, GameFrame, and runtime restart and resume;
+- private projection enforcement;
+- actual Monster Master campaign and Arena Battles return;
+- backup and restore;
+- stopping the tunnel removes public reachability.
+
+Repository tests cannot claim this evidence.
+
+### Layer 10 — Campaign media and optional Cloudflare-native validation
+
+Media canaries prove:
+
+- catalog reuse and deterministic composition;
+- queued generation, validation, moderation, provenance, caching, and replacement;
+- placeholders during generation;
+- recurring identity continuity;
+- budget and failure behavior.
+
+Cloudflare-native state tests are required only for an active migration and may cover Workers, Durable Objects, Queues, R2, export, import, eviction, rollback, and measured plan usage.
+
+These tests do not replace the VM profile until migration gates pass.
+
+## First complete campaign journey
+
+The first actual campaign journey is:
 
 ```text
-two authenticated test players attach
-  -> prepared Monster Master scene and assets
-  -> NPC dialogue and freeform player command
-  -> one player-private clue
+validated handcrafted Monster Master CampaignPackage
+  -> package commitment
+  -> two authenticated test players attach
+  -> Dungeon Master opening from package context
+  -> public and player-private information
+  -> several scripted freeform actions
+  -> clue and event progression
   -> deterministic noncombat check
-  -> Arena Battles encounter request
-  -> actual GameFrame tactical match
+  -> Arena Battles request at a valid threshold
+  -> actual tactical match
   -> structured terminal outcome
-  -> RPG GM Runtime commits consequences
-  -> GameFrame presents the return scene
+  -> Dungeon Master applies consequences and presents return
+  -> campaign reaches bounded resolution
   -> both services restart
-  -> players resume without duplication or continuity loss
+  -> players resume without duplication, leakage, or plot drift
 ```
 
-The required journey uses prepared assets and fake or disabled external media and speech providers. Live generation is tested separately through deterministic provider adapters and staged canaries.
+This journey uses prepared assets and deterministic fallbacks. Live media generation is separate.
+
+## Second complete campaign journey
+
+The second major journey is:
+
+```text
+materially different player concept
+  -> Campaign Architect
+  -> validated original CampaignPackage
+  -> same Dungeon Master
+  -> scripted multi-turn play
+  -> valid resolution or tactical handoff
+```
+
+The same package validator and Dungeon Master harness used by Monster Master must accept this journey without campaign-specific code.
+
+## Coordinated branch policy
+
+During active co-development:
+
+1. update canonical GameFrame shared documents or fixtures;
+2. run focused GameFrame checks;
+3. test the runtime branch against the trusted GameFrame branch;
+4. merge GameFrame canonical changes;
+5. synchronize exact-byte runtime mirrors;
+6. rerun runtime checks against GameFrame `main`;
+7. merge runtime changes.
+
+Private runtime workflows must not execute arbitrary fork or public pull-request code alongside private source or secrets.
 
 ## Trigger policy
 
-### Ordinary runtime pull requests
+Ordinary runtime PRs run focused runtime tests, shared fixture validation, shared-document drift, and affected current-GameFrame integration.
 
-Run:
+Package, Campaign Architect, Dungeon Master, clue, event, NPC, or tactical changes must run the relevant machine-play journeys.
 
-- focused runtime tests;
-- shared fixture validation;
-- shared-document drift check;
-- actual GameFrame Node integration against current GameFrame `main` when affected runtime, contract, adapter, or reference-fixture paths change.
+Persistence and deployment changes run durable integration. Browser changes run focused player journeys. VM and provider claims require explicit canaries.
 
-### Coordinated development
-
-Run the same integration against the trusted GameFrame branch being developed alongside the runtime change, then rerun against GameFrame `main` after the GameFrame side merges.
-
-### Merge-candidate milestones
-
-Run:
-
-- actual GameFrame Node integration;
-- durable local service integration where persistence or deployment boundaries changed;
-- recovery, retry, backup, restore, and reference-campaign journeys.
-
-### Scheduled watches
-
-Run:
-
-- shared-document drift against GameFrame `main`;
-- current GameFrame `main` integration against runtime `main`;
-- no provider-backed or secret-bearing work unless specifically approved.
-
-### External canaries
-
-Run only through explicit staging workflows with owner-controlled secrets and environments. VM staging canaries precede Cloudflare-native migration canaries.
+Broad inherited baselines remain scheduled or manually dispatched unless directly affected.
 
 ## Diagnostics
 
-Cross-repository jobs preserve enough failure evidence to identify which boundary failed without uploading private campaign or secret-bearing data.
+Preserve bounded evidence including:
 
-Useful evidence includes:
-
-- exact GameFrame and runtime commit SHAs;
-- requested GameFrame ref and resolved SHA;
-- fixture and contract versions;
-- service health responses;
-- bounded process logs;
-- failed request and stable error codes with sensitive values redacted;
-- final GameFrame coordination and runtime narrative revisions;
-- retry, reconnect, outcome, backup, and restore receipts;
-- browser traces or screenshots only when the journey includes a real browser surface;
-- deployment profile and storage adapter versions.
-
-A passing process start is not proof of integration. A passing mock is not proof of the real service. A captured screenshot is not proof of authoritative state.
-
-## Duration and runner policy
-
-- GameFrame public workflows use GitHub-hosted runners unless GameFrame repository policy states otherwise.
-- Every RPG GM Runtime workflow uses the designated self-hosted Debian runner.
-- Broad inherited baselines and browser suites remain scheduled or manually dispatched rather than running for every focused integration change.
-- Focused cross-repository jobs still require explicit timeouts, bounded logs, cleanup, and serialized use of the shared runner where necessary.
+- exact GameFrame and runtime SHAs;
+- package, schema, prompt, fixture, and contract versions;
+- package hash and selected provenance;
+- scripted player profile and turn at failure;
+- stable error codes and revisions;
+- bounded service and provider-stub logs;
+- retry, restart, outcome, backup, and restore receipts;
+- browser traces only for browser journeys;
+- no runtime-only package truth or credentials in ordinary artifacts.
 
 ## Acceptance criteria
 
-The integration strategy is established when:
+The testing system is established when:
 
-1. both repositories validate the same versioned fixtures;
-2. runtime mock tests cover failure and retry behavior;
-3. a runtime job on the self-hosted runner checks out and starts current GameFrame `main` or a trusted coordinated branch and records the resolved SHA;
-4. the Monster Master reference campaign enters and exits an actual GameFrame tactical match;
-5. durable local adapters survive both service restarts and lost-response retries;
-6. backup restoration preserves campaign continuity and identity;
-7. GameFrame changes that break runtime integration are detected during active development;
-8. a deployed VM staging canary proves Discord invitation, Cloudflare Tunnel routing, no origin port exposure, and public-network resume;
-9. optional Cloudflare-native migration tests are required only when those components become active deployment dependencies;
-10. no test or player journey depends on Tailscale.
+1. one handcrafted and one generated package pass the same validator;
+2. Dungeon Master machine-play proves multiple turns and multiple packages;
+3. secret, plot-drift, NPC-continuity, missed-clue, retry, and restart cases pass;
+4. both repositories validate the same shared fixtures;
+5. actual GameFrame integration exercises real routes and Arena Battles;
+6. durable integration survives restarts and backup restore;
+7. browser tests prove the complete player surface;
+8. VM canaries prove public routing and private origin posture;
+9. media and Cloudflare-native claims are isolated to their own evidence layers;
+10. no player journey depends on Tailscale or router forwarding.
 
 ## Governing rule
 
-> Use mocks for speed, fixtures for contract stability, the current real GameFrame checkout for integration truth, durable local adapters for first-production state truth, VM staging through Cloudflare Tunnel for public-system truth, and Cloudflare-native tests only for an evidence-backed migration.
+> Prove package structure, agent behavior, real integration, durable state, player experience, deployment, and media at separate evidence layers—and never describe a lower layer as proof of a higher one.

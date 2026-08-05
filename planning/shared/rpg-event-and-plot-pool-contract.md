@@ -8,15 +8,17 @@ applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
   - Monster Master RPG
-  - future prepared RPG campaigns
+  - future handcrafted and generated campaigns
 shared_document_id: rpg-event-and-plot-pool-contract-v1
-shared_document_version: 2
+shared_document_version: 3
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-event-and-plot-pool-contract.md
 mirrors:
   - QuankAIWS/rpg-gm-runtime:docs/shared/rpg-event-and-plot-pool-contract.md
 sync_policy: exact-byte-copy
 related:
+  - rpg-agent-architecture-and-campaign-package.md
+  - rpg-platform-roadmap.md
   - rpg-campaign-compiler-contract.md
   - rpg-one-shot-intro-agent-contract.md
   - rpg-monster-master-reference-campaign.md
@@ -28,146 +30,154 @@ related:
 
 ## Decision
 
-Prepared campaigns use authored campaign spines, curated plot-family catalogs, state-aware event pools, and committed clue graphs.
+Campaign spines, plot-family catalogs, event pools, clue templates, NPC role pools, and asset-role catalogs are **campaign-authoring material**.
 
-The system does not treat a campaign as a bag of unrelated random encounters, and it does not treat one deterministic fixture as the campaign's canonical story.
+The Campaign Architect selects, completes, and binds compatible material into a validated CampaignPackage before ordinary play. For handcrafted Monster Master packages, the team performs this Campaign Architect work manually.
 
-Before meaningful investigation begins, one approved plot family is selected and one hidden package is committed. Event pools then provide compatible complications, reactions, opportunities, and escalation while preserving that package's truth.
+The Dungeon Master later realizes the committed package through narration, dialogue, pacing, eligible events, NPC behavior, and freeform player interaction. It does not treat catalogs as a random-content generator and does not replace package truth.
 
-Monster Master is the first bespoke implementation and proving ground. Its private plot-family contents and selected packages belong in RPG GM Runtime. This public shared contract defines the reusable shape, ownership, asset references, validation rules, and multi-plot requirement.
+A catalog or deterministic fixture is not an executable campaign merely because its shape passes validation.
+
+## Official roles
+
+- **Campaign Architect:** creates the CampaignPackage, selects or authors plot structure, binds concrete actors and clues, and establishes causal truth.
+- **Dungeon Master:** runs the committed package, selects currently eligible events, and adapts realization around players.
+- **GameFrame:** presents player-safe material, owns deterministic mechanics and Arena Battles, and resolves semantic assets.
+
+Older references to plot agent or campaign compiler refer to Campaign Architect responsibilities. Live GM refers to the Dungeon Master.
+
+## Layered model
+
+```text
+campaign brief or handcrafted specification
+        +
+campaign spine
+        +
+plot-family and event source catalogs
+        +
+NPC and asset-role source catalogs
+        ↓
+Campaign Architect or manual authoring
+        ↓
+validated and committed CampaignPackage
+        ↓
+Dungeon Master realization and player decisions
+        ↓
+GameFrame presentation and authoritative mechanics
+```
 
 ## Terminology
 
 ### Campaign spine
 
-The stable functional structure shared by multiple runs.
+A stable functional structure that may be reused across packages.
 
-A spine defines required functions such as:
+It may define:
 
 - group formation;
-- initial assignment or public situation;
+- initial public situation;
 - early player agency;
-- one committed hidden package;
-- investigation, care, travel, social work, practical work, or avoidance;
-- causal pressure;
+- investigation, care, travel, social work, practical work, deception, or avoidance;
+- pressure and escalation functions;
 - decisive intervention;
-- aftermath and optional continuation.
+- aftermath and continuation.
 
-A spine does not identify the cause, responsible actors, exact clues, or ending.
+A spine does not by itself define concrete cause, responsible actors, actual clues, or ending.
 
 ### Plot-family catalog
 
-A plot-family catalog is the approved set of materially different causal patterns available to one prepared campaign.
+A curated set of materially different causal patterns available to the Campaign Architect.
 
-A valid starter catalog should include several families with different mixtures of:
-
-- creature care and ecological pressure;
-- technical or equipment failure;
-- social conflict, competition, or sabotage;
-- public chaos and comedy;
-- human crime, corruption, fraud, or rescue;
-- horror or specialty hazards when their rules are authored.
-
-No family is canonical merely because it is used by CI, documentation, or the first art pass.
+A catalog should span different kinds of play rather than cosmetic variants of one mystery. No family becomes canonical because it appears in CI, documentation, or asset production.
 
 ### Plot family
 
-A plot family is a reusable causal pattern capable of producing a complete one-shot or chapter.
+A reusable causal pattern broad enough to support multiple packages and narrow enough to define meaningful constraints.
 
-It defines:
+It may define:
 
 - public anomaly patterns;
-- hidden-cause shape;
+- hidden-cause patterns;
 - responsible and affected role patterns;
-- fair false interpretations;
-- required conclusion and evidence roles;
-- escalation logic;
-- social, practical, care, investigative, avoidant, deceptive, and tactical resolution shapes;
+- false interpretations;
+- conclusion and evidence roles;
+- pressure and escalation logic;
+- social, care, practical, investigative, avoidant, deceptive, containment, and tactical resolution shapes;
 - consequence families;
-- compatible event pools and semantic asset roles;
-- forbidden elements and realization limits.
+- compatible event and asset roles;
+- forbidden elements.
 
-A plot family is broader than one fixed scenario and narrower than unrestricted model improvisation.
+A plot family is not a completed package.
 
-### Committed plot package
+### CampaignPackage
 
-A committed plot package is the selected hidden truth for one campaign run.
+The completed executable campaign artifact.
 
-It fixes the selected family, cause, responsible actors or forces, affected roles, required clue graph, escalation, resolution constraints, tactical threshold, and continuation seed before meaningful investigation begins.
+It binds:
 
-The package survives exact retry, reconnect, restart, model changes, and unexpected player action. The runtime may not switch families because players guessed correctly, missed a clue, or refused the apparent assignment.
+- actual premise and operating rules;
+- selected cause and causal history;
+- actual responsible and affected actors;
+- actual locations and relationships;
+- concrete clue and evidence graph;
+- event eligibility and pressure state;
+- tactical thresholds and objectives;
+- consequences and resolution conditions;
+- semantic presentation requirements;
+- visibility, provenance, and forbidden retcons.
+
+The package survives retry, reconnect, restart, model changes, and unexpected player behavior.
 
 ### Event pool
 
-An event pool is a versioned set of bounded state-aware events compatible with several plot families or with one explicit family.
+A versioned set of bounded authored situations and state transitions.
 
-Events may add pressure, reveal evidence, create a choice, change an NPC attitude, introduce a temporary hazard, reward preparation, complicate travel, create temptation, or expose the effects of delay.
+Events may add pressure, reveal available evidence, create a choice, change an NPC attitude, introduce hazards, reward preparation, complicate travel, create temptation, or show the effects of delay.
 
-Events cannot replace the committed cause, move decisive evidence merely to steer players, or force an event sequence because it was authored in a particular order.
+An event cannot replace package truth, move decisive evidence merely to steer players, or force a sequence because it was authored in a particular order.
 
 ### Realization
 
-Realization is the live GM's wording, dialogue, sensory description, humor, NPC behavior, event timing, and adaptation to player action.
+The Dungeon Master’s wording, dialogue, sensory detail, humor, NPC performance, timing, and adaptation.
 
-It remains subordinate to the campaign spine, selected package, established facts, and current state.
+Realization remains subordinate to the CampaignPackage and current committed state.
 
 ## Ownership
 
-### GameFrame owns
+### Campaign Architect in RPG GM Runtime
 
-- player-facing presentation of scenes, clues, choices, clocks, recaps, and tactical transitions;
-- semantic asset-role and accepted asset-ID resolution;
-- audience-scoped projections;
-- deterministic placeholders and fallback presentation;
-- tactical rules, encounter state, and committed terminal outcomes;
-- development tools that display public catalog metadata without exposing runtime-only truth;
-- the reusable starter asset foundation and family-extension mappings.
+- selects and completes source material;
+- binds concrete actors, causes, clues, events, pressure, and resolutions;
+- validates and commits CampaignPackages;
+- records provenance and compatibility;
+- ensures the package is playable and recoverable.
 
-### RPG GM Runtime owns
+### Dungeon Master in RPG GM Runtime
 
-- private plot-family contents and catalog enablement;
-- package selection, compatibility checks, seeding, and commitment;
-- committed plot packages and clue graphs;
-- hidden event eligibility and exclusions;
-- selected event state, cooldowns, pressure, and consequences;
-- live realization and freeform intent interpretation;
-- prevention of retrospective plot rewriting;
-- runtime-only continuity and secrecy.
+- interprets freeform actions;
+- selects currently eligible package events;
+- realizes scenes and NPCs;
+- applies package-compatible consequences;
+- preserves package truth and secrecy.
 
-### Shared contract owns
+### GameFrame
 
-- stable identifiers and versioning requirements;
-- reusable catalog, plot, event, clue, consequence, and asset-reference shapes;
-- deterministic-fixture rules;
-- validation and replay invariants;
-- cross-repository ownership boundaries.
+- presents scenes, clues, choices, clocks, recaps, and tactical transitions;
+- resolves semantic asset roles;
+- enforces audience-scoped projections;
+- supplies placeholders and fallbacks;
+- owns deterministic mechanics, encounter state, and terminal outcomes.
 
-## Layered campaign model
+### Shared contract
 
-```text
-prepared campaign spine
-        +
-curated plot-family catalog
-        +
-state-aware event pools
-        +
-shared asset-role foundation
-        ↓
-selected and committed plot package
-        ↓
-live GM realization and player decisions
-        ↓
-GameFrame presentation and tactical outcomes
-```
+- stable concepts, identifiers, versioning, bounds, validation rules, and ownership boundaries.
 
-The catalog and event pools are reusable. The committed package is unique to one run. Realization may vary without changing causal truth.
+## Plot-family source template
 
-## Plot-family template
-
-The implementation schema may evolve, but a plot-family definition must represent these concepts:
+A source plot family should represent:
 
 ```ts
-type PlotFamilyDefinitionV2 = {
+type PlotFamilyDefinitionV3 = {
   protocolVersion: number;
   plotFamilyId: string;
   plotFamilyVersion: number;
@@ -206,22 +216,22 @@ type PlotFamilyDefinitionV2 = {
 };
 ```
 
-Private implementations may add hidden author notes, weighting, content-safety metadata, and runtime-specific validation, but must not remove causal and evidence requirements.
+A CampaignPackage must replace patterns and roles with concrete validated campaign state where required.
 
-## Event-pool template
+## Event-pool source template
 
 ```ts
-type EventPoolDefinitionV2 = {
+type EventPoolDefinitionV3 = {
   protocolVersion: number;
   eventPoolId: string;
   eventPoolVersion: number;
   campaignFamilyId: string;
   purpose: string;
   compatiblePlotFamilyIds: string[];
-  entries: EventPoolEntryV2[];
+  entries: EventPoolEntryV3[];
 };
 
-type EventPoolEntryV2 = {
+type EventPoolEntryV3 = {
   eventId: string;
   eventTags: string[];
   trigger: string;
@@ -242,190 +252,129 @@ type EventPoolEntryV2 = {
 };
 ```
 
-An event entry describes a situation and state transition, not final prose. The live GM may realize it differently according to the selected package, location, NPCs, monsters, prior choices, and available assets.
+An event entry is authored situation material, not final prose or an automatically eligible scene.
 
 ## Clue-graph requirements
 
-Every investigative package contains a committed evidence graph.
+Every investigative CampaignPackage contains a committed evidence graph distinguishing:
 
-The graph distinguishes:
+- required conclusions;
+- primary clues;
+- corroborating clues;
+- context clues;
+- optional red herrings;
+- recovery paths.
 
-- **required conclusions** — facts players may need to establish;
-- **primary clues** — evidence that directly supports a conclusion;
-- **corroborating clues** — independent support or contradiction testing;
-- **context clues** — information explaining motive, timing, or consequences;
-- **red herrings** — plausible but nonmandatory alternatives that can be disproved;
-- **recovery paths** — ways to continue after a missed clue or failed check.
+Each required conclusion must have at least two reasonable paths unless the package is explicitly non-investigative.
 
-Each required conclusion must have at least two reasonable paths unless the package is explicitly non-investigative. A failed roll may change cost, time, confidence, exposure, or consequence, but must not permanently remove the only route to completion.
+A failed roll may change cost, time, confidence, exposure, danger, or consequence. It must not permanently remove the only route to completion.
 
-The live GM may adapt wording and placement details only while remaining compatible with established facts and the committed graph. It may not create new decisive evidence solely because players chose an unexpected approach.
+The Dungeon Master may adapt clue wording and local framing while preserving committed facts and relationships. It may not invent decisive evidence solely because players chose an unexpected approach.
 
-## Reusable event categories
+## Event eligibility
 
-Prepared campaigns should draw from several categories rather than relying on combat interruptions.
+Eligibility may depend on:
 
-Recommended categories include:
-
-- opening opportunity;
-- assignment and briefing;
-- route and infrastructure;
-- environmental pressure;
-- creature care and behavior;
-- social and relationship pressure;
-- bureaucracy and jurisdiction;
-- investigation and evidence;
-- criminal interference;
-- rival or competing-party action;
-- guide or mentor intervention;
-- equipment, supply, cube, and accommodation complications;
-- tactical escalation;
-- aftermath, assessment, and continuation hooks.
-
-Campaign-specific pools may add categories without changing the base contract.
-
-## Eligibility and selection
-
-Plot-family selection occurs before meaningful investigation. Event selection occurs continuously from current state.
-
-At minimum, event eligibility may depend on:
-
-- selected plot family and committed cause;
+- CampaignPackage identity and truth;
 - current spine function;
 - discovered clues and established facts;
 - unresolved consequences;
 - player location and route;
-- present NPCs and monsters;
-- hazard-class permissions and equipment;
+- present NPCs and creatures;
+- permissions, equipment, and resources;
 - pressure state;
-- event cooldowns and repetition limits;
-- audience and privacy constraints;
-- available prepared assets or approved fallbacks.
+- cooldown and repetition limits;
+- audience and privacy;
+- available assets or fallbacks.
 
-Weighted selection, when implemented, occurs only after incompatible entries are excluded. A broad weighted engine is not required for the initial Monster Master catalog.
-
-## Asset-role references
-
-Plot and event definitions reference semantic asset roles, not filenames, provider prompts, or one fixture's named actors.
-
-Shared foundation examples:
-
-```text
-location.field-station
-location.settled-route
-npc.veteran-guide.portrait
-npc.local-worker.portrait
-npc.rival-trainee.portrait
-creature.domestic-worker.field
-creature.conventional-hazard.field
-prop.route-marker.modular
-prop.supply-cart.modular
-prop.capture-cube.inspection
-prop.field-kit.modular
-prop.barrier.modular
-ui.private-observation
-ui.tactical-objectives
-ui.aftermath-summary
-fx.investigation-set
-fx.behavior-warning
-fx.hazard-warning
-```
-
-Family-specific extensions may add roles such as counterfeit components, festival dressing, a false roadblock, or a territorial creature.
-
-GameFrame resolves each role to:
-
-1. an accepted campaign asset;
-2. a compatible theme or Arena Battles asset;
-3. a deterministic composition;
-4. a readable placeholder or text fallback.
-
-Missing optional art must not invalidate an otherwise playable event. Required tactical readability must exist through an accepted asset or approved fallback before encounter launch.
-
-No single plot family or deterministic fixture controls the complete asset register.
+Weighted selection, if added, occurs only after incompatible entries are excluded. A broad weighted engine is not required before the first complete package works.
 
 ## Consequence model
 
-Events and plot resolutions produce bounded state changes rather than merely ending a scene.
-
-Consequence families may include:
+Events and resolutions produce bounded state changes, including:
 
 - clue discovery or confidence;
 - pressure advanced or reduced;
 - NPC trust, suspicion, debt, leverage, or hostility;
-- monster comfort, injury, fear, refusal, placement, or bond;
-- route safety or access;
-- license, legal, evidence, or reputation state;
+- creature comfort, injury, fear, refusal, placement, or bond;
+- route access or safety;
+- legal, license, evidence, or reputation state;
 - supplies, equipment, cube condition, or money;
 - tactical advantage, hazard, objective, or reinforcement;
-- future event eligibility;
-- assessment and optional continuation hooks.
+- later event eligibility;
+- assessment and continuation hooks.
 
-GameFrame receives player-visible consequences through structured events where supported. Runtime-only eligibility and secret-state mutations remain in the runtime.
+GameFrame receives structured player-visible consequences where supported. Runtime-only eligibility and secrets remain in RPG GM Runtime.
 
-## Validation rules
+## Asset-role references
 
-A catalog is accepted only when:
+Source catalogs and packages reference semantic roles, not filenames or provider prompts.
 
-- it contains several materially different enabled plot families;
-- no enabled family is labeled canonical solely because it is used by CI or assets;
-- blocked families state their missing prerequisite;
-- the shared asset foundation supports more than one family;
-- a deterministic fixture is explicitly non-canonical.
+GameFrame resolves each role through:
 
-A plot family or package is accepted only when:
+1. accepted campaign asset;
+2. compatible prepared or Arena Battles asset;
+3. deterministic composition;
+4. readable placeholder, silhouette, card, or text fallback.
+
+Missing optional art does not invalidate an otherwise playable event. Tactical readability must exist before encounter launch.
+
+## Validation levels
+
+### Source catalog validation
+
+A catalog is valid when:
+
+- it contains materially different enabled families;
+- blocked families identify prerequisites;
+- shared assets support more than one family;
+- deterministic fixtures are explicitly noncanonical;
+- source entries have causal and playable structure.
+
+This proves authoring material only.
+
+### CampaignPackage validation
+
+A package is valid when:
 
 - one clear causal chain explains the public anomaly;
-- every required conclusion has redundant or recoverable evidence paths;
-- no single failed check can dead-end the one-shot;
-- escalation follows from cause, time, or player choice;
+- concrete actors, locations, clues, and event state are bound;
+- conclusions have redundant or recoverable paths;
+- escalation follows from cause, time, or player action;
 - noncombat resolution exists when credible;
-- tactical conflict has an authored objective and consequence rather than existing to fill time;
-- guide NPCs provide context and safety boundaries without solving the plot;
-- required asset roles have accepted assets or readable fallbacks;
+- tactical conflict has an authored objective and consequence;
+- guide NPCs do not solve the campaign;
+- required asset roles have accepted assets or fallbacks;
 - runtime-only fields cannot enter player projections;
-- the immediate plot can conclude as a satisfying one-shot;
-- continuation hooks are optional.
+- the campaign has a complete bounded resolution;
+- package state serializes, persists, reloads, and resumes.
 
-## Deterministic fixtures and live variation
+### Dungeon Master behavior validation
 
-Each prepared campaign should maintain at least one deterministic package for integration and regression testing.
+Machine-play must prove that the Dungeon Master:
 
-The deterministic fixture must:
+- preserves package truth;
+- handles expected and unexpected freeform actions;
+- does not leak secrets;
+- preserves NPC identity and relationships;
+- supports missed-clue recovery;
+- selects only eligible events;
+- reaches a valid resolution or tactical threshold.
 
-- select a family also present in the enabled catalog;
-- be marked `fixtureOnly` and `canonicalStarter: false` or equivalent;
-- preserve package, catalog, and seed metadata;
-- produce stable outputs for exact retry;
-- remain replaceable through a versioned fixture change;
-- avoid controlling default campaign copy, creative priority, or the entire asset roadmap.
+## Monster Master boundary
 
-Variable or explicitly selected runs prove that the same chassis and event material can produce materially different coherent play.
+The current Monster Master catalog includes several source families and reusable event pools. The immediate implementation goal is not to execute the entire catalog as a procedural system.
 
-## Privacy and public repositories
+The immediate goal is to convert selected material into **one complete handcrafted gold-standard CampaignPackage**, prove it through the Dungeon Master and GameFrame loop, and then author or generate additional packages.
 
-This contract and public asset-role vocabulary may live in GameFrame.
+The deterministic package remains CI-only and noncanonical. Class 4 specialty material remains blocked until its fixed rule and countermeasure exist. No confirmed Class Five material belongs in the starter.
 
-Specific private family contents, culprit or cause lists, clue answers, package selection, and active campaign truth remain in RPG GM Runtime or runtime persistence. Public documentation may describe representative shapes without publishing every intended surprise.
+## Privacy
 
-## Current Monster Master boundary
+Public shared contracts may describe reusable shapes and representative examples.
 
-The initial Monster Master starter uses:
-
-- the joint academy and warden certification chassis;
-- route, creature-care, capture, delivery, licensing, and public-service functions;
-- at least five materially different enabled plot families;
-- reusable opening, route, care, social, escalation, and aftermath event pools;
-- one selected package committed per run;
-- one explicitly non-canonical deterministic package for CI;
-- official monster hazard Classes 1 through 4;
-- no confirmed or official Class Five event;
-- blocked Class 4 families until their fixed rule and countermeasure exist;
-- a shared starter asset foundation plus selected family extensions;
-- one complete one-shot resolution plus optional continuation seeds.
-
-The shared template does not require immediate procedural generation or production art for every family.
+Private family contents, actual causes, clue answers, package selection, actor bindings, event eligibility, and active campaign truth remain in RPG GM Runtime or runtime persistence.
 
 ## Governing rule
 
-> Maintain several distinct approved plot families, commit one coherent package per run, select only state-compatible events, use shared semantic assets, and never let a deterministic fixture become the campaign's canonical story.
+> Catalogs provide campaign-authoring material; the Campaign Architect turns that material into a complete CampaignPackage; the Dungeon Master realizes only committed and eligible content; and no fixture or source catalog is mistaken for the finished campaign.

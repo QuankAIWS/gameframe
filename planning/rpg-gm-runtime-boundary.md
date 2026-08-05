@@ -3,112 +3,138 @@ title: RPG GM Runtime Boundary
 status: accepted
 document_type: architecture
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-03
+last_updated: 2026-08-05
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
   - scribbles-runtime
 related:
+  - shared/rpg-agent-architecture-and-campaign-package.md
+  - shared/rpg-platform-roadmap.md
   - rpg-campaign-experience-directions.md
   - rpg-gameframe-interface-contract.md
-  - rpg-platform-delivery-plan.md
 ---
 
 # RPG GM Runtime Boundary
 
 ## Decision
 
-The RPG Game Master is a separate project and runtime. It is not hosted, configured, spawned, supervised, or persisted by Scribbles Runtime.
+RPG GM Runtime is a separate project and service. It is not hosted, configured, spawned, supervised, or persisted by Scribbles Runtime.
 
-GameFrame is the complete player-facing RPG interface. RPG GM Runtime is the campaign-intelligence backend. Scribbles Runtime owns Theo and only the connector required for Theo to participate as an ordinary GameFrame player.
+RPG GM Runtime contains two specialized agent capabilities:
 
-## Ownership
+- **Campaign Architect** — creates validated CampaignPackages before ordinary play;
+- **Dungeon Master** — runs committed CampaignPackages through live freeform play.
 
-### Scribbles GameFrame
+GameFrame is the complete player-facing RPG application. Scribbles Runtime owns Theo and only the connector required for Theo to participate as an ordinary GameFrame player.
+
+## System flow
+
+```text
+player concept, owner specification, sheet, or interview
+        ↓
+GameFrame authenticated intake
+        ↓
+Campaign Architect in RPG GM Runtime
+        ↓
+validated CampaignPackage
+        ↓
+Dungeon Master in RPG GM Runtime
+        ↕
+GameFrame player presentation and authoritative mechanics
+```
+
+A handcrafted package such as Monster Master enters at the CampaignPackage boundary and bypasses Campaign Architect generation, not validation or commitment.
+
+## GameFrame ownership
 
 GameFrame owns:
 
-- the complete browser and Discord Activity RPG interface;
-- campaign client sessions, player authentication, seats, invitations, and resume;
+- browser and Discord Activity interfaces;
+- campaign creation, package preview, confirmation, joining, invitations, seats, and resume;
 - authenticated player commands and server-derived principals;
-- scene, dialogue, card, choice, check, character, inventory, quest, map, and encounter presentation;
-- player-visible structured campaign projections;
-- mechanics explicitly implemented through GameFrame contracts;
-- tactical maps, legal actions, turns, effects, hidden tactical information, replay, persistence, reconnect, and committed outcomes;
-- responsive layout, animation, accessibility, and presentation-state behavior.
+- player-visible scenes, dialogue, cards, suggestions, checks, characters, inventory, quests, clues, maps, recaps, and encounters;
+- audience-scoped player projections;
+- mechanics deliberately implemented as GameFrame authority;
+- Arena Battles rules, legal actions, turns, replay, persistence, reconnect, and terminal outcomes;
+- semantic asset resolution, media generation, validation, provenance, storage, caching, delivery, and fallback;
+- responsive layout, animation, accessibility, and client interaction.
 
-GameFrame does not automatically own every narrative fact or semantic campaign concept. State remains runtime-owned unless it is deliberately promoted into a structured GameFrame mechanic.
+GameFrame does not own the hidden CampaignPackage bible, Campaign Architect prompts, Dungeon Master prompts, hidden motives, clue answers, or event eligibility.
 
-### RPG GM Runtime
+## RPG GM Runtime ownership
+
+### Campaign Architect
 
 RPG GM Runtime owns:
 
-- the authoritative campaign journal and runtime-owned campaign revision;
-- semantic world and character continuity outside GameFrame-owned mechanics;
-- narration, scene construction, NPC reasoning, dialogue intent, factions, quests, and narrative progression;
+- campaign brief normalization;
+- CampaignPackage schemas and validation;
+- originality transformation;
+- package generation, repair, hashing, provenance, persistence, migration, and commitment;
+- hidden campaign bible, actors, motives, clues, events, escalation, resolutions, and semantic asset intents;
+- package projection into player-safe preview and Dungeon Master context.
+
+### Dungeon Master
+
+RPG GM Runtime owns:
+
+- authoritative campaign journal and runtime narrative revision;
+- scene construction, narration, NPC reasoning, and dialogue;
 - interpretation of freeform player intent;
-- audience classification for public, party, player-private, and runtime-only information;
-- proposals for choices, checks, structured campaign changes, and tactical encounters;
-- model context construction, provider routing, evaluation, retries, fallback, and recovery;
+- eligible event selection and package-compatible consequences;
+- semantic world, relationship, quest, clue, and incidental NPC continuity;
+- audience classification;
+- requests for checks, media, and tactical encounters;
 - mapping committed GameFrame outcomes into campaign consequences;
-- campaign media requests and stable asset references unless a specific asset becomes GameFrame-owned.
+- context construction, model routing, validation, retries, fallback, and recovery.
 
-Model prose is not campaign truth until validated and committed to the runtime journal.
+Model output is not campaign truth until validated and committed.
 
-### Scribbles Runtime
+## Scribbles Runtime ownership
 
 Scribbles Runtime owns:
 
-- Theo's model behavior and runtime lifecycle;
-- translation between Theo's authorized GameFrame observation and his model context;
+- Theo's model behavior and lifecycle;
+- translation of Theo's authorized GameFrame observation into Theo context;
 - submission of Theo's selected legal GameFrame command;
-- correlation, authorization, timeout, and deterministic fallback behavior for Theo's player connector.
+- connector correlation, authorization, timeout, and fallback.
 
-Scribbles Runtime does not own campaign state, GM context, NPC memory, narration, quests, or RPG-specific orchestration.
-
-## Integration shape
-
-```text
-Human players ─┐
-Theo ──────────┼─> GameFrame player interface and command boundary
-               │          ↕
-               │   versioned RPG contracts
-               │          ↕
-               └─> RPG GM Runtime
-
-Theo model behavior
-        ↕
-Scribbles Runtime
-        ↕ ordinary player connector
-GameFrame
-```
-
-The ordinary design does not require a private Scribbles Runtime-to-RPG GM Runtime connection. Theo and the GM interact through the same GameFrame campaign surfaces available to their respective authenticated roles.
+Scribbles Runtime does not own CampaignPackages, campaign state, Campaign Architect prompts, Dungeon Master context, NPC memory, quests, or RPG orchestration.
 
 ## Contract rules
 
-- No direct reads or writes across repository databases, queues, prompts, tools, secrets, or lifecycle controls.
-- The RPG GM uses a dedicated service principal and never impersonates Theo or a human player.
-- Player identity is derived from authenticated GameFrame context, never client payloads.
-- HTTP or an equivalent authoritative service boundary owns mutations; WebSockets remain projections unless the same command contract is preserved.
-- Contracts are versioned, runtime-validated, bounded, idempotent, audience-scoped, and recoverable after timeout or disconnect.
-- GameFrame consumes semantic presentation events, not arbitrary runtime-authored browser code.
-- RPG GM Runtime consumes structured mechanical outcomes, not combat prose.
+- No direct database, queue, prompt, secret, or lifecycle access across repositories.
+- CampaignPackage origin does not select a different Dungeon Master path.
+- RPG GM Runtime uses a dedicated service principal and never impersonates a player.
+- Player identity comes from authenticated GameFrame context.
+- Contracts are versioned, bounded, validated, idempotent, audience-scoped, and recoverable.
+- GameFrame consumes semantic events, not runtime-authored browser code.
+- Runtime consumes structured mechanics and tactical outcomes, not combat prose.
+- Runtime-only package data never enters ordinary browser projections.
+- Generated media does not become campaign authority.
 
 ## Development consequences
 
-- GameFrame builds the complete RPG shell against deterministic fixtures before production model integration.
-- RPG GM Runtime builds campaign semantics against a mock GameFrame port and frozen fixtures.
-- Integration begins from versioned shared fixtures rather than assumptions about private implementations.
-- New noncombat mechanics enter GameFrame only when a concrete campaign need justifies their schema, authority, persistence, UI, migrations, and tests.
-- Tests remain repository-specific, with compact cross-repository compatibility checks for shared fixtures.
+- Define and implement the CampaignPackage boundary before broadening agent behavior.
+- Handcraft Monster Master as the gold-standard package.
+- Prove the Dungeon Master against committed packages with mock providers and scripted players.
+- Build the Campaign Architect after the package and Dungeon Master quality bar is known.
+- GameFrame builds intake, preview, presentation, mechanics, and assets against versioned contracts and deterministic fixtures.
+- Integration occurs through contracts, never shared storage.
 
 ## Non-goals
 
 This boundary does not require:
 
-- duplicating GameFrame's tactical engine in the runtime;
-- moving GM reasoning or campaign secrets into the browser client;
-- making Discord the main campaign interface;
-- converting every improvised narrative object into a dedicated mechanic;
-- preventing reusable shared libraries where ownership and versioning remain explicit.
+- duplicating Arena Battles in runtime;
+- moving hidden campaign truth into GameFrame;
+- making Discord the primary campaign interface;
+- converting every improvised narrative concept into a dedicated mechanic;
+- separate Monster Master and generated-campaign Dungeon Masters;
+- a third intro agent;
+- live media generation for package logic tests.
+
+## Governing rule
+
+> Runtime authors and runs campaigns through two specialized agents; GameFrame presents them and owns deterministic mechanics; Scribbles Runtime only lets Theo play.

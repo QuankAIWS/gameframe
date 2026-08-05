@@ -5,14 +5,16 @@ document_type: asset-and-presentation-plan
 owner: Scribbles GameFrame
 last_updated: 2026-08-05
 applies_to:
-  - Monster Master RPG starter catalog
+  - Monster Master gold-standard CampaignPackage
   - GameFrame character presentation
   - manual Monster Master asset production
 related:
+  - monster-master-rpg-canonical-baseline.md
   - assets/monster-master-rpg-npc-role-catalog.json
   - monster-master-rpg-asset-register.md
   - assets/monster-master-rpg-asset-register.json
   - monster-master-rpg-current-creative-direction.md
+  - shared/rpg-agent-architecture-and-campaign-package.md
   - shared/rpg-event-and-plot-pool-contract.md
 ---
 
@@ -20,31 +22,33 @@ related:
 
 ## Decision
 
-Monster Master should prepare a reusable NPC role pool and portrait foundation.
+Monster Master maintains a reusable NPC role pool and portrait foundation.
 
-We can predict many people the starter world is likely to need even though we cannot predict every person players will choose to approach. The prepared pool gives the plot agent and DM reliable social vocabulary and gives the asset team a bounded production target.
+The pool is source material for the handcrafted Monster Master CampaignPackage and a reference for future Campaign Architect output. It is not a closed cast or an executable campaign by itself.
 
-The pool remains open. A player may ask to speak to the lunch lady, a stable hand, a janitor, a random traveler, a shop worker, or another plausible person we never selected in advance. The DM may create that NPC and GameFrame must still present them coherently.
+The **Campaign Architect** selects and binds likely recurring, plot-bearing, hidden, and clue-owning roles while constructing a CampaignPackage. For Monster Master, the team performs that authoring manually.
 
-The machine-readable planning catalog is [`assets/monster-master-rpg-npc-role-catalog.json`](assets/monster-master-rpg-npc-role-catalog.json). The main RPG asset register remains the lifecycle and provenance authority when source production begins.
+The **Dungeon Master** may create plausible incidental people when players seek or encounter someone not prepared in advance. Every introduced NPC receives stable identity and continuity.
+
+The machine-readable planning catalog is `assets/monster-master-rpg-npc-role-catalog.json`. The main RPG asset register remains the lifecycle and provenance authority when source production begins.
 
 ## Three NPC levels
 
 ### Named continuity anchors
 
-These are specific people expected to recur across several sessions or starter packages. They receive unique prepared identity assets.
+Specific people expected to recur across packages or sessions receive unique prepared identities.
 
 The initial anchor is:
 
 - **Warden Pell** — veteran guide and field supervisor.
 
-Other named anchors should be added only after lore, a selected plot family, or actual play establishes that they will recur.
+Other anchors should be added only when lore, a complete CampaignPackage, or actual play establishes durable recurring value.
 
 ### Prepared role templates
 
-These are common world roles that can be instantiated with different names, appearances, attitudes, relationships, and motives.
+Common roles may be instantiated with different names, appearances, attitudes, relationships, and motives.
 
-Prepared templates include:
+Templates include:
 
 - station quartermaster or equipment clerk;
 - station cook, cafeteria worker, or lunch lady;
@@ -55,41 +59,61 @@ Prepared templates include:
 - local farmhand, courier, road worker, stable hand, or witness;
 - merchant, innkeeper, caravan worker, courier, or traveler;
 - licensing clerk, inspector, or local official;
-- festival organizer, announcer, performer, sponsor, or civic volunteer;
+- festival organizer, announcer, performer, sponsor, or volunteer;
 - fixer, fence, scammer, false inspector, or corrupt intermediary;
-- intelligent monster citizen, professional, traveler, or official.
+- intelligent-monster citizen, professional, traveler, or official.
 
-A role template is not one permanent face or personality. It maps likely functions to reusable portrait families and accessories.
+A role template is not a permanent face, personality, culprit, clue owner, or campaign actor. The CampaignPackage binds concrete identities and functions where campaign truth requires them.
 
 ### Incidental NPCs
 
-These are people created because players interact with the world in an unplanned way.
+Incidental NPCs are created because players interact with the world in an unplanned but plausible way.
 
-GameFrame should be able to present an incidental NPC through:
+GameFrame should present them through this order:
 
-1. an exact prepared role portrait;
-2. a compatible portrait-family source with role accessories;
-3. a composable portrait crop;
-4. a named silhouette;
-5. a text-only character card.
+1. exact prepared role portrait;
+2. compatible portrait-family identity with role accessories;
+3. composable portrait;
+4. named silhouette;
+5. text-only character card.
 
-Once the DM assigns a visual identity, GameFrame should keep that identity when the NPC returns.
+Once assigned, the same visual and semantic identity must be preserved when the NPC returns.
+
+## Campaign truth boundary
+
+The Campaign Architect must bind before play any role that owns:
+
+- the hidden cause;
+- responsible actor identity;
+- decisive or required evidence;
+- secret authority;
+- mandatory campaign access;
+- an invariant relationship or obligation.
+
+The Dungeon Master may not retroactively give those functions to an incidental NPC unless the committed CampaignPackage explicitly leaves the role open.
+
+Incidental characters receive only knowledge, access, competence, motives, and relationships justified by their role, location, and established events.
 
 ## Continuity and promotion
 
-An incidental person can become important because players make them important.
+An incidental person becomes recurring when:
 
-Promotion occurs when:
-
-- the players seek the NPC again;
-- the NPC owns a task, clue, debt, favor, promise, payment, or disputed fact;
-- the NPC suffers or causes a lasting consequence;
+- players seek them again;
+- they own a task, clue, debt, favor, promise, payment, or disputed fact;
+- they suffer or cause a lasting consequence;
 - a relationship changes materially;
-- the NPC joins travel, employment, custody, rivalry, or another continuing role.
+- they join travel, employment, custody, rivalry, or another continuing role.
 
-Promotion does not require immediate unique art. The NPC keeps their assigned portrait-family identity until manual production approves a bespoke source.
+Promotion preserves:
 
-This protects emergent play without turning every unexpected conversation into an emergency asset request.
+- stable runtime NPC ID;
+- name and identity;
+- appearance and assigned portrait family;
+- role and known competence;
+- established facts and knowledge;
+- promises, lies, gifts, insults, payments, injuries, debts, suspicions, and relationships.
+
+Promotion does not require immediate unique art. The assigned portrait-family identity remains until deliberate production supersedes it.
 
 ## P0 portrait foundation
 
@@ -112,7 +136,7 @@ This protects emergent play without turning every unexpected conversation into a
   - stable hand;
   - ordinary witness.
 
-Initial target: two visibly distinct source identities, with ledger-and-keys, apron or food-service, and work-gear variants.
+Initial target: two visibly distinct identities with ledger-and-keys, food-service, and work-gear variants.
 
 ### Candidate and rival family
 
@@ -122,7 +146,7 @@ Initial target: two visibly distinct source identities, with ledger-and-keys, ap
   - academy peer;
   - apprentice.
 
-Initial target: two distinct identities, expressions from smug or amused through concerned and injured, plus field tokens.
+Initial target: two distinct identities, useful expressions, and field tokens.
 
 ### Care and handler family
 
@@ -142,7 +166,7 @@ Initial target: two identities, care-kit and stable variants, and field tokens.
   - repair specialist;
   - inspection expert.
 
-Initial target: two identities, tool, lens, and note variants.
+Initial target: two identities with tool, lens, and note variants.
 
 ### Guard and patrol family
 
@@ -172,57 +196,22 @@ Initial target: two identities with ledger, satchel, lodging, and caravan varian
   - role label;
   - assigned portrait family or silhouette;
   - short manner cue;
-  - clear fallback when no unique portrait exists.
+  - readable text fallback.
 
 ## P1 portrait foundation
 
-### Civic official family
+- `npc-family.civic-official` — licensing clerks, inspectors, administrators, minor officials;
+- `npc-family.civic-event` — organizers, announcers, performers, sponsors, volunteers;
+- `npc-family.underworld` — fixers, fences, scammers, false inspectors, corrupt intermediaries;
+- `npc-family.intelligent-monster-citizen` — citizens, professionals, travelers, merchants, officials, and specialists.
 
-- `npc-family.civic-official`
-  - licensing clerk;
-  - inspector;
-  - local administrator;
-  - minor official.
+Intelligent monsters are part of ordinary society and should not appear only as companions, hazards, or exceptional plot devices.
 
-### Civic-event family
-
-- `npc-family.civic-event`
-  - festival organizer;
-  - announcer;
-  - performer;
-  - sponsor;
-  - volunteer.
-
-### Underworld family
-
-- `npc-family.underworld`
-  - fixer;
-  - fence;
-  - scammer;
-  - false inspector;
-  - corrupt intermediary.
-
-### Intelligent-monster citizen family
-
-- `npc-family.intelligent-monster-citizen`
-  - ordinary citizen;
-  - licensed professional;
-  - traveler;
-  - merchant;
-  - official;
-  - specialist.
-
-This family is important because intelligent monsters are part of ordinary society and should not appear only as companions, hazards, or exceptional plot devices.
-
-### Diversity expansion
-
-After each common P0 family has one working set, add second and later identities so one face does not become every cook, farmer, witness, and courier in the region.
-
-A portrait family is not considered complete until it has at least two visibly distinct identities at intended card size.
+Each common family should eventually have at least two visibly distinct identities at intended card size.
 
 ## Expression and accessory system
 
-Common expression targets:
+Common expressions:
 
 - neutral;
 - amused;
@@ -230,63 +219,67 @@ Common expression targets:
 - concerned;
 - angry;
 - frightened;
-- injured, where relevant.
+- injured where relevant.
 
-Common role accessories:
+Common accessories:
 
-- apron or food-service gear;
+- food-service gear;
 - ledger and quartermaster keys;
 - care kit or stable gear;
 - cube tools or inspection lens;
 - patrol insignia;
 - merchant ledger or courier satchel;
 - permits, seals, or official badge;
-- festival sash or announcer notes;
+- festival accessory;
 - forged authority gear or contraband case.
 
-Accessories should communicate role while preserving the underlying identity. They should not make every role look like a costume-party caricature.
+Accessories communicate role without turning every character into a costume caricature.
 
 ## Field-token boundary
 
 Prepare field tokens for roles likely to enter tactical space:
 
-- Warden Pell and other active guides;
+- active guides;
 - rivals;
-- creature-care specialists involved in an encounter;
-- road patrols and guards;
-- underworld or false-authority actors;
+- care specialists involved in encounters;
+- patrols and guards;
+- criminal or false-authority actors;
 - intelligent-monster professionals;
-- selected package actors whose position matters tactically.
+- package actors whose positioning matters.
 
-Cooks, clerks, merchants, shop workers, and ordinary witnesses may remain portrait-only unless play changes their operational role.
+Ordinary social NPCs may remain portrait-only unless play changes their operational role.
 
 ## Production sequence
 
-1. create the incidental character card and silhouette fallback;
-2. produce Pell’s unique portrait and field token;
-3. produce two service-worker identities, including quartermaster and cook/lunch-lady presentation;
-4. produce two candidate/rival identities and field tokens;
-5. produce two care-handler identities and field tokens;
-6. produce two technical-specialist identities;
-7. produce two guard/patrol identities and field tokens;
-8. produce two trade/travel identities;
-9. test several scenes containing planned and improvised NPCs;
-10. add civic, event, underworld, and intelligent-monster families as P1;
-11. promote recurring incidental NPCs to bespoke art only when play proves the need.
+Asset production follows the product-wide asset register and the shared roadmap. Within the NPC foundation:
+
+1. incidental character card and silhouette fallback;
+2. Pell’s unique portrait and field token;
+3. two service-worker identities;
+4. two candidate/rival identities and tokens;
+5. two care-handler identities and tokens;
+6. two technical-specialist identities;
+7. two guard/patrol identities and tokens;
+8. two trade/travel identities;
+9. scene tests containing package-selected and incidental NPCs;
+10. civic, event, underworld, and intelligent-monster families;
+11. bespoke art for recurring incidental NPCs only when play proves the need.
+
+This production work supports the first complete CampaignPackage. It does not outrank package construction or Dungeon Master machine-play testing.
 
 ## Acceptance
 
-The NPC foundation is successful when:
+The NPC foundation succeeds when:
 
-- the likely starter cast can be presented without unique art for every role;
-- a lunch lady or other unplanned person can appear immediately without blocking the DM;
-- repeated appearances preserve the same visual identity;
-- ordinary workers and social roles receive as much planning attention as suspects and combatants;
-- NPCs may become recurring through player action;
-- promotion does not force immediate bespoke production;
-- portrait families remain visually distinct and readable at actual GameFrame size;
+- the gold-standard CampaignPackage can bind a concrete cast from prepared roles;
+- likely social roles can appear without unique art for every person;
+- an unplanned lunch lady or other plausible person can appear without blocking play;
+- repeated appearances preserve semantic and visual identity;
+- incidental NPCs cannot rewrite committed package truth;
+- players can promote ordinary people into durable recurring characters;
+- portrait families remain distinct and readable;
 - tactical tokens exist only where operationally necessary.
 
 ## Governing rule
 
-> Prepare a broad reusable cast foundation, let the DM create plausible people players actually seek, and preserve those people as stable characters without requiring bespoke art before they are allowed to matter.
+> The Campaign Architect binds campaign-bearing roles, the Dungeon Master creates plausible incidental people, and GameFrame preserves every introduced identity without requiring bespoke art before a character is allowed to matter.
