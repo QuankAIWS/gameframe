@@ -1,0 +1,3 @@
+npm run assets:props:build
+npm run assets:props:verify
+npm run check:browser
