@@ -112,6 +112,9 @@ jobs:
             '6e50fe930bfc7b8d1bd93bf5ae859386c5156f851c93f6e08aba12649017bd32' \
             'public/assets/monster-master/props/rock-boulder-set-v1/source/master/small-rock-v1-master.png'
 
+          git commit --allow-empty -m 'chore: recovered approved rock masters'
+          git push origin "HEAD:${TARGET_BRANCH}"
+
       - name: Switch pipeline to direct retained masters
         shell: bash
         run: |
@@ -126,6 +129,9 @@ jobs:
           npm run assets:props:build
           npm run assets:props:verify
           npm run check:browser
+
+          git commit --allow-empty -m 'chore: verified direct rock asset build'
+          git push origin "HEAD:${TARGET_BRANCH}"
 
       - name: Verify final retained masters and runtime set
         shell: bash
