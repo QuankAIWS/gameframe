@@ -338,3 +338,21 @@ A person may become recognized during life or only after death. Claiming the tit
 - Recognition may vary by faction, region, profession, species community, and historical period.
 - NPC dialogue and social reactions should reflect disputed or partial recognition.
 - False claims can create ridicule, fraud disputes, or reputational consequences without making the words themselves universally illegal.
+
+## Decision 20 — Mythically rare nonhuman Monster Masters
+
+Any intelligent person can, in principle, become recognized as a Monster Master. The legendary reputation is not limited to humans and does not depend on species, anatomy, citizenship, or which license classes local governments are willing to issue.
+
+A nonhuman Monster Master is nevertheless mythically rare. Most cultures know of none, one disputed ancient example, or a small number of figures whose stories have become difficult to separate from legend. A confirmed living example should feel like a once-in-an-era occurrence rather than an uncommon career achievement.
+
+The rarity follows from several pressures acting together: intelligent monster license holders are already uncommon, legal and technical barriers limit their opportunities, public histories often minimize nonhuman accomplishments, and earning Monster Master recognition requires achievements far beyond ordinary professional excellence.
+
+Species communities may preserve accounts ignored or dismissed by human institutions. A figure considered fictional by a kingdom's scholars may be remembered through detailed oral history, monuments, inherited obligations, or living witnesses among long-lived monsters.
+
+### Implementation consequences
+
+- Monster Master recognition cannot require a human species identifier.
+- Nonhuman Monster Masters should be individually authored legendary figures, not generated as routine high-level NPCs.
+- Historical records may contain disputed, suppressed, mistranslated, or species-specific accounts of such figures.
+- A living nonhuman Monster Master should materially affect regional politics, scholarship, monster communities, and public expectations.
+- Player characters may theoretically earn this recognition, but it must remain an exceptional long-form outcome rather than a normal progression tier.
