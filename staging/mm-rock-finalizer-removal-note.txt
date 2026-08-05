@@ -1,0 +1,1 @@
+Delete this staging directory and .github/workflows/mm-rock-finalize-on-issue.yml immediately after PR #107 is finalized.
