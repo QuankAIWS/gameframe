@@ -75,8 +75,9 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
 
       const campaignRoute = matchCampaignRoute(url.pathname);
       if (campaignRoute && request.method === "POST") {
-        const principal = await authenticate(authenticator, request, url);
-        const body = await readJson(request);
+        const bodyBytes = await readRequestBody(request);
+        const principal = await authenticate(authenticator, request, url, bodyBytes);
+        const body = parseJsonBody(bodyBytes);
         requireBodyIdentity(body.campaignId, campaignRoute.campaignId, "campaignId");
         const rpgPrincipal = toRpgPrincipal(principal);
         if (campaignRoute.operation === "attach") {
@@ -102,8 +103,9 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
 
       const encounterRoute = matchEncounterRoute(url.pathname);
       if (encounterRoute?.operation === "collection" && request.method === "POST") {
-        const principal = await authenticate(authenticator, request, url);
-        const body = await readJson(request);
+        const bodyBytes = await readRequestBody(request);
+        const principal = await authenticate(authenticator, request, url, bodyBytes);
+        const body = parseJsonBody(bodyBytes);
         return sendJson(
           response,
           200,
@@ -114,7 +116,12 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
         );
       }
       if (encounterRoute?.operation === "item" && request.method === "GET") {
-        const principal = await authenticate(authenticator, request, url);
+        const principal = await authenticate(
+          authenticator,
+          request,
+          url,
+          Buffer.alloc(0),
+        );
         return sendJson(
           response,
           200,
@@ -124,8 +131,9 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
         );
       }
       if (encounterRoute?.operation === "complete" && request.method === "POST") {
-        const principal = await authenticate(authenticator, request, url);
-        const body = await readJson(request);
+        const bodyBytes = await readRequestBody(request);
+        const principal = await authenticate(authenticator, request, url, bodyBytes);
+        const body = parseJsonBody(bodyBytes);
         return sendJson(
           response,
           200,
@@ -185,6 +193,7 @@ async function authenticate(
   authenticator: RequestAuthenticator,
   request: IncomingMessage,
   url: URL,
+  body: Uint8Array,
 ): Promise<AuthenticatedPrincipal> {
   const headers = new Headers();
   for (const [name, value] of Object.entries(request.headers)) {
@@ -195,7 +204,11 @@ async function authenticate(
     }
   }
   return await authenticator.authenticate(
-    new Request(url, { method: request.method, headers }),
+    new Request(url, {
+      method: request.method,
+      headers,
+      ...(body.byteLength > 0 ? { body } : {}),
+    }),
   );
 }
 
@@ -205,17 +218,25 @@ function toRpgPrincipal(principal: AuthenticatedPrincipal): DurableRpgPrincipal 
     : { kind: "player", playerId: principal.playerId };
 }
 
-async function readJson(request: IncomingMessage): Promise<Record<string, unknown>> {
-  let body = "";
+async function readRequestBody(request: IncomingMessage): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  let totalBytes = 0;
   for await (const chunk of request) {
-    body += chunk;
-    if (Buffer.byteLength(body, "utf8") > MAX_REQUEST_BODY_BYTES) {
+    const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    totalBytes += bytes.byteLength;
+    if (totalBytes > MAX_REQUEST_BODY_BYTES) {
       throw new HttpBoundaryError(413, "request-too-large", "Request body is too large.");
     }
+    chunks.push(bytes);
   }
-  if (!body) return {};
+  return Buffer.concat(chunks, totalBytes);
+}
+
+function parseJsonBody(body: Uint8Array): Record<string, unknown> {
+  if (body.byteLength === 0) return {};
   try {
-    const value = JSON.parse(body) as unknown;
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(body);
+    const value = JSON.parse(text) as unknown;
     if (!value || typeof value !== "object" || Array.isArray(value)) {
       throw new Error("JSON body must be an object");
     }
