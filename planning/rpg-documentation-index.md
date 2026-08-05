@@ -13,9 +13,8 @@ related:
   - rpg-campaign-experience-directions.md
   - rpg-gm-runtime-boundary.md
   - rpg-gameframe-interface-contract.md
-  - shared/rpg-campaign-compiler-contract.md
+  - shared/rpg-campaign-architect-contract.md
   - shared/rpg-event-and-plot-pool-contract.md
-  - shared/rpg-one-shot-intro-agent-contract.md
   - shared/rpg-monster-master-reference-campaign.md
   - shared/rpg-media-theme-and-audio-pipeline.md
   - shared/rpg-rendering-and-asset-contract.md
@@ -26,7 +25,7 @@ related:
 
 ## Required reading order
 
-1. [`shared/rpg-agent-architecture-and-campaign-package.md`](shared/rpg-agent-architecture-and-campaign-package.md) — controlling two-agent architecture, official names, CampaignPackage handoff, handcrafted/generated equivalence, Monster Master role, and testing requirements.
+1. [`shared/rpg-agent-architecture-and-campaign-package.md`](shared/rpg-agent-architecture-and-campaign-package.md) — controlling two-agent architecture, official names, CampaignPackage handoff, handcrafted/generated equivalence, Monster Master role, campaign-opening rules, and testing requirements.
 2. [`shared/rpg-platform-roadmap.md`](shared/rpg-platform-roadmap.md) — controlling implementation order and milestone gates.
 3. [`monster-master-rpg-canonical-baseline.md`](monster-master-rpg-canonical-baseline.md) — Monster Master-specific authority, lore, assets, and gold-standard package posture.
 
@@ -34,9 +33,10 @@ Do not reconstruct the architecture from chat history, a sample fixture, a raw p
 
 ## Official agent terms
 
-- **Campaign Architect** creates complete CampaignPackages before play. Campaign compiler and plot agent are older aliases for parts of this responsibility.
-- **Dungeon Master** conducts live play from a committed CampaignPackage and the durable journal. Live DM is an acceptable internal shorthand.
-- There is no separate intro agent. The opening is the first Dungeon Master turn.
+- **Campaign Architect** creates complete CampaignPackages before play.
+- **Dungeon Master** conducts live play from a committed CampaignPackage and the durable journal. Live DM is acceptable internal shorthand.
+- Campaign compiler and plot agent are retired aliases for capabilities inside the Campaign Architect, not compatibility interfaces.
+- There is no separate intro agent or intro-agent contract. The opening is the first Dungeon Master turn and is governed by the main agent/package contract.
 
 ## Platform and ownership
 
@@ -48,11 +48,10 @@ Do not reconstruct the architecture from chat history, a sample fixture, a raw p
 
 ## Campaign architecture
 
-1. [`shared/rpg-campaign-compiler-contract.md`](shared/rpg-campaign-compiler-contract.md) — detailed Campaign Architect brief normalization and package construction contract.
+1. [`shared/rpg-campaign-architect-contract.md`](shared/rpg-campaign-architect-contract.md) — detailed Campaign Architect brief normalization and package construction contract.
 2. [`shared/rpg-event-and-plot-pool-contract.md`](shared/rpg-event-and-plot-pool-contract.md) — plot families, committed truth, events, clues, consequences, and asset roles.
-3. [`shared/rpg-one-shot-intro-agent-contract.md`](shared/rpg-one-shot-intro-agent-contract.md) — compatibility filename for the campaign-opening and Dungeon Master contract; it does not define another agent.
-4. [`shared/rpg-monster-master-reference-campaign.md`](shared/rpg-monster-master-reference-campaign.md) — Monster Master as the handcrafted reference package and Arena Battles proving ground.
-5. [`shared/rpg-cross-repository-integration-testing.md`](shared/rpg-cross-repository-integration-testing.md) — mock, fixture, actual service, durable recovery, browser, VM, and later migration test layers.
+3. [`shared/rpg-monster-master-reference-campaign.md`](shared/rpg-monster-master-reference-campaign.md) — Monster Master as the handcrafted reference package and Arena Battles proving ground.
+4. [`shared/rpg-cross-repository-integration-testing.md`](shared/rpg-cross-repository-integration-testing.md) — mock, fixture, actual service, durable recovery, browser, VM, and later migration test layers.
 
 ## Monster Master creative and lore authority
 
