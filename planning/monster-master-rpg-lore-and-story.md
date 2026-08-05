@@ -374,3 +374,21 @@ A living nonhuman Monster Master, if one currently exists, is included within th
 - Recognition data should record supporting regions, factions, species communities, and major accomplishments rather than a universal boolean alone.
 - Introducing, killing, discrediting, or confirming a Monster Master should be a major world event.
 - New legendary figures should not be added casually merely to populate high-level content.
+
+## Decision 22 — Mixed public lives among Monster Masters
+
+Living Monster Masters do not share one profession, allegiance, or relationship with public life. Their legendary reputation describes extraordinary mastery and accomplishments, not a standardized office.
+
+Some are highly visible figures who run academies, advise rulers, lead expeditions, command specialist organizations, participate in diplomacy, publish research, or appear at major tournaments. Others have retired, withdrawn into remote territory, disappeared during an expedition, severed ties with institutions, become fugitives, entered criminal life, or are widely presumed dead despite unresolved sightings.
+
+Public recognition does not guarantee virtue, political authority, reliability, or accessibility. A celebrated Monster Master may be vain, compromised, incompetent outside a narrow specialty, or unwilling to help. A criminal or enemy of the state may still remain a genuine Monster Master if the accomplishments behind the reputation are real.
+
+The small living roster should therefore represent sharply different relationships to society rather than functioning as a uniform council of benevolent mentors.
+
+### Implementation consequences
+
+- Each living Monster Master needs independently authored public status, occupation, allegiance, legal status, accessibility, and current activity.
+- Monster Master recognition must not automatically grant command authority, immunity, government office, or heroic alignment.
+- Public, retired, isolated, missing, criminal, and presumed-dead states can produce different encounter and campaign structures.
+- Institutions may seek endorsement, service, custody, testimony, or control of individual Monster Masters without speaking for the group as a whole.
+- Bringing multiple living Monster Masters together should be unusual and politically significant rather than a routine meeting format.
