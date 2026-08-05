@@ -1,0 +1,69 @@
+name: Monster Master Rock Assets Finalize Trusted
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/monster-master-rock-assets-finalize-trusted.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out rock asset branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/monster-master-rock-props-v1
+          fetch-depth: 0
+
+      - name: Reconcile current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit origin/main
+
+      - name: Download approved rock package
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 --output /tmp/mm-rock-overlay-final.tar.gz \
+            'https://drive.usercontent.google.com/download?id=19XJxw2wfNGn-aa7pOZD7cAC7GNA_E_6Z&export=download&confirm=t'
+          test "$(sha256sum /tmp/mm-rock-overlay-final.tar.gz | cut -d' ' -f1)" = \
+            '09ea02bc1fc70f1d790e2742ef5f577b0986ca003b66fb5315545ce226be1b8b'
+          tar -xzf /tmp/mm-rock-overlay-final.tar.gz -C .
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and verify rock assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run assets:props:build
+          npm run assets:props:verify
+          npm run check:browser
+
+      - name: Commit completed asset package
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf staging/mm-rock-props
+          rm -f .github/workflows/probe-mm-rock-transfer.yml
+          rm -f .github/workflows/monster-master-rock-assets-finalize-trusted.yml
+          git add -A
+          git commit -m "feat: add Monster Master rock prop assets"
+          git push origin HEAD:agent/monster-master-rock-props-v1
