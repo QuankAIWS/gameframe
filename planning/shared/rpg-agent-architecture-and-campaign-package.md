@@ -10,16 +10,15 @@ applies_to:
   - handcrafted campaigns
   - generated campaigns
 shared_document_id: rpg-agent-architecture-and-campaign-package-v1
-shared_document_version: 1
+shared_document_version: 2
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-agent-architecture-and-campaign-package.md
 mirrors:
   - QuankAIWS/rpg-gm-runtime:docs/shared/rpg-agent-architecture-and-campaign-package.md
 sync_policy: exact-byte-copy
 related:
-  - rpg-campaign-compiler-contract.md
+  - rpg-campaign-architect-contract.md
   - rpg-event-and-plot-pool-contract.md
-  - rpg-one-shot-intro-agent-contract.md
   - rpg-monster-master-reference-campaign.md
   - rpg-media-theme-and-audio-pipeline.md
   - rpg-platform-roadmap.md
@@ -38,11 +37,11 @@ The two agents do not share responsibility for inventing campaign truth during o
 
 ## Official terminology
 
-- **Campaign Architect** is the product and architecture name for the campaign-authoring agent. Older documents may call it the campaign compiler, plot agent, or campaign-generation agent. Those terms describe parts of its work but do not define separate agents.
+- **Campaign Architect** is the product and architecture name for the campaign-authoring agent. Campaign compiler, plot agent, and campaign-generation agent are retired aliases for capabilities inside it, not separate agents or compatibility interfaces.
 - **Dungeon Master** is the product and architecture name for the live campaign-running agent. Internal documents may use Live DM where brevity is useful.
-- **CampaignPackage** is the durable handoff artifact. The first implementation schema may be named `CompiledCampaignPackageV1`, but handcrafted and generated packages use the same validator, persistence, projection, and Dungeon Master interface.
+- **CampaignPackage** is the durable handoff artifact. The first implementation schema is `CampaignPackageV1`, and handcrafted and generated packages use the same validator, persistence, projection, and Dungeon Master interface.
 
-There is no separate intro agent. A campaign opening is the first Dungeon Master turn after a CampaignPackage has been accepted and committed.
+There is no separate intro agent and no intro-agent compatibility contract. A campaign opening is the first Dungeon Master turn after a CampaignPackage has been accepted and committed.
 
 ## Campaign Architect responsibilities
 
@@ -104,6 +103,22 @@ The Dungeon Master may fill local gaps but may not replace:
 - established NPC identities;
 - package visibility and secrecy rules.
 
+## Campaign opening rule
+
+The opening is not a separate service or agent. It is the first ordinary Dungeon Master turn after package commitment.
+
+Before that turn, RPG GM Runtime must have committed:
+
+- package identity, version, hash, and provenance;
+- player-safe premise and tone;
+- runtime-only campaign truth and forbidden retcons;
+- participating players and characters;
+- starting location and group-cohesion state;
+- actors, motives, clue relationships, event eligibility, pressure, and tactical thresholds;
+- semantic presentation roles and deterministic fallbacks.
+
+The opening must establish the party, immediate situation, and room for arbitrary plausible action without exposing runtime-only truth or forcing tactical play before current state justifies it. The same Dungeon Master output, idempotency, journal, and publication path continues afterward.
+
 ## CampaignPackage boundary
 
 A valid CampaignPackage is executable campaign material, not a prose pitch or loose collection of ideas.
@@ -152,9 +167,9 @@ It contains at least:
 ### Reproducibility
 
 - schema and package versions;
-- source brief and normalized brief;
+- source brief and normalized brief where applicable;
 - authoring mode: handcrafted, generated, imported, or migrated;
-- compiler or authoring version;
+- Campaign Architect or manual authoring version;
 - seed where applicable;
 - package hash;
 - validation evidence;
@@ -212,7 +227,7 @@ The two-agent boundary must be machine-testable.
 Required test doubles and fixtures include:
 
 - deterministic Campaign Architect provider or handcrafted package fixture;
-- package validator and persistence tests;
+- package validator, hashing, persistence, commitment, and reload tests;
 - mock Dungeon Master model provider returning structured proposals;
 - scripted player actors using expected, chaotic, avoidant, and early-correct-guess behavior;
 - multi-turn assertions that package truth never changes;
@@ -232,7 +247,7 @@ Do not:
 - send a raw premise directly to the Dungeon Master and call that campaign creation;
 - let the Dungeon Master invent the campaign foundation during ordinary play;
 - create separate Monster Master and generic Dungeon Master implementations;
-- create a third intro agent;
+- create a third intro agent or preserve an intro-agent compatibility surface;
 - treat authored catalogs as executable packages without validation and commitment;
 - make generated media a prerequisite for campaign logic testing;
 - allow a deterministic fixture to become product canon;
