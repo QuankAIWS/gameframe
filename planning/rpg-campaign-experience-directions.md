@@ -3,7 +3,7 @@ title: RPG Campaign Experience Direction
 status: accepted
 document_type: decision
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-03
+last_updated: 2026-08-05
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
@@ -12,60 +12,81 @@ supersedes:
   - Discord-first illustrated campaign direction
   - unresolved Discord-first versus game-heavy evaluation
 related:
+  - shared/rpg-agent-architecture-and-campaign-package.md
+  - shared/rpg-platform-roadmap.md
   - rpg-gm-runtime-boundary.md
   - rpg-gameframe-interface-contract.md
-  - rpg-platform-delivery-plan.md
 ---
 
 # RPG Campaign Experience Direction
 
 ## Decision
 
-The RPG is an **all-GameFrame interface experience**. GameFrame is the complete authenticated player-facing application for the campaign. The browser client and Discord Activity wrapper present the same game rather than splitting narration into Discord and mechanics into a separate tactical application.
+The RPG is an **all-GameFrame player experience**. GameFrame is the complete authenticated application for campaign creation, campaign play, mechanics, tactical encounters, history, and resume.
 
-Discord remains useful for voice, social conversation, invitations, notifications, and links into the active campaign. It is not the primary or authoritative gameplay interface.
+Discord remains useful for voice, invitations, notifications, links, social conversation, and a future guided campaign-creation interview. It is not the authoritative gameplay interface and does not own campaign truth.
 
-## Required player experience
+## Campaign creation experience
 
-GameFrame must eventually support one continuous campaign session containing:
+GameFrame should eventually let a player or group create a campaign through:
 
-- campaign creation, joining, seats, invitations, and resume;
+- a concise freeform concept;
+- a detailed description;
+- a structured campaign sheet;
+- a guided GameFrame flow;
+- an optional Discord interview;
+- selection of a prepared campaign such as Monster Master.
+
+Those inputs are sent through authenticated boundaries to the Campaign Architect. The Campaign Architect returns a player-safe preview and a hidden validated CampaignPackage. GameFrame presents only player-safe assumptions, repair questions, and confirmation material.
+
+Monster Master may initially enter as a handcrafted package rather than a generated one, but it uses the same preview, commitment, and Dungeon Master interface.
+
+## Campaign play experience
+
+After package acceptance, the Dungeon Master conducts the campaign through GameFrame.
+
+GameFrame must eventually support:
+
+- campaign joining, seats, invitations, and resume;
 - narration, scene art, NPC dialogue, and cinematic presentation;
-- freeform action entry and structured choices;
-- character sheets, abilities, conditions, progression, inventory, and equipment;
-- quests, objectives, factions, and known campaign information;
+- freeform action entry as the primary narrative input;
+- optional editable suggestions and rare structured choices;
+- character, creature, ability, condition, progression, inventory, and equipment views;
+- quests, objectives, factions, clues, and known campaign information;
 - locations, maps, exploration, and points of interest;
 - checks, dice, consequences, and player-private reveals;
-- tactical encounters using the existing GameFrame authority and renderer;
-- return from encounters to the same campaign interface;
-- durable history, reconnect, recovery, and later-session continuation.
+- tactical encounters using Arena Battles authority;
+- return from encounters to the same campaign;
+- history, recap, reconnect, recovery, and later-session continuation.
 
-GameFrame may present distinct modes such as scene, dialogue, character, inventory, exploration, encounter, and recap. They remain one product, one authenticated campaign session, and one coherent navigation model.
+Distinct modes may exist, but they remain one campaign application and authenticated session.
 
 ## Runtime boundary
 
-The all-GameFrame decision concerns the interface, not ownership of all campaign reasoning.
+RPG GM Runtime contains:
 
-RPG GM Runtime owns campaign continuity, semantic world state, NPC reasoning, narration, freeform-intent interpretation, audience-scoped secrets, model orchestration, and narrative consequences.
+- the Campaign Architect, which creates CampaignPackages before play;
+- the Dungeon Master, which runs committed packages during play;
+- package validation, hidden truth, campaign journal, freeform interpretation, NPC continuity, model orchestration, and narrative consequences.
 
-GameFrame owns authenticated player commands, the complete player presentation surface, structured player-visible projections, mechanics deliberately implemented in GameFrame, tactical state, replay, reconnect, and committed mechanical outcomes.
+GameFrame owns authenticated intake and commands, player-safe package preview, complete presentation, structured mechanics, semantic asset materialization, tactical state, and committed mechanical outcomes.
 
-Scribbles Runtime owns Theo and the connector that lets Theo occupy an ordinary GameFrame player seat. Theo does not receive GM-only context or hidden campaign state.
+Scribbles Runtime owns Theo and the connector that lets Theo occupy an ordinary GameFrame player seat. Theo receives no hidden package or Dungeon Master context.
 
-## Improvisation without a generalized CRPG engine
+## Freeform and improvisation rule
 
-All-GameFrame does not require every improvised narrative object to become a bespoke mechanic. The client should provide reusable semantic primitives for scenes, dialogue, cards, entities, choices, freeform actions, checks, maps, media, and handouts.
+The Dungeon Master may respond to arbitrary plausible player action and may create compatible incidental detail. Suggestions are not the complete action space.
 
-A narrative concept becomes a GameFrame-owned mechanic only when repeated product value justifies a stable schema, authoritative transitions, persistence, projections, UI, migration posture, and tests.
+All-GameFrame does not require every improvised object to become a bespoke mechanic. GameFrame provides reusable semantic primitives. Repeated concepts become authoritative mechanics only when product value justifies schema, persistence, UI, migration, and tests.
 
-This preserves GM improvisation while keeping the entire player experience inside GameFrame.
+## Presentation and media direction
 
-## Presentation direction
+The campaign interface should be battlefield-capable but not battlefield-dominated. Outside encounters, scene art or maps may remain the visual foundation while layered panels present dialogue, character information, clues, inventory, quests, or handouts.
 
-The campaign interface should be battlefield-capable but not battlefield-dominated. Outside encounters, the map or scene art may remain the visual background while layered panels present dialogue, choices, character information, inventory, quests, or handouts. During tactical play, the existing GameFrame battlefield becomes authoritative and primary without ejecting players into another application.
+The Campaign Architect declares semantic media needs. GameFrame resolves, composes, generates, caches, validates, and versions presentation assets. The Dungeon Master uses accepted identities during play.
 
-Generated and composed media must be cached, versioned, and nonblocking. A missing portrait or scene image may reduce presentation quality but cannot prevent legal campaign play.
+Missing media may reduce presentation quality but cannot prevent legal campaign play.
 
 ## Governing rule
 
-> GameFrame is the whole player experience; RPG GM Runtime is the campaign intelligence behind it. Preserve one coherent interface without collapsing the two authority domains into one service.
+> GameFrame owns the complete player journey from campaign idea through campaign play; the Campaign Architect builds the package; the Dungeon Master runs it; and Discord remains an optional social and intake surface rather than a second game.
