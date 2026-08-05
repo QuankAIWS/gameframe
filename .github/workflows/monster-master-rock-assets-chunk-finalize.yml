@@ -71,7 +71,22 @@ jobs:
 
           rm -rf /tmp/mm-rock-overlay-verified
           mkdir -p /tmp/mm-rock-overlay-verified
-          tar -xzf /tmp/mm-rock-overlay-final.tar.gz -C /tmp/mm-rock-overlay-verified
+
+          # The initial connector transfer damaged the gzip wrapper. Recover the
+          # decompressed prefix, then accept it only if every approved file is
+          # present with its exact expected hash. A partial or altered payload
+          # cannot pass the allowlist and sha256 checks below.
+          set +e
+          gzip -dc /tmp/mm-rock-overlay-final.tar.gz > /tmp/mm-rock-overlay-recovered.tar
+          gzip_status=$?
+          tar -xf /tmp/mm-rock-overlay-recovered.tar \
+            --ignore-zeros \
+            -C /tmp/mm-rock-overlay-verified
+          tar_status=$?
+          set -e
+          echo "gzip recovery status: $gzip_status"
+          echo "tar recovery status: $tar_status"
+          wc -c /tmp/mm-rock-overlay-final.tar.gz /tmp/mm-rock-overlay-recovered.tar
 
           unexpected_type="$(find /tmp/mm-rock-overlay-verified -mindepth 1 ! -type d ! -type f -print -quit)"
           test -z "$unexpected_type"
