@@ -4,10 +4,10 @@ status: accepted
 document_type: lore-and-story-addendum
 authority: owner-approved
 owner: Scribbles GameFrame
-last_updated: 2026-08-04
+last_updated: 2026-08-05
 applies_to:
   - Monster Master RPG lore and story decisions
-  - Monster Master starter scenario
+  - Monster Master starter scenarios
   - RPG plot-agent output
   - RPG DM-agent realization
 related:
@@ -25,6 +25,8 @@ related:
 This addendum refines the tone language in Decision 1 of `monster-master-rpg-lore-and-story.md` without replacing the rest of the accepted lore decision log.
 
 Where Decision 1 describes comedy as primarily dry or cautions against slapstick, this addendum and `monster-master-rpg-current-creative-direction.md` control.
+
+It also establishes that the starter uses several approved plot families. No single incident or deterministic fixture is canonical.
 
 ## World posture
 
@@ -80,13 +82,32 @@ The title is funny. The expertise is real.
 
 The character understands bait, scent, sound, habitat, feeding behavior, migration, territorial displays, and nonviolent methods of moving monsters. Professionals treat the title seriously. Other people may fail to do so.
 
-The character must remain useful and respected after the joke lands. He is not automatically inserted into every story and is not required in the starter scenario unless the plot package gives him a functional role.
+The character must remain useful and respected after the joke lands. He is not automatically inserted into every story and is not required in the starter unless the selected plot package gives him a functional role.
+
+## Starter plot catalog
+
+The starter should maintain several materially different approved plot families rather than one favored incident.
+
+The current catalog may include:
+
+- ecological displacement and domestic-monster migration;
+- counterfeit or modified cube failures;
+- rivalry and certification sabotage;
+- public-event or mascot breakouts;
+- false authority, robbery, corruption, and rescue;
+- later specialty hazards only when their rule and countermeasure are authored.
+
+Each family should enable a different mixture of care, investigation, social conflict, comedy, horror, human threat, creature behavior, public chaos, and tactical danger.
+
+Before meaningful investigation, runtime commits one selected package. That package becomes true for the run, but it is only one of several possible starter stories.
+
+A deterministic CI package is a test mechanism, not lore priority, default player story, or mandatory asset target.
 
 ## Plot-agent output is story potential
 
 The future plot agent should not write a rigid adventure script.
 
-It should produce a committed scenario package containing:
+For one selected family, it should produce a committed scenario package containing:
 
 - hidden truth and causal history;
 - actors with goals, fears, leverage, secrets, and behavioral limits;
@@ -105,7 +126,7 @@ The package describes what is true, what is in motion, and what material is avai
 
 ## DM-agent realization is the live story
 
-The DM agent uses the language model to turn the package into play around the actual group.
+The DM agent uses the language model to turn the selected package into play around the actual group.
 
 The DM owns:
 
@@ -120,7 +141,7 @@ The DM owns:
 
 The DM must not:
 
-- replace the cause or culprit;
+- replace the selected plot family, cause, or responsible actors;
 - run the package as a mandatory scene sequence;
 - invent decisive evidence only to rescue pacing;
 - move evidence merely because the players guessed correctly or incorrectly;
@@ -129,16 +150,17 @@ The DM must not:
 - expose runtime-only truth;
 - reverse established outcomes.
 
-The LLM is not decorative prose generation. Its purpose is to adapt the same causal package into materially different, coherent stories for different players.
+The LLM is not decorative prose generation. Its purpose is to adapt committed causal material into materially different, coherent stories for different players.
 
 ## Functional spine
 
 A scenario spine is a causal and functional backbone.
 
-For the starter, the spine should ensure that play can:
+For the starter, the shared chassis should ensure that play can:
 
 - establish why the party is together;
 - reach meaningful agency quickly;
+- commit one selected plot package;
 - provide several credible kinds of action;
 - introduce the incident and its pressures;
 - allow investigation, social action, creature care, practical work, deception, force, avoidance, and freeform alternatives where credible;
@@ -150,7 +172,7 @@ These functions may occur in different orders, combine, or emerge through player
 
 ## Event pools
 
-An event pool is authored dramatic material with eligibility and consequences.
+Event pools are reusable authored dramatic material with eligibility and consequences.
 
 An event may create:
 
@@ -166,7 +188,7 @@ An event may create:
 - a tactical threshold;
 - an aftermath consequence.
 
-The DM selects and realizes only state-compatible events. An event is not final prose and is not automatically mandatory.
+The DM selects and realizes only events compatible with the selected package and current state. An event is not final prose and is not automatically mandatory.
 
 ## Consequence posture
 
@@ -189,29 +211,28 @@ A heroic choice can fail. A selfish choice can work. A lawful choice can be expe
 
 ## Asset implication
 
-Prepared art should form a reusable visual vocabulary for the scenario package:
+Prepared art should form a reusable visual foundation across the starter catalog:
 
-- locations with composable states;
-- recurring actors with useful expression ranges;
-- modular evidence, equipment, cargo, and environmental props;
-- creature states and tactical derivatives;
-- private observation and investigation treatments;
-- objective markers and aftermath consequence summaries.
+- modular locations and roadside states;
+- recurring guide and reusable local-role portraits;
+- carts, markers, cubes, field kits, barriers, cargo, and inspection props;
+- domestic and conventional hazard creature coverage;
+- private observation, investigation, warning, objective, and aftermath presentation;
+- family-specific extension assets only after the shared foundation exists.
 
-Do not require unique art for every event realization. The same prepared assets should support different stories produced from the same package.
+Do not require unique art for every event realization. Do not let one selected package define the entire asset pack.
 
 ## Validation
 
-The first package should remain coherent when players are:
+The starter direction is correct when:
 
-- straightforward and heroic;
-- cautious and procedural;
-- opportunistic or willing to bend rules;
-- aggressive investigators;
-- chaotic, avoidant, or unwilling to accept the apparent assignment.
-
-The hidden truth must survive all of them. The resulting stories should differ because the DM adapts to player action, not because the runtime secretly replaces the plot.
+- several enabled plot families produce materially different sessions;
+- no CI fixture or sample incident is treated as canonical;
+- straightforward, cautious, opportunistic, aggressive, avoidant, and chaotic players remain supported;
+- selected hidden truth survives early insight, missed clues, and unexpected approaches;
+- the DM adapts to player action without secretly replacing the plot;
+- assets remain reusable across more than one family.
 
 ## Governing rule
 
-> Monster Master supplies a coherent adult world and committed causal package; the DM model supplies the live story, with broad player freedom, natural consequences, and no requirement to behave like either ideal heroes or constant criminals.
+> Monster Master supplies a coherent adult world, several starter possibilities, and one committed package per run; the DM supplies the live story, and no sample incident is allowed to become the whole game.
