@@ -8,12 +8,12 @@ applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
   - handcrafted and player-inspired RPG campaigns
-shared_document_id: rpg-campaign-compiler-contract-v1
-shared_document_version: 2
+shared_document_id: rpg-campaign-architect-contract-v1
+shared_document_version: 1
 canonical_repository: QuankAIWS/scribbles-gameframe
-canonical_path: planning/shared/rpg-campaign-compiler-contract.md
+canonical_path: planning/shared/rpg-campaign-architect-contract.md
 mirrors:
-  - QuankAIWS/rpg-gm-runtime:docs/shared/rpg-campaign-compiler-contract.md
+  - QuankAIWS/rpg-gm-runtime:docs/shared/rpg-campaign-architect-contract.md
 sync_policy: exact-byte-copy
 related:
   - rpg-agent-architecture-and-campaign-package.md
@@ -30,7 +30,7 @@ related:
 
 RPG GM Runtime will contain a specialized **Campaign Architect** agent that converts a campaign brief into a validated, persisted CampaignPackage before ordinary campaign play begins.
 
-Older terms such as campaign compiler, plot agent, and campaign-generation agent refer to capabilities inside the Campaign Architect. They do not define separate agents.
+Older terms such as campaign compiler, plot agent, and campaign-generation agent refer to capabilities inside the Campaign Architect. They do not define separate agents or compatibility surfaces.
 
 The Campaign Architect is distinct from the Dungeon Master. It determines the campaign foundation, playable structure, hidden truth, event material, presentation requirements, and provenance. The Dungeon Master later conducts live play from the accepted package.
 
@@ -91,7 +91,7 @@ A short concept may leave most fields unknown. The Campaign Architect may apply 
 
 ## CampaignPackage output
 
-The product-level artifact is `CampaignPackage`. The first implementation schema may be named `CompiledCampaignPackageV1`.
+The product-level artifact is `CampaignPackage`. The first implementation schema is `CampaignPackageV1`.
 
 The same package contract is used for handcrafted and generated campaigns.
 
@@ -209,12 +209,12 @@ When Cloudflare-backed image generation is available, it may materialize Campaig
 
 ## First implementation sequence
 
-1. implement `CampaignBriefV1`;
-2. implement `CompiledCampaignPackageV1`;
-3. implement validation, hashing, persistence, commitment, reload, and player-safe projection;
-4. encode one complete handcrafted Monster Master package;
-5. make the Dungeon Master consume that committed package;
-6. build machine-play campaign tests;
+1. implement `CampaignPackageV1`;
+2. implement validation, hashing, persistence, commitment, reload, and bounded Dungeon Master projection;
+3. encode one complete handcrafted Monster Master package;
+4. make the Dungeon Master consume that committed package;
+5. build machine-play campaign tests;
+6. implement `CampaignBriefV1`;
 7. implement a deterministic Campaign Architect port and fixture;
 8. add a hosted Campaign Architect provider;
 9. prove a materially different generated bespoke campaign;

@@ -10,7 +10,7 @@ applies_to:
   - Monster Master RPG
   - future bespoke campaigns
 shared_document_id: rpg-platform-roadmap-v1
-shared_document_version: 1
+shared_document_version: 2
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-platform-roadmap.md
 mirrors:
@@ -18,7 +18,7 @@ mirrors:
 sync_policy: exact-byte-copy
 related:
   - rpg-agent-architecture-and-campaign-package.md
-  - rpg-campaign-compiler-contract.md
+  - rpg-campaign-architect-contract.md
   - rpg-monster-master-reference-campaign.md
   - rpg-cross-repository-integration-testing.md
   - rpg-media-theme-and-audio-pipeline.md
@@ -45,22 +45,27 @@ Already present in partial form:
 - Monster Master lore, plot-family sketches, event-pool sketches, NPC-role sketches, and deterministic fixtures;
 - focused transport, persistence, restart, and cross-repository tests.
 
+In active implementation:
+
+- executable `CampaignPackageV1` schema and validator;
+- one handcrafted Monster Master package with deterministic placeholder assets;
+- package commitment and bounded projection into Dungeon Master context;
+- package-first local Dungeon Master play.
+
 Not yet complete:
 
-- executable CampaignPackage schema and validator;
 - Campaign Architect port and implementation;
-- package commitment and projection into Dungeon Master context;
-- one complete executable Monster Master package;
-- campaign-aware Dungeon Master behavior tests;
+- campaign-aware multi-turn Dungeon Master behavior tests;
 - event eligibility, clue state, incidental NPC instantiation, checks, and tactical return as one campaign loop;
+- complete GameFrame placeholder rendering and player journey;
 - generated bespoke campaign proof.
 
 ## Milestone 0 — Architecture and documentation baseline
 
 - Keep the two-agent architecture and CampaignPackage boundary canonical in GameFrame and mirrored into runtime.
 - Use Campaign Architect and Dungeon Master as the official role names.
-- Treat campaign compiler and plot agent as older aliases for Campaign Architect responsibilities.
-- Remove or supersede plans that send raw premises directly to the Dungeon Master or introduce a separate intro agent.
+- Retire campaign compiler, plot agent, and intro agent as file names and compatibility surfaces.
+- Remove or supersede plans that send raw premises directly to the Dungeon Master.
 - Keep Monster Master identified as the handcrafted gold standard.
 
 **Exit gate:** documentation indexes, local architecture documents, shared contracts, and roadmaps agree on one architecture and implementation order.
@@ -71,12 +76,12 @@ Implement the smallest complete package substrate before building more agent beh
 
 Required runtime work:
 
-- versioned `CampaignBriefV1`;
-- versioned `CompiledCampaignPackageV1` implementing the product-level CampaignPackage contract;
+- versioned `CampaignPackageV1`;
 - strict validation and bounded schemas;
 - visibility scopes;
 - package hash and provenance;
 - persistence, reload, migration posture, and immutable commitment events;
+- bounded package context supplied to the Dungeon Master without truncation;
 - player-safe projection separated from runtime-only truth.
 
 Required GameFrame work:
@@ -85,11 +90,11 @@ Required GameFrame work:
 - player-safe package preview primitives;
 - deterministic placeholders for unresolved semantic assets.
 
-**Exit gate:** a handcrafted package and a deterministic generated fixture validate, serialize, commit, reload, and project without semantic loss or secret leakage.
+**Exit gate:** the handcrafted Monster Master package validates, serializes, commits, reloads, and projects without semantic loss or secret leakage.
 
 ## Milestone 2 — Handcrafted Monster Master gold-standard package
 
-Convert the current Monster Master sketches into one complete executable CampaignPackage.
+Convert the current Monster Master source material into one complete executable CampaignPackage.
 
 It must contain:
 
@@ -99,7 +104,7 @@ It must contain:
 - fixed hidden truth;
 - actual major actors and locations;
 - clue and evidence graph;
-- event eligibility and pressure state;
+- event eligibility and pressure material;
 - multiple credible approaches;
 - check and tactical opportunities;
 - complete resolution conditions;
@@ -108,7 +113,7 @@ It must contain:
 
 Keep additional plot families as future packages or package templates rather than pretending the entire catalog is already executable.
 
-**Exit gate:** the package passes validation and can be committed without a model provider.
+**Exit gate:** the package passes validation and can be committed without a model or media provider.
 
 ## Milestone 3 — Dungeon Master consumes committed packages
 
@@ -179,6 +184,7 @@ Connect the proven package and Dungeon Master loop to the player product.
 - authenticated membership and invitations;
 - freeform action submission;
 - public, party, and player-private presentation;
+- package preview and placeholder asset resolution;
 - character, creature, quest, clue, condition, and objective views needed by the package;
 - reconnect, recap, restart, and resume;
 - desktop and mobile acceptance;
@@ -210,6 +216,7 @@ Initial tests should create at least two materially different original campaigns
 
 ## Milestone 8 — Rich campaign intake
 
+- versioned `CampaignBriefV1`;
 - player-facing campaign sheet;
 - guided clarification and repair;
 - interactive GameFrame creation flow;

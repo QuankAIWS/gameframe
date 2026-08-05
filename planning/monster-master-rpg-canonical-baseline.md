@@ -14,9 +14,8 @@ related:
   - rpg-documentation-index.md
   - shared/rpg-agent-architecture-and-campaign-package.md
   - shared/rpg-platform-roadmap.md
-  - shared/rpg-campaign-compiler-contract.md
+  - shared/rpg-campaign-architect-contract.md
   - shared/rpg-event-and-plot-pool-contract.md
-  - shared/rpg-one-shot-intro-agent-contract.md
   - shared/rpg-monster-master-reference-campaign.md
   - monster-master-rpg-current-creative-direction.md
   - monster-master-rpg-lore-and-story.md
@@ -40,7 +39,7 @@ The RPG platform has two specialized agents.
 
 The Campaign Architect creates complete, validated CampaignPackages from player concepts, owner-authored specifications, structured sheets, later GameFrame or Discord interviews, prepared settings, or imported packages.
 
-Older terms such as campaign compiler, plot agent, and campaign-generation agent refer to responsibilities inside the Campaign Architect. They do not define additional agents.
+Older terms such as campaign compiler, plot agent, and campaign-generation agent refer to responsibilities inside the Campaign Architect. They do not define additional agents or compatibility interfaces.
 
 The Campaign Architect owns campaign construction: setting, campaign bible, actors, motives, locations, campaign spine, plot structure, clue graph, event pools, escalation, resolution, mechanics and presentation requirements, provenance, validation, and package output.
 
@@ -50,7 +49,7 @@ The Dungeon Master consumes one committed CampaignPackage and the durable campai
 
 The Dungeon Master may fill local gaps but may not replace campaign truth, responsible actors, evidence logic, established facts, prior consequences, tactical outcomes, or established NPC identities.
 
-There is no separate intro agent. The opening is the first Dungeon Master turn after package commitment.
+There is no separate intro agent or intro-agent contract. The opening is the first Dungeon Master turn after package commitment and is governed by the main agent/package contract.
 
 ## CampaignPackage rule
 
@@ -120,7 +119,7 @@ Read and apply documents in this order:
 3. this Monster Master canonical baseline;
 4. `monster-master-rpg-current-creative-direction.md`;
 5. `monster-master-rpg-lore-and-story.md`;
-6. shared package, event, opening, reference-campaign, rendering, media, testing, and deployment contracts;
+6. shared Campaign Architect, event, reference-campaign, rendering, media, testing, and deployment contracts;
 7. asset and NPC registries;
 8. repository-local implementation records only when compatible with the documents above.
 
@@ -194,7 +193,7 @@ Do not follow any document or implementation that:
 - sends a raw premise directly to the Dungeon Master and calls that campaign creation;
 - treats the Dungeon Master as responsible for inventing the campaign foundation;
 - creates separate Monster Master and generic Dungeon Master paths;
-- creates a third intro agent;
+- creates a third intro agent or preserves an intro-agent compatibility surface;
 - treats the current catalogs as complete executable campaigns;
 - makes one incident or deterministic fixture canonical;
 - makes generated media a requirement for campaign logic testing;

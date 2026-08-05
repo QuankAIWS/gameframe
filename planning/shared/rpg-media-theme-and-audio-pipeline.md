@@ -10,7 +10,7 @@ applies_to:
   - campaign media generation
   - narration audio
 shared_document_id: rpg-media-theme-and-audio-pipeline-v1
-shared_document_version: 2
+shared_document_version: 3
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-media-theme-and-audio-pipeline.md
 mirrors:
@@ -19,7 +19,7 @@ sync_policy: exact-byte-copy
 related:
   - rpg-agent-architecture-and-campaign-package.md
   - rpg-platform-roadmap.md
-  - rpg-campaign-compiler-contract.md
+  - rpg-campaign-architect-contract.md
   - rpg-platform-product-goals.md
   - rpg-cloudflare-deployment-architecture.md
 ---
