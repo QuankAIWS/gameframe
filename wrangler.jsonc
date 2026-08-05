@@ -8,7 +8,9 @@
       "SESSION_SECRET",
       "DISCORD_CLIENT_ID",
       "DISCORD_CLIENT_SECRET",
-      "DISCORD_ALLOWED_USER_IDS"
+      "DISCORD_ALLOWED_USER_IDS",
+      "GAMEFRAME_RPG_ORIGIN_URL",
+      "GAMEFRAME_RPG_PROXY_HMAC_SECRET"
     ]
   },
   "durable_objects": {
