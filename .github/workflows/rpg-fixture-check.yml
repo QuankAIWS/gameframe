@@ -7,6 +7,7 @@ on:
     types: [labeled]
     paths:
       - ".github/workflows/rpg-fixture-check.yml"
+      - "package.json"
       - "planning/fixtures/rpg/**"
       - "planning/rpg-gameframe-interface-contract.md"
       - "src/rpg/**"
@@ -14,8 +15,12 @@ on:
       - "src/server/http-server.ts"
       - "src/server/durable-rpg-http-server.ts"
       - "src/server/durable-rpg-http-server.test.ts"
+      - "src/server/durable-rpg-process-config.ts"
+      - "src/server/durable-rpg-process-config.test.ts"
       - "src/server/durable-rpg-service-lifecycle.ts"
       - "src/server/durable-rpg-service-lifecycle.test.ts"
+      - "src/server/durable-rpg-service-lifecycle-wait.test.ts"
+      - "src/server/run-durable-rpg-service.ts"
       - "src/server/rpg-http-server.test.ts"
       - "src/server/rpg-live-protocol-v2-http.test.ts"
       - "src/server/rpg-choice-outcome-http.test.ts"
@@ -56,6 +61,9 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Validate durable RPG process entrypoint syntax
+        run: node --experimental-strip-types --check src/server/run-durable-rpg-service.ts
+
       - name: Validate canonical fixtures and Node HTTP behavior
         run: >-
           node --experimental-strip-types --test
@@ -70,7 +78,9 @@ jobs:
           src/rpg/sqlite-rpg-encounter-store.test.ts
           src/rpg/durable-rpg-campaign-service.test.ts
           src/server/durable-rpg-http-server.test.ts
+          src/server/durable-rpg-process-config.test.ts
           src/server/durable-rpg-service-lifecycle.test.ts
+          src/server/durable-rpg-service-lifecycle-wait.test.ts
           src/server/rpg-http-server.test.ts
           src/server/rpg-live-protocol-v2-http.test.ts
           src/server/rpg-choice-outcome-http.test.ts
