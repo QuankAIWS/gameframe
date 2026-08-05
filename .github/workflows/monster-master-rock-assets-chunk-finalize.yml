@@ -12,6 +12,9 @@ on:
       - reopened
       - synchronize
       - ready_for_review
+  issue_comment:
+    types:
+      - created
   schedule:
     - cron: '*/5 * * * *'
 
@@ -25,9 +28,14 @@ concurrency:
 jobs:
   finalize:
     if: >-
-      github.event_name != 'pull_request_target' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-       github.event.pull_request.head.ref == 'agent/monster-master-rock-props-v1')
+      github.event_name == 'schedule' ||
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request_target' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       github.event.pull_request.head.ref == 'agent/monster-master-rock-props-v1') ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.number == 107 &&
+       github.event.comment.body == '/finalize-mm-rocks')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
