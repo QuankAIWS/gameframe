@@ -1,6 +1,6 @@
 ---
 title: Monster Master RPG Player Shell
-status: implemented-choice-foundation
+status: implemented-freeform-foundation
 document_type: implementation_record
 owner: Scribbles GameFrame
 last_updated: 2026-08-05
@@ -21,6 +21,8 @@ Provide the first usable authenticated campaign surface inside GameFrame while r
 
 The shell is a separate destination from Monster Master Arena Battles. The human Master remains the trainer/player character; the tactical battler remains an encounter destination controlled by campaign state rather than the RPG shell itself pretending to be a monster.
 
+The primary RPG interaction is open-ended conversation with an LLM Game Master. This is not a fixed dialogue-tree interface. The player must be able to describe an action, speak, ask a question, negotiate, investigate, improvise, or attempt something the interface did not anticipate.
+
 ## Current route
 
 ```text
@@ -36,43 +38,43 @@ The existing GameFrame authentication launcher establishes either the hosted Dis
 3. Attach through protocol-v2 `POST /api/rpg/campaigns/{campaignId}/attach`.
 4. Render the player-filtered campaign event feed.
 5. Display GameFrame coordination, presentation, and linked narrative positions separately.
-6. Submit a public freeform action through `campaign.submit_action`.
-7. Render bounded `choice.presented` events as authored option controls.
-8. Submit one structured `campaign.submit_choice` command using the choice and option identifiers supplied by RPG GM Runtime.
-9. Retain one stable command ID across an unconfirmed action or choice retry.
-10. Refresh after command acceptance and poll for GM-authored presentation events.
-11. Reattach when the page becomes visible after suspension.
-12. Switch campaigns without retaining the previous campaign feed in memory.
+6. Write any public freeform action or dialogue through `campaign.submit_action`.
+7. Render authored `choice.presented` options as optional action suggestions.
+8. Let a suggestion populate the composer without sending anything.
+9. Let the player edit, replace, or ignore the suggestion before submission.
+10. Retain one stable command ID across an unconfirmed freeform-action retry.
+11. Refresh after command acceptance and poll for GM-authored presentation events.
+12. Reattach when the page becomes visible after suspension.
+13. Switch campaigns without retaining the previous campaign feed in memory.
 
-## Structured choice authority
+## Freeform-first interaction policy
 
-GameFrame treats choice presentation as authorization data, not decorative copy. Before accepting a choice it verifies:
+The text composer is the authoritative player-input surface for ordinary narrative play.
 
-- the choice is present in the authenticated player's projection;
-- the player is listed in `allowedPlayerIds` when that field is supplied;
-- the submitted option ID exists in the bounded authored option list;
-- another command has not already closed the choice;
-- the expected GameFrame coordination revision still matches.
+- It remains available while suggested approaches are visible.
+- Clicking a suggestion drafts text; it does not submit a command.
+- Suggested approaches are never exhaustive and never imply that unlisted actions are invalid.
+- The player may alter every word of a suggestion or ignore it completely.
+- The GM runtime receives the final written text and interprets it semantically in campaign context.
+- UI recommendations exist to reduce blank-page friction, not to constrain the model or simulate a branching video-game dialogue tree.
 
-The browser sends only `choiceId` and `optionId`. The option label shown in the committed presentation event is recovered from the trusted presentation event rather than accepted from the browser. Choice acceptance, the public `campaign.choice_submitted` event, the coordination advance, the command receipt, and runtime outbox custody commit in one SQLite transaction. Exact retry returns the original receipt. Conflicting reuse remains a stable error.
-
-RPG GM Runtime receives the structured choice delivery, records `campaign.choice_submitted` in its campaign journal, and preserves the choice and option identifiers through deterministic fallback or a configured semantic planner.
+Structured `campaign.submit_choice` remains a supported lower-level contract for future explicit selection surfaces where exact identifiers are materially required, such as a party vote, inventory selection, or non-narrative confirmation. The ordinary RPG shell does not use that command for conversational play.
 
 ## Presentation posture
 
-The shell renders semantic events generically rather than hardcoding campaign lore. It recognizes narration, dialogue, bounded choices, prompts, checks/consequences, and player actions, while preserving a bounded fallback for new event payloads.
+The shell renders semantic events generically rather than hardcoding campaign lore. It recognizes narration, dialogue, optional approaches, prompts, checks/consequences, and player actions, while preserving a bounded fallback for new event payloads.
 
-GameFrame continues to own layout, responsive behavior, accessibility, and event presentation. RPG GM Runtime owns semantic content and narrative truth.
+GameFrame continues to own layout, responsive behavior, accessibility, and event presentation. RPG GM Runtime owns semantic content, contextual interpretation, NPC responses, consequences, and narrative truth.
 
 ## Correctness boundaries
 
-- campaign, choice, option, and command IDs use the accepted identifier grammar;
+- campaign and command IDs use the accepted identifier grammar;
 - action text is bounded to 2,000 characters;
-- authored choices contain from one through 16 unique options;
-- every mutation carries a stable command ID and the current expected GameFrame coordination revision;
+- authored suggestion groups contain from one through 16 unique options;
+- optional `actionText` is treated only as editable draft copy;
+- every submitted action carries a stable command ID and the current expected GameFrame coordination revision;
 - stale revision conflicts cause a projection refresh before another command is created;
-- network or timeout ambiguity preserves the exact command for idempotent retry;
-- only the exact pending choice option remains retryable while delivery is ambiguous;
+- network or timeout ambiguity preserves the exact written action for idempotent retry;
 - recovered presentation events are deduplicated by event ID;
 - polling is recovery, not authority, and pauses while the page is hidden;
 - the browser uses the established GameFrame identity adapter rather than injecting player headers directly.
@@ -86,10 +88,10 @@ This foundation does not yet provide:
 - acknowledgements and signed resumable cursors;
 - encounter transition UI and a campaign-to-battle binding;
 - player-private labeling when the projection omits explicit audience metadata;
-- offline command queueing beyond one ambiguous in-flight command;
+- offline command queueing beyond one ambiguous in-flight action;
 - push updates or WebSocket campaign events.
 
-Those remain additive slices on the same campaign application. They should not create a second RPG client or bypass the protocol-v2 campaign boundary.
+Those remain additive slices on the same campaign application. They should not create a second RPG client, replace freeform input with menu traversal, or bypass the protocol-v2 campaign boundary.
 
 ## Validation
 
@@ -99,8 +101,9 @@ The focused RPG gate validates the browser model, durable service, atomic accept
 - authenticated campaign attach;
 - revision display;
 - public and private-looking event presentation from the supplied projection;
-- freeform command construction with the current coordination revision;
-- bounded choice rendering and authorization state;
-- structured choice command construction;
-- exact browser retry after ambiguous delivery;
+- optional suggestion rendering;
+- suggestion-to-draft behavior without network submission;
+- replacement of the suggestion with an unrelated player-authored action;
+- `campaign.submit_action` construction with the final text and current coordination revision;
+- exact retry after ambiguous delivery;
 - post-command refresh and GM response rendering.
