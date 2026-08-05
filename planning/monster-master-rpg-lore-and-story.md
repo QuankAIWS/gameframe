@@ -392,3 +392,19 @@ The small living roster should therefore represent sharply different relationshi
 - Public, retired, isolated, missing, criminal, and presumed-dead states can produce different encounter and campaign structures.
 - Institutions may seek endorsement, service, custody, testimony, or control of individual Monster Masters without speaking for the group as a whole.
 - Bringing multiple living Monster Masters together should be unusual and politically significant rather than a routine meeting format.
+
+## Decision 23 — Monster Master recognition as an optional emergent outcome
+
+Becoming a Monster Master is not the assumed objective of every player character or campaign. Characters may pursue regional adventures, professional careers, exploration, wealth, political causes, research, relationships, monster welfare, criminal ambitions, or narrowly personal goals without the story treating those paths as lesser versions of a legendary-title quest.
+
+Monster Master recognition can emerge after extraordinary long-form play when a character's accomplishments, relationships with monsters, and influence become impossible for large parts of the world to ignore. It should arise from what the character has actually done rather than from filling a progression meter, completing a predetermined checklist, or selecting the goal during character creation.
+
+A campaign may end successfully with nobody approaching this reputation. Another campaign may produce a disputed regional candidate rather than a globally accepted figure. Explicitly pursuing the title is possible, but doing so can appear arrogant and does not guarantee that anyone else will accept the claim.
+
+### Implementation consequences
+
+- Monster Master recognition must not be a mandatory main quest, standard endgame rank, or required completion condition.
+- Campaign objectives and character advancement must remain useful without feeding a legendary-title progression track.
+- Recognition can be assessed from authored accomplishments, relationships, witnesses, factions, regions, and historical impact.
+- The system may surface rumors that a character is becoming recognized, but must not automatically announce that a numeric threshold has been crossed.
+- Campaign conclusions should support no recognition, disputed recognition, regional recognition, posthumous recognition, or broad living recognition according to actual play.
