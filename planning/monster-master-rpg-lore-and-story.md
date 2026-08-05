@@ -318,3 +318,23 @@ Intelligent monsters may pursue the same routes where local law permits, subject
 - Monster Master status must be distinct from licenses and must never be inferred merely from owning cubes or passing exams.
 - UI, dialogue, and code should use trainer, handler, license holder, specialist, or the specific profession unless legendary Monster Master status is actually intended.
 - Background selection can support academy, apprenticeship, military, warden, guild, and self-taught qualification routes while sharing class-specific competency gates.
+
+## Decision 19 — Monster Master as an earned reputation
+
+No government, guild, academy, licensing authority, tournament body, or council has the power to officially create a Monster Master.
+
+The title emerges through reputation, history, and broad public recognition after extraordinary accomplishments involving monsters. Those accomplishments may include unmatched training, exceptional bonds across many species, major discoveries, resolving disasters, defeating legendary threats, changing accepted practice, or achieving feats that ordinary license holders cannot plausibly imitate.
+
+Recognition does not need to be unanimous. Different regions, cultures, professions, and monster communities may disagree about whether someone deserves the title. A person can be treated as a Monster Master in one kingdom and as an overrated celebrity, dangerous fraud, or obscure foreign specialist somewhere else.
+
+Organizations may award honors, publish rankings, erect statues, or publicly proclaim someone a Monster Master, but those acts only influence reputation. They do not make the title authoritative, and official attempts to manufacture one can fail embarrassingly.
+
+A person may become recognized during life or only after death. Claiming the title for oneself is generally considered boastful and does not make it true.
+
+### Implementation consequences
+
+- Monster Master recognition must be reputation-driven and separate from licenses, offices, levels, and tournament ranks.
+- No single institution or numeric threshold can automatically grant or revoke the title.
+- Recognition may vary by faction, region, profession, species community, and historical period.
+- NPC dialogue and social reactions should reflect disputed or partial recognition.
+- False claims can create ridicule, fraud disputes, or reputational consequences without making the words themselves universally illegal.
