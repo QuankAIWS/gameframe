@@ -12,6 +12,7 @@ related:
   - rpg-gameframe-interface-contract.md
   - tactical-battler-rpg-foundation.md
   - rpg-platform-delivery-plan.md
+  - monster-master-rpg-current-creative-direction.md
   - monster-master-rpg-lore-and-story.md
   - monster-master-rpg-asset-register.md
   - assets/monster-master-rpg-asset-register.json
@@ -36,27 +37,34 @@ Read the canonical RPG planning documents in this order:
 3. [`rpg-gm-runtime-boundary.md`](rpg-gm-runtime-boundary.md) — authority, identity, and repository boundaries.
 4. [`shared/rpg-cloudflare-deployment-architecture.md`](shared/rpg-cloudflare-deployment-architecture.md) — Workers, Durable Objects, invitations, projections, queues, storage, and failure isolation.
 5. [`rpg-gameframe-interface-contract.md`](rpg-gameframe-interface-contract.md) — required full campaign interface and cross-repository contract.
-6. [`shared/rpg-media-theme-and-audio-pipeline.md`](shared/rpg-media-theme-and-audio-pipeline.md) — theme translation, catalogs, composition, image generation, narration audio, provenance, and fallbacks.
-7. [`shared/rpg-rendering-and-asset-contract.md`](shared/rpg-rendering-and-asset-contract.md) — Monster Master as the RPG engine reference campaign, renderer geometry, runtime asset contracts, source-master rules, and the campaign-generation blueprint.
+6. [`shared/rpg-media-theme-and-audio-pipeline.md`](shared/rpg-media-theme-and-audio-pipeline.md) — future theme translation, catalogs, composition, image generation, narration audio, provenance, and fallbacks; these are not current Monster Master asset-production dependencies.
+7. [`shared/rpg-rendering-and-asset-contract.md`](shared/rpg-rendering-and-asset-contract.md) — Monster Master as the RPG engine reference campaign, renderer geometry, runtime asset contracts, source-master rules, and the long-term campaign-generation blueprint.
 8. [`shared/rpg-campaign-compiler-contract.md`](shared/rpg-campaign-compiler-contract.md) — deferred long-term conversion of player ideas, forms, and interviews into validated campaign packages.
 9. [`shared/rpg-one-shot-intro-agent-contract.md`](shared/rpg-one-shot-intro-agent-contract.md) — current bounded hidden-DM intro capability and first-decision output contract.
-10. [`shared/rpg-event-and-plot-pool-contract.md`](shared/rpg-event-and-plot-pool-contract.md) — reusable campaign spines, plot families, state-aware event pools, committed clue graphs, consequences, and semantic asset references.
+10. [`shared/rpg-event-and-plot-pool-contract.md`](shared/rpg-event-and-plot-pool-contract.md) — reusable vocabulary for campaign spines, plot families, state-aware event categories, committed clue graphs, consequences, and semantic asset references.
 11. [`shared/rpg-monster-master-reference-campaign.md`](shared/rpg-monster-master-reference-campaign.md) — Monster Master: Arena Battles, Monster Master RPG, prepared asset-pack strategy, replayable starter architecture, and the first complete campaign proof.
-12. [`monster-master-rpg-lore-and-story.md`](monster-master-rpg-lore-and-story.md) — incremental owner-approved Monster Master fiction, tone, calling, relationship, licensing, hazard-class, and story decisions; speculative alternatives do not become canon.
-13. [`monster-master-rpg-asset-register.md`](monster-master-rpg-asset-register.md) — production priorities, source-master lifecycle, generation-attempt tracking, reuse audit, and acceptance evidence for the starter asset set.
-14. [`assets/monster-master-rpg-asset-register.json`](assets/monster-master-rpg-asset-register.json) — machine-readable asset identities, semantic roles, statuses, fallbacks, and append-only generation-attempt ledger.
-15. [`shared/rpg-cross-repository-integration-testing.md`](shared/rpg-cross-repository-integration-testing.md) — mock, fixture, actual GameFrame, workerd, and deployed staging test layers.
-16. [`tactical-battler-rpg-foundation.md`](tactical-battler-rpg-foundation.md) — existing tactical foundation and its role inside the wider RPG client.
-17. [`rpg-platform-delivery-plan.md`](rpg-platform-delivery-plan.md) — phased implementation and acceptance gates.
+12. [`monster-master-rpg-current-creative-direction.md`](monster-master-rpg-current-creative-direction.md) — controlling current-phase tone and asset-production direction: broad comedy and horror range, the Master Baiter concept, and direct owner-plus-agent asset creation rather than runtime or Cloudflare generation.
+13. [`monster-master-rpg-lore-and-story.md`](monster-master-rpg-lore-and-story.md) — incremental owner-approved Monster Master fiction, calling, relationships, licensing, hazard classes, and story decisions; the current creative-direction document supersedes any earlier tone restriction that conflicts with it.
+14. [`monster-master-rpg-asset-register.md`](monster-master-rpg-asset-register.md) — production priorities, source-master lifecycle, attempt tracking, reuse audit, and acceptance evidence for assets created or edited directly during development.
+15. [`assets/monster-master-rpg-asset-register.json`](assets/monster-master-rpg-asset-register.json) — machine-readable asset identities, semantic roles, statuses, fallbacks, and append-only attempt ledger.
+16. [`shared/rpg-cross-repository-integration-testing.md`](shared/rpg-cross-repository-integration-testing.md) — mock, fixture, actual GameFrame, workerd, and deployed staging test layers.
+17. [`tactical-battler-rpg-foundation.md`](tactical-battler-rpg-foundation.md) — existing tactical foundation and its role inside the wider RPG client.
+18. [`rpg-platform-delivery-plan.md`](rpg-platform-delivery-plan.md) — phased implementation and acceptance gates.
 
 ## Private runtime design
 
-Specific Monster Master culprit patterns, hidden causes, clue answers, event weights, and enabled runtime pools belong in the private RPG GM Runtime repository. The runtime currently stores the bespoke design and machine-readable design fixture in:
+Specific Monster Master culprit patterns, hidden causes, clue answers, event eligibility, and enabled runtime pools belong in the private RPG GM Runtime repository. The runtime currently stores the bespoke design and machine-readable private fixture in:
 
 - `docs/monster-master-event-and-plot-pools.md`;
-- `fixtures/rpg/v1/monster-master-event-and-plot-pools-v1.json`.
+- `fixtures/rpg-private/monster-master-event-and-plot-pools-v1.json`.
 
-GameFrame owns the public template, asset-role vocabulary, presentation semantics, and asset register. It must not become a second store for active hidden plot packages.
+GameFrame owns the public template, asset-role vocabulary, presentation semantics, creative direction, and asset register. It must not become a second store for active hidden plot packages.
+
+## Current creative-production boundary
+
+For the current Monster Master phase, assets are generated, edited, cleaned, reviewed, and integrated directly by the owner and assisting creative agent. Cloudflare generation services, runtime-authored assets, provider orchestration, and live campaign-time generation remain future architecture only.
+
+The complete asset inventory and future-ready metadata should remain in place, but they do not imply that automated infrastructure must be built before the starter one-shot or its bespoke asset set.
 
 ## Shared-document policy
 
@@ -73,7 +81,7 @@ Accepted update flow:
 3. run the exact-byte drift check;
 4. merge the coordinated runtime update.
 
-Do not independently edit a runtime mirror. Repository-specific extensions belong in separate local documents that link to the shared canonical document.
+Do not independently edit a runtime mirror. Repository-specific extensions belong in separate local documents that link to the canonical source.
 
 ## Candidate rule
 
