@@ -1,0 +1,1 @@
+Temporary one-time workflow for issue-triggered finalization of PR #107. Remove after the validated asset commit is pushed.
