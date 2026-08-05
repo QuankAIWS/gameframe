@@ -408,3 +408,21 @@ A campaign may end successfully with nobody approaching this reputation. Another
 - Recognition can be assessed from authored accomplishments, relationships, witnesses, factions, regions, and historical impact.
 - The system may surface rumors that a character is becoming recognized, but must not automatically announce that a numeric threshold has been crossed.
 - Campaign conclusions should support no recognition, disputed recognition, regional recognition, posthumous recognition, or broad living recognition according to actual play.
+
+## Decision 24 — Background-dependent starting licenses
+
+A new player character's starting licenses and registrations depend on their background, prior training, profession, and the campaign premise. The game should not force every character to begin with the same legal qualifications merely because they share the player-character role.
+
+The standard campaign default is a provisional field license. It permits basic overland travel with a limited roster, ordinary monster handling, defensive deployment, supervised or restricted wild capture, and participation in low-risk sanctioned field activity. It does not automatically authorize commercial transport, dangerous-species handling, high-capacity rosters, unrestricted capture, advanced cube modifications, professional medical work, warden powers, or major organized competition.
+
+Other backgrounds begin differently. An academy graduate, apprentice trainer, former soldier, junior warden, caravan handler, researcher, rural caretaker, arena competitor, or self-taught applicant may start with a different combination of full licenses, provisional classes, registrations, endorsements, restrictions, and pending examinations.
+
+Starting credentials establish capabilities and story complications rather than permanent character classes. Characters may earn, upgrade, transfer, suspend, lose, or regain licenses during play, and a campaign may deliberately begin with underqualified, unlicensed, foreign-licensed, or recently discredited characters when that premise is intentional.
+
+### Implementation consequences
+
+- Character creation needs background-driven starting license packages rather than one universal license state.
+- A provisional field package should serve as the default that supports early travel, monster interaction, limited capture, and low-risk combat without granting advanced professional authority.
+- License records need jurisdiction, class, status, restrictions, endorsements, expiration, and pending-assessment fields.
+- Background benefits must remain separable from permanent archetype and combat progression.
+- Campaign setup may override default credentials explicitly, but must show the resulting legal limitations and available advancement paths.
