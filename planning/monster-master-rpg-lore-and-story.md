@@ -426,3 +426,43 @@ Starting credentials establish capabilities and story complications rather than 
 - License records need jurisdiction, class, status, restrictions, endorsements, expiration, and pending-assessment fields.
 - Background benefits must remain separable from permanent archetype and combat progression.
 - Campaign setup may override default credentials explicitly, but must show the resulting legal limitations and available advancement paths.
+
+## Decision 25 — Partial supervision and structured first field outings
+
+Provisional field license holders may operate independently within clearly defined low-risk limits. They can travel on settled routes, care for approved rosters, respond defensively, and complete ordinary assignments that fall within their endorsements.
+
+Supervision is required for first wild captures, designated dangerous regions, unfamiliar specialist hazards, higher-risk monster classes, or any activity explicitly restricted by the provisional license. The supervisor may be an academy instructor, experienced trainer, licensed guide, senior handler, warden, or another qualified field professional.
+
+The standard introductory campaign frame can begin with the party undertaking its first true field outing under a guide or teacher. This provides useful structure, a reason for the group to be together, practical instruction, and a credible safety net without deciding every character's age, personality, or long-term ambition.
+
+Characters in that frame may be young academy graduates, older students changing careers, apprentices from different traditions, independent applicants completing field assessment, or candidates with warden aspirations. An alternate campaign can instead begin with older recruits entering warden service for different personal reasons, or with any other premise that supplies equivalent licenses and group cohesion.
+
+The guide is an opening structure rather than a permanent commander. Circumstances may separate the party from the guide, require the players to act beyond the planned exercise, or conclude the supervised phase once competency is demonstrated.
+
+### Implementation consequences
+
+- Provisional licenses need independent-operation limits and explicit supervision triggers.
+- Campaign setup should offer academy field outing, mixed applicant assessment, and warden recruitment as supported frames rather than mandatory origins.
+- Age, academy attendance, and warden ambition must remain selectable background details rather than universal player facts.
+- The opening guide needs qualifications, responsibility boundaries, and a planned path for player autonomy.
+- Introductory scenarios can teach travel, capture, hazards, licenses, and combat through an in-world field exercise without becoming a rigid tutorial corridor.
+
+## Decision 26 — Five-class monster hazard classification
+
+Monsters are assigned a handling-hazard class that describes the precautions, licenses, facilities, and response capability normally required to manage them. Hazard class is not a combat level, rarity tier, intelligence category, or absolute measurement of power.
+
+- **Class 1 — Domestic or routinely manageable:** Species commonly kept as household, companion, agricultural, or ordinary working monsters. Standard precautions are usually sufficient. A highly trained, unusually large, enraged, diseased, or exceptional Class 1 individual can still be extremely powerful or dangerous in context.
+- **Class 2 — Potentially dangerous:** Monsters capable of causing serious injury or disruption when mishandled, frightened, territorial, or deliberately deployed. Ordinary field professionals can work with them under appropriate licenses and procedures.
+- **Class 3 — Very dangerous:** Monsters whose strength, behavior, abilities, scale, or containment needs create a substantial risk to trained personnel and the public. Specialist endorsements, stronger cubes, prepared teams, and controlled environments are normally required.
+- **Class 4 — Specialty hazard:** Monsters presenting unusual hazards that ordinary strength-based precautions do not adequately address. Examples include toxic, contagious, parasitic, psychic, temporal, spatial, corrosive, reality-distorting, environmental, or infrastructure-threatening effects. Their danger may be narrow, conditional, or difficult to detect rather than simply greater than every Class 3 monster.
+- **Class 5 — Rumor and hearsay:** Alleged, legendary, poorly documented, contradictory, or unverified monsters for which a reliable operational classification cannot yet be made. Class 5 is an uncertainty designation, not a routine highest-power license tier. Confirmed evidence may reclassify the subject into Classes 1 through 4 or establish a new specialist protocol.
+
+Species receive a normal baseline classification, but individual condition, age, training, temperament, unusual abilities, location, and current circumstances can raise or lower the practical response requirement. A Class 1 monster in a crowded city, a Class 2 carrying disease, or a Class 3 near vulnerable infrastructure may require a response beyond its ordinary baseline.
+
+### Implementation consequences
+
+- Monster records need baseline hazard class, current operational class, hazard tags, confidence level, and known handling protocols.
+- Combat power and hazard class must remain separate values; neither should be automatically derived from the other.
+- Licenses and missions may reference both a maximum ordinary hazard class and specific specialty endorsements.
+- Class 4 requires named hazard categories and countermeasures rather than one generic advanced permit.
+- Class 5 records should preserve sources, sightings, contradictions, confidence, and reclassification history so rumors can become investigations, discoveries, frauds, or genuine legendary encounters.
