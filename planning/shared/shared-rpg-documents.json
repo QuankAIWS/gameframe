@@ -23,6 +23,10 @@
       "filename": "rpg-rendering-and-asset-contract.md"
     },
     {
+      "id": "rpg-campaign-compiler-contract-v1",
+      "filename": "rpg-campaign-compiler-contract.md"
+    },
+    {
       "id": "rpg-monster-master-reference-campaign-v1",
       "filename": "rpg-monster-master-reference-campaign.md"
     },
