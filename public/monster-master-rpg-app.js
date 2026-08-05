@@ -1,3 +1,4 @@
+import { gameFrameFetch } from "./gameframe-auth.js";
 import {
   REFERENCE_CAMPAIGN_ID,
   buildActionCommand,
@@ -92,16 +93,15 @@ async function requestJson(path, body) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 12_000);
   try {
-    const response = await fetch(path, {
+    const response = await gameFrameFetch(path, {
       method: "POST",
-      credentials: "same-origin",
       headers: {
         accept: "application/json",
         "content-type": "application/json",
       },
       body: JSON.stringify(body),
       signal: controller.signal,
-    });
+    }, identity);
     const text = await response.text();
     const value = text ? JSON.parse(text) : null;
     if (!response.ok) {
@@ -237,6 +237,7 @@ function stopPolling() {
 
 async function submitAction() {
   if (!state.projection || !state.campaignId) return;
+  const retrying = Boolean(state.pendingCommand);
   const pending = state.pendingCommand || buildActionCommand({
     campaignId: state.campaignId,
     commandId: `command:${crypto.randomUUID()}`,
@@ -247,9 +248,9 @@ async function submitAction() {
   state.pendingCommand = pending;
   updateComposer();
   elements.send.disabled = true;
-  elements.actionStatus.textContent = state.pendingCommand === pending
-    ? "Sending the action to the Game Master…"
-    : "Retrying the exact action…";
+  elements.actionStatus.textContent = retrying
+    ? "Retrying the exact action…"
+    : "Sending the action to the Game Master…";
   showError("");
   try {
     await requestJson(campaignPath("commands"), pending);
