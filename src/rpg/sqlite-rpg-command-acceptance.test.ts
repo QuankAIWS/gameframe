@@ -5,10 +5,10 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { SqliteRuntimeCommandOutbox } from "./runtime-command-outbox.ts";
+import { SqliteRpgCampaignStore } from "./sqlite-rpg-campaign-store.ts";
 import {
   SqliteRpgCommandAcceptanceError,
   SqliteRpgCommandAcceptanceRepository,
-  type DurableGameFrameCommandInput,
 } from "./sqlite-rpg-command-acceptance.ts";
 
 const directories: string[] = [];
@@ -20,14 +20,12 @@ test.afterEach(() => {
 });
 
 function databasePath(): string {
-  const directory = mkdtempSync(join(tmpdir(), "gameframe-rpg-command-acceptance-"));
+  const directory = mkdtempSync(join(tmpdir(), "gameframe-rpg-acceptance-"));
   directories.push(directory);
   return join(directory, "gameframe.sqlite");
 }
 
-function commandInput(
-  overrides: Partial<DurableGameFrameCommandInput> = {},
-): DurableGameFrameCommandInput {
+function input(overrides: Record<string, unknown> = {}) {
   return {
     campaignId: "campaign-one",
     commandId: "command-one",
@@ -51,31 +49,57 @@ function commandInput(
   };
 }
 
-function initializedRepository(
+function bootstrapEvents() {
+  return Array.from({ length: 8 }, (_, index) => ({
+    eventId: `event:bootstrap:${index + 1}`,
+    kind: "scene.presented",
+    audience: { kind: "public" as const },
+    payload: { index: index + 1 },
+    createdAt: `2026-08-04T22:4${index}:00.000Z`,
+  }));
+}
+
+function initialized(
   filePath: string,
   faultInjector?: (stage: string) => void,
-): SqliteRpgCommandAcceptanceRepository {
-  const repository = new SqliteRpgCommandAcceptanceRepository({
-    filePath,
-    ...(faultInjector ? { faultInjector } : {}),
-  });
-  repository.initializeCampaign({
+) {
+  const campaigns = new SqliteRpgCampaignStore({ filePath });
+  campaigns.bootstrap({
     campaignId: "campaign-one",
+    title: "Reference campaign",
+    status: "active",
     state: {
       gameframeCoordinationRevision: 5,
       presentationSequence: 8,
       linkedNarrativeRevision: 2,
     },
-    initializedAt: "2026-08-04T22:49:00.000Z",
+    memberships: [
+      {
+        playerId: "discord:1234",
+        role: "player",
+        partyId: "party:keepers",
+        joinedPresentationSequence: 0,
+      },
+      {
+        playerId: "discord:observer",
+        role: "observer",
+        joinedPresentationSequence: 0,
+      },
+    ],
+    events: bootstrapEvents(),
+    initializedAt: "2026-08-04T22:39:00.000Z",
   });
-  return repository;
+  campaigns.close();
+  return new SqliteRpgCommandAcceptanceRepository({
+    filePath,
+    ...(faultInjector ? { faultInjector } : {}),
+  });
 }
 
-test("atomically commits coordination, presentation, receipt, and outbox custody", () => {
+test("atomically commits state, events, receipt, and outbox for an active player", () => {
   const filePath = databasePath();
-  const repository = initializedRepository(filePath);
-
-  const receipt = repository.acceptCommand(commandInput());
+  const repository = initialized(filePath);
+  const receipt = repository.acceptCommand(input());
   assert.deepEqual(receipt, {
     kind: "gameframe.command_committed",
     campaignId: "campaign-one",
@@ -86,7 +110,7 @@ test("atomically commits coordination, presentation, receipt, and outbox custody
     presentationSequence: 9,
     linkedNarrativeRevision: 2,
   });
-  assert.equal(repository.presentationEvents("campaign-one").length, 1);
+  assert.equal(repository.presentationEvents("campaign-one", 8).length, 1);
   repository.close();
 
   const outbox = new SqliteRuntimeCommandOutbox({ filePath });
@@ -96,16 +120,16 @@ test("atomically commits coordination, presentation, receipt, and outbox custody
   outbox.close();
 });
 
-test("survives restart and returns exact retry without duplicate state", () => {
+test("survives restart and returns exact retry without duplicates", () => {
   const filePath = databasePath();
-  let repository = initializedRepository(filePath);
-  const first = repository.acceptCommand(commandInput());
+  let repository = initialized(filePath);
+  const first = repository.acceptCommand(input());
   repository.close();
 
   repository = new SqliteRpgCommandAcceptanceRepository({ filePath });
-  const retry = repository.acceptCommand(commandInput());
+  const retry = repository.acceptCommand(input());
   assert.deepEqual(retry, first);
-  assert.equal(repository.presentationEvents("campaign-one").length, 1);
+  assert.equal(repository.presentationEvents("campaign-one", 8).length, 1);
   repository.close();
 
   const outbox = new SqliteRuntimeCommandOutbox({ filePath });
@@ -113,58 +137,77 @@ test("survives restart and returns exact retry without duplicate state", () => {
   outbox.close();
 });
 
-test("rejects changed reuse and stale revisions without side effects", () => {
+test("rejects observers and nonmembers before command mutation", () => {
   const filePath = databasePath();
-  const repository = initializedRepository(filePath);
-  repository.acceptCommand(commandInput());
-
-  assert.throws(
-    () =>
-      repository.acceptCommand(
-        commandInput({
-          command: {
-            kind: "campaign.submit_action",
-            visibility: "public",
-            text: "Open the academy gate.",
-          },
-        }),
-      ),
-    (error: unknown) =>
-      error instanceof SqliteRpgCommandAcceptanceError
-      && error.code === "command-conflict",
-  );
-  assert.throws(
-    () =>
-      repository.acceptCommand(
-        commandInput({
-          commandId: "command-two",
-          expectedGameframeCoordinationRevision: 5,
+  const repository = initialized(filePath);
+  for (const authenticatedPlayerId of ["discord:observer", "discord:outsider"]) {
+    assert.throws(
+      () => repository.acceptCommand(
+        input({
+          commandId: `command:${authenticatedPlayerId}`,
+          authenticatedPlayerId,
           presentationEvents: [],
         }),
       ),
-    (error: unknown) =>
-      error instanceof SqliteRpgCommandAcceptanceError
-      && error.code === "coordination-revision-conflict",
-  );
-  assert.equal(repository.presentationEvents("campaign-one").length, 1);
-  repository.close();
-});
-
-test("rolls back every authority surface when acceptance fails mid-transaction", () => {
-  const filePath = databasePath();
-  const repository = initializedRepository(filePath, (stage) => {
-    if (stage === "after-outbox-insert") {
-      throw new Error("injected crash");
-    }
-  });
-
-  assert.throws(() => repository.acceptCommand(commandInput()), /injected crash/);
+      (error: unknown) =>
+        error instanceof SqliteRpgCommandAcceptanceError
+        && error.code === "player-not-authorized",
+    );
+  }
   assert.deepEqual(repository.state("campaign-one"), {
     gameframeCoordinationRevision: 5,
     presentationSequence: 8,
     linkedNarrativeRevision: 2,
   });
-  assert.equal(repository.presentationEvents("campaign-one").length, 0);
+  repository.close();
+});
+
+test("rejects changed command reuse and stale revisions without side effects", () => {
+  const filePath = databasePath();
+  const repository = initialized(filePath);
+  repository.acceptCommand(input());
+  assert.throws(
+    () => repository.acceptCommand(
+      input({
+        command: {
+          kind: "campaign.submit_action",
+          visibility: "public",
+          text: "Open the gate.",
+        },
+      }),
+    ),
+    (error: unknown) =>
+      error instanceof SqliteRpgCommandAcceptanceError
+      && error.code === "command-conflict",
+  );
+  assert.throws(
+    () => repository.acceptCommand(
+      input({
+        commandId: "command-two",
+        expectedGameframeCoordinationRevision: 5,
+        presentationEvents: [],
+      }),
+    ),
+    (error: unknown) =>
+      error instanceof SqliteRpgCommandAcceptanceError
+      && error.code === "coordination-revision-conflict",
+  );
+  assert.equal(repository.presentationEvents("campaign-one", 8).length, 1);
+  repository.close();
+});
+
+test("rolls back every authority surface when acceptance fails mid-transaction", () => {
+  const filePath = databasePath();
+  const repository = initialized(filePath, (stage) => {
+    if (stage === "after-outbox-insert") throw new Error("injected crash");
+  });
+  assert.throws(() => repository.acceptCommand(input()), /injected crash/);
+  assert.deepEqual(repository.state("campaign-one"), {
+    gameframeCoordinationRevision: 5,
+    presentationSequence: 8,
+    linkedNarrativeRevision: 2,
+  });
+  assert.equal(repository.presentationEvents("campaign-one", 8).length, 0);
   repository.close();
 
   const outbox = new SqliteRuntimeCommandOutbox({ filePath });
@@ -172,23 +215,16 @@ test("rolls back every authority surface when acceptance fails mid-transaction",
   outbox.close();
 });
 
-test("serializes competing repository instances through the revision CAS", async () => {
+test("serializes competing repositories through SQLite revision CAS", async () => {
   const filePath = databasePath();
-  const first = initializedRepository(filePath);
+  const first = initialized(filePath);
   const second = new SqliteRpgCommandAcceptanceRepository({ filePath });
-
   const results = await Promise.allSettled([
-    Promise.resolve().then(() => first.acceptCommand(commandInput())),
-    Promise.resolve().then(() =>
-      second.acceptCommand(
-        commandInput({
-          commandId: "command-two",
-          presentationEvents: [],
-        }),
-      ),
-    ),
+    Promise.resolve().then(() => first.acceptCommand(input())),
+    Promise.resolve().then(() => second.acceptCommand(
+      input({ commandId: "command-two", presentationEvents: [] }),
+    )),
   ]);
-
   assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
   assert.equal(results.filter((result) => result.status === "rejected").length, 1);
   first.close();
