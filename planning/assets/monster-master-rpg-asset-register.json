@@ -1,0 +1,474 @@
+{
+  "protocolVersion": 1,
+  "registerId": "monster-master-rpg-starter-assets-v1",
+  "registerVersion": 1,
+  "lastUpdated": "2026-08-04",
+  "owner": "Scribbles GameFrame",
+  "themePackId": "monster-master-rpg-v1",
+  "geometryProfile": "mm-isometric-72x36-wall29",
+  "statusVocabulary": [
+    "planned",
+    "reuse-audit",
+    "spec-ready",
+    "queued",
+    "generating",
+    "source-ready",
+    "review",
+    "accepted",
+    "derivative-ready",
+    "integrated",
+    "rejected",
+    "failed",
+    "superseded"
+  ],
+  "priorityVocabulary": {
+    "P0": "intro-critical",
+    "P1": "one-shot-critical",
+    "P2": "plot-pool coverage",
+    "P3": "polish and expansion"
+  },
+  "assetFields": {
+    "assetId": "stable identity",
+    "semanticRole": "pool-facing role",
+    "family": "presentation family",
+    "priority": "production priority",
+    "status": "lifecycle status",
+    "sourceMode": "preferred source route",
+    "fallback": "readable degraded presentation",
+    "currentAcceptedAttemptId": "accepted source attempt or null"
+  },
+  "generationAttemptFields": [
+    "attemptId",
+    "assetId",
+    "status",
+    "sourceMode",
+    "createdAt",
+    "provider",
+    "model",
+    "workflowVersion",
+    "promptCompilerVersion",
+    "recipeVersion",
+    "seed",
+    "productionSpecRef",
+    "sourceMasterPath",
+    "sourceHash",
+    "reviewResult",
+    "reviewer",
+    "rightsNote",
+    "supersedesAttemptId",
+    "notes"
+  ],
+  "assets": [
+    {
+      "assetId": "ui:mm-rpg-wordmark-v1",
+      "semanticRole": "ui.campaign-identity",
+      "family": "interface",
+      "priority": "P0",
+      "status": "reuse-audit",
+      "sourceMode": "composed",
+      "fallback": "Monster Master RPG",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "ui:mm-incident-card-v1",
+      "semanticRole": "ui.incident-card",
+      "family": "interface",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "composed",
+      "fallback": "Field incident",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "ui:mm-private-clue-card-v1",
+      "semanticRole": "ui.private-clue-card",
+      "family": "interface",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "composed",
+      "fallback": "Private observation",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "ui:mm-field-assessment-card-v1",
+      "semanticRole": "ui.field-assessment-card",
+      "family": "interface",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "composed",
+      "fallback": "Field assessment",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "icon:mm-hazard-classes-v1",
+      "semanticRole": "ui.hazard-class-badges",
+      "family": "interface",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Class 1–4 text badges",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "icon:mm-field-actions-v1",
+      "semanticRole": "ui.field-action-icons",
+      "family": "interface",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Text labels",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "scene:mm-academy-east-gate-v1",
+      "semanticRole": "location.academy-east-gate",
+      "family": "environment",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "composed",
+      "fallback": "Scene card",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "scene:mm-eastgate-field-station-v1",
+      "semanticRole": "location.field-station.exterior",
+      "family": "environment",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "composed",
+      "fallback": "Scene card",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "scene:mm-settled-route-v1",
+      "semanticRole": "location.settled-route",
+      "family": "environment",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "composed",
+      "fallback": "Scene card",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "scene:mm-damaged-cart-site-v1",
+      "semanticRole": "location.damaged-cart-site",
+      "family": "environment",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "composed",
+      "fallback": "Incident card",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "scene:mm-old-culvert-v1",
+      "semanticRole": "location.old-culvert",
+      "family": "environment",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "composed",
+      "fallback": "Scene card",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "scene:mm-creature-care-outpost-v1",
+      "semanticRole": "location.creature-care-outpost",
+      "family": "environment",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "composed",
+      "fallback": "Scene card",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "scene:mm-return-assessment-v1",
+      "semanticRole": "location.return-assessment",
+      "family": "environment",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "composed",
+      "fallback": "Scene card",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "portrait:mm-warden-pell-v1",
+      "semanticRole": "npc.veteran-warden-guide.portrait",
+      "family": "character",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Named silhouette",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "entity:mm-warden-pell-field-v1",
+      "semanticRole": "npc.veteran-warden-guide.field",
+      "family": "character",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Field marker",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "portrait:mm-nervous-courier-v1",
+      "semanticRole": "npc.nervous-courier.portrait",
+      "family": "character",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Role silhouette",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "portrait:mm-station-worker-v1",
+      "semanticRole": "npc.station-worker.portrait",
+      "family": "character",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Role silhouette",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "portrait:mm-contractor-v1",
+      "semanticRole": "npc.contractor.portrait",
+      "family": "character",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Role silhouette",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "portrait:mm-academy-assessor-v1",
+      "semanticRole": "npc.academy-assessor.portrait",
+      "family": "character",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Role silhouette",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "portrait:mm-rival-trainee-v1",
+      "semanticRole": "npc.rival-trainee.portrait",
+      "family": "character",
+      "priority": "P2",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Role silhouette",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "creature:mm-starter-support-role-v1",
+      "semanticRole": "creature.starter-support.field",
+      "family": "creature",
+      "priority": "P0",
+      "status": "reuse-audit",
+      "sourceMode": "reused",
+      "fallback": "Readable silhouette",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "creature:mm-starter-tracker-role-v1",
+      "semanticRole": "creature.starter-tracker.field",
+      "family": "creature",
+      "priority": "P0",
+      "status": "reuse-audit",
+      "sourceMode": "reused",
+      "fallback": "Readable silhouette",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "creature:mm-domestic-hauler-v1",
+      "semanticRole": "creature.domestic-hauler.field",
+      "family": "creature",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Readable silhouette",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "creature:mm-distressed-class1-v1",
+      "semanticRole": "creature.distressed-class1.field",
+      "family": "creature",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Readable silhouette",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "creature:mm-dangerous-juvenile-v1",
+      "semanticRole": "creature.dangerous-juvenile.field",
+      "family": "creature",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Unknown-creature silhouette",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "creature:mm-warden-companion-v1",
+      "semanticRole": "creature.warden-companion.field",
+      "family": "creature",
+      "priority": "P2",
+      "status": "reuse-audit",
+      "sourceMode": "reused",
+      "fallback": "Readable silhouette",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "terrain:mm-grass-ground-v1",
+      "semanticRole": "terrain.grass-ground",
+      "family": "environment",
+      "priority": "P1",
+      "status": "reuse-audit",
+      "sourceMode": "reused",
+      "fallback": "Generic grass material",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "terrain:mm-settled-road-v1",
+      "semanticRole": "terrain.settled-road",
+      "family": "environment",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Generic road material",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "terrain:mm-raised-earth-top-v1",
+      "semanticRole": "terrain.raised-earth-top",
+      "family": "environment",
+      "priority": "P1",
+      "status": "reuse-audit",
+      "sourceMode": "reused",
+      "fallback": "Generic raised top",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "terrain:mm-cliff-face-v1",
+      "semanticRole": "terrain.cliff-face",
+      "family": "environment",
+      "priority": "P1",
+      "status": "reuse-audit",
+      "sourceMode": "reused",
+      "fallback": "Generic cliff face",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "prop:mm-culvert-structure-v1",
+      "semanticRole": "prop.old-culvert",
+      "family": "prop",
+      "priority": "P1",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Objective marker",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "prop:mm-damaged-supply-cart-v1",
+      "semanticRole": "prop.supply-cart.damaged",
+      "family": "prop",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Cart icon",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "prop:mm-supply-crates-v1",
+      "semanticRole": "prop.supply-crates",
+      "family": "prop",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Crate icon",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "prop:mm-route-markers-v1",
+      "semanticRole": "prop.route-marker.tampered",
+      "family": "prop",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "authored",
+      "fallback": "Route marker icon",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "prop:mm-roadside-dressing-v1",
+      "semanticRole": "prop.roadside-dressing",
+      "family": "prop",
+      "priority": "P2",
+      "status": "reuse-audit",
+      "sourceMode": "reused",
+      "fallback": "Generic dressing",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "fx:mm-investigation-set-v1",
+      "semanticRole": "fx.investigation-set",
+      "family": "effect",
+      "priority": "P0",
+      "status": "planned",
+      "sourceMode": "composed",
+      "fallback": "Text and icon feedback",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "fx:mm-capture-care-set-v1",
+      "semanticRole": "fx.capture-care-set",
+      "family": "effect",
+      "priority": "P1",
+      "status": "reuse-audit",
+      "sourceMode": "composed",
+      "fallback": "Existing effect fallback",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "fx:mm-encounter-return-v1",
+      "semanticRole": "fx.encounter-return",
+      "family": "effect",
+      "priority": "P1",
+      "status": "reuse-audit",
+      "sourceMode": "reused",
+      "fallback": "Immediate transition",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "audio:mm-starter-one-shot-set-v1",
+      "semanticRole": "audio.starter-one-shot-set",
+      "family": "audio",
+      "priority": "P3",
+      "status": "planned",
+      "sourceMode": "generated",
+      "fallback": "Silent fallback",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "voice:mm-narrator-v1",
+      "semanticRole": "voice.narrator",
+      "family": "audio",
+      "priority": "P3",
+      "status": "planned",
+      "sourceMode": "generated",
+      "fallback": "Text only",
+      "currentAcceptedAttemptId": null
+    },
+    {
+      "assetId": "voice:mm-warden-pell-v1",
+      "semanticRole": "voice.warden-pell",
+      "family": "audio",
+      "priority": "P3",
+      "status": "planned",
+      "sourceMode": "generated",
+      "fallback": "Text only",
+      "currentAcceptedAttemptId": null
+    }
+  ],
+  "generationAttempts": []
+}
