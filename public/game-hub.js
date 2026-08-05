@@ -1,4 +1,4 @@
-const stylesheetUrls = ["/game-hub.css", "/game-hub-shell.css", "/game-hub-cards.css", "/game-hub-flow.css"];
+const stylesheetUrls = ["/game-hub.css", "/game-hub-shell.css", "/game-hub-cards.css", "/game-hub-flow.css", "/game-hub-rpg.css"];
 for (const stylesheetUrl of stylesheetUrls) {
   if (document.querySelector(`link[href="${stylesheetUrl}"]`)) continue;
   const stylesheet = document.createElement("link");
