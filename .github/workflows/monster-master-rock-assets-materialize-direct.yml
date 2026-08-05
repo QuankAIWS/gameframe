@@ -1,0 +1,98 @@
+name: Materialize Monster Master rock masters
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/monster-master-rock-assets-materialize-direct.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: monster-master-rock-assets-materialize-direct
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_BRANCH: agent/materialize-mm-rock-direct-assets
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Materialize approved masters from retained package
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run assets:props:build
+          npm run assets:props:verify
+
+      - name: Switch pipeline to direct retained masters
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/git/blobs/403a4cce326656fadf8a66cd831d431dcc8514f8" \
+            --jq .content | tr -d '\n' | base64 --decode \
+            > scripts/monster-master-rock-props.mjs
+          gh api "repos/${GITHUB_REPOSITORY}/git/blobs/c5a24752fd44922f55827f436cc2c5140efb0de1" \
+            --jq .content | tr -d '\n' | base64 --decode \
+            > public/assets/monster-master/props/rock-boulder-set-v1/manifest.json
+
+          npm run assets:props:build
+          npm run assets:props:verify
+          npm run check:browser
+
+      - name: Verify final retained masters and runtime set
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/mm-rock-master-hashes <<'EOF'
+          9654237ba8aa56949e50c9e29959e616d4dfb2ea7747c7623058e14caa095001  public/assets/monster-master/props/rock-boulder-set-v1/source/master/medium-boulder-v1-master.png
+          5eb658e2d822edfc8e0941227cd317ccbe445f195e01fa6c1864d56824f0557a  public/assets/monster-master/props/rock-boulder-set-v1/source/master/rubble-pile-v1-master.png
+          6e50fe930bfc7b8d1bd93bf5ae859386c5156f851c93f6e08aba12649017bd32  public/assets/monster-master/props/rock-boulder-set-v1/source/master/small-rock-v1-master.png
+          EOF
+          sed -i 's/^          //' /tmp/mm-rock-master-hashes
+          sha256sum --check --strict /tmp/mm-rock-master-hashes
+
+          for stem in medium-boulder-v1 rubble-pile-v1 small-rock-v1; do
+            test -f "public/assets/monster-master/props/rock-boulder-set-v1/runtime/${stem}-512.png"
+            test -f "public/assets/monster-master/props/rock-boulder-set-v1/runtime/${stem}-256.webp"
+            test -f "public/assets/monster-master/props/rock-boulder-set-v1/runtime/${stem}-128.webp"
+          done
+
+      - name: Publish direct-master repair branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf public/assets/monster-master/props/rock-boulder-set-v1/source/package
+          rm -f .github/workflows/monster-master-rock-assets-materialize-direct.yml
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -C "$TARGET_BRANCH"
+          git add -A \
+            .github/workflows/monster-master-rock-assets-materialize-direct.yml \
+            public/assets/monster-master/props/rock-boulder-set-v1 \
+            scripts/monster-master-rock-props.mjs
+
+          test ! -d public/assets/monster-master/props/rock-boulder-set-v1/source/package
+          git diff --cached --stat
+          git commit -m 'fix: materialize Monster Master rock masters directly'
+          git push --force origin "HEAD:${TARGET_BRANCH}"
