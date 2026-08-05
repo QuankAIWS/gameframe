@@ -1,13 +1,14 @@
 import { createHash } from "node:crypto";
 import { DatabaseSync, type StatementSync } from "node:sqlite";
 
-import { SqliteRpgCommandAcceptanceRepository } from "./sqlite-rpg-command-acceptance.ts";
+import { SqliteRpgCampaignStore } from "./sqlite-rpg-campaign-store.ts";
 import type {
   GameFrameCoordinationState,
   RuntimeNarrativeCommitReceipt,
 } from "./rpg-dual-revision-contract.ts";
 
 const COORDINATION_TABLE = "rpg_campaign_coordination_v1";
+const METADATA_TABLE = "rpg_campaign_metadata_v1";
 const MEMBERSHIP_TABLE = "rpg_campaign_membership_intervals_v1";
 const ENCOUNTER_TABLE = "rpg_encounters_v1";
 const COMPLETION_TABLE = "rpg_encounter_completions_v1";
@@ -17,6 +18,7 @@ const MAX_OBJECTIVES = 32;
 const MAX_CONDITIONS = 32;
 const MAX_REWARDS = 32;
 const MAX_REQUEST_BYTES = 131_072;
+const MAX_INTEGER = 10_000_000;
 const RUNTIME_SERVICE_ID = "rpg-gm-runtime";
 const ENGINE_SERVICE_ID = "gameframe-encounter-engine";
 
@@ -57,10 +59,7 @@ export type DurableTerminalOutcome = {
     kind: "item" | "currency" | "experience" | "flag";
     quantity: number;
   }>;
-  ruleset: {
-    id: string;
-    revision: number;
-  };
+  ruleset: { id: string; revision: number };
   commit: {
     matchId: string;
     matchRevision: number;
@@ -84,6 +83,7 @@ export class SqliteRpgEncounterError extends Error {
   readonly code:
     | "invalid-input"
     | "campaign-not-found"
+    | "campaign-inactive"
     | "coordination-revision-conflict"
     | "runtime-source-revision-conflict"
     | "narrative-link-conflict"
@@ -115,6 +115,8 @@ type CoordinationRow = {
   linked_narrative_revision: number;
 };
 
+type MetadataRow = { status: string };
+
 type EncounterRow = {
   encounter_id: string;
   campaign_id: string;
@@ -142,6 +144,7 @@ type CompletionRow = {
 export class SqliteRpgEncounterStore {
   readonly #database: DatabaseSync;
   readonly #faultInjector?: (stage: string) => void;
+  readonly #selectMetadata: StatementSync;
   readonly #selectState: StatementSync;
   readonly #updateState: StatementSync;
   readonly #selectByEncounter: StatementSync;
@@ -154,16 +157,13 @@ export class SqliteRpgEncounterStore {
   readonly #insertCompletion: StatementSync;
   readonly #selectActiveMembership: StatementSync;
 
-  constructor(input: {
-    filePath: string;
-    faultInjector?: (stage: string) => void;
-  }) {
+  constructor(input: { filePath: string; faultInjector?: (stage: string) => void }) {
     if (!input || typeof input.filePath !== "string" || !input.filePath.trim()) {
       throw new TypeError("filePath is required");
     }
     const filePath = input.filePath.trim();
-    const commands = new SqliteRpgCommandAcceptanceRepository({ filePath });
-    commands.close();
+    const campaigns = new SqliteRpgCampaignStore({ filePath });
+    campaigns.close();
 
     this.#database = new DatabaseSync(filePath);
     this.#database.exec("PRAGMA busy_timeout = 5000");
@@ -201,6 +201,9 @@ export class SqliteRpgEncounterStore {
       );
     `);
 
+    this.#selectMetadata = this.#database.prepare(
+      `SELECT status FROM ${METADATA_TABLE} WHERE campaign_id = ?`,
+    );
     this.#selectState = this.#database.prepare(`
       SELECT campaign_id, gameframe_coordination_revision,
              presentation_sequence, linked_narrative_revision
@@ -211,9 +214,9 @@ export class SqliteRpgEncounterStore {
       SET gameframe_coordination_revision = ?, linked_narrative_revision = ?, updated_at = ?
       WHERE campaign_id = ? AND gameframe_coordination_revision = ?
     `);
-    this.#selectByEncounter = this.#database.prepare(`
-      SELECT * FROM ${ENCOUNTER_TABLE} WHERE encounter_id = ?
-    `);
+    this.#selectByEncounter = this.#database.prepare(
+      `SELECT * FROM ${ENCOUNTER_TABLE} WHERE encounter_id = ?`,
+    );
     this.#selectByMutation = this.#database.prepare(`
       SELECT * FROM ${ENCOUNTER_TABLE}
       WHERE campaign_id = ? AND coordination_mutation_id = ?
@@ -238,9 +241,9 @@ export class SqliteRpgEncounterStore {
       SET handle_json = ?, state = 'completed', updated_at = ?
       WHERE encounter_id = ? AND state = 'preparing'
     `);
-    this.#selectCompletion = this.#database.prepare(`
-      SELECT * FROM ${COMPLETION_TABLE} WHERE encounter_id = ?
-    `);
+    this.#selectCompletion = this.#database.prepare(
+      `SELECT * FROM ${COMPLETION_TABLE} WHERE encounter_id = ?`,
+    );
     this.#insertCompletion = this.#database.prepare(`
       INSERT INTO ${COMPLETION_TABLE} (
         encounter_id, completion_id, fingerprint, outcome_json,
@@ -251,10 +254,7 @@ export class SqliteRpgEncounterStore {
       SELECT role FROM ${MEMBERSHIP_TABLE}
       WHERE campaign_id = ? AND player_id = ?
         AND joined_presentation_sequence <= ?
-        AND (
-          left_presentation_sequence IS NULL
-          OR left_presentation_sequence > ?
-        )
+        AND (left_presentation_sequence IS NULL OR left_presentation_sequence > ?)
       ORDER BY joined_presentation_sequence DESC
       LIMIT 1
     `);
@@ -281,53 +281,26 @@ export class SqliteRpgEncounterStore {
     const requestFingerprint = fingerprint(requestJson);
 
     return this.#transaction(() => {
-      const existingMutation = this.#selectByMutation.get(
-        request.campaignId,
-        request.coordinationMutationId,
-      ) as EncounterRow | undefined;
-      if (existingMutation) {
-        return exactLaunchRetry(existingMutation, request, requestFingerprint);
-      }
-      const existingIdempotency = this.#selectByIdempotency.get(
-        request.campaignId,
-        serviceId,
-        request.idempotencyKey,
-      ) as EncounterRow | undefined;
-      if (existingIdempotency) {
-        return exactLaunchRetry(existingIdempotency, request, requestFingerprint);
-      }
-      const existingEncounter = this.#selectByEncounter.get(
-        request.encounterId,
-      ) as EncounterRow | undefined;
-      if (existingEncounter) {
-        throw new SqliteRpgEncounterError(
-          "encounter-conflict",
-          `Encounter ${request.encounterId} already exists with different launch custody.`,
-        );
-      }
-      const existingCommit = this.#selectByRuntimeCommit.get(
-        request.campaignId,
-        request.runtimeCommit.runtimeCommitId,
-      ) as EncounterRow | undefined;
-      if (existingCommit) {
-        throw new SqliteRpgEncounterError(
-          "runtime-commit-conflict",
-          `Runtime commit ${request.runtimeCommit.runtimeCommitId} is already linked to another encounter.`,
-        );
-      }
+      const retry = this.#existingLaunch(request, serviceId, requestFingerprint);
+      if (retry) return retry;
 
+      const metadata = this.#selectMetadata.get(request.campaignId) as MetadataRow | undefined;
       const stateRow = this.#selectState.get(request.campaignId) as CoordinationRow | undefined;
-      if (!stateRow) {
+      if (!metadata || !stateRow) {
         throw new SqliteRpgEncounterError(
           "campaign-not-found",
           `Campaign ${request.campaignId} does not exist.`,
         );
       }
+      if (metadata.status !== "active") {
+        throw new SqliteRpgEncounterError(
+          "campaign-inactive",
+          `Campaign ${request.campaignId} is ${metadata.status} and cannot launch encounters.`,
+        );
+      }
+
       const current = stateFromRow(stateRow);
-      if (
-        request.expectedGameframeCoordinationRevision
-        !== current.gameframeCoordinationRevision
-      ) {
+      if (request.expectedGameframeCoordinationRevision !== current.gameframeCoordinationRevision) {
         throw new SqliteRpgEncounterError(
           "coordination-revision-conflict",
           `Expected GameFrame coordination revision ${request.expectedGameframeCoordinationRevision}, actual ${current.gameframeCoordinationRevision}.`,
@@ -343,10 +316,8 @@ export class SqliteRpgEncounterStore {
         );
       }
       if (
-        request.runtimeCommit.previousNarrativeRevision
-        !== current.linkedNarrativeRevision
-        || request.runtimeCommit.narrativeRevision
-        !== current.linkedNarrativeRevision + 1
+        request.runtimeCommit.previousNarrativeRevision !== current.linkedNarrativeRevision
+        || request.runtimeCommit.narrativeRevision !== current.linkedNarrativeRevision + 1
       ) {
         throw new SqliteRpgEncounterError(
           "narrative-link-conflict",
@@ -441,8 +412,7 @@ export class SqliteRpgEncounterStore {
     }
     const completedAt = timestamp(input.completedAt, "completedAt");
     const completion = normalizeCompletion(encounterId, requestValue);
-    const completionJson = stableJson(completion);
-    const completionFingerprint = fingerprint(completionJson);
+    const completionFingerprint = fingerprint(stableJson(completion));
 
     return this.#transaction(() => {
       const row = this.#selectByEncounter.get(encounterId) as EncounterRow | undefined;
@@ -472,11 +442,11 @@ export class SqliteRpgEncounterStore {
           `Encounter ${encounterId} is already terminal without a valid completion receipt.`,
         );
       }
+
       const launch = parseLaunchRequest(row.request_json, row);
       validateOutcomeCoverage(launch, completion.outcome);
-      const currentHandle = parseHandle(row.handle_json, row);
       const handle: DurableEncounterHandle = {
-        ...currentHandle,
+        ...parseHandle(row.handle_json, row),
         state: "completed",
         terminalOutcome: completion.outcome,
       };
@@ -490,11 +460,7 @@ export class SqliteRpgEncounterStore {
         completedAt,
       );
       this.#fault("after-completion-receipt-insert");
-      const updated = this.#updateEncounterComplete.run(
-        handleJson,
-        completedAt,
-        encounterId,
-      );
+      const updated = this.#updateEncounterComplete.run(handleJson, completedAt, encounterId);
       if (Number(updated.changes) !== 1) {
         throw new SqliteRpgEncounterError(
           "completion-conflict",
@@ -506,6 +472,44 @@ export class SqliteRpgEncounterStore {
     });
   }
 
+  #existingLaunch(
+    request: DurableEncounterLaunchRequest,
+    serviceId: string,
+    requestFingerprint: string,
+  ): DurableEncounterHandle | undefined {
+    const mutation = this.#selectByMutation.get(
+      request.campaignId,
+      request.coordinationMutationId,
+    ) as EncounterRow | undefined;
+    if (mutation) return exactLaunchRetry(mutation, request, requestFingerprint);
+
+    const idempotency = this.#selectByIdempotency.get(
+      request.campaignId,
+      serviceId,
+      request.idempotencyKey,
+    ) as EncounterRow | undefined;
+    if (idempotency) return exactLaunchRetry(idempotency, request, requestFingerprint);
+
+    const encounter = this.#selectByEncounter.get(request.encounterId) as EncounterRow | undefined;
+    if (encounter) {
+      throw new SqliteRpgEncounterError(
+        "encounter-conflict",
+        `Encounter ${request.encounterId} already exists with different launch custody.`,
+      );
+    }
+    const commit = this.#selectByRuntimeCommit.get(
+      request.campaignId,
+      request.runtimeCommit.runtimeCommitId,
+    ) as EncounterRow | undefined;
+    if (commit) {
+      throw new SqliteRpgEncounterError(
+        "runtime-commit-conflict",
+        `Runtime commit ${request.runtimeCommit.runtimeCommitId} is already linked to another encounter.`,
+      );
+    }
+    return undefined;
+  }
+
   #validateParticipants(
     campaignId: string,
     participants: JsonRecord[],
@@ -514,7 +518,10 @@ export class SqliteRpgEncounterStore {
     for (const participant of participants) {
       const participantId = identifier(participant.participantId, "participantId");
       const controller = record(participant.controller, `participant ${participantId} controller`);
-      if (controller.kind !== "player") continue;
+      if (controller.kind === "runtime") continue;
+      if (controller.kind !== "player") {
+        throw invalid(`participant ${participantId} controller.kind is not supported`);
+      }
       const playerId = identifier(controller.playerId, "participant.controller.playerId");
       const membership = this.#selectActiveMembership.get(
         campaignId,
@@ -559,26 +566,27 @@ function normalizeLaunch(value: unknown): DurableEncounterLaunchRequest {
   if (runtimeCommit.runtimeCommitKind !== "runtime.encounter_launch") {
     throw invalid("runtimeCommitKind must be runtime.encounter_launch");
   }
-  const participants = recordArray(
-    request.participants,
-    "participants",
-    1,
-    MAX_PARTICIPANTS,
-  );
-  const objectives = recordArray(
-    request.objectives,
-    "objectives",
-    1,
-    MAX_OBJECTIVES,
-  );
+  const participants = recordArray(request.participants, "participants", 1, MAX_PARTICIPANTS);
+  const objectives = recordArray(request.objectives, "objectives", 1, MAX_OBJECTIVES);
   assertUniqueIdentifiers(participants, "participantId", "participants");
   assertUniqueIdentifiers(objectives, "objectiveId", "objectives");
+  for (const [index, participant] of participants.entries()) {
+    identifier(participant.participantId, `participants[${index}].participantId`);
+    identifier(participant.teamId, `participants[${index}].teamId`);
+    const controller = record(participant.controller, `participants[${index}].controller`);
+    if (controller.kind === "player") {
+      identifier(controller.playerId, `participants[${index}].controller.playerId`);
+    } else if (controller.kind !== "runtime") {
+      throw invalid(`participants[${index}].controller.kind is not supported`);
+    }
+  }
+  for (const [index, objective] of objectives.entries()) {
+    identifier(objective.objectiveId, `objectives[${index}].objectiveId`);
+  }
+
   const normalized: DurableEncounterLaunchRequest = {
     protocolVersion: 2,
-    coordinationMutationId: identifier(
-      request.coordinationMutationId,
-      "coordinationMutationId",
-    ),
+    coordinationMutationId: identifier(request.coordinationMutationId, "coordinationMutationId"),
     expectedGameframeCoordinationRevision: integer(
       request.expectedGameframeCoordinationRevision,
       "expectedGameframeCoordinationRevision",
@@ -628,64 +636,70 @@ function normalizeOutcome(value: unknown): DurableTerminalOutcome {
   ) {
     throw invalidOutcome("outcome.result is invalid");
   }
-  const objectiveResults = array(valueAt(outcome, "objectiveResults"), "objectiveResults", MAX_OBJECTIVES)
-    .map((entry, index) => {
-      const result = record(entry, `objectiveResults[${index}]`);
-      if (
-        result.status !== "completed"
-        && result.status !== "failed"
-        && result.status !== "partial"
-      ) {
-        throw invalidOutcome(`objectiveResults[${index}].status is invalid`);
+  const objectiveResults = array(
+    valueAt(outcome, "objectiveResults"),
+    "objectiveResults",
+    MAX_OBJECTIVES,
+  ).map((entry, index) => {
+    const result = record(entry, `objectiveResults[${index}]`);
+    if (
+      result.status !== "completed"
+      && result.status !== "failed"
+      && result.status !== "partial"
+    ) {
+      throw invalidOutcome(`objectiveResults[${index}].status is invalid`);
+    }
+    return {
+      objectiveId: identifier(result.objectiveId, `objectiveResults[${index}].objectiveId`),
+      status: result.status,
+    };
+  });
+  const participantResults = array(
+    valueAt(outcome, "participantResults"),
+    "participantResults",
+    MAX_PARTICIPANTS,
+  ).map((entry, index) => {
+    const result = record(entry, `participantResults[${index}]`);
+    if (
+      result.status !== "active"
+      && result.status !== "defeated"
+      && result.status !== "withdrawn"
+    ) {
+      throw invalidOutcome(`participantResults[${index}].status is invalid`);
+    }
+    const conditions = array(
+      valueAt(result, "conditions"),
+      `participantResults[${index}].conditions`,
+      MAX_CONDITIONS,
+    ).map((condition, conditionIndex) =>
+      identifier(condition, `participantResults[${index}].conditions[${conditionIndex}]`)
+    );
+    const resources = record(
+      result.resourceChanges,
+      `participantResults[${index}].resourceChanges`,
+    );
+    const resourceChanges: Record<string, number> = {};
+    for (const [key, amount] of Object.entries(resources)) {
+      if (typeof amount !== "number" || !Number.isFinite(amount)) {
+        throw invalidOutcome(`participantResults[${index}].resourceChanges.${key} is invalid`);
       }
-      return {
-        objectiveId: identifier(result.objectiveId, `objectiveResults[${index}].objectiveId`),
-        status: result.status,
-      };
-    });
-  const participantResults = array(valueAt(outcome, "participantResults"), "participantResults", MAX_PARTICIPANTS)
-    .map((entry, index) => {
-      const result = record(entry, `participantResults[${index}]`);
-      if (
-        result.status !== "active"
-        && result.status !== "defeated"
-        && result.status !== "withdrawn"
-      ) {
-        throw invalidOutcome(`participantResults[${index}].status is invalid`);
-      }
-      const conditions = array(valueAt(result, "conditions"), `participantResults[${index}].conditions`, MAX_CONDITIONS)
-        .map((condition, conditionIndex) =>
-          identifier(condition, `participantResults[${index}].conditions[${conditionIndex}]`)
-        );
-      const resourceChangesValue = record(
-        result.resourceChanges,
-        `participantResults[${index}].resourceChanges`,
-      );
-      const resourceChanges: Record<string, number> = {};
-      for (const [key, amount] of Object.entries(resourceChangesValue)) {
-        if (typeof amount !== "number" || !Number.isFinite(amount)) {
-          throw invalidOutcome(`participantResults[${index}].resourceChanges.${key} is invalid`);
-        }
-        resourceChanges[identifier(key, "resource key")] = amount;
-      }
-      return {
-        participantId: identifier(
-          result.participantId,
-          `participantResults[${index}].participantId`,
-        ),
-        status: result.status,
-        ...(result.healthRemaining === undefined
-          ? {}
-          : {
-              healthRemaining: nonNegativeNumber(
-                result.healthRemaining,
-                `participantResults[${index}].healthRemaining`,
-              ),
-            }),
-        conditions,
-        resourceChanges,
-      };
-    });
+      resourceChanges[identifier(key, "resource key")] = amount;
+    }
+    return {
+      participantId: identifier(result.participantId, `participantResults[${index}].participantId`),
+      status: result.status,
+      ...(result.healthRemaining === undefined
+        ? {}
+        : {
+            healthRemaining: nonNegativeNumber(
+              result.healthRemaining,
+              `participantResults[${index}].healthRemaining`,
+            ),
+          }),
+      conditions,
+      resourceChanges,
+    };
+  });
   const rewards = array(valueAt(outcome, "rewards"), "rewards", MAX_REWARDS)
     .map((entry, index) => {
       const reward = record(entry, `rewards[${index}]`);
@@ -734,18 +748,21 @@ function validateOutcomeCoverage(
   launch: DurableEncounterLaunchRequest,
   outcome: DurableTerminalOutcome,
 ): void {
-  const participantIds = launch.participants.map((entry) =>
-    identifier(entry.participantId, "participantId")
-  ).toSorted();
-  const objectiveIds = launch.objectives.map((entry) =>
-    identifier(entry.objectiveId, "objectiveId")
-  ).toSorted();
+  const participantIds = launch.participants
+    .map((entry) => identifier(entry.participantId, "participantId"))
+    .sort();
+  const objectiveIds = launch.objectives
+    .map((entry) => identifier(entry.objectiveId, "objectiveId"))
+    .sort();
+  const teamIds = new Set(
+    launch.participants.map((entry) => identifier(entry.teamId, "teamId")),
+  );
   const outcomeParticipants = outcome.participantResults
     .map((entry) => entry.participantId)
-    .toSorted();
+    .sort();
   const outcomeObjectives = outcome.objectiveResults
     .map((entry) => entry.objectiveId)
-    .toSorted();
+    .sort();
   if (stableJson(participantIds) !== stableJson(outcomeParticipants)) {
     throw invalidOutcome("terminal outcome must cover every encounter participant exactly once");
   }
@@ -754,6 +771,9 @@ function validateOutcomeCoverage(
   }
   if (outcome.ruleset.id !== launch.rulesetId) {
     throw invalidOutcome("terminal outcome ruleset must match encounter launch");
+  }
+  if (outcome.winnerTeamId && !teamIds.has(outcome.winnerTeamId)) {
+    throw invalidOutcome("terminal outcome winnerTeamId must identify a launched team");
   }
 }
 
@@ -788,6 +808,9 @@ function parseHandle(value: string, row: EncounterRow): DurableEncounterHandle {
       || handle.coordinationMutationId !== row.coordination_mutation_id
       || handle.runtimeCommitId !== row.runtime_commit_id
       || handle.state !== row.state
+      || !Number.isInteger(handle.gameframeCoordinationRevision)
+      || !Number.isInteger(handle.presentationSequence)
+      || !Number.isInteger(handle.linkedNarrativeRevision)
     ) {
       throw new Error("encounter handle identity is invalid");
     }
@@ -864,11 +887,7 @@ function stateFromRow(row: CoordinationRow): GameFrameCoordinationState {
       "gameframeCoordinationRevision",
       0,
     ),
-    presentationSequence: integer(
-      row.presentation_sequence,
-      "presentationSequence",
-      0,
-    ),
+    presentationSequence: integer(row.presentation_sequence, "presentationSequence", 0),
     linkedNarrativeRevision: integer(
       row.linked_narrative_revision,
       "linkedNarrativeRevision",
@@ -877,12 +896,11 @@ function stateFromRow(row: CoordinationRow): GameFrameCoordinationState {
   };
 }
 
-function resumeToken(encounterId: string, serviceId: string): string {
-  return `resume:${createHash("sha256")
-    .update(encounterId, "utf8")
-    .update("\0")
-    .update(serviceId, "utf8")
-    .digest("base64url")}`;
+function record(value: unknown, label: string): JsonRecord {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw invalid(`${label} must be an object`);
+  }
+  return structuredClone(value as JsonRecord);
 }
 
 function recordArray(
@@ -894,7 +912,7 @@ function recordArray(
   if (!Array.isArray(value) || value.length < minimum || value.length > maximum) {
     throw invalid(`${label} must contain from ${minimum} through ${maximum} entries`);
   }
-  return value.map((entry, index) => structuredClone(record(entry, `${label}[${index}]`)));
+  return value.map((entry, index) => record(entry, `${label}[${index}]`));
 }
 
 function array(value: unknown, label: string, maximum: number): unknown[] {
@@ -908,15 +926,22 @@ function valueAt(recordValue: JsonRecord, key: string): unknown {
   return recordValue[key];
 }
 
-function assertUniqueIdentifiers(entries: JsonRecord[], key: string, label: string): void {
-  const ids = entries.map((entry, index) => identifier(entry[key], `${label}[${index}].${key}`));
-  assertUniqueResultIds(ids, label);
+function identifier(value: unknown, label: string): string {
+  if (typeof value !== "string" || !IDENTIFIER_PATTERN.test(value)) {
+    throw invalid(`${label} is not a valid identifier`);
+  }
+  return value;
 }
 
-function assertUniqueResultIds(ids: string[], label: string): void {
-  if (new Set(ids).size !== ids.length) {
-    throw invalidOutcome(`${label} must contain unique identities`);
+function integer(value: unknown, label: string, minimum: number): number {
+  if (
+    !Number.isInteger(value)
+    || Number(value) < minimum
+    || Number(value) > MAX_INTEGER
+  ) {
+    throw invalid(`${label} must be an integer from ${minimum} through ${MAX_INTEGER}`);
   }
+  return Number(value);
 }
 
 function nonNegativeNumber(value: unknown, label: string): number {
@@ -926,70 +951,38 @@ function nonNegativeNumber(value: unknown, label: string): number {
   return value;
 }
 
-function identifier(value: unknown, label: string): string {
-  if (typeof value !== "string" || !IDENTIFIER_PATTERN.test(value)) {
-    throw invalid(`${label} is not a valid identifier`);
-  }
-  return value;
-}
-
-function integer(value: unknown, label: string, minimum: number): number {
-  if (typeof value !== "number" || !Number.isInteger(value) || value < minimum) {
-    throw invalid(`${label} must be an integer of at least ${minimum}`);
-  }
-  return value;
-}
-
 function timestamp(value: unknown, label: string): string {
-  if (typeof value !== "string" || !value.trim()) throw invalid(`${label} must be a timestamp`);
+  if (typeof value !== "string" || !value.trim()) {
+    throw invalid(`${label} must be a timestamp`);
+  }
   const milliseconds = Date.parse(value);
-  if (!Number.isFinite(milliseconds)) throw invalid(`${label} must be a valid timestamp`);
+  if (!Number.isFinite(milliseconds)) throw invalid(`${label} is invalid`);
   return new Date(milliseconds).toISOString();
 }
 
-function record(value: unknown, label: string): JsonRecord {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw invalid(`${label} must be an object`);
+function assertUniqueIdentifiers(
+  records: JsonRecord[],
+  key: string,
+  label: string,
+): void {
+  const values = records.map((entry, index) => identifier(entry[key], `${label}[${index}].${key}`));
+  if (new Set(values).size !== values.length) throw invalid(`${label} identifiers must be unique`);
+}
+
+function assertUniqueResultIds(values: string[], label: string): void {
+  if (new Set(values).size !== values.length) {
+    throw invalidOutcome(`${label} identifiers must be unique`);
   }
-  return value as JsonRecord;
-}
-
-function invalid(message: string): SqliteRpgEncounterError {
-  return new SqliteRpgEncounterError("invalid-input", message);
-}
-
-function invalidOutcome(message: string): SqliteRpgEncounterError {
-  return new SqliteRpgEncounterError("invalid-terminal-outcome", message);
-}
-
-function fingerprint(value: string): string {
-  return createHash("sha256").update(value, "utf8").digest("base64url");
-}
-
-function stableJson(value: unknown): string {
-  return JSON.stringify(sortJson(value));
-}
-
-function sortJson(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sortJson);
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value)
-        .toSorted(([left], [right]) => left.localeCompare(right))
-        .map(([key, entry]) => [key, sortJson(entry)]),
-    );
-  }
-  return value;
 }
 
 function assertJson(value: unknown, path: string, seen = new Set<object>()): void {
   if (value === null || typeof value === "string" || typeof value === "boolean") return;
   if (typeof value === "number") {
-    if (!Number.isFinite(value)) throw invalid(`${path} is not finite`);
+    if (!Number.isFinite(value)) throw invalid(`${path} contains a non-finite number`);
     return;
   }
   if (typeof value !== "object") throw invalid(`${path} is not JSON-compatible`);
-  if (seen.has(value)) throw invalid(`${path} is circular`);
+  if (seen.has(value)) throw invalid(`${path} contains a circular reference`);
   seen.add(value);
   try {
     if (Array.isArray(value)) {
@@ -1006,4 +999,24 @@ function assertJson(value: unknown, path: string, seen = new Set<object>()): voi
   } finally {
     seen.delete(value);
   }
+}
+
+function stableJson(value: unknown): string {
+  return JSON.stringify(value);
+}
+
+function fingerprint(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("base64url");
+}
+
+function resumeToken(encounterId: string, serviceId: string): string {
+  return `resume:${fingerprint(`${encounterId}\n${serviceId}`)}`;
+}
+
+function invalid(message: string): SqliteRpgEncounterError {
+  return new SqliteRpgEncounterError("invalid-input", message);
+}
+
+function invalidOutcome(message: string): SqliteRpgEncounterError {
+  return new SqliteRpgEncounterError("invalid-terminal-outcome", message);
 }
