@@ -5,6 +5,7 @@ import {
   normalizeRuntimeCommandDelivery,
   SqliteRuntimeCommandOutbox,
   type RuntimeCommandDeliveryV1,
+  type RuntimePlayerCommandV1,
 } from "./runtime-command-outbox.ts";
 import type { GameFrameCoordinationState } from "./rpg-dual-revision-contract.ts";
 
@@ -36,11 +37,7 @@ export type DurableGameFrameCommandInput = {
   authenticatedPlayerId: string;
   expectedGameframeCoordinationRevision: number;
   issuedAt: string;
-  command: {
-    kind: "campaign.submit_action";
-    visibility: "public" | "private-to-runtime";
-    text: string;
-  };
+  command: RuntimePlayerCommandV1;
   presentationEvents: DurableRpgPresentationEvent[];
 };
 
@@ -533,13 +530,6 @@ function normalizeCommandInput(value: unknown): DurableGameFrameCommandInput {
   if (totalBytes > MAX_TOTAL_PRESENTATION_BYTES) {
     throw invalid(`presentationEvents exceed ${MAX_TOTAL_PRESENTATION_BYTES} bytes`);
   }
-  const command = record(input.command, "command");
-  if (command.kind !== "campaign.submit_action") {
-    throw invalid("command.kind is not supported");
-  }
-  if (command.visibility !== "public" && command.visibility !== "private-to-runtime") {
-    throw invalid("command.visibility is not supported");
-  }
   return {
     campaignId: identifier(input.campaignId, "campaignId"),
     commandId: identifier(input.commandId, "commandId"),
@@ -550,13 +540,31 @@ function normalizeCommandInput(value: unknown): DurableGameFrameCommandInput {
       0,
     ),
     issuedAt: timestamp(input.issuedAt, "issuedAt"),
-    command: {
+    command: normalizePlayerCommand(input.command),
+    presentationEvents,
+  };
+}
+
+function normalizePlayerCommand(value: unknown): RuntimePlayerCommandV1 {
+  const command = record(value, "command");
+  if (command.kind === "campaign.submit_action") {
+    if (command.visibility !== "public" && command.visibility !== "private-to-runtime") {
+      throw invalid("command.visibility is not supported");
+    }
+    return {
       kind: "campaign.submit_action",
       visibility: command.visibility,
       text: text(command.text, "command.text", 4_000),
-    },
-    presentationEvents,
-  };
+    };
+  }
+  if (command.kind === "campaign.submit_choice") {
+    return {
+      kind: "campaign.submit_choice",
+      choiceId: identifier(command.choiceId, "command.choiceId"),
+      optionId: identifier(command.optionId, "command.optionId"),
+    };
+  }
+  throw invalid("command.kind is not supported");
 }
 
 function normalizePresentationEvent(value: unknown): DurableRpgPresentationEvent {
