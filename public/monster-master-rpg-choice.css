@@ -1,0 +1,82 @@
+.mm-rpg-choice-event {
+  border-color: rgba(129, 214, 255, .34);
+  background:
+    linear-gradient(145deg, rgba(16, 35, 45, .94), rgba(8, 17, 23, .98)),
+    rgba(8, 17, 23, .98);
+}
+
+.mm-rpg-choice-prompt {
+  margin: 10px 0 0;
+  color: #eff9fc;
+  font-size: clamp(.95rem, 1.3vw, 1.08rem);
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.mm-rpg-choice-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.mm-rpg-choice-option {
+  min-height: 48px;
+  padding: 11px 14px;
+  border: 1px solid rgba(139, 211, 228, .28);
+  border-radius: 11px;
+  background: linear-gradient(145deg, rgba(23, 49, 59, .96), rgba(10, 25, 32, .98));
+  color: #effbff;
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 780;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .16s ease, transform .16s ease, background .16s ease;
+}
+
+.mm-rpg-choice-option:hover:not(:disabled),
+.mm-rpg-choice-option:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(145, 230, 251, .75);
+  background: linear-gradient(145deg, rgba(31, 69, 80, .98), rgba(12, 32, 40, .98));
+  outline: none;
+}
+
+.mm-rpg-choice-option.is-pending {
+  border-color: rgba(244, 197, 91, .75);
+  box-shadow: 0 0 0 2px rgba(244, 197, 91, .12);
+}
+
+.mm-rpg-choice-option.is-selected {
+  border-color: rgba(155, 225, 112, .72);
+  background: linear-gradient(145deg, rgba(37, 67, 37, .98), rgba(16, 35, 24, .98));
+}
+
+.mm-rpg-choice-option:disabled {
+  cursor: default;
+  opacity: .58;
+}
+
+.mm-rpg-choice-option.is-selected:disabled {
+  opacity: .9;
+}
+
+.mm-rpg-choice-status {
+  display: block;
+  margin-top: 11px;
+  color: #93aab2;
+  font-size: .7rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .mm-rpg-choice-options {
+    grid-template-columns: 1fr;
+  }
+
+  .mm-rpg-choice-option {
+    min-height: 52px;
+  }
+}
