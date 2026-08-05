@@ -12,7 +12,7 @@ applies_to:
   - VM staging validation
   - later Cloudflare and media validation
 shared_document_id: rpg-cross-repository-integration-testing-v1
-shared_document_version: 3
+shared_document_version: 4
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-cross-repository-integration-testing.md
 mirrors:
@@ -22,7 +22,7 @@ related:
   - rpg-agent-architecture-and-campaign-package.md
   - rpg-platform-roadmap.md
   - rpg-platform-product-goals.md
-  - rpg-campaign-compiler-contract.md
+  - rpg-campaign-architect-contract.md
   - rpg-monster-master-reference-campaign.md
   - rpg-cloudflare-deployment-architecture.md
 ---
@@ -73,21 +73,22 @@ GameFrame owns:
 
 Prove:
 
-- `CampaignBriefV1` and `CompiledCampaignPackageV1` bounds;
+- `CampaignPackageV1` bounds and reference integrity;
 - player-safe and runtime-only separation;
 - package validation;
 - package hash and provenance;
 - handcrafted and generated origin metadata;
 - commitment, reload, migration posture, and immutable identity;
+- bounded Dungeon Master context without truncation;
 - player-safe preview without hidden truth;
 - exact retry and restart.
 
 Required fixtures:
 
 - one complete handcrafted Monster Master package;
-- one deterministic Campaign Architect output;
 - malformed and contradictory packages;
-- partial and paraphrased secret-projection attacks.
+- partial and paraphrased secret-projection attacks;
+- a deterministic Campaign Architect output after that agent exists.
 
 ### Layer 2 — Campaign Architect behavior
 
