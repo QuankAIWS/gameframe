@@ -356,3 +356,21 @@ Species communities may preserve accounts ignored or dismissed by human institut
 - Historical records may contain disputed, suppressed, mistranslated, or species-specific accounts of such figures.
 - A living nonhuman Monster Master should materially affect regional politics, scholarship, monster communities, and public expectations.
 - Player characters may theoretically earn this recognition, but it must remain an exceptional long-form outcome rather than a normal progression tier.
+
+## Decision 21 — A small handful of living Monster Masters
+
+Only a small handful of living people are broadly recognized as Monster Masters across the world. The setting should generally contain fewer than ten widely accepted living figures, with several disputed or regional candidates around the edges.
+
+The broadly recognized Monster Masters are famous names among professional trainers, handlers, wardens, scholars, rulers, and intelligent-monster communities. Ordinary people may know simplified stories, titles, or exaggerated versions of their accomplishments even when they could not identify every specialist involved.
+
+Recognition remains decentralized. Lists published by academies, tournament organizations, governments, newspapers, and monster communities will not match perfectly. One figure may be accepted almost everywhere, another only across several kingdoms, and another may be considered a fraud by half the world despite achievements nobody can easily explain away.
+
+A living nonhuman Monster Master, if one currently exists, is included within this same small global handful and remains an exceptional once-in-an-era figure rather than an additional common category.
+
+### Implementation consequences
+
+- The global setting should maintain a deliberately small authored roster of living Monster Masters rather than procedurally generating them.
+- Widely recognized, regionally recognized, disputed, retired, missing, and presumed-dead states should remain distinct.
+- Recognition data should record supporting regions, factions, species communities, and major accomplishments rather than a universal boolean alone.
+- Introducing, killing, discrediting, or confirming a Monster Master should be a major world event.
+- New legendary figures should not be added casually merely to populate high-level content.
