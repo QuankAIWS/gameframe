@@ -39,6 +39,16 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Mark materializer execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -C "$TARGET_BRANCH"
+          git commit --allow-empty -m 'chore: start direct rock materialization'
+          git push --force origin "HEAD:${TARGET_BRANCH}"
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -93,17 +103,12 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf public/assets/monster-master/props/rock-boulder-set-v1/source/package
-          rm -f .github/workflows/monster-master-rock-assets-materialize-direct.yml
 
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git switch -C "$TARGET_BRANCH"
           git add -A \
-            .github/workflows/monster-master-rock-assets-materialize-direct.yml \
             public/assets/monster-master/props/rock-boulder-set-v1 \
             scripts/monster-master-rock-props.mjs
 
           test ! -d public/assets/monster-master/props/rock-boulder-set-v1/source/package
           git diff --cached --stat
           git commit -m 'fix: materialize Monster Master rock masters directly'
-          git push --force origin "HEAD:${TARGET_BRANCH}"
+          git push origin "HEAD:${TARGET_BRANCH}"
