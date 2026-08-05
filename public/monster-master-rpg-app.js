@@ -89,6 +89,7 @@ function updateCharacterCount() {
 function updateComposer() {
   const retrying = Boolean(state.pendingCommand);
   elements.send.textContent = retrying ? "Retry exact action" : "Send to Game Master";
+  elements.send.disabled = false;
   elements.discardRetry.hidden = !retrying;
   elements.action.disabled = false;
 }
