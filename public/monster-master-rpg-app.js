@@ -168,7 +168,6 @@ async function openCampaign(campaignIdValue) {
     window.history.replaceState({}, "", url);
     elements.join.hidden = true;
     elements.campaign.hidden = false;
-    elements.action.focus();
     startPolling();
   } catch (error) {
     state.campaignId = null;
