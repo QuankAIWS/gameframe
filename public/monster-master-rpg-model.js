@@ -1,10 +1,12 @@
 export const REFERENCE_CAMPAIGN_ID = "campaign-monster-master-reference";
 
-const CAMPAIGN_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
+const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
+const COMMAND_ID_PATTERN = /^command:[A-Za-z0-9_-]{8,160}$/;
+const MAX_CHOICE_OPTIONS = 16;
 
 export function normalizeCampaignId(value) {
   const campaignId = String(value ?? "").trim();
-  if (!CAMPAIGN_ID_PATTERN.test(campaignId)) {
+  if (!IDENTIFIER_PATTERN.test(campaignId)) {
     throw new TypeError("Campaign codes may contain letters, numbers, periods, underscores, colons, and hyphens.");
   }
   return campaignId;
@@ -27,15 +29,7 @@ export function buildActionCommand({
   if (!action || action.length > 2_000) {
     throw new TypeError("Player actions must contain 1 through 2,000 characters.");
   }
-  if (!/^command:[A-Za-z0-9_-]{8,160}$/.test(String(commandId ?? ""))) {
-    throw new TypeError("A stable command ID is required.");
-  }
-  if (!Number.isInteger(expectedGameframeCoordinationRevision) || expectedGameframeCoordinationRevision < 0) {
-    throw new TypeError("A non-negative GameFrame coordination revision is required.");
-  }
-  if (!issuedAt || Number.isNaN(Date.parse(issuedAt))) {
-    throw new TypeError("A valid command timestamp is required.");
-  }
+  validateCommandIdentity(commandId, issuedAt, expectedGameframeCoordinationRevision);
   return {
     protocolVersion: 2,
     campaignId,
@@ -46,6 +40,30 @@ export function buildActionCommand({
       expectedGameframeCoordinationRevision,
       visibility: "public",
       text: action,
+    },
+  };
+}
+
+export function buildChoiceCommand({
+  campaignId: campaignIdValue,
+  commandId,
+  issuedAt,
+  expectedGameframeCoordinationRevision,
+  choiceId,
+  optionId,
+}) {
+  const campaignId = normalizeCampaignId(campaignIdValue);
+  validateCommandIdentity(commandId, issuedAt, expectedGameframeCoordinationRevision);
+  return {
+    protocolVersion: 2,
+    campaignId,
+    commandId,
+    issuedAt,
+    command: {
+      kind: "campaign.submit_choice",
+      expectedGameframeCoordinationRevision,
+      choiceId: boundedIdentifier(choiceId, "choiceId"),
+      optionId: boundedIdentifier(optionId, "optionId"),
     },
   };
 }
@@ -98,6 +116,57 @@ export function mergeCampaignEvents(existing, incoming) {
   });
 }
 
+export function isChoicePresentedEvent(eventValue) {
+  try {
+    return normalizeEvent(eventValue).kind === "choice.presented";
+  } catch {
+    return false;
+  }
+}
+
+export function presentCampaignChoice(eventValue, playerIdValue, allEventsValue = []) {
+  const event = normalizeEvent(eventValue);
+  if (event.kind !== "choice.presented") {
+    throw new TypeError("Only choice.presented events can become bounded player choices.");
+  }
+  const playerId = boundedIdentifier(playerIdValue, "playerId");
+  const choiceId = boundedIdentifier(event.payload.choiceId, "choiceId");
+  const prompt = readableText(event.payload.prompt, 1_000)
+    ?? readableText(event.payload.text, 1_000)
+    ?? "Choose an option.";
+  const allowedPlayerIds = normalizeAllowedPlayers(event.payload.allowedPlayerIds);
+  const options = normalizeChoiceOptions(event.payload.options);
+  const events = Array.isArray(allEventsValue) ? allEventsValue.map(normalizeEvent) : [];
+  const submission = events.toReversed().find((candidate) =>
+    candidate.kind === "campaign.choice_submitted"
+    && candidate.payload.choiceId === choiceId
+  );
+  const authorized = allowedPlayerIds === null || allowedPlayerIds.includes(playerId);
+  const selectedOptionId = submission && typeof submission.payload.optionId === "string"
+    ? submission.payload.optionId
+    : null;
+  const selectedLabel = submission && typeof submission.payload.label === "string"
+    ? submission.payload.label
+    : options.find((option) => option.optionId === selectedOptionId)?.label ?? null;
+  return {
+    eventId: event.eventId,
+    choiceId,
+    prompt,
+    authorized,
+    submitted: Boolean(submission),
+    selectedOptionId,
+    selectedLabel,
+    submittedBy: submission && typeof submission.payload.actorId === "string"
+      ? submission.payload.actorId
+      : null,
+    options: options.map((option) => ({
+      ...option,
+      selected: option.optionId === selectedOptionId,
+      disabled: !authorized || Boolean(submission),
+    })),
+  };
+}
+
 export function presentCampaignEvent(eventValue) {
   const event = normalizeEvent(eventValue);
   const payload = event.payload;
@@ -122,6 +191,53 @@ export function presentCampaignEvent(eventValue) {
     tone: toneForKind(event.kind),
     audience: audienceLabel(event.audience),
   };
+}
+
+function validateCommandIdentity(commandId, issuedAt, expectedGameframeCoordinationRevision) {
+  if (!COMMAND_ID_PATTERN.test(String(commandId ?? ""))) {
+    throw new TypeError("A stable command ID is required.");
+  }
+  if (!Number.isInteger(expectedGameframeCoordinationRevision) || expectedGameframeCoordinationRevision < 0) {
+    throw new TypeError("A non-negative GameFrame coordination revision is required.");
+  }
+  if (!issuedAt || Number.isNaN(Date.parse(issuedAt))) {
+    throw new TypeError("A valid command timestamp is required.");
+  }
+}
+
+function boundedIdentifier(value, label) {
+  const normalized = String(value ?? "").trim();
+  if (!IDENTIFIER_PATTERN.test(normalized)) {
+    throw new TypeError(`${label} must be a bounded identifier.`);
+  }
+  return normalized;
+}
+
+function normalizeAllowedPlayers(value) {
+  if (value === undefined) return null;
+  if (!Array.isArray(value) || value.length > 32) {
+    throw new TypeError("Choice allowedPlayerIds must be a bounded array.");
+  }
+  return value.map((playerId) => boundedIdentifier(playerId, "allowedPlayerId"));
+}
+
+function normalizeChoiceOptions(value) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_CHOICE_OPTIONS) {
+    throw new TypeError(`Choices must contain from 1 through ${MAX_CHOICE_OPTIONS} options.`);
+  }
+  const options = value.map((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      throw new TypeError("Choice options must be objects.");
+    }
+    const optionId = boundedIdentifier(entry.optionId, "optionId");
+    const label = readableText(entry.label, 240);
+    if (!label) throw new TypeError("Choice options require a bounded label.");
+    return { optionId, label };
+  });
+  if (new Set(options.map((option) => option.optionId)).size !== options.length) {
+    throw new TypeError("Choice option IDs must be unique.");
+  }
+  return options;
 }
 
 function normalizeEvent(value) {

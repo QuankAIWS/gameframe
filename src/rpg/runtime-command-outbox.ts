@@ -12,6 +12,18 @@ const OUTBOX_TABLE = "rpg_runtime_command_outbox_v1";
 
 type JsonRecord = Record<string, unknown>;
 
+export type RuntimePlayerCommandV1 =
+  | {
+      kind: "campaign.submit_action";
+      visibility: "public" | "private-to-runtime";
+      text: string;
+    }
+  | {
+      kind: "campaign.submit_choice";
+      choiceId: string;
+      optionId: string;
+    };
+
 export type RuntimeCommandDeliveryV1 = {
   protocolVersion: typeof RPG_RUNTIME_COMMAND_DELIVERY_PROTOCOL_VERSION;
   deliveryId: string;
@@ -23,11 +35,7 @@ export type RuntimeCommandDeliveryV1 = {
   sourcePresentationSequence: number;
   acceptedPresentationSequence: number;
   issuedAt: string;
-  command: {
-    kind: "campaign.submit_action";
-    visibility: "public" | "private-to-runtime";
-    text: string;
-  };
+  command: RuntimePlayerCommandV1;
 };
 
 export type RuntimeCommandInboxReceiptV1 = {
@@ -599,19 +607,26 @@ function normalizeStatus(value: unknown): RuntimeCommandOutboxStatus {
   throw new Error("status is invalid");
 }
 
-function normalizeCommand(value: unknown): RuntimeCommandDeliveryV1["command"] {
+function normalizeCommand(value: unknown): RuntimePlayerCommandV1 {
   const command = record(value, "command");
-  if (command.kind !== "campaign.submit_action") {
-    throw invalid("command.kind is not supported");
+  if (command.kind === "campaign.submit_action") {
+    if (command.visibility !== "public" && command.visibility !== "private-to-runtime") {
+      throw invalid("command.visibility is not supported");
+    }
+    return {
+      kind: "campaign.submit_action",
+      visibility: command.visibility,
+      text: normalizeText(command.text, "command.text", MAX_RUNTIME_COMMAND_TEXT_LENGTH),
+    };
   }
-  if (command.visibility !== "public" && command.visibility !== "private-to-runtime") {
-    throw invalid("command.visibility is not supported");
+  if (command.kind === "campaign.submit_choice") {
+    return {
+      kind: "campaign.submit_choice",
+      choiceId: normalizeIdentifier(command.choiceId, "command.choiceId"),
+      optionId: normalizeIdentifier(command.optionId, "command.optionId"),
+    };
   }
-  return {
-    kind: "campaign.submit_action",
-    visibility: command.visibility,
-    text: normalizeText(command.text, "command.text", MAX_RUNTIME_COMMAND_TEXT_LENGTH),
-  };
+  throw invalid("command.kind is not supported");
 }
 
 function normalizeLeaseDuration(value: unknown): number {

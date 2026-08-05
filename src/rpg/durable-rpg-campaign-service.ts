@@ -6,6 +6,7 @@ import {
   type DurableCampaignBootstrap,
   type DurableCampaignBootstrapReceipt,
   type PlayerCampaignProjection,
+  type PlayerCampaignProjectionEvent,
 } from "./sqlite-rpg-campaign-store.ts";
 import {
   SqliteRpgCommandAcceptanceError,
@@ -21,8 +22,16 @@ import {
 export const DURABLE_RPG_CAMPAIGN_PROTOCOL_VERSION = 2 as const;
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
 const MAX_ACTION_TEXT_LENGTH = 2_000;
+const MAX_CHOICE_OPTIONS = 16;
+const MAX_CHOICE_ALLOWED_PLAYERS = 32;
+const MAX_CHOICE_LABEL_LENGTH = 240;
 
 type JsonRecord = Record<string, unknown>;
+
+type ChoiceOption = {
+  optionId: string;
+  label: string;
+};
 
 export type DurableRpgPrincipal =
   | { kind: "player"; playerId: string }
@@ -130,35 +139,64 @@ export class DurableRpgCampaignService {
     const commandId = identifier(request.commandId, "commandId");
     const issuedAt = timestamp(request.issuedAt, "issuedAt");
     const command = requestRecord(request.command, "command");
-    if (command.kind !== "campaign.submit_action") {
-      throw new DurableRpgCampaignServiceError({
-        code: "unsupported-command",
-        message: "The durable campaign service currently accepts campaign.submit_action.",
-        status: 400,
+    const expected = nonNegativeInteger(
+      command.expectedGameframeCoordinationRevision,
+      "expectedGameframeCoordinationRevision",
+    );
+
+    if (command.kind === "campaign.submit_action") {
+      return this.#acceptAction({
+        campaignId,
+        commandId,
+        issuedAt,
+        expected,
+        principal,
+        command,
       });
     }
-    const visibility = command.visibility === "public"
+    if (command.kind === "campaign.submit_choice") {
+      return this.#acceptChoice({
+        campaignId,
+        commandId,
+        issuedAt,
+        expected,
+        principal,
+        command,
+      });
+    }
+    throw new DurableRpgCampaignServiceError({
+      code: "unsupported-command",
+      message: "The durable campaign service accepts campaign.submit_action and campaign.submit_choice.",
+      status: 400,
+    });
+  }
+
+  #acceptAction(input: {
+    campaignId: string;
+    commandId: string;
+    issuedAt: string;
+    expected: number;
+    principal: { kind: "player"; playerId: string };
+    command: JsonRecord;
+  }): DurableGameFrameCommandReceipt {
+    const visibility = input.command.visibility === "public"
       ? "public" as const
-      : command.visibility === "private-to-runtime"
+      : input.command.visibility === "private-to-runtime"
         ? "private-to-runtime" as const
         : undefined;
     if (!visibility) {
       throw invalid("command.visibility is not supported");
     }
-    const text = boundedText(command.text, "command.text", MAX_ACTION_TEXT_LENGTH);
-    const expected = nonNegativeInteger(
-      command.expectedGameframeCoordinationRevision,
-      "expectedGameframeCoordinationRevision",
-    );
+    const text = boundedText(input.command.text, "command.text", MAX_ACTION_TEXT_LENGTH);
     const presentationEvents = visibility === "public"
       ? [
           {
-            eventId: actionEventId(campaignId, commandId),
+            eventId: actionEventId(input.campaignId, input.commandId),
             kind: "campaign.action_submitted",
             audience: { kind: "public" as const },
             payload: {
-              commandId,
-              actorId: principal.playerId,
+              commandId: input.commandId,
+              actorId: input.principal.playerId,
               text,
             },
           },
@@ -166,11 +204,11 @@ export class DurableRpgCampaignService {
       : [];
     try {
       return this.#commands.acceptCommand({
-        campaignId,
-        commandId,
-        authenticatedPlayerId: principal.playerId,
-        expectedGameframeCoordinationRevision: expected,
-        issuedAt,
+        campaignId: input.campaignId,
+        commandId: input.commandId,
+        authenticatedPlayerId: input.principal.playerId,
+        expectedGameframeCoordinationRevision: input.expected,
+        issuedAt: input.issuedAt,
         command: {
           kind: "campaign.submit_action",
           visibility,
@@ -179,7 +217,82 @@ export class DurableRpgCampaignService {
         presentationEvents,
       });
     } catch (error) {
-      throw mapCommandError(error, this.#commands.state(campaignId));
+      throw mapCommandError(error, this.#commands.state(input.campaignId));
+    }
+  }
+
+  #acceptChoice(input: {
+    campaignId: string;
+    commandId: string;
+    issuedAt: string;
+    expected: number;
+    principal: { kind: "player"; playerId: string };
+    command: JsonRecord;
+  }): DurableGameFrameCommandReceipt {
+    const choiceId = identifier(input.command.choiceId, "command.choiceId");
+    const optionId = identifier(input.command.optionId, "command.optionId");
+    let projection: PlayerCampaignProjection;
+    try {
+      projection = this.#campaigns.attach({
+        campaignId: input.campaignId,
+        authenticatedPlayerId: input.principal.playerId,
+      });
+    } catch (error) {
+      throw mapCampaignError(error);
+    }
+
+    const existingSubmission = latestChoiceSubmission(projection.events, choiceId);
+    if (
+      existingSubmission
+      && existingSubmission.payload.commandId !== input.commandId
+    ) {
+      throw choiceError(
+        "choice-already-submitted",
+        `Choice ${choiceId} has already been submitted.`,
+        409,
+      );
+    }
+
+    const presented = latestPresentedChoice(projection.events, choiceId);
+    if (!presented) {
+      throw choiceError(
+        "choice-not-found",
+        `Choice ${choiceId} is not available in this player projection.`,
+        409,
+      );
+    }
+    authorizeChoicePlayer(presented.payload, input.principal.playerId, choiceId);
+    const option = choiceOption(presented.payload, optionId, choiceId);
+
+    try {
+      return this.#commands.acceptCommand({
+        campaignId: input.campaignId,
+        commandId: input.commandId,
+        authenticatedPlayerId: input.principal.playerId,
+        expectedGameframeCoordinationRevision: input.expected,
+        issuedAt: input.issuedAt,
+        command: {
+          kind: "campaign.submit_choice",
+          choiceId,
+          optionId,
+        },
+        presentationEvents: [
+          {
+            eventId: choiceEventId(input.campaignId, input.commandId),
+            kind: "campaign.choice_submitted",
+            audience: { kind: "public" },
+            payload: {
+              commandId: input.commandId,
+              actorId: input.principal.playerId,
+              choiceId,
+              optionId,
+              label: option.label,
+            },
+          },
+        ],
+      });
+    } catch (error) {
+      throw mapCommandError(error, this.#commands.state(input.campaignId));
     }
   }
 
@@ -209,6 +322,108 @@ export class DurableRpgCampaignService {
       );
     }
   }
+}
+
+function latestChoiceSubmission(
+  events: PlayerCampaignProjectionEvent[],
+  choiceId: string,
+): PlayerCampaignProjectionEvent | undefined {
+  return events.toReversed().find((event) =>
+    event.kind === "campaign.choice_submitted"
+    && event.payload.choiceId === choiceId
+  );
+}
+
+function latestPresentedChoice(
+  events: PlayerCampaignProjectionEvent[],
+  choiceId: string,
+): PlayerCampaignProjectionEvent | undefined {
+  return events.toReversed().find((event) =>
+    event.kind === "choice.presented"
+    && event.payload.choiceId === choiceId
+  );
+}
+
+function authorizeChoicePlayer(payload: JsonRecord, playerId: string, choiceId: string): void {
+  if (payload.allowedPlayerIds === undefined) return;
+  if (!Array.isArray(payload.allowedPlayerIds)) {
+    throw choiceError(
+      "choice-not-found",
+      `Choice ${choiceId} has invalid player authorization data.`,
+      409,
+    );
+  }
+  if (payload.allowedPlayerIds.length > MAX_CHOICE_ALLOWED_PLAYERS) {
+    throw choiceError(
+      "choice-not-found",
+      `Choice ${choiceId} exceeds the allowed player bound.`,
+      409,
+    );
+  }
+  const allowed = payload.allowedPlayerIds.map((value) =>
+    typeof value === "string" && IDENTIFIER_PATTERN.test(value) ? value : undefined
+  );
+  if (allowed.some((value) => value === undefined)) {
+    throw choiceError(
+      "choice-not-found",
+      `Choice ${choiceId} has invalid player authorization data.`,
+      409,
+    );
+  }
+  if (!allowed.includes(playerId)) {
+    throw choiceError(
+      "choice-not-authorized",
+      `Player ${playerId} is not authorized to answer choice ${choiceId}.`,
+      403,
+    );
+  }
+}
+
+function choiceOption(payload: JsonRecord, optionId: string, choiceId: string): ChoiceOption {
+  if (
+    !Array.isArray(payload.options)
+    || payload.options.length < 1
+    || payload.options.length > MAX_CHOICE_OPTIONS
+  ) {
+    throw choiceError(
+      "choice-not-found",
+      `Choice ${choiceId} has no valid bounded options.`,
+      409,
+    );
+  }
+  for (const value of payload.options) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+    const option = value as JsonRecord;
+    if (option.optionId !== optionId) continue;
+    return {
+      optionId,
+      label: boundedChoiceLabel(option.label, choiceId, optionId),
+    };
+  }
+  throw choiceError(
+    "choice-option-not-found",
+    `Option ${optionId} is not available for choice ${choiceId}.`,
+    400,
+  );
+}
+
+function boundedChoiceLabel(value: unknown, choiceId: string, optionId: string): string {
+  if (typeof value !== "string") {
+    throw choiceError(
+      "choice-not-found",
+      `Option ${optionId} for choice ${choiceId} has no valid label.`,
+      409,
+    );
+  }
+  const normalized = value.trim();
+  if (!normalized || normalized.length > MAX_CHOICE_LABEL_LENGTH) {
+    throw choiceError(
+      "choice-not-found",
+      `Option ${optionId} for choice ${choiceId} has an invalid label.`,
+      409,
+    );
+  }
+  return normalized;
 }
 
 function playerPrincipal(value: DurableRpgPrincipal): { kind: "player"; playerId: string } {
@@ -321,6 +536,10 @@ function invalid(message: string): DurableRpgCampaignServiceError {
   });
 }
 
+function choiceError(code: string, message: string, status: number): DurableRpgCampaignServiceError {
+  return new DurableRpgCampaignServiceError({ code, message, status });
+}
+
 function identifier(value: unknown, label: string): string {
   if (typeof value !== "string" || !IDENTIFIER_PATTERN.test(value)) {
     throw invalid(`${label} is not a valid identifier`);
@@ -352,9 +571,17 @@ function timestamp(value: unknown, label: string): string {
 }
 
 function actionEventId(campaignId: string, commandId: string): string {
-  return `event:action:${createHash("sha256")
+  return `event:action:${commandDigest(campaignId, commandId)}`;
+}
+
+function choiceEventId(campaignId: string, commandId: string): string {
+  return `event:choice:${commandDigest(campaignId, commandId)}`;
+}
+
+function commandDigest(campaignId: string, commandId: string): string {
+  return createHash("sha256")
     .update(campaignId, "utf8")
     .update("\0")
     .update(commandId, "utf8")
-    .digest("base64url")}`;
+    .digest("base64url");
 }
