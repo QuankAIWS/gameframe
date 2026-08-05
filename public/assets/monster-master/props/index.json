@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "family": "Monster Master props",
+  "sets": [
+    {
+      "assetSetId": "prop:mm-rock-boulder-set-v1",
+      "semanticRole": "prop.natural.rock-boulder-set",
+      "status": "partial-derivative-ready",
+      "manifest": "/assets/monster-master/props/rock-boulder-set-v1/manifest.json",
+      "acceptedMembers": [
+        "prop:mm-rock-small-v1",
+        "prop:mm-boulder-medium-v1",
+        "prop:mm-rubble-pile-v1"
+      ],
+      "pendingMembers": [
+        "large-boulder"
+      ]
+    }
+  ]
+}
