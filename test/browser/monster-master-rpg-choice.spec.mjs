@@ -14,7 +14,11 @@ function projection({ accepted = false } = {}) {
         prompt: "How do you approach the sealed gate?",
         allowedPlayerIds: ["choice-ui-player"],
         options: [
-          { optionId: "option:inspect-runes", label: "Inspect the runes" },
+          {
+            optionId: "option:inspect-runes",
+            label: "Inspect the runes",
+            actionText: "I inspect the runes without touching the gate.",
+          },
           { optionId: "option:force-gate", label: "Force the gate" },
         ],
       },
@@ -24,27 +28,25 @@ function projection({ accepted = false } = {}) {
   if (accepted) {
     events.push(
       {
-        eventId: "event:choice-submitted",
-        kind: "campaign.choice_submitted",
+        eventId: "event:action-submitted",
+        kind: "campaign.action_submitted",
         audience: { kind: "public" },
         presentationSequence: 2,
         payload: {
-          commandId: "command:browser-choice",
+          commandId: "command:browser-action",
           actorId: "choice-ui-player",
-          choiceId: "choice:academy-gate",
-          optionId: "option:inspect-runes",
-          label: "Inspect the runes",
+          text: "I ignore the obvious routes and ask the groundskeeper who last opened this gate.",
         },
         createdAt: "2026-08-05T04:31:00.000Z",
       },
       {
-        eventId: "event:choice-result",
-        kind: "scene.presented",
+        eventId: "event:action-result",
+        kind: "dialogue.turn",
         audience: { kind: "public" },
         presentationSequence: 3,
         payload: {
-          title: "Runes inspected",
-          narration: "The outer ring is a decoy. A fresh binding mark glows beneath it.",
+          speakerName: "Groundskeeper",
+          dialogue: "The bursar opened it after midnight, and he was carrying somebody else's keys.",
         },
         createdAt: "2026-08-05T04:31:01.000Z",
       },
@@ -62,7 +64,7 @@ function projection({ accepted = false } = {}) {
   };
 }
 
-test("submits an authored choice and retries the exact command after ambiguous delivery", async ({ page }) => {
+test("uses authored approaches as optional drafts and retries the exact freeform action", async ({ page }) => {
   let accepted = false;
   const commands = [];
 
@@ -87,8 +89,8 @@ test("submits an authored choice and retries the exact command after ambiguous d
         kind: "gameframe.command_committed",
         campaignId,
         commandId: commands[1].commandId,
-        deliveryId: "delivery:browser-choice",
-        eventIds: ["event:choice-submitted"],
+        deliveryId: "delivery:browser-action",
+        eventIds: ["event:action-submitted"],
         gameframeCoordinationRevision: 2,
         presentationSequence: 2,
         linkedNarrativeRevision: 1,
@@ -97,34 +99,38 @@ test("submits an authored choice and retries the exact command after ambiguous d
   });
 
   await page.goto(`/monster-master-rpg.html?player=choice-ui-player&campaign=${campaignId}`);
-  const choice = page.locator('[data-choice-id="choice:academy-gate"]');
-  await expect(choice).toBeVisible();
-  await expect(choice).toContainText("How do you approach the sealed gate?");
-  const inspect = choice.locator('[data-option-id="option:inspect-runes"]');
-  const force = choice.locator('[data-option-id="option:force-gate"]');
+  const suggestions = page.locator('[data-choice-id="choice:academy-gate"]');
+  await expect(suggestions).toBeVisible();
+  await expect(suggestions).toContainText("Possible approaches");
+  await expect(suggestions).toContainText("type anything else");
+  const inspect = suggestions.locator('[data-option-id="option:inspect-runes"]');
   await expect(inspect).toBeEnabled();
-  await expect(force).toBeEnabled();
 
   await inspect.click();
+  await expect(page.locator("#mm-rpg-action")).toHaveValue(
+    "I inspect the runes without touching the gate.",
+  );
+  await expect(page.locator("#mm-rpg-action-status")).toContainText("Nothing has been sent");
+  expect(commands).toHaveLength(0);
+
+  const freeform = "I ignore the obvious routes and ask the groundskeeper who last opened this gate.";
+  await page.locator("#mm-rpg-action").fill(freeform);
+  await page.locator("#mm-rpg-send").click();
   await expect(page.locator("#mm-rpg-action-status")).toContainText("not confirmed");
-  await expect(inspect).toContainText("Retry:");
-  await expect(inspect).toBeEnabled();
-  await expect(force).toBeDisabled();
+  await expect(page.locator("#mm-rpg-action")).toBeEnabled();
+  await expect(page.locator("#mm-rpg-send")).toHaveText("Retry exact action");
 
-  await inspect.click();
+  await page.locator("#mm-rpg-send").click();
   await expect.poll(() => commands.length).toBe(2);
   expect(commands[0]).toEqual(commands[1]);
   expect(commands[1].protocolVersion).toBe(2);
   expect(commands[1].campaignId).toBe(campaignId);
-  expect(commands[1].command.kind).toBe("campaign.submit_choice");
+  expect(commands[1].command.kind).toBe("campaign.submit_action");
   expect(commands[1].command.expectedGameframeCoordinationRevision).toBe(1);
-  expect(commands[1].command.choiceId).toBe("choice:academy-gate");
-  expect(commands[1].command.optionId).toBe("option:inspect-runes");
+  expect(commands[1].command.text).toBe(freeform);
   expect(commands[1].commandId).toMatch(/^command:/);
 
-  await expect(choice.locator('[data-option-id="option:inspect-runes"]')).toHaveClass(/is-selected/);
-  await expect(choice.locator('[data-option-id="option:inspect-runes"]')).toBeDisabled();
-  await expect(choice).toContainText("Selected: Inspect the runes");
-  await expect(page.locator('[data-event-id="event:choice-result"]')).toContainText("fresh binding mark");
-  await expect(page.locator("#mm-rpg-action-status")).toContainText("Choice accepted");
+  await expect(page.locator("#mm-rpg-action")).toHaveValue("");
+  await expect(page.locator('[data-event-id="event:action-result"]')).toContainText("somebody else's keys");
+  await expect(page.locator("#mm-rpg-action-status")).toContainText("Action accepted");
 });

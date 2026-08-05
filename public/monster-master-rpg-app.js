@@ -3,7 +3,6 @@ import {
   REFERENCE_CAMPAIGN_ID,
   buildActionCommand,
   buildAttachRequest,
-  buildChoiceCommand,
   isChoicePresentedEvent,
   mergeCampaignEvents,
   normalizeCampaignId,
@@ -87,18 +86,12 @@ function updateCharacterCount() {
   elements.count.textContent = `${elements.action.value.length} / 2000`;
 }
 
-function pendingKind() {
-  return state.pendingCommand?.command?.kind ?? null;
-}
-
 function updateComposer() {
-  const kind = pendingKind();
-  elements.send.textContent = kind === "campaign.submit_action"
-    ? "Retry exact action"
-    : "Send to Game Master";
-  elements.send.disabled = kind === "campaign.submit_choice";
-  elements.action.disabled = kind === "campaign.submit_choice";
-  elements.discardRetry.hidden = !kind;
+  const retrying = Boolean(state.pendingCommand);
+  elements.send.textContent = retrying ? "Retry exact action" : "Send to Game Master";
+  elements.send.disabled = false;
+  elements.discardRetry.hidden = !retrying;
+  elements.action.disabled = false;
 }
 
 async function requestJson(path, body) {
@@ -238,7 +231,7 @@ function renderChoiceEvent(event) {
   const choice = presentCampaignChoice(event, identity.playerId, state.events);
   const item = eventShell({
     ...presentation,
-    heading: "Decision",
+    heading: "Possible approaches",
     tone: "prompt",
   });
   item.classList.add("mm-rpg-choice-event");
@@ -251,23 +244,15 @@ function renderChoiceEvent(event) {
 
   const options = document.createElement("div");
   options.className = "mm-rpg-choice-options";
-  const pending = pendingKind() === "campaign.submit_choice"
-    ? state.pendingCommand.command
-    : null;
   for (const option of choice.options) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "mm-rpg-choice-option";
     button.dataset.optionId = option.optionId;
-    const exactPending = pending?.choiceId === choice.choiceId
-      && pending?.optionId === option.optionId;
-    button.textContent = exactPending ? `Retry: ${option.label}` : option.label;
-    button.disabled = option.disabled || Boolean(pending && !exactPending);
+    button.textContent = option.label;
+    button.disabled = option.disabled;
     button.classList.toggle("is-selected", option.selected);
-    button.classList.toggle("is-pending", exactPending);
-    button.addEventListener("click", () => {
-      void submitChoice(choice, option).catch((error) => showError(error.message));
-    });
+    button.addEventListener("click", () => applySuggestedAction(choice, option));
     options.append(button);
   }
   item.append(options);
@@ -276,17 +261,29 @@ function renderChoiceEvent(event) {
   status.className = "mm-rpg-choice-status";
   if (choice.submitted) {
     status.textContent = choice.selectedLabel
-      ? `Selected: ${choice.selectedLabel}`
-      : "This choice has been submitted.";
+      ? `Recorded selection: ${choice.selectedLabel}. You can still describe another action below.`
+      : "A selection was recorded. You can still describe another action below.";
   } else if (!choice.authorized) {
-    status.textContent = "This decision belongs to another player.";
-  } else if (pending?.choiceId === choice.choiceId) {
-    status.textContent = "Delivery was not confirmed. Retry the highlighted option safely.";
+    status.textContent = "These suggestions belong to another player. Your freeform action remains available below.";
   } else {
-    status.textContent = "Choose one option. The first accepted response closes this decision.";
+    status.textContent = "Suggestions only. Use one as a starting point, edit it, ignore it, or type anything else.";
   }
   item.append(status);
   return item;
+}
+
+function applySuggestedAction(choice, option) {
+  if (!choice.authorized || option.disabled) return;
+  if (state.pendingCommand) {
+    showError("An earlier action has unconfirmed delivery. Retry or discard it before drafting a different action.");
+    return;
+  }
+  elements.action.value = option.suggestedAction;
+  updateCharacterCount();
+  elements.action.focus();
+  elements.action.setSelectionRange(elements.action.value.length, elements.action.value.length);
+  elements.actionStatus.textContent = "Suggestion loaded. Edit it, replace it, or type something else. Nothing has been sent.";
+  showError("");
 }
 
 function formatTime(value) {
@@ -311,11 +308,7 @@ function stopPolling() {
 
 async function submitAction() {
   if (!state.projection || !state.campaignId) return;
-  if (pendingKind() === "campaign.submit_choice") {
-    showError("Resolve or discard the pending choice delivery before sending a freeform action.");
-    return;
-  }
-  const retrying = pendingKind() === "campaign.submit_action";
+  const retrying = Boolean(state.pendingCommand);
   const pending = retrying ? state.pendingCommand : buildActionCommand({
     campaignId: state.campaignId,
     commandId: `command:${crypto.randomUUID()}`,
@@ -338,77 +331,23 @@ async function submitAction() {
     elements.actionStatus.textContent = "Action accepted. Waiting for the Game Master’s response.";
     await attachCampaign({ quiet: true });
   } catch (error) {
-    await handleCommandFailure(error, "action");
+    await handleCommandFailure(error);
   } finally {
     updateComposer();
   }
 }
 
-async function submitChoice(choice, option) {
-  if (!state.projection || !state.campaignId || choice.submitted || !choice.authorized) return;
-  const existing = state.pendingCommand;
-  if (existing && existing.command.kind !== "campaign.submit_choice") {
-    showError("Resolve or discard the pending action delivery before choosing an option.");
-    return;
-  }
-  if (
-    existing
-    && (
-      existing.command.choiceId !== choice.choiceId
-      || existing.command.optionId !== option.optionId
-    )
-  ) {
-    showError("A different choice delivery is awaiting confirmation. Retry or discard it first.");
-    return;
-  }
-  const retrying = Boolean(existing);
-  const pending = existing || buildChoiceCommand({
-    campaignId: state.campaignId,
-    commandId: `command:${crypto.randomUUID()}`,
-    issuedAt: new Date().toISOString(),
-    expectedGameframeCoordinationRevision: state.projection.gameframeCoordinationRevision,
-    choiceId: choice.choiceId,
-    optionId: option.optionId,
-  });
-  state.pendingCommand = pending;
-  updateComposer();
-  renderCampaign();
-  elements.actionStatus.textContent = retrying
-    ? "Retrying the exact choice…"
-    : `Submitting “${option.label}”…`;
-  showError("");
-  try {
-    await requestJson(campaignPath("commands"), pending);
-    state.pendingCommand = null;
-    elements.actionStatus.textContent = "Choice accepted. Waiting for the Game Master’s response.";
-    await attachCampaign({ quiet: true });
-  } catch (error) {
-    await handleCommandFailure(error, "choice");
-  } finally {
-    updateComposer();
-    renderCampaign();
-  }
-}
-
-async function handleCommandFailure(error, commandKind) {
+async function handleCommandFailure(error) {
   const revisionConflict = error.status === 409
     && /revision|stale/i.test(`${error.code} ${error.message}`);
-  const definitiveChoiceConflict = commandKind === "choice"
-    && error.status >= 400
-    && error.status < 500
-    && /^choice-/.test(String(error.code));
-  if (revisionConflict || definitiveChoiceConflict) {
+  if (revisionConflict) {
     state.pendingCommand = null;
-    elements.actionStatus.textContent = revisionConflict
-      ? "Campaign position changed. Refreshed; review the feed and submit again."
-      : "That choice is no longer available. The campaign feed was refreshed.";
+    elements.actionStatus.textContent = "Campaign position changed. Refreshed; review the feed and submit again.";
     await attachCampaign().catch(() => undefined);
     return;
   }
-  elements.actionStatus.textContent = commandKind === "choice"
-    ? "Choice delivery was not confirmed. Retry the highlighted option with the same command ID."
-    : "Delivery was not confirmed. Retry sends the same command ID safely.";
-  showError(error.message || `The ${commandKind} could not be delivered.`);
+  elements.actionStatus.textContent = "Delivery was not confirmed. Retry sends the same written action and command ID safely.";
+  showError(error.message || "The action could not be delivered.");
 }
 
 elements.joinForm.addEventListener("submit", (event) => {
@@ -451,11 +390,9 @@ elements.actionForm.addEventListener("submit", (event) => {
 });
 
 elements.discardRetry.addEventListener("click", () => {
-  const discardedKind = pendingKind() === "campaign.submit_choice" ? "choice" : "action";
   state.pendingCommand = null;
   updateComposer();
-  renderCampaign();
-  elements.actionStatus.textContent = `Failed ${discardedKind} delivery discarded. Ready for a new command.`;
+  elements.actionStatus.textContent = "Unconfirmed action discarded. Ready for a new freeform action.";
   showError("");
 });
 

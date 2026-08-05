@@ -127,13 +127,13 @@ export function isChoicePresentedEvent(eventValue) {
 export function presentCampaignChoice(eventValue, playerIdValue, allEventsValue = []) {
   const event = normalizeEvent(eventValue);
   if (event.kind !== "choice.presented") {
-    throw new TypeError("Only choice.presented events can become bounded player choices.");
+    throw new TypeError("Only choice.presented events can become suggested player approaches.");
   }
   const playerId = boundedIdentifier(playerIdValue, "playerId");
   const choiceId = boundedIdentifier(event.payload.choiceId, "choiceId");
   const prompt = readableText(event.payload.prompt, 1_000)
     ?? readableText(event.payload.text, 1_000)
-    ?? "Choose an option.";
+    ?? "What do you do?";
   const allowedPlayerIds = normalizeAllowedPlayers(event.payload.allowedPlayerIds);
   const options = normalizeChoiceOptions(event.payload.options);
   const events = Array.isArray(allEventsValue) ? allEventsValue.map(normalizeEvent) : [];
@@ -232,7 +232,10 @@ function normalizeChoiceOptions(value) {
     const optionId = boundedIdentifier(entry.optionId, "optionId");
     const label = readableText(entry.label, 240);
     if (!label) throw new TypeError("Choice options require a bounded label.");
-    return { optionId, label };
+    const suggestedAction = readableText(entry.actionText, 2_000)
+      ?? readableText(entry.text, 2_000)
+      ?? label;
+    return { optionId, label, suggestedAction };
   });
   if (new Set(options.map((option) => option.optionId)).size !== options.length) {
     throw new TypeError("Choice option IDs must be unique.");

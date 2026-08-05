@@ -16,13 +16,17 @@ const choiceEvent = {
     prompt: "How do you approach the sealed gate?",
     allowedPlayerIds: ["player:ada"],
     options: [
-      { optionId: "option:inspect-runes", label: "Inspect the runes" },
+      {
+        optionId: "option:inspect-runes",
+        label: "Inspect the runes",
+        actionText: "I inspect the runes without touching the gate.",
+      },
       { optionId: "option:force-gate", label: "Force the gate" },
     ],
   },
 };
 
-test("builds a structured protocol-v2 choice command", () => {
+test("retains structured choice command construction for explicit non-narrative selection clients", () => {
   assert.deepEqual(buildChoiceCommand({
     campaignId: "campaign-one",
     commandId: "command:choice1234",
@@ -44,19 +48,32 @@ test("builds a structured protocol-v2 choice command", () => {
   });
 });
 
-test("presents only authored options and closes after a submitted choice", () => {
+test("presents authored options as editable action suggestions", () => {
   const open = presentCampaignChoice(choiceEvent, "player:ada", [choiceEvent]);
   assert.equal(open.authorized, true);
   assert.equal(open.submitted, false);
   assert.deepEqual(open.options.map((option) => ({
     optionId: option.optionId,
     label: option.label,
+    suggestedAction: option.suggestedAction,
     disabled: option.disabled,
   })), [
-    { optionId: "option:inspect-runes", label: "Inspect the runes", disabled: false },
-    { optionId: "option:force-gate", label: "Force the gate", disabled: false },
+    {
+      optionId: "option:inspect-runes",
+      label: "Inspect the runes",
+      suggestedAction: "I inspect the runes without touching the gate.",
+      disabled: false,
+    },
+    {
+      optionId: "option:force-gate",
+      label: "Force the gate",
+      suggestedAction: "Force the gate",
+      disabled: false,
+    },
   ]);
+});
 
+test("still reflects an explicit structured selection without defining the player's next freeform action", () => {
   const submission = {
     eventId: "event:choice-submitted",
     kind: "campaign.choice_submitted",
@@ -78,7 +95,7 @@ test("presents only authored options and closes after a submitted choice", () =>
   assert.equal(closed.options.find((option) => option.selected)?.optionId, "option:inspect-runes");
 });
 
-test("marks choices unavailable to other players", () => {
+test("marks another player's suggestions unavailable without affecting their own composer", () => {
   const choice = presentCampaignChoice(choiceEvent, "player:bryn", [choiceEvent]);
   assert.equal(choice.authorized, false);
   assert.equal(choice.options.every((option) => option.disabled), true);
