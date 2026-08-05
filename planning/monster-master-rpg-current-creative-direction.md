@@ -14,6 +14,7 @@ related:
   - monster-master-rpg-lore-and-story.md
   - monster-master-rpg-lore-tone-and-agent-realization.md
   - monster-master-rpg-asset-register.md
+  - monster-master-rpg-npc-pool.md
   - shared/rpg-event-and-plot-pool-contract.md
   - shared/rpg-monster-master-reference-campaign.md
 ---
@@ -31,7 +32,8 @@ It establishes that:
 3. the starter is a reusable certification chassis with several possible plot families, not one canonical incident;
 4. one selected package is committed per run before meaningful investigation;
 5. the DM agent uses the language model to adapt strongly to players while preserving the selected package's truth;
-6. deterministic CI fixtures prove contracts and do not define the product's story or asset roadmap.
+6. deterministic CI fixtures prove contracts and do not define the product's story or asset roadmap;
+7. a curated NPC role pool supports likely people and base assets without becoming a closed cast.
 
 ## Current deliverable
 
@@ -78,6 +80,33 @@ The current curated catalog should support at least these distinct families:
 A misclassified Class 4 specialty hazard remains blocked until its actual rule and countermeasure are authored.
 
 Additional families may be added later, but no single favorite incident should consume the starter identity.
+
+## NPC pool posture
+
+The starter should maintain a curated NPC role pool alongside the plot catalog.
+
+The pool should prepare likely recurring and ordinary roles such as:
+
+- veteran guide;
+- station quartermaster;
+- station cook, cafeteria worker, or lunch lady;
+- rival trainee;
+- creature medic or handler;
+- cube technician or researcher;
+- road patrol or town guard;
+- local worker, farmer, courier, merchant, innkeeper, or traveler;
+- licensing official;
+- festival organizer;
+- underworld fixer or false inspector;
+- intelligent-monster citizen or professional.
+
+This gives the plot agent predictable cast vocabulary and gives GameFrame a bounded portrait-family plan.
+
+It is not a closed cast. When players seek a plausible person who was not prepared, the DM may instantiate that person, assign a stable identity and portrait family, preserve continuity, and promote them into the recurring cast if play makes them matter.
+
+An improvised NPC may not retroactively replace the committed culprit, decisive witness, clue owner, or secret authority unless the selected package explicitly left that role open.
+
+Promotion does not require immediate unique art. The NPC may continue using a stable reusable portrait-family identity until manual production approves bespoke art.
 
 ## Adult-world posture
 
@@ -156,13 +185,16 @@ The first asset cut should establish reusable starter vocabulary before plot-spe
 
 - academy or field-station environments;
 - settled routes and modular roadside states;
-- veteran guide and reusable local-role portraits;
+- veteran guide and reusable NPC portrait families;
+- incidental-NPC card and silhouette fallbacks;
 - modular carts, signs, cubes, field kits, barriers, and inspection props;
 - domestic and conventional hazard creature coverage;
 - private observation, investigation, warning, objective, and aftermath UI;
 - Arena Battles terrain and effects reused where sufficient.
 
-After that base is integrated, family-specific extensions may be produced for the first two or three selected families. No single plot family controls the entire asset pack.
+The NPC portrait foundation should begin with Pell plus reusable service-worker, candidate/rival, care-handler, technical-specialist, guard/patrol, and trade/travel families. Civic, event, underworld, and intelligent-monster citizen families follow as P1.
+
+After that base is integrated, family-specific extensions may be produced for the first two or three selected plot families. No single plot family controls the entire asset pack.
 
 The following are future capabilities, not current dependencies:
 
@@ -197,8 +229,10 @@ A Monster Master starter is on target when:
 - players can laugh without being told the world is a parody;
 - horror can become genuinely uncomfortable for a bounded stretch;
 - consequences matter without becoming a lecture;
+- likely NPC roles have prepared visual coverage;
+- an unplanned lunch lady or other ordinary person can become a durable character without blocking play;
 - the session produces a memorable story rather than a sequence of instructional beats.
 
 ## Governing rule
 
-> Build several distinct starter possibilities and a reusable visual foundation, commit one hidden package per run, and never allow a CI fixture or favored incident to become the whole game.
+> Build several distinct starter possibilities, a reusable visual and NPC foundation, and one committed hidden package per run—without allowing a CI fixture, favored incident, or closed cast list to become the whole game.
