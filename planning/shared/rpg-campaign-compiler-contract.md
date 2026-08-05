@@ -1,348 +1,235 @@
 ---
-title: RPG Campaign Compiler Contract
+title: RPG Campaign Architect and Package Construction Contract
 status: accepted
 document_type: decision
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-04
+last_updated: 2026-08-05
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
-  - curated and player-inspired RPG campaigns
+  - handcrafted and player-inspired RPG campaigns
 shared_document_id: rpg-campaign-compiler-contract-v1
-shared_document_version: 1
+shared_document_version: 2
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-campaign-compiler-contract.md
 mirrors:
   - QuankAIWS/rpg-gm-runtime:docs/shared/rpg-campaign-compiler-contract.md
 sync_policy: exact-byte-copy
 related:
-  - rpg-platform-product-goals.md
+  - rpg-agent-architecture-and-campaign-package.md
+  - rpg-platform-roadmap.md
+  - rpg-event-and-plot-pool-contract.md
   - rpg-monster-master-reference-campaign.md
-  - rpg-rendering-and-asset-contract.md
   - rpg-media-theme-and-audio-pipeline.md
   - rpg-cross-repository-integration-testing.md
 ---
 
-# RPG Campaign Compiler Contract
+# RPG Campaign Architect and Package Construction Contract
 
 ## Decision
 
-RPG GM Runtime will contain a campaign-compiler capability that converts a player concept into a validated, persisted campaign package before ordinary campaign play begins.
+RPG GM Runtime will contain a specialized **Campaign Architect** agent that converts a campaign brief into a validated, persisted CampaignPackage before ordinary campaign play begins.
 
-A concept may be as small as a one-line inspiration, such as an early-industrial supernatural investigation adventure, or as detailed as a structured campaign sheet. A later interactive interview may gather missing preferences. All input modes normalize into the same versioned `CampaignBrief` contract.
+Older terms such as campaign compiler, plot agent, and campaign-generation agent refer to capabilities inside the Campaign Architect. They do not define separate agents.
 
-The compiler is distinct from the live Game Master. It establishes the campaign's foundational truth, playable spine, event pools, constraints, presentation semantics, and initial hidden state. The live Game Master consumes that package and adapts play within it rather than regenerating the campaign premise on every turn.
+The Campaign Architect is distinct from the Dungeon Master. It determines the campaign foundation, playable structure, hidden truth, event material, presentation requirements, and provenance. The Dungeon Master later conducts live play from the accepted package.
 
-Asset generation is not required for the first implementation. The compiler emits semantic presentation and asset intents that GameFrame can render through deterministic placeholders, text, existing icons, silhouettes, cards, terrain families, and fallback audio labels. Image, animation, and sound providers may materialize those intents later without changing campaign truth.
+## Input modes
 
-## Product objective
+The Campaign Architect must eventually support:
 
-The campaign compiler should let a player or group move from an idea to a playable, coherent starter experience without requiring them to write an adventure or expose GM-only information.
+- a one-line or short freeform concept;
+- a detailed player or owner specification;
+- a structured campaign sheet;
+- a guided GameFrame creation flow;
+- an interactive Discord interview;
+- prepared campaign families;
+- imported packages that pass validation and migration.
 
-It must support:
+All input modes normalize into the same versioned `CampaignBriefV1` contract. Unknowns, assumptions, and required repairs remain explicit.
 
-- a concise freeform concept;
-- a structured questionnaire or campaign sheet;
-- an interactive guided creation process added later;
-- prepared reference settings such as Monster Master;
-- curated genre and mechanic packs;
-- original transformations of recognizable inspirations rather than direct copying of protected characters, settings, terminology, visual identities, or plots;
-- deterministic fixtures for testing;
-- text-first GameFrame presentation before generated media is available.
+## Campaign Architect responsibilities
 
-## Compile-time and run-time separation
+The Campaign Architect owns:
 
-### Campaign compiler
+- interpreting and normalizing the brief;
+- preserving the requested player fantasy while creating an original campaign identity;
+- selecting compatible prepared mechanics, theme capabilities, and content packs;
+- setting tone, genre, boundaries, and campaign length;
+- producing the campaign bible and continuity invariants;
+- defining important locations, factions, actors, motives, secrets, and relationships;
+- producing the starter spine and at least one complete resolution;
+- creating or selecting plot structure, clue graph, event pools, escalation, recovery paths, and consequences;
+- declaring checks and tactical opportunities compatible with available GameFrame authority;
+- declaring semantic presentation, asset, narration, and audio intents;
+- validating that the package is playable with deterministic fallbacks;
+- recording package version, seed where applicable, content hash, provenance, warnings, and migrations.
 
-The compiler runs during campaign creation or explicit recompilation. It owns:
+The Campaign Architect does not conduct ordinary player turns, perform NPC dialogue in live scenes, or rewrite an active campaign in response to unexpected player action.
 
-- interpreting and normalizing the campaign brief;
-- selecting compatible platform mechanics and prepared content capabilities;
-- producing the campaign bible and starter spine;
-- creating curated special-event and incident pools;
-- committing hidden campaign truth required for the first playable chapter;
-- defining tone, genre, themes, boundaries, and originality constraints;
-- declaring presentation semantics and asset intents;
-- validating that the result is playable with available GameFrame capabilities and deterministic fallbacks;
-- assigning compiler version, package version, seed, and content hash.
+## Campaign brief
 
-### Live Game Master
+`CampaignBriefV1` should represent:
 
-The live Game Master owns:
+- original concept text;
+- desired genres and blend;
+- tone and comedy or seriousness bounds;
+- technology era and supernatural or scientific assumptions;
+- player roles and group fantasy;
+- campaign length and structure preference;
+- combat, mystery, exploration, social, collection, survival, political, and other emphasis values;
+- content boundaries and excluded material;
+- required and avoided elements;
+- player count and known character information;
+- prepared campaign or theme identifiers when applicable;
+- GameFrame mechanic and presentation capabilities;
+- input source: freeform, form, interview, prepared, imported, or owner-authored;
+- brief version;
+- explicit unknowns and assumptions.
 
-- scene realization and narration;
-- NPC dialogue and reactions;
-- interpretation of freeform player intent;
-- checks, choices, pacing, and consequences within the package;
-- selecting eligible events from compiled pools;
-- adding compatible secondary details;
-- requesting tactical encounters and applying committed outcomes;
-- maintaining campaign continuity after play begins.
+A short concept may leave most fields unknown. The Campaign Architect may apply conservative defaults, record assumptions, and request bounded clarification. It must not fabricate hidden player preferences and present them as confirmed.
 
-The live Game Master must not silently replace the campaign's committed premise, central actors, established facts, event constraints, or required evidence merely because players act unexpectedly.
+## CampaignPackage output
 
-## Normalized campaign brief
+The product-level artifact is `CampaignPackage`. The first implementation schema may be named `CompiledCampaignPackageV1`.
 
-Every input path produces a `CampaignBrief` containing known values and explicit unknowns.
+The same package contract is used for handcrafted and generated campaigns.
 
-The initial contract should support:
+### Player-safe pitch
 
-- `concept_text` — the player's original wording;
-- `desired_genres` and `genre_blend`;
-- `tone` and comedy or seriousness bounds;
-- `technology_era` and supernatural or scientific assumptions;
-- `player_roles` and desired group fantasy;
-- `campaign_length` — one-shot, starter with open end, short arc, or longer campaign;
-- `structure_preference` — guided, mixed, or open;
-- `combat_frequency` and tactical expectations;
-- `mystery`, exploration, social, collection, survival, political, and other emphasis values;
-- `content_boundaries` and excluded material;
-- `must_include` and `avoid` elements;
-- `player_count` and available character information;
-- `prepared_theme_id`, when compiling from a curated setting;
-- `mechanic_capabilities` and `presentation_capabilities` supplied by GameFrame;
-- `brief_source` — freeform, form, interview, prepared fixture, or imported package;
-- `brief_version`.
-
-A one-line prompt may leave most fields unknown. The compiler should make conservative defaults, record its assumptions, and expose player-safe assumptions for confirmation when confirmation is useful. It must not block creation merely because a detailed form was not completed.
-
-## Compiled campaign package
-
-A valid `CompiledCampaignPackage` contains several visibility-scoped sections.
-
-### Player-safe campaign pitch
-
-This section may be projected before play and contains:
-
-- original campaign title;
+- original campaign title and identity;
 - concise premise;
 - expected player roles;
 - tone and content summary;
-- approximate session shape;
-- relevant character-creation guidance;
-- declared player-facing assumptions;
-- any required consent or boundary confirmation.
+- approximate session or campaign shape;
+- character guidance;
+- player-facing assumptions and boundary confirmations.
 
 ### Runtime-only campaign bible
 
-This section is never included in ordinary player projections. It contains:
-
 - setting truths and operating assumptions;
-- factions, important NPC roles, motives, and secrets;
+- factions, important actors, motives, secrets, leverage, and limits;
 - location roles and relationships;
-- campaign themes and thematic limits;
-- central tensions and likely long-term pressures;
+- themes and thematic limits;
 - hidden chronology and causality;
 - originality transformations and prohibited direct-copy elements;
-- GM behavior rules specific to the campaign;
-- information-visibility classifications;
-- continuity invariants that later improvisation cannot contradict.
+- Dungeon Master behavior rules specific to the campaign;
+- visibility classifications;
+- continuity invariants and forbidden retcons.
 
-### Playable starter spine
-
-The first compilation must produce a complete starter rather than only a world bible. It contains:
+### Playable campaign structure
 
 - opening situation and group-cohesion mechanism;
-- required scenes or functional beats without prescribing one route;
-- at least two reasonable approaches to meaningful problems;
-- expected social, investigative, exploration, check, choice, and tactical opportunities as appropriate;
-- one-shot resolution conditions;
-- open-ended continuation seeds;
-- pacing bounds and escalation rules;
-- failure-forward alternatives that prevent one missed clue or failed check from ending play.
+- functional beats without a mandatory scene order;
+- credible alternative approaches;
+- social, investigative, practical, exploration, care, check, choice, and tactical opportunities as appropriate;
+- event and complication pools;
+- clue and evidence graph when investigation exists;
+- escalation and pressure rules;
+- failure-forward and recovery paths;
+- one complete starter or one-shot resolution;
+- optional continuation seeds.
 
-The default target is a campaign bible plus one playable starter chapter with open-ended arc seeds, not a fully scripted multi-year campaign.
+### Mechanics and presentation
 
-### Special-event and incident pools
+- mechanic capabilities used by the package;
+- check intents and tactical encounter envelopes;
+- semantic character, creature, location, item, terrain, effect, handout, and interface asset roles;
+- theme and presentation profile;
+- narration and audio intents where useful;
+- required, optional, and deferred media;
+- deterministic text, card, silhouette, terrain, and audio-label fallbacks.
 
-The compiler produces bounded pools compatible with the campaign's premise and mechanics. Pool entries may include:
+### Provenance and reproducibility
 
-- triggering conditions;
-- eligibility and exclusion rules;
-- foreshadowing requirements;
-- involved roles, locations, and asset families;
-- hidden cause categories;
-- escalation behavior;
-- possible nonviolent and tactical resolutions;
-- consequences and persistent state changes;
-- cooldown, uniqueness, and repetition limits;
-- links to longer campaign seeds.
-
-Pools are not collections of context-free random encounters. Selected events must fit current campaign state, established causality, pacing, and prior player choices.
-
-### Presentation profile and asset intents
-
-The package contains semantic presentation instructions rather than provider-specific media files.
-
-Initial fields should cover:
-
-- palette and interface mood tokens;
-- typography and ornamentation families;
-- location, character, creature, item, effect, and tactical-terrain intent IDs;
-- portrait or silhouette requirements;
-- scene-background descriptions;
-- ambient audio and music mood labels;
-- narration voice characteristics without requiring a synthesized voice;
-- fallback text, icon, card, silhouette, and terrain mappings;
-- asset priority and whether an intent is required, optional, or deferred.
-
-GameFrame may initially present these through a developer theme, placeholder cards, text descriptions, existing terrain, and generic audio indicators. Later materialization replaces presentation resources, not campaign identities or state IDs.
-
-### Reproducibility and provenance
-
-The package records:
-
-- `compiler_version`;
-- `prompt_bundle_version`;
-- `schema_version`;
-- `campaign_seed`;
-- `package_version`;
-- `package_hash`;
-- source brief and normalized brief;
-- selected curated packs and their versions;
+- schema version;
+- package identity and version;
+- source and normalized brief;
+- authoring mode: handcrafted, generated, imported, or migrated;
+- Campaign Architect, prompt-bundle, or manual authoring version;
+- selected packs and versions;
+- seed where applicable;
+- package hash;
 - validation results and warnings;
-- compile timestamp;
-- explicit amendments or migrations performed after initial compilation.
+- compile or authoring timestamp;
+- explicit amendments and migrations.
 
-## Prompt and instruction boundary
+## Handcrafted package rule
 
-The campaign compiler uses a versioned runtime-owned prompt bundle and structured output schema.
+A handcrafted package is not exempt from validation.
 
-The prompt bundle may include:
+Monster Master is manually authored as the gold standard for Campaign Architect output. It must pass the same package schema, visibility, persistence, commitment, and Dungeon Master consumption contracts as generated campaigns.
 
-- campaign architecture instructions;
-- genre translation guidance;
-- event-pool construction rules;
-- originality and intellectual-property transformation rules;
-- GameFrame mechanic and presentation capability summaries;
-- hidden-state and audience-separation rules;
-- package validation and self-review instructions;
-- deterministic fallback behavior.
-
-Raw system prompts, private compiler deliberation, hidden campaign secrets, provider credentials, and internal evaluation material must remain within RPG GM Runtime. They are not shared documents, campaign exports for players, or GameFrame player projections.
-
-The shared contract defines required behavior and schemas. Runtime-specific prompt wording may evolve independently when it preserves the contract and remains versioned for reproducibility.
+The Dungeon Master must not select a separate execution path based on package origin.
 
 ## Originality transformation
 
-Player inspirations may refer to existing media, eras, genres, or recognizable combinations. The compiler should preserve the requested experience while producing an original campaign identity.
+Player inspiration may use recognizable media shorthand. The Campaign Architect preserves high-level experience—era, genre blend, occupational fantasy, mood, technology assumptions, pacing, and activity types—while replacing protected or overly derivative names, organizations, creatures, terminology, plots, signature designs, and setting lore.
 
-It may retain high-level elements such as:
+The package records both the original player intent and the transformed original campaign identity. Runtime-only avoid constraints prevent the Dungeon Master and media pipeline from drifting back toward direct imitation.
 
-- historical period;
-- genre mixture;
-- occupational fantasy;
-- mood;
-- broad technology or supernatural assumptions;
-- desired pacing and activity types.
-
-It must replace protected or overly derivative elements such as named characters, distinctive organizations, proprietary creatures, exact terminology, copied plots, signature visual designs, and setting-specific lore.
-
-The compiler records the transformed premise in the player-safe pitch and records prohibited direct-copy elements in the runtime-only bible so later model realization does not drift back toward imitation.
+The system does not claim automatic legal safety. Transformation, validation, and operator review are product controls.
 
 ## Visibility and security
 
-Campaign compilation produces information in at least four scopes:
+Packages use at least:
 
-- `public` — safe for anyone with campaign access;
-- `party` — safe for current players;
-- `player_private` — scoped to one player or character;
-- `runtime_only` — campaign secrets, event eligibility, hidden motives, unrevealed evidence, prompt instructions, and compiler metadata not intended for players.
+- `public`;
+- `party`;
+- `player_private`;
+- `runtime_only`.
 
-GameFrame receives only the projections necessary for the current authenticated audience and operator-authorized development inspection.
+GameFrame receives player-safe preview and the audience projections required for play. It must not receive the full hidden package in browser-accessible fields.
 
-A separate developer or administrator preview may show compiler diagnostics, hidden structure, asset intents, and validation failures when explicitly authorized. That view must never be reachable through ordinary player state or client-side hidden fields.
+Raw Campaign Architect prompts, private deliberation, hidden campaign truth, provider credentials, and internal evaluation material remain in RPG GM Runtime.
 
-## Validation gates
+## Package acceptance gates
 
-Compilation fails or returns an explicit repair request when the package cannot satisfy required invariants.
+A package is accepted only when it:
 
-A valid initial package must:
+- preserves the player concept after originality transformation;
+- defines a playable group role and reason to act together;
+- contains a complete starter experience and resolution;
+- supports meaningful choice and more than one viable approach;
+- separates hidden truth from player-safe information;
+- provides coherent causality and redundant or recoverable evidence when investigation exists;
+- avoids unsupported mechanics or maps them to available primitives;
+- declares every required presentation resource through an accepted asset or deterministic fallback;
+- fits session-length and content boundaries;
+- serializes, hashes, persists, reloads, and resumes without semantic loss;
+- survives exact retry and process restart;
+- remains playable without live media generation after package acceptance;
+- can be consumed by the ordinary Dungeon Master path.
 
-- preserve the core player idea after originality transformation;
-- define a playable group role and opening reason to act together;
-- provide a complete starter chapter with a valid one-shot resolution;
-- contain at least one meaningful choice and more than one viable approach;
-- distinguish hidden truth from player-safe information;
-- provide coherent causal links between anomalies, evidence, actors, escalation, and consequences when mystery is present;
-- avoid unsupported mechanics or map unsupported ideas onto available primitives;
-- declare every required presentation resource through a resolvable prepared asset or deterministic fallback;
-- fit configured session-length and content-boundary constraints;
-- avoid mandatory dependence on live image, sound, or model providers after compilation;
-- serialize, hash, persist, reload, and resume without semantic loss;
-- remain stable under exact retry and process restart.
+## Campaign media preparation
 
-The first implementation should use a small number of well-tested schemas and event-pool archetypes rather than unrestricted campaign invention.
+The Campaign Architect declares semantic media requirements and priorities. GameFrame owns media resolution, composition, generation, validation, provenance, storage, delivery, and replacement.
 
-## Text-first GameFrame proving mode
+When Cloudflare-backed image generation is available, it may materialize Campaign Architect asset intents during campaign preparation. It does not own campaign truth and does not block text-first package validation.
 
-Before media generation is operational, GameFrame should be able to preview and run compiled campaigns through a text-first development presentation.
+## First implementation sequence
 
-The proving mode should display:
+1. implement `CampaignBriefV1`;
+2. implement `CompiledCampaignPackageV1`;
+3. implement validation, hashing, persistence, commitment, reload, and player-safe projection;
+4. encode one complete handcrafted Monster Master package;
+5. make the Dungeon Master consume that committed package;
+6. build machine-play campaign tests;
+7. implement a deterministic Campaign Architect port and fixture;
+8. add a hosted Campaign Architect provider;
+9. prove a materially different generated bespoke campaign;
+10. add sheets, interviews, repair loops, and media materialization.
 
-- player-safe title, pitch, roles, and campaign assumptions;
-- scene text and NPC dialogue;
-- location and character cards using deterministic placeholders;
-- semantic asset-intent identifiers and fallback labels in operator-authorized views;
-- choices, checks, objectives, relationships, inventories, and campaign state;
-- tactical encounters using existing or generic compatible terrain and units;
-- return scenes, recaps, reconnect, restart, and resume.
-
-Generated media is an enhancement to this loop, not a prerequisite for proving campaign compilation, hidden-state integrity, or Game Master behavior.
-
-## Ownership
-
-### RPG GM Runtime owns
-
-- compiler orchestration and model calls;
-- normalized brief and compiled-package schemas;
-- runtime-only prompt bundles and versions;
-- hidden campaign bible, starter truth, event pools, and validation;
-- package persistence, hashing, migrations, and deterministic fallback;
-- live GM consumption of the committed package;
-- non-player-visible compiler and campaign secrets.
-
-### GameFrame owns
-
-- player and operator campaign-creation interfaces;
-- authenticated submission of freeform ideas, forms, and later interview responses;
-- mechanic and presentation capability declarations supplied to the compiler;
-- player-safe campaign preview and confirmation;
-- audience-scoped campaign presentation;
-- placeholder and prepared asset resolution;
-- later media-intent materialization, storage, delivery, and replacement;
-- tactical execution and committed encounter outcomes.
-
-## Initial implementation slice
-
-The first runtime slice should implement the contracts without requiring a live campaign-generation model.
-
-It should include:
-
-1. a versioned `CampaignBrief` schema accepting both concise concept text and structured fields;
-2. a versioned `CompiledCampaignPackage` schema with player-safe, runtime-only, starter-spine, event-pool, presentation-intent, and provenance sections;
-3. a deterministic compiler fixture that transforms a known brief into a valid package;
-4. package validation, hashing, persistence, reload, and audience-projection tests;
-5. a compiler port that permits a later hosted-model implementation;
-6. a text-first GameFrame preview fixture using deterministic placeholders;
-7. a Monster Master compilation fixture proving the prepared reference campaign through the generic contract;
-8. one original transformed-theme fixture proving that a concise inspiration can become a distinct campaign without generated media.
-
-A later slice may add the hosted compiler, structured repair loop, interactive brief interview, and provider-backed asset materialization.
-
-## Non-goals
-
-The initial compiler does not require:
+## Non-goals of the first implementation
 
 - unrestricted open-world generation;
-- a complete long campaign authored in advance;
-- generated images, animation, music, or speech;
-- exposing hidden packages or prompt instructions to players;
-- allowing the model to invent new GameFrame mechanics dynamically;
-- accepting every possible concept without repair or rejection;
+- a complete multi-year campaign authored in advance;
+- generated images, music, animation, or speech as a validation requirement;
 - direct recreation of protected commercial settings;
-- replacing authoritative campaign state with a text transcript.
+- allowing the Campaign Architect to invent new GameFrame mechanics without contracts;
+- allowing the Dungeon Master to complete missing package fundamentals during ordinary play;
+- separate package formats for Monster Master and generated campaigns.
 
 ## Governing rule
 
-> Compile the player's idea into a validated, hidden, replay-safe campaign package; prove it through text and deterministic presentation first; materialize richer assets later without changing campaign truth.
+> The Campaign Architect turns any supported brief into one validated CampaignPackage; handcrafted Monster Master proves the quality bar; and the Dungeon Master runs every accepted package through the same durable interface.
