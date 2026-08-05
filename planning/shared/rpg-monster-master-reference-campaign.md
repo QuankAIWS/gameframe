@@ -9,7 +9,7 @@ applies_to:
   - rpg-gm-runtime
   - Monster Master product family
 shared_document_id: rpg-monster-master-reference-campaign-v1
-shared_document_version: 4
+shared_document_version: 5
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-monster-master-reference-campaign.md
 mirrors:
@@ -18,9 +18,8 @@ sync_policy: exact-byte-copy
 related:
   - rpg-agent-architecture-and-campaign-package.md
   - rpg-platform-roadmap.md
-  - rpg-campaign-compiler-contract.md
+  - rpg-campaign-architect-contract.md
   - rpg-event-and-plot-pool-contract.md
-  - rpg-one-shot-intro-agent-contract.md
   - rpg-media-theme-and-audio-pipeline.md
   - rpg-cross-repository-integration-testing.md
 ---
