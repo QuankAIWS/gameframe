@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "packId": "monster-master-core-v1",
+  "packVersion": 1,
+  "status": "production-foundation",
+  "geometryProfile": "monster-master-isometric-72x36-wall29-v1",
+  "legacyAtlas": {
+    "path": "/assets/monster-master/creature-atlas-v1.svg",
+    "cellWidth": 96,
+    "cellHeight": 96,
+    "columns": 3,
+    "rows": 1
+  },
+  "unitVisuals": {
+    "warden-master-v1": {
+      "family": "trainer",
+      "continuityRef": "trainer-default-master-v1",
+      "status": "legacy-fallback",
+      "battlefield": {
+        "anchor": { "x": 0.5, "y": 0.86 },
+        "displayHeight": 94,
+        "mirrorSafe": true
+      },
+      "legacyFrame": { "column": 0, "row": 0 },
+      "replacementTarget": "trainer-default-master-v1-battlefield"
+    },
+    "stone-bulwark-v1": {
+      "family": "monster",
+      "continuityRef": "monster-stone-bulwark-v1",
+      "status": "legacy-fallback",
+      "battlefield": {
+        "anchor": { "x": 0.5, "y": 0.86 },
+        "displayHeight": 104,
+        "mirrorSafe": true
+      },
+      "legacyFrame": { "column": 1, "row": 0 },
+      "replacementTarget": "monster-stone-bulwark-v2-battlefield"
+    },
+    "emberling-skirmisher-v1": {
+      "family": "monster",
+      "continuityRef": "monster-emberling-skirmisher-v1",
+      "status": "legacy-fallback",
+      "battlefield": {
+        "anchor": { "x": 0.5, "y": 0.86 },
+        "displayHeight": 82,
+        "mirrorSafe": true
+      },
+      "legacyFrame": { "column": 2, "row": 0 },
+      "replacementTarget": "monster-emberling-skirmisher-v2-battlefield"
+    }
+  }
+}
