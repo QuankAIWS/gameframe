@@ -14,7 +14,7 @@ depends_on:
   - rpg-gm-runtime-boundary.md
   - rpg-gameframe-interface-contract.md
 related:
-  - shared/rpg-campaign-compiler-contract.md
+  - shared/rpg-campaign-architect-contract.md
   - shared/rpg-monster-master-reference-campaign.md
   - shared/rpg-media-theme-and-audio-pipeline.md
   - shared/rpg-cross-repository-integration-testing.md
