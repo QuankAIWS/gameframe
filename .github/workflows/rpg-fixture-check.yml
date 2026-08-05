@@ -8,8 +8,10 @@ on:
     paths:
       - ".github/workflows/rpg-fixture-check.yml"
       - "package.json"
+      - "deploy/systemd/**"
       - "planning/fixtures/rpg/**"
       - "planning/rpg-gameframe-interface-contract.md"
+      - "planning/rpg-single-vm-deployment.md"
       - "src/rpg/**"
       - "src/auth/request-authenticator.ts"
       - "src/server/http-server.ts"
@@ -21,6 +23,7 @@ on:
       - "src/server/durable-rpg-service-lifecycle.test.ts"
       - "src/server/durable-rpg-service-lifecycle-wait.test.ts"
       - "src/server/run-durable-rpg-service.ts"
+      - "src/server/rpg-systemd-deployment.test.ts"
       - "src/server/rpg-http-server.test.ts"
       - "src/server/rpg-live-protocol-v2-http.test.ts"
       - "src/server/rpg-choice-outcome-http.test.ts"
@@ -81,6 +84,7 @@ jobs:
           src/server/durable-rpg-process-config.test.ts
           src/server/durable-rpg-service-lifecycle.test.ts
           src/server/durable-rpg-service-lifecycle-wait.test.ts
+          src/server/rpg-systemd-deployment.test.ts
           src/server/rpg-http-server.test.ts
           src/server/rpg-live-protocol-v2-http.test.ts
           src/server/rpg-choice-outcome-http.test.ts
