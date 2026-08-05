@@ -27,12 +27,15 @@ function databasePath(): string {
   return join(directory, "gameframe.sqlite");
 }
 
-function initialize(filePath: string): void {
+function initialize(
+  filePath: string,
+  status: "active" | "paused" | "completed" = "active",
+): void {
   const campaigns = new SqliteRpgCampaignStore({ filePath });
   campaigns.bootstrap({
     campaignId: "campaign-one",
     title: "Reference campaign",
-    status: "active",
+    status,
     state: {
       gameframeCoordinationRevision: 6,
       presentationSequence: 3,
@@ -224,6 +227,47 @@ test("returns exact launch after restart without another coordination advance", 
   store.close();
 });
 
+test("rejects inactive campaigns before any encounter mutation", () => {
+  const filePath = databasePath();
+  initialize(filePath, "completed");
+  const store = new SqliteRpgEncounterStore({ filePath });
+  requireError(
+    () => store.launch(launch(), {
+      serviceId: "rpg-gm-runtime",
+      createdAt: "2026-08-04T22:45:00.000Z",
+    }),
+    "campaign-inactive",
+  );
+  store.close();
+  assert.equal(encounterCount(filePath), 0);
+  assert.deepEqual(state(filePath), {
+    gameframe_coordination_revision: 6,
+    presentation_sequence: 3,
+    linked_narrative_revision: 0,
+  });
+});
+
+test("rejects malformed participant controllers before durable custody", () => {
+  const filePath = databasePath();
+  initialize(filePath);
+  const store = new SqliteRpgEncounterStore({ filePath });
+  requireError(
+    () => store.launch(
+      launch({
+        participants: [{
+          participantId: "participant:ada",
+          controller: { kind: "plaeyr", playerId: "player:ada" },
+          teamId: "team:keepers",
+        }],
+      }),
+      { serviceId: "rpg-gm-runtime", createdAt: "2026-08-04T22:45:00.000Z" },
+    ),
+    "invalid-input",
+  );
+  store.close();
+  assert.equal(encounterCount(filePath), 0);
+});
+
 test("rejects observer participants and stale revision/narrative linkage without mutation", () => {
   const filePath = databasePath();
   initialize(filePath);
@@ -234,6 +278,7 @@ test("rejects observer participants and stale revision/narrative linkage without
         participants: [{
           participantId: "participant:observer",
           controller: { kind: "player", playerId: "player:observer" },
+          teamId: "team:observers",
         }],
       }),
       { serviceId: "rpg-gm-runtime", createdAt: "2026-08-04T22:45:00.000Z" },
@@ -293,6 +338,34 @@ test("completes terminal outcome durably and returns exact completion retry", ()
   });
   assert.deepEqual(retry, completed);
   assert.deepEqual(store.get("encounter-one", { serviceId: "rpg-gm-runtime" }), completed);
+  store.close();
+});
+
+test("rejects winner team IDs that were not present at launch", () => {
+  const filePath = databasePath();
+  initialize(filePath);
+  const store = new SqliteRpgEncounterStore({ filePath });
+  store.launch(launch(), {
+    serviceId: "rpg-gm-runtime",
+    createdAt: "2026-08-04T22:45:00.000Z",
+  });
+  requireError(
+    () => store.complete(
+      "encounter-one",
+      {
+        protocolVersion: 2,
+        completionId: "completion:invalid-winner",
+        encounterId: "encounter-one",
+        outcome: outcome({ winnerTeamId: "team:unknown" }),
+      },
+      { serviceId: "gameframe-encounter-engine", completedAt: "2026-08-04T22:50:00.000Z" },
+    ),
+    "invalid-terminal-outcome",
+  );
+  assert.equal(
+    store.get("encounter-one", { serviceId: "rpg-gm-runtime" }).state,
+    "preparing",
+  );
   store.close();
 });
 
