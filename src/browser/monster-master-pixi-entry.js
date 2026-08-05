@@ -10,6 +10,12 @@ import {
   TilingSprite,
 } from "pixi.js";
 import {
+  acceptedRuntimePaths,
+  legacyFrameRectangle,
+  loadMonsterMasterCorePack,
+  resolveMonsterMasterUnitVisual,
+} from "./monster-master-asset-pack.js";
+import {
   GROUND_APRON_CELLS,
   TILE_HEIGHT,
   TILE_WIDTH,
@@ -30,11 +36,9 @@ import {
 } from "./monster-master-terrain-geometry.js";
 
 const GAME_ID = "monster-master-duel";
-const CREATURE_ATLAS = "/assets/monster-master/creature-atlas-v1.svg";
 const GRASS_GROUND_TEXTURE = "/assets/monster-master/terrain/grass-ground/grass-ground-v1-128.webp";
 const RAISED_BARRIER_CAP_TEXTURE = "/assets/monster-master/terrain/raised-barrier-cap/raised-barrier-cap-grassland-stone-v1-128.webp";
 const CLIFF_FACE_TEXTURE = "/assets/monster-master/terrain/cliff-face/cliff-face-grassland-stone-v1-128.webp";
-const CREATURE_CELL = 96;
 const CAMERA_STORAGE_KEY = "gameframe:monster-master:pixi-camera";
 const VIEW_EVENT = "gameframe:monster-master-pixi-view";
 const GEOMETRY_DEBUG_PARAMETER = "geometryDebug";
@@ -57,6 +61,7 @@ const state = {
   camera: loadCamera(),
   layers: null,
   textures: null,
+  assetPack: null,
   resizeObserver: null,
   geometryDebug: new URLSearchParams(window.location.search).get(GEOMETRY_DEBUG_PARAMETER) === "1",
   terrainStats: {
@@ -178,25 +183,45 @@ function inverseProject(point) {
   return inverseProjectPoint(point, map(), state.camera.quarter);
 }
 
-function creatureFrame(unit) {
-  const column = unit.role === "master" ? 0 : unit.role === "bulwark" ? 1 : 2;
-  return new Rectangle(column * CREATURE_CELL, 0, CREATURE_CELL, CREATURE_CELL);
-}
-
 function textureFromFrame(base, frame) {
   return new Texture({ source: base.source, frame });
 }
 
+function legacyTextureForVisual(visual) {
+  const frame = legacyFrameRectangle(state.assetPack, visual);
+  return textureFromFrame(
+    state.textures.creatureBase,
+    new Rectangle(frame.x, frame.y, frame.width, frame.height),
+  );
+}
+
+function textureForVisual(visual) {
+  if (!visual.runtime) return legacyTextureForVisual(visual);
+  const texture = state.textures.unitRuntimeTextures.get(visual.runtime.path);
+  if (!texture) throw new Error(`Missing loaded Monster Master texture: ${visual.runtime.path}`);
+  return texture;
+}
+
 async function loadTextures() {
-  const [creatureBase, grassGround, raisedBarrierCap, cliffFace] = await Promise.all([
-    Assets.load(CREATURE_ATLAS),
+  const assetPack = await loadMonsterMasterCorePack();
+  const runtimePaths = acceptedRuntimePaths(assetPack);
+  const [creatureBase, grassGround, raisedBarrierCap, cliffFace, runtimeEntries] = await Promise.all([
+    Assets.load(assetPack.legacyAtlas.path),
     Assets.load(GRASS_GROUND_TEXTURE),
     Assets.load(RAISED_BARRIER_CAP_TEXTURE),
     Assets.load(CLIFF_FACE_TEXTURE),
+    Promise.all(runtimePaths.map(async (path) => [path, await Assets.load(path)])),
   ]);
   raisedBarrierCap.source.wrapMode = "repeat";
   cliffFace.source.wrapMode = "repeat";
-  state.textures = { creatureBase, grassGround, raisedBarrierCap, cliffFace };
+  state.assetPack = assetPack;
+  state.textures = {
+    creatureBase,
+    grassGround,
+    raisedBarrierCap,
+    cliffFace,
+    unitRuntimeTextures: new Map(runtimeEntries),
+  };
 }
 
 function makeLayers() {
@@ -427,17 +452,18 @@ function unitSignature() {
   if (!state.view) return "";
   return units().map((unit) => [
     unit.id,
+    unit.contentId,
     unit.position.x,
     unit.position.y,
     unit.health,
     unit.maxHealth,
     unit.role,
     unit.ownerId,
-  ].join(":" )).join("|") + `:${state.view.observation.activeUnitId}:${state.camera.quarter}`;
+  ].join(":" )).join("|") + `:${state.view.observation.activeUnitId}:${state.camera.quarter}:${state.assetPack?.packVersion ?? 0}`;
 }
 
 function rebuildUnits() {
-  if (!state.layers || !state.textures || !state.view) return;
+  if (!state.layers || !state.textures || !state.assetPack || !state.view) return;
   const signature = unitSignature();
   if (signature === state.unitsSignature) return;
   state.unitsSignature = signature;
@@ -462,12 +488,17 @@ function rebuildUnits() {
     const ringColor = unit.ownerId === firstPlayer ? 0x4badff : 0xff5b8f;
     const ring = new Graphics().ellipse(0, TILE_HEIGHT * 0.65, TILE_WIDTH * 0.32, TILE_HEIGHT * 0.27)
       .stroke({ color: ringColor, width: unit.id === state.view.observation.activeUnitId ? 4 : 2, alpha: 0.88 });
-    const sprite = new Sprite(textureFromFrame(state.textures.creatureBase, creatureFrame(unit)));
-    sprite.anchor.set(0.5, 0.86);
-    const size = unit.role === "bulwark" ? 104 : unit.role === "master" ? 94 : 82;
-    sprite.width = size;
-    sprite.height = size;
-    if (unit.ownerId === firstPlayer) sprite.scale.x *= -1;
+    const visual = resolveMonsterMasterUnitVisual(state.assetPack, unit);
+    const texture = textureForVisual(visual);
+    const sprite = new Sprite(texture);
+    sprite.anchor.set(visual.battlefield.anchor.x, visual.battlefield.anchor.y);
+    const displayHeight = visual.battlefield.displayHeight;
+    const aspectRatio = texture.width / Math.max(1, texture.height);
+    sprite.height = displayHeight;
+    sprite.width = displayHeight * aspectRatio;
+    if (unit.ownerId === firstPlayer && visual.battlefield.mirrorSafe) sprite.scale.x *= -1;
+    group.gameFrameAssetContentId = visual.contentId;
+    group.gameFrameAssetStatus = visual.status;
 
     const healthBack = new Graphics().roundRect(-34, 8, 68, 6, 3).fill({ color: 0x050910, alpha: 0.9 });
     const healthWidth = 68 * clamp(unit.health / Math.max(1, unit.maxHealth), 0, 1);
@@ -815,6 +846,7 @@ window.gameFrameMonsterPixi = Object.freeze({
   ready,
   getView: () => state.view,
   getCamera: () => ({ ...state.camera }),
+  getAssetPack: () => state.assetPack,
   getPerformance: () => ({ ...state.performance }),
   getTerrainStats: () => ({ ...state.terrainStats }),
   getGeometrySnapshot: (coordinate) => geometrySnapshot(coordinate, map(), state.camera.quarter),
