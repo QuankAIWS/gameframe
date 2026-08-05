@@ -37,16 +37,6 @@ jobs:
             echo 'value=false' >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Reconcile current main
-        if: steps.pending.outputs.value == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git fetch origin main
-          git merge --no-edit origin/main
-
       - name: Reassemble and verify approved package
         if: steps.pending.outputs.value == 'true'
         shell: bash
@@ -62,6 +52,17 @@ jobs:
           echo '09ea02bc1fc70f1d790e2742ef5f577b0986ca003b66fb5315545ce226be1b8b  /tmp/mm-rock-overlay-final.tar.gz' \
             | sha256sum --check --strict
           tar -tzf /tmp/mm-rock-overlay-final.tar.gz
+
+      - name: Reset worktree to current main
+        if: steps.pending.outputs.value == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git reset --hard origin/main
+          git clean -fdx
           tar -xzf /tmp/mm-rock-overlay-final.tar.gz -C .
 
       - name: Set up Node
@@ -84,16 +85,17 @@ jobs:
           npm run assets:props:verify
           npm run check:browser
 
-      - name: Replace transfer scaffolding with clean asset commit
+      - name: Publish one clean asset commit
         if: steps.pending.outputs.value == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf staging/mm-rock-props
-          rm -f .github/workflows/monster-master-rock-assets-finalize.yml
-          rm -f .github/workflows/monster-master-rock-assets-pr-finalize.yml
-          rm -f .github/workflows/monster-master-rock-assets-chunk-finalize.yml
-          git add -A
+          git add package.json \
+            planning/assets/catalogs/monster-master/prop.json \
+            planning/monster-master/assets/README.md \
+            planning/monster-master/assets/rock-boulder-set-v1.md \
+            public/assets/monster-master/props \
+            scripts/monster-master-rock-props.mjs
           git diff --cached --stat
           git commit -m 'feat: add Monster Master rock prop assets'
-          git push origin HEAD:agent/monster-master-rock-props-v1
+          git push --force-with-lease origin HEAD:agent/monster-master-rock-props-v1
