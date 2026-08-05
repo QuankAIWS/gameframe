@@ -6,9 +6,15 @@ on:
       - main
     paths:
       - .github/workflows/monster-master-rock-assets-chunk-finalize.yml
+  schedule:
+    - cron: '*/5 * * * *'
 
 permissions:
   contents: write
+
+concurrency:
+  group: monster-master-rock-assets-finalize
+  cancel-in-progress: false
 
 jobs:
   finalize:
@@ -21,7 +27,18 @@ jobs:
           ref: agent/monster-master-rock-props-v1
           fetch-depth: 0
 
+      - name: Detect pending transfer
+        id: pending
+        shell: bash
+        run: |
+          if [ -d staging/mm-rock-props/source-overlay ]; then
+            echo 'value=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'value=false' >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Reconcile current main
+        if: steps.pending.outputs.value == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -31,6 +48,7 @@ jobs:
           git merge --no-edit origin/main
 
       - name: Reassemble and verify approved package
+        if: steps.pending.outputs.value == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -47,15 +65,18 @@ jobs:
           tar -xzf /tmp/mm-rock-overlay-final.tar.gz -C .
 
       - name: Set up Node
+        if: steps.pending.outputs.value == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22.16.0
           cache: npm
 
       - name: Install dependencies
+        if: steps.pending.outputs.value == 'true'
         run: npm ci
 
       - name: Build and verify approved rock assets
+        if: steps.pending.outputs.value == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -64,6 +85,7 @@ jobs:
           npm run check:browser
 
       - name: Replace transfer scaffolding with clean asset commit
+        if: steps.pending.outputs.value == 'true'
         shell: bash
         run: |
           set -euo pipefail
