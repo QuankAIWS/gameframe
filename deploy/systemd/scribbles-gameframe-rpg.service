@@ -1,0 +1,47 @@
+[Unit]
+Description=Scribbles GameFrame durable RPG service
+Documentation=file:/opt/game-master/scribbles-gameframe/planning/rpg-single-vm-deployment.md
+Wants=network-online.target rpg-gm-runtime.service
+After=network-online.target rpg-gm-runtime.service
+
+[Service]
+Type=simple
+User=game-master
+Group=game-master
+WorkingDirectory=/opt/game-master/scribbles-gameframe
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/game-master/scribbles-gameframe-rpg.env
+ExecStart=/usr/bin/npm run start:rpg-durable
+Restart=on-failure
+RestartSec=3s
+TimeoutStartSec=30s
+TimeoutStopSec=60s
+KillSignal=SIGTERM
+SendSIGKILL=yes
+UMask=0077
+
+StateDirectory=game-master/gameframe
+StateDirectoryMode=0750
+ReadWritePaths=/var/lib/game-master/gameframe
+
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectClock=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+RemoveIPC=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
