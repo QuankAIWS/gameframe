@@ -14,6 +14,12 @@ on:
       - "planning/rpg-gameframe-interface-contract.md"
       - "planning/rpg-signed-edge-authentication.md"
       - "planning/rpg-single-vm-deployment.md"
+      - "public/game-hub.js"
+      - "public/gameframe-nav.js"
+      - "public/monster-master-rpg.html"
+      - "public/monster-master-rpg.css"
+      - "public/monster-master-rpg-*.js"
+      - "src/browser/monster-master-rpg-model.test.ts"
       - "src/rpg/**"
       - "src/auth/hmac-proxy-request-authenticator.ts"
       - "src/auth/request-authenticator.ts"
@@ -70,12 +76,16 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Validate durable RPG process entrypoint syntax
-        run: node --experimental-strip-types --check src/server/run-durable-rpg-service.ts
+      - name: Validate RPG entrypoint and player-shell syntax
+        run: >-
+          node --experimental-strip-types --check src/server/run-durable-rpg-service.ts
+          && node --check public/monster-master-rpg-model.js
+          && node --check public/monster-master-rpg-app.js
 
       - name: Validate canonical fixtures and Node HTTP behavior
         run: >-
           node --experimental-strip-types --test
+          src/browser/monster-master-rpg-model.test.ts
           src/cloudflare/rpg-edge-proxy.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
           src/rpg/rpg-dual-revision-contract.test.ts
