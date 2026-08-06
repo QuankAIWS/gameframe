@@ -44,18 +44,27 @@ on:
       - "src/server/rpg-choice-outcome-http.test.ts"
       - "src/server/rpg-choice-outcome-authority.test.ts"
       - "src/server/rpg-choice-consequence-authority.test.ts"
+  issue_comment:
+    types: [created]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: rpg-node-contract-check-${{ github.event.pull_request.number || github.ref }}
+  group: rpg-node-contract-check-${{ github.event.pull_request.number || github.event.issue.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   validate:
-    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'canonical-validation'
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || github.event.label.name == 'canonical-validation'
+      || (
+        github.event_name == 'issue_comment'
+        && github.event.issue.number == 124
+        && github.event.comment.body == '/run-rpg-node-contract-check'
+      )
     name: Validate RPG fixtures and Node HTTP boundary
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -66,6 +75,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          ref: ${{ github.event_name == 'issue_comment' && 'agent/rpg-encounter-battle-loop' || github.ref }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -79,17 +89,21 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Validate RPG entrypoint and player-shell syntax
+      - name: Validate canonical RPG entrypoints and player-shell syntax
         run: >-
           node --experimental-strip-types --check src/server/run-durable-rpg-service.ts
+          && node --experimental-strip-types --check src/server/http-server.ts
+          && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
           && node --check public/monster-master-rpg-model.js
           && node --check public/monster-master-rpg-app.js
+          && node --check public/monster-master-rpg-return.js
 
       - name: Validate canonical fixtures and Node HTTP behavior
         run: >-
           node --experimental-strip-types --test
           src/browser/monster-master-rpg-model.test.ts
           src/browser/monster-master-rpg-choice-model.test.ts
+          src/browser/monster-master-rpg-encounter-model.test.ts
           src/cloudflare/rpg-edge-proxy.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
           src/rpg/rpg-dual-revision-contract.test.ts
@@ -101,6 +115,7 @@ jobs:
           src/rpg/sqlite-rpg-runtime-linkage.test.ts
           src/rpg/sqlite-rpg-encounter-store.test.ts
           src/rpg/durable-rpg-campaign-service.test.ts
+          src/rpg/in-memory-rpg-encounter-match-coordinator.test.ts
           src/rpg/structured-choice-flow.test.ts
           src/server/durable-rpg-http-server.test.ts
           src/server/durable-rpg-process-config.test.ts
