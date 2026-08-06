@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import { MockDecisionProvider } from "../agents/mock-decision-provider.ts";
 import { ProviderBackedAgentPlayer } from "../agents/provider-backed-agent.ts";
 import {
@@ -12,14 +13,14 @@ import { InMemoryMatchSnapshotStore } from "../platform/match-store.ts";
 import { CheckersMatchService } from "./checkers-match-service.ts";
 
 function service(options: {
-  theo?: ProviderBackedAgentPlayer<CheckersAction, CheckersObservation>;
+  bot?: ProviderBackedAgentPlayer<CheckersAction, CheckersObservation>;
   ids?: string[];
 } = {}) {
   const ids = [...(options.ids ?? ["generated-1", "generated-2", "generated-3"])];
   return new CheckersMatchService({
     store: new InMemoryMatchSnapshotStore<CheckersState, CheckersAction>(),
     idGenerator: () => ids.shift() ?? crypto.randomUUID(),
-    ...(options.theo ? { theo: options.theo } : {}),
+    ...(options.bot ? { bot: options.bot } : {}),
   });
 }
 
@@ -50,9 +51,12 @@ test("authoritative Checkers service advances a two-human match and restores rep
   assert.deepEqual(await matches.replay(created.matchId), (await matches.snapshot(created.matchId)).state);
 });
 
-test("deterministic Theo answers a human Checkers move through the authoritative service", async () => {
-  const matches = service({ ids: ["theo-action-id"] });
-  const created = await matches.createMatch(["human", "theo"], "checkers-theo");
+test("deterministic CheckersBot answers a human move through the authoritative service", async () => {
+  const matches = service({ ids: ["bot-action-id"] });
+  const created = await matches.createMatch(
+    ["human", GAMEFRAME_BOT_PLAYER_ID],
+    "checkers-bot",
+  );
   assert.equal(created.revision, 0);
 
   const updated = await matches.submitAction({
@@ -68,24 +72,27 @@ test("deterministic Theo answers a human Checkers move through the authoritative
 
   const snapshot = await matches.snapshot(created.matchId);
   assert.equal(snapshot.events[0].playerId, "human");
-  assert.equal(snapshot.events[1].playerId, "theo");
-  assert.equal(snapshot.events[1].actionId, "theo:theo-action-id");
+  assert.equal(snapshot.events[1].playerId, GAMEFRAME_BOT_PLAYER_ID);
+  assert.equal(snapshot.events[1].actionId, `${GAMEFRAME_BOT_PLAYER_ID}:bot-action-id`);
 });
 
-test("provider-backed Theo uses the versioned Checkers decision contract", async () => {
+test("provider-backed GameFrameBot uses the versioned Checkers decision contract", async () => {
   const provider = new MockDecisionProvider<CheckersAction, CheckersObservation>({
     mode: "deterministic",
     commentary: "Taking the first legal Checkers action.",
   });
-  const theo = new ProviderBackedAgentPlayer<CheckersAction, CheckersObservation>({
-    agentId: "theo",
+  const bot = new ProviderBackedAgentPlayer<CheckersAction, CheckersObservation>({
+    agentId: GAMEFRAME_BOT_PLAYER_ID,
     gameId: checkersDefinition.gameId,
     provider,
     isSameAction: checkersDefinition.isSameAction.bind(checkersDefinition),
     requestIdGenerator: () => "checkers-request-1",
   });
-  const matches = service({ theo });
-  const created = await matches.createMatch(["human", "theo"], "checkers-provider");
+  const matches = service({ bot });
+  const created = await matches.createMatch(
+    ["human", GAMEFRAME_BOT_PLAYER_ID],
+    "checkers-provider",
+  );
 
   const updated = await matches.submitAction({
     matchId: created.matchId,
@@ -100,7 +107,7 @@ test("provider-backed Theo uses the versioned Checkers decision contract", async
   assert.equal(provider.requests[0].requestId, "checkers-request-1");
   assert.equal(provider.requests[0].gameId, "american-checkers");
   assert.equal(provider.requests[0].matchId, "checkers-provider");
-  assert.equal(provider.requests[0].playerId, "theo");
+  assert.equal(provider.requests[0].playerId, GAMEFRAME_BOT_PLAYER_ID);
   assert.equal(provider.requests[0].expectedRevision, 1);
   assert.ok(provider.requests[0].legalActions.length > 0);
 
