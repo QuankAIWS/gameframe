@@ -30,11 +30,11 @@ async function makeCheckersTurn(page) {
   throw new Error("Checkers turn did not commit after twelve path steps.");
 }
 
-test("plays and resumes a deterministic American Checkers match against Theo", async ({ page }) => {
+test("plays and resumes a deterministic American Checkers match against CheckersBot", async ({ page }) => {
   const player = uniquePlayer("checkers-browser");
   await page.goto(`/?player=${encodeURIComponent(player)}`);
   await selectCheckers(page);
-  await page.getByRole("button", { name: "Challenge Theo" }).click();
+  await page.getByRole("button", { name: "Challenge CheckersBot" }).click();
 
   await expect(page.locator("#match-panel")).toBeVisible();
   await expect(page.locator("#match-game")).toHaveText("American Checkers");
@@ -92,7 +92,7 @@ test("American Checkers remains usable without horizontal overflow on mobile", a
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/?player=${encodeURIComponent(uniquePlayer("checkers-mobile"))}`);
   await selectCheckers(page);
-  await page.getByRole("button", { name: "Challenge Theo" }).click();
+  await page.getByRole("button", { name: "Challenge CheckersBot" }).click();
 
   await expect(page.locator(".checkers-cell")).toHaveCount(64);
   await expect(page.locator(".player-card")).toHaveCount(2);
