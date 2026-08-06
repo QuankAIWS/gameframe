@@ -50,6 +50,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: rpg-node-contract-check-${{ github.event.pull_request.number || github.event.issue.number || github.ref }}
@@ -127,3 +128,39 @@ jobs:
           src/server/rpg-choice-outcome-http.test.ts
           src/server/rpg-choice-outcome-authority.test.ts
           src/server/rpg-choice-consequence-authority.test.ts
+
+      - name: Report PR 124 validation result
+        if: always() && github.event_name == 'issue_comment'
+        env:
+          API_URL: ${{ github.api_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TESTED_COMMIT: 9a4bdac74658b60a16afa1caa254faa2764b2b8e
+          VALIDATION_STATUS: ${{ job.status }}
+        run: |
+          node --input-type=module <<'NODE'
+          const body = [
+            "## RPG Node Contract Check",
+            "",
+            `- Tested commit: \`${process.env.TESTED_COMMIT}\``,
+            `- Status: **${process.env.VALIDATION_STATUS}**`,
+            `- Workflow run: ${process.env.RUN_URL}`,
+          ].join("\n");
+          const response = await fetch(
+            `${process.env.API_URL}/repos/${process.env.REPOSITORY}/issues/124/comments`,
+            {
+              method: "POST",
+              headers: {
+                accept: "application/vnd.github+json",
+                authorization: `Bearer ${process.env.GH_TOKEN}`,
+                "content-type": "application/json",
+                "x-github-api-version": "2022-11-28",
+              },
+              body: JSON.stringify({ body }),
+            },
+          );
+          if (!response.ok) {
+            throw new Error(`Unable to publish validation result: ${response.status}`);
+          }
+          NODE
