@@ -8,7 +8,7 @@ async function openMonsterMaster(page, player, { mobile = false } = {}) {
   if (mobile) await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/monster-master.html?player=${player}`);
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
   await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
@@ -82,7 +82,7 @@ test("Setup stops the active surface and allows a fresh battle", async ({ page }
   await expect(page.locator("#monster-master-match")).toBeHidden();
   await expect(page).not.toHaveURL(/match=/);
 
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect.poll(async () => (await diagnostics(page)).matchId).not.toBe(firstMatchId);
   await expect(page.locator("#monster-master-match")).toBeVisible();
 });
@@ -96,7 +96,7 @@ test("Monster Master uses the compatibility battlefield when the WebGL fallback 
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterRendererMode)).toBe("legacy");
   await expect(page.locator("body.monster-master-legacy-fallback")).toBeVisible();
   await expect(page.locator("#monster-master-error")).toContainText("compatibility battlefield");
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("#monster-master-canvas")).toBeVisible();
   await expect(page.locator("#monster-master-pixi-canvas")).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterLegacyDrawCount ?? 0)).toBeGreaterThan(0);
