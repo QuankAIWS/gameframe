@@ -81,6 +81,7 @@ class FakeRpgService {
   };
   launchCalls = 0;
   completion = null;
+  completionCalls = [];
 
   async launchEncounter() {
     this.launchCalls += 1;
@@ -93,6 +94,7 @@ class FakeRpgService {
       serviceId: "gameframe-encounter-engine",
     });
     this.completion = structuredClone(request);
+    this.completionCalls.push(structuredClone(request));
     this.handle = {
       ...this.handle,
       state: "completed",
@@ -181,13 +183,19 @@ test("allows encounter participants to retrieve play metadata and rejects outsid
   );
 });
 
-test("commits a complete structured RPG outcome when the bound match ends", async () => {
+test("commits a complete structured RPG outcome with exact retry content", async () => {
   const rpg = new FakeRpgService();
   const matches = new FakeMatchService();
+  let clockCalls = 0;
   const coordinator = new InMemoryRpgEncounterMatchCoordinator({
     rpg,
     matches,
-    clock: () => "2026-08-06T18:10:00.000Z",
+    clock: () => {
+      clockCalls += 1;
+      return clockCalls === 1
+        ? "2026-08-06T18:10:00.000Z"
+        : "2026-08-06T18:11:00.000Z";
+    },
   });
   await coordinator.launchEncounter(
     launchRequest(),
@@ -195,6 +203,10 @@ test("commits a complete structured RPG outcome when the bound match ends", asyn
   );
 
   await coordinator.synchronizeMatch(completedView());
+  await coordinator.synchronizeMatch(completedView());
+  assert.equal(clockCalls, 1);
+  assert.equal(rpg.completionCalls.length, 2);
+  assert.deepEqual(rpg.completionCalls[1], rpg.completionCalls[0]);
   assert.equal(rpg.completion.completionId, "completion:encounter-one");
   assert.equal(rpg.completion.outcome.result, "victory");
   assert.equal(rpg.completion.outcome.winnerTeamId, "team:party");
