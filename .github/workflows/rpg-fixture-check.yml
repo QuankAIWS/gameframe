@@ -83,6 +83,9 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Capture tested commit
+        run: echo "TESTED_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
@@ -139,7 +142,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          TESTED_COMMIT: 9a4bdac74658b60a16afa1caa254faa2764b2b8e
           VALIDATION_STATUS: ${{ job.status }}
         run: |
           node --input-type=module <<'NODE'
