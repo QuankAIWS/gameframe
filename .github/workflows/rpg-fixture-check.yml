@@ -4,7 +4,7 @@ run-name: RPG Node Contract Check · ${{ github.sha }}
 on:
   pull_request:
     branches: [main]
-    types: [labeled]
+    types: [labeled, synchronize, ready_for_review]
     paths:
       - ".github/workflows/rpg-fixture-check.yml"
       - "package.json"
@@ -55,7 +55,10 @@ concurrency:
 
 jobs:
   validate:
-    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'canonical-validation'
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || github.event.label.name == 'canonical-validation'
+      || contains(github.event.pull_request.labels.*.name, 'canonical-validation')
     name: Validate RPG fixtures and Node HTTP boundary
     runs-on: ubuntu-latest
     timeout-minutes: 5
