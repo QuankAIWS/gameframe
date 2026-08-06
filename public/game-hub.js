@@ -31,7 +31,7 @@ const games = [
     href: "/monster-master-rpg.html",
     kicker: "CAMPAIGN",
     title: "Monster Master RPG",
-    description: "Resume a GM-driven campaign, review the story feed, and send your trainer’s next action.",
+    description: "Resume a Dungeon-Master-driven campaign, review the story feed, and send your trainer’s next action.",
     accent: "monster",
   },
   {
@@ -63,7 +63,7 @@ const games = [
     href: "/?game=tic-tac-toe&menu=1",
     kicker: "QUICK MATCH",
     title: "Tic-Tac-Toe",
-    description: "A fast duel against Theo or another player.",
+    description: "A fast duel against the CPU Opponent or another player.",
     accent: "tic",
   },
 ];
@@ -134,6 +134,12 @@ function createLibraryCard(game) {
   return card;
 }
 
+function gameMenuMessage(game) {
+  return game.id === "american-checkers"
+    ? "Start a match with CheckersBot or invite another player."
+    : "Start a match with the CPU Opponent or invite another player.";
+}
+
 function installGameMenu() {
   if (!menuGame || !lobby || !modeGrid) return;
   const selected = games.find((game) => game.id === menuGame);
@@ -163,7 +169,7 @@ function installGameMenu() {
 
   if (sectionLabel) sectionLabel.textContent = "GAME MENU";
   if (lobbyTitle) lobbyTitle.textContent = "Choose how to play";
-  if (lobbyMessage) lobbyMessage.textContent = "Start a match with Theo or invite another player.";
+  if (lobbyMessage) lobbyMessage.textContent = gameMenuMessage(selected);
 }
 
 function installLibrary() {
@@ -190,12 +196,13 @@ function syncHubState() {
   if (lobbyVisible && menuGame) document.body.dataset.gameframeMenuGame = games.find((game) => game.id === menuGame)?.accent || "hub";
   else delete document.body.dataset.gameframeMenuGame;
   if (lobbyVisible) {
+    const selected = games.find((game) => game.id === menuGame);
     const expectedMessage = menuGame
-      ? "Start a match with Theo or invite another player."
+      ? gameMenuMessage(selected)
       : "Select a game to open its menu.";
     if (lobbyMessage && lobbyMessage.textContent !== expectedMessage) lobbyMessage.textContent = expectedMessage;
     document.title = menuGame
-      ? `${games.find((game) => game.id === menuGame)?.title || "Game"} · Scribbles GameFrame`
+      ? `${selected?.title || "Game"} · Scribbles GameFrame`
       : "Scribbles GameFrame";
   }
   window.gameFrameDestinationBar?.sync?.();
