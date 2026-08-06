@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const campaignId = "campaign-rpg-encounter-ui";
 const encounterId = "encounter-ui-one";
+const developmentIdentityKey = "scribbles-gameframe.player-id";
 
 function encounterProjection() {
   return {
@@ -32,7 +33,7 @@ function encounterProjection() {
   };
 }
 
-test("campaign shell renders the authoritative battle handoff and fences narrative input", async ({ page }) => {
+async function mockCampaignAttach(page) {
   await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -40,7 +41,10 @@ test("campaign shell renders the authoritative battle handoff and fences narrati
       body: JSON.stringify(encounterProjection()),
     });
   });
+}
 
+test("campaign shell renders the authoritative battle handoff and fences narrative input", async ({ page }) => {
+  await mockCampaignAttach(page);
   await page.goto(`/monster-master-rpg.html?player=rpg-ui-player&campaign=${campaignId}`);
 
   const encounter = page.locator(`[data-encounter-id="${encounterId}"]`);
@@ -52,9 +56,12 @@ test("campaign shell renders the authoritative battle handoff and fences narrati
   );
   await expect(page.locator("#mm-rpg-action")).toBeDisabled();
   await expect(page.locator("#mm-rpg-action-status")).toContainText("Arena Battles");
+  await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), developmentIdentityKey))
+    .toBe("rpg-ui-player");
 });
 
-test("completed campaign battle exposes a direct return to the Game Master", async ({ page }) => {
+test("completed campaign battle returns to the same local Game Master identity", async ({ page }) => {
+  await mockCampaignAttach(page);
   await page.goto(`/monster-master.html?player=rpg-ui-player&campaign=${campaignId}`);
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent("gameframe:monster-master-pixi-view", {
@@ -75,8 +82,15 @@ test("completed campaign battle exposes a direct return to the Game Master", asy
   const returnPanel = page.locator(".monster-master-rpg-return");
   await expect(returnPanel).toBeVisible();
   await expect(returnPanel).toContainText("Return to the Game Master");
-  await expect(returnPanel.locator("a")).toHaveAttribute(
+  const returnLink = returnPanel.locator("a");
+  await expect(returnLink).toHaveAttribute(
     "href",
     `/monster-master-rpg.html?campaign=${campaignId}`,
   );
+  await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), developmentIdentityKey))
+    .toBe("rpg-ui-player");
+
+  await returnLink.click();
+  await expect(page).toHaveURL(new RegExp(`/monster-master-rpg\\.html\\?campaign=${campaignId}$`));
+  await expect(page.locator("#mm-rpg-player-id")).toHaveText("rpg-ui-player");
 });
