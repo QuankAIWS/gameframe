@@ -46,6 +46,10 @@ on:
       - "src/server/rpg-choice-consequence-authority.test.ts"
   issue_comment:
     types: [created]
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/rpg-fixture-check.yml"
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
@@ -62,6 +66,7 @@ jobs:
   validate:
     if: >-
       github.event_name == 'workflow_dispatch'
+      || github.event_name == 'push'
       || github.event_name == 'schedule'
       || github.event.label.name == 'canonical-validation'
       || (
@@ -79,7 +84,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ (github.event_name == 'issue_comment' || github.event_name == 'schedule') && 'agent/rpg-encounter-battle-loop' || github.ref }}
+          ref: ${{ (github.event_name == 'issue_comment' || github.event_name == 'push' || github.event_name == 'schedule') && 'agent/rpg-encounter-battle-loop' || github.ref }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -130,13 +135,14 @@ jobs:
           src/server/durable-rpg-service-lifecycle-wait.test.ts
           src/server/rpg-systemd-deployment.test.ts
           src/server/rpg-http-server.test.ts
+          src/server/rpg-encounter-match-http.test.ts
           src/server/rpg-live-protocol-v2-http.test.ts
           src/server/rpg-choice-outcome-http.test.ts
           src/server/rpg-choice-outcome-authority.test.ts
           src/server/rpg-choice-consequence-authority.test.ts
 
       - name: Report PR 124 validation result
-        if: always() && (github.event_name == 'issue_comment' || github.event_name == 'schedule')
+        if: always() && (github.event_name == 'issue_comment' || github.event_name == 'push' || github.event_name == 'schedule')
         env:
           API_URL: ${{ github.api_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
