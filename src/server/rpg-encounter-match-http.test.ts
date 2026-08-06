@@ -26,12 +26,22 @@ function jsonBody(value: unknown): RequestInit {
 const campaignId = "campaign-monster-master-reference";
 const encounterId = "encounter:rpg-bound-checkpoint";
 const encounter = {
-  protocolVersion: 1,
+  protocolVersion: 2,
+  coordinationMutationId: "coordination:rpg-bound-checkpoint",
+  expectedGameframeCoordinationRevision: 4,
+  runtimeCommit: {
+    kind: "runtime.narrative_committed",
+    runtimeCommitKind: "runtime.encounter_launch",
+    runtimeCommitId: "runtime-commit:rpg-bound-checkpoint",
+    sourceCommandId: "command:rpg-bound-checkpoint",
+    sourceGameframeCoordinationRevision: 4,
+    previousNarrativeRevision: 0,
+    narrativeRevision: 1,
+  },
   encounterId,
   campaignId,
-  campaignRevision: 4,
-  rulesetId: "monster-master-duel",
-  idempotencyKey: "encounter:rpg-bound-checkpoint:v1",
+  rulesetId: "monster-master-rpg",
+  idempotencyKey: "encounter:rpg-bound-checkpoint:v2",
   difficulty: {
     id: "normal",
     encounterPressure: "standard",
@@ -123,9 +133,9 @@ class TerminalMatchService {
   }
 }
 
-test("Node HTTP boundary binds, authorizes, completes, and resumes an RPG encounter", async (context) => {
+test("live protocol v2 binds, authorizes, completes, and resumes an RPG encounter", async (context) => {
   const previousCompatibility = process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY;
-  process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY = "1";
+  delete process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY;
   context.after(() => {
     if (previousCompatibility === undefined) {
       delete process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY;
@@ -149,7 +159,11 @@ test("Node HTTP boundary binds, authorizes, completes, and resumes an RPG encoun
   );
   assert.equal(launch.status, 200);
   const launched = await launch.json();
+  assert.equal(launched.protocolVersion, 2);
   assert.equal(launched.state, "preparing");
+  assert.equal(launched.gameframeCoordinationRevision, 5);
+  assert.equal(launched.presentationSequence, 4);
+  assert.equal(launched.linkedNarrativeRevision, 1);
   assert.deepEqual(launched.play, {
     gameId: "monster-master-duel",
     matchId: `rpg:${encounterId}`,
@@ -160,6 +174,14 @@ test("Node HTTP boundary binds, authorizes, completes, and resumes an RPG encoun
     playerIds: ["player:ada", "theo"],
     matchId: `rpg:${encounterId}`,
   });
+
+  const retry = await serviceFetch(
+    `${base}/api/rpg/encounters`,
+    "rpg-gm-runtime",
+    jsonBody(encounter),
+  );
+  assert.equal(retry.status, 200);
+  assert.deepEqual(await retry.json(), launched);
 
   const participant = await playerFetch(
     `${base}/api/rpg/encounters/${encodeURIComponent(encounterId)}`,
@@ -189,6 +211,7 @@ test("Node HTTP boundary binds, authorizes, completes, and resumes an RPG encoun
   );
   assert.equal(completed.status, 200);
   const completedEncounter = await completed.json();
+  assert.equal(completedEncounter.protocolVersion, 2);
   assert.equal(completedEncounter.state, "completed");
   assert.equal(completedEncounter.resumeToken, launched.resumeToken);
   assert.equal(completedEncounter.terminalOutcome.result, "victory");
