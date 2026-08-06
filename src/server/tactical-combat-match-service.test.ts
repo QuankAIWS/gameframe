@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import type { TacticalCombatAction, TacticalCombatObservation, TacticalCombatState } from "../games/tactical-combat/index.ts";
 import { InMemoryMatchSnapshotStore } from "../platform/match-store.ts";
 import { TacticalCombatMatchService } from "./tactical-combat-match-service.ts";
@@ -37,9 +38,12 @@ test("combat service creates a four-unit authoritative human match", async () =>
   assert.ok(created.observation.legalActions.some((action) => action.type === "end-activation"));
 });
 
-test("combat service runs a complete bounded Theo activation after a human ends", async () => {
+test("combat service runs a complete bounded ArenaBot activation after a human ends", async () => {
   const service = createService();
-  const created = await service.createMatch(["human", "theo"], "combat-theo-second");
+  const created = await service.createMatch(
+    ["human", GAMEFRAME_BOT_PLAYER_ID],
+    "combat-bot-second",
+  );
   const ended = actionOfType(created.observation, "end-activation");
 
   const advanced = await service.submitAction({
@@ -58,9 +62,12 @@ test("combat service runs a complete bounded Theo activation after a human ends"
   assert.deepEqual(await service.replay(created.matchId), (await service.snapshot(created.matchId)).state);
 });
 
-test("combat service completes an opening Theo activation when Theo owns player one", async () => {
+test("combat service completes an opening ArenaBot activation when the bot owns player one", async () => {
   const service = createService();
-  const created = await service.createMatch(["theo", "human"], "combat-theo-first");
+  const created = await service.createMatch(
+    [GAMEFRAME_BOT_PLAYER_ID, "human"],
+    "combat-bot-first",
+  );
 
   assert.equal(created.revision, 2);
   assert.equal(created.eventCount, 2);
