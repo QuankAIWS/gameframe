@@ -64,6 +64,7 @@ type EncounterBinding = {
   primaryPlayerId: string;
   participants: EncounterParticipant[];
   objectives: EncounterObjective[];
+  completionRequest?: JsonRecord;
 };
 
 /**
@@ -98,7 +99,8 @@ export class InMemoryRpgEncounterMatchCoordinator {
     const launched = await this.#rpg.launchEncounter(requestValue, principal);
     if (!SUPPORTED_RPG_RULESETS.has(request.rulesetId)) return launched;
 
-    const binding = this.#binding(request);
+    const binding = this.#bindingsByEncounter.get(request.encounterId)
+      ?? this.#binding(request);
     await this.#ensureMatch(binding);
     this.#bindingsByEncounter.set(binding.encounterId, binding);
     this.#bindingsByMatch.set(binding.matchId, binding);
@@ -133,15 +135,16 @@ export class InMemoryRpgEncounterMatchCoordinator {
     const binding = this.#bindingsByMatch.get(view.matchId);
     if (!binding || view.observation.status.lifecycle === "active") return;
 
-    const outcome = terminalOutcome(binding, view, this.#clock());
+    const completion = binding.completionRequest ?? {
+      protocolVersion: 2,
+      completionId: `completion:${binding.encounterId}`,
+      encounterId: binding.encounterId,
+      outcome: terminalOutcome(binding, view, this.#clock()),
+    };
+    binding.completionRequest = structuredClone(completion);
     await this.#rpg.completeEncounter(
       binding.encounterId,
-      {
-        protocolVersion: 2,
-        completionId: `completion:${binding.encounterId}`,
-        encounterId: binding.encounterId,
-        outcome,
-      },
+      completion,
       { kind: "runtime", serviceId: ENCOUNTER_ENGINE_SERVICE_ID },
     );
   }
