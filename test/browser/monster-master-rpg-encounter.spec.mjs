@@ -43,6 +43,13 @@ async function mockCampaignAttach(page) {
   });
 }
 
+async function expectPersistedIdentity(page) {
+  await expect.poll(() => page.evaluate(
+    (key) => localStorage.getItem(key),
+    developmentIdentityKey,
+  )).toBe("rpg-ui-player");
+}
+
 test("campaign shell renders the authoritative battle handoff and fences narrative input", async ({ page }) => {
   await mockCampaignAttach(page);
   await page.goto(`/monster-master-rpg.html?player=rpg-ui-player&campaign=${campaignId}`);
@@ -56,13 +63,13 @@ test("campaign shell renders the authoritative battle handoff and fences narrati
   );
   await expect(page.locator("#mm-rpg-action")).toBeDisabled();
   await expect(page.locator("#mm-rpg-action-status")).toContainText("Arena Battles");
-  await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), developmentIdentityKey))
-    .toBe("rpg-ui-player");
+  await expectPersistedIdentity(page);
 });
 
 test("completed campaign battle returns to the same local Game Master identity", async ({ page }) => {
   await mockCampaignAttach(page);
   await page.goto(`/monster-master.html?player=rpg-ui-player&campaign=${campaignId}`);
+  await expectPersistedIdentity(page);
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent("gameframe:monster-master-pixi-view", {
       detail: {
@@ -87,8 +94,6 @@ test("completed campaign battle returns to the same local Game Master identity",
     "href",
     `/monster-master-rpg.html?campaign=${campaignId}`,
   );
-  await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), developmentIdentityKey))
-    .toBe("rpg-ui-player");
 
   await returnLink.click();
   await expect(page).toHaveURL(new RegExp(`/monster-master-rpg\\.html\\?campaign=${campaignId}$`));
