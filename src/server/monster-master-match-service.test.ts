@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import type {
   MonsterMasterAction,
   MonsterMasterObservation,
@@ -38,9 +39,12 @@ test("Monster Master service creates a public deployment match", async () => {
   assert.ok(created.observation.legalActions.every((action) => action.type === "deploy-unit"));
 });
 
-test("Theo deploys one unit after each human deployment and combat begins after six actions", async () => {
+test("Monster Master BattleBot deploys after each human deployment and combat begins after six actions", async () => {
   const service = createService();
-  let view = await service.createMatch(["human", "theo"], "mm-theo-deployment");
+  let view = await service.createMatch(
+    ["human", GAMEFRAME_BOT_PLAYER_ID],
+    "mm-bot-deployment",
+  );
 
   for (let humanDeployment = 0; humanDeployment < 3; humanDeployment += 1) {
     const action = actionOfType(view.observation, "deploy-unit");
@@ -62,9 +66,12 @@ test("Theo deploys one unit after each human deployment and combat begins after 
   assert.equal(view.eventCount, 6);
 });
 
-test("Theo can own the opening deployment seat without blocking match creation", async () => {
+test("Monster Master BattleBot can own the opening deployment seat", async () => {
   const service = createService();
-  const created = await service.createMatch(["theo", "human"], "mm-theo-first");
+  const created = await service.createMatch(
+    [GAMEFRAME_BOT_PLAYER_ID, "human"],
+    "mm-bot-first",
+  );
 
   assert.equal(created.revision, 1);
   assert.equal(created.eventCount, 1);
@@ -74,9 +81,12 @@ test("Theo can own the opening deployment seat without blocking match creation",
   assert.equal(created.observation.undeployedUnitIds.length, 5);
 });
 
-test("Theo resolves a bounded multi-action combat activation before returning control", async () => {
+test("Monster Master BattleBot resolves a bounded multi-action activation before returning control", async () => {
   const service = createService();
-  let view = await service.createMatch(["human", "theo"], "mm-theo-combat");
+  let view = await service.createMatch(
+    ["human", GAMEFRAME_BOT_PLAYER_ID],
+    "mm-bot-combat",
+  );
   for (let deployment = 0; deployment < 3; deployment += 1) {
     view = await service.submitAction({
       matchId: view.matchId,
