@@ -79,17 +79,21 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Validate RPG entrypoint and player-shell syntax
+      - name: Validate canonical RPG entrypoints and player-shell syntax
         run: >-
           node --experimental-strip-types --check src/server/run-durable-rpg-service.ts
+          && node --experimental-strip-types --check src/server/http-server.ts
+          && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
           && node --check public/monster-master-rpg-model.js
           && node --check public/monster-master-rpg-app.js
+          && node --check public/monster-master-rpg-return.js
 
       - name: Validate canonical fixtures and Node HTTP behavior
         run: >-
           node --experimental-strip-types --test
           src/browser/monster-master-rpg-model.test.ts
           src/browser/monster-master-rpg-choice-model.test.ts
+          src/browser/monster-master-rpg-encounter-model.test.ts
           src/cloudflare/rpg-edge-proxy.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
           src/rpg/rpg-dual-revision-contract.test.ts
@@ -101,6 +105,7 @@ jobs:
           src/rpg/sqlite-rpg-runtime-linkage.test.ts
           src/rpg/sqlite-rpg-encounter-store.test.ts
           src/rpg/durable-rpg-campaign-service.test.ts
+          src/rpg/in-memory-rpg-encounter-match-coordinator.test.ts
           src/rpg/structured-choice-flow.test.ts
           src/server/durable-rpg-http-server.test.ts
           src/server/durable-rpg-process-config.test.ts
