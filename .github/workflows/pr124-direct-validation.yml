@@ -2,6 +2,9 @@ name: PR 124 Direct Validation
 run-name: PR 124 Direct Validation · ${{ github.sha }}
 
 on:
+  pull_request_target:
+    branches: [main]
+    types: [reopened, labeled, synchronize, ready_for_review]
   push:
     branches: [main]
     paths:
@@ -20,6 +23,7 @@ concurrency:
 
 jobs:
   validate:
+    if: github.event_name != 'pull_request_target' || github.event.pull_request.number == 124
     name: Validate RPG encounter battle loop
     runs-on: ubuntu-latest
     timeout-minutes: 8
