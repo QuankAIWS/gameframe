@@ -1,6 +1,7 @@
 import { env, exports as workerExports } from "cloudflare:workers";
 import { evictDurableObject } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../../src/agents/gameframe-bot.ts";
 import { SignedSessionCodec } from "../../src/auth/signed-session.ts";
 
 const sessionSecret = "gf0002-workerd-session-secret-0123456789abcdef";
@@ -145,7 +146,7 @@ describe("GameFrame real workerd runtime", () => {
   });
 
   it("restores committed tic-tac-toe state after Durable Object eviction", async () => {
-    const created = await createMatch(["human", "theo"]) as TicTacToeMatchView;
+    const created = await createMatch(["human", GAMEFRAME_BOT_PLAYER_ID]) as TicTacToeMatchView;
     expect(created.gameId).toBe("tic-tac-toe");
 
     const actionResponse = await workerFetch(
@@ -181,7 +182,7 @@ describe("GameFrame real workerd runtime", () => {
 
   it("restores committed Checkers state after Durable Object eviction", async () => {
     const created = await createMatch(
-      ["checkers-human", "theo"],
+      ["checkers-human", GAMEFRAME_BOT_PLAYER_ID],
       "american-checkers",
     ) as CheckersMatchView;
     expect(created.gameId).toBe("american-checkers");
@@ -222,7 +223,7 @@ describe("GameFrame real workerd runtime", () => {
 
   it("restores tactical state and canonical paths after Durable Object eviction", async () => {
     const created = await createMatch(
-      ["tactical-human", "theo"],
+      ["tactical-human", GAMEFRAME_BOT_PLAYER_ID],
       "tactical-movement-canary",
     ) as TacticalMatchView;
     expect(created.gameId).toBe("tactical-movement-canary");
@@ -287,7 +288,7 @@ describe("GameFrame real workerd runtime", () => {
   });
 
   it("resumes a hibernatable WebSocket after Durable Object eviction", async () => {
-    const created = await createMatch(["socket-human", "theo"]) as TicTacToeMatchView;
+    const created = await createMatch(["socket-human", GAMEFRAME_BOT_PLAYER_ID]) as TicTacToeMatchView;
     const response = await workerFetch(
       `/api/matches/${encodeURIComponent(created.matchId)}/events`,
       "socket-human",
