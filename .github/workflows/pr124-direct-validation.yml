@@ -1,0 +1,100 @@
+name: PR 124 Direct Validation
+run-name: PR 124 Direct Validation · ${{ github.sha }}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/pr124-direct-validation.yml"
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: pr124-direct-validation
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate RPG encounter battle loop
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY: "1"
+
+    steps:
+      - name: Check out PR 124 branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: agent/rpg-encounter-battle-loop
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Capture tested commit
+        run: echo "TESTED_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate syntax
+        run: >-
+          node --experimental-strip-types --check src/server/http-server.ts
+          && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
+          && node --check public/monster-master-rpg-model.js
+          && node --check public/monster-master-rpg-app.js
+          && node --check public/monster-master-rpg-return.js
+
+      - name: Validate focused RPG contracts
+        run: >-
+          node --experimental-strip-types --test
+          src/browser/monster-master-rpg-model.test.ts
+          src/browser/monster-master-rpg-choice-model.test.ts
+          src/browser/monster-master-rpg-encounter-model.test.ts
+          src/rpg/in-memory-rpg-encounter-match-coordinator.test.ts
+          src/server/rpg-http-server.test.ts
+          src/server/rpg-encounter-match-http.test.ts
+          src/server/rpg-live-protocol-v2-http.test.ts
+
+      - name: Report result to PR 124
+        if: always()
+        env:
+          API_URL: ${{ github.api_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          VALIDATION_STATUS: ${{ job.status }}
+        run: |
+          node --input-type=module <<'NODE'
+          const body = [
+            "## PR 124 Direct Validation",
+            "",
+            `- Tested commit: \`${process.env.TESTED_COMMIT || "checkout-failed"}\``,
+            `- Status: **${process.env.VALIDATION_STATUS}**`,
+            `- Workflow run: ${process.env.RUN_URL}`,
+          ].join("\n");
+          const response = await fetch(
+            `${process.env.API_URL}/repos/${process.env.REPOSITORY}/issues/124/comments`,
+            {
+              method: "POST",
+              headers: {
+                accept: "application/vnd.github+json",
+                authorization: `Bearer ${process.env.GH_TOKEN}`,
+                "content-type": "application/json",
+                "x-github-api-version": "2022-11-28",
+              },
+              body: JSON.stringify({ body }),
+            },
+          );
+          if (!response.ok) throw new Error(`Unable to report result: ${response.status}`);
+          NODE
