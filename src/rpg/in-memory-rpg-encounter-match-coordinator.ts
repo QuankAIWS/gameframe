@@ -61,6 +61,7 @@ type EncounterBinding = {
   gameId: "monster-master-duel";
   matchId: string;
   playerIds: readonly string[];
+  authorizedPlayerIds: readonly string[];
   primaryPlayerId: string;
   participants: EncounterParticipant[];
   objectives: EncounterObjective[];
@@ -71,9 +72,10 @@ type EncounterBinding = {
  * Node-local campaign-to-battle adapter.
  *
  * RPG GM Runtime still owns encounter intent and GameFrame still owns battle
- * legality. This adapter gives a supported Monster Master encounter one stable
- * match, exposes only participant-authorized play metadata, and commits the
- * terminal match result through the existing encounter authority.
+ * legality. This adapter gives a supported single-player Monster Master
+ * encounter one stable match, exposes only participant-authorized play
+ * metadata, and commits the terminal match result through the existing
+ * encounter authority.
  */
 export class InMemoryRpgEncounterMatchCoordinator {
   readonly #rpg: RpgEncounterService;
@@ -116,7 +118,7 @@ export class InMemoryRpgEncounterMatchCoordinator {
       return await this.#rpg.getEncounter(encounterId, principal);
     }
     const binding = this.#bindingsByEncounter.get(encounterId);
-    if (!binding || !binding.playerIds.includes(principal.playerId)) {
+    if (!binding || !binding.authorizedPlayerIds.includes(principal.playerId)) {
       throw failure(
         "forbidden",
         "The authenticated player is not a participant in this encounter.",
@@ -156,16 +158,14 @@ export class InMemoryRpgEncounterMatchCoordinator {
         .map((participant) => participant.controller.playerId)
         .filter((value): value is string => Boolean(value)),
     )];
-    if (playerIds.length < 1 || playerIds.length > 2) {
+    if (playerIds.length !== 1) {
       throw failure(
         "unsupported-encounter-roster",
-        "Monster Master RPG encounters currently require one or two player-controlled trainers.",
+        "The initial Monster Master RPG battle adapter requires exactly one player-controlled trainer. Cooperative encounters require a team-aware battle engine.",
         400,
       );
     }
-    const matchPlayers = playerIds.length === 1
-      ? [playerIds[0]!, THEO_PLAYER_ID]
-      : playerIds;
+    const matchPlayers = [playerIds[0]!, THEO_PLAYER_ID];
     return {
       encounterId: request.encounterId,
       campaignId: request.campaignId,
@@ -173,6 +173,7 @@ export class InMemoryRpgEncounterMatchCoordinator {
       gameId: "monster-master-duel",
       matchId: rpgEncounterMatchId(request.encounterId),
       playerIds: matchPlayers,
+      authorizedPlayerIds: playerIds,
       primaryPlayerId: playerIds[0]!,
       participants: request.participants,
       objectives: request.objectives,
