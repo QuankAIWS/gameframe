@@ -4,10 +4,12 @@ import {
   buildActionCommand,
   buildAttachRequest,
   isChoicePresentedEvent,
+  isEncounterPresentedEvent,
   mergeCampaignEvents,
   normalizeCampaignId,
   normalizeProjection,
   presentCampaignChoice,
+  presentCampaignEncounter,
   presentCampaignEvent,
 } from "./monster-master-rpg-model.js";
 
@@ -86,12 +88,25 @@ function updateCharacterCount() {
   elements.count.textContent = `${elements.action.value.length} / 2000`;
 }
 
+function activeEncounterEvent() {
+  const encounterIndex = state.events.findLastIndex(isEncounterPresentedEvent);
+  if (encounterIndex < 0) return null;
+  const resumed = state.events.slice(encounterIndex + 1).some((event) =>
+    event.kind === "scene.presented" && !isEncounterPresentedEvent(event)
+  );
+  return resumed ? null : state.events[encounterIndex];
+}
+
 function updateComposer() {
   const retrying = Boolean(state.pendingCommand);
+  const encounterActive = Boolean(activeEncounterEvent());
   elements.send.textContent = retrying ? "Retry exact action" : "Send to Game Master";
-  elements.send.disabled = false;
+  elements.send.disabled = encounterActive;
   elements.discardRetry.hidden = !retrying;
-  elements.action.disabled = false;
+  elements.action.disabled = encounterActive;
+  if (encounterActive && !retrying) {
+    elements.actionStatus.textContent = "The campaign is in Arena Battles. Resolve the encounter before sending another narrative action.";
+  }
 }
 
 async function requestJson(path, body) {
@@ -196,6 +211,7 @@ function renderCampaign() {
 }
 
 function renderEvent(event) {
+  if (isEncounterPresentedEvent(event)) return renderEncounterEvent(event);
   if (isChoicePresentedEvent(event)) return renderChoiceEvent(event);
   const presentation = presentCampaignEvent(event);
   const item = eventShell(presentation);
@@ -223,6 +239,36 @@ function eventShell(presentation) {
   ].filter(Boolean).join(" · ");
   header.append(heading, meta);
   item.append(header);
+  return item;
+}
+
+function renderEncounterEvent(event) {
+  const presentation = presentCampaignEvent(event);
+  const encounter = presentCampaignEncounter(event, state.campaignId);
+  const item = eventShell({
+    ...presentation,
+    tone: "consequence",
+  });
+  item.classList.add("mm-rpg-encounter-event");
+  item.dataset.encounterId = encounter.encounterId;
+
+  const narration = document.createElement("p");
+  narration.textContent = presentation.body;
+
+  const handoff = document.createElement("section");
+  handoff.className = "mm-rpg-encounter-handoff";
+  const label = document.createElement("small");
+  label.textContent = "TACTICAL ENCOUNTER";
+  const objective = document.createElement("strong");
+  objective.textContent = encounter.objective;
+  const reason = document.createElement("p");
+  reason.textContent = encounter.reason;
+  const enter = document.createElement("a");
+  enter.className = "mm-rpg-encounter-enter";
+  enter.href = encounter.href;
+  enter.textContent = "Enter Arena Battles";
+  handoff.append(label, objective, reason, enter);
+  item.append(narration, handoff);
   return item;
 }
 
@@ -274,6 +320,10 @@ function renderChoiceEvent(event) {
 
 function applySuggestedAction(choice, option) {
   if (!choice.authorized || option.disabled) return;
+  if (activeEncounterEvent()) {
+    showError("Resolve the active Arena Battles encounter before drafting another narrative action.");
+    return;
+  }
   if (state.pendingCommand) {
     showError("An earlier action has unconfirmed delivery. Retry or discard it before drafting a different action.");
     return;
@@ -308,6 +358,10 @@ function stopPolling() {
 
 async function submitAction() {
   if (!state.projection || !state.campaignId) return;
+  if (activeEncounterEvent()) {
+    showError("The tactical encounter must finish before another narrative action can be submitted.");
+    return;
+  }
   const retrying = Boolean(state.pendingCommand);
   const pending = retrying ? state.pendingCommand : buildActionCommand({
     campaignId: state.campaignId,
