@@ -159,7 +159,7 @@ test("binds one RPG encounter to one recoverable Monster Master match", async ()
   assert.deepEqual(retry.play, launched.play);
 });
 
-test("allows encounter participants to retrieve play metadata and rejects outsiders", async () => {
+test("allows campaign participants to retrieve play metadata and rejects non-participants", async () => {
   const coordinator = new InMemoryRpgEncounterMatchCoordinator({
     rpg: new FakeRpgService(),
     matches: new FakeMatchService(),
@@ -174,13 +174,37 @@ test("allows encounter participants to retrieve play metadata and rejects outsid
     { kind: "player", playerId: "player:ada" },
   );
   assert.equal(player.play.matchId, "rpg:encounter-one");
+  for (const playerId of ["player:outsider", "theo"]) {
+    await assert.rejects(
+      coordinator.getEncounterForPrincipal(
+        "encounter-one",
+        { kind: "player", playerId },
+      ),
+      (error) => error.code === "forbidden",
+    );
+  }
+});
+
+test("rejects cooperative rosters before launching or creating an adversarial duel", async () => {
+  const rpg = new FakeRpgService();
+  const matches = new FakeMatchService();
+  const coordinator = new InMemoryRpgEncounterMatchCoordinator({ rpg, matches });
+  const request = launchRequest();
+  request.participants.push({
+    participantId: "participant:player-two",
+    controller: { kind: "player", playerId: "player:grace" },
+    teamId: "team:party",
+  });
+
   await assert.rejects(
-    coordinator.getEncounterForPrincipal(
-      "encounter-one",
-      { kind: "player", playerId: "player:outsider" },
+    coordinator.launchEncounter(
+      request,
+      { kind: "runtime", serviceId: "rpg-gm-runtime" },
     ),
-    (error) => error.code === "forbidden",
+    (error) => error.code === "unsupported-encounter-roster",
   );
+  assert.equal(rpg.launchCalls, 0);
+  assert.equal(matches.created, null);
 });
 
 test("commits a complete structured RPG outcome with exact retry content", async () => {
