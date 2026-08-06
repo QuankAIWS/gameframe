@@ -123,7 +123,7 @@ class TerminalMatchService {
   }
 }
 
-test("Node HTTP boundary binds, authorizes, completes, and returns an RPG encounter", async (context) => {
+test("Node HTTP boundary binds, authorizes, completes, and resumes an RPG encounter", async (context) => {
   const previousCompatibility = process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY;
   process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY = "1";
   context.after(() => {
@@ -190,12 +190,12 @@ test("Node HTTP boundary binds, authorizes, completes, and returns an RPG encoun
   assert.equal(completed.status, 200);
   const completedEncounter = await completed.json();
   assert.equal(completedEncounter.state, "completed");
+  assert.equal(completedEncounter.resumeToken, launched.resumeToken);
   assert.equal(completedEncounter.terminalOutcome.result, "victory");
   assert.equal(completedEncounter.terminalOutcome.winnerTeamId, "team:party");
   assert.deepEqual(completedEncounter.terminalOutcome.objectiveResults, [{
     objectiveId: "objective:protect-travelers",
     status: "completed",
   }]);
-  assert.equal(completedEncounter.returnToCampaign.campaignId, campaignId);
-  assert.equal(completedEncounter.returnToCampaign.resumeToken, launched.resumeToken);
+  assert.equal(launched.play.href.endsWith(`&campaign=${campaignId}`), true);
 });
