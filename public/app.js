@@ -20,9 +20,10 @@ const playerXSeat = document.querySelector("#player-x-seat");
 const playerOSeat = document.querySelector("#player-o-seat");
 const playerXBadge = document.querySelector("#player-x-badge");
 const playerOBadge = document.querySelector("#player-o-badge");
-const challengeTheo = document.querySelector("#challenge-theo");
+const challengeBot = document.querySelector("#challenge-bot");
+const botChallengeLabel = document.querySelector("#bot-challenge-label");
 const createHumanMatch = document.querySelector("#create-human-match");
-const theoDescription = document.querySelector("#theo-description");
+const botDescription = document.querySelector("#bot-description");
 const humanDescription = document.querySelector("#human-description");
 const newMatch = document.querySelector("#new-match");
 const copyInvite = document.querySelector("#copy-invite");
@@ -34,7 +35,7 @@ const gameButtons = [...document.querySelectorAll("[data-game-id]")];
 
 const primaryPlayerStorageKey = "scribbles-gameframe.player-id";
 const recentMatchStorageKey = "scribbles-gameframe.recent-match";
-const theoPlayerId = "theo";
+const gameFrameBotPlayerId = "gameframe-bot";
 const ticTacToeGameId = "tic-tac-toe";
 const checkersGameId = "american-checkers";
 
@@ -44,7 +45,9 @@ const games = {
     shortTitle: "Tic-Tac-Toe",
     hero: "A small complete game proving authoritative turns, deterministic opponents, resumable browser play, and the same match contracts intended for larger GameFrame modules.",
     matchTitle: "Authoritative Tic-Tac-Toe board",
-    theo: "Play X against the perfect deterministic fallback opponent.",
+    botLabel: "Challenge CPU Opponent",
+    botName: "CPU Opponent",
+    bot: "Play X against the perfect deterministic GameFrameBot.",
     human: "Create a second seat and share a resumable development invite.",
     seats: ["First seat · X", "Second seat · O"],
     badges: ["X", "O"],
@@ -52,9 +55,11 @@ const games = {
   [checkersGameId]: {
     title: "American Checkers",
     shortTitle: "Checkers",
-    hero: "The first nontrivial GameFrame module: mandatory captures, complete multi-jump turns, kings, deterministic agents, replay, and the same authoritative contracts used by every game.",
+    hero: "The first nontrivial GameFrame module: mandatory captures, complete multi-jump turns, kings, deterministic bots, replay, and the same authoritative contracts used by every game.",
     matchTitle: "Authoritative Checkers board",
-    theo: "Play Black against Theo's deterministic Checkers opponent.",
+    botLabel: "Challenge CheckersBot",
+    botName: "CheckersBot",
+    bot: "Play Black against GameFrame's deterministic CheckersBot.",
     human: "Create Black and Red seats and share a resumable development invite.",
     seats: ["First seat · Black", "Second seat · Red"],
     badges: ["B", "R"],
@@ -99,8 +104,8 @@ function getOrCreatePrimaryPlayerId() {
   return created;
 }
 
-function displayName(id) {
-  if (id === theoPlayerId) return "Theo";
+function displayName(id, view = current) {
+  if (id === gameFrameBotPlayerId) return games[gameIdOf(view)].botName;
   if (id === playerId) return "You";
   return "Opponent";
 }
@@ -122,7 +127,7 @@ function statusText(view) {
   if (observation.status.winnerPlayerId) {
     return observation.status.winnerPlayerId === playerId
       ? "You won. Match complete."
-      : `${displayName(observation.status.winnerPlayerId)} won. Match complete.`;
+      : `${displayName(observation.status.winnerPlayerId, view)} won. Match complete.`;
   }
 
   const active = activePlayerId(view);
@@ -135,12 +140,12 @@ function statusText(view) {
     }
     return `Your turn — you are ${playerRole(view, view.playerIds.indexOf(playerId))}.`;
   }
-  return active ? `${displayName(active)} is up.` : "Match complete.";
+  return active ? `${displayName(active, view)} is up.` : "Match complete.";
 }
 
 function setBusy(busy) {
   requestPending = busy;
-  challengeTheo.disabled = busy;
+  challengeBot.disabled = busy;
   createHumanMatch.disabled = busy;
   newMatch.disabled = busy;
   for (const gameButton of gameButtons) gameButton.disabled = busy;
@@ -181,7 +186,7 @@ function clearRecentMatch() {
 }
 
 function buildInviteUrl(view) {
-  if (view.playerIds.includes(theoPlayerId) || view.playerIds[0] !== playerId) return null;
+  if (view.playerIds.includes(gameFrameBotPlayerId) || view.playerIds[0] !== playerId) return null;
   const invitedPlayer = view.playerIds[1];
   const url = new URL(window.location.href);
   url.searchParams.set("match", view.matchId);
@@ -194,7 +199,8 @@ function updateGamePresentation() {
   const game = games[selectedGameId];
   gameTitle.textContent = game.title;
   heroCopy.textContent = game.hero;
-  theoDescription.textContent = game.theo;
+  botChallengeLabel.textContent = game.botLabel;
+  botDescription.textContent = game.bot;
   humanDescription.textContent = game.human;
   document.title = `${game.title} · Scribbles GameFrame`;
   for (const button of gameButtons) {
@@ -218,8 +224,8 @@ function selectGame(gameId) {
 function renderPlayerCards(view) {
   const [firstId, secondId] = view.playerIds;
   const game = games[gameIdOf(view)];
-  playerXName.textContent = displayName(firstId);
-  playerOName.textContent = displayName(secondId);
+  playerXName.textContent = displayName(firstId, view);
+  playerOName.textContent = displayName(secondId, view);
   playerXSeat.textContent = game.seats[0];
   playerOSeat.textContent = game.seats[1];
   playerXBadge.textContent = game.badges[0];
@@ -704,7 +710,7 @@ function renderPlaceholderBoard() {
 for (const gameButton of gameButtons) {
   gameButton.addEventListener("click", () => selectGame(gameButton.dataset.gameId));
 }
-challengeTheo.addEventListener("click", () => createMatch(theoPlayerId));
+challengeBot.addEventListener("click", () => createMatch(gameFrameBotPlayerId));
 createHumanMatch.addEventListener("click", () => createMatch(`guest-${crypto.randomUUID()}`));
 newMatch.addEventListener("click", leaveMatch);
 copyInvite.addEventListener("click", copyInviteLink);
