@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import {
   InMemoryRpgEncounterMatchCoordinator,
   rpgEncounterMatchId,
@@ -51,7 +52,7 @@ function activeView() {
   return {
     gameId: "monster-master-duel",
     matchId: rpgEncounterMatchId("encounter-one"),
-    playerIds: ["player:ada", "theo"],
+    playerIds: ["player:ada", GAMEFRAME_BOT_PLAYER_ID],
     revision: 3,
     eventCount: 3,
     observation: {
@@ -131,7 +132,7 @@ class FakeMatchService {
   }
 }
 
-test("binds one RPG encounter to one recoverable Monster Master match", async () => {
+test("binds one RPG encounter to one recoverable Monster Master BattleBot match", async () => {
   const rpg = new FakeRpgService();
   const matches = new FakeMatchService();
   const coordinator = new InMemoryRpgEncounterMatchCoordinator({ rpg, matches });
@@ -142,7 +143,7 @@ test("binds one RPG encounter to one recoverable Monster Master match", async ()
   );
   assert.deepEqual(matches.created, {
     gameId: "monster-master-duel",
-    playerIds: ["player:ada", "theo"],
+    playerIds: ["player:ada", GAMEFRAME_BOT_PLAYER_ID],
     matchId: "rpg:encounter-one",
   });
   assert.deepEqual(launched.play, {
@@ -174,7 +175,7 @@ test("allows campaign participants to retrieve play metadata and rejects non-par
     { kind: "player", playerId: "player:ada" },
   );
   assert.equal(player.play.matchId, "rpg:encounter-one");
-  for (const playerId of ["player:outsider", "theo"]) {
+  for (const playerId of ["player:outsider", GAMEFRAME_BOT_PLAYER_ID]) {
     await assert.rejects(
       coordinator.getEncounterForPrincipal(
         "encounter-one",
