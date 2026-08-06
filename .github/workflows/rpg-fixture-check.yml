@@ -16,6 +16,7 @@ on:
       - "planning/rpg-signed-edge-authentication.md"
       - "planning/rpg-single-vm-deployment.md"
       - "public/game-hub.js"
+      - "public/gameframe-auth.js"
       - "public/gameframe-nav.js"
       - "public/monster-master-rpg.html"
       - "public/monster-master-rpg.css"
@@ -88,6 +89,7 @@ jobs:
           node --experimental-strip-types --check src/server/run-durable-rpg-service.ts
           && node --experimental-strip-types --check src/server/http-server.ts
           && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
+          && node --check public/gameframe-auth.js
           && node --check public/monster-master-rpg-model.js
           && node --check public/monster-master-rpg-app.js
           && node --check public/monster-master-rpg-return.js
