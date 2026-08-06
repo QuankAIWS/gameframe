@@ -124,6 +124,44 @@ export function isChoicePresentedEvent(eventValue) {
   }
 }
 
+export function isEncounterPresentedEvent(eventValue) {
+  try {
+    const event = normalizeEvent(eventValue);
+    return event.kind === "scene.presented"
+      && optionalRecord(event.payload.mechanic)?.kind === "encounter";
+  } catch {
+    return false;
+  }
+}
+
+export function presentCampaignEncounter(eventValue, campaignIdValue) {
+  const event = normalizeEvent(eventValue);
+  if (event.kind !== "scene.presented") {
+    throw new TypeError("Only scene.presented events can contain an encounter handoff.");
+  }
+  const mechanic = optionalRecord(event.payload.mechanic);
+  if (mechanic?.kind !== "encounter") {
+    throw new TypeError("The scene does not contain an encounter handoff.");
+  }
+  const encounterId = boundedIdentifier(mechanic.encounterId, "encounterId");
+  const campaignId = normalizeCampaignId(campaignIdValue);
+  const state = readableText(mechanic.state, 40) ?? "preparing";
+  const reason = readableText(mechanic.reason, 1_000)
+    ?? "The situation has moved into a tactical encounter.";
+  const objective = readableText(mechanic.objective, 1_000)
+    ?? "Resolve the encounter and return to the campaign.";
+  const matchId = `rpg:${encounterId}`;
+  return {
+    encounterId,
+    campaignId,
+    matchId,
+    state,
+    reason,
+    objective,
+    href: `/monster-master.html?match=${encodeURIComponent(matchId)}&campaign=${encodeURIComponent(campaignId)}`,
+  };
+}
+
 export function presentCampaignChoice(eventValue, playerIdValue, allEventsValue = []) {
   const event = normalizeEvent(eventValue);
   if (event.kind !== "choice.presented") {
@@ -256,6 +294,12 @@ function normalizeEvent(value) {
     ? value.payload
     : {};
   return { ...value, eventId, kind, payload };
+}
+
+function optionalRecord(value) {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value
+    : null;
 }
 
 function nonNegativeInteger(value, label) {
