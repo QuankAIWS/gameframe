@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import { createGameFrameServer } from "./http-server.ts";
 
 function authenticatedFetch(url: string, playerId: string, init: RequestInit = {}) {
@@ -31,14 +32,14 @@ test("HTTP health advertises every supported deterministic game", async (context
   ]);
 });
 
-test("HTTP boundary creates and advances human-versus-Theo Checkers", async (context) => {
+test("HTTP boundary creates and advances human-versus-CheckersBot", async (context) => {
   const base = await startServer(context);
   const createdResponse = await authenticatedFetch(`${base}/api/matches`, "human", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       gameId: "american-checkers",
-      playerIds: ["human", "theo"],
+      playerIds: ["human", GAMEFRAME_BOT_PLAYER_ID],
     }),
   });
   assert.equal(createdResponse.status, 201);
@@ -105,14 +106,14 @@ test("HTTP boundary supports separate human Checkers seats", async (context) => 
   assert.ok(bobView.observation.legalActions.length > 0);
 });
 
-test("HTTP boundary runs complete multi-action Theo combat activations", async (context) => {
+test("HTTP boundary runs complete multi-action ArenaBot activations", async (context) => {
   const base = await startServer(context);
   const createdResponse = await authenticatedFetch(`${base}/api/matches`, "human", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       gameId: "tactical-combat-canary",
-      playerIds: ["human", "theo"],
+      playerIds: ["human", GAMEFRAME_BOT_PLAYER_ID],
     }),
   });
   assert.equal(createdResponse.status, 201);
