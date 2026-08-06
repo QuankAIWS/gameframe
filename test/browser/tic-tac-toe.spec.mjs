@@ -10,12 +10,12 @@ async function waitForEnabledCell(page, cell) {
   return target;
 }
 
-test("completes and resumes a deterministic match against Theo", async ({ page }) => {
+test("completes and resumes a deterministic match against CPU Opponent", async ({ page }) => {
   const player = uniquePlayer("browser-test");
   await page.goto(`/?player=${encodeURIComponent(player)}`);
 
   await expect(page.getByRole("heading", { name: "Tic-Tac-Toe" })).toBeVisible();
-  await page.getByRole("button", { name: "Challenge Theo" }).click();
+  await page.getByRole("button", { name: "Challenge CPU Opponent" }).click();
   await expect(page.locator("#match-panel")).toBeVisible();
   await expect(page.locator("#revision")).toContainText("Revision 0");
 
@@ -87,7 +87,7 @@ test("invalid resume links fail visibly and return to setup", async ({ page }) =
 test("mobile layout remains usable without horizontal overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/?player=${encodeURIComponent(uniquePlayer("mobile"))}`);
-  await page.getByRole("button", { name: "Challenge Theo" }).click();
+  await page.getByRole("button", { name: "Challenge CPU Opponent" }).click();
 
   await expect(page.locator("#board")).toBeVisible();
   await expect(page.locator(".player-card")).toHaveCount(2);
