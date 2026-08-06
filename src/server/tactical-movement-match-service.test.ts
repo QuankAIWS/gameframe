@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import { MockDecisionProvider } from "../agents/mock-decision-provider.ts";
 import { ProviderBackedAgentPlayer } from "../agents/provider-backed-agent.ts";
 import {
@@ -12,14 +13,14 @@ import { InMemoryMatchSnapshotStore } from "../platform/match-store.ts";
 import { TacticalMovementMatchService } from "./tactical-movement-match-service.ts";
 
 function service(options: {
-  theo?: ProviderBackedAgentPlayer<TacticalMovementAction, TacticalMovementObservation>;
+  bot?: ProviderBackedAgentPlayer<TacticalMovementAction, TacticalMovementObservation>;
   ids?: string[];
 } = {}) {
   const ids = [...(options.ids ?? ["generated-1", "generated-2", "generated-3"])];
   return new TacticalMovementMatchService({
     store: new InMemoryMatchSnapshotStore<TacticalMovementState, TacticalMovementAction>(),
     idGenerator: () => ids.shift() ?? crypto.randomUUID(),
-    ...(options.theo ? { theo: options.theo } : {}),
+    ...(options.bot ? { bot: options.bot } : {}),
   });
 }
 
@@ -47,9 +48,12 @@ test("authoritative tactical movement service advances and restores a two-human 
   assert.deepEqual(await matches.replay(created.matchId), (await matches.snapshot(created.matchId)).state);
 });
 
-test("deterministic Theo answers one tactical movement action", async () => {
-  const matches = service({ ids: ["theo-tactical-id"] });
-  const created = await matches.createMatch(["human", "theo"], "tactical-theo");
+test("deterministic ArenaBot answers one tactical movement action", async () => {
+  const matches = service({ ids: ["arena-bot-tactical-id"] });
+  const created = await matches.createMatch(
+    ["human", GAMEFRAME_BOT_PLAYER_ID],
+    "tactical-bot",
+  );
   const updated = await matches.submitAction({
     matchId: created.matchId,
     playerId: "human",
@@ -61,23 +65,26 @@ test("deterministic Theo answers one tactical movement action", async () => {
   assert.equal(updated.eventCount, 2);
   assert.equal(updated.observation.activePlayerId, "human");
   const snapshot = await matches.snapshot(created.matchId);
-  assert.equal(snapshot.events[1].playerId, "theo");
-  assert.equal(snapshot.events[1].actionId, "theo:theo-tactical-id");
+  assert.equal(snapshot.events[1].playerId, GAMEFRAME_BOT_PLAYER_ID);
+  assert.equal(snapshot.events[1].actionId, `${GAMEFRAME_BOT_PLAYER_ID}:arena-bot-tactical-id`);
 });
 
-test("provider-backed Theo receives tactical map, path, and revision context", async () => {
+test("provider-backed GameFrameBot receives tactical map, path, and revision context", async () => {
   const provider = new MockDecisionProvider<TacticalMovementAction, TacticalMovementObservation>({
     mode: "deterministic",
   });
-  const theo = new ProviderBackedAgentPlayer<TacticalMovementAction, TacticalMovementObservation>({
-    agentId: "theo",
+  const bot = new ProviderBackedAgentPlayer<TacticalMovementAction, TacticalMovementObservation>({
+    agentId: GAMEFRAME_BOT_PLAYER_ID,
     gameId: tacticalMovementDefinition.gameId,
     provider,
     isSameAction: tacticalMovementDefinition.isSameAction.bind(tacticalMovementDefinition),
     requestIdGenerator: () => "tactical-request-1",
   });
-  const matches = service({ theo });
-  const created = await matches.createMatch(["human", "theo"], "tactical-provider");
+  const matches = service({ bot });
+  const created = await matches.createMatch(
+    ["human", GAMEFRAME_BOT_PLAYER_ID],
+    "tactical-provider",
+  );
   const updated = await matches.submitAction({
     matchId: created.matchId,
     playerId: "human",
@@ -90,7 +97,7 @@ test("provider-backed Theo receives tactical map, path, and revision context", a
   assert.equal(provider.requests.length, 1);
   assert.equal(provider.requests[0].gameId, "tactical-movement-canary");
   assert.equal(provider.requests[0].matchId, "tactical-provider");
-  assert.equal(provider.requests[0].playerId, "theo");
+  assert.equal(provider.requests[0].playerId, GAMEFRAME_BOT_PLAYER_ID);
   assert.equal(provider.requests[0].expectedRevision, 1);
   assert.equal(provider.requests[0].observation.board.map.width, 24);
   assert.ok(provider.requests[0].legalActions.some((action) => action.type === "move"));
