@@ -98,11 +98,12 @@ export class InMemoryRpgEncounterMatchCoordinator {
 
   async launchEncounter(requestValue: unknown, principal: RpgPrincipal): Promise<unknown> {
     const request = normalizeLaunch(requestValue);
+    const binding = SUPPORTED_RPG_RULESETS.has(request.rulesetId)
+      ? this.#bindingsByEncounter.get(request.encounterId) ?? this.#binding(request)
+      : undefined;
     const launched = await this.#rpg.launchEncounter(requestValue, principal);
-    if (!SUPPORTED_RPG_RULESETS.has(request.rulesetId)) return launched;
+    if (!binding) return launched;
 
-    const binding = this.#bindingsByEncounter.get(request.encounterId)
-      ?? this.#binding(request);
     await this.#ensureMatch(binding);
     this.#bindingsByEncounter.set(binding.encounterId, binding);
     this.#bindingsByMatch.set(binding.matchId, binding);
