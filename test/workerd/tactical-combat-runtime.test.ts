@@ -1,6 +1,7 @@
 import { env, exports as workerExports } from "cloudflare:workers";
 import { evictDurableObject } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../../src/agents/gameframe-bot.ts";
 import { SignedSessionCodec } from "../../src/auth/signed-session.ts";
 import type {
   TacticalCombatAction,
@@ -107,8 +108,8 @@ describe("tactical combat in the real workerd runtime", () => {
     expect(betaView.observation.legalActions.length).toBeGreaterThan(0);
   });
 
-  it("commits Theo's complete multi-action activation before persistence", async () => {
-    const created = await createCombatMatch(["human", "theo"]);
+  it("commits ArenaBot's complete multi-action activation before persistence", async () => {
+    const created = await createCombatMatch(["human", GAMEFRAME_BOT_PLAYER_ID]);
     const endActivation = actionOfType(created, "end-activation");
     const response = await workerFetch(
       `/api/matches/${encodeURIComponent(created.matchId)}/actions`,
