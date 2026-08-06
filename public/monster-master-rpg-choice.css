@@ -71,6 +71,62 @@
   line-height: 1.45;
 }
 
+.mm-rpg-encounter-event {
+  border-color: rgba(244, 197, 91, .4);
+  background:
+    radial-gradient(circle at 88% 18%, rgba(244, 197, 91, .12), transparent 34%),
+    linear-gradient(145deg, rgba(38, 30, 14, .96), rgba(12, 13, 9, .98));
+}
+
+.mm-rpg-encounter-handoff {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 15px;
+  border: 1px solid rgba(244, 197, 91, .25);
+  border-radius: 12px;
+  background: rgba(9, 10, 6, .72);
+}
+
+.mm-rpg-encounter-handoff small {
+  color: #f4c55b;
+  font-size: .65rem;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.mm-rpg-encounter-handoff strong {
+  color: #fff2c7;
+  line-height: 1.4;
+}
+
+.mm-rpg-encounter-handoff p {
+  color: #c9c2a9;
+}
+
+.mm-rpg-encounter-enter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: max-content;
+  min-height: 44px;
+  margin-top: 5px;
+  padding: 0 17px;
+  border: 1px solid rgba(244, 197, 91, .72);
+  border-radius: 11px;
+  background: linear-gradient(180deg, #f8d77d, #d8a934);
+  color: #1c1507;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.mm-rpg-encounter-enter:hover,
+.mm-rpg-encounter-enter:focus-visible {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  outline: none;
+}
+
 @media (max-width: 640px) {
   .mm-rpg-choice-options {
     grid-template-columns: 1fr;
@@ -78,5 +134,9 @@
 
   .mm-rpg-choice-option {
     min-height: 52px;
+  }
+
+  .mm-rpg-encounter-enter {
+    width: 100%;
   }
 }
