@@ -30,7 +30,7 @@ async function deploySelectedUnit(page) {
 async function enterCombat(page, player, viewport) {
   await page.setViewportSize(viewport);
   await page.goto(`/monster-master.html?player=${encodeURIComponent(player)}`);
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await waitForPixi(page);
   for (let deployment = 1; deployment <= 3; deployment += 1) {
     await deploySelectedUnit(page);
