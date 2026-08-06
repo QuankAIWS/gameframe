@@ -26,7 +26,7 @@ jobs:
     if: github.event_name != 'pull_request_target' || github.event.pull_request.number == 124
     name: Validate RPG encounter battle loop
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     env:
       GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY: "1"
 
@@ -55,6 +55,7 @@ jobs:
         run: >-
           node --experimental-strip-types --check src/server/http-server.ts
           && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
+          && node --check public/gameframe-auth.js
           && node --check public/monster-master-rpg-model.js
           && node --check public/monster-master-rpg-app.js
           && node --check public/monster-master-rpg-return.js
@@ -69,6 +70,12 @@ jobs:
           src/server/rpg-http-server.test.ts
           src/server/rpg-encounter-match-http.test.ts
           src/server/rpg-live-protocol-v2-http.test.ts
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate RPG battle browser round trip
+        run: npx playwright test test/browser/monster-master-rpg-encounter.spec.mjs --config playwright.config.mjs
 
       - name: Report result to PR 124
         if: always()
