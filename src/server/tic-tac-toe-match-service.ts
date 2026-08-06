@@ -12,6 +12,8 @@ import {
 import { MatchSession, type MatchSnapshot } from "../platform/match-session.ts";
 import type { MatchSnapshotStore } from "../platform/match-store.ts";
 
+export const GAMEFRAME_BOT_PLAYER_ID = "gameframe-bot";
+
 export interface PublicMatchView {
   matchId: string;
   playerIds: readonly string[];
@@ -23,18 +25,18 @@ export interface PublicMatchView {
 export interface TicTacToeMatchServiceOptions {
   store: MatchSnapshotStore<TicTacToeState, TicTacToeAction>;
   idGenerator?: () => string;
-  theo?: AgentPlayer<TicTacToeAction, TicTacToeObservation>;
+  bot?: AgentPlayer<TicTacToeAction, TicTacToeObservation>;
 }
 
 export class TicTacToeMatchService {
   readonly #store: MatchSnapshotStore<TicTacToeState, TicTacToeAction>;
   readonly #idGenerator: () => string;
-  readonly #theo: AgentPlayer<TicTacToeAction, TicTacToeObservation>;
+  readonly #bot: AgentPlayer<TicTacToeAction, TicTacToeObservation>;
 
   constructor(options: TicTacToeMatchServiceOptions) {
     this.#store = options.store;
     this.#idGenerator = options.idGenerator ?? (() => crypto.randomUUID());
-    this.#theo = options.theo ?? new PerfectTicTacToePlayer("theo");
+    this.#bot = options.bot ?? new PerfectTicTacToePlayer(GAMEFRAME_BOT_PLAYER_ID);
   }
 
   async createMatch(playerIds: readonly string[], requestedMatchId?: string): Promise<PublicMatchView> {
@@ -61,9 +63,9 @@ export class TicTacToeMatchService {
       definition: ticTacToeDefinition,
       playerIds: normalizedPlayers,
     });
-    await this.#runTheoTurnIfNeeded(session);
+    await this.#runBotTurnIfNeeded(session);
     await this.#store.save(session.snapshot());
-    const requestingPlayerId = normalizedPlayers.find((playerId) => playerId !== this.#theo.agentId)
+    const requestingPlayerId = normalizedPlayers.find((playerId) => playerId !== this.#bot.agentId)
       ?? normalizedPlayers[0];
     return this.#view(session, requestingPlayerId);
   }
@@ -93,7 +95,7 @@ export class TicTacToeMatchService {
       throw error;
     }
 
-    await this.#runTheoTurnIfNeeded(session);
+    await this.#runBotTurnIfNeeded(session);
     await this.#store.save(session.snapshot());
     return this.#view(session, input.playerId);
   }
@@ -108,40 +110,40 @@ export class TicTacToeMatchService {
     return (await this.#loadSession(matchId)).replay();
   }
 
-  async #runTheoTurnIfNeeded(
+  async #runBotTurnIfNeeded(
     session: MatchSession<TicTacToeState, TicTacToeAction, TicTacToeObservation>,
   ): Promise<void> {
     const snapshot = session.snapshot();
-    if (!snapshot.playerIds.includes(this.#theo.agentId)) return;
+    if (!snapshot.playerIds.includes(this.#bot.agentId)) return;
 
-    const theoObservation = session.observe(this.#theo.agentId);
+    const botObservation = session.observe(this.#bot.agentId);
     if (
-      theoObservation.status.lifecycle !== "active" ||
-      theoObservation.nextPlayerId !== this.#theo.agentId
+      botObservation.status.lifecycle !== "active" ||
+      botObservation.nextPlayerId !== this.#bot.agentId
     ) {
       return;
     }
 
     const decision = await chooseAgentDecision(
-      this.#theo,
+      this.#bot,
       {
         gameId: ticTacToeDefinition.gameId,
         matchId: session.matchId,
-        playerId: this.#theo.agentId,
+        playerId: this.#bot.agentId,
         revision: session.revision,
-        observation: theoObservation,
-        legalActions: theoObservation.legalActions,
+        observation: botObservation,
+        legalActions: botObservation.legalActions,
       },
-      `${this.#theo.agentId}:${this.#idGenerator()}`,
+      `${this.#bot.agentId}:${this.#idGenerator()}`,
     );
-    const theoResult = session.submit({
+    const botResult = session.submit({
       actionId: decision.actionId,
-      playerId: this.#theo.agentId,
+      playerId: this.#bot.agentId,
       expectedRevision: session.revision,
       action: decision.action,
     });
-    if (!theoResult.accepted) {
-      throw new Error(`Theo decision was rejected: ${theoResult.message}`);
+    if (!botResult.accepted) {
+      throw new Error(`GameFrameBot decision was rejected: ${botResult.message}`);
     }
   }
 
