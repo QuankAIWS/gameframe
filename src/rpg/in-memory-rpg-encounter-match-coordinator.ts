@@ -1,8 +1,8 @@
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import type { RpgPrincipal } from "./in-memory-rpg-service.ts";
 
 const RPG_RUNTIME_SERVICE_ID = "rpg-gm-runtime";
 const ENCOUNTER_ENGINE_SERVICE_ID = "gameframe-encounter-engine";
-const THEO_PLAYER_ID = "theo";
 const SUPPORTED_RPG_RULESETS = new Set([
   "monster-master-rpg",
   "monster-master-duel",
@@ -71,11 +71,12 @@ type EncounterBinding = {
 /**
  * Node-local campaign-to-battle adapter.
  *
- * RPG GM Runtime still owns encounter intent and GameFrame still owns battle
- * legality. This adapter gives a supported single-player Monster Master
+ * RPG GM Runtime owns encounter intent, GameFrame owns battle legality, and the
+ * built-in Monster Master BattleBot supplies the temporary deterministic enemy
+ * seat. The BattleBot is a GameFrame test participant, not Theo, Scribbles
+ * Runtime, or the Dungeon Master. This adapter gives a supported single-player
  * encounter one stable match, exposes only participant-authorized play
- * metadata, and commits the terminal match result through the existing
- * encounter authority.
+ * metadata, and commits the terminal match result through encounter authority.
  */
 export class InMemoryRpgEncounterMatchCoordinator {
   readonly #rpg: RpgEncounterService;
@@ -166,7 +167,7 @@ export class InMemoryRpgEncounterMatchCoordinator {
         400,
       );
     }
-    const matchPlayers = [playerIds[0]!, THEO_PLAYER_ID];
+    const matchPlayers = [playerIds[0]!, GAMEFRAME_BOT_PLAYER_ID];
     return {
       encounterId: request.encounterId,
       campaignId: request.campaignId,
