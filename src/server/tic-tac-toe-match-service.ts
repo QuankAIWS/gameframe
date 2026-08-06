@@ -2,6 +2,7 @@ import {
   chooseAgentDecision,
   type AgentPlayer,
 } from "../agents/agent-player.ts";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import {
   PerfectTicTacToePlayer,
   ticTacToeDefinition,
@@ -11,8 +12,6 @@ import {
 } from "../games/tic-tac-toe/index.ts";
 import { MatchSession, type MatchSnapshot } from "../platform/match-session.ts";
 import type { MatchSnapshotStore } from "../platform/match-store.ts";
-
-export const GAMEFRAME_BOT_PLAYER_ID = "gameframe-bot";
 
 export interface PublicMatchView {
   matchId: string;
