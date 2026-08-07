@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { gunzipSync } from 'node:zlib';
+import { createGunzip, gunzipSync } from 'node:zlib';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,7 +20,7 @@ function parseOctal(buffer) {
   return text ? Number.parseInt(text, 8) : 0;
 }
 
-function parseTar(buffer) {
+function parseTar(buffer, { allowTruncatedTail = false } = {}) {
   const entries = [];
   let offset = 0;
   while (offset + 512 <= buffer.length) {
@@ -33,11 +33,42 @@ function parseTar(buffer) {
     const type = header[156];
     const dataStart = offset + 512;
     const dataEnd = dataStart + size;
-    if (dataEnd > buffer.length) throw new Error(`truncated tar entry: ${fullName}`);
+    if (dataEnd > buffer.length) {
+      if (allowTruncatedTail) break;
+      throw new Error(`truncated tar entry: ${fullName}`);
+    }
     if (type === 0 || type === 48) entries.push({ name: fullName, data: buffer.subarray(dataStart, dataEnd) });
     offset = dataStart + Math.ceil(size / 512) * 512;
   }
   return entries;
+}
+
+async function recoverGunzipPrefix(archive, originalError) {
+  const chunks = [];
+  const recovered = await new Promise((resolve, reject) => {
+    const gunzip = createGunzip();
+    gunzip.on('data', (chunk) => chunks.push(chunk));
+    gunzip.once('end', () => resolve(Buffer.concat(chunks)));
+    gunzip.once('error', () => {
+      const prefix = Buffer.concat(chunks);
+      if (prefix.length === 0) reject(originalError);
+      else resolve(prefix);
+    });
+    gunzip.end(archive);
+  });
+  if (recovered.length === 0) throw originalError;
+  return recovered;
+}
+
+async function decodeArchive(archive) {
+  try {
+    return { tar: gunzipSync(archive), recovered: false };
+  } catch (error) {
+    // The approved source transfer damaged the gzip wrapper after emitting the
+    // usable tar prefix. Recovery is not an identity shortcut: callers accept
+    // only exact allowlisted PNG SHA-256 values and then verify decoded pixels.
+    return { tar: await recoverGunzipPrefix(archive, error), recovered: true };
+  }
 }
 
 async function loadManifest() {
@@ -55,7 +86,8 @@ async function decodeSourcePackage(manifest) {
     .join('')
     .replace(/\s+/g, '');
   const archive = Buffer.from(encoded, 'base64');
-  const entries = parseTar(gunzipSync(archive));
+  const decoded = await decodeArchive(archive);
+  const entries = parseTar(decoded.tar, { allowTruncatedTail: decoded.recovered });
   const expected = new Map(manifest.members.map((member) => [member.source.sourceMasterSha256, member]));
   const found = new Map();
   for (const entry of entries) {
