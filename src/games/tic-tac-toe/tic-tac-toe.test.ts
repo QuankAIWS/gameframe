@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../../agents/gameframe-bot.ts";
 import { PerfectTicTacToePlayer, ticTacToeDefinition, type TicTacToeState } from "./index.ts";
 
 test("tic-tac-toe identifies a row win", () => {
@@ -22,8 +23,8 @@ test("legal actions expose only empty cells to the active player", () => {
   assert.equal(ticTacToeDefinition.listLegalActions(state, "b").some((action) => action.cell === 4), false);
 });
 
-test("perfect Theo cannot lose as O against any sequence of legal human moves", async () => {
-  const theo = new PerfectTicTacToePlayer("theo");
+test("perfect GameFrameBot cannot lose as O against any sequence of legal human moves", async () => {
+  const bot = new PerfectTicTacToePlayer(GAMEFRAME_BOT_PLAYER_ID);
 
   async function explore(state: TicTacToeState): Promise<void> {
     const status = ticTacToeDefinition.getStatus(state);
@@ -31,10 +32,10 @@ test("perfect Theo cannot lose as O against any sequence of legal human moves", 
     if (status.lifecycle === "completed") return;
 
     const active = ticTacToeDefinition.getActivePlayerId(state);
-    if (active === "theo") {
-      const observation = ticTacToeDefinition.getObservation(state, "theo");
-      const action = await theo.chooseAction({ observation, legalActions: observation.legalActions });
-      await explore(ticTacToeDefinition.applyAction(state, "theo", action).state);
+    if (active === GAMEFRAME_BOT_PLAYER_ID) {
+      const observation = ticTacToeDefinition.getObservation(state, GAMEFRAME_BOT_PLAYER_ID);
+      const action = await bot.chooseAction({ observation, legalActions: observation.legalActions });
+      await explore(ticTacToeDefinition.applyAction(state, GAMEFRAME_BOT_PLAYER_ID, action).state);
       return;
     }
 
@@ -43,5 +44,5 @@ test("perfect Theo cannot lose as O against any sequence of legal human moves", 
     }
   }
 
-  await explore(ticTacToeDefinition.createInitialState(["human", "theo"]));
+  await explore(ticTacToeDefinition.createInitialState(["human", GAMEFRAME_BOT_PLAYER_ID]));
 });
