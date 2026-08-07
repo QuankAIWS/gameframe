@@ -29,7 +29,7 @@ function bootstrap(): DurableCampaignBootstrap {
     status: "active",
     state: {
       gameframeCoordinationRevision: 3,
-      presentationSequence: 3,
+      presentationSequence: 0,
       linkedNarrativeRevision: 0,
     },
     memberships: [
