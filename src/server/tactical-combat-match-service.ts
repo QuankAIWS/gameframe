@@ -2,6 +2,7 @@ import {
   chooseAgentDecision,
   type AgentPlayer,
 } from "../agents/agent-player.ts";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import {
   DeterministicTacticalCombatPlayer,
   tacticalCombatDefinition,
@@ -23,18 +24,18 @@ export interface PublicTacticalCombatMatchView {
 export interface TacticalCombatMatchServiceOptions {
   store: MatchSnapshotStore<TacticalCombatState, TacticalCombatAction>;
   idGenerator?: () => string;
-  theo?: AgentPlayer<TacticalCombatAction, TacticalCombatObservation>;
+  bot?: AgentPlayer<TacticalCombatAction, TacticalCombatObservation>;
 }
 
 export class TacticalCombatMatchService {
   readonly #store: MatchSnapshotStore<TacticalCombatState, TacticalCombatAction>;
   readonly #idGenerator: () => string;
-  readonly #theo: AgentPlayer<TacticalCombatAction, TacticalCombatObservation>;
+  readonly #bot: AgentPlayer<TacticalCombatAction, TacticalCombatObservation>;
 
   constructor(options: TacticalCombatMatchServiceOptions) {
     this.#store = options.store;
     this.#idGenerator = options.idGenerator ?? (() => crypto.randomUUID());
-    this.#theo = options.theo ?? new DeterministicTacticalCombatPlayer("theo");
+    this.#bot = options.bot ?? new DeterministicTacticalCombatPlayer(GAMEFRAME_BOT_PLAYER_ID);
   }
 
   async createMatch(
@@ -64,9 +65,9 @@ export class TacticalCombatMatchService {
       definition: tacticalCombatDefinition,
       playerIds: normalizedPlayers,
     });
-    await this.#runTheoActivationIfNeeded(session);
+    await this.#runBotActivationIfNeeded(session);
     await this.#store.save(session.snapshot());
-    const requestingPlayerId = normalizedPlayers.find((playerId) => playerId !== this.#theo.agentId)
+    const requestingPlayerId = normalizedPlayers.find((playerId) => playerId !== this.#bot.agentId)
       ?? normalizedPlayers[0];
     return this.#view(session, requestingPlayerId);
   }
@@ -96,7 +97,7 @@ export class TacticalCombatMatchService {
       throw error;
     }
 
-    await this.#runTheoActivationIfNeeded(session);
+    await this.#runBotActivationIfNeeded(session);
     await this.#store.save(session.snapshot());
     return this.#view(session, input.playerId);
   }
@@ -113,45 +114,45 @@ export class TacticalCombatMatchService {
     return (await this.#loadSession(matchId)).replay();
   }
 
-  async #runTheoActivationIfNeeded(
+  async #runBotActivationIfNeeded(
     session: MatchSession<TacticalCombatState, TacticalCombatAction, TacticalCombatObservation>,
   ): Promise<void> {
     const snapshot = session.snapshot();
-    if (!snapshot.playerIds.includes(this.#theo.agentId)) return;
+    if (!snapshot.playerIds.includes(this.#bot.agentId)) return;
 
     for (let actionCount = 0; actionCount < 8; actionCount += 1) {
-      const observation = session.observe(this.#theo.agentId);
+      const observation = session.observe(this.#bot.agentId);
       if (
         observation.status.lifecycle !== "active"
-        || observation.activePlayerId !== this.#theo.agentId
+        || observation.activePlayerId !== this.#bot.agentId
       ) {
         return;
       }
 
       const decision = await chooseAgentDecision(
-        this.#theo,
+        this.#bot,
         {
           gameId: tacticalCombatDefinition.gameId,
           matchId: session.matchId,
-          playerId: this.#theo.agentId,
+          playerId: this.#bot.agentId,
           revision: session.revision,
           observation,
           legalActions: observation.legalActions,
         },
-        `${this.#theo.agentId}:${this.#idGenerator()}`,
+        `${this.#bot.agentId}:${this.#idGenerator()}`,
       );
       const result = session.submit({
         actionId: decision.actionId,
-        playerId: this.#theo.agentId,
+        playerId: this.#bot.agentId,
         expectedRevision: session.revision,
         action: decision.action,
       });
       if (!result.accepted) {
-        throw new Error(`Theo tactical combat decision was rejected: ${result.message}`);
+        throw new Error(`ArenaBot decision was rejected: ${result.message}`);
       }
     }
 
-    throw new Error("Theo tactical combat activation exceeded the bounded action limit.");
+    throw new Error("ArenaBot activation exceeded the bounded action limit.");
   }
 
   async #loadSession(

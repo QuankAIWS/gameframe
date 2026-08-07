@@ -1,7 +1,7 @@
 import { gameFrameFetch } from "./gameframe-auth.js";
 
 const gameId = "monster-master-duel";
-const theoPlayerId = "theo";
+const gameFrameBotPlayerId = "gameframe-bot";
 const recentMatchStorageKey = "scribbles-gameframe.recent-monster-master-match";
 const monsterMasterViewEvent = "gameframe:monster-master-pixi-view";
 const identity = window.gameFrameIdentity;
@@ -9,7 +9,7 @@ const playerId = identity.playerId;
 
 const lobby = document.querySelector("#monster-master-lobby");
 const lobbyMessage = document.querySelector("#monster-master-lobby-message");
-const challengeTheo = document.querySelector("#monster-master-theo");
+const challengeBot = document.querySelector("#monster-master-bot");
 const createHumanMatch = document.querySelector("#monster-master-human");
 const matchPanel = document.querySelector("#monster-master-match");
 const status = document.querySelector("#monster-master-status");
@@ -76,7 +76,7 @@ let viewport = {
 };
 
 function displayName(id) {
-  if (id === theoPlayerId) return "Theo";
+  if (id === gameFrameBotPlayerId) return "Monster Master BattleBot";
   if (id === playerId) return "You";
   return "Opponent";
 }
@@ -645,7 +645,7 @@ function renderPlayers(view) {
 }
 
 function buildInvite(view) {
-  if (identity.source !== "development" || view.playerIds.includes(theoPlayerId) || view.playerIds[0] !== playerId) return null;
+  if (identity.source !== "development" || view.playerIds.includes(gameFrameBotPlayerId) || view.playerIds[0] !== playerId) return null;
   const invitedPlayer = view.playerIds[1];
   const url = new URL(window.location.href);
   url.searchParams.set("match", view.matchId);
@@ -744,7 +744,7 @@ function render(view) {
 
 function setBusy(busy) {
   requestPending = busy;
-  challengeTheo.disabled = busy;
+  challengeBot.disabled = busy;
   createHumanMatch.disabled = busy;
   newMatch.disabled = busy;
   for (const button of panButtons) button.disabled = busy;
@@ -1027,7 +1027,7 @@ function startProjection(matchId) {
   }
 }
 
-challengeTheo.addEventListener("click", () => createMatch(theoPlayerId));
+challengeBot.addEventListener("click", () => createMatch(gameFrameBotPlayerId));
 createHumanMatch.addEventListener("click", () => createMatch(`guest-${crypto.randomUUID()}`));
 selectDeploy.addEventListener("click", () => selectMode("deploy-unit"));
 selectMove.addEventListener("click", () => selectMode("move"));

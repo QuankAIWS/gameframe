@@ -1,11 +1,11 @@
 const gameId = "tactical-movement-canary";
-const theoPlayerId = "theo";
+const gameFrameBotPlayerId = "gameframe-bot";
 const playerStorageKey = "scribbles-gameframe.player-id";
 const recentMatchStorageKey = "scribbles-gameframe.recent-tactical-match";
 
 const lobby = document.querySelector("#tactical-lobby");
 const lobbyMessage = document.querySelector("#tactical-lobby-message");
-const challengeTheo = document.querySelector("#tactical-theo");
+const challengeBot = document.querySelector("#tactical-bot");
 const createHumanMatch = document.querySelector("#tactical-human");
 const matchPanel = document.querySelector("#tactical-match");
 const status = document.querySelector("#tactical-status");
@@ -74,7 +74,7 @@ function getOrCreatePlayerId() {
 }
 
 function displayName(id) {
-  if (id === theoPlayerId) return "Theo";
+  if (id === gameFrameBotPlayerId) return "ArenaBot";
   if (id === playerId) return "You";
   return "Opponent";
 }
@@ -142,7 +142,7 @@ function clearError() {
 
 function setBusy(busy) {
   requestPending = busy;
-  challengeTheo.disabled = busy;
+  challengeBot.disabled = busy;
   createHumanMatch.disabled = busy;
   newMatch.disabled = busy;
   for (const button of panButtons) button.disabled = busy;
@@ -196,7 +196,7 @@ function clearRecentMatch() {
 }
 
 function buildInvite(view) {
-  if (view.playerIds.includes(theoPlayerId) || view.playerIds[0] !== playerId) return null;
+  if (view.playerIds.includes(gameFrameBotPlayerId) || view.playerIds[0] !== playerId) return null;
   const invitedPlayer = view.playerIds[1];
   const url = new URL(window.location.href);
   url.searchParams.set("match", view.matchId);
@@ -794,7 +794,7 @@ async function copyInviteLink() {
   }
 }
 
-challengeTheo.addEventListener("click", () => createMatch(theoPlayerId));
+challengeBot.addEventListener("click", () => createMatch(gameFrameBotPlayerId));
 createHumanMatch.addEventListener("click", () => createMatch(`guest-${crypto.randomUUID()}`));
 newMatch.addEventListener("click", leaveMatch);
 copyInvite.addEventListener("click", copyInviteLink);

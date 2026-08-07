@@ -1,6 +1,7 @@
 import { env, exports as workerExports } from "cloudflare:workers";
 import { evictDurableObject } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../../src/agents/gameframe-bot.ts";
 import { SignedSessionCodec } from "../../src/auth/signed-session.ts";
 
 const sessionSecret = "gf0002-workerd-session-secret-0123456789abcdef";
@@ -97,7 +98,7 @@ describe("authenticated match invitations in the real workerd runtime", () => {
     });
   });
 
-  it("rejects direct Discord human-seat creation while preserving Theo matches", async () => {
+  it("rejects direct Discord human-seat creation while preserving GameFrameBot matches", async () => {
     const human = await workerFetch("/api/matches", "discord:111", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -108,18 +109,18 @@ describe("authenticated match invitations in the real workerd runtime", () => {
     });
     expect(human.status).toBe(403);
 
-    const theo = await workerFetch("/api/matches", "discord:111", {
+    const botMatch = await workerFetch("/api/matches", "discord:111", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         gameId: "tic-tac-toe",
-        playerIds: ["discord:111", "theo"],
+        playerIds: ["discord:111", GAMEFRAME_BOT_PLAYER_ID],
       }),
     });
-    expect(theo.status).toBe(201);
-    expect(await theo.json()).toMatchObject({
+    expect(botMatch.status).toBe(201);
+    expect(await botMatch.json()).toMatchObject({
       gameId: "tic-tac-toe",
-      playerIds: ["discord:111", "theo"],
+      playerIds: ["discord:111", GAMEFRAME_BOT_PLAYER_ID],
     });
   });
 });

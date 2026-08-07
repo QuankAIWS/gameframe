@@ -77,9 +77,9 @@ async function prepareLegalAttack(request) {
   throw new Error("The deterministic browser scenario did not reach a legal attack.");
 }
 
-test("moves, ends, observes Theo, and resumes a tactical combat match", async ({ page }) => {
+test("moves, ends, observes ArenaBot, and resumes a tactical combat match", async ({ page }) => {
   await page.goto("/combat.html?player=combat-human");
-  await page.locator("#combat-theo").click();
+  await page.locator("#combat-bot").click();
 
   await expect(page.locator("#combat-revision")).toHaveText("Revision 0");
   await expect(page.locator("#combat-active-unit")).toContainText("Blue Vanguard");
@@ -150,7 +150,7 @@ test("selects and commits a legal Canvas combat attack", async ({ page, request 
 test("combat Canvas controls remain usable without horizontal overflow on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/combat.html?player=combat-mobile");
-  await page.locator("#combat-theo").click();
+  await page.locator("#combat-bot").click();
   await expect(page.locator("#combat-canvas")).toBeVisible();
   await expect(page.locator("#combat-select-move")).toBeVisible();
   await page.locator("#combat-zoom-in").click();

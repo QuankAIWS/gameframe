@@ -16,10 +16,10 @@ async function moveFirstDestination(page) {
   await page.locator("#tactical-destinations button").first().click();
 }
 
-test("plays, pans, zooms, and resumes the tactical movement canary against Theo", async ({ page }) => {
+test("plays, pans, zooms, and resumes the tactical movement canary against ArenaBot", async ({ page }) => {
   const player = uniquePlayer("tactical-browser");
   await page.goto(`/tactical.html?player=${encodeURIComponent(player)}`);
-  await page.getByRole("button", { name: "Race Theo" }).click();
+  await page.getByRole("button", { name: "Race ArenaBot" }).click();
 
   await expect(page.locator("#tactical-match")).toBeVisible();
   await expect(page.locator("#tactical-canvas")).toBeVisible();
@@ -80,7 +80,7 @@ test("two browser seats share and advance one tactical movement match", async ({
 test("tactical Canvas controls remain usable without horizontal overflow on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/tactical.html?player=${encodeURIComponent(uniquePlayer("tactical-mobile"))}`);
-  await page.getByRole("button", { name: "Race Theo" }).click();
+  await page.getByRole("button", { name: "Race ArenaBot" }).click();
 
   await expect(page.locator("#tactical-canvas")).toBeVisible();
   await expect(page.getByRole("button", { name: "Pan camera north" })).toBeVisible();

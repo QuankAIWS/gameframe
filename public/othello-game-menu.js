@@ -6,7 +6,7 @@
   const darkName = document.querySelector(".score-rail-dark > span");
   const lightName = document.querySelector(".score-rail-light > span");
   let mode = null;
-  let theoTimer = null;
+  let botTimer = null;
 
   function validBoard(board) {
     return Array.isArray(board)
@@ -25,7 +25,7 @@
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
       if (!saved || !validBoard(saved.state?.board)) return null;
-      if (saved.mode !== "theo" && saved.mode !== "local") return null;
+      if (saved.mode !== "bot" && saved.mode !== "local") return null;
       return saved;
     } catch {
       markStorageUnavailable();
@@ -76,13 +76,13 @@
     updateUi();
     closeMenu();
     updateModeLabels();
-    scheduleTheoTurn();
+    scheduleBotTurn();
   }
 
   function updateModeLabels() {
     document.body.dataset.othelloMode = mode || "menu";
-    if (darkName) darkName.textContent = mode === "theo" ? "You" : "Dark";
-    if (lightName) lightName.textContent = mode === "theo" ? "Theo" : "Light";
+    if (darkName) darkName.textContent = mode === "bot" ? "You" : "Dark";
+    if (lightName) lightName.textContent = mode === "bot" ? "OthelloBot" : "Light";
     window.gameFrameDestinationBar?.sync?.();
   }
 
@@ -92,20 +92,20 @@
   }
 
   function showMenu() {
-    clearTimeout(theoTimer);
+    clearTimeout(botTimer);
     document.body.classList.add("othello-menu-open");
     menu.hidden = false;
     const saved = readSave();
     resumeButton.hidden = !saved;
     if (saved) {
-      const savedMode = saved.mode === "theo" ? "Theo match" : "local match";
+      const savedMode = saved.mode === "bot" ? "OthelloBot match" : "local match";
       resumeButton.querySelector("small").textContent = `Continue ${savedMode} from move ${saved.state.move}.`;
     }
     updateModeLabels();
   }
 
   function startNew(nextMode) {
-    clearTimeout(theoTimer);
+    clearTimeout(botTimer);
     mode = nextMode;
     state = createState();
     flipAnimation = null;
@@ -116,13 +116,13 @@
     persist();
   }
 
-  function scheduleTheoTurn() {
-    clearTimeout(theoTimer);
-    if (mode !== "theo" || state.complete || state.player !== LIGHT || snapshotMode) return;
+  function scheduleBotTurn() {
+    clearTimeout(botTimer);
+    if (mode !== "bot" || state.complete || state.player !== LIGHT || snapshotMode) return;
     const delay = flipAnimation ? flipAnimation.duration + 100 : 260;
-    theoTimer = setTimeout(() => {
-      if (mode !== "theo" || state.complete || state.player !== LIGHT || flipAnimation) {
-        scheduleTheoTurn();
+    botTimer = setTimeout(() => {
+      if (mode !== "bot" || state.complete || state.player !== LIGHT || flipAnimation) {
+        scheduleBotTurn();
         return;
       }
       const move = selectComputerMove();
@@ -136,7 +136,7 @@
     if (changed) {
       persist();
       updateModeLabels();
-      scheduleTheoTurn();
+      scheduleBotTurn();
     }
     return changed;
   };
@@ -151,8 +151,8 @@
       <h2 id="othello-game-menu-title">Choose how to play</h2>
       <p>Begin from the standard opening position. Local matches are saved automatically when browser storage is available.</p>
       <div class="othello-menu-actions">
-        <button id="othello-play-theo" type="button">
-          <strong>Challenge Theo</strong>
+        <button id="othello-play-bot" type="button">
+          <strong>Challenge OthelloBot</strong>
           <small>Play Dark against a deterministic local opponent.</small>
         </button>
         <button id="othello-play-local" type="button">
@@ -170,7 +170,7 @@
   app?.prepend(menu);
 
   const resumeButton = menu.querySelector("#othello-resume");
-  menu.querySelector("#othello-play-theo")?.addEventListener("click", () => startNew("theo"));
+  menu.querySelector("#othello-play-bot")?.addEventListener("click", () => startNew("bot"));
   menu.querySelector("#othello-play-local")?.addEventListener("click", () => startNew("local"));
   resumeButton?.addEventListener("click", () => {
     const saved = readSave();
@@ -189,14 +189,14 @@
   }
 
   canvas.addEventListener("pointerdown", (event) => {
-    if (document.body.classList.contains("othello-menu-open") || (mode === "theo" && state.player === LIGHT)) {
+    if (document.body.classList.contains("othello-menu-open") || (mode === "bot" && state.player === LIGHT)) {
       event.preventDefault();
       event.stopImmediatePropagation();
     }
   }, true);
 
   document.querySelector("#new-game")?.addEventListener("click", () => {
-    clearTimeout(theoTimer);
+    clearTimeout(botTimer);
     persist();
     updateModeLabels();
   });
@@ -217,7 +217,7 @@
 
   window.gameFrameOthello = Object.freeze({
     showMenu,
-    startTheo: () => startNew("theo"),
+    startBot: () => startNew("bot"),
     startLocal: () => startNew("local"),
     resume: () => {
       const saved = readSave();

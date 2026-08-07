@@ -10,7 +10,7 @@ test("selecting Checkers exposes the premium board title as a real heading", asy
 
 test("premium Checkers skin preserves authoritative selection and movement", async ({ page }) => {
   await page.goto("/?game=american-checkers&player=browser-checkers-premium");
-  await page.locator("#challenge-theo").click();
+  await page.locator("#challenge-bot").click();
 
   await expect(page.locator("#board")).toHaveClass(/board-checkers/);
   await expect(page.locator("body")).toHaveClass(/checkers-premium-active/);
@@ -37,7 +37,7 @@ test("premium Checkers skin preserves authoritative selection and movement", asy
 test("premium Checkers layout remains bounded on a narrow viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?game=american-checkers&player=mobile-checkers-premium");
-  await page.locator("#challenge-theo").click();
+  await page.locator("#challenge-bot").click();
   await expect(page.locator("body")).toHaveClass(/checkers-premium-active/);
   await expect(page.locator("#board")).toBeVisible();
   const overflow = await page.evaluate(() => ({

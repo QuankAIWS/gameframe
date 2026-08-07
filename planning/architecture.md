@@ -2,104 +2,174 @@
 
 ## System shape
 
-Scribbles GameFrame is a modular monolith with explicit game modules and integration adapters. One authoritative service owns each match. Clients and agents submit intentions; deterministic code validates and commits state transitions.
+Scribbles GameFrame is a modular authoritative game platform with explicit game modules and integration adapters. One authoritative service owns each match. Humans, built-in bots, and external agents submit intentions; deterministic GameFrame code validates and commits state transitions.
 
 ```text
-Discord Activity ─┐
-Standalone web ───┼── authenticated application boundary
-Discord text ─────┤                 │
-Scribbles Runtime ┘                 ▼
-                           authoritative match service
-                         sessions · revisions · events
-                                  │
-                    ┌─────────────┴─────────────┐
-                    ▼                           ▼
-             game definition             decision adapter
-          tic-tac-toe / tactics        Theo / solver / bot
+Standalone browser ───────┐
+Discord website/Activity ─┼── authenticated GameFrame boundary
+rpg-gm-runtime ───────────┤
+future external agents ───┘                 │
+                                            ▼
+                               authoritative match service
+                             sessions · revisions · events
+                                      │
+                    ┌─────────────────┴─────────────────┐
+                    ▼                                   ▼
+             game definition                     decision boundary
+      rules · legal actions · outcomes       GameFrameBot / provider
 ```
 
-Scribbles Runtime is the integration host. Theo is the public-facing agent and registered GameFrame player represented by that integration.
+GameFrame does not host the Dungeon Master or Theo.
+
+- `rpg-gm-runtime` is the separate Dungeon Master and campaign authority.
+- Scribbles Runtime is a separate future integration host for Theo.
+- Theo may later use an explicit connector as an ordinary player.
 
 ## Game definition contract
 
 Each game owns:
 
-- Initial state
-- Active-player determination
-- Legal-action enumeration
-- State transitions
-- Player-specific observations
-- Completion and winner semantics
+- initial state;
+- active-player determination;
+- legal-action enumeration;
+- state transitions;
+- player-specific observations;
+- completion and winner semantics.
 
 The platform owns:
 
-- Match identity
-- Seats and player identity
-- Action envelopes
-- Revision checks
-- Idempotency
-- Event sequencing
-- Replay
-- Persistence and transport adapters
+- match identity;
+- seats and player identity;
+- action envelopes;
+- revision checks;
+- idempotency;
+- event sequencing;
+- replay;
+- persistence and transport adapters.
 
 ## Authority
 
-The server is authoritative. Browser code, Discord clients, Scribbles Runtime, and Theo's model output are untrusted callers. They may request only actions the current game definition exposes as legal. Neither the runtime nor Theo owns dice, clocks, turn order, health, movement, or victory state.
+The server is authoritative. Browser code, Discord clients, `rpg-gm-runtime`, Scribbles Runtime, model output, and bot policies are untrusted callers. They may request only actions exposed as currently legal by the game definition.
 
-## First-slice persistence
+No external caller owns dice, clocks, turn order, health, movement, resources, or victory state.
 
-GF-0001 uses an in-memory repository so the contracts can be tested without deployment credentials or third-party dependencies. This repository is an adapter, not a permanent state model. Durable Object and conventional persistent adapters must preserve the same revision, idempotency, event, and observation contracts.
+## GameFrameBot
 
-## Integration direction
+The built-in deterministic participant uses stable player ID `gameframe-bot`.
 
-- The ordinary browser client remains the base client.
-- Discord Activity is a host adapter around that client.
-- Cloudflare is an intended public edge and match-runtime option, not a dependency of game rules.
-- Scribbles Runtime connects through a constrained player adapter, receives Theo's structured observations, and submits actions on Theo's behalf.
+Game-specific UI may present it as:
+
+- CPU Opponent;
+- CheckersBot;
+- ArenaBot;
+- Monster Master BattleBot.
+
+These labels describe rules-based bots, not model-driven AI. Bot policies select from current legal actions and remain subject to the same authoritative submission path as human and external-agent actions.
+
+The retired built-in `theo` seat has no compatibility guarantee and must not remain in active code, tests, fixtures, or browser copy.
+
+## External agent connector
+
+The versioned decision-provider boundary is generic. A future named agent connector must provide:
+
+- authenticated service identity;
+- an explicitly assigned player seat;
+- player-specific observations;
+- current legal actions;
+- bounded deadlines;
+- request correlation;
+- revision and action identity.
+
+GameFrame validates the returned action before commit. A future Scribbles Runtime connector may use this boundary for Theo, but Theo is not registered implicitly and cannot acquire hidden or Dungeon-Master-only information.
+
+## RPG boundary
+
+The RPG lifecycle crosses two separate authorities:
+
+```text
+rpg-gm-runtime
+  campaign state · narration · encounter intent
+          │
+          │ structured launch
+          ▼
+GameFrame
+  tactical rules · legal actions · match state · terminal outcome
+          │
+          │ structured completion
+          ▼
+rpg-gm-runtime
+  campaign consequences · continued narration
+```
+
+The current first adapter uses Monster Master BattleBot as the deterministic opposing tactical participant. This does not make the bot the Dungeon Master and does not introduce a Scribbles Runtime dependency.
+
+Campaign and battle identifiers must be durable and idempotent. Deployed production wiring must preserve the same encounter launch, match authority, terminal outcome, and retry contracts across process restart.
+
+## Player seats and teams
+
+Ordinary two-player games use two explicit distinct player IDs. A seat may be held by:
+
+- an authenticated human;
+- `gameframe-bot`;
+- a future authenticated external agent identity.
+
+Transports do not infer, replace, or impersonate identities.
+
+RPG cooperative combat requires a separate team-aware ownership model. Multiple human campaign participants must not be forced into opposing duel seats. Future team control must map each human principal to explicit teams and controlled units while representing enemy control separately.
 
 ## Command and projection split
 
-Game-changing actions use authenticated HTTP commands with action IDs and expected revisions. WebSockets are read-side projections only:
+Game-changing actions use authenticated HTTP commands with action IDs and expected revisions. WebSockets are read-side projections only.
 
 ```text
 HTTP command
-  -> validate identity, revision, turn, and legal action
-  -> persist authoritative snapshot and event
-  -> return committed view
-  -> broadcast player-specific projections
+  → authenticate principal
+  → authorize seat
+  → validate revision, turn, and legal action
+  → persist snapshot and event
+  → return committed player view
+  → broadcast player-specific projections
 
 WebSocket
-  -> initial authoritative view
-  -> update notifications
-  -> explicit refresh requests
-  -> no direct game mutation
+  → initial authoritative view
+  → update notification
+  → explicit refresh
+  → no direct mutation
 ```
 
-This prevents connection retries, duplicate socket messages, or projection failures from becoming game-state authority. Cloudflare's hibernation WebSocket API is the intended transport so idle connections can survive Durable Object eviction without keeping the object continuously active.
+Projection retries or failures must never become a second game-state authority.
 
-## Player seats
+## Persistence
 
-Tic-tac-toe matches are created with exactly two explicit, distinct player IDs. A player ID may represent a Discord-authenticated human or a registered agent identity such as `theo`. The game definition maps the ordered seats to X and O; transports do not infer or silently replace identities.
+The in-memory repository is a development adapter, not a permanent production state model. Durable Object, SQLite-backed, or conventional persistent adapters must preserve:
 
-The service invokes an agent decision adapter only when that agent ID is actually present and currently owns the turn. Human-versus-human matches therefore use the same service and persistence path without model calls or deterministic bot actions. If Theo occupies the first seat, his opening action is committed during match creation so an agent-owned turn is not stranded.
+- revision ordering;
+- accepted and rejected idempotency;
+- event history;
+- configured initial state;
+- player observations;
+- encounter-to-match bindings;
+- terminal completion requests.
 
-## Authenticated player identity
+## Authentication
 
-External transports produce an authenticated principal before they reach match services. The public request body never determines the actor:
+External transports must produce an authenticated principal before reaching match services. Public request bodies never determine the actor.
 
 ```text
-Discord SDK authorize
-  -> backend code exchange and Discord verification
-  -> authenticated session
-  -> canonical player principal
-  -> seat authorization
-  -> match command or projection
+external authentication
+→ canonical GameFrame principal
+→ seat authorization
+→ command or projection
 ```
 
-The local Node adapter uses `x-gameframe-player-id` only as an explicit development authenticator. The Cloudflare entry point rejects public game API requests until a production verifier is installed. Scribbles Runtime uses a separate service principal bound only to Theo's stable `theo` player identity.
+The Node-local `x-gameframe-player-id` header and development URL identities are explicit test mechanisms only. Hosted Discord delivery uses verified Discord identity and signed GameFrame sessions. External service connectors require separately scoped service credentials.
 
-## Activity sessions
+## Deployment direction
 
-After Discord OAuth verification, GameFrame issues a short-lived HMAC-signed session cookie. The token is opaque to the game core and contains only the canonical principal and expiry metadata. The cookie is HttpOnly, Secure, `SameSite=None`, and `Partitioned`, and is scoped to the Activity's `{clientId}.discordsays.com` host.
+- The ordinary browser remains the base client.
+- Discord website and Activity delivery wrap the same authoritative interfaces.
+- Cloudflare Worker and Durable Objects are the intended public edge and match authority.
+- `rpg-gm-runtime` integrates through an explicit service contract.
+- Scribbles Runtime remains an optional future external-player integration.
 
-HTTP commands and WebSocket upgrades therefore pass through the same `RequestAuthenticator`. The Worker imports `SESSION_SECRET` from the deployment environment; without it, all game APIs fail closed.
+GitHub Actions is currently unavailable for the active identity-cleanup branch. Repository edits do not constitute exact-head validation.

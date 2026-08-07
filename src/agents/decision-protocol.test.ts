@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { AgentDecisionContext, AgentPlayer } from "./agent-player.ts";
 import { AgentDecisionError } from "./decision-protocol.ts";
+import { GAMEFRAME_BOT_PLAYER_ID } from "./gameframe-bot.ts";
 import { MockDecisionProvider, type MockDecisionProviderMode } from "./mock-decision-provider.ts";
 import { ProviderBackedAgentPlayer } from "./provider-backed-agent.ts";
 import { ticTacToeDefinition, type TicTacToeAction, type TicTacToeObservation } from "../games/tic-tac-toe/index.ts";
@@ -18,6 +19,8 @@ interface TestObservation {
   label: string;
 }
 
+const TEST_AGENT_ID = "test-agent";
+
 const legalActions: readonly TestAction[] = [
   { type: "pick", value: 1 },
   { type: "pick", value: 2 },
@@ -32,7 +35,7 @@ function context(overrides: Partial<AgentDecisionContext<TestAction, TestObserva
   return {
     gameId: "test-game",
     matchId: "match-1",
-    playerId: "theo",
+    playerId: TEST_AGENT_ID,
     revision: 3,
     observation: { label: "test" },
     legalActions,
@@ -50,7 +53,7 @@ function agentFor(
   let requestId = 0;
   let fallbackId = 0;
   return new ProviderBackedAgentPlayer<TestAction, TestObservation>({
-    agentId: "theo",
+    agentId: TEST_AGENT_ID,
     gameId: "test-game",
     provider,
     isSameAction,
@@ -84,7 +87,7 @@ test("provider-backed agent sends a correlated versioned request and accepts a l
     requestId: "request-1",
     gameId: "test-game",
     matchId: "match-1",
-    playerId: "theo",
+    playerId: TEST_AGENT_ID,
     expectedRevision: 3,
     observation: { label: "test" },
     legalActions,
@@ -147,7 +150,7 @@ test("duplicate provider action IDs are rejected across decisions", async () => 
 
 test("documented deterministic fallback handles provider failure", async () => {
   const fallback: AgentPlayer<TestAction, TestObservation> = {
-    agentId: "theo",
+    agentId: TEST_AGENT_ID,
     async chooseAction() {
       return legalActions[1]!;
     },
@@ -156,7 +159,7 @@ test("documented deterministic fallback handles provider failure", async () => {
   const decision = await agentFor(provider, { fallback }).chooseDecision(context());
 
   assert.deepEqual(decision.action, legalActions[1]);
-  assert.equal(decision.actionId, "theo:fallback:fallback-1");
+  assert.equal(decision.actionId, `${TEST_AGENT_ID}:fallback:fallback-1`);
 });
 
 test("provider-backed agents require authoritative match context", async () => {
@@ -170,10 +173,10 @@ test("provider-backed agents require authoritative match context", async () => {
   );
 });
 
-test("tic-tac-toe service commits a provider-supplied structured action", async () => {
+test("tic-tac-toe service commits a provider-supplied structured GameFrameBot action", async () => {
   const provider = new MockDecisionProvider<TicTacToeAction, TicTacToeObservation>();
-  const theo = new ProviderBackedAgentPlayer<TicTacToeAction, TicTacToeObservation>({
-    agentId: "theo",
+  const bot = new ProviderBackedAgentPlayer<TicTacToeAction, TicTacToeObservation>({
+    agentId: GAMEFRAME_BOT_PLAYER_ID,
     gameId: ticTacToeDefinition.gameId,
     provider,
     isSameAction: ticTacToeDefinition.isSameAction.bind(ticTacToeDefinition),
@@ -182,10 +185,10 @@ test("tic-tac-toe service commits a provider-supplied structured action", async 
   const service = new TicTacToeMatchService({
     store: new InMemoryMatchSnapshotStore<TicTacToeState, TicTacToeAction>(),
     idGenerator: () => "generated-id",
-    theo,
+    bot,
   });
 
-  await service.createMatch(["human", "theo"], "provider-match");
+  await service.createMatch(["human", GAMEFRAME_BOT_PLAYER_ID], "provider-match");
   const view = await service.submitAction({
     matchId: "provider-match",
     playerId: "human",

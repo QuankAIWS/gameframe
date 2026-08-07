@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import { createGameFrameServer } from "./http-server.ts";
 
 function authenticatedFetch(url: string, playerId: string, init: RequestInit = {}) {
@@ -17,14 +18,14 @@ async function startServer(context: { after(callback: () => void): void }) {
   return `http://127.0.0.1:${address.port}`;
 }
 
-test("HTTP boundary alternates human and Theo Monster Master deployments", async (context) => {
+test("HTTP boundary alternates human and Monster Master BattleBot deployments", async (context) => {
   const base = await startServer(context);
   const createdResponse = await authenticatedFetch(`${base}/api/matches`, "human", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       gameId: "monster-master-duel",
-      playerIds: ["human", "theo"],
+      playerIds: ["human", GAMEFRAME_BOT_PLAYER_ID],
     }),
   });
   assert.equal(createdResponse.status, 201);

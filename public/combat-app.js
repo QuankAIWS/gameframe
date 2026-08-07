@@ -1,11 +1,11 @@
 const gameId = "tactical-combat-canary";
-const theoPlayerId = "theo";
+const gameFrameBotPlayerId = "gameframe-bot";
 const playerStorageKey = "scribbles-gameframe.player-id";
 const recentMatchStorageKey = "scribbles-gameframe.recent-combat-match";
 
 const lobby = document.querySelector("#combat-lobby");
 const lobbyMessage = document.querySelector("#combat-lobby-message");
-const challengeTheo = document.querySelector("#combat-theo");
+const challengeBot = document.querySelector("#combat-bot");
 const createHumanMatch = document.querySelector("#combat-human");
 const matchPanel = document.querySelector("#combat-match");
 const status = document.querySelector("#combat-status");
@@ -81,7 +81,7 @@ function getOrCreatePlayerId() {
 }
 
 function displayName(id) {
-  if (id === theoPlayerId) return "Theo";
+  if (id === gameFrameBotPlayerId) return "ArenaBot";
   if (id === playerId) return "You";
   return "Opponent";
 }
@@ -526,7 +526,7 @@ function renderPlayers(view) {
 }
 
 function buildInvite(view) {
-  if (view.playerIds.includes(theoPlayerId) || view.playerIds[0] !== playerId) return null;
+  if (view.playerIds.includes(gameFrameBotPlayerId) || view.playerIds[0] !== playerId) return null;
   const invitedPlayer = view.playerIds[1];
   const url = new URL(window.location.href);
   url.searchParams.set("match", view.matchId);
@@ -596,7 +596,7 @@ function render(view) {
 
 function setBusy(busy) {
   requestPending = busy;
-  challengeTheo.disabled = busy;
+  challengeBot.disabled = busy;
   createHumanMatch.disabled = busy;
   newMatch.disabled = busy;
   for (const button of panButtons) button.disabled = busy;
@@ -858,7 +858,7 @@ function startProjection(matchId) {
   }
 }
 
-challengeTheo.addEventListener("click", () => createMatch(theoPlayerId));
+challengeBot.addEventListener("click", () => createMatch(gameFrameBotPlayerId));
 createHumanMatch.addEventListener("click", () => createMatch(`guest-${crypto.randomUUID()}`));
 selectMove.addEventListener("click", () => selectMode("move"));
 selectAttack.addEventListener("click", () => selectMode("attack"));

@@ -114,12 +114,15 @@ test("the player flow uses universal navigation, game-specific menus, and storag
   assert.match(app4, /query\.get\("state"\) \|\| "start"/);
   assert.match(app4, /othello-game-menu\.js/);
   assert.match(app4, /othello-launcher\.js/);
-  assert.match(othelloMenu, /Challenge Theo/);
+  assert.match(othelloMenu, /Challenge OthelloBot/);
+  assert.match(othelloMenu, /id="othello-play-bot"/);
   assert.match(othelloMenu, /Pass &amp; play/);
   assert.match(othelloMenu, /function markStorageUnavailable/);
   assert.match(othelloMenu, /try \{\n      localStorage\.setItem/);
   assert.match(othelloMenu, /catch \{\n      markStorageUnavailable\(\)/);
-  assert.match(othelloMenu, /scheduleTheoTurn/);
+  assert.match(othelloMenu, /scheduleBotTurn/);
+  assert.match(othelloMenu, /mode !== "bot"/);
+  assert.match(othelloMenu, /startBot/);
   assert.match(othelloMenu, /state\.player === LIGHT/);
   assert.match(othelloMenu, /demoMove\?\.remove/);
   assert.match(othelloMenu, /document\.addEventListener\("gameframe:before-home", persist\)/);

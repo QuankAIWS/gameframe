@@ -106,7 +106,7 @@ test("Tic-Tac-Toe presents a board-level result and starts a rematch", async ({ 
 test("Checkers exposes a visible movement animation after a committed turn", async ({ page }) => {
   const player = `checkers-motion-${crypto.randomUUID()}`;
   await page.goto(`/?game=american-checkers&menu=1&player=${encodeURIComponent(player)}`);
-  await page.locator("#challenge-theo").click();
+  await page.locator("#challenge-bot").click();
   await page.locator(".checkers-cell.selectable-piece:enabled").first().click();
   await page.locator(".checkers-cell.legal-destination:enabled").first().click();
   await expect(page.locator("#board")).toHaveAttribute("data-last-animation-steps", /^[1-9]\d*$/);

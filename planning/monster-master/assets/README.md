@@ -10,7 +10,6 @@ A Master is a human trainer/player character who commands and calls monsters. Tr
 
 - [`core-pack-v1.md`](core-pack-v1.md) — runtime pack, identity layers, source-master lifecycle, legacy fallbacks, and validation.
 - [`default-master-trainer-v1.md`](default-master-trainer-v1.md) — initial human-trainer source specification.
-- [`rock-boulder-set-v1.md`](rock-boulder-set-v1.md) — accepted small rock, medium boulder, and rubble-pile masters, derivatives, provenance, and runtime metadata.
 
 ## Acceptance rule
 

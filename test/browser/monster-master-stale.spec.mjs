@@ -52,7 +52,7 @@ test("stale Monster Master deployment refreshes without duplicate mutation", asy
     );
   });
   await page.goto("/monster-master.html?player=monster-stale");
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await waitForPixi(page);
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 0");
 

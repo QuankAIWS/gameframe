@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import { createGameFrameServer } from "./http-server.ts";
 
 function authenticatedFetch(url: string, playerId: string, init: RequestInit = {}) {
@@ -24,14 +25,14 @@ test("HTTP health advertises the tactical movement canary", async (context) => {
   assert.ok(health.games.includes("tactical-movement-canary"));
 });
 
-test("HTTP creates and advances a human-versus-Theo tactical movement match", async (context) => {
+test("HTTP creates and advances a human-versus-ArenaBot tactical movement match", async (context) => {
   const base = await startServer(context);
   const createdResponse = await authenticatedFetch(`${base}/api/matches`, "human", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       gameId: "tactical-movement-canary",
-      playerIds: ["human", "theo"],
+      playerIds: ["human", GAMEFRAME_BOT_PLAYER_ID],
     }),
   });
   assert.equal(createdResponse.status, 201);

@@ -14,6 +14,7 @@ import {
   RpgServiceError,
   type RpgPrincipal,
 } from "../rpg/in-memory-rpg-service.ts";
+import { InMemoryRpgEncounterMatchCoordinator } from "../rpg/in-memory-rpg-encounter-match-coordinator.ts";
 import {
   RPG_CAMPAIGN_PROTOCOL_VERSION,
   RPG_ENCOUNTER_PROTOCOL_VERSION,
@@ -182,6 +183,11 @@ export function createGameFrameServer(
   authenticator: RequestAuthenticator = new DevelopmentHeaderAuthenticator(),
   rpgService = new StrictInMemoryRpgService(),
 ) {
+  const encounterMatches = new InMemoryRpgEncounterMatchCoordinator({
+    rpg: rpgService,
+    matches: matchService,
+  });
+
   return createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? "/", "http://127.0.0.1");
@@ -205,6 +211,8 @@ export function createGameFrameServer(
               "campaign-return",
               "dual-revision-linkage",
               "runtime-commit-receipts",
+              "encounter-match-binding",
+              "automatic-encounter-completion",
               ...(legacyRpgCompatibilityEnabled()
                 ? ["legacy-v1-compatibility"]
                 : []),
@@ -289,7 +297,7 @@ export function createGameFrameServer(
         return json(
           response,
           200,
-          await rpgService.launchEncounter(body, rpgPrincipal(principal)),
+          await encounterMatches.launchEncounter(body, rpgPrincipal(principal)),
         );
       }
       if (
@@ -316,15 +324,13 @@ export function createGameFrameServer(
         && request.method === "GET"
       ) {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
-        requireServicePrincipal(
-          principal,
-          RPG_RUNTIME_SERVICE_ID,
-          "Encounter retrieval requires the RPG GM runtime service principal.",
-        );
         return json(
           response,
           200,
-          await rpgService.getEncounter(encounterRoute.encounterId, rpgPrincipal(principal)),
+          await encounterMatches.getEncounterForPrincipal(
+            encounterRoute.encounterId,
+            rpgPrincipal(principal),
+          ),
         );
       }
 
@@ -344,7 +350,9 @@ export function createGameFrameServer(
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
         requirePlayerPrincipal(principal);
         rejectIdentityClaim(principal, url.searchParams.get("playerId"));
-        return json(response, 200, await matchService.view(route.matchId, principal.playerId));
+        const view = await matchService.view(route.matchId, principal.playerId);
+        await encounterMatches.synchronizeMatch(view);
+        return json(response, 200, view);
       }
 
       if (route && request.method === "POST" && route.action) {
@@ -359,6 +367,7 @@ export function createGameFrameServer(
           expectedRevision: Number(body.expectedRevision),
           action: body.action,
         });
+        await encounterMatches.synchronizeMatch(view);
         return json(response, 200, view);
       }
 

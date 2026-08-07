@@ -2,6 +2,7 @@ import {
   chooseAgentDecision,
   type AgentPlayer,
 } from "../agents/agent-player.ts";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import {
   DeterministicTacticalMovementPlayer,
   tacticalMovementDefinition,
@@ -23,18 +24,18 @@ export interface PublicTacticalMovementMatchView {
 export interface TacticalMovementMatchServiceOptions {
   store: MatchSnapshotStore<TacticalMovementState, TacticalMovementAction>;
   idGenerator?: () => string;
-  theo?: AgentPlayer<TacticalMovementAction, TacticalMovementObservation>;
+  bot?: AgentPlayer<TacticalMovementAction, TacticalMovementObservation>;
 }
 
 export class TacticalMovementMatchService {
   readonly #store: MatchSnapshotStore<TacticalMovementState, TacticalMovementAction>;
   readonly #idGenerator: () => string;
-  readonly #theo: AgentPlayer<TacticalMovementAction, TacticalMovementObservation>;
+  readonly #bot: AgentPlayer<TacticalMovementAction, TacticalMovementObservation>;
 
   constructor(options: TacticalMovementMatchServiceOptions) {
     this.#store = options.store;
     this.#idGenerator = options.idGenerator ?? (() => crypto.randomUUID());
-    this.#theo = options.theo ?? new DeterministicTacticalMovementPlayer("theo");
+    this.#bot = options.bot ?? new DeterministicTacticalMovementPlayer(GAMEFRAME_BOT_PLAYER_ID);
   }
 
   async createMatch(
@@ -64,9 +65,9 @@ export class TacticalMovementMatchService {
       definition: tacticalMovementDefinition,
       playerIds: normalizedPlayers,
     });
-    await this.#runTheoTurnIfNeeded(session);
+    await this.#runBotTurnIfNeeded(session);
     await this.#store.save(session.snapshot());
-    const requestingPlayerId = normalizedPlayers.find((playerId) => playerId !== this.#theo.agentId)
+    const requestingPlayerId = normalizedPlayers.find((playerId) => playerId !== this.#bot.agentId)
       ?? normalizedPlayers[0];
     return this.#view(session, requestingPlayerId);
   }
@@ -96,7 +97,7 @@ export class TacticalMovementMatchService {
       throw error;
     }
 
-    await this.#runTheoTurnIfNeeded(session);
+    await this.#runBotTurnIfNeeded(session);
     await this.#store.save(session.snapshot());
     return this.#view(session, input.playerId);
   }
@@ -113,40 +114,40 @@ export class TacticalMovementMatchService {
     return (await this.#loadSession(matchId)).replay();
   }
 
-  async #runTheoTurnIfNeeded(
+  async #runBotTurnIfNeeded(
     session: MatchSession<TacticalMovementState, TacticalMovementAction, TacticalMovementObservation>,
   ): Promise<void> {
     const snapshot = session.snapshot();
-    if (!snapshot.playerIds.includes(this.#theo.agentId)) return;
+    if (!snapshot.playerIds.includes(this.#bot.agentId)) return;
 
-    const observation = session.observe(this.#theo.agentId);
+    const observation = session.observe(this.#bot.agentId);
     if (
       observation.status.lifecycle !== "active"
-      || observation.activePlayerId !== this.#theo.agentId
+      || observation.activePlayerId !== this.#bot.agentId
     ) {
       return;
     }
 
     const decision = await chooseAgentDecision(
-      this.#theo,
+      this.#bot,
       {
         gameId: tacticalMovementDefinition.gameId,
         matchId: session.matchId,
-        playerId: this.#theo.agentId,
+        playerId: this.#bot.agentId,
         revision: session.revision,
         observation,
         legalActions: observation.legalActions,
       },
-      `${this.#theo.agentId}:${this.#idGenerator()}`,
+      `${this.#bot.agentId}:${this.#idGenerator()}`,
     );
     const result = session.submit({
       actionId: decision.actionId,
-      playerId: this.#theo.agentId,
+      playerId: this.#bot.agentId,
       expectedRevision: session.revision,
       action: decision.action,
     });
     if (!result.accepted) {
-      throw new Error(`Theo tactical decision was rejected: ${result.message}`);
+      throw new Error(`ArenaBot tactical movement decision was rejected: ${result.message}`);
     }
   }
 

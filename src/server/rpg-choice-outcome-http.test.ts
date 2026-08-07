@@ -179,6 +179,7 @@ test("Node RPG HTTP boundary resolves a bounded choice and resumes after a termi
   assert.equal(launchedResponse.status, 200);
   const launched = await launchedResponse.json();
   assert.equal(launched.state, "preparing");
+  assert.equal(launched.play.matchId, `rpg:${encounterRequest.encounterId}`);
 
   const completion = record(fixture.completionCase, "completionCase");
   const completionRequest = record(completion.request, "completionCase.request");
@@ -225,7 +226,10 @@ test("Node RPG HTTP boundary resolves a bounded choice and resumes after a termi
     "rpg-gm-runtime",
   );
   assert.equal(fetchedOutcome.status, 200);
-  assert.deepEqual(await fetchedOutcome.json(), completed);
+  assert.deepEqual(await fetchedOutcome.json(), {
+    ...completed,
+    play: launched.play,
+  });
 
   const resume = record(fixture.resumeCase, "resumeCase");
   const resumeRequest = record(resume.request, "resumeCase.request");

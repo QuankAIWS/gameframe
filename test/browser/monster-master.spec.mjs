@@ -162,10 +162,10 @@ async function openPrepared(page, prepared, playerId) {
   await waitForPixi(page);
 }
 
-test("deploys a full creature roster, advances combat against Theo, and resumes the battle", async ({ page }) => {
+test("deploys a full creature roster, advances combat against Monster Master BattleBot, and resumes the battle", async ({ page }) => {
   test.setTimeout(45_000);
   await page.goto("/monster-master.html?player=monster-master-human");
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await waitForPixi(page);
 
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 0");
@@ -273,7 +273,7 @@ test("renders the bounded round-cap draw", async ({ page, request }) => {
 test("Monster Master controls remain usable without horizontal overflow on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/monster-master.html?player=monster-mobile");
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await waitForPixi(page);
   await expect(page.locator("#monster-master-select-deploy")).toBeVisible();
   await page.locator("#monster-master-zoom-in").click();

@@ -2,6 +2,7 @@ import {
   chooseAgentDecision,
   type AgentPlayer,
 } from "../agents/agent-player.ts";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import {
   DeterministicCheckersPlayer,
   checkersDefinition,
@@ -23,18 +24,18 @@ export interface PublicCheckersMatchView {
 export interface CheckersMatchServiceOptions {
   store: MatchSnapshotStore<CheckersState, CheckersAction>;
   idGenerator?: () => string;
-  theo?: AgentPlayer<CheckersAction, CheckersObservation>;
+  bot?: AgentPlayer<CheckersAction, CheckersObservation>;
 }
 
 export class CheckersMatchService {
   readonly #store: MatchSnapshotStore<CheckersState, CheckersAction>;
   readonly #idGenerator: () => string;
-  readonly #theo: AgentPlayer<CheckersAction, CheckersObservation>;
+  readonly #bot: AgentPlayer<CheckersAction, CheckersObservation>;
 
   constructor(options: CheckersMatchServiceOptions) {
     this.#store = options.store;
     this.#idGenerator = options.idGenerator ?? (() => crypto.randomUUID());
-    this.#theo = options.theo ?? new DeterministicCheckersPlayer("theo");
+    this.#bot = options.bot ?? new DeterministicCheckersPlayer(GAMEFRAME_BOT_PLAYER_ID);
   }
 
   async createMatch(
@@ -64,9 +65,9 @@ export class CheckersMatchService {
       definition: checkersDefinition,
       playerIds: normalizedPlayers,
     });
-    await this.#runTheoTurnIfNeeded(session);
+    await this.#runBotTurnIfNeeded(session);
     await this.#store.save(session.snapshot());
-    const requestingPlayerId = normalizedPlayers.find((playerId) => playerId !== this.#theo.agentId)
+    const requestingPlayerId = normalizedPlayers.find((playerId) => playerId !== this.#bot.agentId)
       ?? normalizedPlayers[0];
     return this.#view(session, requestingPlayerId);
   }
@@ -96,7 +97,7 @@ export class CheckersMatchService {
       throw error;
     }
 
-    await this.#runTheoTurnIfNeeded(session);
+    await this.#runBotTurnIfNeeded(session);
     await this.#store.save(session.snapshot());
     return this.#view(session, input.playerId);
   }
@@ -111,40 +112,40 @@ export class CheckersMatchService {
     return (await this.#loadSession(matchId)).replay();
   }
 
-  async #runTheoTurnIfNeeded(
+  async #runBotTurnIfNeeded(
     session: MatchSession<CheckersState, CheckersAction, CheckersObservation>,
   ): Promise<void> {
     const snapshot = session.snapshot();
-    if (!snapshot.playerIds.includes(this.#theo.agentId)) return;
+    if (!snapshot.playerIds.includes(this.#bot.agentId)) return;
 
-    const theoObservation = session.observe(this.#theo.agentId);
+    const botObservation = session.observe(this.#bot.agentId);
     if (
-      theoObservation.status.lifecycle !== "active" ||
-      theoObservation.activePlayerId !== this.#theo.agentId
+      botObservation.status.lifecycle !== "active" ||
+      botObservation.activePlayerId !== this.#bot.agentId
     ) {
       return;
     }
 
     const decision = await chooseAgentDecision(
-      this.#theo,
+      this.#bot,
       {
         gameId: checkersDefinition.gameId,
         matchId: session.matchId,
-        playerId: this.#theo.agentId,
+        playerId: this.#bot.agentId,
         revision: session.revision,
-        observation: theoObservation,
-        legalActions: theoObservation.legalActions,
+        observation: botObservation,
+        legalActions: botObservation.legalActions,
       },
-      `${this.#theo.agentId}:${this.#idGenerator()}`,
+      `${this.#bot.agentId}:${this.#idGenerator()}`,
     );
-    const theoResult = session.submit({
+    const botResult = session.submit({
       actionId: decision.actionId,
-      playerId: this.#theo.agentId,
+      playerId: this.#bot.agentId,
       expectedRevision: session.revision,
       action: decision.action,
     });
-    if (!theoResult.accepted) {
-      throw new Error(`Theo decision was rejected: ${theoResult.message}`);
+    if (!botResult.accepted) {
+      throw new Error(`CheckersBot decision was rejected: ${botResult.message}`);
     }
   }
 

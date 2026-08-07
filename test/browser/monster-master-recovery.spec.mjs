@@ -62,13 +62,13 @@ test("failed duel creation restores usable lobby controls", async ({ page }) => 
   });
 
   await page.goto("/monster-master.html?player=monster-create-recovery");
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("#monster-master-error")).toContainText("Synthetic creation outage");
   await expect(page.locator("#monster-master-lobby")).toBeVisible();
-  await expect(page.locator("#monster-master-theo")).toBeEnabled();
+  await expect(page.locator("#monster-master-bot")).toBeEnabled();
   await expect(page.locator("#monster-master-human")).toBeEnabled();
 
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("#monster-master-match")).toBeVisible();
   await expect(page.locator("#monster-master-phase")).toHaveText("Deployment");
 });

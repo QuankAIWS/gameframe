@@ -58,7 +58,7 @@ function statusState() {
   if (text.includes("draw")) return "draw";
   if (text.includes("deploy")) return "deployment";
   if (text.includes("loading") || text.includes("preparing")) return "loading";
-  if (text.includes("opponent") || text.includes("theo") || text.includes("resolving")) return "waiting";
+  if (text.includes("opponent") || text.includes("gameframe-bot") || text.includes("resolving")) return "waiting";
   return match && !match.hidden ? "combat" : "lobby";
 }
 

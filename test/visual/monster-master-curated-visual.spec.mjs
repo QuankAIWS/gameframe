@@ -237,7 +237,7 @@ test("captures Monster Master lobby, deployment, combat, and move-selection stat
   await capture(page, testInfo, "20-monster-master-lobby-mobile");
 
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("#monster-master-phase")).toHaveText("Deployment");
   await expect(page.locator('#monster-master-options button[data-action-kind="deploy-unit"]')).toHaveCount(3);
   await capture(page, testInfo, "21-monster-master-deployment");

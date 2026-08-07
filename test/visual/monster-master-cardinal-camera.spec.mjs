@@ -26,7 +26,7 @@ test("Monster Master WASD camera input stays screen-cardinal at every rotation",
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/monster-master.html?player=monster-cardinal-keyboard");
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterPixiBridge?.panScreen))).toBe(true);
 
@@ -65,7 +65,7 @@ test("Monster Master active-turn portrait uses a smooth non-rotating idle motion
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/monster-master.html?player=monster-turn-motion");
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
 
   const turnCard = page.locator(".monster-master-turn-unit").first();

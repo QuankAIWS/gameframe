@@ -3,7 +3,7 @@
   "requestId": "decision-fixture-1",
   "gameId": "tic-tac-toe",
   "matchId": "match-fixture-1",
-  "playerId": "theo",
+  "playerId": "gameframe-bot",
   "expectedRevision": 3,
   "observation": {
     "board": [
@@ -18,7 +18,7 @@
       null
     ],
     "yourMark": "O",
-    "nextPlayerId": "theo",
+    "nextPlayerId": "gameframe-bot",
     "status": {
       "lifecycle": "active",
       "winnerPlayerId": null,

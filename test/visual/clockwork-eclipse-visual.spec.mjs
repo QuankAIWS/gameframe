@@ -41,7 +41,7 @@ test("Clockwork Eclipse active match obeys the full-viewport contract", async ({
   ]) {
     await page.setViewportSize(viewport);
     await page.goto("/?game=american-checkers&player=visual-clockwork-eclipse");
-    await page.locator("#challenge-theo").click();
+    await page.locator("#challenge-bot").click();
     await expect(page.locator("body")).toHaveClass(/checkers-premium-running/);
     await settle(page);
     await assertViewportContract(page);
@@ -55,7 +55,7 @@ test("Clockwork Eclipse active match obeys the full-viewport contract", async ({
 test("Clockwork Eclipse preserves authoritative Checkers selection", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/?game=american-checkers&player=visual-clockwork-selection");
-  await page.locator("#challenge-theo").click();
+  await page.locator("#challenge-bot").click();
   await page.locator(".checkers-cell.selectable-piece").first().click();
   await expect(page.locator(".checkers-cell.legal-destination").first()).toBeVisible();
   await assertViewportContract(page);

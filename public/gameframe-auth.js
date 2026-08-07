@@ -15,7 +15,10 @@ function normalizeIdentity(value) {
 
 function developmentIdentity(preferred) {
   const explicit = normalizeIdentity(preferred);
-  if (explicit) return explicit;
+  if (explicit) {
+    window.localStorage.setItem(developmentStorageKey, explicit);
+    return explicit;
+  }
   const existing = normalizeIdentity(window.localStorage.getItem(developmentStorageKey));
   if (existing) return existing;
   const created = `browser-${crypto.randomUUID()}`;

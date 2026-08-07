@@ -24,7 +24,7 @@ test("returns from Monster Master through the universal destination bar", async 
 
 test("opens and closes Monster Master diagnostics", async ({ page }) => {
   await page.goto("/monster-master.html?player=monster-diagnostics");
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("#monster-master-match")).toBeVisible();
 
   const diagnostics = page.locator("details.diagnostics");

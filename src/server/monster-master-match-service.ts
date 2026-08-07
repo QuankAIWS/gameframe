@@ -2,6 +2,7 @@ import {
   chooseAgentDecision,
   type AgentPlayer,
 } from "../agents/agent-player.ts";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import {
   DeterministicMonsterMasterPlayer,
   monsterMasterDefinition,
@@ -23,18 +24,18 @@ export interface PublicMonsterMasterMatchView {
 export interface MonsterMasterMatchServiceOptions {
   store: MatchSnapshotStore<MonsterMasterState, MonsterMasterAction>;
   idGenerator?: () => string;
-  theo?: AgentPlayer<MonsterMasterAction, MonsterMasterObservation>;
+  bot?: AgentPlayer<MonsterMasterAction, MonsterMasterObservation>;
 }
 
 export class MonsterMasterMatchService {
   readonly #store: MatchSnapshotStore<MonsterMasterState, MonsterMasterAction>;
   readonly #idGenerator: () => string;
-  readonly #theo: AgentPlayer<MonsterMasterAction, MonsterMasterObservation>;
+  readonly #bot: AgentPlayer<MonsterMasterAction, MonsterMasterObservation>;
 
   constructor(options: MonsterMasterMatchServiceOptions) {
     this.#store = options.store;
     this.#idGenerator = options.idGenerator ?? (() => crypto.randomUUID());
-    this.#theo = options.theo ?? new DeterministicMonsterMasterPlayer("theo");
+    this.#bot = options.bot ?? new DeterministicMonsterMasterPlayer(GAMEFRAME_BOT_PLAYER_ID);
   }
 
   async createMatch(
@@ -64,9 +65,9 @@ export class MonsterMasterMatchService {
       definition: monsterMasterDefinition,
       playerIds: normalizedPlayers,
     });
-    await this.#runTheoActionsIfNeeded(session);
+    await this.#runBotActionsIfNeeded(session);
     await this.#store.save(session.snapshot());
-    const requestingPlayerId = normalizedPlayers.find((playerId) => playerId !== this.#theo.agentId)
+    const requestingPlayerId = normalizedPlayers.find((playerId) => playerId !== this.#bot.agentId)
       ?? normalizedPlayers[0];
     return this.#view(session, requestingPlayerId);
   }
@@ -96,7 +97,7 @@ export class MonsterMasterMatchService {
       throw error;
     }
 
-    await this.#runTheoActionsIfNeeded(session);
+    await this.#runBotActionsIfNeeded(session);
     await this.#store.save(session.snapshot());
     return this.#view(session, input.playerId);
   }
@@ -117,44 +118,44 @@ export class MonsterMasterMatchService {
     return (await this.#loadSession(matchId)).replay();
   }
 
-  async #runTheoActionsIfNeeded(
+  async #runBotActionsIfNeeded(
     session: MatchSession<MonsterMasterState, MonsterMasterAction, MonsterMasterObservation>,
   ): Promise<void> {
-    if (!session.snapshot().playerIds.includes(this.#theo.agentId)) return;
+    if (!session.snapshot().playerIds.includes(this.#bot.agentId)) return;
 
     for (let actionCount = 0; actionCount < 12; actionCount += 1) {
-      const observation = session.observe(this.#theo.agentId);
+      const observation = session.observe(this.#bot.agentId);
       if (
         observation.status.lifecycle !== "active"
-        || observation.activePlayerId !== this.#theo.agentId
+        || observation.activePlayerId !== this.#bot.agentId
       ) {
         return;
       }
 
       const decision = await chooseAgentDecision(
-        this.#theo,
+        this.#bot,
         {
           gameId: monsterMasterDefinition.gameId,
           matchId: session.matchId,
-          playerId: this.#theo.agentId,
+          playerId: this.#bot.agentId,
           revision: session.revision,
           observation,
           legalActions: observation.legalActions,
         },
-        `${this.#theo.agentId}:${this.#idGenerator()}`,
+        `${this.#bot.agentId}:${this.#idGenerator()}`,
       );
       const result = session.submit({
         actionId: decision.actionId,
-        playerId: this.#theo.agentId,
+        playerId: this.#bot.agentId,
         expectedRevision: session.revision,
         action: decision.action,
       });
       if (!result.accepted) {
-        throw new Error(`Theo Monster Master decision was rejected: ${result.message}`);
+        throw new Error(`Monster Master BattleBot decision was rejected: ${result.message}`);
       }
     }
 
-    throw new Error("Theo Monster Master turn exceeded the bounded action limit.");
+    throw new Error("Monster Master BattleBot turn exceeded the bounded action limit.");
   }
 
   async #loadSession(

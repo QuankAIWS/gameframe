@@ -54,7 +54,7 @@ async function openSharedGameMenu(page, viewport, game, theme) {
   await expect(page.locator(".game-menu-hero")).toBeVisible();
   await expect(page.locator(".game-grid")).toBeHidden();
   await expect(page.locator(".mode-grid")).toBeVisible();
-  await expect(page.locator("#challenge-theo")).toBeVisible();
+  await expect(page.locator("#challenge-bot")).toBeVisible();
   await expect(page.locator("#create-human-match")).toBeVisible();
 }
 
@@ -68,7 +68,7 @@ async function openCheckersMenu(page, viewport) {
 
 async function openTicTacToe(page, viewport) {
   await openTicTacToeMenu(page, viewport);
-  await page.locator("#challenge-theo").click();
+  await page.locator("#challenge-bot").click();
   await expect(page.locator("body.tic-tac-toe-noir-running")).toBeVisible();
   await expectDestinationBar(page, "tic");
   await expect(page.locator(".tic-noir-topbar")).toBeHidden();
@@ -82,7 +82,7 @@ async function openTicTacToe(page, viewport) {
 
 async function openCheckers(page, viewport) {
   await openCheckersMenu(page, viewport);
-  await page.locator("#challenge-theo").click();
+  await page.locator("#challenge-bot").click();
   await expect(page.locator("body.gameframe-shared-match-running")).toBeVisible();
   await expectDestinationBar(page, "checkers");
   await expect(page.locator("#board.board-checkers")).toBeVisible();
@@ -97,7 +97,7 @@ async function openOthelloMenu(page, viewport) {
   await expectDestinationBar(page, "othello-obsidian");
   await expect(page.locator(".othello-app > .product-header")).toBeHidden();
   await expect(page.locator("#othello-game-menu")).toBeVisible();
-  await expect(page.locator("#othello-play-theo")).toBeVisible();
+  await expect(page.locator("#othello-play-bot")).toBeVisible();
   await expect(page.locator("#othello-play-local")).toBeVisible();
   await expect(page.locator("#othello-resume")).toBeVisible();
   await expect(page.locator("#dark-score")).toHaveText("2");
@@ -108,10 +108,10 @@ async function openOthelloMenu(page, viewport) {
 
 async function openOthello(page, viewport) {
   await openOthelloMenu(page, viewport);
-  await page.locator("#othello-play-theo").click();
+  await page.locator("#othello-play-bot").click();
   await expect(page.locator("#othello-game-menu")).toBeHidden();
   await expect(page.locator(".score-rail-dark > span")).toHaveText("You");
-  await expect(page.locator(".score-rail-light > span")).toHaveText("Theo");
+  await expect(page.locator(".score-rail-light > span")).toHaveText("OthelloBot");
   await expectBoardFirstOnMobile(page, ".board-viewport");
 
   const canvas = page.locator("#othello-board");
@@ -128,13 +128,13 @@ async function openMonsterMasterLobby(page, viewport) {
   await expectDestinationBar(page, "monster");
   await expect(page.locator(".monster-master-shell > .hero")).toBeHidden();
   await expect(page.locator("#monster-master-lobby")).toBeVisible();
-  await expect(page.locator("#monster-master-theo")).toBeVisible();
+  await expect(page.locator("#monster-master-bot")).toBeVisible();
   await expect(page.locator("#monster-master-human")).toBeVisible();
 }
 
 async function openMonsterMaster(page, viewport) {
   await openMonsterMasterLobby(page, viewport);
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
   await expect(page.locator("#monster-master-roster-title")).toHaveText("Turn order");

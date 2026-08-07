@@ -1,9 +1,9 @@
 {
   "protocolVersion": "1",
   "requestId": "decision-fixture-1",
-  "playerId": "theo",
+  "playerId": "gameframe-bot",
   "expectedRevision": 3,
-  "actionId": "theo-action-fixture-1",
+  "actionId": "gameframe-bot-action-fixture-1",
   "action": {
     "type": "place",
     "cell": 4
