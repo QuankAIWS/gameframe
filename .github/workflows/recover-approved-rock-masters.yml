@@ -4,7 +4,7 @@ run-name: Recover Approved Rock Masters · PR ${{ github.event.pull_request.numb
 on:
   pull_request:
     branches: [main]
-    types: [labeled]
+    types: [labeled, synchronize]
 
 permissions:
   contents: write
@@ -18,7 +18,7 @@ jobs:
   recover:
     if: >-
       github.event.pull_request.number == 124
-      && github.event.label.name == 'recover-approved-rock-masters'
+      && contains(github.event.pull_request.labels.*.name, 'recover-approved-rock-masters')
     runs-on: ubuntu-latest
     timeout-minutes: 12
 
