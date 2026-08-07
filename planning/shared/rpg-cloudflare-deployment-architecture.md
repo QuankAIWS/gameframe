@@ -3,16 +3,15 @@ title: RPG Deployment Architecture
 status: accepted
 document_type: architecture
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-04
+last_updated: 2026-08-07
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
-  - initial VM deployment
-  - Cloudflare public edge
-  - future Cloudflare-native scale profile
+  - hybrid Cloudflare and VM deployment
   - Discord entry and invitations
+  - trusted private staging deployment
 shared_document_id: rpg-cloudflare-deployment-architecture-v1
-shared_document_version: 2
+shared_document_version: 3
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-cloudflare-deployment-architecture.md
 mirrors:
@@ -29,332 +28,302 @@ related:
 
 ## Decision
 
-The first production-shaped RPG deployment runs GameFrame and RPG GM Runtime as separate services on one dedicated VM. Cloudflare provides the public edge through DNS, TLS, CDN behavior, denial-of-service protection, and Cloudflare Tunnel. The VM initiates the tunnel outbound; the home router exposes no inbound application port and ordinary players require no Tailscale, WARP, VPN, tailnet membership, or direct origin access.
+The current production-shaped RPG topology is a **hybrid Cloudflare + private VM profile**.
 
-Only GameFrame is publicly routed. RPG GM Runtime remains private to the VM service network and accepts authenticated service calls from GameFrame. The two services use separate processes or containers, separate persistent stores, separate credentials, and independently versioned releases even when they share one machine.
+GameFrame remains the public player-facing authority. Its Cloudflare Worker serves the public application boundary, Discord/session routes, static assets, ordinary GameFrame routes, and ordinary Durable Object-backed matches. RPG campaign and `rpg:*` tactical traffic is authenticated at that edge and HMAC-proxied to the durable RPG authority on the private VM.
 
-Cloudflare Workers, Durable Objects, Queues, and R2 remain supported future scale components. They are not prerequisites for the first public campaign and must not become correctness dependencies until their migration gates are satisfied.
+The VM initiates Cloudflare Tunnel outbound. No application port is forwarded on the home router, no VM application port is advertised in public DNS, and ordinary players require no Tailscale, WARP, VPN, tailnet membership, or direct origin access.
 
-## Deployment profiles
+The RPG GM Runtime remains a separate loopback-only service on the same VM. It owns hidden campaign truth and model orchestration and is never directly routed from Cloudflare or the browser.
 
-### Profile A — Initial VM production profile
+This document supersedes the earlier assumption that the first deployment would tunnel all GameFrame traffic directly to a public-facing Node GameFrame origin on the VM. Current implemented Worker, Durable Object, HMAC proxy, durable RPG service, and SQLite authority take precedence.
 
-This is the controlling first deployment:
-
-- one dedicated Linux VM;
-- GameFrame Node service as the only public application origin;
-- RPG GM Runtime as a private service;
-- Cloudflare Tunnel as public ingress;
-- Cloudflare DNS, TLS, CDN, and edge protection;
-- durable local persistence owned independently by each service;
-- prepared assets served by GameFrame and cacheable through Cloudflare;
-- operator administration through a private management path such as Tailscale or local console;
-- no router port forwarding and no public SSH, database, GameFrame service port, or GM service port.
-
-### Profile B — Cloudflare-native scale profile
-
-This is a later migration target:
-
-- GameFrame edge Worker;
-- campaign and encounter Durable Objects where their authority and persistence contracts justify migration;
-- Queues for slow idempotent work;
-- R2 or equivalent object storage for accepted binaries;
-- RPG GM Runtime remaining a separate authenticated service unless a later decision explicitly changes that boundary.
-
-Profile B must preserve the same versioned domain contracts, identities, audience rules, retry semantics, and authority split as Profile A. It is not a separate product architecture.
-
-## Initial topology
+## Current topology
 
 ```text
-Discord invitation, OAuth, Activity launch, or browser visit
-                         |
-                         v
-              Cloudflare public edge
-         DNS, TLS, CDN, protection, Tunnel
-                         |
-               outbound encrypted tunnel
-                         |
-                         v
-+--------------------- dedicated VM ----------------------+
-|                                                         |
-|  cloudflared                                            |
-|       |                                                 |
-|       v                                                 |
-|  GameFrame service                                     |
-|  public web app, auth, sessions, commands, presentation |
-|  campaign coordination, tactical authority, assets      |
-|       |                                                 |
-|       | private authenticated service call              |
-|       v                                                 |
-|  RPG GM Runtime service                                |
-|  narrative journal, context, NPC/world reasoning,       |
-|  model and provider adapters                            |
-|                                                         |
-|  GameFrame persistence    RPG GM Runtime persistence    |
-|  separate volume/store    separate volume/store         |
-+---------------------------------------------------------+
+Discord Activity / browser
+          |
+          v
+Cloudflare GameFrame Worker + assets
+          |
+          +--> ordinary GameFrame traffic
+          |       |
+          |       v
+          |   Durable Objects / Worker authority
+          |
+          +--> RPG campaign and rpg:* tactical traffic
+                  |
+                  | Discord/session-authenticated request
+                  | gameframe-hmac-v1 upstream signature
+                  v
+        stable HTTPS RPG origin hostname
+                  |
+          Cloudflare Tunnel
+        outbound from the VM
+                  |
+                  v
++---------------- private staging/production VM ----------------+
+|                                                               |
+| cloudflared                                                   |
+|    |                                                          |
+|    v                                                          |
+| GameFrame durable RPG service                                 |
+| loopback only; default 127.0.0.1:8790                         |
+| SQLite campaign/encounter/match authority for RPG traffic     |
+|    |                                                          |
+|    | authenticated service protocol                           |
+|    v                                                          |
+| RPG GM Runtime                                                |
+| loopback only                                                 |
+| hidden campaign truth, journal, context, provider orchestration|
+|                                                               |
+| separate persistent state and independently versioned releases |
++---------------------------------------------------------------+
 ```
 
-Players connect to a normal public HTTPS hostname through Cloudflare. They do not connect to the residential IP, router, VM address, container network, or runtime service directly.
+Stopping `cloudflared` removes public reachability to the VM RPG origin. It must not expose a fallback LAN or public application listener.
 
-## Cloudflare edge boundary
+## Cloudflare GameFrame boundary
 
-Cloudflare is the initial public edge, not the initial authoritative application host.
+The GameFrame Worker is the public application boundary.
 
-The edge provides:
+It owns or fronts:
 
-- public DNS for the GameFrame hostname;
-- managed HTTPS and certificate termination;
-- Tunnel routing to the private origin;
-- cache delivery for explicitly cacheable static assets;
-- edge denial-of-service and abuse protection available to the selected plan;
-- origin address concealment so public DNS does not advertise the residential IP.
+- Discord OAuth and Activity authentication;
+- signed GameFrame sessions;
+- browser assets and public application routes;
+- invitations, seats, player command custody, and player-facing presentation;
+- ordinary GameFrame Durable Object-backed matches;
+- authenticated RPG campaign edge routes;
+- authenticated RPG-bound tactical routes;
+- HMAC construction for requests forwarded to the VM RPG origin.
 
-Normal dynamic GameFrame requests route through the tunnel to the VM without requiring a Worker or Durable Object invocation. This keeps the initial application independent of Cloudflare compute request quotas while retaining Cloudflare as the public ingress.
+The Worker requires a distinct HTTPS RPG origin and a shared HMAC secret. The RPG origin must not equal the public GameFrame origin.
 
-Stopping `cloudflared` makes the application unavailable. It must not expose a fallback origin port.
+The current Worker configuration uses `GAMEFRAME_RPG_ORIGIN_URL` and `GAMEFRAME_RPG_PROXY_HMAC_SECRET`. The shared secret is machine-generated, contains at least 32 bytes, and exists only in the Cloudflare Worker secret store and the private GameFrame RPG service configuration.
 
-## Router and host network posture
+## VM GameFrame durable RPG authority
 
-The initial production posture is deny-by-default:
+The VM GameFrame RPG service is a separate service from ordinary Cloudflare GameFrame match authority.
 
-- no router forwarding for ports 80, 443, GameFrame, RPG GM Runtime, SSH, databases, or administration;
-- no VM placement in the router DMZ;
+It owns the current durable SQLite authority for RPG-specific campaign coordination, RPG encounter binding, configured Monster Master RPG matches, legal RPG tactical actions, terminal participant outcomes, and delivery to the RPG GM Runtime.
+
+Current process constraints are deliberate:
+
+- default listen address `127.0.0.1`;
+- default port `8790`;
+- non-loopback bind addresses are rejected;
+- Cloudflare-facing requests use HMAC proxy authentication;
+- GameFrame-to-GM calls use a separate bearer service credential;
+- the SQLite database lives outside immutable release directories.
+
+Cloudflare Tunnel may connect to `http://127.0.0.1:8790` because `cloudflared` runs on the same VM. The application itself does not need to bind to the LAN interface.
+
+## RPG GM Runtime boundary
+
+RPG GM Runtime remains private and loopback-only.
+
+It owns:
+
+- committed CampaignPackage truth and provenance;
+- narrative journal and semantic campaign revision;
+- hidden NPC/world state and runtime-only knowledge;
+- Dungeon Master semantic decisions and player-safe rendering contracts;
+- model/provider selection and bounded retries;
+- application of GameFrame-authoritative encounter outcomes to campaign truth.
+
+It accepts only authenticated service traffic from the VM GameFrame RPG service. It receives no Discord client secret, GameFrame session-signing secret, browser cookie, Cloudflare HMAC edge secret, or authority to impersonate a player.
+
+`RPG_GM_SERVICE_TOKEN` is a separate machine-generated shared secret of at least 32 bytes installed at the GameFrame RPG service and GM service boundaries.
+
+## Network posture
+
+The home-hosted VM uses deny-by-default application exposure:
+
+- no router forwarding for HTTP, HTTPS, GameFrame, RPG GM, databases, or staging application ports;
+- no VM placement in a router DMZ;
 - no UPnP-created application forwarding;
-- host firewall denies unsolicited inbound traffic;
-- the VM permits only required outbound traffic and established responses;
-- GameFrame listens only on loopback or the private container network behind the tunnel;
-- RPG GM Runtime listens only on the private service network;
-- databases and persistent stores are never publicly bound;
-- operator administration uses a separate private management channel.
+- GameFrame RPG and GM services bind only to loopback;
+- databases are never network-bound;
+- `cloudflared` creates outbound connections to Cloudflare;
+- administrative SSH or Tailscale is a separate operator path and is not part of player connectivity.
 
-The production VM should be isolated from sensitive household devices through a dedicated VM network, host-only segmentation, VLAN, or equivalent boundary where practical. The production services must not share a VM with an untrusted or general-purpose GitHub Actions runner.
+A host firewall is recommended before broader production use. The primary application security invariant is still that no application service listens on a public or LAN interface merely to support Tunnel routing.
 
-## Service isolation on one VM
+## Service and data isolation
 
-Same-machine deployment does not collapse the services.
+Same-machine deployment does not collapse authority boundaries.
 
-GameFrame and RPG GM Runtime must have:
+GameFrame RPG and RPG GM Runtime have:
 
-- separate process identities or containers;
-- separate working directories and immutable application images or releases;
-- separate writable data volumes;
-- separate secrets;
+- separate systemd services and process identities;
+- independently versioned immutable release directories;
+- separate persistent writable state directories;
+- separate environment/secret files;
 - independent health checks and restart policies;
-- bounded CPU, memory, and disk behavior;
-- independently deployable and rollback-capable versions;
-- an explicit authenticated service protocol.
+- an explicit authenticated service protocol;
+- no direct access to each other's private database internals.
 
-A private Docker network or loopback connection reduces exposure but does not replace service authentication. GameFrame-to-runtime requests carry a service identity or signed credential, protocol version, bounded payload, timeout, and idempotency identity where mutation is possible.
+Recommended host layout:
 
-RPG GM Runtime receives no GameFrame session-signing secret, Discord client secret, browser cookie, raw database handle, or authority to impersonate a player.
+```text
+/opt/rpg-staging/gameframe-rpg/releases/<gameframe-sha>/
+/opt/rpg-staging/gameframe-rpg/current -> releases/<gameframe-sha>
+/opt/rpg-staging/rpg-gm/releases/<runtime-sha>/
+/opt/rpg-staging/rpg-gm/current -> releases/<runtime-sha>
 
-## GameFrame responsibilities in Profile A
+/var/lib/rpg-staging/gameframe-rpg/
+/var/lib/rpg-staging/rpg-gm/
 
-GameFrame owns the public HTTP boundary for:
+/etc/rpg-staging/
+```
 
-- Discord OAuth callbacks and Discord Activity authentication;
-- issuance and verification of GameFrame sessions;
-- invitation creation, inspection, acceptance, cancellation, and expiry;
-- campaign creation, join, attach, resume, command, feed, and projection routes;
-- scene, dialogue, choice, map, character, inventory, quest, recap, and encounter presentation;
-- tactical legal actions, revisions, replay, reconnect, and terminal outcomes;
-- browser assets and prepared campaign media;
-- routing authenticated semantic commands to RPG GM Runtime;
-- applying runtime-authored presentation events and structured campaign consequences through the accepted cross-repository contract.
+Release files are disposable and reproducible. SQLite, narrative receipts, backups, and other durable authority live under `/var/lib`, not inside a release directory. Secrets live under root-controlled `/etc` configuration and are never copied into release artifacts.
 
-GameFrame derives principals from verified server-side authentication. A request body, query parameter, display name, avatar, Discord username, or client-provided player ID is never proof of identity.
+## Trusted deployment runner boundary
 
-## RPG GM Runtime responsibilities in Profile A
+The public `scribbles-gameframe` repository must not gain general execution authority on the private/home VM.
 
-RPG GM Runtime remains the separate campaign-intelligence service. It owns:
+The accepted staging shape is:
 
-- runtime-authoritative narrative event history and semantic campaign truth;
-- NPC motives, memory, relationships, and dialogue intent;
-- freeform action interpretation;
-- runtime-owned audience classification and hidden information;
-- context construction, provider selection, retries, evaluation, and deterministic fallback;
-- bounded scene, dialogue, choice, check, consequence, media, and encounter proposals;
-- application of structured GameFrame outcomes to runtime-owned campaign truth.
+```text
+public scribbles-gameframe repository
+        -> ordinary public-repository CI elsewhere
 
-It is not publicly routed and does not serve browser clients.
+private rpg-gm-runtime deployment workflow
+        -> trusted self-hosted VM runner
+        -> resolve an exact approved GameFrame SHA
+        -> fetch/build that public source as deployment input
+        -> deploy the paired staging release
+```
 
-## Durable persistence in Profile A
+A private deployment workflow consuming an exact public GameFrame commit is not equivalent to allowing GameFrame workflows to execute on the VM.
 
-The existing in-memory Node stores are development adapters, not production persistence.
-
-Before public VM deployment, GameFrame requires durable local adapters for the state it must authoritatively operate and reconnect, including:
-
-- identities needed beyond a signed session lifetime;
-- campaign membership and seat claims;
-- invitations and atomic acceptance receipts;
-- command idempotency and conflict receipts;
-- GameFrame coordination revisions and player projection positions;
-- match and encounter snapshots, event history, replay, and terminal outcomes;
-- asset references and readiness state owned by GameFrame.
-
-RPG GM Runtime retains its own durable store for runtime-owned narrative events and semantic state.
-
-The initial implementation should prefer a simple transactional local store such as SQLite in WAL mode where its write and concurrency profile is appropriate. PostgreSQL or another service may be introduced when measured concurrency, operations, backup, or availability requirements justify it.
-
-The stores remain separate. Neither repository reads or writes the other service's database, files, journal, migrations, or internal tables. Cross-service synchronization occurs only through versioned APIs and durable identifiers.
-
-## Revision and journal separation
-
-Profile A must make the dual authority explicit:
-
-- GameFrame coordination revision covers authenticated commands, memberships, client projection positions, tactical state, encounter references, and GameFrame-owned mechanics;
-- RPG GM Runtime narrative revision covers semantic campaign truth, NPC/world state, runtime-authored consequences, and hidden narrative facts.
-
-The two revisions are linked by stable command IDs, runtime commit IDs, encounter IDs, and acknowledged receipts. They are not presented as one interchangeable revision counter.
-
-## Discord entry and invitation flow
-
-The intended player journey is:
-
-1. An authenticated campaign member creates a bounded, signed, expiring invitation in GameFrame.
-2. The recipient opens the link through an ordinary browser or Discord Activity.
-3. Discord authentication establishes the external identity.
-4. GameFrame issues or resumes its own signed session for a stable principal.
-5. The invitation authorizes an atomic campaign-seat claim but does not itself establish identity.
-6. GameFrame commits membership and returns the authorized player projection.
-7. The player resumes later through the same public GameFrame hostname without replaying the invitation.
-
-Discord voice and social chat may accompany play. They do not substitute for GameFrame commands, projections, persistence, or authorization.
-
-## Projection and reconnect
-
-HTTP or an equivalent authoritative request boundary owns mutations. WebSockets may deliver responsive projections but are not a second mutation path.
-
-Correctness cannot depend on receiving every WebSocket message. Each player can recover by presenting a valid session and bounded resume cursor, then fetching the current projection or missed feed range.
-
-Tests must cover:
-
-- GameFrame process restart;
-- RPG GM Runtime process restart;
-- browser refresh and later-session resume;
-- missed projection recovery;
-- duplicate and stale command rejection;
-- public, party, player-private, and runtime-only filtering;
-- restart during encounter completion or runtime response delivery;
-- lost-response retry without duplicate campaign events.
-
-## Static assets and media
-
-Prepared HTML, JavaScript, CSS, Pixi bundles, game art, and deterministic campaign assets may be served by GameFrame through the tunnel. Hashed immutable assets should use long-lived cache headers so Cloudflare can serve them efficiently. API, authentication, personalized HTML, private media, and mutation routes must not be publicly cached.
-
-R2 or another object store is optional in the first deployment. Generated media may begin on a dedicated VM volume with explicit quotas, retention, provenance, backup, and cleanup. Object storage becomes preferred when accepted binary volume, multi-origin delivery, durability, or migration requirements justify it.
-
-Slow model, image, audio, and composition work never executes inside a state commit that must complete for legal play. Media failure retains a placeholder or prepared fallback.
+The staging VM may share the trusted private deployment runner during active development. Public pull requests, forks, or arbitrary public-repository workflow code must never be executed on that runner with private source, deployment credentials, provider keys, or home-network authority.
 
 ## Release and rollback
 
-Each repository produces an independently versioned deployable artifact, preferably an immutable container image or release bundle.
+Each deployment records both source revisions.
 
-The deployment flow should:
+The staging deployment flow is:
 
-1. validate the exact source revision;
-2. build the GameFrame or runtime artifact;
-3. publish it to an owner-controlled registry or release store;
-4. pull the pinned version onto the VM;
-5. run schema and migration preflight;
-6. start the candidate with health checks;
-7. switch traffic or service routing only after readiness;
-8. retain the previous compatible artifact and database backup for rollback.
+1. resolve exact RPG GM Runtime and GameFrame SHAs;
+2. run focused validation before deployment;
+3. build each release without root privileges;
+4. install immutable release directories;
+5. verify required configuration and secrets are present without printing them;
+6. stop the two local application services for a bounded activation window;
+7. take consistent backups of durable SQLite/state files;
+8. atomically update `current` release links;
+9. start RPG GM Runtime first;
+10. verify GM private health;
+11. start the GameFrame durable RPG service;
+12. verify GameFrame private health and service authentication;
+13. ensure `cloudflared` is healthy;
+14. verify Worker -> Tunnel -> VM routing;
+15. verify GameFrame -> RPG GM Runtime delivery;
+16. run an external staging smoke/canary;
+17. record deployed SHAs, health results, and rollback targets.
 
-A GameFrame deployment must not silently upgrade the GM service, and a GM deployment must not replace GameFrame. Cross-repository compatibility is verified through the shared contract and recorded source versions.
+A failed activation restores the previous `current` links and restarts the previous compatible pair. Persistent state is not rolled backward automatically unless an operator explicitly chooses a database restore, because release rollback and authority-data rollback are different operations.
 
-## Backup and recovery
+## Cloudflare Worker deployment
 
-The VM profile requires documented backup and restore before public campaigns are considered durable.
+The public GameFrame Worker may be deployed from the trusted private staging workflow using the exact resolved GameFrame SHA.
 
-Backups cover:
+Cloudflare account/deploy credentials and Worker secrets remain secret-store values. They are not committed to either repository or copied to artifacts.
 
-- GameFrame persistence;
-- RPG GM Runtime persistence;
-- accepted local media and provenance records;
-- deployment configuration excluding recoverable build artifacts;
-- encrypted secret recovery material according to operator policy.
+At minimum staging eventually configures:
 
-Restore testing must prove a campaign can resume from backups without identity collision, duplicate command application, missing terminal outcome, or cross-service revision confusion.
+- `SESSION_SECRET`;
+- `DISCORD_CLIENT_ID`;
+- `DISCORD_CLIENT_SECRET`;
+- `DISCORD_ALLOWED_USER_IDS`;
+- `GAMEFRAME_RPG_ORIGIN_URL`;
+- `GAMEFRAME_RPG_PROXY_HMAC_SECRET`.
+
+The stable public staging hostname should remain fixed while release SHAs change behind it. The RPG tunnel hostname is an origin endpoint, not the player-facing application URL.
+
+## Persistence, backup, and recovery
+
+GameFrame RPG and RPG GM Runtime keep separate durable stores.
+
+Backups cover at least:
+
+- GameFrame RPG SQLite state;
+- RPG GM Runtime SQLite/state and narrative-link state;
+- deployment metadata identifying the paired source SHAs;
+- non-secret configuration needed to reconstruct service layout.
+
+Secret recovery follows operator policy and remains outside ordinary release artifacts.
+
+Restore testing must prove that a campaign can resume without duplicate command application, identity collision, missing terminal outcome, or cross-service revision confusion.
+
+## Discord entry
+
+The intended staging/production player path is:
+
+```text
+Discord Activity
+  -> stable GameFrame HTTPS hostname
+  -> Cloudflare Worker
+  -> ordinary Cloudflare authority or RPG edge proxy as appropriate
+```
+
+Discord URL configuration should normally remain stable across application deployments. A release changes what runs behind the staging hostname, not the Activity URL itself.
 
 ## Failure behavior
 
 | Failure | Required behavior |
 | --- | --- |
 | Browser disconnect | Preserve committed state and permit resume. |
-| WebSocket loss | Recover by authenticated polling or feed cursor. |
-| Tunnel interruption | Keep local state intact and resume public service when the tunnel reconnects. |
-| GameFrame restart | Recover GameFrame-owned state from durable persistence. |
-| RPG GM Runtime restart | Recover runtime-owned journal and semantic state without duplicating accepted commands. |
-| Runtime timeout | Preserve command identity and retry without duplicate events. |
-| Lost response after commit | Return the existing durable receipt or committed result. |
-| Image provider failure | Keep placeholder or prepared asset and continue play. |
-| Audio provider failure | Display text and continue play. |
-| Local media volume unavailable | Keep the asset unresolved and do not publish a broken reference. |
-| Discord unavailable after login | Existing valid GameFrame sessions continue according to session policy. |
-| VM outage | Restore from durable disks or backups; never reconstruct authority from browser state. |
+| Tunnel interruption | Keep local state intact; VM application ports remain private. |
+| GameFrame Worker failure | Do not create a direct-origin bypass. |
+| GameFrame RPG restart | Recover GameFrame-owned RPG state from SQLite. |
+| RPG GM Runtime restart | Recover runtime-owned journal/state without duplicating accepted commands. |
+| Runtime timeout | Preserve semantic command identity and retry without duplicate events. |
+| Lost response after commit | Return/recover the existing durable receipt or committed result. |
+| Deployment failure | Restore previous release links and restart the previous compatible pair. |
+| VM outage | Restore from durable state/backups; never reconstruct authority from browser state. |
 
-## Cloudflare-native scale profile
+## Future migration profile
 
-Profile B may be adopted incrementally rather than as one rewrite.
+Cloudflare-native migration may continue incrementally, but the current hybrid is already an intentional architecture rather than a temporary fake deployment.
 
-Candidate migrations include:
+Future candidates include moving additional RPG coordination or encounter authority into Durable Objects, Queues, or R2 only when export/import, retry, reconnect, privacy, cost, and rollback gates are proven. RPG GM Runtime remains a separate authenticated service unless a later architectural decision explicitly moves that trust boundary.
 
-1. move public route handling or selected stateless edge logic to a Worker;
-2. move large accepted binaries to R2 or equivalent object storage;
-3. move asynchronous work to Queues;
-4. move encounter authority to an Encounter Durable Object after its storage and replay contract is proven;
-5. move GameFrame campaign coordination to a Campaign Durable Object after dual-revision ownership, migration, reconnect, and recovery semantics are settled;
-6. retain RPG GM Runtime behind the same narrow authenticated service contract.
-
-A migration must preserve stable IDs, accepted receipts, revisions, event ordering, player projections, terminal outcomes, and rollback capability. It must not require campaign reset or direct database sharing.
-
-## Cloudflare-native migration gates
-
-Cloudflare compute is not a production correctness dependency until automated tests prove:
-
-1. export and import between the local persistence adapter and target Cloudflare storage;
-2. exact command retry and conflict behavior across migration;
-3. campaign and encounter recovery after Durable Object eviction;
-4. projection reconnect after Worker or object restart;
-5. one campaign entering and returning from an encounter;
-6. player-private projection enforcement;
-7. stable asset retrieval after storage migration;
-8. rollback to a compatible prior deployment without campaign corruption;
-9. public desktop and mobile journeys that require no Tailscale;
-10. measured request, duration, storage, and cost behavior within the selected Cloudflare plan or approved budget.
+No migration may require campaign reset or direct cross-service database sharing.
 
 ## Environments
 
 Maintain separate local, test, staging, and production configuration.
 
-- Local development may use synthetic identity only through explicit development-only routes.
-- Test environments use deterministic providers and disposable stores.
-- VM staging uses the same service topology, tunnel behavior, persistence adapters, and migration process as VM production with restricted Discord access.
-- Cloudflare-native staging is introduced only for Profile B migration work.
-- Production uses explicit budgets, rate limits, logs, metrics, backups, retention, and incident procedures.
+- local development may use explicit synthetic identity and disposable stores;
+- automated tests use deterministic providers and isolated state;
+- VM staging uses the hybrid Worker/DO + Tunnel + loopback-service topology with restricted Discord access;
+- production uses the same authority split with stronger operational controls, budgets, retention, backups, and incident procedures.
 
-No environment may silently fall back from authenticated production behavior to synthetic local identity.
+No environment silently falls back from authenticated staging/production behavior to development identity.
 
-## Initial validation gates
+## Staging acceptance gates
 
-Profile A is production-shaped when automated and operator-observed tests prove:
+The hybrid staging profile is useful before the complete campaign is product-complete, but each evidence claim remains bounded.
 
-1. public Discord OAuth or Activity authentication through Cloudflare Tunnel;
-2. signed invitation and atomic campaign-seat claim;
-3. two public-network players joining the same campaign without a VPN;
-4. no router port forwarding or direct public origin route;
-5. GameFrame-to-runtime authenticated service calls over the private network;
-6. durable command idempotency and revision conflict behavior;
-7. GameFrame and runtime restart recovery;
-8. campaign-to-Arena-Battles-to-campaign outcome application;
-9. player-private projection enforcement;
-10. prepared asset delivery with safe cache behavior;
-11. provider failure without campaign corruption;
-12. backup restoration and later-session resume;
-13. desktop and mobile journeys that require no Tailscale.
+Deployment-level acceptance requires:
+
+1. Worker and assets reachable through the stable staging hostname;
+2. no router application forwarding and no direct public VM application listener;
+3. Worker RPG edge health reports configured upstream routing;
+4. HMAC-authenticated Worker -> Tunnel -> GameFrame RPG requests;
+5. bearer-authenticated GameFrame RPG -> GM calls;
+6. separate durable state for both services;
+7. restart recovery for both local services;
+8. release rollback without deleting durable state;
+9. actual configured Monster Master Arena traffic using the VM RPG authority;
+10. later, the complete single-player campaign and Discord Activity canary required by the testing ladder.
+
+A successful tunnel or health endpoint does not by itself prove a complete RPG campaign.
 
 ## Governing rule
 
-> Cloudflare is the public edge; the first authoritative services run separately on one private VM; GameFrame is the only public game origin; RPG GM Runtime remains private; and Cloudflare-native stateful compute is adopted later only through an evidence-backed migration.
+> GameFrame stays the public player authority at Cloudflare; ordinary GameFrame traffic stays on Worker/Durable Object authority; RPG-specific traffic is authenticated and proxied through Cloudflare Tunnel to the loopback-only durable RPG service; RPG GM Runtime remains a separate private service; and the public GameFrame repository never receives general execution authority on the private VM.
