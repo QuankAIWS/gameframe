@@ -159,7 +159,7 @@ Repository proofs do not by themselves establish production deployment. The foll
 - durable production RPG service integration and restart recovery;
 - production observability, quota, backup, and incident behavior.
 
-GitHub Actions is currently unavailable for the active identity-cleanup branch, so no exact-head canonical validation is claimed for those commits.
+Validation claims are exact-head only. The active pull request and durable validation records identify completed GitHub Actions runs; any later commit invalidates an earlier pass.
 
 ## Ownership and licensing
 
