@@ -2,8 +2,13 @@ import { HmacProxyRequestAuthenticator } from "../auth/hmac-proxy-request-authen
 import { DevelopmentHeaderAuthenticator } from "../auth/request-authenticator.ts";
 import { parseDurableRpgProcessConfig } from "./durable-rpg-process-config.ts";
 import { createConfiguredDurableRpgService } from "./durable-rpg-service-lifecycle.ts";
+import {
+  durableRpgStagingBootstrap,
+  parseDurableRpgStagingBootstrapConfig,
+} from "./durable-rpg-staging-bootstrap.ts";
 
 const config = parseDurableRpgProcessConfig(process.env);
+const stagingBootstrapConfig = parseDurableRpgStagingBootstrapConfig(process.env);
 const authenticator = config.authentication.mode === "hmac-proxy"
   ? new HmacProxyRequestAuthenticator({
       proxySecret: config.authentication.proxyHmacSecret,
@@ -17,6 +22,9 @@ const lifecycle = createConfiguredDurableRpgService({
   gmBaseUrl: config.gmBaseUrl,
   gmServiceToken: config.gmServiceToken,
   authenticator,
+  ...(stagingBootstrapConfig
+    ? { bootstrapCampaigns: [durableRpgStagingBootstrap(stagingBootstrapConfig)] }
+    : {}),
   pollIntervalMs: config.pollIntervalMs,
   deliveryTimeoutMs: config.deliveryTimeoutMs,
 });
@@ -59,6 +67,9 @@ try {
     databasePath: config.filePath,
     gmBaseUrl: config.gmBaseUrl,
     authentication: config.authentication.mode,
+    ...(stagingBootstrapConfig
+      ? { stagingCampaignId: stagingBootstrapConfig.campaignId }
+      : {}),
   })}\n`);
   await lifecycle.waitUntilTerminated();
 } catch (error) {
