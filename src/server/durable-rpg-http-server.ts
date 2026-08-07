@@ -3,6 +3,8 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import {
   AuthenticationError,
   DevelopmentHeaderAuthenticator,
+  rejectIdentityClaim,
+  requirePlayerPrincipal,
   type AuthenticatedPrincipal,
   type RequestAuthenticator,
 } from "../auth/request-authenticator.ts";
@@ -11,6 +13,9 @@ import {
   DurableRpgCampaignServiceError,
   type DurableRpgPrincipal,
 } from "../rpg/durable-rpg-campaign-service.ts";
+import {
+  SqliteRpgEncounterMatchCoordinator,
+} from "../rpg/sqlite-rpg-encounter-match-coordinator.ts";
 import type { DurableCampaignBootstrap } from "../rpg/sqlite-rpg-campaign-store.ts";
 import {
   SqliteRpgEncounterError,
@@ -50,6 +55,11 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
     clock,
   });
   const encounters = new SqliteRpgEncounterStore({ filePath: options.filePath });
+  const encounterMatches = new SqliteRpgEncounterMatchCoordinator({
+    filePath: options.filePath,
+    encounters,
+    clock,
+  });
   for (const bootstrap of options.bootstrapCampaigns ?? []) {
     campaigns.bootstrapCampaign(bootstrap);
   }
@@ -109,7 +119,7 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
         return sendJson(
           response,
           200,
-          encounters.launch(body, {
+          await encounterMatches.launchEncounter(body, {
             serviceId: principal.playerId,
             createdAt: clock(),
           }),
@@ -125,7 +135,7 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
         return sendJson(
           response,
           200,
-          encounters.get(encounterRoute.encounterId, {
+          await encounterMatches.getEncounter(encounterRoute.encounterId, {
             serviceId: principal.playerId,
           }),
         );
@@ -140,6 +150,41 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
           encounters.complete(encounterRoute.encounterId, body, {
             serviceId: principal.playerId,
             completedAt: clock(),
+          }),
+        );
+      }
+
+      const matchRoute = matchRpgMatchRoute(url.pathname);
+      if (matchRoute?.operation === "view" && request.method === "GET") {
+        const principal = await authenticate(
+          authenticator,
+          request,
+          url,
+          Buffer.alloc(0),
+        );
+        requirePlayerPrincipal(principal);
+        rejectIdentityClaim(principal, url.searchParams.get("playerId"));
+        return sendJson(
+          response,
+          200,
+          await encounterMatches.viewMatchForPlayer(matchRoute.matchId, principal.playerId),
+        );
+      }
+      if (matchRoute?.operation === "actions" && request.method === "POST") {
+        const bodyBytes = await readRequestBody(request);
+        const principal = await authenticate(authenticator, request, url, bodyBytes);
+        requirePlayerPrincipal(principal);
+        const body = parseJsonBody(bodyBytes);
+        rejectIdentityClaim(principal, body.playerId);
+        return sendJson(
+          response,
+          200,
+          await encounterMatches.submitMatchActionForPlayer({
+            matchId: matchRoute.matchId,
+            playerId: principal.playerId,
+            actionId: String(body.actionId ?? ""),
+            expectedRevision: Number(body.expectedRevision),
+            action: body.action,
           }),
         );
       }
@@ -159,6 +204,7 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
   server.once("close", () => {
     if (closed) return;
     closed = true;
+    encounterMatches.close();
     encounters.close();
     campaigns.close();
   });
@@ -186,6 +232,19 @@ function matchEncounterRoute(pathname: string):
   return {
     encounterId: decodeURIComponent(match[1]!),
     operation: match[2] ? "complete" : "item",
+  };
+}
+
+function matchRpgMatchRoute(pathname: string):
+  | { operation: "view" | "actions"; matchId: string }
+  | undefined {
+  const match = /^\/api\/matches\/([^/]+)(\/actions)?$/.exec(pathname);
+  if (!match) return undefined;
+  const matchId = decodeURIComponent(match[1]!);
+  if (!matchId.startsWith("rpg:")) return undefined;
+  return {
+    matchId,
+    operation: match[2] ? "actions" : "view",
   };
 }
 
