@@ -31,7 +31,9 @@ function configuredInput() {
         participantId: "trainer:rival",
         controller: { kind: "runtime" },
         teamId: "team:rivals",
-        rulesState: { creatureIds: ["creature:bulwark:rival"] },
+        rulesState: {
+          creatureIds: ["creature:bulwark:rival", "creature:emberling:rival"],
+        },
       },
     ],
     objectives: [
@@ -63,12 +65,12 @@ test("materializes exact participant creature identities into revision-zero tact
 
   assert.deepEqual(materialized.teamUnitIds, {
     "team:keepers": ["creature:emberling:ada", "creature:bulwark:bryn"],
-    "team:rivals": ["creature:bulwark:rival"],
+    "team:rivals": ["creature:bulwark:rival", "creature:emberling:rival"],
   });
   assert.deepEqual(materialized.participantUnitIds, {
     "trainer:ada": ["creature:emberling:ada"],
     "trainer:bryn": ["creature:bulwark:bryn"],
-    "trainer:rival": ["creature:bulwark:rival"],
+    "trainer:rival": ["creature:bulwark:rival", "creature:emberling:rival"],
   });
 
   const state = materialized.initialState;
@@ -79,6 +81,7 @@ test("materializes exact participant creature identities into revision-zero tact
     "creature:emberling:ada",
     "creature:bulwark:bryn",
     "creature:bulwark:rival",
+    "creature:emberling:rival",
   ]);
   assert.deepEqual(
     state.rosters[playerSeatId].map((unit) => ({ id: unit.id, role: unit.role, contentId: unit.contentId })),
@@ -106,6 +109,11 @@ test("materializes exact participant creature identities into revision-zero tact
         id: "creature:bulwark:rival",
         role: "bulwark",
         contentId: "stone-bulwark-v1",
+      },
+      {
+        id: "creature:emberling:rival",
+        role: "emberling",
+        contentId: "emberling-skirmisher-v1",
       },
     ],
   );
@@ -144,7 +152,7 @@ test("fails closed on unsupported creature species and combat rules instead of s
   );
 });
 
-test("rejects duplicate creatures and team rosters beyond the bounded Arena surface", () => {
+test("rejects duplicate, oversized, and asymmetric tactical rosters", () => {
   const duplicate = configuredInput();
   duplicate.participants[1]!.rulesState = { creatureIds: ["creature:emberling:ada"] };
   assert.throws(
@@ -164,5 +172,12 @@ test("rejects duplicate creatures and team rosters beyond the bounded Arena surf
   assert.throws(
     () => materializeMonsterMasterRpgEncounter(oversized),
     /must materialize from 1 through 3 supported creatures/,
+  );
+
+  const asymmetric = configuredInput();
+  asymmetric.participants[2]!.rulesState = { creatureIds: ["creature:bulwark:rival"] };
+  assert.throws(
+    () => materializeMonsterMasterRpgEncounter(asymmetric),
+    /requires equal tactical creature counts/,
   );
 });
