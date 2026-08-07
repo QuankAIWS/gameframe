@@ -62,7 +62,7 @@ jobs:
           else
             gzip -dc /tmp/mm-rock-fresh-transfer.bin > /tmp/mm-rock-fresh-transfer.tar || true
             test -s /tmp/mm-rock-fresh-transfer.tar
-            tar --ignore-zeros -xf /tmp/mm-rock-fresh-transfer.tar -C /tmp/mm-rock-unpack
+            tar --ignore-zeros -xf /tmp/mm-rock-fresh-transfer.tar -C /tmp/mm-rock-unpack || true
           fi
 
           master_dir='target/public/assets/monster-master/props/rock-boulder-set-v1/source/master'
