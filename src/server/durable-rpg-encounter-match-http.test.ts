@@ -91,7 +91,9 @@ function launchRequest() {
         participantId: "participant:warden",
         controller: { kind: "runtime" },
         teamId: "team:opposition",
-        rulesState: { creatureIds: ["creature:bulwark:warden"] },
+        rulesState: {
+          creatureIds: ["creature:bulwark:warden", "creature:emberling:warden"],
+        },
       },
     ],
     objectives: [
@@ -163,10 +165,11 @@ test("durable cooperative RPG battle materializes exact participant creatures an
   let runtime = await start(filePath, true);
   let persistedRevision = 0;
   const expectedTeamUnits = ["creature:emberling:ada", "creature:bulwark:bryn"];
+  const expectedOpponentUnits = ["creature:bulwark:warden", "creature:emberling:warden"];
   const expectedParticipantUnits = {
     "participant:ada": ["creature:emberling:ada"],
     "participant:bryn": ["creature:bulwark:bryn"],
-    "participant:warden": ["creature:bulwark:warden"],
+    "participant:warden": expectedOpponentUnits,
   };
   try {
     const launchedResponse = await fetch(
@@ -206,7 +209,10 @@ test("durable cooperative RPG battle materializes exact participant creatures an
     );
     assert.deepEqual(
       ada.observation.rosters[GAMEFRAME_BOT_PLAYER_ID].map((unit: any) => [unit.id, unit.role]),
-      [["creature:bulwark:warden", "bulwark"]],
+      [
+        ["creature:bulwark:warden", "bulwark"],
+        ["creature:emberling:warden", "emberling"],
+      ],
     );
     assert.equal(
       Object.values(ada.observation.rosters).flat().some((unit: any) => unit.role === "master"),
@@ -278,6 +284,10 @@ test("durable cooperative RPG battle materializes exact participant creatures an
       resumed.observation.rosters["player:ada"].map((unit: any) => unit.id),
       expectedTeamUnits,
     );
+    assert.deepEqual(
+      resumed.observation.rosters[GAMEFRAME_BOT_PLAYER_ID].map((unit: any) => unit.id),
+      expectedOpponentUnits,
+    );
 
     const runtimeRead = await fetch(
       `${runtime.baseUrl}/api/rpg/encounters/encounter-one`,
@@ -305,6 +315,31 @@ test("durable RPG launch rejects unsupported creature configuration before encou
     assert.equal(response.status, 400);
     const failure = await json(response);
     assert.equal(failure.error, "unsupported-encounter-configuration");
+
+    const missing = await fetch(
+      `${runtime.baseUrl}/api/rpg/encounters/encounter-one`,
+      { headers: serviceHeaders("rpg-gm-runtime") },
+    );
+    assert.equal(missing.status, 404);
+  } finally {
+    await close(runtime.server);
+  }
+});
+
+test("durable RPG launch rejects asymmetric creature rosters before encounter custody", async () => {
+  const filePath = databasePath();
+  const runtime = await start(filePath, true);
+  try {
+    const launch = launchRequest();
+    launch.participants[2]!.rulesState = { creatureIds: ["creature:bulwark:warden"] };
+    const response = await fetch(
+      `${runtime.baseUrl}/api/rpg/encounters`,
+      post(launch, serviceHeaders("rpg-gm-runtime")),
+    );
+    assert.equal(response.status, 400);
+    const failure = await json(response);
+    assert.equal(failure.error, "unsupported-encounter-configuration");
+    assert.match(failure.message, /requires equal tactical creature counts/);
 
     const missing = await fetch(
       `${runtime.baseUrl}/api/rpg/encounters/encounter-one`,
