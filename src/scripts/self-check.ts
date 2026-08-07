@@ -147,6 +147,7 @@ const textExtensions = new Set([
   ".md", ".txt", ".yml", ".yaml",
 ]);
 const executableRoots = ["src", "public", "test", "scripts", ".github"];
+const retiredIdentityViolations: string[] = [];
 
 for (const root of executableRoots) {
   const absoluteRoot = join(repositoryRoot, root);
@@ -154,18 +155,19 @@ for (const root of executableRoots) {
     const repositoryPath = relative(repositoryRoot, absolutePath).replaceAll("\\", "/");
     if (!textExtensions.has(extname(absolutePath).toLowerCase())) continue;
     const content = await readFile(absolutePath, "utf8");
-    assert.doesNotMatch(
-      repositoryPath,
-      retiredBuiltInIdentityPattern,
-      `${repositoryPath} retains the retired built-in opponent identity in its path.`,
-    );
-    assert.doesNotMatch(
-      content,
-      retiredBuiltInIdentityPattern,
-      `${repositoryPath} retains the retired built-in opponent identity. Named external-agent references belong only in explicit architecture documentation.`,
-    );
+    if (retiredBuiltInIdentityPattern.test(repositoryPath)) {
+      retiredIdentityViolations.push(`${repositoryPath} (path)`);
+    }
+    if (retiredBuiltInIdentityPattern.test(content)) {
+      retiredIdentityViolations.push(`${repositoryPath} (content)`);
+    }
   }
 }
+assert.deepEqual(
+  retiredIdentityViolations,
+  [],
+  `Executable GameFrame surfaces retain the retired built-in opponent identity:\n${retiredIdentityViolations.join("\n")}`,
+);
 
 const retiredProjectName = [retiredBuiltInIdentity, "gameframe"].join("-");
 const retiredPlatformTokens = [retiredProjectName, `@quankaiws/${retiredProjectName}`];
