@@ -1,6 +1,7 @@
 import { env, exports as workerExports } from "cloudflare:workers";
 import { evictDurableObject } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../../src/agents/gameframe-bot.ts";
 import { SignedSessionCodec } from "../../src/auth/signed-session.ts";
 import type { MonsterMasterAction, MonsterMasterObservation } from "../../src/games/monster-master/index.ts";
 
@@ -82,7 +83,7 @@ async function submit(
 
 describe("Monster Master in the real workerd runtime", () => {
   it("persists alternating deployment and player projections through eviction", async () => {
-    let view = await createMatch(["human", "theo"]);
+    let view = await createMatch(["human", GAMEFRAME_BOT_PLAYER_ID]);
     expect(view.observation.phase).toBe("deployment");
     expect(view.observation.board.units).toHaveLength(0);
 
@@ -108,16 +109,16 @@ describe("Monster Master in the real workerd runtime", () => {
     expect(restored.observation.undeployedUnitIds).toEqual(view.observation.undeployedUnitIds);
     expect(restored.observation.legalActions).toEqual(view.observation.legalActions);
 
-    const theoView = await workerFetch(
+    const botView = await workerFetch(
       `/api/matches/${encodeURIComponent(view.matchId)}`,
-      "theo",
+      GAMEFRAME_BOT_PLAYER_ID,
     ).then((response) => response.json() as Promise<MonsterMasterMatchView>);
-    expect(theoView.observation.activePlayerId).toBe("human");
-    expect(theoView.observation.legalActions).toHaveLength(0);
+    expect(botView.observation.activePlayerId).toBe("human");
+    expect(botView.observation.legalActions).toHaveLength(0);
   });
 
-  it("persists the completed deployment transition and Theo combat activation", async () => {
-    let view = await createMatch(["human", "theo"]);
+  it("persists the completed deployment transition and Monster Master BattleBot combat activation", async () => {
+    let view = await createMatch(["human", GAMEFRAME_BOT_PLAYER_ID]);
     for (let deployment = 0; deployment < 3; deployment += 1) {
       view = await submit(
         view,
