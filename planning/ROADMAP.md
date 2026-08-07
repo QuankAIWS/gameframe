@@ -1,3 +1,22 @@
+---
+title: Scribbles GameFrame Roadmap
+status: active
+document_type: roadmap
+owner: Scribbles GameFrame
+last_updated: 2026-08-07
+applies_to:
+  - scribbles-gameframe
+  - Monster Master Arena Battles
+  - RPG GameFrame integration
+related:
+  - README.md
+  - rpg-documentation-index.md
+  - shared/rpg-platform-roadmap.md
+  - rpg-gameframe-interface-contract.md
+  - monster-master-rpg-canonical-baseline.md
+  - decisions/0005-gameframe-bot-and-external-agent-boundary.md
+---
+
 # Scribbles GameFrame Roadmap
 
 ## Canonical boundaries
@@ -84,45 +103,66 @@ This protocol is generic. It may later support named external agents, including 
 - Human-versus-human and human-versus-Monster-Master-BattleBot flows
 - Replay, persistence, invitations, browser play, Pixi/Canvas rendering, and visual review
 
-## Active
+### GF-0011A — Node-local Monster Master RPG encounter loop
 
-### GF-0011 — Monster Master RPG encounter loop
-
-Connect the separate Dungeon Master runtime to GameFrame through a structured encounter contract:
+Merged through PR #124 as the first player-facing campaign-to-battle semantic/UI proof:
 
 ```text
-human player action
-→ rpg-gm-runtime Dungeon Master
-→ committed encounter launch
-→ GameFrame Arena battle
-→ structured terminal outcome
-→ rpg-gm-runtime continuation
+Dungeon Master encounter scene
+→ GameFrame creates one bound Monster Master battle
+→ campaign shell opens Arena Battles
+→ battle completes
+→ GameFrame commits structured terminal outcome
+→ RPG GM continuation publishes aftermath
+→ player returns to campaign shell
 ```
 
-Current branch scope:
+The merged baseline proves:
 
-- Node-local campaign shell
-- deterministic encounter-to-match binding
-- exactly one human campaign player against Monster Master BattleBot
-- authorized battle handoff
-- narrative input fenced while battle is active
-- terminal result committed back to the RPG service
-- return to campaign continuation
+- Node-local campaign shell;
+- deterministic encounter-to-match binding;
+- exactly one human campaign player against Monster Master BattleBot;
+- authorized battle handoff;
+- narrative input fenced while battle is active;
+- terminal result committed back to the RPG service;
+- return-to-campaign presentation;
+- BattleBot remains a built-in GameFrame participant, not Theo or the Dungeon Master.
 
-The BattleBot is a temporary deterministic enemy participant. It is not Theo and it is not the Dungeon Master.
+This is not yet the final durable production binding.
 
-Remaining productionization:
+## Active
 
-- durable encounter-to-match bindings across process restart;
-- deployed Cloudflare edge and Durable Object match authority;
+### GF-0011B — Durable Monster Master RPG encounter productionization
+
+Port the merged Node-local encounter-to-match semantics onto GameFrame's existing durable RPG and encounter authority.
+
+Required work:
+
+- durable encounter-to-match binding across process restart;
+- preserve RPG campaign participant/team/controller identity into match authority;
+- preserve stable mapping between RPG encounter participants and authoritative match units;
 - durable SQLite-backed RPG service wiring;
-- authentication and service-to-service authorization;
-- duplicate/retry and reconnect validation across deployed components;
-- operational logging, quotas, backup, and recovery.
+- deployed service-to-service authorization and retry/reconnect behavior;
+- exact structured terminal participant outcomes for runtime aftermath;
+- deployed Cloudflare edge and Durable Object match authority where the selected deployment profile requires them;
+- operational reconciliation for partial distributed failures.
+
+Do not create a parallel persistent encounter database merely to port the Node-local coordinator. Reuse the established durable RPG/encounter stores.
+
+### Monster Master RPG rules fidelity
+
+The RPG campaign package can describe trainer/species/rules/ability choices beyond the fixed MM-0001 duel templates. The first playable campaign must not advertise combat options that Arena silently replaces with unrelated fixed units.
+
+Near-term rule:
+
+- either narrow the first package's combat-relevant selectable surface to what GameFrame executes;
+- or add an explicit RPG encounter definition/configuration that instantiates units from the supplied participant rules state.
+
+Reuse tactical primitives, rendering, match authority, and BattleBot infrastructure without forcing the fixed `monster-master-duel` roster to become every future RPG battle ruleset.
 
 ### Team-aware RPG battles
 
-The initial adapter intentionally rejects cooperative campaign rosters because the existing Arena battle is a two-seat duel. The next multiplayer design must explicitly map:
+The initial adapter intentionally rejects cooperative campaign rosters because the existing Arena battle is a two-seat duel. Multiplayer design must explicitly map:
 
 ```text
 human player ID
@@ -132,7 +172,9 @@ human player ID
 → permitted actions
 ```
 
-Enemy control must remain separately represented. Do not place a second human on the opposing seat merely to satisfy the duel contract.
+Enemy control remains separately represented. Do not place a second cooperative human on the opposing seat merely to satisfy the duel contract.
+
+This work follows the first complete single-player campaign proof unless a concrete blocker requires an earlier interface decision.
 
 ## Future
 
@@ -150,16 +192,16 @@ GameFrameBot remains the built-in deterministic participant. Theo does not repla
 
 ### Campaign and world expansion
 
-After the encounter lifecycle is durable:
+After the encounter lifecycle and complete RPG vertical slice are proven:
 
-- persistent party and inventory projections;
+- persistent party and inventory projections required by actual packages;
 - exploration and points of interest;
-- quests, dialogue, NPCs, and campaign map state;
+- quests, dialogue, NPC, and campaign map presentation state;
 - additional encounter rulesets;
 - generated campaign packages and assets;
-- bounded context compilation and campaign-authoring tools.
+- richer resumable campaign views.
 
-These systems belong to the Dungeon Master runtime and campaign package architecture where appropriate. GameFrame should retain only the campaign-facing projections and tactical contracts it needs.
+Campaign truth, Dungeon Master reasoning, and package authoring remain runtime responsibilities where appropriate. GameFrame retains authenticated player-facing projections and deterministic mechanics.
 
 ### Specialist game modules
 
@@ -174,6 +216,19 @@ These systems belong to the Dungeon Master runtime and campaign package architec
 - Native desktop or mobile clients
 - Claims of production readiness before deployed canaries and recovery tests exist
 
+## Documentation posture
+
+RPG planning should have one index, one cross-repository roadmap, one GameFrame-local roadmap, and explicit specialist contracts rather than accumulating competing status memos.
+
+Use:
+
+- `planning/rpg-documentation-index.md` for RPG reading order;
+- `planning/shared/rpg-platform-roadmap.md` for cross-repository milestone order;
+- this file for GameFrame-local implementation direction;
+- `planning/monster-master-rpg-canonical-baseline.md` for Monster Master authority.
+
+RPG planning YAML metadata and local relationship links are validated by the focused documentation-hygiene check.
+
 ## Validation note
 
-Validation is deliberate and exact-head. Completed GitHub Actions runs on the active pull request or durable validation records establish a tested commit; any later commit requires a new pass before merge.
+Validation is deliberate and exact-head. Completed GitHub Actions runs on the active pull request or durable validation records establish a tested commit; any later substantive commit requires a new pass before the corresponding product claim is advanced.

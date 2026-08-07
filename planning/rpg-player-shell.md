@@ -1,15 +1,17 @@
 ---
 title: Monster Master RPG Player Shell
-status: implemented-freeform-foundation
+status: active
 document_type: implementation_record
+implementation_status: implemented-freeform-foundation
 owner: Scribbles GameFrame
-last_updated: 2026-08-05
+last_updated: 2026-08-07
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
 related:
   - rpg-gameframe-interface-contract.md
   - rpg-signed-edge-authentication.md
+  - ROADMAP.md
   - ../public/monster-master-rpg.html
 ---
 
@@ -17,7 +19,7 @@ related:
 
 ## Purpose
 
-Provide the first usable authenticated campaign surface inside GameFrame while richer character, party, inventory, map, and encounter projections continue to develop.
+Provide the first usable authenticated campaign surface inside GameFrame while richer character, party, inventory, map, and campaign projections continue to develop.
 
 The shell is a separate destination from Monster Master Arena Battles. The human Master remains the trainer/player character; the tactical battler remains an encounter destination controlled by campaign state rather than the RPG shell itself pretending to be a monster.
 
@@ -46,25 +48,29 @@ The existing GameFrame authentication launcher establishes either the hosted Dis
 11. Refresh after command acceptance and poll for GM-authored presentation events.
 12. Reattach when the page becomes visible after suspension.
 13. Switch campaigns without retaining the previous campaign feed in memory.
+14. Recognize a supported encounter handoff, fence narrative input while battle is active, and open the bound Monster Master battle.
+15. Present a return-to-campaign surface after the bound battle reaches a terminal view.
+
+The encounter handoff in items 14–15 is the merged Node-local semantic/UI baseline from PR #124. Durable production encounter-to-match binding remains tracked in `ROADMAP.md`.
 
 ## Freeform-first interaction policy
 
 The text composer is the authoritative player-input surface for ordinary narrative play.
 
-- It remains available while suggested approaches are visible.
+- It remains available while suggested approaches are visible unless a tactical encounter currently owns player control.
 - Clicking a suggestion drafts text; it does not submit a command.
 - Suggested approaches are never exhaustive and never imply that unlisted actions are invalid.
 - The player may alter every word of a suggestion or ignore it completely.
 - The GM runtime receives the final written text and interprets it semantically in campaign context.
 - UI recommendations exist to reduce blank-page friction, not to constrain the model or simulate a branching video-game dialogue tree.
 
-Structured `campaign.submit_choice` remains a supported lower-level contract for future explicit selection surfaces where exact identifiers are materially required, such as a party vote, inventory selection, or non-narrative confirmation. The ordinary RPG shell does not use that command for conversational play.
+Structured `campaign.submit_choice` remains a supported lower-level contract for explicit selection surfaces where exact identifiers are materially required, such as a party vote, inventory selection, or non-narrative confirmation. The ordinary RPG shell does not use that command for conversational play.
 
 ## Presentation posture
 
-The shell renders semantic events generically rather than hardcoding campaign lore. It recognizes narration, dialogue, optional approaches, prompts, checks/consequences, and player actions, while preserving a bounded fallback for new event payloads.
+The shell renders semantic events generically rather than hardcoding campaign lore. It recognizes narration, dialogue, optional approaches, prompts, checks/consequences, encounter handoffs, player actions, and bounded fallback for new event payloads.
 
-GameFrame continues to own layout, responsive behavior, accessibility, and event presentation. RPG GM Runtime owns semantic content, contextual interpretation, NPC responses, consequences, and narrative truth.
+GameFrame owns layout, responsive behavior, accessibility, encounter navigation, and event presentation. RPG GM Runtime owns semantic content, contextual interpretation, NPC responses, consequences, and narrative truth.
 
 ## Correctness boundaries
 
@@ -77,25 +83,28 @@ GameFrame continues to own layout, responsive behavior, accessibility, and event
 - network or timeout ambiguity preserves the exact written action for idempotent retry;
 - recovered presentation events are deduplicated by event ID;
 - polling is recovery, not authority, and pauses while the page is hidden;
-- the browser uses the established GameFrame identity adapter rather than injecting player headers directly.
+- the browser uses the established GameFrame identity adapter rather than injecting player headers directly;
+- narrative input is fenced while the current campaign state is handing control to Arena Battles;
+- encounter play metadata is available only to authorized campaign participants.
 
 ## Deliberate current limits
 
-This foundation does not yet provide:
+This foundation does not yet provide the complete campaign product. Remaining gaps include:
 
-- campaign discovery or invitation acceptance;
-- character, party, inventory, equipment, ability, condition, quest, objective, location, or map projections;
-- acknowledgements and signed resumable cursors;
-- encounter transition UI and a campaign-to-battle binding;
-- player-private labeling when the projection omits explicit audience metadata;
+- polished campaign discovery, invitation acceptance, and multi-player join UX;
+- complete character, party, inventory, equipment, ability, condition, quest, clue, objective, location, and map projections;
+- all desired acknowledgements and signed resumable cursor behavior in the browser surface;
+- durable production encounter-to-match binding across restart and deployed components;
+- team-aware cooperative RPG battle control;
+- player-private presentation labeling wherever a projection intentionally omits explicit audience metadata;
 - offline command queueing beyond one ambiguous in-flight action;
 - push updates or WebSocket campaign events.
 
-Those remain additive slices on the same campaign application. They should not create a second RPG client, replace freeform input with menu traversal, or bypass the protocol-v2 campaign boundary.
+These remain additive slices on the same campaign application. They must not create a second RPG client, replace freeform input with menu traversal, or bypass the protocol-v2 campaign boundary.
 
 ## Validation
 
-The focused RPG gate validates the browser model, durable service, atomic acceptance transaction, outbox payload, and syntax. Required browser acceptance verifies:
+The focused RPG gate validates the browser model, durable service, atomic acceptance transaction, outbox payload, encounter handoff semantics, and syntax. Required browser acceptance covers:
 
 - the separate GameFrame library destination;
 - authenticated campaign attach;
@@ -106,4 +115,8 @@ The focused RPG gate validates the browser model, durable service, atomic accept
 - replacement of the suggestion with an unrelated player-authored action;
 - `campaign.submit_action` construction with the final text and current coordination revision;
 - exact retry after ambiguous delivery;
-- post-command refresh and GM response rendering.
+- post-command refresh and GM response rendering;
+- supported encounter handoff and narrative-input fencing;
+- return-to-campaign presentation after a terminal battle view.
+
+The browser handoff test is not by itself proof of a complete real campaign-to-Arena round trip; the cross-repository evidence contract defines that higher acceptance layer.

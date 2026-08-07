@@ -1,9 +1,10 @@
 ---
 title: RPG Signed Edge Authentication
-status: implemented
+status: active
 document_type: security_contract
+implementation_status: implemented
 owner: Scribbles GameFrame
-last_updated: 2026-08-04
+last_updated: 2026-08-07
 applies_to:
   - scribbles-gameframe
   - cloudflare-worker

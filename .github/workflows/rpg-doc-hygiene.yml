@@ -1,0 +1,50 @@
+name: RPG Documentation Hygiene
+run-name: RPG Documentation Hygiene · ${{ github.sha }}
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "planning/README.md"
+      - "planning/ROADMAP.md"
+      - "planning/rpg-*.md"
+      - "planning/monster-master-rpg-*.md"
+      - "planning/shared/**"
+      - "planning/decisions/0005-gameframe-bot-and-external-agent-boundary.md"
+      - "scripts/check-rpg-planning-docs.py"
+      - ".github/workflows/rpg-doc-hygiene.yml"
+  push:
+    branches: [main]
+    paths:
+      - "planning/README.md"
+      - "planning/ROADMAP.md"
+      - "planning/rpg-*.md"
+      - "planning/monster-master-rpg-*.md"
+      - "planning/shared/**"
+      - "planning/decisions/0005-gameframe-bot-and-external-agent-boundary.md"
+      - "scripts/check-rpg-planning-docs.py"
+      - ".github/workflows/rpg-doc-hygiene.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gameframe-rpg-doc-hygiene-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    name: RPG planning metadata and graph
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Validate RPG planning documentation
+        run: python3 scripts/check-rpg-planning-docs.py

@@ -1,9 +1,10 @@
 ---
 title: RPG Single-VM Deployment
-status: implementation-ready
+status: active
 document_type: deployment_runbook
+implementation_status: implementation-ready
 owner: Scribbles GameFrame
-last_updated: 2026-08-04
+last_updated: 2026-08-07
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
