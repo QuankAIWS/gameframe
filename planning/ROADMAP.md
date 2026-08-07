@@ -176,4 +176,4 @@ These systems belong to the Dungeon Master runtime and campaign package architec
 
 ## Validation note
 
-GitHub Actions is currently unavailable for the active identity-cleanup and RPG encounter branch. No exact-head canonical validation is claimed until the service is restored and the final branch head is tested.
+Validation is deliberate and exact-head. Completed GitHub Actions runs on the active pull request or durable validation records establish a tested commit; any later commit requires a new pass before merge.
