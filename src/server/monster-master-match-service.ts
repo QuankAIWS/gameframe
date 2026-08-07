@@ -41,6 +41,7 @@ export class MonsterMasterMatchService {
   async createMatch(
     playerIds: readonly string[],
     requestedMatchId?: string,
+    initialState?: MonsterMasterState,
   ): Promise<PublicMonsterMasterMatchView> {
     const normalizedPlayers = playerIds.map((playerId) => playerId.trim());
     if (
@@ -50,6 +51,17 @@ export class MonsterMasterMatchService {
     ) {
       const error = new Error("Monster Master requires exactly two distinct player IDs.");
       Object.assign(error, { code: "invalid_players" });
+      throw error;
+    }
+    if (
+      initialState
+      && (
+        initialState.playerIds.length !== normalizedPlayers.length
+        || initialState.playerIds.some((playerId, index) => playerId !== normalizedPlayers[index])
+      )
+    ) {
+      const error = new Error("Configured Monster Master state player order does not match the match seats.");
+      Object.assign(error, { code: "invalid_initial_state" });
       throw error;
     }
 
@@ -64,6 +76,19 @@ export class MonsterMasterMatchService {
       matchId,
       definition: monsterMasterDefinition,
       playerIds: normalizedPlayers,
+      ...(initialState
+        ? {
+            snapshot: {
+              matchId,
+              gameId: monsterMasterDefinition.gameId,
+              playerIds: normalizedPlayers,
+              revision: 0,
+              initialState,
+              state: initialState,
+              events: [],
+            },
+          }
+        : {}),
     });
     await this.#runBotActionsIfNeeded(session);
     await this.#store.save(session.snapshot());
