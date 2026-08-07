@@ -41,7 +41,7 @@ test("the tactical Canvas canary remains a projection over shared authority", as
   const tacticalService = await read("src/server/tactical-movement-match-service.ts");
   assert.match(tacticalService, /tacticalMovementDefinition/);
   assert.match(tacticalService, /chooseAgentDecision/);
-  assert.match(tacticalService, /DeterministicTacticalMovementPlayer\("theo"\)/);
+  assert.match(tacticalService, /new DeterministicTacticalMovementPlayer\(GAMEFRAME_BOT_PLAYER_ID\)/);
 
   const inMemoryDispatch = await read("src/server/in-memory-match-service.ts");
   assert.match(inMemoryDispatch, /"tactical-movement-canary"/);
