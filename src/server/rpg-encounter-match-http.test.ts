@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import { createGameFrameServer } from "./http-server.ts";
 
 function playerFetch(url: string, playerId: string, init: RequestInit = {}) {
@@ -86,7 +87,7 @@ function activeView() {
   return {
     gameId: "monster-master-duel",
     matchId: `rpg:${encounterId}`,
-    playerIds: ["player:ada", "theo"],
+    playerIds: ["player:ada", GAMEFRAME_BOT_PLAYER_ID],
     revision: 1,
     eventCount: 1,
     observation: {
@@ -171,7 +172,7 @@ test("live protocol v2 binds, authorizes, completes, and resumes an RPG encounte
   });
   assert.deepEqual(matches.created, {
     gameId: "monster-master-duel",
-    playerIds: ["player:ada", "theo"],
+    playerIds: ["player:ada", GAMEFRAME_BOT_PLAYER_ID],
     matchId: `rpg:${encounterId}`,
   });
 
@@ -190,7 +191,7 @@ test("live protocol v2 binds, authorizes, completes, and resumes an RPG encounte
   assert.equal(participant.status, 200);
   assert.equal((await participant.json()).play.matchId, `rpg:${encounterId}`);
 
-  for (const playerId of ["player:outsider", "theo"]) {
+  for (const playerId of ["player:outsider", GAMEFRAME_BOT_PLAYER_ID]) {
     const forbidden = await playerFetch(
       `${base}/api/rpg/encounters/${encodeURIComponent(encounterId)}`,
       playerId,
