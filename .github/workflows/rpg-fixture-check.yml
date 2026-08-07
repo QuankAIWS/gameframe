@@ -109,6 +109,7 @@ jobs:
           src/browser/monster-master-rpg-choice-model.test.ts
           src/browser/monster-master-rpg-encounter-model.test.ts
           src/cloudflare/rpg-edge-proxy.test.ts
+          src/cloudflare/rpg-edge-worker-match-routing.test.ts
           src/cloudflare/rpg-match-edge-proxy.test.ts
           src/platform/sqlite-match-store.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
