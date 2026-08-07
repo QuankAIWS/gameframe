@@ -12,7 +12,7 @@ async function expectStyledDestinationBar(page, theme) {
 async function openTic(page, viewport, player) {
   await page.setViewportSize(viewport);
   await page.goto(`/?game=tic-tac-toe&menu=1&player=${player}`);
-  await page.locator("#challenge-theo").click();
+  await page.locator("#challenge-bot").click();
   await expect(page.locator("body.tic-tac-toe-noir-running")).toBeVisible();
   await expectStyledDestinationBar(page, "tic");
   await expect(page.locator(".tic-noir-topbar")).toHaveCount(0);
@@ -111,7 +111,7 @@ test("Tic-Tac-Toe uses a two-row desktop viewport with an unclipped board and te
 test("Checkers never inherits Tic-Tac-Toe presentation wrappers", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?game=american-checkers&menu=1&player=checkers-style-regression");
-  await page.locator("#challenge-theo").click();
+  await page.locator("#challenge-bot").click();
 
   await expect(page.locator("body.gameframe-shared-match-running")).toBeVisible();
   await expect(page.locator("body.tic-tac-toe-noir-running")).toHaveCount(0);
@@ -127,7 +127,7 @@ test("Monster Master keeps its mobile setup control and session badge inside the
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/monster-master.html?player=monster-mobile-regression");
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
 
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expectStyledDestinationBar(page, "monster");
@@ -154,7 +154,7 @@ test("Monster Master uses a battlefield background with working contextual unit 
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/monster-master.html?player=monster-overlay-regression");
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("body.monster-master-overlay-ready")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
 
