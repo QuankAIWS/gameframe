@@ -43,13 +43,22 @@ CORE_RPG_INDEX_PATHS = {
     "monster-master-rpg-canonical-baseline.md",
     "rpg-gm-runtime-boundary.md",
     "rpg-gameframe-interface-contract.md",
+    "monster-master-rules.md",
 }
 PLANNING_README_PATHS = {
     "rpg-documentation-index.md",
     "shared/rpg-agent-architecture-and-campaign-package.md",
     "shared/rpg-platform-roadmap.md",
     "monster-master-rpg-canonical-baseline.md",
+    "monster-master-rules.md",
     "ROADMAP.md",
+}
+SOURCE_PATH_PREFIXES = ("src/", "public/", "planning/", "scripts/", "test/")
+SOURCE_PATH_CHECK_DOCS = {
+    "planning/ROADMAP.md",
+    "planning/rpg-gameframe-interface-contract.md",
+    "planning/rpg-platform-delivery-plan.md",
+    "planning/monster-master-rules.md",
 }
 
 
@@ -114,6 +123,7 @@ def managed_documents() -> list[Path]:
         PLANNING / "README.md",
         PLANNING / "ROADMAP.md",
         PLANNING / "rpg-documentation-index.md",
+        PLANNING / "monster-master-rules.md",
         PLANNING / "monster-master-rpg-canonical-baseline.md",
         PLANNING / "decisions" / "0005-gameframe-bot-and-external-agent-boundary.md",
         *PLANNING.glob("rpg-*.md"),
@@ -180,6 +190,25 @@ def validate_references(path: Path, data: dict[str, object]) -> list[str]:
     return errors
 
 
+def validate_source_paths(path: Path) -> list[str]:
+    path_key = relative(path)
+    if path_key not in SOURCE_PATH_CHECK_DOCS:
+        return []
+
+    text = path.read_text(encoding="utf-8")
+    errors: list[str] = []
+    references = sorted(set(re.findall(r"`((?:src|public|planning|scripts|test)/[^`\s]+)`", text)))
+    for reference in references:
+        if not reference.startswith(SOURCE_PATH_PREFIXES):
+            continue
+        if any(token in reference for token in ("*", "{", "}", "<", ">")):
+            continue
+        candidate = ROOT / reference.rstrip(".,;:")
+        if not candidate.exists():
+            errors.append(f"{path_key} references missing repository path: {reference}")
+    return errors
+
+
 def validate_indexes() -> list[str]:
     errors: list[str] = []
     rpg_index = (PLANNING / "rpg-documentation-index.md").read_text(encoding="utf-8")
@@ -220,6 +249,7 @@ def main() -> int:
         errors.extend(validate_front_matter(path, data))
         errors.extend(validate_references(path, data))
         errors.extend(validate_supersession(path, data))
+        errors.extend(validate_source_paths(path))
 
     errors.extend(validate_indexes())
 
