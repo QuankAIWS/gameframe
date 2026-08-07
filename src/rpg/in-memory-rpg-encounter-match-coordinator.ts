@@ -116,10 +116,11 @@ export class InMemoryRpgEncounterMatchCoordinator {
     principal: RpgPrincipal,
   ): Promise<unknown> {
     const encounterId = identifier(encounterIdValue, "encounterId");
-    if (principal.kind === "runtime") {
-      return await this.#rpg.getEncounter(encounterId, principal);
-    }
     const binding = this.#bindingsByEncounter.get(encounterId);
+    if (principal.kind === "runtime") {
+      const handle = await this.#rpg.getEncounter(encounterId, principal);
+      return binding ? withPlayMetadata(handle, binding) : handle;
+    }
     if (!binding || !binding.authorizedPlayerIds.includes(principal.playerId)) {
       throw failure(
         "forbidden",
