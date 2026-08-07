@@ -38,13 +38,17 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
   assert.match(roadmap, /### MM-0001 — Monster Master Arena Battles foundation/);
   assert.match(roadmap, /Human-versus-human and human-versus-Monster-Master-BattleBot flows/);
   assert.match(roadmap, /Replay, persistence, invitations, browser play, Pixi\/Canvas rendering, and visual review/);
-  assert.match(roadmap, /### GF-0011 — Monster Master RPG encounter loop/);
+  assert.match(roadmap, /### GF-0011A — Node-local Monster Master RPG encounter loop/);
+  assert.match(roadmap, /### GF-0011B — Durable Monster Master RPG encounter productionization/);
+  assert.match(roadmap, /### Team-aware RPG battles/);
+  assert.match(roadmap, /synthetic GameFrame tactical team seat/);
+  assert.match(roadmap, /shared-team control/);
 
   assert.match(agents, /GameFrameBot.*stable player ID `gameframe-bot`/s);
   assert.match(agents, /Monster Master BattleBot/);
   assert.match(agents, /planning\/monster-master-rules\.md/);
   assert.match(agents, /Use the separate visual-review lane/);
-  assert.match(agents, /Cooperative parties must not be silently mapped into opposing duel seats/);
+  assert.match(agents, /Cooperative campaign players on one allied encounter team use the explicit shared-team control model/);
 
   assert.match(matrix, /Capture numbers are globally unique/);
   assert.match(matrix, /30\. Monster Master — bounded draw at round 24/);
