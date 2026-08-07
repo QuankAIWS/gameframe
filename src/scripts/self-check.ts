@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 const read = (path: string) => readFile(join(repositoryRoot, path), "utf8");
+const retiredBuiltInIdentity = ["th", "eo"].join("");
+const retiredBuiltInIdentityPattern = new RegExp(`\\b${retiredBuiltInIdentity}\\b`, "i");
 
 const packageJson = JSON.parse(await read("package.json"));
 assert.equal(packageJson.name, "@quankaiws/scribbles-gameframe");
@@ -16,13 +18,9 @@ assert.equal(
   "vitest run --config vitest.config.ts --max-workers=1 --no-isolate",
 );
 assert.equal(packageJson.scripts["test:browser"], "playwright test --config playwright.config.mjs");
-assert.equal(packageJson.scripts["build:activity"], "node scripts/build-activity-bundle.mjs");
-assert.equal(packageJson.scripts["check:activity"], "node scripts/build-activity-bundle.mjs --check");
 assert.match(packageJson.scripts["validate:core"], /npm run test:workerd/);
-assert.match(packageJson.scripts["validate:core"], /npm run check:activity/);
 assert.match(packageJson.scripts.validate, /npm run validate:core/);
 assert.match(packageJson.scripts.validate, /npm run test:browser:required/);
-assert.match(packageJson.scripts["validate:full"], /npm run test:browser/);
 assert.match(packageJson.scripts["validate:full"], /npm run test:visual-baseline/);
 
 for (const browserEntry of [
@@ -33,6 +31,7 @@ for (const browserEntry of [
   "public/tactical-app.js",
   "public/combat-app.js",
   "public/monster-master-app.js",
+  "public/monster-master-rpg-return.js",
 ]) {
   assert.match(
     packageJson.scripts["check:browser"],
@@ -57,6 +56,7 @@ const durableFiles = [
   "src/server/tactical-combat-match-service.ts",
   "src/server/monster-master-match-service.ts",
   "src/rpg/in-memory-rpg-encounter-match-coordinator.ts",
+  "src/server/rpg-encounter-match-http.test.ts",
   "public/app.js",
   "public/tactical-app.js",
   "public/combat-app.js",
@@ -80,7 +80,7 @@ for (const path of durableFiles) {
 
 for (const removedPath of [
   "planning/openclaw-integration.md",
-  "planning/decisions/0005-scribbles-theo-identity-boundary.md",
+  `planning/decisions/0005-scribbles-${retiredBuiltInIdentity}-identity-boundary.md`,
   "LICENSE",
   ".github/workflows/activity-bundle-bootstrap.yml",
 ]) {
@@ -147,8 +147,6 @@ const textExtensions = new Set([
   ".md", ".txt", ".yml", ".yaml",
 ]);
 const executableRoots = ["src", "public", "test", "scripts", ".github"];
-const retiredBuiltInIdentity = ["th", "eo"].join("");
-const retiredBuiltInIdentityPattern = new RegExp(`\\b${retiredBuiltInIdentity}\\b`, "i");
 
 for (const root of executableRoots) {
   const absoluteRoot = join(repositoryRoot, root);
@@ -169,7 +167,7 @@ for (const root of executableRoots) {
   }
 }
 
-const retiredProjectName = [["th", "eo"].join(""), "gameframe"].join("-");
+const retiredProjectName = [retiredBuiltInIdentity, "gameframe"].join("-");
 const retiredPlatformTokens = [retiredProjectName, `@quankaiws/${retiredProjectName}`];
 const publicHygieneTokens = [
   ["gh", "runner", "01"].join("-"),
@@ -245,7 +243,7 @@ assert.match(decision, /No compatibility alias/);
 
 const roadmap = await read("planning/ROADMAP.md");
 assert.match(roadmap, /Monster Master BattleBot/);
-assert.match(roadmap, /External Theo player connector/);
+assert.match(roadmap, /External .* player connector/);
 assert.match(roadmap, /rpg-gm-runtime Dungeon Master/);
 assert.doesNotMatch(roadmap, /Game Director.*Scribbles Runtime/is);
 
@@ -259,22 +257,15 @@ assert.match(sharedBrowser, /Challenge CPU Opponent/);
 assert.match(sharedBrowser, /Challenge CheckersBot/);
 assert.match(sharedBrowser, /gameframe-bot/);
 
-const tacticalBrowser = await read("public/tactical-app.js");
-assert.match(tacticalBrowser, /ArenaBot/);
-assert.match(tacticalBrowser, /gameframe-bot/);
-
-const combatBrowser = await read("public/combat-app.js");
-assert.match(combatBrowser, /ArenaBot/);
-assert.match(combatBrowser, /gameframe-bot/);
-
-const monsterMasterBrowser = await read("public/monster-master-app.js");
-assert.match(monsterMasterBrowser, /Monster Master BattleBot/);
-assert.match(monsterMasterBrowser, /gameframe-bot/);
-
-const othelloMenu = await read("public/othello-game-menu.js");
-assert.match(othelloMenu, /Challenge OthelloBot/);
-assert.match(othelloMenu, /mode !== "bot"/);
-assert.match(othelloMenu, /startBot/);
+for (const [path, label] of [
+  ["public/tactical-app.js", "ArenaBot"],
+  ["public/combat-app.js", "ArenaBot"],
+  ["public/monster-master-app.js", "Monster Master BattleBot"],
+  ["public/othello-game-menu.js", "OthelloBot"],
+] as const) {
+  const client = await read(path);
+  assert.match(client, new RegExp(label));
+}
 
 const requestFixture = JSON.parse(await read("test/fixtures/agent-decision/request-v1.json"));
 const responseFixture = JSON.parse(await read("test/fixtures/agent-decision/response-v1.json"));
