@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import { InMemoryTicTacToeService } from "./in-memory-match-service.ts";
 
-test("human action is followed by an authoritative Theo action", async () => {
+test("human action is followed by an authoritative GameFrameBot action", async () => {
   const service = new InMemoryTicTacToeService();
-  const created = await service.createMatch(["human", "theo"]);
+  const created = await service.createMatch(["human", GAMEFRAME_BOT_PLAYER_ID]);
   const updated = await service.submitAction({
     matchId: created.matchId,
     playerId: "human",
@@ -62,9 +63,9 @@ test("match creation rejects empty, duplicate, or incomplete player identities",
   await assert.rejects(() => service.createMatch(["alice", " "]), /exactly two distinct/);
 });
 
-test("a match with Theo in the first seat commits his opening move during creation", async () => {
+test("a match with GameFrameBot in the first seat commits its opening move during creation", async () => {
   const service = new InMemoryTicTacToeService();
-  const created = await service.createMatch(["theo", "human"]);
+  const created = await service.createMatch([GAMEFRAME_BOT_PLAYER_ID, "human"]);
 
   assert.equal(created.revision, 1);
   assert.equal(created.eventCount, 1);
