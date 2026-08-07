@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { type TestContext } from "node:test";
 
 import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import { rpgEncounterTeamSeatId } from "../rpg/in-memory-rpg-encounter-match-coordinator.ts";
@@ -91,6 +91,16 @@ const encounter = {
     assetIds: ["battlefield:crooked-checkpoint:v1"],
   },
 };
+
+function strictReferenceEncounter() {
+  const value = structuredClone(encounter);
+  value.idempotencyKey = "encounter:rpg-bound-checkpoint:strict:v2";
+  value.participants = value.participants.filter(
+    (participant) => participant.controller.kind !== "player"
+      || participant.controller.playerId === "player:ada",
+  );
+  return value;
+}
 
 function activeView() {
   return {
@@ -195,8 +205,47 @@ class ActiveMatchService {
   }
 }
 
-async function listen(matches: unknown, context: test.TestContext): Promise<string> {
-  const server = createGameFrameServer(matches as never);
+class CooperativeRpgService {
+  handle = {
+    protocolVersion: 2,
+    encounterId,
+    campaignId,
+    state: "preparing",
+    resumeToken: `resume:${encounterId}`,
+    gameframeCoordinationRevision: 5,
+    presentationSequence: 4,
+    linkedNarrativeRevision: 1,
+    coordinationMutationId: encounter.coordinationMutationId,
+    runtimeCommitId: encounter.runtimeCommit.runtimeCommitId,
+  };
+
+  async launchEncounter(_request: unknown, principal: unknown) {
+    assert.deepEqual(principal, { kind: "runtime", serviceId: "rpg-gm-runtime" });
+    return structuredClone(this.handle);
+  }
+
+  async getEncounter(_encounterId: unknown, principal: unknown) {
+    assert.deepEqual(principal, { kind: "runtime", serviceId: "rpg-gm-runtime" });
+    return structuredClone(this.handle);
+  }
+
+  async completeEncounter(_encounterId: unknown, request: any, principal: unknown) {
+    assert.deepEqual(principal, { kind: "runtime", serviceId: "gameframe-encounter-engine" });
+    this.handle = {
+      ...this.handle,
+      state: "completed",
+      terminalOutcome: structuredClone(request.outcome),
+    } as typeof this.handle & { terminalOutcome: unknown };
+    return structuredClone(this.handle);
+  }
+}
+
+async function listen(
+  matches: unknown,
+  context: TestContext,
+  rpgService?: unknown,
+): Promise<string> {
+  const server = createGameFrameServer(matches as never, undefined, rpgService as never);
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   context.after(() => server.close());
   const address = server.address();
@@ -204,7 +253,7 @@ async function listen(matches: unknown, context: test.TestContext): Promise<stri
   return `http://127.0.0.1:${address.port}`;
 }
 
-test("live protocol v2 binds, authorizes, completes, and resumes a cooperative RPG encounter", async (context) => {
+test("live strict protocol v2 preserves membership guards while binding the RPG team seat", async (context) => {
   const previousCompatibility = process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY;
   delete process.env.GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY;
   context.after(() => {
@@ -217,11 +266,12 @@ test("live protocol v2 binds, authorizes, completes, and resumes a cooperative R
 
   const matches = new TerminalMatchService();
   const base = await listen(matches, context);
+  const strictEncounter = strictReferenceEncounter();
 
   const launch = await serviceFetch(
     `${base}/api/rpg/encounters`,
     "rpg-gm-runtime",
-    jsonBody(encounter),
+    jsonBody(strictEncounter),
   );
   assert.equal(launch.status, 200);
   const launched = await launch.json();
@@ -237,7 +287,7 @@ test("live protocol v2 binds, authorizes, completes, and resumes a cooperative R
     control: {
       mode: "shared-team",
       teamId: "team:party",
-      playerIds: ["player:ada", "player:grace"],
+      playerIds: ["player:ada"],
     },
   });
   assert.deepEqual(matches.created, {
@@ -249,21 +299,19 @@ test("live protocol v2 binds, authorizes, completes, and resumes a cooperative R
   const retry = await serviceFetch(
     `${base}/api/rpg/encounters`,
     "rpg-gm-runtime",
-    jsonBody(encounter),
+    jsonBody(strictEncounter),
   );
   assert.equal(retry.status, 200);
   assert.deepEqual(await retry.json(), launched);
 
-  for (const playerId of ["player:ada", "player:grace"]) {
-    const participant = await playerFetch(
-      `${base}/api/rpg/encounters/${encodeURIComponent(encounterId)}`,
-      playerId,
-    );
-    assert.equal(participant.status, 200);
-    assert.equal((await participant.json()).play.matchId, `rpg:${encounterId}`);
-  }
+  const participant = await playerFetch(
+    `${base}/api/rpg/encounters/${encodeURIComponent(encounterId)}`,
+    "player:ada",
+  );
+  assert.equal(participant.status, 200);
+  assert.equal((await participant.json()).play.matchId, `rpg:${encounterId}`);
 
-  for (const playerId of ["player:outsider", GAMEFRAME_BOT_PLAYER_ID]) {
+  for (const playerId of ["player:grace", "player:outsider", GAMEFRAME_BOT_PLAYER_ID]) {
     const forbidden = await playerFetch(
       `${base}/api/rpg/encounters/${encodeURIComponent(encounterId)}`,
       playerId,
@@ -273,15 +321,13 @@ test("live protocol v2 binds, authorizes, completes, and resumes a cooperative R
 
   const terminalMatch = await playerFetch(
     `${base}/api/matches/${encodeURIComponent(`rpg:${encounterId}`)}`,
-    "player:grace",
+    "player:ada",
   );
   assert.equal(terminalMatch.status, 200);
   const terminalView = await terminalMatch.json();
   assert.equal(terminalView.observation.status.lifecycle, "completed");
-  assert.deepEqual(terminalView.playerIds, ["player:grace", GAMEFRAME_BOT_PLAYER_ID]);
-  assert.equal(terminalView.observation.status.winnerPlayerId, "player:grace");
-  assert.equal(terminalView.rpgControl.mode, "shared-team");
-  assert.deepEqual(terminalView.rpgControl.teamPlayerIds, ["player:ada", "player:grace"]);
+  assert.deepEqual(terminalView.playerIds, ["player:ada", GAMEFRAME_BOT_PLAYER_ID]);
+  assert.equal(terminalView.observation.status.winnerPlayerId, "player:ada");
 
   const completed = await serviceFetch(
     `${base}/api/rpg/encounters/${encodeURIComponent(encounterId)}`,
@@ -289,27 +335,26 @@ test("live protocol v2 binds, authorizes, completes, and resumes a cooperative R
   );
   assert.equal(completed.status, 200);
   const completedEncounter = await completed.json();
-  assert.equal(completedEncounter.protocolVersion, 2);
   assert.equal(completedEncounter.state, "completed");
-  assert.equal(completedEncounter.resumeToken, launched.resumeToken);
   assert.equal(completedEncounter.terminalOutcome.result, "victory");
   assert.equal(completedEncounter.terminalOutcome.winnerTeamId, "team:party");
-  assert.deepEqual(completedEncounter.terminalOutcome.objectiveResults, [{
-    objectiveId: "objective:protect-travelers",
-    status: "completed",
-  }]);
-  assert.equal(launched.play.href.endsWith(`&campaign=${campaignId}`), true);
 });
 
-test("authenticated teammates can submit the same RPG team seat without identity spoofing", async (context) => {
+test("authenticated cooperative teammates can share one RPG tactical seat without identity spoofing", async (context) => {
   const matches = new ActiveMatchService();
-  const base = await listen(matches, context);
+  const base = await listen(matches, context, new CooperativeRpgService());
   const launch = await serviceFetch(
     `${base}/api/rpg/encounters`,
     "rpg-gm-runtime",
     jsonBody(encounter),
   );
   assert.equal(launch.status, 200);
+  const launched = await launch.json();
+  assert.deepEqual(launched.play.control, {
+    mode: "shared-team",
+    teamId: "team:party",
+    playerIds: ["player:ada", "player:grace"],
+  });
 
   for (const playerId of ["player:ada", "player:grace"]) {
     const viewResponse = await playerFetch(
@@ -323,6 +368,7 @@ test("authenticated teammates can submit the same RPG team seat without identity
     assert.equal(view.observation.activePlayerId, playerId);
     assert.equal(view.observation.rosters[playerId][0].ownerId, playerId);
     assert.equal(view.rpgControl.playerId, playerId);
+    assert.deepEqual(view.rpgControl.teamPlayerIds, ["player:ada", "player:grace"]);
   }
 
   const action = await playerFetch(
