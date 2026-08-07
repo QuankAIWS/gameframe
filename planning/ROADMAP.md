@@ -162,19 +162,29 @@ Reuse tactical primitives, rendering, match authority, and BattleBot infrastruct
 
 ### Team-aware RPG battles
 
-The initial adapter intentionally rejects cooperative campaign rosters because the existing Arena battle is a two-seat duel. Multiplayer design must explicitly map:
+The Node-local adapter now has the first cooperative control model without changing the underlying two-seat Arena engine:
 
 ```text
-human player ID
+authenticated human player
 → campaign participant
-→ team
-→ controlled trainer or units
-→ permitted actions
+→ allied RPG team
+→ synthetic GameFrame tactical team seat
+→ legal Monster Master actions
 ```
 
-Enemy control remains separately represented. Do not place a second cooperative human on the opposing seat merely to satisfy the duel contract.
+Current semantics:
 
-This work follows the first complete single-player campaign proof unless a concrete blocker requires an earlier interface decision.
+- all player-controlled encounter participants must belong to one allied team;
+- each human keeps their own authenticated GameFrame identity at ingress;
+- the RPG adapter translates authorized teammates to one synthetic allied tactical seat only at the match-authority boundary;
+- returned match projections alias that synthetic seat back to the requesting human, so the ordinary Monster Master client remains a player client;
+- authorized teammates share control of the allied tactical roster;
+- normal GameFrame revision checks arbitrate simultaneous teammate submissions;
+- Monster Master BattleBot remains the separately represented opposition seat;
+- outsiders and the bot cannot use the allied team binding;
+- cooperative humans are never placed on opposing duel seats merely to satisfy the engine contract.
+
+This is intentionally shared-team control, not exclusive per-player unit ownership. The next durable productionization must persist the team binding across restart and preserve explicit encounter-participant-to-authoritative-unit mapping when package semantics require individual ownership.
 
 ## Future
 

@@ -246,7 +246,7 @@ assert.match(decision, /No compatibility alias/);
 const roadmap = await read("planning/ROADMAP.md");
 assert.match(roadmap, /Monster Master BattleBot/);
 assert.match(roadmap, /External .* player connector/);
-assert.match(roadmap, /rpg-gm-runtime Dungeon Master/);
+assert.match(roadmap, /rpg-gm-runtime.*Dungeon Master/s);
 assert.doesNotMatch(roadmap, /Game Director.*Scribbles Runtime/is);
 
 const architecture = await read("planning/architecture.md");

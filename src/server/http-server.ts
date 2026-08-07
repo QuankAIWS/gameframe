@@ -212,6 +212,7 @@ export function createGameFrameServer(
               "dual-revision-linkage",
               "runtime-commit-receipts",
               "encounter-match-binding",
+              "shared-team-encounter-control",
               "automatic-encounter-completion",
               ...(legacyRpgCompatibilityEnabled()
                 ? ["legacy-v1-compatibility"]
@@ -350,7 +351,10 @@ export function createGameFrameServer(
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
         requirePlayerPrincipal(principal);
         rejectIdentityClaim(principal, url.searchParams.get("playerId"));
-        const view = await matchService.view(route.matchId, principal.playerId);
+        const view = await encounterMatches.viewMatchForPrincipal(
+          route.matchId,
+          principal.playerId,
+        );
         await encounterMatches.synchronizeMatch(view);
         return json(response, 200, view);
       }
@@ -360,7 +364,7 @@ export function createGameFrameServer(
         requirePlayerPrincipal(principal);
         const body = await readJson(request);
         rejectIdentityClaim(principal, body.playerId);
-        const view = await matchService.submitAction({
+        const view = await encounterMatches.submitMatchActionForPrincipal({
           matchId: route.matchId,
           playerId: principal.playerId,
           actionId: String(body.actionId ?? ""),

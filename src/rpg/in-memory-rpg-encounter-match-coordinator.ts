@@ -42,6 +42,13 @@ type MatchService = {
     requestedMatchId?: string,
   ): Promise<unknown>;
   view(matchId: string, playerId: string): Promise<unknown>;
+  submitAction(input: {
+    matchId: string;
+    playerId: string;
+    actionId: string;
+    expectedRevision: number;
+    action: unknown;
+  }): Promise<unknown>;
 };
 
 type EncounterParticipant = {
@@ -62,7 +69,9 @@ type EncounterBinding = {
   matchId: string;
   playerIds: readonly string[];
   authorizedPlayerIds: readonly string[];
-  primaryPlayerId: string;
+  playerTeamId: string;
+  oppositionTeamId: string;
+  playerTeamSeatId: string;
   participants: EncounterParticipant[];
   objectives: EncounterObjective[];
   completionRequest?: JsonRecord;
@@ -71,12 +80,14 @@ type EncounterBinding = {
 /**
  * Node-local campaign-to-battle adapter.
  *
- * RPG GM Runtime owns encounter intent, GameFrame owns battle legality, and the
- * built-in Monster Master BattleBot supplies the temporary deterministic enemy
- * seat. The BattleBot is a built-in GameFrame test participant, not an external
- * agent or the Dungeon Master. This adapter gives a supported single-player
- * encounter one stable match, exposes only participant-authorized play
- * metadata, and commits the terminal match result through encounter authority.
+ * RPG GM Runtime owns encounter intent and teams. GameFrame owns battle legality.
+ * Human campaign participants on one allied team share one synthetic tactical
+ * seat, while the built-in Monster Master BattleBot supplies the deterministic
+ * opposition seat. Each HTTP request keeps its authenticated human identity;
+ * only this adapter translates that identity to the team seat at the match
+ * authority boundary. The returned player projection aliases the team seat back
+ * to the requesting player so the existing Monster Master client remains a
+ * normal player client rather than learning an impersonation or multi-seat hack.
  */
 export class InMemoryRpgEncounterMatchCoordinator {
   readonly #rpg: RpgEncounterService;
@@ -135,6 +146,41 @@ export class InMemoryRpgEncounterMatchCoordinator {
     return withPlayMetadata(handle, binding);
   }
 
+  async viewMatchForPrincipal(
+    matchIdValue: unknown,
+    playerIdValue: unknown,
+  ): Promise<unknown> {
+    const matchId = identifier(matchIdValue, "matchId");
+    const playerId = identifier(playerIdValue, "playerId");
+    const binding = this.#bindingsByMatch.get(matchId);
+    if (!binding) return this.#matches.view(matchId, playerId);
+    requireAuthorizedPlayer(binding, playerId);
+    const view = await this.#matches.view(matchId, binding.playerTeamSeatId);
+    return withTeamControlProjection(view, binding, playerId);
+  }
+
+  async submitMatchActionForPrincipal(input: {
+    matchId: string;
+    playerId: string;
+    actionId: string;
+    expectedRevision: number;
+    action: unknown;
+  }): Promise<unknown> {
+    const matchId = identifier(input.matchId, "matchId");
+    const playerId = identifier(input.playerId, "playerId");
+    const binding = this.#bindingsByMatch.get(matchId);
+    if (!binding) {
+      return this.#matches.submitAction({ ...input, matchId, playerId });
+    }
+    requireAuthorizedPlayer(binding, playerId);
+    const view = await this.#matches.submitAction({
+      ...input,
+      matchId,
+      playerId: binding.playerTeamSeatId,
+    });
+    return withTeamControlProjection(view, binding, playerId);
+  }
+
   async synchronizeMatch(viewValue: unknown): Promise<void> {
     const view = normalizeMatchView(viewValue);
     const binding = this.#bindingsByMatch.get(view.matchId);
@@ -155,20 +201,46 @@ export class InMemoryRpgEncounterMatchCoordinator {
   }
 
   #binding(request: ReturnType<typeof normalizeLaunch>): EncounterBinding {
+    const playerParticipants = request.participants.filter(
+      (participant) => participant.controller.kind === "player",
+    );
     const playerIds = [...new Set(
-      request.participants
-        .filter((participant) => participant.controller.kind === "player")
+      playerParticipants
         .map((participant) => participant.controller.playerId)
         .filter((value): value is string => Boolean(value)),
     )];
-    if (playerIds.length !== 1) {
+    if (playerIds.length === 0) {
       throw failure(
         "unsupported-encounter-roster",
-        "The initial Monster Master RPG battle adapter requires exactly one player-controlled trainer. Cooperative encounters require a team-aware battle engine.",
+        "Monster Master RPG encounters require at least one player-controlled participant.",
         400,
       );
     }
-    const matchPlayers = [playerIds[0]!, GAMEFRAME_BOT_PLAYER_ID];
+
+    const playerTeamIds = [...new Set(playerParticipants.map((participant) => participant.teamId))];
+    if (playerTeamIds.length !== 1) {
+      throw failure(
+        "unsupported-encounter-roster",
+        "Player-controlled Monster Master participants must cooperate on one tactical team.",
+        400,
+      );
+    }
+    const playerTeamId = playerTeamIds[0]!;
+    const oppositionTeamIds = [...new Set(
+      request.participants
+        .map((participant) => participant.teamId)
+        .filter((teamId) => teamId !== playerTeamId),
+    )];
+    if (oppositionTeamIds.length !== 1) {
+      throw failure(
+        "unsupported-encounter-roster",
+        "The current Monster Master RPG adapter requires exactly one opposition team.",
+        400,
+      );
+    }
+    const oppositionTeamId = oppositionTeamIds[0]!;
+    const playerTeamSeatId = rpgEncounterTeamSeatId(request.encounterId);
+    const matchPlayers = [playerTeamSeatId, GAMEFRAME_BOT_PLAYER_ID];
     return {
       encounterId: request.encounterId,
       campaignId: request.campaignId,
@@ -177,7 +249,9 @@ export class InMemoryRpgEncounterMatchCoordinator {
       matchId: rpgEncounterMatchId(request.encounterId),
       playerIds: matchPlayers,
       authorizedPlayerIds: playerIds,
-      primaryPlayerId: playerIds[0]!,
+      playerTeamId,
+      oppositionTeamId,
+      playerTeamSeatId,
       participants: request.participants,
       objectives: request.objectives,
     };
@@ -196,7 +270,7 @@ export class InMemoryRpgEncounterMatchCoordinator {
     }
 
     const recovered = normalizeMatchView(
-      await this.#matches.view(binding.matchId, binding.primaryPlayerId),
+      await this.#matches.view(binding.matchId, binding.playerTeamSeatId),
     );
     if (
       recovered.gameId !== binding.gameId
@@ -216,6 +290,19 @@ export function rpgEncounterMatchId(encounterIdValue: unknown): string {
   return `rpg:${identifier(encounterIdValue, "encounterId")}`;
 }
 
+export function rpgEncounterTeamSeatId(encounterIdValue: unknown): string {
+  return `rpg-team:${identifier(encounterIdValue, "encounterId")}`;
+}
+
+function requireAuthorizedPlayer(binding: EncounterBinding, playerId: string): void {
+  if (binding.authorizedPlayerIds.includes(playerId)) return;
+  throw failure(
+    "forbidden",
+    "The authenticated player is not authorized to control this encounter team.",
+    403,
+  );
+}
+
 function withPlayMetadata(value: unknown, binding: EncounterBinding): JsonRecord {
   const handle = record(value, "encounter handle");
   return {
@@ -224,8 +311,73 @@ function withPlayMetadata(value: unknown, binding: EncounterBinding): JsonRecord
       gameId: binding.gameId,
       matchId: binding.matchId,
       href: `/monster-master.html?match=${encodeURIComponent(binding.matchId)}&campaign=${encodeURIComponent(binding.campaignId)}`,
+      control: {
+        mode: "shared-team",
+        teamId: binding.playerTeamId,
+        playerIds: [...binding.authorizedPlayerIds],
+      },
     },
   };
+}
+
+function withTeamControlProjection(
+  value: unknown,
+  binding: EncounterBinding,
+  playerId: string,
+): JsonRecord {
+  const aliased = aliasExactIdentity(
+    record(value, "match view"),
+    binding.playerTeamSeatId,
+    playerId,
+  ) as JsonRecord;
+  const controlledParticipantIds = binding.participants
+    .filter(
+      (participant) => participant.controller.kind === "player"
+        && participant.controller.playerId === playerId,
+    )
+    .map((participant) => participant.participantId);
+  const controlledUnitIds = controlledUnits(aliased, playerId);
+  return {
+    ...aliased,
+    rpgControl: {
+      encounterId: binding.encounterId,
+      campaignId: binding.campaignId,
+      mode: "shared-team",
+      teamId: binding.playerTeamId,
+      playerId,
+      teamPlayerIds: [...binding.authorizedPlayerIds],
+      controlledParticipantIds,
+      controlledUnitIds,
+    },
+  };
+}
+
+function controlledUnits(view: JsonRecord, playerId: string): string[] {
+  const observation = view.observation && typeof view.observation === "object"
+    && !Array.isArray(view.observation)
+    ? view.observation as JsonRecord
+    : {};
+  const rosters = observation.rosters && typeof observation.rosters === "object"
+    && !Array.isArray(observation.rosters)
+    ? observation.rosters as JsonRecord
+    : {};
+  const roster = Array.isArray(rosters[playerId]) ? rosters[playerId] as unknown[] : [];
+  return roster.flatMap((value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+    const unitId = String((value as JsonRecord).id ?? "").trim();
+    return unitId ? [unitId] : [];
+  });
+}
+
+function aliasExactIdentity(value: unknown, from: string, to: string): unknown {
+  if (value === from) return to;
+  if (Array.isArray(value)) return value.map((item) => aliasExactIdentity(item, from, to));
+  if (!value || typeof value !== "object") return value;
+  const output: JsonRecord = {};
+  for (const [key, nested] of Object.entries(value as JsonRecord)) {
+    output[key === from ? to : key] = aliasExactIdentity(nested, from, to);
+  }
+  return output;
 }
 
 function terminalOutcome(
@@ -237,31 +389,17 @@ function terminalOutcome(
     ? view.observation.status.winnerPlayerId
     : undefined;
   const draw = view.observation.status.draw === true || !winnerPlayerId;
-  const playerParticipant = binding.participants.find(
-    (participant) => participant.controller.kind === "player"
-      && participant.controller.playerId === binding.primaryPlayerId,
-  );
-  if (!playerParticipant) {
-    throw failure(
-      "encounter-participant-missing",
-      "The completed encounter has no primary player participant.",
-      500,
-    );
-  }
-  const opposition = binding.participants.find(
-    (participant) => participant.teamId === "team:opposition",
-  ) ?? binding.participants.find(
-    (participant) => participant.teamId !== playerParticipant.teamId,
-  );
+  const playerTeamWon = winnerPlayerId === binding.playerTeamSeatId
+    || Boolean(winnerPlayerId && binding.authorizedPlayerIds.includes(winnerPlayerId));
   const result = draw
     ? "draw"
-    : winnerPlayerId === binding.primaryPlayerId
+    : playerTeamWon
       ? "victory"
       : "defeat";
   const winnerTeamId = result === "victory"
-    ? playerParticipant.teamId
+    ? binding.playerTeamId
     : result === "defeat"
-      ? opposition?.teamId
+      ? binding.oppositionTeamId
       : undefined;
 
   return {
@@ -279,8 +417,8 @@ function terminalOutcome(
     participantResults: binding.participants.map((participant) => {
       const status = participantStatus(
         participant.teamId,
-        playerParticipant.teamId,
-        opposition?.teamId,
+        binding.playerTeamId,
+        binding.oppositionTeamId,
         result,
       );
       return {
@@ -305,15 +443,13 @@ function terminalOutcome(
 function participantStatus(
   teamId: string,
   playerTeamId: string,
-  oppositionTeamId: string | undefined,
+  oppositionTeamId: string,
   result: "victory" | "defeat" | "draw",
 ): "active" | "defeated" | "withdrawn" {
   if (result === "draw") return "active";
-  if (result === "victory") {
-    return oppositionTeamId && teamId === oppositionTeamId ? "defeated" : "active";
-  }
+  if (result === "victory") return teamId === oppositionTeamId ? "defeated" : "active";
   if (teamId === playerTeamId) return "defeated";
-  if (oppositionTeamId && teamId === oppositionTeamId) return "active";
+  if (teamId === oppositionTeamId) return "active";
   return "withdrawn";
 }
 

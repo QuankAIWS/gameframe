@@ -59,11 +59,11 @@ export type PublicGameMatchView =
 
 export interface InMemoryGameFrameServiceOptions {
   idGenerator?: () => string;
-  ticTacToeTheo?: AgentPlayer<TicTacToeAction, TicTacToeObservation>;
-  checkersTheo?: AgentPlayer<CheckersAction, CheckersObservation>;
-  tacticalTheo?: AgentPlayer<TacticalMovementAction, TacticalMovementObservation>;
-  tacticalCombatTheo?: AgentPlayer<TacticalCombatAction, TacticalCombatObservation>;
-  monsterMasterTheo?: AgentPlayer<MonsterMasterAction, MonsterMasterObservation>;
+  ticTacToeBot?: AgentPlayer<TicTacToeAction, TicTacToeObservation>;
+  checkersBot?: AgentPlayer<CheckersAction, CheckersObservation>;
+  tacticalBot?: AgentPlayer<TacticalMovementAction, TacticalMovementObservation>;
+  tacticalCombatBot?: AgentPlayer<TacticalCombatAction, TacticalCombatObservation>;
+  monsterMasterBot?: AgentPlayer<MonsterMasterAction, MonsterMasterObservation>;
 }
 
 export type {
@@ -132,23 +132,23 @@ export class InMemoryGameFrameService {
     this.#idGenerator = options.idGenerator ?? (() => crypto.randomUUID());
     this.#ticTacToe = new TicTacToeMatchService({
       store: new InMemoryMatchSnapshotStore<TicTacToeState, TicTacToeAction>(),
-      ...(options.ticTacToeTheo ? { bot: options.ticTacToeTheo } : {}),
+      ...(options.ticTacToeBot ? { bot: options.ticTacToeBot } : {}),
     });
     this.#checkers = new CheckersMatchService({
       store: new InMemoryMatchSnapshotStore<CheckersState, CheckersAction>(),
-      ...(options.checkersTheo ? { bot: options.checkersTheo } : {}),
+      ...(options.checkersBot ? { bot: options.checkersBot } : {}),
     });
     this.#tactical = new TacticalMovementMatchService({
       store: new InMemoryMatchSnapshotStore<TacticalMovementState, TacticalMovementAction>(),
-      ...(options.tacticalTheo ? { bot: options.tacticalTheo } : {}),
+      ...(options.tacticalBot ? { bot: options.tacticalBot } : {}),
     });
     this.#combat = new TacticalCombatMatchService({
       store: new InMemoryMatchSnapshotStore<TacticalCombatState, TacticalCombatAction>(),
-      ...(options.tacticalCombatTheo ? { bot: options.tacticalCombatTheo } : {}),
+      ...(options.tacticalCombatBot ? { bot: options.tacticalCombatBot } : {}),
     });
     this.#monsterMaster = new MonsterMasterMatchService({
       store: new InMemoryMatchSnapshotStore<MonsterMasterState, MonsterMasterAction>(),
-      ...(options.monsterMasterTheo ? { bot: options.monsterMasterTheo } : {}),
+      ...(options.monsterMasterBot ? { bot: options.monsterMasterBot } : {}),
     });
   }
 

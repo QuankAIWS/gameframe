@@ -68,13 +68,13 @@ human players
 → rpg-gm-runtime campaign continuation
 ```
 
-The current first encounter adapter may use Monster Master BattleBot for deterministic enemy turns. That is an implementation-stage battle participant, not the Dungeon Master and not Theo.
+The current encounter adapter may use Monster Master BattleBot for deterministic enemy turns. That is an implementation-stage battle participant, not the Dungeon Master and not Theo.
 
-Cooperative parties must not be silently mapped into opposing duel seats. Until Arena Battles has an explicit team-aware control model, unsupported cooperative encounter rosters must fail closed.
+Cooperative campaign players on one allied encounter team use the explicit shared-team control model: each human remains independently authenticated, the RPG adapter maps authorized teammates to one synthetic allied tactical seat only at the match-authority boundary, and returned projections alias that seat back to the requesting player. Normal GameFrame revision and legality checks remain authoritative. Do not place cooperative humans on opposing duel seats, expose the synthetic team seat as a human identity, or infer exclusive per-player unit ownership unless the encounter contract explicitly supplies and validates that mapping.
 
 ## Current active lane
 
-The current lane connects Monster Master RPG encounters to playable Monster Master Arena Battles while preserving the authority split above. The first Node-local adapter proves the encounter-to-battle-to-campaign lifecycle. Durable Cloudflare, Durable Object, SQLite service wiring, restart recovery, and team-aware multiplayer remain later production slices unless implemented and validated explicitly.
+The Node-local RPG adapter now proves both the encounter-to-battle-to-campaign lifecycle and shared-team cooperative control. Durable Cloudflare, Durable Object, SQLite service wiring, restart recovery, and persistent participant-to-authoritative-unit mapping remain later production slices unless implemented and validated explicitly.
 
 ## Public repository controls
 
