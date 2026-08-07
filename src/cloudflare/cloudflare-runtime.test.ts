@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import { DevelopmentHeaderAuthenticator } from "../auth/request-authenticator.ts";
 import { TicTacToeMatchObjectRuntime } from "./match-object-runtime.ts";
 import type {
@@ -78,7 +79,7 @@ function createEnvironment(namespace: DurableObjectNamespaceLike = new FakeMatch
   };
 }
 
-test("Cloudflare router creates, advances, and restores a durable match", async () => {
+test("Cloudflare router creates, advances, and restores a durable GameFrameBot match", async () => {
   const namespace = new FakeMatchNamespace();
   const env = createEnvironment(namespace);
   const worker = createTestWorker({ idGenerator: () => "match-cloudflare-1" });
@@ -86,7 +87,7 @@ test("Cloudflare router creates, advances, and restores a durable match", async 
   const createdResponse = await worker.fetch(authenticatedRequest("https://games.example/api/matches", "human", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ playerIds: ["human", "theo"] }),
+    body: JSON.stringify({ playerIds: ["human", GAMEFRAME_BOT_PLAYER_ID] }),
   }), env);
   assert.equal(createdResponse.status, 201);
   const created = await createdResponse.json() as any;
@@ -145,7 +146,7 @@ test("Durable Object serialization rejects one of two competing revision-zero mo
   await worker.fetch(authenticatedRequest("https://games.example/api/matches", "human", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ playerIds: ["human", "theo"] }),
+    body: JSON.stringify({ playerIds: ["human", GAMEFRAME_BOT_PLAYER_ID] }),
   }), env);
 
   const submit = (actionId: string, cell: number) => worker.fetch(authenticatedRequest(
@@ -197,7 +198,7 @@ test("Cloudflare router forwards WebSocket upgrade requests to the match object"
   assert.equal(forwarded.headers.get("Sec-WebSocket-Protocol"), "gameframe-v1");
 });
 
-test("match runtime projection failures do not roll back committed actions", async () => {
+test("match runtime projection failures do not roll back committed GameFrameBot actions", async () => {
   const storage = new FakeStorage();
   let notifications = 0;
   const runtime = new TicTacToeMatchObjectRuntime(
@@ -217,7 +218,7 @@ test("match runtime projection failures do not roll back committed actions", asy
   const initialized = await runtime.fetch(new Request("https://match.internal/initialize", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ matchId: "match-notify", playerIds: ["human", "theo"] }),
+    body: JSON.stringify({ matchId: "match-notify", playerIds: ["human", GAMEFRAME_BOT_PLAYER_ID] }),
   }));
   assert.equal(initialized.status, 201);
 
@@ -238,7 +239,7 @@ test("match runtime projection failures do not roll back committed actions", asy
   assert.equal(notifications, 2);
 });
 
-test("Cloudflare runtime preserves two-human turn ownership without auto-playing Theo", async () => {
+test("Cloudflare runtime preserves two-human turn ownership without auto-playing GameFrameBot", async () => {
   const env = createEnvironment();
   const worker = createTestWorker({ idGenerator: () => "match-two-human" });
 
@@ -281,7 +282,7 @@ test("Cloudflare public APIs fail closed without a configured identity verifier"
   const response = await worker.fetch(new Request("https://games.example/api/matches", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ playerIds: ["alice", "theo"] }),
+    body: JSON.stringify({ playerIds: ["alice", GAMEFRAME_BOT_PLAYER_ID] }),
   }), createEnvironment());
 
   assert.equal(response.status, 401);
@@ -296,7 +297,7 @@ test("Cloudflare boundary rejects seat and action identity spoofing", async () =
     "https://games.example/api/matches", "mallory", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ playerIds: ["alice", "theo"] }),
+      body: JSON.stringify({ playerIds: ["alice", GAMEFRAME_BOT_PLAYER_ID] }),
     },
   ), env);
   assert.equal(forbiddenCreate.status, 403);
@@ -345,7 +346,7 @@ test("Cloudflare boundary accepts a signed Discord-style session cookie", async 
       "content-type": "application/json",
       cookie: `gameframe_session=${token}`,
     },
-    body: JSON.stringify({ playerIds: ["discord:123", "theo"] }),
+    body: JSON.stringify({ playerIds: ["discord:123", GAMEFRAME_BOT_PLAYER_ID] }),
   }), env);
 
   assert.equal(created.status, 201);
