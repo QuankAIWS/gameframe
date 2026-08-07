@@ -152,6 +152,11 @@ export function materializeMonsterMasterRpgEncounter(input: {
       );
     }
   }
+  if (teamUnits[playerTeamId]!.length !== teamUnits[oppositionTeamId]!.length) {
+    throw unsupported(
+      "The current Monster Master deployment phase requires equal tactical creature counts; asymmetric RPG rosters are not implemented yet.",
+    );
+  }
 
   const playerRoster = teamUnits[playerTeamId]!.map(cloneMonsterMasterUnit);
   const oppositionRoster = teamUnits[oppositionTeamId]!.map(cloneMonsterMasterUnit);
