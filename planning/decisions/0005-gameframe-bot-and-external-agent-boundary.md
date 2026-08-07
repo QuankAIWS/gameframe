@@ -1,3 +1,19 @@
+---
+title: GameFrameBot and External-Agent Identity Boundary
+status: accepted
+document_type: decision
+owner: Scribbles GameFrame
+last_updated: 2026-08-07
+applies_to:
+  - scribbles-gameframe
+  - RPG GameFrame integration
+  - future Scribbles Runtime player connector
+related:
+  - ../ROADMAP.md
+  - ../rpg-gm-runtime-boundary.md
+  - ../shared/rpg-agent-architecture-and-campaign-package.md
+---
+
 # Decision 0005 — GameFrameBot and external-agent identities are distinct
 
 ## Decision
