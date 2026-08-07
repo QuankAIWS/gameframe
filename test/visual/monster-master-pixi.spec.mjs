@@ -30,7 +30,7 @@ test("Monster Master uses one idle-on-demand Pixi WebGL battlefield", async ({ p
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/monster-master.html?player=monster-pixi-regression");
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
 
@@ -182,7 +182,7 @@ test("Monster Master Pixi battlefield stays inside the mobile viewport", async (
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/monster-master.html?player=monster-pixi-mobile");
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
   await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
