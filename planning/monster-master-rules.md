@@ -1,3 +1,20 @@
+---
+title: Monster Master Duel Rules — MM-0001
+status: accepted
+document_type: contract
+owner: Scribbles GameFrame
+last_updated: 2026-08-07
+applies_to:
+  - scribbles-gameframe
+  - Monster Master Arena Battles
+  - MM-0001
+related:
+  - ROADMAP.md
+  - monster-master-rpg-canonical-baseline.md
+  - rpg-gameframe-interface-contract.md
+  - tactical-battler-rpg-foundation.md
+---
+
 # Monster Master Duel Rules — MM-0001
 
 ## Purpose
@@ -116,6 +133,21 @@ The game authority owns:
 - structured effects.
 
 The browser owns only presentation state such as camera, hover, selection, path animation, visual effects, and local UI mode.
+
+## Campaign-configured encounter boundary
+
+MM-0001 remains the fixed standalone duel definition. RPG campaigns may reuse its tactical primitives and match infrastructure, but campaign encounters must not silently replace supplied trainer/monster identities or unsupported rules profiles with the fixed MM-0001 roster.
+
+The preferred future campaign path is:
+
+```text
+validated RPG encounter configuration
+→ configured Monster Master initial state
+→ authoritative revision-zero match snapshot
+→ ordinary MatchSession actions, replay, and persistence
+```
+
+A configured initial state does not broaden the rules implemented by this file. Campaign-specific trainer profiles, monster species, abilities, resources, objectives, or conditions must be explicitly supported by the selected encounter definition or rejected before match creation.
 
 ## Future compatibility
 
