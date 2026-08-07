@@ -27,22 +27,24 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
     read("test/browser/monster-master-invite-disclosure.spec.mjs"),
   ]);
 
-  assert.match(readme, /Monster Master MM-0001 candidate:/);
-  assert.match(readme, /Forty-four Playwright interaction journeys/);
-  assert.match(readme, /30 synthetic .* screenshots/);
-  assert.match(readme, /configured final round/);
-  assert.match(readme, /Collapsed local second-seat invitation disclosure/);
+  assert.match(readme, /### Monster Master Arena Battles/);
+  assert.match(readme, /Separate `monster-master-duel` game definition/);
+  assert.match(readme, /configured encounter restoration/);
+  assert.match(readme, /Human-versus-Monster-Master-BattleBot/);
+  assert.match(readme, /bounded draws/);
   assert.match(readme, /\/monster-master\.html/);
-  assert.match(readme, /src\/games\/monster-master/);
+  assert.match(readme, /src\/games\//);
 
-  assert.match(roadmap, /GF-0010 .* Repository candidate/);
-  assert.match(roadmap, /`MM-0001` — Repository-complete candidate/);
-  assert.match(roadmap, /2026-07-30-monster-master-first-playable\.md/);
+  assert.match(roadmap, /### MM-0001 — Monster Master Arena Battles foundation/);
+  assert.match(roadmap, /Human-versus-human and human-versus-Monster-Master-BattleBot flows/);
+  assert.match(roadmap, /Replay, persistence, invitations, browser play, Pixi\/Canvas rendering, and visual review/);
+  assert.match(roadmap, /### GF-0011 — Monster Master RPG encounter loop/);
 
-  assert.match(agents, /review and freeze the repository-complete first playable Monster Master candidate/);
+  assert.match(agents, /GameFrameBot.*stable player ID `gameframe-bot`/s);
+  assert.match(agents, /Monster Master BattleBot/);
   assert.match(agents, /planning\/monster-master-rules\.md/);
-  assert.match(agents, /planning\/browser-journey-matrix\.md/);
-  assert.match(agents, /Use the separate `visual-review` label/);
+  assert.match(agents, /Use the separate visual-review lane/);
+  assert.match(agents, /Cooperative parties must not be silently mapped into opposing duel seats/);
 
   assert.match(matrix, /Capture numbers are globally unique/);
   assert.match(matrix, /30\. Monster Master — bounded draw at round 24/);
