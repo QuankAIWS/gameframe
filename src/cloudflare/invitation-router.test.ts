@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import { SignedSessionCodec } from "../auth/signed-session.ts";
 import { InvitationObjectRuntime } from "./invitation-object-runtime.ts";
 import { GameFrameMatchObjectRuntime } from "./match-object-runtime.ts";
@@ -150,10 +151,10 @@ test("authenticated invitation claim creates a match with both verified principa
   assert.equal((await lateClaim.json() as any).error, "invitation_claimed");
 });
 
-test("Discord direct match creation permits Theo but rejects an unclaimed human seat", async () => {
+test("Discord direct match creation permits GameFrameBot but rejects an unclaimed human seat", async () => {
   const env: GameFrameWorkerEnv = { SESSION_SECRET: secret, MATCHES: new HybridNamespace() };
   const worker = createGameFrameWorker({
-    idGenerator: sequenceGenerator(["match-theo", "must-not-create"]),
+    idGenerator: sequenceGenerator(["match-bot", "must-not-create"]),
   });
 
   const humanSpoof = await authenticatedFetch(worker, env, "/api/matches", "discord:111", {
@@ -167,16 +168,16 @@ test("Discord direct match creation permits Theo but rejects an unclaimed human 
   assert.equal(humanSpoof.status, 403);
   assert.match((await humanSpoof.json() as any).message, /signed invitation/);
 
-  const theo = await authenticatedFetch(worker, env, "/api/matches", "discord:111", {
+  const botMatch = await authenticatedFetch(worker, env, "/api/matches", "discord:111", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       gameId: "tic-tac-toe",
-      playerIds: ["discord:111", "theo"],
+      playerIds: ["discord:111", GAMEFRAME_BOT_PLAYER_ID],
     }),
   });
-  assert.equal(theo.status, 201);
-  assert.equal((await theo.json() as any).matchId, "match-theo");
+  assert.equal(botMatch.status, 201);
+  assert.equal((await botMatch.json() as any).matchId, "match-bot");
 });
 
 test("targeted invitations and cancellation remain tied to authenticated principals", async () => {
