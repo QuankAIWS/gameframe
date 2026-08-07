@@ -1,3 +1,4 @@
+import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import {
   AuthenticationError,
   RejectingRequestAuthenticator,
@@ -80,10 +81,10 @@ function requireDirectMatchCreationPolicy(
 ): void {
   requirePrincipalSeat(principal, playerIds);
   if (principal.source !== "discord") return;
-  const validTheoMatch = playerIds.length === 2
+  const validBotMatch = playerIds.length === 2
     && playerIds.filter((playerId) => playerId === principal.playerId).length === 1
-    && playerIds.filter((playerId) => playerId === "theo").length === 1;
-  if (!validTheoMatch) {
+    && playerIds.filter((playerId) => playerId === GAMEFRAME_BOT_PLAYER_ID).length === 1;
+  if (!validBotMatch) {
     throw new AuthenticationError(
       "forbidden",
       "Discord-authenticated human matches require a signed invitation and second-user claim.",
