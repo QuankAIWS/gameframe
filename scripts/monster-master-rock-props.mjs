@@ -1,5 +1,6 @@
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { createGunzip, gunzipSync } from 'node:zlib';
+import { gunzipSync } from 'node:zlib';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +11,7 @@ const BASE = path.join(ROOT, 'public/assets/monster-master/props/rock-boulder-se
 const PACKAGE_DIR = path.join(BASE, 'source/package');
 const MANIFEST_PATH = path.join(BASE, 'manifest.json');
 const EXPECTED_CHUNKS = 9;
+const MAX_RECOVERED_BYTES = 256 * 1024 * 1024;
 
 function sha256(buffer) {
   return createHash('sha256').update(buffer).digest('hex');
@@ -43,31 +45,30 @@ function parseTar(buffer, { allowTruncatedTail = false } = {}) {
   return entries;
 }
 
-async function recoverGunzipPrefix(archive, originalError) {
-  const chunks = [];
-  const recovered = await new Promise((resolve, reject) => {
-    const gunzip = createGunzip();
-    gunzip.on('data', (chunk) => chunks.push(chunk));
-    gunzip.once('end', () => resolve(Buffer.concat(chunks)));
-    gunzip.once('error', () => {
-      const prefix = Buffer.concat(chunks);
-      if (prefix.length === 0) reject(originalError);
-      else resolve(prefix);
-    });
-    gunzip.end(archive);
+function recoverGunzipPrefix(archive, originalError) {
+  // The source package was accepted only after GNU gzip recovered its complete
+  // approved tar prefix from a transfer-damaged wrapper. Preserve that exact
+  // recovery behavior. A nonzero gzip exit is expected; stdout is untrusted
+  // until every required master matches its allowlisted file and pixel hashes.
+  const result = spawnSync('gzip', ['-dc'], {
+    input: archive,
+    maxBuffer: MAX_RECOVERED_BYTES,
+    windowsHide: true,
   });
-  if (recovered.length === 0) throw originalError;
-  return recovered;
+  if (Buffer.isBuffer(result.stdout) && result.stdout.length > 0) return result.stdout;
+  if (result.error) {
+    throw new Error(`rock source package requires GNU gzip recovery: ${result.error.message}`, {
+      cause: originalError,
+    });
+  }
+  throw originalError;
 }
 
-async function decodeArchive(archive) {
+function decodeArchive(archive) {
   try {
     return { tar: gunzipSync(archive), recovered: false };
   } catch (error) {
-    // The approved source transfer damaged the gzip wrapper after emitting the
-    // usable tar prefix. Recovery is not an identity shortcut: callers accept
-    // only exact allowlisted PNG SHA-256 values and then verify decoded pixels.
-    return { tar: await recoverGunzipPrefix(archive, error), recovered: true };
+    return { tar: recoverGunzipPrefix(archive, error), recovered: true };
   }
 }
 
@@ -86,7 +87,7 @@ async function decodeSourcePackage(manifest) {
     .join('')
     .replace(/\s+/g, '');
   const archive = Buffer.from(encoded, 'base64');
-  const decoded = await decodeArchive(archive);
+  const decoded = decodeArchive(archive);
   const entries = parseTar(decoded.tar, { allowTruncatedTail: decoded.recovered });
   const expected = new Map(manifest.members.map((member) => [member.source.sourceMasterSha256, member]));
   const found = new Map();
