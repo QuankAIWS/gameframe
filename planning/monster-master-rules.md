@@ -57,9 +57,9 @@ Content IDs and unit IDs are stable. Rules refer to semantic roles and content d
 - The first player uses the left deployment zone; the second uses the right deployment zone.
 - Blocked or occupied cells are illegal.
 - Deployment actions are authoritative commands containing the stable unit ID and destination coordinate.
-- After all six units are deployed, initiative is calculated and the duel enters combat at round one.
+- After every unit in both rosters is deployed, initiative is calculated and the duel enters combat at round one.
 
-The first deployment system is intentionally deterministic and public. Hidden placement, simultaneous reveal, drafting, reserve units, and reinforcement waves are later possibilities.
+The first deployment system is intentionally deterministic and public. Its alternating-seat transition currently requires equal roster counts on the two tactical sides. Campaign-configured encounters with asymmetric counts therefore fail closed before match creation until asymmetric deployment is deliberately implemented. Hidden placement, simultaneous reveal, drafting, reserve units, and reinforcement waves are later possibilities.
 
 ## Combat activations
 
@@ -112,7 +112,7 @@ The Warden Master may use `Mend` as its primary action:
 ## Victory and draw
 
 - A player wins only after every opposing unit has been defeated and removed from the battlefield.
-- Defeating the opposing Warden Master does not end the duel while that player still controls a living Bulwark or Emberling.
+- Defeating the opposing Warden Master does not end the standalone duel while that player still controls a living Bulwark or Emberling.
 - If neither force is eliminated, the duel becomes a draw when the final activation of round 24 ends. The authoritative round remains 24; a phantom round 25 is not started.
 
 Alternative objectives, capture points, escort rules, retreats, surrender, and multi-stage encounters remain future rules.
@@ -136,18 +136,32 @@ The browser owns only presentation state such as camera, hover, selection, path 
 
 ## Campaign-configured encounter boundary
 
-MM-0001 remains the fixed standalone duel definition. RPG campaigns may reuse its tactical primitives and match infrastructure, but campaign encounters must not silently replace supplied trainer/monster identities or unsupported rules profiles with the fixed MM-0001 roster.
+MM-0001 remains the fixed standalone duel definition. RPG campaigns reuse its tactical primitives and ordinary match authority without silently replacing supplied trainer/monster identities with the standalone three-unit roster.
 
-The preferred future campaign path is:
+The implemented `monster-master-rpg` path is:
 
 ```text
-validated RPG encounter configuration
+validated RPG encounter `rulesState.creatureIds`
+→ validate supported creature/objective/difficulty/battlefield configuration
 → configured Monster Master initial state
-→ authoritative revision-zero match snapshot
-→ ordinary MatchSession actions, replay, and persistence
+→ authoritative revision-zero MatchSession snapshot
+→ ordinary actions, replay, durable persistence, and terminal state
+→ exact participant-to-creature aftermath
 ```
 
-A configured initial state does not broaden the rules implemented by this file. Campaign-specific trainer profiles, monster species, abilities, resources, objectives, or conditions must be explicitly supported by the selected encounter definition or rejected before match creation.
+Current configured RPG semantics:
+
+- trainers remain RPG encounter participants/controllers and are not materialized as Warden Master tactical creatures;
+- exact campaign creature IDs are retained as tactical unit IDs;
+- Emberling IDs use the existing Emberling Skirmisher rules profile;
+- Bulwark IDs use the existing Stone Bulwark rules profile;
+- each tactical side may contain one through three supported creatures;
+- both sides must currently contain the same number of creatures because deployment alternates between two tactical seats;
+- the current compact-duel map, normal difficulty semantics, and defeat-opposition objective are the only accepted combat configuration;
+- `participantUnitIds` persists exact participant→creature assignment for terminal aftermath;
+- shared-team player authorization remains distinct from assignment: an authorized teammate may operate the allied roster even though `assignedUnitIds` identifies the creatures mapped to that player's participant records.
+
+A configured initial state does not broaden the rules implemented by this file. Unknown species, arbitrary trainer combat profiles, custom abilities/resources/status mechanics, custom maps, unsupported objectives/difficulty values, or asymmetric rosters are rejected before durable encounter custody. New package mechanics require corresponding deterministic Arena implementation and tests; they are never accepted as ignored metadata.
 
 ## Future compatibility
 
