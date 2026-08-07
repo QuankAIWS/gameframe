@@ -38,11 +38,15 @@ jobs:
           node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
-          const roots = ['src', 'public', 'test', 'scripts', '.github'];
+          const rewriteRoots = ['src', 'public', 'test', 'scripts'];
+          const verifyRoots = [...rewriteRoots, '.github'];
           const extensions = new Set([
             '.ts', '.tsx', '.js', '.mjs', '.cjs', '.json', '.jsonc', '.html', '.css',
             '.md', '.txt', '.yml', '.yaml',
           ]);
+          const retired = ['th', 'eo'].join('');
+          const titleRetired = retired[0].toUpperCase() + retired.slice(1);
+          const upperRetired = retired.toUpperCase();
 
           function filesUnder(root) {
             if (!fs.existsSync(root)) return [];
@@ -55,28 +59,34 @@ jobs:
             return files;
           }
 
-          for (const file of roots.flatMap(filesUnder)) {
+          for (const file of rewriteRoots.flatMap(filesUnder)) {
             const before = fs.readFileSync(file, 'utf8');
             const after = before
-              .replaceAll('"theo"', '"gameframe-bot"')
-              .replaceAll("'theo'", "'gameframe-bot'")
-              .replace(/\bTHEO(?=[A-Z0-9_])/g, 'GAMEFRAME_BOT')
-              .replace(/\bTheo(?=[A-Z0-9_])/g, 'GameFrameBot')
-              .replace(/\btheo(?=[A-Z0-9_])/g, 'bot')
-              .replace(/\bTheo\b/g, 'GameFrameBot')
-              .replace(/\btheo\b/g, 'bot');
+              .replaceAll(`"${retired}"`, '"gameframe-bot"')
+              .replaceAll(`'${retired}'`, "'gameframe-bot'")
+              .replace(new RegExp(`\\b${upperRetired}(?=[A-Z0-9_])`, 'g'), 'GAMEFRAME_BOT')
+              .replace(new RegExp(`\\b${titleRetired}(?=[A-Z0-9_])`, 'g'), 'GameFrameBot')
+              .replace(new RegExp(`\\b${retired}(?=[A-Z0-9_])`, 'g'), 'bot')
+              .replace(new RegExp(`\\b${titleRetired}\\b`, 'g'), 'GameFrameBot')
+              .replace(new RegExp(`\\b${retired}\\b`, 'g'), 'bot');
             if (after !== before) fs.writeFileSync(file, after);
           }
-          NODE
 
-          if grep -RniE '\b[Tt]heo\b|\bTHEO[A-Z0-9_]|\bTheo[A-Z0-9_]|\btheo[A-Z0-9_]' \
-            src public test scripts .github \
-            --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' \
-            --include='*.cjs' --include='*.json' --include='*.jsonc' --include='*.html' \
-            --include='*.css' --include='*.md' --include='*.txt' --include='*.yml' --include='*.yaml'; then
-            echo 'Retired opponent identity still present.' >&2
-            exit 1
-          fi
+          const violationPattern = new RegExp(
+            `\\b${retired}\\b|\\b${retired}(?=[A-Z0-9_])`,
+            'i',
+          );
+          const violations = [];
+          for (const file of verifyRoots.flatMap(filesUnder)) {
+            const content = fs.readFileSync(file, 'utf8');
+            if (violationPattern.test(content)) violations.push(file);
+          }
+          if (violations.length) {
+            console.error('Retired opponent identity still present:');
+            console.error(violations.join('\n'));
+            process.exit(1);
+          }
+          NODE
 
       - name: Validate identity cleanup and Node suite
         run: |
@@ -90,7 +100,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src public test scripts .github
+          git add src public test scripts
           git diff --cached --check
           if git diff --cached --quiet; then
             echo 'No cleanup changes remained.'
