@@ -31,7 +31,7 @@ test("development authenticator rejects anonymous requests", async () => {
 test("authorization rejects match creation and action claims for another identity", () => {
   const principal = { playerId: "alice", source: "development" as const };
   assert.throws(
-    () => requirePrincipalSeat(principal, ["bob", "theo"]),
+    () => requirePrincipalSeat(principal, ["bob", "gameframe-bot"]),
     (error: any) => error.code === "forbidden",
   );
   assert.throws(
