@@ -112,7 +112,7 @@ The Warden Master may use `Mend` as its primary action:
 ## Victory and draw
 
 - A player wins only after every opposing unit has been defeated and removed from the battlefield.
-- Defeating the opposing Warden Master does not end the standalone duel while that player still controls a living Bulwark or Emberling.
+- Defeating the opposing Warden Master does not end the duel while that player still controls a living Bulwark or Emberling; this rule describes the standalone MM-0001 roster.
 - If neither force is eliminated, the duel becomes a draw when the final activation of round 24 ends. The authoritative round remains 24; a phantom round 25 is not started.
 
 Alternative objectives, capture points, escort rules, retreats, surrender, and multi-stage encounters remain future rules.
