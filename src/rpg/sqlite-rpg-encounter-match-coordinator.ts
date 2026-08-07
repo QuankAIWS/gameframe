@@ -11,7 +11,10 @@ import {
 } from "./sqlite-rpg-encounter-match-binding-store.ts";
 import { SqliteRpgEncounterStore } from "./sqlite-rpg-encounter-store.ts";
 
-const SUPPORTED_RPG_RULESETS = new Set(["monster-master-rpg", "monster-master-duel"]);
+// The durable production adapter is for the campaign-family RPG ruleset. A raw
+// monster-master-duel encounter remains a generic durable encounter unless it is
+// explicitly launched as Monster Master RPG campaign play.
+const DURABLE_BOUND_RPG_RULESETS = new Set(["monster-master-rpg"]);
 const ENGINE_SERVICE_ID = "gameframe-encounter-engine";
 
 type JsonRecord = Record<string, unknown>;
@@ -84,10 +87,17 @@ export class SqliteRpgEncounterMatchCoordinator {
   ): Promise<JsonRecord> {
     const request = record(requestValue, "encounter launch");
     const rulesetId = identifier(request.rulesetId, "rulesetId");
-    const plan = SUPPORTED_RPG_RULESETS.has(rulesetId) ? bindingPlan(request) : undefined;
+    const plan = DURABLE_BOUND_RPG_RULESETS.has(rulesetId) ? bindingPlan(request) : undefined;
+
+    // Validate the tactical roster before the durable encounter launch commits so
+    // an unsupported cooperative shape cannot leave a half-admitted encounter.
     const launched = this.#encounters.launch(requestValue, input);
     if (!plan) return structuredClone(launched) as JsonRecord;
-    const binding = await this.#ensureBinding(plan, input.createdAt);
+
+    const binding = await this.#serialize(
+      plan.matchId,
+      () => this.#ensureBindingUnlocked(plan, input.createdAt),
+    );
     return withPlayMetadata(launched as unknown as JsonRecord, binding);
   }
 
@@ -102,8 +112,12 @@ export class SqliteRpgEncounterMatchCoordinator {
       const launch = this.#bindings.loadEncounterLaunch(encounterId);
       if (launch) {
         const rulesetId = identifier(launch.rulesetId, "rulesetId");
-        if (SUPPORTED_RPG_RULESETS.has(rulesetId)) {
-          binding = await this.#ensureBinding(bindingPlan(launch), this.#clock());
+        if (DURABLE_BOUND_RPG_RULESETS.has(rulesetId)) {
+          const plan = bindingPlan(launch);
+          binding = await this.#serialize(
+            plan.matchId,
+            () => this.#ensureBindingUnlocked(plan, this.#clock()),
+          );
         }
       }
     }
@@ -116,7 +130,7 @@ export class SqliteRpgEncounterMatchCoordinator {
     const matchId = identifier(matchIdValue, "matchId");
     const playerId = identifier(playerIdValue, "playerId");
     return await this.#serialize(matchId, async () => {
-      const binding = await this.#bindingForMatch(matchId);
+      const binding = await this.#bindingForMatchUnlocked(matchId);
       requireAuthorizedPlayer(binding, playerId);
       const view = asMatchView(await this.#matches.view(matchId, binding.playerTeamSeatId));
       await this.#synchronize(binding, view);
@@ -134,7 +148,7 @@ export class SqliteRpgEncounterMatchCoordinator {
     const matchId = identifier(input.matchId, "matchId");
     const playerId = identifier(input.playerId, "playerId");
     return await this.#serialize(matchId, async () => {
-      const binding = await this.#bindingForMatch(matchId);
+      const binding = await this.#bindingForMatchUnlocked(matchId);
       requireAuthorizedPlayer(binding, playerId);
       const view = asMatchView(await this.#matches.submitAction({
         matchId,
@@ -148,7 +162,7 @@ export class SqliteRpgEncounterMatchCoordinator {
     });
   }
 
-  async #bindingForMatch(matchId: string): Promise<DurableRpgEncounterMatchBinding> {
+  async #bindingForMatchUnlocked(matchId: string): Promise<DurableRpgEncounterMatchBinding> {
     const existing = this.#bindings.loadByMatch(matchId);
     if (existing) return existing;
     if (!matchId.startsWith("rpg:")) {
@@ -158,48 +172,51 @@ export class SqliteRpgEncounterMatchCoordinator {
     const launch = this.#bindings.loadEncounterLaunch(encounterId);
     if (!launch) throw failure("match_not_found", `Unknown RPG match: ${matchId}`, 404);
     const rulesetId = identifier(launch.rulesetId, "rulesetId");
-    if (!SUPPORTED_RPG_RULESETS.has(rulesetId)) {
+    if (!DURABLE_BOUND_RPG_RULESETS.has(rulesetId)) {
       throw failure("match_not_found", `Encounter ${encounterId} has no playable RPG match.`, 404);
     }
-    return await this.#ensureBinding(bindingPlan(launch), this.#clock());
+    return await this.#ensureBindingUnlocked(bindingPlan(launch), this.#clock());
   }
 
-  async #ensureBinding(plan: BindingPlan, timestamp: string): Promise<DurableRpgEncounterMatchBinding> {
-    return await this.#serialize(plan.matchId, async () => {
-      const existing = this.#bindings.loadByEncounter(plan.encounterId);
-      if (existing) {
-        assertBindingMatchesPlan(existing, plan);
-        const view = await this.#ensureMatch(plan);
-        assertUnitMappingMatches(existing, view);
-        return existing;
-      }
-
+  async #ensureBindingUnlocked(
+    plan: BindingPlan,
+    timestamp: string,
+  ): Promise<DurableRpgEncounterMatchBinding> {
+    const existing = this.#bindings.loadByEncounter(plan.encounterId);
+    if (existing) {
+      assertBindingMatchesPlan(existing, plan);
       const view = await this.#ensureMatch(plan);
-      const teamUnitIds = teamUnits(view, plan);
-      const participantUnitIds = Object.fromEntries(
-        plan.participants.map((participant) => [
-          participant.participantId,
-          [...(teamUnitIds[participant.teamId] ?? [])],
-        ]),
-      );
-      return this.#bindings.saveExact({
-        protocolVersion: 1,
-        encounterId: plan.encounterId,
-        campaignId: plan.campaignId,
-        rulesetId: plan.rulesetId,
-        gameId: plan.gameId,
-        matchId: plan.matchId,
-        authorizedPlayerIds: [...plan.authorizedPlayerIds],
-        playerTeamId: plan.playerTeamId,
-        oppositionTeamId: plan.oppositionTeamId,
-        playerTeamSeatId: plan.playerTeamSeatId,
-        participants: structuredClone(plan.participants),
-        objectives: structuredClone(plan.objectives),
-        mappingMode: "shared-team-roster",
-        teamUnitIds,
-        participantUnitIds,
-      }, timestamp);
-    });
+      assertUnitMappingMatches(existing, view);
+      return existing;
+    }
+
+    // Match creation may succeed just before process death. On restart this path
+    // recovers the exact match snapshot and then materializes the missing binding.
+    const view = await this.#ensureMatch(plan);
+    const teamUnitIds = teamUnits(view, plan);
+    const participantUnitIds = Object.fromEntries(
+      plan.participants.map((participant) => [
+        participant.participantId,
+        [...(teamUnitIds[participant.teamId] ?? [])],
+      ]),
+    );
+    return this.#bindings.saveExact({
+      protocolVersion: 1,
+      encounterId: plan.encounterId,
+      campaignId: plan.campaignId,
+      rulesetId: plan.rulesetId,
+      gameId: plan.gameId,
+      matchId: plan.matchId,
+      authorizedPlayerIds: [...plan.authorizedPlayerIds],
+      playerTeamId: plan.playerTeamId,
+      oppositionTeamId: plan.oppositionTeamId,
+      playerTeamSeatId: plan.playerTeamSeatId,
+      participants: structuredClone(plan.participants),
+      objectives: structuredClone(plan.objectives),
+      mappingMode: "shared-team-roster",
+      teamUnitIds,
+      participantUnitIds,
+    }, timestamp);
   }
 
   async #ensureMatch(plan: BindingPlan): Promise<MatchView> {
@@ -224,15 +241,24 @@ export class SqliteRpgEncounterMatchCoordinator {
 
   async #synchronize(binding: DurableRpgEncounterMatchBinding, view: MatchView): Promise<void> {
     if (view.observation.status.lifecycle === "active") return;
+    const snapshot = await this.#matches.snapshot(binding.matchId);
+    const completedAt = snapshot.events.at(-1)?.occurredAt;
+    if (!completedAt) {
+      throw failure(
+        "encounter-match-conflict",
+        `Terminal match ${binding.matchId} has no durable terminal event timestamp.`,
+        409,
+      );
+    }
     const completion = {
       protocolVersion: 2,
       completionId: `completion:${binding.encounterId}`,
       encounterId: binding.encounterId,
-      outcome: terminalOutcome(binding, view, this.#clock()),
+      outcome: terminalOutcome(binding, view, completedAt),
     };
     this.#encounters.complete(binding.encounterId, completion, {
       serviceId: ENGINE_SERVICE_ID,
-      completedAt: this.#clock(),
+      completedAt,
     });
   }
 
@@ -408,7 +434,7 @@ function assertUnitMappingMatches(
     matchPlayerIds: [binding.playerTeamSeatId, GAMEFRAME_BOT_PLAYER_ID],
   };
   const current = teamUnits(view, plan);
-  if (JSON.stringify(current) !== JSON.stringify(binding.teamUnitIds)) {
+  if (stableJson(current) !== stableJson(binding.teamUnitIds)) {
     throw failure(
       "encounter-match-conflict",
       `Encounter ${binding.encounterId} authoritative unit mapping changed after persistence.`,
@@ -447,7 +473,7 @@ function assertBindingMatchesPlan(
     participants: plan.participants,
     objectives: plan.objectives,
   };
-  if (JSON.stringify(comparable) !== JSON.stringify(expected)) {
+  if (stableJson(comparable) !== stableJson(expected)) {
     throw failure(
       "encounter-match-conflict",
       `Encounter ${plan.encounterId} durable binding conflicts with its launch request.`,
@@ -599,6 +625,20 @@ function errorCode(error: unknown): string | undefined {
   return typeof (error as { code?: unknown }).code === "string"
     ? (error as { code: string }).code
     : undefined;
+}
+
+function stableJson(value: unknown): string {
+  return JSON.stringify(sortJson(value));
+}
+
+function sortJson(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortJson);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value as JsonRecord)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, nested]) => [key, sortJson(nested)]),
+  );
 }
 
 function failure(code: string, message: string, status: number): Error {
