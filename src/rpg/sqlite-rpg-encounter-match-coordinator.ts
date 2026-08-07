@@ -6,6 +6,11 @@ import type {
 import { SqliteMatchSnapshotStore } from "../platform/sqlite-match-store.ts";
 import { MonsterMasterMatchService } from "../server/monster-master-match-service.ts";
 import {
+  materializeMonsterMasterRpgEncounter,
+  type MonsterMasterRpgEncounterObjective,
+  type MonsterMasterRpgEncounterParticipant,
+} from "./monster-master-rpg-encounter-materializer.ts";
+import {
   type DurableRpgEncounterMatchBinding,
   SqliteRpgEncounterMatchBindingStore,
 } from "./sqlite-rpg-encounter-match-binding-store.ts";
@@ -24,6 +29,9 @@ type BindingPlan = Omit<
   "protocolVersion" | "mappingMode" | "teamUnitIds" | "participantUnitIds"
 > & {
   matchPlayerIds: [string, string];
+  initialState: MonsterMasterState;
+  teamUnitIds: Record<string, string[]>;
+  participantUnitIds: Record<string, string[]>;
 };
 
 type MatchView = {
@@ -89,8 +97,9 @@ export class SqliteRpgEncounterMatchCoordinator {
     const rulesetId = identifier(request.rulesetId, "rulesetId");
     const plan = DURABLE_BOUND_RPG_RULESETS.has(rulesetId) ? bindingPlan(request) : undefined;
 
-    // Validate the tactical roster before the durable encounter launch commits so
-    // an unsupported cooperative shape cannot leave a half-admitted encounter.
+    // Materialize and validate the exact tactical configuration before durable
+    // encounter custody advances. Unsupported package mechanics therefore fail
+    // without leaving a half-admitted encounter or a substituted default roster.
     const launched = this.#encounters.launch(requestValue, input);
     if (!plan) return structuredClone(launched) as JsonRecord;
 
@@ -191,15 +200,10 @@ export class SqliteRpgEncounterMatchCoordinator {
     }
 
     // Match creation may succeed just before process death. On restart this path
-    // recovers the exact match snapshot and then materializes the missing binding.
+    // recovers the exact revision-zero configured match and then materializes the
+    // missing binding from durable encounter custody.
     const view = await this.#ensureMatch(plan);
-    const teamUnitIds = teamUnits(view, plan);
-    const participantUnitIds = Object.fromEntries(
-      plan.participants.map((participant) => [
-        participant.participantId,
-        [...(teamUnitIds[participant.teamId] ?? [])],
-      ]),
-    );
+    assertTeamUnitsMatchPlan(view, plan);
     return this.#bindings.saveExact({
       protocolVersion: 1,
       encounterId: plan.encounterId,
@@ -214,28 +218,33 @@ export class SqliteRpgEncounterMatchCoordinator {
       participants: structuredClone(plan.participants),
       objectives: structuredClone(plan.objectives),
       mappingMode: "shared-team-roster",
-      teamUnitIds,
-      participantUnitIds,
+      teamUnitIds: structuredClone(plan.teamUnitIds),
+      participantUnitIds: structuredClone(plan.participantUnitIds),
     }, timestamp);
   }
 
   async #ensureMatch(plan: BindingPlan): Promise<MatchView> {
     try {
-      return asMatchView(await this.#matches.createMatch(plan.matchPlayerIds, plan.matchId));
+      return asMatchView(
+        await this.#matches.createMatch(plan.matchPlayerIds, plan.matchId, plan.initialState),
+      );
     } catch (error) {
       if (errorCode(error) !== "match_exists") throw error;
     }
-    const recovered = asMatchView(await this.#matches.view(plan.matchId, plan.playerTeamSeatId));
+    const snapshot = await this.#matches.snapshot(plan.matchId);
     if (
-      recovered.playerIds.length !== plan.matchPlayerIds.length
-      || recovered.playerIds.some((playerId, index) => playerId !== plan.matchPlayerIds[index])
+      snapshot.playerIds.length !== plan.matchPlayerIds.length
+      || snapshot.playerIds.some((playerId, index) => playerId !== plan.matchPlayerIds[index])
+      || stableJson(snapshot.initialState) !== stableJson(plan.initialState)
     ) {
       throw failure(
         "encounter-match-conflict",
-        `Encounter ${plan.encounterId} is bound to a different tactical match.`,
+        `Encounter ${plan.encounterId} is bound to a different tactical match configuration.`,
         409,
       );
     }
+    const recovered = asMatchView(await this.#matches.view(plan.matchId, plan.playerTeamSeatId));
+    assertTeamUnitsMatchPlan(recovered, plan);
     return recovered;
   }
 
@@ -279,7 +288,10 @@ function bindingPlan(request: JsonRecord): BindingPlan {
   const encounterId = identifier(request.encounterId, "encounterId");
   const campaignId = identifier(request.campaignId, "campaignId");
   const rulesetId = identifier(request.rulesetId, "rulesetId");
-  const participants = array(request.participants, "participants").map((value, index) => {
+  const configuredParticipants: MonsterMasterRpgEncounterParticipant[] = array(
+    request.participants,
+    "participants",
+  ).map((value, index) => {
     const participant = record(value, `participants[${index}]`);
     const controller = record(participant.controller, `participants[${index}].controller`);
     const kind = requiredText(controller.kind, `participants[${index}].controller.kind`);
@@ -295,13 +307,31 @@ function bindingPlan(request: JsonRecord): BindingPlan {
           : {}),
       },
       teamId: identifier(participant.teamId, `participants[${index}].teamId`),
+      rulesState: record(participant.rulesState, `participants[${index}].rulesState`),
     };
   });
-  const objectives = array(request.objectives, "objectives").map((value, index) => {
+  const participants = configuredParticipants.map((participant) => ({
+    participantId: participant.participantId,
+    controller: structuredClone(participant.controller),
+    teamId: participant.teamId,
+  }));
+  const configuredObjectives: MonsterMasterRpgEncounterObjective[] = array(
+    request.objectives,
+    "objectives",
+  ).map((value, index) => {
     const objective = record(value, `objectives[${index}]`);
-    return { objectiveId: identifier(objective.objectiveId, `objectives[${index}].objectiveId`) };
+    return {
+      objectiveId: identifier(objective.objectiveId, `objectives[${index}].objectiveId`),
+      kind: requiredText(objective.kind, `objectives[${index}].kind`),
+      ...(objective.rules === undefined
+        ? {}
+        : { rules: record(objective.rules, `objectives[${index}].rules`) }),
+    };
   });
-  const playerParticipants = participants.filter((participant) => participant.controller.kind === "player");
+  const objectives = configuredObjectives.map((objective) => ({ objectiveId: objective.objectiveId }));
+  const playerParticipants = configuredParticipants.filter(
+    (participant) => participant.controller.kind === "player",
+  );
   const authorizedPlayerIds = unique(playerParticipants.flatMap((participant) => (
     participant.controller.playerId ? [participant.controller.playerId] : []
   )));
@@ -322,7 +352,9 @@ function bindingPlan(request: JsonRecord): BindingPlan {
   }
   const playerTeamId = playerTeamIds[0]!;
   const oppositionTeamIds = unique(
-    participants.map((participant) => participant.teamId).filter((teamId) => teamId !== playerTeamId),
+    configuredParticipants
+      .map((participant) => participant.teamId)
+      .filter((teamId) => teamId !== playerTeamId),
   );
   if (oppositionTeamIds.length !== 1) {
     throw failure(
@@ -331,7 +363,18 @@ function bindingPlan(request: JsonRecord): BindingPlan {
       400,
     );
   }
+  const oppositionTeamId = oppositionTeamIds[0]!;
   const playerTeamSeatId = rpgEncounterTeamSeatId(encounterId);
+  const matchPlayerIds: [string, string] = [playerTeamSeatId, GAMEFRAME_BOT_PLAYER_ID];
+  const materialized = materializeMonsterMasterRpgEncounter({
+    matchPlayerIds,
+    playerTeamId,
+    oppositionTeamId,
+    participants: configuredParticipants,
+    objectives: configuredObjectives,
+    difficulty: record(request.difficulty, "difficulty"),
+    battlefield: record(request.battlefield, "battlefield"),
+  });
   return {
     encounterId,
     campaignId,
@@ -340,11 +383,14 @@ function bindingPlan(request: JsonRecord): BindingPlan {
     matchId: rpgEncounterMatchId(encounterId),
     authorizedPlayerIds,
     playerTeamId,
-    oppositionTeamId: oppositionTeamIds[0]!,
+    oppositionTeamId,
     playerTeamSeatId,
     participants,
     objectives,
-    matchPlayerIds: [playerTeamSeatId, GAMEFRAME_BOT_PLAYER_ID],
+    matchPlayerIds,
+    initialState: materialized.initialState,
+    teamUnitIds: materialized.teamUnitIds,
+    participantUnitIds: materialized.participantUnitIds,
   };
 }
 
@@ -372,6 +418,7 @@ function withPlayMetadata(
         teamId: binding.playerTeamId,
         playerIds: [...binding.authorizedPlayerIds],
         teamUnitIds: [...(binding.teamUnitIds[binding.playerTeamId] ?? [])],
+        participantUnitIds: structuredClone(binding.participantUnitIds),
       },
     },
   };
@@ -388,7 +435,7 @@ function withTeamControlProjection(
     .filter((participant) => participant.controller.kind === "player"
       && participant.controller.playerId === playerId)
     .map((participant) => participant.participantId);
-  const controlledUnitIds = unique(controlledParticipantIds.flatMap(
+  const assignedUnitIds = unique(controlledParticipantIds.flatMap(
     (participantId) => binding.participantUnitIds[participantId] ?? [],
   ));
   return {
@@ -402,12 +449,13 @@ function withTeamControlProjection(
       playerId,
       teamPlayerIds: [...binding.authorizedPlayerIds],
       controlledParticipantIds,
-      controlledUnitIds,
+      controlledUnitIds: [...(binding.teamUnitIds[binding.playerTeamId] ?? [])],
+      assignedUnitIds,
     },
   };
 }
 
-function teamUnits(view: MatchView, plan: BindingPlan): Record<string, string[]> {
+function teamUnits(view: MatchView, plan: Pick<BindingPlan, "playerTeamId" | "oppositionTeamId" | "playerTeamSeatId">): Record<string, string[]> {
   const rosters = record(view.observation.rosters, "observation.rosters");
   return {
     [plan.playerTeamId]: unitIds(rosters[plan.playerTeamSeatId]),
@@ -415,25 +463,21 @@ function teamUnits(view: MatchView, plan: BindingPlan): Record<string, string[]>
   };
 }
 
+function assertTeamUnitsMatchPlan(view: MatchView, plan: BindingPlan): void {
+  if (stableJson(teamUnits(view, plan)) !== stableJson(plan.teamUnitIds)) {
+    throw failure(
+      "encounter-match-conflict",
+      `Encounter ${plan.encounterId} tactical roster does not match its configured participant creatures.`,
+      409,
+    );
+  }
+}
+
 function assertUnitMappingMatches(
   binding: DurableRpgEncounterMatchBinding,
   view: MatchView,
 ): void {
-  const plan: BindingPlan = {
-    encounterId: binding.encounterId,
-    campaignId: binding.campaignId,
-    rulesetId: binding.rulesetId,
-    gameId: binding.gameId,
-    matchId: binding.matchId,
-    authorizedPlayerIds: binding.authorizedPlayerIds,
-    playerTeamId: binding.playerTeamId,
-    oppositionTeamId: binding.oppositionTeamId,
-    playerTeamSeatId: binding.playerTeamSeatId,
-    participants: binding.participants,
-    objectives: binding.objectives,
-    matchPlayerIds: [binding.playerTeamSeatId, GAMEFRAME_BOT_PLAYER_ID],
-  };
-  const current = teamUnits(view, plan);
+  const current = teamUnits(view, binding);
   if (stableJson(current) !== stableJson(binding.teamUnitIds)) {
     throw failure(
       "encounter-match-conflict",
@@ -459,6 +503,8 @@ function assertBindingMatchesPlan(
     playerTeamSeatId: binding.playerTeamSeatId,
     participants: binding.participants,
     objectives: binding.objectives,
+    teamUnitIds: binding.teamUnitIds,
+    participantUnitIds: binding.participantUnitIds,
   };
   const expected = {
     encounterId: plan.encounterId,
@@ -472,6 +518,8 @@ function assertBindingMatchesPlan(
     playerTeamSeatId: plan.playerTeamSeatId,
     participants: plan.participants,
     objectives: plan.objectives,
+    teamUnitIds: plan.teamUnitIds,
+    participantUnitIds: plan.participantUnitIds,
   };
   if (stableJson(comparable) !== stableJson(expected)) {
     throw failure(
@@ -509,16 +557,9 @@ function terminalOutcome(
       objectiveId: objective.objectiveId,
       status: result === "victory" ? "completed" : result === "defeat" ? "failed" : "partial",
     })),
-    participantResults: binding.participants.map((participant) => ({
-      participantId: participant.participantId,
-      status: result === "draw"
-        ? "active"
-        : participant.teamId === winnerTeamId
-          ? "active"
-          : "defeated",
-      conditions: result !== "draw" && participant.teamId !== winnerTeamId ? ["defeated"] : [],
-      resourceChanges: {},
-    })),
+    participantResults: binding.participants.map((participant) =>
+      participantTerminalResult(binding, view, participant.participantId)
+    ),
     rewards: [],
     ruleset: { id: binding.rulesetId, revision: 1 },
     commit: {
@@ -527,6 +568,57 @@ function terminalOutcome(
       eventCount: view.eventCount,
       completedAt,
     },
+  };
+}
+
+function participantTerminalResult(
+  binding: DurableRpgEncounterMatchBinding,
+  view: MatchView,
+  participantId: string,
+): JsonRecord {
+  const mappedUnitIds = binding.participantUnitIds[participantId] ?? [];
+  if (mappedUnitIds.length === 0) {
+    throw failure(
+      "encounter-match-conflict",
+      `Participant ${participantId} has no persisted tactical unit mapping.`,
+      409,
+    );
+  }
+  const board = safeRecord(view.observation.board);
+  const living = Array.isArray(board.units) ? board.units : [];
+  const defeated = new Set(
+    Array.isArray(view.observation.defeatedUnitIds)
+      ? view.observation.defeatedUnitIds.filter((value): value is string => typeof value === "string")
+      : [],
+  );
+  let healthRemaining = 0;
+  let livingCount = 0;
+  for (const unitId of mappedUnitIds) {
+    const unit = living.find((value) =>
+      value && typeof value === "object" && !Array.isArray(value)
+      && (value as JsonRecord).id === unitId
+    ) as JsonRecord | undefined;
+    if (unit) {
+      const health = typeof unit.health === "number" && Number.isFinite(unit.health)
+        ? Math.max(0, unit.health)
+        : 0;
+      healthRemaining += health;
+      if (health > 0) livingCount += 1;
+    } else if (!defeated.has(unitId)) {
+      throw failure(
+        "encounter-match-conflict",
+        `Mapped tactical unit ${unitId} is neither living nor defeated in the terminal match.`,
+        409,
+      );
+    }
+  }
+  const status = livingCount > 0 ? "active" : "defeated";
+  return {
+    participantId,
+    status,
+    healthRemaining,
+    conditions: status === "defeated" ? ["defeated"] : [],
+    resourceChanges: {},
   };
 }
 
@@ -593,6 +685,12 @@ function record(value: unknown, label: string): JsonRecord {
     throw failure("invalid-input", `${label} must be an object.`, 400);
   }
   return value as JsonRecord;
+}
+
+function safeRecord(value: unknown): JsonRecord {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as JsonRecord
+    : {};
 }
 
 function identifier(value: unknown, label: string): string {
