@@ -8,6 +8,10 @@ import {
 } from "../auth/signed-session.ts";
 import { errorResponse, json } from "./http-utils.ts";
 import {
+  proxyPublicRpgMatchRequest,
+  publicRpgMatchEdgeRoute,
+} from "./rpg-match-edge-proxy.ts";
+import {
   proxyPublicRpgRequest,
   publicRpgEdgeRoute,
   type RpgEdgeProxyDependencies,
@@ -22,9 +26,9 @@ export interface RpgEdgeWorkerOptions {
 
 /**
  * Adds the public RPG edge boundary in front of the existing GameFrame Worker.
- * Only authenticated Discord sessions reach the HMAC-signing proxy. All other
- * assets, OAuth routes, invitations, and Durable Object game APIs retain the
- * existing worker router.
+ * Authenticated RPG campaign and RPG-bound tactical requests are HMAC-proxied to
+ * the durable VM service. Ordinary games, OAuth, invitations, assets, and their
+ * Durable Object match authority remain on the existing worker router.
  */
 export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {}) {
   const gameFrame = createGameFrameWorker();
@@ -71,6 +75,16 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
         if (publicRpgEdgeRoute(url.pathname)) {
           const principal = await authenticatorFor(env).authenticate(request);
           return await proxyPublicRpgRequest(
+            request,
+            env,
+            principal,
+            options.proxyDependencies,
+          );
+        }
+
+        if (publicRpgMatchEdgeRoute(url.pathname)) {
+          const principal = await authenticatorFor(env).authenticate(request);
+          return await proxyPublicRpgMatchRequest(
             request,
             env,
             principal,
