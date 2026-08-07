@@ -68,13 +68,17 @@ human players
 → rpg-gm-runtime campaign continuation
 ```
 
-The current Node-local encounter adapter supports exactly one human campaign player against Monster Master BattleBot. It fails closed when more than one human player appears in the encounter roster. It is an implementation-stage semantic/UI bridge, not the final durable participant-faithful RPG battle binding.
+The Node-local encounter adapter supports cooperative campaign players on one allied team. Each human remains independently authenticated while the adapter maps authorized teammates to one synthetic allied tactical seat at the match-authority boundary. Returned projections alias that tactical seat back to the requesting human. Normal GameFrame revision and legality checks arbitrate teammate actions; Monster Master BattleBot remains the separately represented opposition.
 
-The planned cooperative model is player → campaign participant → allied RPG team → controlled trainer/monster units → legal action. Do not place cooperative humans on opposing duel seats merely to satisfy MM-0001's two-seat contract. A future shared-team or per-player control adapter must preserve each human's authenticated GameFrame identity and stable RPG participant/unit mapping across restart.
+The VM-first durable RPG path persists the encounter-to-match binding, synthetic team seat, authorized player identities, shared-team roster mapping, and Monster Master match snapshot in the same SQLite database as GameFrame's durable campaign and encounter authority. Public `rpg:*` match view/action requests remain authenticated at the Cloudflare Worker and are HMAC-proxied to the VM authority; ordinary GameFrame matches continue to use Durable Objects.
+
+This is **shared-team control**, not exclusive per-player unit ownership. `participantUnitIds` may record the authoritative shared roster for each participant under mapping mode `shared-team-roster`; do not reinterpret that as a claim that one player exclusively owns those units. Do not place cooperative humans on opposing duel seats merely to satisfy MM-0001's two-seat contract.
+
+The current Monster Master RPG match still materializes the fixed `monster-master-duel` roster. A future participant-faithful configuration/state materializer must preserve supported campaign participant rules state, trainer/monster configuration, and any required exclusive participant-to-unit mapping or fail closed when the selected ruleset cannot execute it truthfully.
 
 ## Current active lane
 
-The Node-local RPG adapter proves the one-human encounter-to-battle-to-campaign lifecycle. The next GameFrame RPG work is durable participant-faithful encounter→match productionization using the existing durable RPG/encounter authority, followed by the complete single-player campaign proof. Runtime join/party lifecycle and team-aware cooperative Arena control come after that vertical slice.
+Durable encounter→match restart/reconnect authority and shared-team tactical control are established repository substrates. The next product-critical GameFrame RPG work is participant-faithful Monster Master encounter configuration and the complete full-stack Monster Master campaign proof with the real CampaignPackage and Dungeon Master path. Runtime campaign join/party lifecycle and official two-human campaign acceptance remain separate gates even though the tactical shared-team substrate already exists.
 
 ## Public repository controls
 
