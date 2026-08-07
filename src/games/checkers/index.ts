@@ -382,7 +382,7 @@ function actionScore(action: CheckersAction, observation: CheckersObservation): 
 export class DeterministicCheckersPlayer implements AgentPlayer<CheckersAction, CheckersObservation> {
   readonly agentId: string;
 
-  constructor(agentId = "theo") {
+  constructor(agentId = "gameframe-bot") {
     this.agentId = agentId;
   }
 

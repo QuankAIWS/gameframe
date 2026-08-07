@@ -4,7 +4,7 @@ async function openOthelloMenu(page) {
   await page.goto("/othello.html?theme=obsidian&player=othello-browser-test");
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
   await expect(page.locator("#othello-game-menu")).toBeVisible();
-  await expect(page.locator("#othello-play-theo")).toBeVisible();
+  await expect(page.locator("#othello-play-bot")).toBeVisible();
   await expect(page.locator("#othello-play-local")).toBeVisible();
 }
 
@@ -40,7 +40,7 @@ test("Othello pass-and-play alternates legal turns", async ({ page }) => {
   await expect(page.locator("#dark-turn")).toHaveClass(/is-active/);
 });
 
-test("Othello Theo turns continue when persistence is unavailable", async ({ page }) => {
+test("Othello GameFrameBot turns continue when persistence is unavailable", async ({ page }) => {
   await openOthelloMenu(page);
   await page.evaluate(() => {
     Storage.prototype.setItem = function unavailableStorageWrite() {
@@ -48,13 +48,13 @@ test("Othello Theo turns continue when persistence is unavailable", async ({ pag
     };
   });
 
-  await page.locator("#othello-play-theo").click();
+  await page.locator("#othello-play-bot").click();
   await expect(page.locator("#othello-game-menu")).toBeHidden();
   await expect(page.locator("body")).toHaveAttribute("data-gameframe-storage-unavailable", "true");
 
   await clickBoardCell(page, 2, 3);
 
-  // The human move is ply one; Theo must still answer even though saving threw.
+  // The human move is ply one; GameFrameBot must still answer even though saving threw.
   await expect(page.locator("#move-number")).toHaveText("2 / 60");
   await expect(page.locator("#dark-turn")).toHaveClass(/is-active/);
   await expect(page.locator("#turn-copy")).toContainText("Dark");

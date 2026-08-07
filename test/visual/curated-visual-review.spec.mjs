@@ -113,7 +113,7 @@ test("captures board-game lobby, active, completed, error, and mobile states", a
   await capture(page, testInfo, "02-main-lobby-mobile");
 
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.getByRole("button", { name: "Challenge Theo" }).click();
+  await page.getByRole("button", { name: "Challenge GameFrameBot" }).click();
   await expect(page.locator("#match-panel")).toBeVisible();
   await capture(page, testInfo, "03-tic-tac-toe-active");
 
@@ -135,7 +135,7 @@ test("captures board-game lobby, active, completed, error, and mobile states", a
 test("captures Checkers initial and selected-piece states", async ({ page }, testInfo) => {
   await page.goto("/?player=visual-checkers-user");
   await page.locator("#select-checkers").click();
-  await page.getByRole("button", { name: "Challenge Theo" }).click();
+  await page.getByRole("button", { name: "Challenge GameFrameBot" }).click();
   await expect(page.locator(".checkers-cell")).toHaveCount(64);
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
   await capture(page, testInfo, "06-checkers-initial");
@@ -148,7 +148,7 @@ test("captures Checkers initial and selected-piece states", async ({ page }, tes
 
 test("captures tactical movement camera and path states", async ({ page }, testInfo) => {
   await page.goto("/tactical.html?player=visual-tactical-user");
-  await page.getByRole("button", { name: "Race Theo" }).click();
+  await page.getByRole("button", { name: "Race GameFrameBot" }).click();
   await expect(page.locator("#tactical-canvas")).toBeVisible();
   await capture(page, testInfo, "08-tactical-movement-initial");
 
@@ -162,7 +162,7 @@ test("captures tactical movement camera and path states", async ({ page }, testI
 
 test("captures tactical combat activation, move, attack, and damage states", async ({ page, request }, testInfo) => {
   await page.goto("/combat.html?player=visual-combat-user");
-  await page.getByRole("button", { name: "Skirmish with Theo" }).click();
+  await page.getByRole("button", { name: "Skirmish with GameFrameBot" }).click();
   await expect(page.locator("#combat-canvas")).toBeVisible();
   await capture(page, testInfo, "10-tactical-combat-activation");
 

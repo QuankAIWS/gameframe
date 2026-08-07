@@ -20,7 +20,7 @@ async function capture(page, testInfo, name) {
 test("captures premium Checkers match and move-selection states", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/?game=american-checkers&player=visual-checkers-premium");
-  await page.locator("#challenge-theo").click();
+  await page.locator("#challenge-bot").click();
   await expect(page.locator("body")).toHaveClass(/checkers-premium-active/);
   await expect(page.locator("#checkers-intel-rail")).toBeVisible();
   await capture(page, testInfo, "31-checkers-premium-opening");

@@ -31,7 +31,7 @@ test("navigates game surfaces, diagnostics, and setup reset controls", async ({ 
 
   await page.getByRole("link", { name: "Other games" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await page.getByRole("button", { name: "Challenge Theo" }).click();
+  await page.getByRole("button", { name: "Challenge GameFrameBot" }).click();
   await expect(page.locator("#match-panel")).toBeVisible();
 
   const diagnostics = page.locator("details.diagnostics");
@@ -48,7 +48,7 @@ test("navigates game surfaces, diagnostics, and setup reset controls", async ({ 
 
 test("exercises tactical camera controls and navigation", async ({ page }) => {
   await page.goto(`/tactical.html?player=${encodeURIComponent(uniquePlayer("camera"))}`);
-  await page.getByRole("button", { name: "Race Theo" }).click();
+  await page.getByRole("button", { name: "Race GameFrameBot" }).click();
   await expect(page.locator("#tactical-canvas")).toBeVisible();
 
   const viewport = page.locator("#tactical-viewport-label");
@@ -84,7 +84,7 @@ test("exercises tactical camera controls and navigation", async ({ page }) => {
 
 test("exercises combat camera, diagnostics, and setup controls", async ({ page }) => {
   await page.goto(`/combat.html?player=${encodeURIComponent(uniquePlayer("combat-controls"))}`);
-  await page.getByRole("button", { name: "Skirmish with Theo" }).click();
+  await page.getByRole("button", { name: "Skirmish with GameFrameBot" }).click();
   await expect(page.locator("#combat-canvas")).toBeVisible();
 
   await page.getByRole("button", { name: "Pan camera east" }).click();

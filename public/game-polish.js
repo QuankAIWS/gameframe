@@ -6,7 +6,7 @@ const boardWrap = board?.closest(".board-wrap");
 const status = document.querySelector("#status");
 const details = document.querySelector("#details");
 const newMatch = document.querySelector("#new-match");
-const challengeTheo = document.querySelector("#challenge-theo");
+const challengeTheo = document.querySelector("#challenge-bot");
 const createHumanMatch = document.querySelector("#create-human-match");
 
 let checkersSnapshot = new Map();
@@ -49,8 +49,8 @@ function ensureOutcomeOverlay() {
   overlay.querySelector("#game-outcome-setup").addEventListener("click", () => newMatch?.click());
   overlay.querySelector("#game-outcome-rematch").addEventListener("click", () => {
     const diagnostics = readDiagnostics();
-    const versusTheo = diagnostics.playerIds?.includes("theo")
-      || document.querySelector("#player-o-name")?.textContent === "Theo";
+    const versusTheo = diagnostics.playerIds?.includes("gameframe-bot")
+      || document.querySelector("#player-o-name")?.textContent === "GameFrameBot";
     newMatch?.click();
     requestAnimationFrame(() => {
       if (versusTheo) challengeTheo?.click();

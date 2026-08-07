@@ -836,7 +836,7 @@ export class DeterministicMonsterMasterPlayer
 {
   readonly agentId: string;
 
-  constructor(agentId = "theo") {
+  constructor(agentId = "gameframe-bot") {
     this.agentId = agentId;
   }
 

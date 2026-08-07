@@ -208,9 +208,9 @@ test("cloneState isolates pieces and repetition counters", () => {
 });
 
 test("the deterministic checkers player always returns a legal stable choice", async () => {
-  const current = checkersDefinition.createInitialState(["theo", "human"]);
-  const observation = checkersDefinition.getObservation(current, "theo");
-  const agent = new DeterministicCheckersPlayer("theo");
+  const current = checkersDefinition.createInitialState(["gameframe-bot", "human"]);
+  const observation = checkersDefinition.getObservation(current, "gameframe-bot");
+  const agent = new DeterministicCheckersPlayer("gameframe-bot");
   const first = await agent.chooseAction({ observation, legalActions: observation.legalActions });
   const second = await agent.chooseAction({ observation, legalActions: observation.legalActions });
   assert.deepEqual(first, second);

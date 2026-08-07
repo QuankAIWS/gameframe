@@ -75,46 +75,46 @@ export type {
 };
 
 export class InMemoryTicTacToeService extends TicTacToeMatchService {
-  constructor(theo?: AgentPlayer<TicTacToeAction, TicTacToeObservation>) {
+  constructor(bot?: AgentPlayer<TicTacToeAction, TicTacToeObservation>) {
     super({
       store: new InMemoryMatchSnapshotStore<TicTacToeState, TicTacToeAction>(),
-      ...(theo ? { theo } : {}),
+      ...(bot ? { bot } : {}),
     });
   }
 }
 
 export class InMemoryCheckersService extends CheckersMatchService {
-  constructor(theo?: AgentPlayer<CheckersAction, CheckersObservation>) {
+  constructor(bot?: AgentPlayer<CheckersAction, CheckersObservation>) {
     super({
       store: new InMemoryMatchSnapshotStore<CheckersState, CheckersAction>(),
-      ...(theo ? { theo } : {}),
+      ...(bot ? { bot } : {}),
     });
   }
 }
 
 export class InMemoryTacticalMovementService extends TacticalMovementMatchService {
-  constructor(theo?: AgentPlayer<TacticalMovementAction, TacticalMovementObservation>) {
+  constructor(bot?: AgentPlayer<TacticalMovementAction, TacticalMovementObservation>) {
     super({
       store: new InMemoryMatchSnapshotStore<TacticalMovementState, TacticalMovementAction>(),
-      ...(theo ? { theo } : {}),
+      ...(bot ? { bot } : {}),
     });
   }
 }
 
 export class InMemoryTacticalCombatService extends TacticalCombatMatchService {
-  constructor(theo?: AgentPlayer<TacticalCombatAction, TacticalCombatObservation>) {
+  constructor(bot?: AgentPlayer<TacticalCombatAction, TacticalCombatObservation>) {
     super({
       store: new InMemoryMatchSnapshotStore<TacticalCombatState, TacticalCombatAction>(),
-      ...(theo ? { theo } : {}),
+      ...(bot ? { bot } : {}),
     });
   }
 }
 
 export class InMemoryMonsterMasterService extends MonsterMasterMatchService {
-  constructor(theo?: AgentPlayer<MonsterMasterAction, MonsterMasterObservation>) {
+  constructor(bot?: AgentPlayer<MonsterMasterAction, MonsterMasterObservation>) {
     super({
       store: new InMemoryMatchSnapshotStore<MonsterMasterState, MonsterMasterAction>(),
-      ...(theo ? { theo } : {}),
+      ...(bot ? { bot } : {}),
     });
   }
 }
@@ -132,23 +132,23 @@ export class InMemoryGameFrameService {
     this.#idGenerator = options.idGenerator ?? (() => crypto.randomUUID());
     this.#ticTacToe = new TicTacToeMatchService({
       store: new InMemoryMatchSnapshotStore<TicTacToeState, TicTacToeAction>(),
-      ...(options.ticTacToeTheo ? { theo: options.ticTacToeTheo } : {}),
+      ...(options.ticTacToeTheo ? { bot: options.ticTacToeTheo } : {}),
     });
     this.#checkers = new CheckersMatchService({
       store: new InMemoryMatchSnapshotStore<CheckersState, CheckersAction>(),
-      ...(options.checkersTheo ? { theo: options.checkersTheo } : {}),
+      ...(options.checkersTheo ? { bot: options.checkersTheo } : {}),
     });
     this.#tactical = new TacticalMovementMatchService({
       store: new InMemoryMatchSnapshotStore<TacticalMovementState, TacticalMovementAction>(),
-      ...(options.tacticalTheo ? { theo: options.tacticalTheo } : {}),
+      ...(options.tacticalTheo ? { bot: options.tacticalTheo } : {}),
     });
     this.#combat = new TacticalCombatMatchService({
       store: new InMemoryMatchSnapshotStore<TacticalCombatState, TacticalCombatAction>(),
-      ...(options.tacticalCombatTheo ? { theo: options.tacticalCombatTheo } : {}),
+      ...(options.tacticalCombatTheo ? { bot: options.tacticalCombatTheo } : {}),
     });
     this.#monsterMaster = new MonsterMasterMatchService({
       store: new InMemoryMatchSnapshotStore<MonsterMasterState, MonsterMasterAction>(),
-      ...(options.monsterMasterTheo ? { theo: options.monsterMasterTheo } : {}),
+      ...(options.monsterMasterTheo ? { bot: options.monsterMasterTheo } : {}),
     });
   }
 
