@@ -16,7 +16,7 @@ const details = document.querySelector("#details");
 const blackPlayerCard = document.querySelector("#player-x");
 const redPlayerCard = document.querySelector("#player-o");
 const newMatch = document.querySelector("#new-match");
-const challengeTheo = document.querySelector("#challenge-bot");
+const challengeBot = document.querySelector("#challenge-bot");
 const createHumanMatch = document.querySelector("#create-human-match");
 
 let updateScheduled = false;
@@ -164,11 +164,11 @@ function ensureOutcomeOverlay() {
   overlay.querySelector("#checkers-outcome-setup")?.addEventListener("click", () => newMatch?.click());
   overlay.querySelector("#checkers-outcome-rematch")?.addEventListener("click", () => {
     const diagnostics = readDiagnostics();
-    const versusTheo = diagnostics.playerIds?.includes("gameframe-bot")
+    const versusBot = diagnostics.playerIds?.includes("gameframe-bot")
       || document.querySelector("#player-o-name")?.textContent === "GameFrameBot";
     newMatch?.click();
     requestAnimationFrame(() => {
-      if (versusTheo) challengeTheo?.click();
+      if (versusBot) challengeBot?.click();
       else createHumanMatch?.click();
     });
   });
