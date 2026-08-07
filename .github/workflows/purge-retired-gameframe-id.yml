@@ -1,0 +1,99 @@
+name: Purge Retired GameFrame Opponent Identity
+run-name: Purge retired GameFrame opponent identity · PR ${{ github.event.pull_request.number }}
+
+on:
+  pull_request:
+    branches: [main]
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  purge:
+    if: >-
+      github.event.pull_request.number == 124
+      && github.event.label.name == 'purge-retired-gameframe-id'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out target feature branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: agent/rpg-encounter-battle-loop
+          fetch-depth: 1
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.16.0
+          cache: npm
+
+      - name: Purge remaining retired opponent literals
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const files = [
+            'src/games/checkers/index.test.ts',
+            'src/games/checkers/index.ts',
+            'src/games/monster-master/index.ts',
+            'src/games/tactical-combat/index.ts',
+            'src/games/tactical-core/index.ts',
+            'src/games/tic-tac-toe/index.ts',
+            'src/server/in-memory-match-service.ts',
+            'public/checkers-premium.js',
+            'public/game-polish.js',
+            'public/monster-master-polish.js',
+            'test/browser/checkers-premium.spec.mjs',
+            'test/browser/control-journeys.spec.mjs',
+            'test/browser/othello-gameplay.spec.mjs',
+            'test/visual/checkers-premium.visual.spec.mjs',
+            'test/visual/monster-master-12-card.visual.spec.mjs',
+            'test/visual/monster-master-pixi.visual.spec.mjs',
+            'test/visual/monster-master.visual.spec.mjs',
+          ];
+
+          for (const file of files) {
+            const before = fs.readFileSync(file, 'utf8');
+            let after = before
+              .replaceAll('"theo"', '"gameframe-bot"')
+              .replaceAll("'theo'", "'gameframe-bot'")
+              .replace(/\bTheo\b/g, 'GameFrameBot')
+              .replace(/\btheo\b/g, 'bot');
+            if (after !== before) fs.writeFileSync(file, after);
+          }
+          NODE
+
+          if grep -RniE '\b[Tt]heo\b' \
+            src public test scripts .github \
+            --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' \
+            --include='*.cjs' --include='*.json' --include='*.jsonc' --include='*.html' \
+            --include='*.css' --include='*.md' --include='*.txt' --include='*.yml' --include='*.yaml'; then
+            echo 'Retired opponent identity still present.' >&2
+            exit 1
+          fi
+
+      - name: Validate identity cleanup and Node suite
+        run: |
+          npm ci --no-audit --no-fund
+          node --experimental-strip-types src/scripts/self-check.ts
+          npm test
+
+      - name: Commit cleanup to PR branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src public test
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No cleanup changes remained.'
+            exit 0
+          fi
+          git commit -m 'Purge retired built-in opponent identity'
+          git push origin HEAD:agent/rpg-encounter-battle-loop
