@@ -63,6 +63,7 @@ jobs:
   validate:
     if: >-
       github.event_name == 'workflow_dispatch'
+      || github.event.action == 'ready_for_review'
       || github.event.label.name == 'canonical-validation'
       || contains(github.event.pull_request.labels.*.name, 'canonical-validation')
     name: Validate RPG fixtures and Node HTTP boundary
