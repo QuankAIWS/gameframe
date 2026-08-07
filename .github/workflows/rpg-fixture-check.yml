@@ -24,15 +24,19 @@ on:
       - "public/monster-master-rpg-*.js"
       - "src/browser/monster-master-rpg-*.test.ts"
       - "src/browser/monster-master-rpg-model.test.ts"
+      - "src/platform/sqlite-match-store.ts"
+      - "src/platform/sqlite-match-store.test.ts"
       - "src/rpg/**"
       - "src/auth/hmac-proxy-request-authenticator.ts"
       - "src/auth/request-authenticator.ts"
       - "src/cloudflare/rpg-edge-*.ts"
+      - "src/cloudflare/rpg-match-edge-*.ts"
       - "src/cloudflare/runtime-contracts.ts"
       - "src/cloudflare/worker.ts"
       - "src/server/http-server.ts"
       - "src/server/durable-rpg-http-server.ts"
       - "src/server/durable-rpg-http-server.test.ts"
+      - "src/server/durable-rpg-encounter-match-http.test.ts"
       - "src/server/durable-rpg-process-config.ts"
       - "src/server/durable-rpg-process-config.test.ts"
       - "src/server/durable-rpg-service-lifecycle.ts"
@@ -89,6 +93,10 @@ jobs:
           node --experimental-strip-types --check src/server/run-durable-rpg-service.ts
           && node --experimental-strip-types --check src/server/http-server.ts
           && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
+          && node --experimental-strip-types --check src/rpg/sqlite-rpg-encounter-match-binding-store.ts
+          && node --experimental-strip-types --check src/rpg/sqlite-rpg-encounter-match-coordinator.ts
+          && node --experimental-strip-types --check src/platform/sqlite-match-store.ts
+          && node --experimental-strip-types --check src/cloudflare/rpg-match-edge-proxy.ts
           && node --check public/gameframe-auth.js
           && node --check public/monster-master-rpg-model.js
           && node --check public/monster-master-rpg-app.js
@@ -101,6 +109,9 @@ jobs:
           src/browser/monster-master-rpg-choice-model.test.ts
           src/browser/monster-master-rpg-encounter-model.test.ts
           src/cloudflare/rpg-edge-proxy.test.ts
+          src/cloudflare/rpg-edge-worker-match-routing.test.ts
+          src/cloudflare/rpg-match-edge-proxy.test.ts
+          src/platform/sqlite-match-store.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
           src/rpg/rpg-dual-revision-contract.test.ts
           src/rpg/rpg-choice-outcome-fixture.test.ts
@@ -114,6 +125,7 @@ jobs:
           src/rpg/in-memory-rpg-encounter-match-coordinator.test.ts
           src/rpg/structured-choice-flow.test.ts
           src/server/durable-rpg-http-server.test.ts
+          src/server/durable-rpg-encounter-match-http.test.ts
           src/server/durable-rpg-process-config.test.ts
           src/server/durable-rpg-service-lifecycle.test.ts
           src/server/durable-rpg-service-lifecycle-wait.test.ts

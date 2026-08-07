@@ -25,7 +25,7 @@ related:
 - Built-in deterministic opponents use player ID `gameframe-bot` and game-specific bot presentation.
 - `rpg-gm-runtime` owns the Dungeon Master and campaign authority.
 - Scribbles Runtime is a separate future integration host for Theo.
-- Theo may later join through an explicit connector as an ordinary player. Theo is not a built-in opponent, deterministic fallback, or Dungeon Master.
+- Theo may later join through an explicit External Theo player connector as an ordinary player. Theo is not a built-in opponent, deterministic fallback, or Dungeon Master.
 
 See `planning/decisions/0005-gameframe-bot-and-external-agent-boundary.md`.
 
@@ -105,7 +105,7 @@ This protocol is generic. It may later support named external agents, including 
 
 ### GF-0011A — Node-local Monster Master RPG encounter loop
 
-Merged through PR #124 as the first player-facing campaign-to-battle semantic/UI proof:
+PR #124 established the first player-facing campaign-to-battle semantic/UI proof:
 
 ```text
 Dungeon Master encounter scene
@@ -117,42 +117,53 @@ Dungeon Master encounter scene
 → player returns to campaign shell
 ```
 
-The merged baseline proves:
+That initial proof used one authenticated human against Monster Master BattleBot. PR #152 then extended the Node-local adapter with explicit shared-team cooperative control:
 
-- Node-local campaign shell;
-- deterministic encounter-to-match binding;
-- exactly one human campaign player against Monster Master BattleBot;
-- authorized battle handoff;
-- narrative input fenced while battle is active;
-- terminal result committed back to the RPG service;
-- return-to-campaign presentation;
-- BattleBot remains a built-in GameFrame participant, not Theo or the Dungeon Master.
+- multiple authenticated campaign players may belong to one allied RPG team;
+- each human retains their own GameFrame principal at ingress;
+- authorized teammates map to one synthetic allied tactical seat only at the match-authority boundary;
+- returned projections alias the synthetic seat back to the requesting player;
+- normal GameFrame revision and legality checks arbitrate teammate actions;
+- outsiders and Monster Master BattleBot cannot act through the allied binding;
+- terminal tactical winners map back to RPG team outcomes;
+- cooperative humans are never placed on opposing duel seats merely to satisfy MM-0001's two-seat engine.
 
-The current coordinator deliberately rejects encounters containing more than one human player. It also creates the ordinary fixed `monster-master-duel` from the human GameFrame player ID plus `gameframe-bot`; it does not yet materialize the RPG participant roster into authoritative tactical units. Terminal RPG participant results in this slice are therefore semantic/team-level proof rather than participant-faithful tactical aftermath.
-
-This is not the final durable production binding.
+This is shared-team control, not exclusive per-player unit ownership. The Node-local binding remains an in-memory semantic adapter and still materializes the fixed `monster-master-duel` roster rather than a participant-faithful campaign-configured roster.
 
 ## Active
 
 ### GF-0011B — Durable Monster Master RPG encounter productionization
 
-Port the merged Node-local encounter-to-match semantics onto GameFrame's existing durable RPG and encounter authority.
+The VM-first repository implementation now ports the shared-team encounter-to-match semantics onto GameFrame's existing durable RPG authority without creating a second encounter database.
 
-GameFrame already has durable campaign and encounter SQLite authority. The missing production slice is the binding between that durable encounter record and an authoritative Monster Master match; do not rebuild encounter persistence merely to create the battle.
+Repository implementation:
 
-Required work:
+- campaign and encounter custody remain in the established SQLite RPG database;
+- RPG-bound Monster Master match snapshots are persisted in that same database through the ordinary `MatchSession` snapshot contract;
+- the encounter↔match binding survives process restart;
+- authenticated player IDs, RPG team IDs, the synthetic tactical team seat, and shared-team roster mapping survive restart;
+- a process death after match creation but before binding materialization is reconciled from durable encounter launch custody;
+- same-match VM actions are serialized before load/apply/save, preserving revision authority in the selected single-owner deployment profile;
+- terminal encounter completion derives its timestamp from the persisted terminal match event so exact completion retry remains stable after restart;
+- the durable VM HTTP service exposes only RPG-bound `rpg:*` match view/action authority in addition to its RPG campaign/encounter routes;
+- the Cloudflare Worker authenticates those public requests and HMAC-proxies them to the VM RPG service;
+- ordinary GameFrame matches remain on the existing Durable Object path;
+- RPG battle pages use HTTP polling so projection traffic cannot accidentally reconnect to the ordinary Durable Object match store.
 
-- durable encounter-to-match binding across process restart;
-- preserve RPG campaign participant/team/controller identity into match authority;
-- preserve a stable mapping between RPG encounter participants and authoritative match units;
-- preserve supplied rules-state data that the selected encounter ruleset actually supports;
-- durable SQLite-backed RPG service wiring;
-- deployed service-to-service authorization and retry/reconnect behavior;
-- exact structured terminal participant outcomes for runtime aftermath;
-- deployed Cloudflare edge and Durable Object match authority where the selected deployment profile requires them;
-- operational reconciliation for partial distributed failures.
+The persisted mapping mode is `shared-team-roster`. It preserves stable team/participant correlation with the authoritative roster but does not claim exclusive player→unit ownership.
 
-Do not create a parallel persistent encounter database merely to port the Node-local coordinator. Reuse the established durable RPG/encounter stores.
+Repository-level restart and transport tests are not a deployed production claim. VM/Cloudflare/Discord canaries, backup/restore evidence, and operational reconciliation remain required before production-readiness language is justified.
+
+### Monster Master RPG rules fidelity
+
+The remaining tactical correctness gap is participant-faithful encounter materialization. The current durable adapter still creates the fixed MM-0001 `monster-master-duel` roster. A CampaignPackage may describe trainer, species, rules, ability, resource, or status choices that this fixed roster does not execute.
+
+Near-term rule:
+
+- either narrow the first package's combat-relevant selectable surface to what GameFrame actually executes;
+- or add a validated RPG encounter configuration/state materializer that instantiates authoritative tactical units from supported participant rules state.
+
+If the package exposes a combat-relevant mechanic that the selected Arena rules definition cannot execute truthfully, encounter launch must fail closed. Do not silently replace campaign participant configuration with unrelated fixed units.
 
 A preferred implementation shape is:
 
@@ -165,24 +176,11 @@ validated RPG encounter request
 → exact participant-to-unit terminal outcome
 ```
 
-`MatchSession` already persists and replays an explicit initial state. The RPG slice should use that capability rather than inventing a second tactical event model.
-
-### Monster Master RPG rules fidelity
-
-The RPG campaign package can describe trainer/species/rules/ability choices beyond the fixed MM-0001 duel templates. The first playable campaign must not advertise combat options that Arena silently replaces with unrelated fixed units.
-
-Near-term rule:
-
-- either narrow the first package's combat-relevant selectable surface to what GameFrame executes;
-- or add an explicit RPG encounter definition/configuration that instantiates units from the supplied participant rules state.
-
-Reuse tactical primitives, rendering, match authority, and BattleBot infrastructure without forcing the fixed `monster-master-duel` roster to become every future RPG battle ruleset.
-
-A configured initial state is not permission to accept unsupported mechanics. If the package exposes a trainer rules profile, monster species, ability, resource, or status as combat-relevant, the selected Arena rules definition must implement it or fail closed.
+`MatchSession` already persists and replays an explicit initial state. Use that capability rather than inventing a second tactical event model.
 
 ### Single-player full-stack campaign proof
 
-Before multiplayer Arena control is added, prove one complete campaign path with one authenticated human and Monster Master BattleBot:
+The next full-product engineering gate remains one complete campaign path with one authenticated human plus Monster Master BattleBot. Tactical shared-team capability existing early does not remove the need to prove the simpler complete architecture first.
 
 ```text
 real CampaignPackage
@@ -196,40 +194,41 @@ real CampaignPackage
 → GameFrame + runtime restart/resume
 ```
 
-This is the first full-stack engineering proof. It does not claim multiplayer behavior.
-
-## Planned after the single-player vertical slice
+This proves the complete package → Dungeon Master → GameFrame → Arena → aftermath architecture. It does not by itself prove party-private multiplayer campaign behavior.
 
 ### Team-aware RPG battles
 
-The current Node-local adapter does **not** implement cooperative control; it fails closed when more than one human player appears in the encounter roster.
-
-The planned cooperative control model is:
+Team-aware tactical control is now an established GameFrame substrate in both the Node-local adapter and the VM-first durable binding:
 
 ```text
 authenticated human player
 → campaign participant
 → allied RPG team
-→ controlled trainer/monster units
+→ persisted synthetic GameFrame tactical team seat
 → legal Monster Master actions
 ```
 
-Required semantics:
+Current semantics:
 
 - cooperative human players remain separate authenticated GameFrame principals;
-- multiple players may belong to the same RPG team without being placed on opposing duel seats;
-- encounter participant identity remains stable through the tactical match;
-- authorization identifies which participant/unit actions each player may submit;
-- normal GameFrame revision checks arbitrate concurrent teammate submissions;
+- multiple players may share one allied RPG team without occupying opposing duel seats;
+- encounter participant identity remains stable in durable binding metadata;
+- authorized teammates share the allied tactical roster under mapping mode `shared-team-roster`;
+- normal revision checks arbitrate concurrent teammate submissions;
 - Monster Master BattleBot remains separately represented opposition;
 - outsiders and the bot cannot act through allied human bindings;
-- restart and reconnect preserve team and participant-unit mappings.
+- restart and reconnect preserve the team seat and authoritative roster mapping.
 
-A temporary shared-team tactical seat may be considered as an adapter implementation technique, but it is not current behavior and must not erase authenticated player identity or campaign participant identity.
+Not yet claimed:
+
+- exclusive per-player unit ownership;
+- participant-specific configured tactical units derived from arbitrary CampaignPackage rules state;
+- full runtime campaign join/party lifecycle;
+- official two-human campaign acceptance.
 
 ### Two-human campaign acceptance
 
-After runtime join/party lifecycle and team-aware Arena control exist, prove the official two-human journey:
+After the real CampaignPackage/Dungeon Master full-stack proof and runtime join/party lifecycle are in place, prove the official two-human journey using the existing team-aware tactical substrate:
 
 - two authenticated players join one campaign;
 - public, party-private, and player-private information remains correctly scoped;

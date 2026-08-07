@@ -8,6 +8,10 @@ import {
 } from "../auth/signed-session.ts";
 import { errorResponse, json } from "./http-utils.ts";
 import {
+  proxyPublicRpgMatchRequest,
+  publicRpgMatchEdgeRoute,
+} from "./rpg-match-edge-proxy.ts";
+import {
   proxyPublicRpgRequest,
   publicRpgEdgeRoute,
   type RpgEdgeProxyDependencies,
@@ -22,9 +26,9 @@ export interface RpgEdgeWorkerOptions {
 
 /**
  * Adds the public RPG edge boundary in front of the existing GameFrame Worker.
- * Only authenticated Discord sessions reach the HMAC-signing proxy. All other
- * assets, OAuth routes, invitations, and Durable Object game APIs retain the
- * existing worker router.
+ * Authenticated RPG campaign and RPG-bound tactical requests are HMAC-proxied to
+ * the durable VM service. Ordinary games, OAuth, invitations, assets, and their
+ * Durable Object match authority remain on the existing worker router.
  */
 export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {}) {
   const gameFrame = createGameFrameWorker();
@@ -68,9 +72,38 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           });
         }
 
+        // The generic health endpoint advertises the Durable Object WebSocket
+        // transport used by ordinary matches. An RPG battle page is intentionally
+        // bound to VM SQLite authority, so keep that client on its existing HTTP
+        // polling fallback instead of letting /events reconnect to another store.
+        if (
+          request.method === "GET"
+          && url.pathname === "/api/health"
+          && rpgMatchReferrer(request, url.origin)
+        ) {
+          const baseHealth = await gameFrame.fetch(request, env);
+          if (!baseHealth.ok) return baseHealth;
+          const value = await baseHealth.json() as Record<string, unknown>;
+          return json(200, {
+            ...value,
+            realtime: "http-polling",
+            rpgMatchAuthority: "vm-sqlite",
+          });
+        }
+
         if (publicRpgEdgeRoute(url.pathname)) {
           const principal = await authenticatorFor(env).authenticate(request);
           return await proxyPublicRpgRequest(
+            request,
+            env,
+            principal,
+            options.proxyDependencies,
+          );
+        }
+
+        if (publicRpgMatchEdgeRoute(url.pathname)) {
+          const principal = await authenticatorFor(env).authenticate(request);
+          return await proxyPublicRpgMatchRequest(
             request,
             env,
             principal,
@@ -91,4 +124,16 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
       }
     },
   };
+}
+
+function rpgMatchReferrer(request: Request, publicOrigin: string): boolean {
+  const referrer = request.headers.get("referer")?.trim();
+  if (!referrer) return false;
+  try {
+    const url = new URL(referrer);
+    if (url.origin !== publicOrigin || url.pathname !== "/monster-master.html") return false;
+    return (url.searchParams.get("match") ?? "").startsWith("rpg:");
+  } catch {
+    return false;
+  }
 }

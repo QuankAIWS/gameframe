@@ -39,19 +39,22 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
   assert.match(roadmap, /Human-versus-human and human-versus-Monster-Master-BattleBot flows/);
   assert.match(roadmap, /Replay, persistence, invitations, browser play, Pixi\/Canvas rendering, and visual review/);
   assert.match(roadmap, /### GF-0011A — Node-local Monster Master RPG encounter loop/);
+  assert.match(roadmap, /PR #152 then extended the Node-local adapter with explicit shared-team cooperative control/);
   assert.match(roadmap, /### GF-0011B — Durable Monster Master RPG encounter productionization/);
+  assert.match(roadmap, /encounter↔match binding survives process restart/);
   assert.match(roadmap, /### Team-aware RPG battles/);
-  assert.match(roadmap, /does \*\*not\*\* implement cooperative control/);
-  assert.match(roadmap, /fails closed when more than one human player appears/);
-  assert.match(roadmap, /participant-unit mappings/);
+  assert.match(roadmap, /Team-aware tactical control is now an established GameFrame substrate/);
+  assert.match(roadmap, /shared-team-roster/);
+  assert.match(roadmap, /participant-faithful encounter materialization/);
 
   assert.match(agents, /GameFrameBot.*stable player ID `gameframe-bot`/s);
   assert.match(agents, /Monster Master BattleBot/);
   assert.match(agents, /planning\/monster-master-rules\.md/);
   assert.match(agents, /Use the separate visual-review lane/);
-  assert.match(agents, /supports exactly one human campaign player/);
-  assert.match(agents, /planned cooperative model/);
-  assert.doesNotMatch(agents, /adapter now proves.*shared-team cooperative control/s);
+  assert.match(agents, /Node-local encounter adapter supports cooperative campaign players on one allied team/);
+  assert.match(agents, /VM-first durable RPG path persists the encounter-to-match binding/);
+  assert.match(agents, /shared-team-roster/);
+  assert.doesNotMatch(agents, /supports exactly one human campaign player/);
 
   assert.match(matrix, /Capture numbers are globally unique/);
   assert.match(matrix, /30\. Monster Master — bounded draw at round 24/);
