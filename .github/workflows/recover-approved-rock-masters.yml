@@ -30,11 +30,11 @@ jobs:
           path: target
           fetch-depth: 1
 
-      - name: Check out retained fresh transfer
+      - name: Check out authoritative approved rock package
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: agent/mm-rock-fresh-transfer
-          path: fresh
+          ref: 40584f32667b6617f21ef49ad2aeb1ab2589775b
+          path: approved
           fetch-depth: 1
           persist-credentials: false
 
@@ -49,20 +49,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat fresh/staging/mm-rock-fresh-transfer/chunk-* \
+          package_dir='approved/public/assets/monster-master/props/rock-boulder-set-v1/source/package'
+          test "$(find "$package_dir" -maxdepth 1 -type f -name 'chunk-*' | wc -l)" -eq 9
+          cat "$package_dir"/chunk-* \
             | tr -d '[:space:]' \
-            | base64 --decode > /tmp/mm-rock-fresh-transfer.bin
+            | base64 --decode > /tmp/mm-rock-approved-package.bin
 
           rm -rf /tmp/mm-rock-unpack
           mkdir -p /tmp/mm-rock-unpack
-          if tar -tzf /tmp/mm-rock-fresh-transfer.bin >/dev/null 2>&1; then
-            tar -xzf /tmp/mm-rock-fresh-transfer.bin -C /tmp/mm-rock-unpack
-          elif tar -tf /tmp/mm-rock-fresh-transfer.bin >/dev/null 2>&1; then
-            tar -xf /tmp/mm-rock-fresh-transfer.bin -C /tmp/mm-rock-unpack
+          if tar -tzf /tmp/mm-rock-approved-package.bin >/dev/null 2>&1; then
+            tar -xzf /tmp/mm-rock-approved-package.bin -C /tmp/mm-rock-unpack
+          elif tar -tf /tmp/mm-rock-approved-package.bin >/dev/null 2>&1; then
+            tar -xf /tmp/mm-rock-approved-package.bin -C /tmp/mm-rock-unpack
           else
-            gzip -dc /tmp/mm-rock-fresh-transfer.bin > /tmp/mm-rock-fresh-transfer.tar || true
-            test -s /tmp/mm-rock-fresh-transfer.tar
-            tar --ignore-zeros -xf /tmp/mm-rock-fresh-transfer.tar -C /tmp/mm-rock-unpack || true
+            gzip -dc /tmp/mm-rock-approved-package.bin > /tmp/mm-rock-approved-package.tar || true
+            test -s /tmp/mm-rock-approved-package.tar
+            tar --ignore-zeros -xf /tmp/mm-rock-approved-package.tar -C /tmp/mm-rock-unpack || true
           fi
 
           master_dir='target/public/assets/monster-master/props/rock-boulder-set-v1/source/master'
