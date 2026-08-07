@@ -4,7 +4,7 @@ async function openMonsterMaster(page, player) {
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto(`/monster-master.html?player=${player}`);
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
-  await page.locator("#monster-master-theo").click();
+  await page.locator("#monster-master-bot").click();
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterPixi?.getTerrainStats))).toBe(true);
