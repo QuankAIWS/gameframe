@@ -4,9 +4,12 @@ status: superseded
 document_type: authority-pointer
 authority: owner-approved
 owner: Scribbles GameFrame
-last_updated: 2026-08-05
+last_updated: 2026-08-07
 applies_to:
   - Monster Master RPG
+superseded_by:
+  - monster-master-rpg-canonical-baseline.md
+  - monster-master-rpg-current-creative-direction.md
 related:
   - monster-master-rpg-canonical-baseline.md
   - monster-master-rpg-current-creative-direction.md
