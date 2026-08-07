@@ -73,8 +73,8 @@ type EncounterBinding = {
  *
  * RPG GM Runtime owns encounter intent, GameFrame owns battle legality, and the
  * built-in Monster Master BattleBot supplies the temporary deterministic enemy
- * seat. The BattleBot is a GameFrame test participant, not Theo, Scribbles
- * Runtime, or the Dungeon Master. This adapter gives a supported single-player
+ * seat. The BattleBot is a built-in GameFrame test participant, not an external
+ * agent or the Dungeon Master. This adapter gives a supported single-player
  * encounter one stable match, exposes only participant-authorized play
  * metadata, and commits the terminal match result through encounter authority.
  */
