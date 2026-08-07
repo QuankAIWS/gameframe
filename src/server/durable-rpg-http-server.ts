@@ -14,6 +14,9 @@ import {
   type DurableRpgPrincipal,
 } from "../rpg/durable-rpg-campaign-service.ts";
 import {
+  MonsterMasterRpgEncounterConfigurationError,
+} from "../rpg/monster-master-rpg-encounter-materializer.ts";
+import {
   SqliteRpgEncounterMatchCoordinator,
 } from "../rpg/sqlite-rpg-encounter-match-coordinator.ts";
 import type { DurableCampaignBootstrap } from "../rpg/sqlite-rpg-campaign-store.ts";
@@ -358,6 +361,9 @@ function normalizeError(error: unknown): {
       error.retryable,
       error,
     );
+  }
+  if (error instanceof MonsterMasterRpgEncounterConfigurationError) {
+    return failure(error.status, error.code, error.message, error.retryable);
   }
   if (error instanceof SqliteRpgEncounterError) {
     const status = error.code === "campaign-not-found" || error.code === "encounter-not-found"

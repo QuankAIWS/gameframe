@@ -9,6 +9,7 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
     readme,
     roadmap,
     agents,
+    rules,
     matrix,
     checkpoint,
     html,
@@ -19,6 +20,7 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
     read("README.md"),
     read("planning/ROADMAP.md"),
     read("AGENTS.md"),
+    read("planning/monster-master-rules.md"),
     read("planning/browser-journey-matrix.md"),
     read("planning/validation/2026-07-30-monster-master-first-playable.md"),
     read("public/monster-master.html"),
@@ -42,10 +44,11 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
   assert.match(roadmap, /PR #152 then extended the Node-local adapter with explicit shared-team cooperative control/);
   assert.match(roadmap, /### GF-0011B — Durable Monster Master RPG encounter productionization/);
   assert.match(roadmap, /encounter↔match binding survives process restart/);
+  assert.match(roadmap, /`rulesState\.creatureIds` is validated and converted into the exact revision-zero tactical roster/);
+  assert.match(roadmap, /terminal participant results are calculated from each participant's exact mapped creature health\/defeat state/);
   assert.match(roadmap, /### Team-aware RPG battles/);
-  assert.match(roadmap, /Team-aware tactical control is now an established GameFrame substrate/);
-  assert.match(roadmap, /shared-team-roster/);
-  assert.match(roadmap, /participant-faithful encounter materialization/);
+  assert.match(roadmap, /exact configured participant→creature assignments persist in `participantUnitIds`/);
+  assert.match(roadmap, /asymmetric tactical deployment/);
 
   assert.match(agents, /GameFrameBot.*stable player ID `gameframe-bot`/s);
   assert.match(agents, /Monster Master BattleBot/);
@@ -53,8 +56,16 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
   assert.match(agents, /Use the separate visual-review lane/);
   assert.match(agents, /Node-local encounter adapter supports cooperative campaign players on one allied team/);
   assert.match(agents, /VM-first durable RPG path persists the encounter-to-match binding/);
-  assert.match(agents, /shared-team-roster/);
+  assert.match(agents, /`participantUnitIds` now records the exact campaign participant→tactical creature assignment/);
+  assert.match(agents, /Emberling and Bulwark creature profiles/);
+  assert.match(agents, /asymmetric tactical roster sizes fail closed/);
   assert.doesNotMatch(agents, /supports exactly one human campaign player/);
+
+  assert.match(rules, /The implemented `monster-master-rpg` path is:/);
+  assert.match(rules, /validated RPG encounter `rulesState\.creatureIds`/);
+  assert.match(rules, /trainers remain RPG encounter participants\/controllers/);
+  assert.match(rules, /both sides must currently contain the same number of creatures/);
+  assert.match(rules, /`participantUnitIds` persists exact participant→creature assignment/);
 
   assert.match(matrix, /Capture numbers are globally unique/);
   assert.match(matrix, /30\. Monster Master — bounded draw at round 24/);

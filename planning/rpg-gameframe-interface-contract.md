@@ -105,7 +105,11 @@ runtime campaign participant ID
 
 A GameFrame adapter may validate or enrich participant data for a selected ruleset. It must not silently replace the party roster with unrelated bootstrap or fixed-duel identities. If an encounter ruleset cannot materialize the supplied participant configuration truthfully, launch fails closed with an unsupported-configuration error.
 
-The current shared-team adapter preserves participant IDs, team IDs, authenticated player IDs, a synthetic allied tactical seat, and the authoritative team roster under mapping mode `shared-team-roster`. That mapping is durable in the VM-first implementation. It does not assert exclusive per-player unit ownership and does not make the fixed MM-0001 roster participant-faithful.
+For the current `monster-master-rpg` ruleset, the durable adapter consumes the existing participant `rulesState.creatureIds` vocabulary and stores exact `participantUnitIds` alongside the durable encounter↔match binding. Each configured creature ID becomes the tactical unit ID using an explicitly supported Arena species profile. Campaign trainers remain encounter participants/controllers; they are not converted into the standalone MM-0001 Warden Master unit.
+
+Mapping mode remains `shared-team-roster` because allied action authorization is shared among authenticated teammates. The mapping itself is exact: `participantUnitIds` records participant→creature assignment, `assignedUnitIds` exposes the requesting player's participant assignments, and `controlledUnitIds` identifies the full allied roster that shared-team authorization allows the player to operate. This is not exclusive per-player action ownership.
+
+The first materialized rules surface is intentionally bounded to currently implemented Arena mechanics. Unsupported species, extra participant combat fields, unsupported objective/difficulty values, custom battlefield layouts, and asymmetric roster sizes fail closed before durable encounter custody. GameFrame does not accept unsupported package configuration as inert metadata.
 
 ## Identity model
 
@@ -186,7 +190,7 @@ A deterministic fixture must prove this sequence:
 10. The runtime resumes the scene and GameFrame renders it.
 11. A disconnect and resume do not duplicate commands or presentation events.
 
-This fixture is the eventual multiplayer contract proof. The team-aware tactical substrate exists, but the full two-human campaign lifecycle, party-private runtime behavior, participant-faithful configured roster, and cross-service acceptance journey remain separate evidence requirements.
+This fixture is the eventual multiplayer contract proof. The team-aware tactical substrate and bounded participant-faithful configured Monster Master roster exist, but the full two-human campaign lifecycle, party-private runtime behavior, cross-service CampaignPackage/Dungeon Master journey, and human multiplayer acceptance remain separate evidence requirements.
 
 ## Shared fixture ownership and staged completion
 
@@ -227,7 +231,9 @@ The VM-first implementation uses the existing GameFrame RPG SQLite database as o
 - `SqliteRpgEncounterStore` encounter launch, retrieval, completion, exact retry, and restart-safe terminal outcomes;
 - durable RPG-bound Monster Master match snapshots;
 - exact encounter↔match binding identity;
-- persisted authenticated teammate IDs, team IDs, synthetic tactical team seat, and shared-team roster mapping.
+- persisted authenticated teammate IDs, team IDs, synthetic tactical team seat, exact participant→creature assignments, and team roster mappings;
+- configured revision-zero Monster Master state for the supported `rulesState.creatureIds` surface;
+- exact terminal participant health/defeat results derived from mapped authoritative creatures.
 
 `createDurableRpgHttpServer()` exposes the durable campaign/encounter routes plus player-authenticated `rpg:*` match view/action routes. The Cloudflare RPG edge authenticates browser sessions and HMAC-proxies only those RPG-bound match requests to the VM service. Ordinary GameFrame matches remain on the existing Durable Object path.
 
@@ -235,18 +241,20 @@ RPG battle clients use HTTP polling in this deployment profile. They must not op
 
 ### Remaining production fidelity and operations
 
-The durable encounter-match storage/restart seam is established, but the current RPG match still instantiates the fixed `monster-master-duel` roster. Remaining correctness work includes:
+The participant-faithful path is implemented for the narrow rules surface GameFrame actually supports today:
 
 ```text
-validated participant-faithful Monster Master configuration
+validated `rulesState.creatureIds`
++ supported Emberling/Bulwark materialization
 + authoritative configured revision-zero state
-+ supported participant rules-state preservation
-+ exact participant-specific unit mapping when the package requires it
++ exact participant-specific unit mapping
++ durable match/restart authority
 + exact terminal participant aftermath
-+ deployed restart/backup/edge canaries
 ```
 
-`MatchSession` already supports persistence of an explicit initial state and replay from that state. A campaign-configured Monster Master implementation should feed a validated initial state into ordinary match/replay authority rather than adding a second tactical event model.
+Remaining fidelity work is requirement-driven rather than a blanket new rules engine: add new species, abilities, resources, statuses, objectives, battlefield layouts, difficulty mechanics, or asymmetric deployment only when an actual CampaignPackage requires them and only with corresponding deterministic Arena implementation. Unsupported configuration continues to fail closed.
+
+The next full-product proof is cross-repository: a real committed CampaignPackage and configured Dungeon Master must drive the durable GameFrame path through Arena and automatic aftermath. Deployed restart/backup/Cloudflare/Discord canaries remain separate operational evidence.
 
 ## Protocol-v2 routes
 
@@ -257,10 +265,10 @@ The development and durable adapters expose the same campaign/encounter protocol
 | `POST` | `/api/rpg/campaigns/{campaignId}/attach` | authenticated player | Returns the audience-filtered projection with explicit GameFrame positions. |
 | `POST` | `/api/rpg/campaigns/{campaignId}/commands` | active player member | Accepts player commands with `expectedGameframeCoordinationRevision`, commits one coordination transaction, and preserves exact command retry. |
 | `POST` | `/api/rpg/campaigns/{campaignId}/events` | RPG runtime service | Links one runtime narrative receipt through a stable `coordinationMutationId`, validates its GameFrame source revision and next narrative revision, and appends submitted presentation events atomically. |
-| `POST` | `/api/rpg/encounters` | RPG runtime service | Links a `runtime.encounter_launch` receipt, validates campaign provenance and participant bindings, advances coordination without inventing a presentation event, and creates one idempotent encounter handle and, for the supported RPG ruleset, one durable bound match. |
+| `POST` | `/api/rpg/encounters` | RPG runtime service | Validates supported encounter configuration before custody, links a `runtime.encounter_launch` receipt, advances coordination without inventing a presentation event, and creates one idempotent encounter handle plus one durable configured bound match for `monster-master-rpg`. |
 | `GET` | `/api/rpg/encounters/{encounterId}` | creating runtime service | Retrieves the current encounter handle, linked positions, and durable play binding when applicable. |
 | `POST` | `/api/rpg/encounters/{encounterId}/complete` | GameFrame encounter-engine service | Commits one validated terminal outcome while preserving the launch linkage metadata. |
-| `GET` | `/api/matches/{rpgMatchId}` | authenticated authorized encounter player | Returns the player-aliased authoritative RPG battle projection. |
+| `GET` | `/api/matches/{rpgMatchId}` | authenticated authorized encounter player | Returns the player-aliased authoritative RPG battle projection, shared-team control metadata, and exact player-assigned unit IDs. |
 | `POST` | `/api/matches/{rpgMatchId}/actions` | authenticated authorized encounter player | Submits a legal action through the persisted allied tactical seat with normal expected-revision checks. |
 
 Development player requests use `x-gameframe-player-id`. Development service requests use `x-gameframe-service-id`. A request claiming both identities is rejected, and service principals cannot use ordinary player-match routes. Production player identity is verified by the Cloudflare session boundary and signed into the private VM request; production service authentication remains narrowly scoped.
@@ -272,7 +280,7 @@ The live boundary advertises campaign protocol version `2` and encounter protoco
 - a runtime-owned `runtime.narrative_committed` receipt;
 - bounded operation-specific content.
 
-Stable protocol-v2 conflicts distinguish coordination revision mismatch, runtime source-revision mismatch, narrative-link mismatch, repeated runtime-link attempts, command-ID conflict, and coordination-mutation-ID conflict. Exact retries return the original receipt or encounter handle without advancing any position again.
+Stable protocol-v2 conflicts distinguish coordination revision mismatch, runtime source-revision mismatch, narrative-link mismatch, repeated runtime-link attempts, command-ID conflict, and coordination-mutation-ID conflict. Exact retries return the original receipt or encounter handle without advancing any position again. Unsupported Monster Master encounter configuration returns the stable nonretryable `unsupported-encounter-configuration` validation error before encounter custody advances.
 
 Legacy protocol-v1 reducer fixtures remain regression-only. New runtime integration must use protocol version 2 and must not depend on legacy `campaignRevision`, `expectedRevision`, or encounter `campaignRevision` fields.
 
