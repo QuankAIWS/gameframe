@@ -3,7 +3,7 @@ title: RPG Cross-Repository and Agent-System Testing
 status: accepted
 document_type: architecture
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-05
+last_updated: 2026-08-07
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
@@ -12,7 +12,7 @@ applies_to:
   - VM staging validation
   - later Cloudflare and media validation
 shared_document_id: rpg-cross-repository-integration-testing-v1
-shared_document_version: 4
+shared_document_version: 5
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-cross-repository-integration-testing.md
 mirrors:
@@ -39,13 +39,15 @@ The RPG platform uses separate evidence layers for:
 4. GameFrame contract conformance;
 5. actual cross-repository integration;
 6. persistence and restart;
-7. browser player experience;
-8. VM deployment;
-9. media providers and optional Cloudflare-native migration.
+7. complete single-player full-stack campaign proof;
+8. multiplayer integration and human acceptance;
+9. browser player experience;
+10. VM deployment;
+11. media providers and optional Cloudflare-native migration.
 
 Each layer claims only what it executes.
 
-A catalog-shape test does not prove an executable CampaignPackage. A provider stub does not prove Dungeon Master quality. A transport round trip does not prove a campaign. A browser screenshot does not prove authoritative state. A VM tunnel does not prove generated media or Cloudflare-native persistence.
+A catalog-shape test does not prove an executable CampaignPackage. A provider stub does not prove Dungeon Master quality. A transport round trip does not prove a campaign. A single-player campaign does not prove multiplayer audiences or cooperative control. A browser screenshot does not prove authoritative state. A VM tunnel does not prove generated media or Cloudflare-native persistence.
 
 ## Ownership
 
@@ -197,7 +199,56 @@ Cover:
 - encounter launch, completion, consequence application, and resumed campaign;
 - no cross-service storage access.
 
-### Layer 8 — Browser campaign acceptance
+### Layer 8 — Complete single-player full-stack campaign proof
+
+The first complete engineering journey intentionally uses one authenticated human plus Monster Master BattleBot so the product can prove the entire package → Dungeon Master → Arena → aftermath lifecycle before multiplayer join and cooperative-control work is allowed to broaden the state space.
+
+Required journey:
+
+```text
+validated handcrafted Monster Master CampaignPackage
+  -> package commitment
+  -> one authenticated player attachment
+  -> Dungeon Master opening from package context
+  -> several real freeform actions
+  -> clue and executable event progression
+  -> deterministic noncombat check
+  -> Arena Battles request at a valid threshold
+  -> participant-faithful actual tactical match against Monster Master BattleBot
+  -> exact structured terminal participant outcome
+  -> Dungeon Master applies consequences and presents return
+  -> campaign reaches bounded resolution
+  -> both services restart
+  -> player resumes without duplication, leakage, or package drift
+```
+
+The claimed journey must use the configured Dungeon Master provider and actual GameFrame match authority. It must not manually fabricate the terminal encounter event, call an in-memory completion shortcut, or dispatch a fake browser completion event.
+
+This layer proves the full-stack campaign architecture. It does **not** prove multiplayer membership, party-private audience behavior, or cooperative tactical control.
+
+### Layer 9 — Multiplayer integration and two-human acceptance
+
+After the single-player vertical slice, add runtime campaign join/party lifecycle and team-aware Arena control, then prove the stronger multiplayer contract.
+
+Required machine integration journey:
+
+```text
+validated handcrafted Monster Master CampaignPackage
+  -> two authenticated players join one campaign
+  -> public + party-private + player-private information
+  -> both players submit freeform actions
+  -> structured choice and noncombat check
+  -> cooperative Arena Battles request
+  -> both players retain authenticated identity and valid allied control
+  -> exact participant/unit terminal outcomes
+  -> Dungeon Master aftermath
+  -> disconnect/reconnect and service restart
+  -> both players resume without duplication or audience leakage
+```
+
+Only after this machine journey is green should human two-player acceptance be treated as the final multiplayer product gate. Human acceptance asks whether actual players can complete ordinary play without developer intervention; it does not replace deterministic authority assertions.
+
+### Layer 10 — Browser campaign acceptance
 
 Use real browser journeys for:
 
@@ -212,7 +263,7 @@ Use real browser journeys for:
 
 A screenshot supports presentation evidence but does not replace state assertions.
 
-### Layer 9 — VM, Cloudflare edge, and Discord canary
+### Layer 11 — VM, Cloudflare edge, and Discord canary
 
 A staging VM proves:
 
@@ -230,7 +281,7 @@ A staging VM proves:
 
 Repository tests cannot claim this evidence.
 
-### Layer 10 — Campaign media and optional Cloudflare-native validation
+### Layer 12 — Campaign media and optional Cloudflare-native validation
 
 Media canaries prove:
 
@@ -244,33 +295,9 @@ Cloudflare-native state tests are required only for an active migration and may 
 
 These tests do not replace the VM profile until migration gates pass.
 
-## First complete campaign journey
-
-The first actual campaign journey is:
-
-```text
-validated handcrafted Monster Master CampaignPackage
-  -> package commitment
-  -> two authenticated test players attach
-  -> Dungeon Master opening from package context
-  -> public and player-private information
-  -> several scripted freeform actions
-  -> clue and event progression
-  -> deterministic noncombat check
-  -> Arena Battles request at a valid threshold
-  -> actual tactical match
-  -> structured terminal outcome
-  -> Dungeon Master applies consequences and presents return
-  -> campaign reaches bounded resolution
-  -> both services restart
-  -> players resume without duplication, leakage, or plot drift
-```
-
-This journey uses prepared assets and deterministic fallbacks. Live media generation is separate.
-
 ## Second complete campaign journey
 
-The second major journey is:
+The second major campaign-independence journey is:
 
 ```text
 materially different player concept
@@ -331,11 +358,13 @@ The testing system is established when:
 4. both repositories validate the same shared fixtures;
 5. actual GameFrame integration exercises real routes and Arena Battles;
 6. durable integration survives restarts and backup restore;
-7. browser tests prove the complete player surface;
-8. VM canaries prove public routing and private origin posture;
-9. media and Cloudflare-native claims are isolated to their own evidence layers;
-10. no player journey depends on Tailscale or router forwarding.
+7. the one-human-plus-BattleBot full-stack campaign proves the complete architecture without fabricated tactical outcomes;
+8. the two-human machine journey proves membership, party/private audiences, cooperative Arena control, and restart/resume;
+9. browser tests prove the complete player surface;
+10. VM canaries prove public routing and private origin posture;
+11. media and Cloudflare-native claims are isolated to their own evidence layers;
+12. no player journey depends on Tailscale or router forwarding.
 
 ## Governing rule
 
-> Prove package structure, agent behavior, real integration, durable state, player experience, deployment, and media at separate evidence layers—and never describe a lower layer as proof of a higher one.
+> Prove package structure, agent behavior, real integration, durable state, the complete single-player architecture, multiplayer behavior, player experience, deployment, and media at separate evidence layers—and never describe a lower layer as proof of a higher one.

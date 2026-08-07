@@ -3,7 +3,7 @@ title: RPG GameFrame Interface Contract
 status: accepted
 document_type: contract
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-04
+last_updated: 2026-08-07
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
@@ -79,6 +79,8 @@ RPG GM Runtime may emit semantic, audience-scoped events such as:
 
 GameFrame owns layout, animation, responsive behavior, accessibility, and presentation-state transitions. The runtime owns semantic content, stable references, ordering within its narrative commit, and audience intent.
 
+One runtime narrative commit may contain multiple events with different explicit audiences. GameFrame must preserve each event audience independently; it must not infer output audience from the visibility of the player command that caused the runtime turn.
+
 ### Structured projections
 
 GameFrame should receive narrow player-visible projections for repeated campaign systems rather than the runtime's full hidden semantic state. Initial projections may cover character state, party composition, known inventory, equipment, abilities, conditions, quests, objectives, current location, and exposed points of interest.
@@ -86,6 +88,22 @@ GameFrame should receive narrow player-visible projections for repeated campaign
 ### Encounter port
 
 GameFrame provides launch, retrieval, cancellation, lifecycle, reconnect, and terminal-outcome operations for tactical encounters. Launch is durable and idempotent. Terminal outcomes are structured and include objective, participant, injury or condition, resource, item, ruleset, revision, and commit data supported by the selected game.
+
+#### Participant identity invariant
+
+A runtime encounter participant is a durable campaign entity reference, not a display-only slot. The participant identity supplied at launch must remain correlatable through match materialization and terminal outcome.
+
+Required chain:
+
+```text
+runtime campaign participant ID
+→ GameFrame encounter participant record
+→ authoritative tactical unit mapping
+→ terminal participant result
+→ runtime campaign aftermath
+```
+
+A GameFrame adapter may validate or enrich participant data for a selected ruleset. It must not silently replace the party roster with unrelated bootstrap or fixed-duel identities. If an encounter ruleset cannot materialize the supplied participant configuration truthfully, launch fails closed with an unsupported-configuration error.
 
 ## Identity model
 
@@ -164,6 +182,8 @@ A deterministic fixture must prove this sequence:
 10. The runtime resumes the scene and GameFrame renders it.
 11. A disconnect and resume do not duplicate commands or presentation events.
 
+This fixture is the eventual multiplayer contract proof. A narrower one-human-plus-BattleBot journey may be used earlier as the full-stack engineering gate, but it does not satisfy the two-player conformance claim.
+
 ## Shared fixture ownership and staged completion
 
 GameFrame owns the canonical machine-readable fixtures under `planning/fixtures/rpg/v1/`. The manifest at `planning/fixtures/rpg/v1/shared-rpg-fixtures.json` is the only canonical fixture list for contract version 2. RPG GM Runtime mirrors those files exactly under `fixtures/rpg/v1/` and validates them against its deterministic boundary.
@@ -184,22 +204,57 @@ The `campaign-revision-linkage` fixture defines the production revision domains 
 
 Fixture changes are canonical-first: update and validate GameFrame, merge the canonical fixture, synchronize the private runtime mirror, run the runtime fixture conformance tests, and then merge runtime changes. Neither repository maintains a second hardcoded fixture list.
 
-## Node-local HTTP slice
+## Current implementation layers
 
-The active GameFrame Node adapter is memory-backed and seeded from the canonical Monster Master reference fixture. It exposes these development routes:
+The repository intentionally contains three different RPG implementation layers. They must not be conflated in status claims or future work.
+
+### In-memory development adapter
+
+`VersionedInMemoryRpgService` and the ordinary development HTTP server retain deterministic protocol and browser-regression behavior. They are useful fixtures and are not the production persistence authority.
+
+The Node-local PR #124 encounter coordinator is also memory-backed. It proves one human campaign player can be handed to a deterministic Monster Master BattleBot match and returned to the RPG shell. It does not persist the encounter-to-match binding across process restart, and it does not materialize the RPG participant roster into authoritative tactical units.
+
+### Durable SQLite RPG authority
+
+GameFrame already has durable production-shaped RPG services:
+
+- durable campaign membership/projection and command custody;
+- durable command outbox and runtime linkage;
+- `SqliteRpgEncounterStore` for encounter launch, retrieval, completion, exact retry, and restart-safe terminal outcomes;
+- `createDurableRpgHttpServer()` exposing the durable campaign and encounter services through authenticated protocol-v2 routes.
+
+This layer establishes durable RPG/encounter authority. It does not by itself create or run an Arena match.
+
+### Missing production binding
+
+The remaining production integration is:
+
+```text
+durable RPG encounter authority
++ validated participant-faithful Monster Master configuration
++ authoritative match creation/recovery
++ exact match-unit ↔ RPG participant mapping
++ exact terminal participant outcome
+```
+
+`MatchSession` already supports persistence of an explicit initial state and replay from that state. A campaign-configured Monster Master implementation should prefer a validated encounter configuration/state materializer feeding the ordinary match/replay authority rather than adding a second tactical event model.
+
+## Protocol-v2 development routes
+
+The development and durable adapters expose the same core route families with different backing stores:
 
 | Method | Route | Principal | Protocol-v2 behavior |
 | --- | --- | --- | --- |
-| `POST` | `/api/rpg/campaigns/{campaignId}/attach` | authenticated player | Returns the audience-filtered projection with all three explicit positions and a temporary position-bearing cursor. |
-| `POST` | `/api/rpg/campaigns/{campaignId}/commands` | active player member | Accepts player commands with `expectedGameframeCoordinationRevision`, commits one coordination transaction, appends zero or more presentation events, and preserves exact command retry. |
-| `POST` | `/api/rpg/campaigns/{campaignId}/events` | RPG runtime service | Links one runtime narrative receipt through a stable `coordinationMutationId`, validates its GameFrame source revision and next narrative revision, and appends the submitted presentation events atomically in the Node-local adapter. |
+| `POST` | `/api/rpg/campaigns/{campaignId}/attach` | authenticated player | Returns the audience-filtered projection with the explicit GameFrame positions. |
+| `POST` | `/api/rpg/campaigns/{campaignId}/commands` | active player member | Accepts player commands with `expectedGameframeCoordinationRevision`, commits one coordination transaction, and preserves exact command retry. |
+| `POST` | `/api/rpg/campaigns/{campaignId}/events` | RPG runtime service | Links one runtime narrative receipt through a stable `coordinationMutationId`, validates its GameFrame source revision and next narrative revision, and appends submitted presentation events atomically. |
 | `POST` | `/api/rpg/encounters` | RPG runtime service | Links a `runtime.encounter_launch` receipt, validates campaign provenance and participant bindings, advances coordination without inventing a presentation event, and creates one idempotent encounter handle. |
 | `GET` | `/api/rpg/encounters/{encounterId}` | creating runtime service | Retrieves the current encounter handle with its linked coordination and narrative positions. |
 | `POST` | `/api/rpg/encounters/{encounterId}/complete` | GameFrame encounter-engine service | Commits one validated terminal outcome while preserving the launch linkage metadata. |
 
 Development player requests use `x-gameframe-player-id`. Development service requests use `x-gameframe-service-id`. A request claiming both identities is rejected, and service principals cannot use ordinary player-match routes. Production authentication remains the responsibility of the injected `RequestAuthenticator`.
 
-The live boundary advertises campaign protocol version `2` and encounter protocol version `2`. Protocol-v2 responses expose `gameframeCoordinationRevision`, `presentationSequence`, and `linkedNarrativeRevision`; they do not expose `campaignRevision`. Player commands carry `expectedGameframeCoordinationRevision`. Runtime event and encounter-launch mutations carry:
+The live boundary advertises campaign protocol version `2` and encounter protocol version `2`. Protocol-v2 responses expose `gameframeCoordinationRevision`, `presentationSequence`, and `linkedNarrativeRevision`; they do not expose the old ambiguous `campaignRevision`. Player commands carry `expectedGameframeCoordinationRevision`. Runtime event and encounter-launch mutations carry:
 
 - stable `coordinationMutationId`;
 - `expectedGameframeCoordinationRevision`;
@@ -208,11 +263,7 @@ The live boundary advertises campaign protocol version `2` and encounter protoco
 
 Stable protocol-v2 conflicts distinguish coordination revision mismatch, runtime source-revision mismatch, narrative-link mismatch, repeated runtime-link attempts, command-ID conflict, and coordination-mutation-ID conflict. Exact retries return the original receipt or encounter handle without advancing any position again.
 
-The current implementation has a 64 KiB HTTP request-body limit, a 2,000-character freeform action limit, at most 16 runtime presentation events per transaction, at most 32 encounter participants, and at most 32 objectives. Command, runtime-link, and encounter retries remain process-memory idempotent only. The returned campaign cursor is a temporary projection marker, not yet a signed, viewer-bound durable resume cursor.
-
-`VersionedInMemoryRpgService` encapsulates the existing protocol-v1 event reducer solely to preserve deterministic port-A/port-B choice, check, outcome, and authority regression coverage. Protocol version 1 is rejected by the default HTTP server. Regression lanes may enable it only through the explicit `GAMEFRAME_ENABLE_RPG_V1_COMPATIBILITY=1` test configuration; while enabled, the health endpoint advertises `legacy-v1-compatibility`. New runtime integration must use protocol version 2 and must not depend on legacy `campaignRevision`, `expectedRevision`, or encounter `campaignRevision` fields.
-
-This slice does not claim durable VM persistence, restart survival, browser campaign UI, or deployed Cloudflare authentication. Those remain explicit later acceptance gates.
+Legacy protocol-v1 reducer fixtures remain regression-only. New runtime integration must use protocol version 2 and must not depend on legacy `campaignRevision`, `expectedRevision`, or encounter `campaignRevision` fields.
 
 ## Delivery evidence
 
