@@ -37,11 +37,14 @@ export type DurableRpgEncounterMatchBinding = {
 
 export class SqliteRpgEncounterMatchBindingError extends Error {
   readonly code: "binding-conflict" | "corrupt-binding";
+  readonly status: 409 | 500;
+  readonly retryable = false;
 
   constructor(code: SqliteRpgEncounterMatchBindingError["code"], message: string) {
     super(message);
     this.name = "SqliteRpgEncounterMatchBindingError";
     this.code = code;
+    this.status = code === "binding-conflict" ? 409 : 500;
   }
 }
 
