@@ -3,12 +3,15 @@ import { DevelopmentHeaderAuthenticator } from "../auth/request-authenticator.ts
 import { parseDurableRpgProcessConfig } from "./durable-rpg-process-config.ts";
 import { createConfiguredDurableRpgService } from "./durable-rpg-service-lifecycle.ts";
 import {
-  durableRpgStagingBootstrap,
+  durableRpgStagingBootstrapForDatabase,
   parseDurableRpgStagingBootstrapConfig,
 } from "./durable-rpg-staging-bootstrap.ts";
 
 const config = parseDurableRpgProcessConfig(process.env);
 const stagingBootstrapConfig = parseDurableRpgStagingBootstrapConfig(process.env);
+const stagingBootstrap = stagingBootstrapConfig
+  ? durableRpgStagingBootstrapForDatabase(config.filePath, stagingBootstrapConfig)
+  : undefined;
 const authenticator = config.authentication.mode === "hmac-proxy"
   ? new HmacProxyRequestAuthenticator({
       proxySecret: config.authentication.proxyHmacSecret,
@@ -22,9 +25,7 @@ const lifecycle = createConfiguredDurableRpgService({
   gmBaseUrl: config.gmBaseUrl,
   gmServiceToken: config.gmServiceToken,
   authenticator,
-  ...(stagingBootstrapConfig
-    ? { bootstrapCampaigns: [durableRpgStagingBootstrap(stagingBootstrapConfig)] }
-    : {}),
+  ...(stagingBootstrap ? { bootstrapCampaigns: [stagingBootstrap] } : {}),
   pollIntervalMs: config.pollIntervalMs,
   deliveryTimeoutMs: config.deliveryTimeoutMs,
 });
