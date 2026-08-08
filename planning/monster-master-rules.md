@@ -20,7 +20,7 @@ related:
 
 ## Purpose
 
-MM-0001 is the first small standalone Monster Master game built on GameFrame's tactical substrate. It is intentionally bounded enough to implement, simulate, and preserve as a regression target while the campaign-facing Monster Master RPG encounter model grows separately.
+MM-0001 is a **separate game definition** and the first small standalone Monster Master game built on GameFrame's tactical substrate. It is intentionally bounded enough to implement, simulate, and preserve as a regression target while the campaign-facing Monster Master RPG encounter model grows separately.
 
 MM-0001 reuses platform/map/movement/line-of-sight/replay/storage/rendering infrastructure without defining the complete future RPG combat system.
 
@@ -55,7 +55,7 @@ Each player owns three fixed units:
 
 Content/unit identities are stable. Artwork does not define rules.
 
-## Deployment
+## Deployment phase
 
 - duel begins in `deployment`;
 - players alternate one unit deployment at a time;
@@ -96,9 +96,9 @@ MM-0001 does not define death semantics for RPG campaigns. A campaign rules prof
 
 Each player begins with two command energy and has a maximum of three. One restores at the start of each new round up to the cap.
 
-## Mend
+## Mend ability
 
-Warden Master may use `Mend`:
+The Warden Master may use `Mend`:
 
 - primary action;
 - cost 1 command;
@@ -109,8 +109,8 @@ Warden Master may use `Mend`:
 
 ## Victory and draw
 
-- a player wins only after every opposing MM-0001 unit is defeated;
-- defeating only the Warden Master does not end the duel while that side has a living Bulwark/Emberling;
+- a player **wins only after every opposing unit has been defeated** and removed from the battlefield;
+- defeating the opposing **Warden Master does not end the duel** while that side still has a living Bulwark or Emberling;
 - if neither force is eliminated, round 24 completion is a draw.
 
 This **defeat-all-opposition** rule belongs to the standalone duel. It is not the universal Monster Master RPG objective model.
@@ -135,10 +135,10 @@ Browser owns camera/hover/selection/animation/local UI only.
 
 ## Current configured RPG reuse
 
-The existing `monster-master-rpg` adapter reuses MM-0001 creature templates and MatchSession authority for a narrow configured campaign surface:
+**The implemented `monster-master-rpg` path is:**
 
 ```text
-validated RPG `rulesState.creatureIds`
+validated RPG encounter `rulesState.creatureIds`
 → supported creature/objective/difficulty/battlefield validation
 → configured revision-zero Monster Master state
 → ordinary MatchSession actions/replay/persistence
@@ -147,16 +147,16 @@ validated RPG `rulesState.creatureIds`
 
 Current supported semantics:
 
-- trainers remain encounter participants/controllers, not Warden Master tactical creatures;
+- **trainers remain RPG encounter participants/controllers** and are not Warden Master tactical creatures;
 - exact campaign creature IDs become tactical unit IDs;
 - Emberling IDs use Emberling rules;
 - Bulwark IDs use Stone Bulwark rules;
 - one through three supported creatures per side;
-- equal creature counts;
+- **both sides must currently contain the same number of creatures** because the deployment phase alternates between two tactical seats;
 - compact-duel geometry;
 - normal difficulty;
 - defeat-opposition objective;
-- exact `participantUnitIds` mapping;
+- **`participantUnitIds` persists exact participant→creature assignment**;
 - shared-team authorization is separate from exact participant assignment.
 
 Unsupported combat-relevant configuration fails closed.
@@ -177,6 +177,8 @@ That contract may add, as actual campaigns require:
 - structured scene reconciliation.
 
 Those capabilities should reuse tactical-core and MatchSession when appropriate, but they do not have to pretend the fixed MM-0001 duel is the entire campaign combat system.
+
+A **D&D-style system should use its own rules definition** or family of definitions. It may reuse GameFrame infrastructure while retaining different initiative, action, reaction, resource, condition, visibility, and character semantics.
 
 ## Explicitly outside MM-0001
 
