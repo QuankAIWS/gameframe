@@ -10,14 +10,16 @@ applies_to:
   - handcrafted campaigns
   - generated campaigns
 shared_document_id: rpg-agent-architecture-and-campaign-package-v1
-shared_document_version: 3
+shared_document_version: 4
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-agent-architecture-and-campaign-package.md
 mirrors:
   - QuankAIWS/rpg-gm-runtime:docs/shared/rpg-agent-architecture-and-campaign-package.md
 sync_policy: exact-byte-copy
 related:
+  - rpg-platform-product-goals.md
   - rpg-scene-entity-and-knowledge-contract.md
+  - rpg-embodied-exploration-and-character-performance-contract.md
   - rpg-campaign-architect-contract.md
   - rpg-event-and-plot-pool-contract.md
   - rpg-monster-master-reference-campaign.md
@@ -29,36 +31,42 @@ related:
 
 ## Decision
 
-The RPG platform uses two distinct specialized agents connected by one durable campaign-package boundary.
+The RPG platform uses two distinct specialized agents connected by one durable CampaignPackage boundary.
 
 1. **Campaign Architect** — creates a complete, validated CampaignPackage before ordinary play.
 2. **Dungeon Master** — conducts live play from that committed package and durable campaign state.
 
-The platform also contains deterministic runtime substrate that is **not another agent**:
+The platform also contains deterministic/runtime substrate that is **not another campaign agent**:
 
 - CampaignPackage validator and immutable package commitment;
 - campaign journal;
 - Entity Registry;
 - Character Factory for bounded incidental-character materialization;
 - Scene Registry;
-- player/party knowledge projection;
+- semantic observer/player/party knowledge;
 - Dungeon Master Context Compiler;
+- semantic world/location services;
+- GameFrame exploration/materialization adapters;
 - Encounter Scene Compiler;
 - GameFrame adapters and deterministic mechanic coordinators.
 
-The agents do not share responsibility for inventing campaign truth during ordinary turns. The Campaign Architect determines what campaign exists. The Dungeon Master determines how that campaign unfolds through player action. Runtime substrate makes identity, presence, knowledge, mechanics, and durability explicit so those facts do not depend on model memory.
+The agents do not share responsibility for inventing campaign truth during ordinary turns. The Campaign Architect determines what campaign exists. The Dungeon Master determines how that campaign unfolds through player action and world events. Runtime/GameFrame substrate makes identity, presence, knowledge, world continuity, materialization, mechanics, and durability explicit so those facts do not depend on model memory.
+
+The mature player experience is embodied exploration through GameFrame. Freeform intent remains first-class for actions the fixed interaction vocabulary does not express.
 
 ## Official terminology
 
-- **Campaign Architect** is the product and architecture name for the campaign-authoring agent. Campaign compiler, plot agent, and campaign-generation agent are retired aliases for capabilities inside it, not separate agents or compatibility interfaces.
-- **Dungeon Master** is the product and architecture name for the live campaign-running agent. Internal documents may use Live DM where brevity is useful.
-- **CampaignPackage** is the durable handoff artifact. Handcrafted and generated packages use the same validator, persistence, projection, and Dungeon Master interface.
+- **Campaign Architect** is the campaign-authoring agent. Campaign compiler, plot agent, and campaign-generation agent are retired aliases for capabilities inside it, not separate agents or compatibility interfaces.
+- **Dungeon Master** is the live campaign-running agent. Internal documents may use Live DM where brevity is useful.
+- **CampaignPackage** is the durable handoff artifact. Handcrafted and generated packages use the same validator, persistence, projection, world initialization, and Dungeon Master interface.
 - **Character Factory** is deterministic/schema-first runtime substrate used to materialize bounded incidental characters requested during play. It is not a campaign-authoring agent.
-- **Scene Registry** is the authoritative runtime projection of who and what is physically present in the current scene.
-- **Player Knowledge Projection** is the viewer-specific read model of what a particular player character is entitled to know.
+- **Scene Registry** is authoritative runtime semantic state for who/what is physically present in zero or more active scenes.
+- **Semantic Observer Knowledge** is sparse authoritative knowledge/belief state for players and other relevant observers; Player Knowledge Projection is the viewer-safe read model over that state.
+- **WorldGraph** is semantic campaign location/route truth. It is not renderer geometry.
+- **Exploration Scene Materialization** is GameFrame's accepted/reproducible playable realization of semantic world/scene intent.
 - **Encounter Scene Compiler** converts relevant current-scene truth into a validated tactical request without substituting unrelated duel identities.
 
-There is no separate intro agent. A campaign opening is the first Dungeon Master turn after a CampaignPackage has been accepted and committed.
+There is no separate intro agent and no separate NPC agent. A campaign opening is the first Dungeon Master campaign framing after package/world initialization. NPC portrayal is a context mode of the Dungeon Master bounded to one performing entity's perspective.
 
 ## Campaign Architect responsibilities
 
@@ -78,13 +86,14 @@ The Campaign Architect owns:
 - originality transformation of franchise shorthand into an original campaign identity;
 - setting rules, tone, themes, boundaries, and player fantasy;
 - campaign bible and continuity invariants;
-- important locations, factions, actors, motives, secrets, and relationships;
+- semantic WorldGraph, important regions/locations, routes, traversal assumptions, and location relationships;
+- important factions, actors, motives, secrets, and relationships;
 - campaign spine and playable starter chapter;
-- clue and evidence relationships;
+- clue/evidence relationships;
 - event and complication pools;
 - escalation, pressure, consequence, and resolution rules;
 - tactical opportunities, thresholds, objectives, and outcome expectations;
-- semantic presentation and asset requirements;
+- semantic presentation, world-kit, materialization, and asset requirements;
 - provenance, versions, content hashes, validation results, and migrations.
 
 The Campaign Architect completes campaign construction before ordinary play. It may later support explicit owner-authorized recompilation or package migration, but it does not silently rewrite an active campaign because players behave unexpectedly.
@@ -102,7 +111,7 @@ brief or source material
 → explicit commitment
 ```
 
-An owner may therefore heavily handcraft Monster Master or start from a Campaign Architect draft and massage it before commitment. Authoring mode is provenance, not a runtime execution switch.
+An owner may therefore heavily handcraft Monster Master or start from a Campaign Architect draft and refine it before commitment. Authoring mode is provenance, not a runtime execution switch.
 
 An active committed package is immutable for ordinary play. Campaign-foundation changes require an explicit amendment/new-version/migration lifecycle.
 
@@ -110,56 +119,92 @@ An active committed package is immutable for ordinary play. Campaign-foundation 
 
 The Dungeon Master receives the committed CampaignPackage plus current durable campaign state compiled for the current trigger. It owns:
 
-- opening-scene realization;
-- narration and scene framing;
-- NPC dialogue, performance, and reactions;
-- interpretation of arbitrary freeform player declarations;
-- pacing and scene transitions;
-- selection among currently eligible prepared events;
-- application of campaign-compatible consequences;
-- maintenance of relationships, quests, and world continuity through validated semantic operations;
+- opening/scene framing when narration is useful;
+- interpretation of arbitrary plausible freeform player declarations;
+- rules/knowledge clarification through Ask-GM;
+- pacing and selection among currently eligible prepared events;
+- campaign-compatible consequences;
 - compatible local improvisation;
-- requests for incidental people or local entities when players seek something not prepared;
-- requests for checks, structured choices, media, and tactical encounters;
-- narration of authoritative mechanical and tactical results.
+- requests for incidental people or bounded local entities when players seek something not prepared;
+- requests for checks, structured choices, media/materialization, and tactical encounters;
+- perspective-bounded NPC/entity dialogue, performance, and reactions;
+- dramatic GM interventions where appropriate;
+- narration/framing of authoritative mechanical and tactical results where useful.
+
+The Dungeon Master does **not** own:
+
+- durable entity IDs;
+- physical scene presence;
+- canonical-name revelation state;
+- observer/player knowledge authority;
+- semantic world/location invariants;
+- GameFrame exploration geometry or frame-by-frame avatar transforms;
+- package invariants;
+- deterministic mechanic outcomes;
+- tactical outcomes.
 
 The Dungeon Master may fill local gaps but may not replace:
 
 - the campaign premise;
-- committed setting rules;
+- committed setting/world rules;
 - selected causes or responsible actors;
 - established motives or relationships;
-- committed clue and evidence logic;
+- committed clue/evidence logic;
 - revealed facts;
 - previous consequences;
 - tactical outcomes;
-- established entity identities;
-- package visibility and secrecy rules.
+- established entity or materialized-scene identities;
+- package visibility/secrecy rules.
 
-### Incidental-character rule
+## Dungeon Master context modes
+
+One Dungeon Master capability may operate through several explicit context modes.
+
+### Referee / world-adjudication mode
+
+Receives the hidden campaign/world state needed to interpret unusual actions, event eligibility, consequences, checks, scene transitions, and world reactions.
+
+### Game Master communication mode
+
+Answers Ask-GM queries and may issue player/party/table GM interventions. It receives only the runtime truth required to answer the authorized audience safely.
+
+### Entity-performance mode
+
+Bound to exactly one performing durable entity. The context compiler includes only justified entity identity, personality, goals, relationships, memories, beliefs/knowledge, current observations, conditions, and bounded recent conversation plus package constraints required for correct portrayal.
+
+It excludes unrelated hidden campaign truth. The fact that referee mode could know something does not authorize Pell, Mara, or another entity to know it.
+
+### Aftermath/intervention mode
+
+Frames committed deterministic outcomes or significant semantic events. Presentation remains separate from semantic authority.
+
+These are context/authority modes, not separate autonomous agents.
+
+## Incidental-character rule
 
 The Dungeon Master may **request** a plausible incidental person but does not directly mint a durable NPC record through prose or an unconstrained generic fact write.
 
-A request passes through the Character Factory, which creates one validated stable entity identity from prepared role vocabularies and bounded constraints. The Dungeon Master may then portray that entity.
+A request passes through Character Factory, which creates one validated stable entity identity from prepared role vocabularies and bounded constraints. The Dungeon Master may then portray that entity using entity-performance mode.
 
 An incidental entity may later become recurring without changing identity. It cannot retroactively become a committed culprit, decisive witness, clue owner, or secret authority unless the package explicitly left that function open.
 
 ## Campaign opening rule
 
-The opening is not a separate service or agent. It is the first ordinary Dungeon Master turn after package commitment.
+The opening is not a separate service or agent.
 
-Before that turn, RPG GM Runtime must have committed:
+Before ordinary play, RPG GM Runtime must have committed:
 
 - package identity, version, hash, and provenance;
 - player-safe premise and tone;
 - runtime-only campaign truth and forbidden retcons;
 - participating players and characters;
-- starting location and group-cohesion state;
+- semantic WorldGraph and starting location;
+- starting group-cohesion state;
 - initial Scene Registry state;
 - actors, motives, clue relationships, event eligibility, pressure, and tactical thresholds;
-- semantic presentation roles and deterministic fallbacks.
+- semantic presentation/materialization roles and deterministic fallbacks.
 
-The opening must establish the party, immediate situation, and room for arbitrary plausible action without exposing runtime-only truth or forcing tactical play before current state justifies it. The same Dungeon Master semantic-decision, validation, journal, and publication path continues afterward.
+GameFrame may materialize the starting exploration scene before or alongside the first Dungeon Master framing. The opening should establish the immediate situation without forcing the player to use text to describe ordinary movement.
 
 ## CampaignPackage boundary
 
@@ -178,32 +223,43 @@ It contains at least:
 
 ### Runtime-only campaign bible
 
-- setting rules and continuity invariants;
+- setting/world rules and continuity invariants;
 - hidden chronology and causality;
 - factions, major actors, motives, secrets, leverage, and limits;
 - important locations and relationships;
 - prohibited retcons and originality constraints;
 - audience classifications.
 
+### Semantic world structure
+
+- stable important location/region identities;
+- WorldGraph adjacency/route relationships as needed;
+- traversal assumptions and relevant hidden/known routes;
+- starting location and initial semantic scene;
+- location materialization roles/requirements without renderer-specific geometry;
+- important landmarks/objects/scene anchors;
+- world-kit/theme/asset requirements and fallbacks;
+- open incidental-area rules where bounded on-demand materialization is allowed.
+
 ### Playable campaign structure
 
 - group-cohesion mechanism;
 - opening situation;
 - initial scene membership and materially relevant scene entities;
-- functional beats without a mandatory scene order;
+- functional beats without mandatory scene order;
 - credible alternative approaches;
 - event pools and deterministic eligibility vocabulary;
-- clue and evidence graph where investigation exists;
+- clue/evidence graph where investigation exists;
 - escalation and recovery paths;
 - consequence and resolution conditions;
-- one complete starter or one-shot resolution;
+- one complete starter/one-shot resolution;
 - optional continuation seeds.
 
 ### Mechanics and presentation
 
 - supported mechanic capabilities;
 - check and tactical encounter intents;
-- semantic entity, location, item, terrain, effect, handout, and interface asset roles;
+- semantic entity, location, item, terrain, effect, handout, interface, and exploration-world asset roles;
 - required deterministic fallbacks;
 - presentation profile and accessibility-safe text equivalents.
 
@@ -220,9 +276,9 @@ It contains at least:
 
 ## Handcrafted and generated equivalence
 
-The Dungeon Master must not require different code paths for handcrafted and generated campaigns.
+The Dungeon Master and GameFrame exploration system must not require different control paths for handcrafted and generated campaigns.
 
-A handcrafted Monster Master package enters through the same CampaignPackage validator and commitment process as a future Campaign Architect output. The package may contain richer owner-authored material, but it does not receive privileged runtime semantics or a separate Monster Master-only Dungeon Master.
+A handcrafted Monster Master package enters through the same CampaignPackage validator and commitment process as a future Campaign Architect output. The package may contain richer owner-authored material, but it does not receive privileged runtime semantics, a separate Monster Master Dungeon Master, or a special world engine.
 
 The origin of the package is provenance, not an execution-mode switch.
 
@@ -230,38 +286,38 @@ The origin of the package is provenance, not an execution-mode switch.
 
 Monster Master is the first bespoke reference campaign and gold standard for Campaign Architect output.
 
-The team manually creates everything a mature Campaign Architect should later produce: setting, package truth, actors, locations, clue structures, event pools, tactical opportunities, consequence rules, semantic assets, and test fixtures.
+The team manually creates everything a mature Campaign Architect should later produce: setting, semantic world, package truth, actors, locations/routes, clue structures, event pools, tactical opportunities, consequence rules, semantic assets/materialization requirements, and test fixtures.
 
 Monster Master serves as:
 
-- the first playable campaign;
+- the first playable embodied campaign;
 - the reference CampaignPackage;
 - the quality bar for generated campaigns;
-- the principal Dungeon Master behavior and continuity fixture;
-- the proving ground for Scene Registry, player knowledge, GameFrame presentation, and Arena Battles integration.
+- the principal Dungeon Master behavior/character-performance fixture;
+- the proving ground for Scene Registry, observer/player knowledge, GameFrame exploration/materialization, and Arena Battles integration.
 
 Monster Master is not the platform architecture, and its deterministic fixture is not its canonical story.
 
-## Durable entities and scenes
+## Durable entities, scenes, and world materialization
 
-The campaign journal is authoritative history. Runtime projects durable entity and scene state from committed package truth plus journaled operations.
+The campaign journal is authoritative history. Runtime projects durable entity and semantic scene state from committed package truth plus journaled operations.
 
-The Scene Registry answers exact questions that must not rely on the model's recollection of prose:
+The Scene Registry answers exact semantic questions that must not rely on the model's recollection of prose:
 
 - who is physically present;
 - which creatures and relevant objects are present;
 - who entered or left;
-- what location the scene occupies;
+- what semantic location the scene occupies;
 - which exits, hazards, and objective entities matter;
 - which present entities are tactically eligible.
 
+GameFrame owns accepted playable materialization of the scene: collision geometry, semantic anchors, spawn/transition zones, interaction bindings, and ephemeral realtime transforms. GameFrame geometry does not become hidden package truth.
+
 A known absent person may be discussed or contacted through an explicit remote channel, but cannot physically act as if present.
 
-See `rpg-scene-entity-and-knowledge-contract.md` for the controlling contract.
+## Observer knowledge and identity labels
 
-## Player knowledge and identity labels
-
-Canonical runtime entity identity and player-known identity are distinct.
+Canonical runtime entity identity and observer/player-known identity are distinct.
 
 A player may know someone first as:
 
@@ -269,92 +325,66 @@ A player may know someone first as:
 - later `the checkpoint inspector`;
 - later `Mara Venn`.
 
-The hidden Dungeon Master decision may use the canonical entity ID. Player-facing rendering and GameFrame People views use only the best viewer-authorized label and facts.
+An NPC may know a different set of facts about the same entity. Sparse observer knowledge should exist only where campaign behavior requires it.
+
+The hidden referee decision may use canonical entity IDs. Character-performance and player-facing rendering receive only the knowledge justified for their respective contexts.
 
 Unknown entity existence is omitted rather than represented through hidden IDs, null records, redacted slots, or leaked counts.
 
-## Dungeon Master context and rendering
+## Player action, direct interaction, and Ask-GM
 
-The production Dungeon Master path separates hidden semantic reasoning from player-facing prose.
+The mature interface distinguishes:
 
-```text
-GmTurnTrigger
-→ typed hidden context compiled from package + current scene/world state
-→ hidden semantic decision with no player-facing prose
-→ deterministic validation/materialization
-→ committed consequences + authorized revelations
-→ audience-specific player-safe scene/world/knowledge projection
-→ presentation renderer
-→ audience-scoped GameFrame events
-```
+- direct GameFrame exploration/mechanic input;
+- targeted in-fiction interaction/dialogue;
+- **Do Something Else** freeform fictional intent;
+- **Ask Game Master** out-of-fiction rules/knowledge/clarification.
 
-The journal remains the audit trail and source of truth. Typed current-state projections are reconstructible read layers and should replace raw bounded journal history as the model's primary memory mechanism.
+Do Something Else preserves tabletop flexibility when no dedicated interaction exists.
 
-The renderer must not receive unrevealed entity names, hidden motives, clue meanings, event eligibility, runtime-only facts, or unauthorized entity existence merely because the hidden decision model received them.
-
-## Player action versus Ask-GM
-
-The player interface must distinguish:
-
-- an in-fiction **Act / Speak** declaration; and
-- an out-of-fiction **Ask Game Master** query for rules, character knowledge, or clarification.
-
-These use distinct command/trigger semantics. An Ask-GM query does not automatically become speech heard by NPCs and should not advance fictional time merely because the player asked a question.
+Ask-GM does not automatically become speech heard by NPCs and should not advance fictional time merely because the player asked a question.
 
 ## Tactical encounter rule
 
-A tactical encounter is a stricter resolution mode for the current scene, not an unrelated match that substitutes canned identities.
+A tactical encounter is a stricter resolution mode for the current embodied scene, not an unrelated match that substitutes canned identities.
 
-The Encounter Scene Compiler projects exact required campaign entities, roles, teams, controllers/behavior authorities, objective entities, battlefield intent, and alternate terminal conditions into GameFrame.
+The Encounter Scene Compiler projects exact required campaign entities, roles, teams, controllers/behavior authorities, objective entities, battlefield intent, scene provenance, and alternate terminal conditions into GameFrame.
 
 GameFrame owns deterministic tactical authority and fails closed when the selected tactical rules cannot truthfully execute a combat-relevant requirement.
 
-Campaign encounters may require more than elimination, including protection, escape, withdrawal, surrender, holding or reaching a location, preventing escape, or securing an object. The current fixed Monster Master duel remains a small standalone rules contract; campaign-specific tactical capability evolves separately and reuses GameFrame tactical infrastructure.
+Campaign encounters may require more than elimination, including protection, escape, withdrawal, surrender, holding or reaching a location, preventing escape, or securing an object.
 
-## Campaign intake evolution
-
-Campaign creation should expand in this order:
-
-1. owner-authored and deterministic briefs for implementation;
-2. concise freeform player concepts;
-3. generated draft packages with optional owner refinement;
-4. structured campaign sheets;
-5. guided GameFrame or Discord interviews;
-6. reusable prepared theme and mechanic packs;
-7. richer generation, repair, and operator review workflows.
-
-All intake paths normalize into the same brief and CampaignPackage contracts.
+After terminal outcome, runtime reconciles consequences and GameFrame updates the surrounding exploration materialization before ordinary embodied control resumes.
 
 ## Media and asset relationship
 
-The Campaign Architect decides which semantic assets and media roles the campaign requires. GameFrame's media pipeline resolves, composes, generates, validates, stores, versions, and delivers those assets.
+The Campaign Architect decides which semantic assets, world kits, location identities, recurring entities, and media roles the campaign requires. GameFrame resolves, composes, generates, validates, stores, versions, and delivers those assets.
 
-The Dungeon Master uses accepted semantic identities during play and may request a compatible missing incidental presentation, but it does not redesign the campaign asset pack every turn.
+The Dungeon Master uses accepted semantic identities during play and may request compatible missing incidental presentation, but it does not redesign the campaign asset pack every turn.
 
-Cloudflare-backed image generation is a campaign-preparation capability. Generated media is not required to prove CampaignPackage validity, entity/scene semantics, or Dungeon Master behavior.
+Cloudflare-backed image generation is a campaign-preparation/on-demand presentation capability. Generated media is not required to prove CampaignPackage validity, semantic world state, legal movement, entity/scene semantics, or Dungeon Master behavior.
 
 ## Testing requirements
 
-Required fixtures and tests include:
+Required fixtures/tests include:
 
 - deterministic Campaign Architect provider or handcrafted package fixture;
 - package validator, hashing, persistence, commitment, and reload tests;
 - stable entity creation and incidental promotion tests;
 - Scene Registry enter/leave/restart tests;
-- player-specific identity and knowledge tests;
-- hidden-name/secret absence from renderer input;
-- mock Dungeon Master provider returning structured semantic decisions;
-- scripted player actors using expected, chaotic, avoidant, and early-correct-guess behavior;
-- multi-turn assertions that package truth never changes;
-- partial and paraphrased secret-leak attempts;
-- incidental NPC creation and later reappearance;
-- missed-clue recovery;
-- Act/Speak versus Ask-GM behavior;
+- observer/player identity and knowledge tests;
+- hidden-name/secret absence from player-safe and entity-performance input;
+- GameFrame materialized-scene identity/reconnect tests;
+- direct NPC interaction with perspective-bounded context;
+- Ask-GM behavior;
+- Do Something Else unsupported-action adjudication;
+- alternate-route/second-scene materialization and revisit;
 - check and tactical handoff requests;
 - scene-faithful encounter participant projection;
 - withdrawal/escape outcomes where supported;
+- authoritative return to the embodied exploration scene;
 - restart, exact retry, reconnect, and resume;
-- at least two materially different CampaignPackages.
+- at least two materially different CampaignPackages/worlds.
 
 Transport and restart tests do not substitute for campaign-behavior tests. Catalog-shape tests do not substitute for executable package tests.
 
@@ -364,13 +394,17 @@ Do not:
 
 - send a raw premise directly to the Dungeon Master and call that campaign creation;
 - let the Dungeon Master invent the campaign foundation during ordinary play;
-- use the model's prose history as the sole source for entity identity, physical presence, or player knowledge;
+- use model prose history as the sole source for entity identity, physical presence, observer/player knowledge, or world layout identity;
 - let the Dungeon Master directly mint unconstrained durable NPCs through generic fact writes;
-- expose canonical runtime names merely because the hidden model knows them;
+- expose canonical runtime names merely because referee context knows them;
+- give an NPC performance call unrelated hidden campaign truth;
 - create separate Monster Master and generic Dungeon Master implementations;
-- create a third intro agent;
+- create a third intro or NPC agent;
+- make graphical affordances the complete set of possible player actions;
 - treat authored catalogs as executable packages without validation and commitment;
 - make generated media a prerequisite for campaign logic testing;
+- let generated pixels define collision or semantic world truth;
+- journal every avatar coordinate as RPG campaign state;
 - allow a deterministic fixture to become product canon;
 - expose runtime-only CampaignPackage fields to GameFrame players;
 - drop trainers, civilians, allies, escapees, or objective entities silently when tactical mode starts;
@@ -379,4 +413,4 @@ Do not:
 
 ## Governing rule
 
-> The Campaign Architect creates one validated CampaignPackage; runtime makes entities, scenes, and player knowledge explicit; the Dungeon Master interprets and portrays that committed world through validated semantic decisions; and GameFrame presents and adjudicates it without losing identity when the campaign changes modes.
+> The Campaign Architect creates one validated semantic CampaignPackage; runtime makes world/entity/scene/observer knowledge explicit; GameFrame materializes that world into playable space; the Dungeon Master referees it and performs bounded character perspectives; and the player can always fall back to plausible freeform intent when fixed controls are insufficient.
