@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 const bootSeenStorageKey = "scribbles-gameframe.boot-seen:v2";
+const internalHomeReturnStorageKey = "scribbles-gameframe.internal-home-return:v1";
 
 test("a first visit uses the cold terminal boot and only marks it seen after successful startup", async ({ page }) => {
   let releaseSession;
@@ -80,6 +81,42 @@ test("repeat visits use the compact warm terminal boot", async ({ page }) => {
 
   await expect(page.locator("#gameframe-boot")).toBeHidden();
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
+});
+
+test("Home returns to the hub without replaying the terminal boot", async ({ page }) => {
+  await page.goto("/othello.html?player=hub-home-return-test");
+  await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
+  await expect(page.locator("#othello-game-menu")).toBeVisible();
+
+  let releaseHomeSession;
+  let markHomeSessionRequested;
+  const homeSessionRequested = new Promise((resolve) => {
+    markHomeSessionRequested = resolve;
+  });
+  await page.route("**/api/session", async (route) => {
+    markHomeSessionRequested();
+    await new Promise((resolve) => {
+      releaseHomeSession = resolve;
+    });
+    await route.continue();
+  });
+
+  const homeNavigation = page.locator("#gameframe-destination-bar [data-gameframe-home]").click();
+  await homeSessionRequested;
+
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator("html")).toHaveClass(/gameframe-internal-home-return/);
+  await expect(page.locator("body.gameframe-booting")).toBeVisible();
+  await expect(page.locator("#gameframe-boot")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+  expect(await page.evaluate((key) => sessionStorage.getItem(key), internalHomeReturnStorageKey)).toBeNull();
+
+  releaseHomeSession();
+  await homeNavigation;
+
+  await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
+  await expect(page.locator("#game-card-othello")).toBeVisible();
+  await expect(page.locator("#gameframe-boot")).toBeHidden();
 });
 
 test("the complete game cards open their game-specific menus", async ({ page }) => {
