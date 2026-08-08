@@ -127,7 +127,7 @@ That bounded surface is proven substrate, not the desired final campaign rules m
 
 ### Team-aware RPG battles
 
-The existing shared-team substrate preserves separate authenticated human principals while allowing one allied tactical team. **Exact configured participant→creature assignments persist in `participantUnitIds`** while shared-team authorization may allow teammates to operate the allied roster.
+The existing shared-team substrate preserves separate authenticated human principals while allowing one allied tactical team. exact configured participant→creature assignments persist in `participantUnitIds` while shared-team authorization may allow teammates to operate the allied roster.
 
 The current implementation does not claim exclusive per-player unit ownership, arbitrary species/rules, or **asymmetric tactical deployment**.
 
