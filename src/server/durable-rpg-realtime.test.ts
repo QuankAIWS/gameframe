@@ -230,6 +230,12 @@ test("campaign realtime publishes only durable position advances and accepts ref
     assert.equal(refresh.reason, "refresh");
     assert.equal(refresh.gameframeCoordinationRevision, 4);
 
+    const limitedPromise = nextJson(socket);
+    socket.send(JSON.stringify({ type: "refresh" }));
+    const limited = await limitedPromise;
+    assert.equal(limited.type, "protocol_error");
+    assert.equal(limited.code, "refresh_rate_limited");
+
     const protocolErrorPromise = nextJson(socket);
     socket.send(JSON.stringify({ type: "submit_action" }));
     const protocolError = await protocolErrorPromise;
@@ -264,6 +270,44 @@ test("campaign realtime rejects a player who cannot attach to the campaign", asy
     });
     assert.equal(status, 403);
   } finally {
+    await closeRuntime(runtime.server);
+  }
+});
+
+test("campaign realtime bounds simultaneous player connections", async () => {
+  const runtime = await start();
+  const sockets: WebSocket[] = [];
+  try {
+    for (let index = 0; index < 6; index += 1) {
+      const socket = new WebSocket(
+        `${runtime.websocketBaseUrl}/api/rpg/campaigns/campaign-one/realtime`,
+        { headers: playerHeaders("player:ada") },
+      );
+      sockets.push(socket);
+      const initial = await nextJson(socket);
+      assert.equal(initial.type, "campaign_position");
+    }
+
+    const status = await new Promise<number>((resolve, reject) => {
+      const overflow = new WebSocket(
+        `${runtime.websocketBaseUrl}/api/rpg/campaigns/campaign-one/realtime`,
+        { headers: playerHeaders("player:ada") },
+      );
+      overflow.once("unexpected-response", (_request, response) => {
+        response.resume();
+        resolve(response.statusCode ?? 0);
+      });
+      overflow.once("open", () => {
+        overflow.close();
+        reject(new Error("Connection limit unexpectedly admitted a seventh socket."));
+      });
+      overflow.once("error", () => {
+        // See unauthorized-upgrade test above.
+      });
+    });
+    assert.equal(status, 429);
+  } finally {
+    for (const socket of sockets) socket.close();
     await closeRuntime(runtime.server);
   }
 });
