@@ -30,9 +30,15 @@ MM-0001 remains the small deterministic standalone duel and regression target. T
 
 ## Input contract
 
-The runtime supplies a validated encounter-scene projection derived from the authoritative current scene.
+The runtime supplies a validated encounter-scene projection derived from authoritative current scene state.
 
-The projection must retain exact campaign entity identity for every required tactical participant and may include:
+Every request must include source-scene provenance sufficient to reject stale tactical truth:
+
+- source scene ID;
+- source scene revision or equivalent authoritative position;
+- deterministic digest over combat-relevant source-scene state.
+
+The projection retains exact campaign entity identity for every required tactical participant and may include:
 
 - human trainers;
 - owned or allied monsters;
@@ -44,6 +50,8 @@ The projection must retain exact campaign entity identity for every required tac
 - scene objects and barriers;
 - exit/withdrawal zones;
 - objectives and alternate terminal conditions.
+
+If combat-relevant source-scene truth changes before encounter custody, launch must reject/recompile rather than run a stale scene.
 
 GameFrame validates the requested surface against explicit implemented capability. Unsupported combat-relevant requirements fail closed before encounter custody.
 
@@ -62,6 +70,17 @@ The target bounded role vocabulary is:
 
 The first implementation does not need every role at once. It must never silently omit a requested role that materially affects the encounter.
 
+## Scene-membership preservation rule
+
+Every individually instantiated persistent person or creature physically present in the source scene when tactical mode begins must either:
+
+1. be represented in the tactical encounter in a truthful supported form; or
+2. have an explicit pre-launch scene transition proving that the entity left, withdrew, was evacuated, or otherwise ceased to be present before tactical custody.
+
+Not every present entity must be a fully controllable combatant. A civilian may be represented as protected/noncombatant state, Pell may be support, and a frightened monster may be escaping. Large anonymous crowds may use an aggregate crowd entity if individual identity is not materially relevant.
+
+GameFrame may not silently make a present named character disappear merely to fit the current duel schema.
+
 ## Trainers
 
 Campaign trainers are real player characters and may eventually participate tactically according to their committed trainer archetype and implemented GameFrame rules profile.
@@ -74,7 +93,7 @@ A trainer may not be silently replaced by the standalone MM-0001 `Warden Master`
 
 ## Scene fidelity
 
-The Encounter Scene Compiler should preserve the current scene elements required by fiction and objectives.
+The Encounter Scene Compiler should preserve the source-scene elements required by fiction and objectives.
 
 Examples for the Crooked Checkpoint package include:
 
@@ -122,7 +141,7 @@ Supported terminal participant outcomes should distinguish at least:
 
 When lethal rules are later enabled, `dead` is explicit and separate.
 
-The preferred first primitive for physical withdrawal is an authored visible exit zone. A participant with an escape objective reaches the legal exit and leaves the tactical state through an authoritative action/effect.
+The preferred first primitive for physical withdrawal is an authored visible exit zone. A participant with an escape objective reaches the legal exit and leaves tactical state through an authoritative action/effect.
 
 A neutral or frightened creature whose fiction says it wants to flee should not be forced to attack indefinitely because elimination is the only terminal state.
 
@@ -165,9 +184,26 @@ The result should be able to report:
 - spent resources;
 - winning/losing team when meaningful;
 - objective completion/failure;
-- authoritative revision and commit time.
+- source scene ID/revision/digest;
+- authoritative tactical revision and commit time.
 
 Runtime maps those exact results back into campaign world/scene truth and only then asks the Dungeon Master to narrate aftermath.
+
+## Campaign-bound terminal presentation
+
+A campaign encounter does not become a standalone replay loop after victory/defeat.
+
+For campaign-bound matches:
+
+- primary action is **Return to Campaign**;
+- generic `New Duel` is suppressed;
+- generic `Return Home` is not presented as the primary continuation path;
+- terminal copy describes the campaign encounter result rather than generic duel completion;
+- returning to the campaign route does not itself authorize a new narrative turn.
+
+The campaign composer/input remains fenced until runtime has consumed the authoritative terminal outcome, reconciled world/scene truth, and published a later resumable campaign state.
+
+This distinction must be browser-tested. A test that only clicks a return link and verifies the URL is insufficient.
 
 ## Crooked Checkpoint target proof
 
@@ -204,14 +240,15 @@ When a capability becomes generally useful and stable, it may be promoted into r
 ## Implementation order
 
 1. retain current participant-faithful creature-only configured RPG path as the existing baseline;
-2. add explicit encounter-scene contract and fail-closed role validation;
-3. add withdrawal/escape terminal semantics and exit zones;
-4. add asymmetric scene materialization;
-5. add trainer tactical profiles required by the reference campaign;
-6. add protected/noncombatant/support roles as actual package needs prove them;
-7. prove the Crooked Checkpoint scene-faithful encounter and aftermath;
-8. broaden only from demonstrated campaign requirements.
+2. add explicit encounter-scene contract with source-scene revision/digest and fail-closed role validation;
+3. add campaign-specific terminal UX and authoritative post-battle unlock acceptance;
+4. add withdrawal/escape terminal semantics and exit zones;
+5. add asymmetric scene materialization;
+6. add trainer tactical profiles required by the reference campaign;
+7. add protected/noncombatant/support roles as actual package needs prove them;
+8. prove the Crooked Checkpoint scene-faithful encounter and aftermath;
+9. broaden only from demonstrated campaign requirements.
 
 ## Governing rule
 
-> Keep the standalone duel small, but make Monster Master RPG combat a faithful tactical projection of the campaign scene, with exact entities, explicit objectives, and meaningful ways to flee, surrender, protect, or survive besides killing everything on the other side.
+> Keep the standalone duel small, but make Monster Master RPG combat a faithful tactical projection of the campaign scene, with exact entities, explicit source-scene provenance, meaningful non-elimination outcomes, and a campaign return that does not unlock until authoritative aftermath is complete.

@@ -21,7 +21,7 @@ These are rules-based deterministic bots used for local play, testing, demonstra
 
 ### Dungeon Master
 
-The separate `rpg-gm-runtime` project owns the Dungeon Master, campaign narration, encounter intent, campaign state, and post-encounter continuation. GameFrame owns tactical legality, authoritative battle state, and structured outcomes.
+The separate `rpg-gm-runtime` project owns the Dungeon Master, committed CampaignPackage truth, durable campaign journal, entity/scene/player-knowledge authority, encounter intent, campaign consequences, and post-encounter continuation. GameFrame owns authenticated player presentation, tactical legality, authoritative battle state, and structured outcomes.
 
 ### Theo and Scribbles Runtime
 
@@ -44,7 +44,7 @@ The repository contains:
 - HTTP polling fallback and WebSocket projection reconnect behavior;
 - signed Discord website and Activity session boundaries;
 - signed authenticated human-match invitations;
-- responsive browser and Canvas game surfaces;
+- responsive browser and Canvas/Pixi game surfaces;
 - Playwright interaction coverage, Workers-runtime coverage, and curated visual-review infrastructure.
 
 ## Game proofs
@@ -82,28 +82,59 @@ The repository contains:
 - Replay, configured encounter restoration, in-memory HTTP service, Durable Object persistence, and player-specific observations
 - Dedicated `/monster-master.html` Pixi/Canvas surface with deployment, actions, camera controls, resume, invitations, and outcome states
 
-### Monster Master RPG encounter loop
+### Monster Master RPG foundation
 
-The current feature branch proves this Node-local lifecycle:
+The current production-shaped RPG path is split across GameFrame and the private RPG GM Runtime service.
 
-```text
-Dungeon Master encounter scene
-→ GameFrame creates one bound Arena battle
-→ player resolves the tactical encounter
-→ GameFrame commits a structured terminal outcome
-→ rpg-gm-runtime publishes the aftermath
-→ player returns to the campaign shell
-```
+GameFrame currently provides, among other things:
 
-The temporary enemy seat uses Monster Master BattleBot. It is not Theo and it is not the Dungeon Master.
+- the Monster Master RPG browser shell;
+- Discord-authenticated staging/player entry;
+- campaign onboarding/profile/objective presentation;
+- durable RPG command/projection transport with HTTP recovery and VM-backed WebSocket projection delivery;
+- durable encounter↔match binding;
+- exact participant→creature mapping for the current bounded configured Monster Master RPG profile;
+- campaign-aware Arena return presentation;
+- staging/admin/reset integration surfaces.
 
-The first adapter supports one human campaign player and fails closed for cooperative rosters until Arena Battles gains a team-aware multiplayer control model. Durable deployed wiring through Cloudflare, Durable Objects, and the SQLite-backed RPG service is a separate productionization slice.
+RPG GM Runtime owns the private package/journal/Dungeon Master side and automatic encounter continuation/aftermath.
+
+The current configured tactical profile remains intentionally narrow: supported creature profiles, equal creature counts, compact-duel layout, defeat-opposition objective, and trainers as controllers rather than tactical units. This is **not** the final Monster Master RPG encounter contract.
+
+Current architecture work is explicitly expanding toward:
+
+- durable Entity Registry and Character Factory;
+- authoritative scene membership;
+- viewer-specific People/identity knowledge;
+- Act/Speak versus Ask-GM;
+- player-safe rendering separated from hidden Dungeon Master decisions;
+- scene-derived tactical requests with exact source-scene provenance;
+- withdrawal/escape and asymmetric campaign encounters;
+- trainer/support/noncombatant roles only as deterministic GameFrame capabilities are implemented.
+
+A browser return link or terminal Arena result does not by itself prove that campaign aftermath was consumed. Campaign narrative input must remain fenced until RPG GM Runtime has reconciled the outcome and GameFrame receives a later authoritative resumable campaign projection.
 
 ## Decision-provider boundary
 
 GameFrame has a versioned structured decision-provider protocol containing game, match, player, revision, deadline, observation, and legal-action context. Provider output remains untrusted: GameFrame validates correlation, identity, revision, response shape, action IDs, duplication, and current legality before committing an action.
 
 This protocol may later be used by named external agents, including Theo, without changing GameFrame authority. It does not make the built-in deterministic bots into those agents.
+
+## RPG planning and authority
+
+Canonical public/shared RPG contracts live under `planning/` and are mirrored byte-for-byte into the private RPG GM Runtime where declared by the shared manifest.
+
+Start with:
+
+- `planning/rpg-documentation-index.md`;
+- `planning/shared/rpg-platform-product-goals.md`;
+- `planning/shared/rpg-agent-architecture-and-campaign-package.md`;
+- `planning/shared/rpg-scene-entity-and-knowledge-contract.md`;
+- `planning/shared/rpg-platform-roadmap.md`;
+- `planning/monster-master-rpg-canonical-baseline.md`;
+- `planning/monster-master-rpg-encounter-rules.md`.
+
+The fixed standalone MM-0001 duel and the evolving Monster Master RPG encounter contract are deliberately separate.
 
 ## Run locally
 
@@ -149,17 +180,21 @@ planning/                     architecture, roadmap, decisions, contracts, and v
 
 ## Deployment status
 
-Repository proofs do not by themselves establish production deployment. The following remain separate until actually exercised:
+A working VM-first staging topology now exists for the RPG development path: Cloudflare exposes player-facing GameFrame routes while the private GameFrame RPG service and RPG GM Runtime remain on loopback/private VM boundaries. Deployment/restart/reset and authenticated staging canaries remain separate evidence from repository tests.
 
-- deployed Cloudflare Worker and Durable Object behavior;
-- real Discord website OAuth and Activity launch;
-- public-network authenticated multiplayer and reconnect behavior;
-- remote decision-provider transport and authentication;
-- live Scribbles Runtime connector behavior for Theo;
-- durable production RPG service integration and restart recovery;
-- production observability, quota, backup, and incident behavior.
+Do not infer a production-quality campaign from infrastructure alone. Current product evidence still requires separate proof for:
 
-Validation claims are exact-head only. The active pull request and durable validation records identify completed GitHub Actions runs; any later commit invalidates an earlier pass.
+- durable entity/scene/player-knowledge continuity;
+- hidden-name/player-safe rendering;
+- complete Act/Speak versus Ask-GM interaction semantics;
+- scene-faithful campaign Arena materialization;
+- authoritative Arena aftermath and campaign unlock;
+- complete single-player campaign resolution/restart;
+- later multiplayer acceptance;
+- backup/restore and incident posture;
+- optional media-provider and Cloudflare-native migration behavior.
+
+Validation claims are exact-head only. A later commit requires corresponding evidence before its behavior is described as proven.
 
 ## Ownership and licensing
 

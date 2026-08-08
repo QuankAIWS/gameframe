@@ -108,7 +108,7 @@ Current durable implementation provides:
 - serialized same-match mutation;
 - terminal outcome derivation from authoritative match state;
 - private VM RPG match routes behind authenticated/HMAC Worker proxying;
-- HTTP polling for VM-owned `rpg:*` match projections;
+- HTTP polling plus VM-backed WebSocket projection delivery/recovery for staging;
 - **`rulesState.creatureIds` is validated and converted into the exact revision-zero tactical roster** for the supported species surface;
 - **terminal participant results are calculated from each participant's exact mapped creature health/defeat state**;
 - fail-closed unsupported configuration.
@@ -141,9 +141,38 @@ Current staging work includes:
 - Discord-bound staging administration/reset control;
 - package-first Monster Master staging campaign bootstrap;
 - durable opening publication;
-- authenticated player shell and onboarding work.
+- authenticated player shell and onboarding work;
+- VM-backed WebSocket projection delivery with HTTP recovery.
 
 Deployment evidence remains separate from complete campaign-behavior evidence.
+
+## P0 live blocker — authoritative Arena return and campaign unlock
+
+Human staging play still exposed a critical lifecycle gap: a terminal Arena battle can navigate back to the campaign shell while the campaign remains fenced on the same encounter because authoritative runtime aftermath/resumable state has not yet become visible to the browser.
+
+This is a P0 product blocker until an end-to-end test proves:
+
+```text
+terminal GameFrame outcome
+→ runtime observes exact encounter outcome
+→ world/scene/roster consequences reconcile once
+→ Dungeon Master aftermath commits/publishes
+→ later non-encounter campaign state appears
+→ composer/input unlocks
+→ refresh/reconnect remains unlocked without duplicate aftermath
+```
+
+The current browser return-link regression is insufficient by itself because URL navigation is not campaign authority.
+
+Required GameFrame terminal UX for campaign-bound battles:
+
+- primary action is **Return to Campaign**;
+- generic `New Duel` is suppressed;
+- generic `Return Home` is not the primary continuation path;
+- terminal copy is campaign-specific;
+- returning to the campaign route never bypasses the authoritative encounter fence.
+
+Fixing this blocker outranks cosmetic RPG UI work because it prevents ordinary campaign continuation.
 
 ## Active product correction — durable campaign world, not model transcript
 
@@ -154,12 +183,13 @@ The controlling correction is `shared/rpg-scene-entity-and-knowledge-contract.md
 The project now treats these as first-class runtime/player surfaces:
 
 - durable entities;
-- current scene membership;
+- zero-or-more active scenes with explicit physical membership;
 - viewer-specific identity/name knowledge;
+- semantic knowledge records with provenance/correction state;
 - People/Characters projection;
 - explicit Act/Speak versus Ask-GM interaction;
 - typed presentation origin;
-- scene-to-Arena participant/objective continuity.
+- scene-to-Arena participant/objective continuity with source-scene revision/digest.
 
 ## Active — GF-0013 Scene and People player surfaces
 
@@ -184,6 +214,8 @@ The same durable runtime entity should be able to appear to a player as:
 
 without changing entity identity.
 
+`knownFacts` in GameFrame is presentation material derived from runtime semantic knowledge; it is not the authority store.
+
 ### UI goal
 
 The RPG shell should provide a real **People** view alongside campaign history/objectives/companions. This is a player-character memory surface, not an admin view of runtime truth.
@@ -197,7 +229,7 @@ At minimum:
 - **Act / Speak** submits an in-fiction action;
 - **Ask Game Master** submits a player-to-GM rules/knowledge/clarification question.
 
-Ask-GM must not automatically become dialogue heard by NPCs or advance time. The result should render as GAME MASTER/system guidance rather than fictional NPC reaction.
+Ask-GM must not automatically become dialogue heard by NPCs or advance time. It is player-private by default unless an explicit future command requests broader visibility.
 
 Presentation event origin should be distinct from audience so transcript headings can identify:
 
@@ -213,15 +245,16 @@ The campaign tactical path should now evolve under `monster-master-rpg-encounter
 
 Target capabilities, implemented only as campaign needs prove them:
 
-1. encounter-scene contract with exact entity roles;
-2. withdrawal/escape terminal semantics and visible exit zones;
-3. asymmetric scene materialization;
-4. trainer tactical profiles;
-5. bounded noncombatant/protected/support/neutral roles;
-6. alternative objectives such as protect, prevent escape, secure object, reach location, or survive;
-7. structured scene reconciliation after terminal outcome.
+1. encounter-scene contract with exact source scene ID/revision/digest and entity roles;
+2. campaign-specific terminal UX + authoritative post-battle unlock acceptance;
+3. withdrawal/escape terminal semantics and visible exit zones;
+4. asymmetric scene materialization;
+5. trainer tactical profiles;
+6. bounded noncombatant/protected/support/neutral roles;
+7. alternative objectives such as protect, prevent escape, secure object, reach location, or survive;
+8. structured scene reconciliation after terminal outcome.
 
-Unsupported combat-relevant requirements continue to fail closed.
+Every individually instantiated persistent person/creature present when tactical mode starts must either be represented truthfully in supported tactical form or have an explicit pre-launch scene transition out. Unsupported combat-relevant requirements continue to fail closed.
 
 ### Crooked Checkpoint target
 
@@ -248,9 +281,25 @@ Ordinary capture cubes are handheld externally despite much larger interior livi
 
 See `decisions/0006-monster-master-capture-cube-form-factor.md`.
 
+## Shared fixture expansion
+
+Parallel GameFrame/runtime development should be coordinated through versioned machine-readable shared fixtures as each slice lands.
+
+Add fixtures for:
+
+- viewer-safe current scene;
+- People descriptor→role→name progression;
+- Act/Speak and Ask-GM;
+- presentation origin versus audience;
+- safe entity inspection;
+- encounter source scene/revision/digest;
+- tactical role/objective projection;
+- escape/withdrawal terminal outcomes once implemented;
+- authoritative Arena aftermath/composer unlock.
+
 ## Single-player full-stack acceptance gate
 
-The next complete product proof remains one authenticated human plus Monster Master BattleBot, but the acceptance criteria are now stronger than transport/tactical roundtrip alone.
+The next complete product proof remains one authenticated human plus Monster Master BattleBot, but the acceptance criteria are stronger than transport/tactical roundtrip alone.
 
 Required journey:
 
@@ -265,11 +314,14 @@ committed handcrafted CampaignPackage
 → exact structured tactical outcomes
 → scene/world reconciliation
 → automatic aftermath
-→ bounded campaign resolution
+→ authoritative composer unlock
+→ bounded campaign engineering resolution
 → runtime + GameFrame restart/resume
 ```
 
 This proves the complete single-player architecture. It does not prove multiplayer knowledge/audience behavior.
+
+The bounded engineering proof is not the mature product ceiling; Monster Master is intended to grow into a durable multi-session campaign once the foundation is trustworthy.
 
 ## Two-human campaign acceptance
 
@@ -282,11 +334,9 @@ After the single-player architecture is proven:
 - shared-team cooperative Arena control uses stable principals and exact participant mapping;
 - restart/resume preserves audiences and state.
 
-## Future — Campaign Architect
+## Future — second handcrafted package then Campaign Architect
 
-Do not implement Campaign Architect merely because the contract is documented.
-
-First prove a materially different second handcrafted package through the same package/entity/scene/knowledge/Dungeon Master/GameFrame path.
+Before Campaign Architect generation becomes an implementation priority, prove a materially different second handcrafted package through the same package/entity/scene/knowledge/Dungeon Master/GameFrame path.
 
 Then implement generated-draft authoring:
 
@@ -339,4 +389,4 @@ Use:
 
 ## Governing rule
 
-> GameFrame should stop treating the RPG as narration wrapped around a separate duel. It must present the player's durable campaign world, preserve viewer knowledge, and carry that same world into authoritative mechanics without losing people, identity, or objectives at mode boundaries.
+> GameFrame should stop treating the RPG as narration wrapped around a separate duel. It must present the player's durable campaign world, preserve viewer knowledge, and carry that same world into authoritative mechanics without losing people, identity, objectives, or the campaign lifecycle at mode boundaries.

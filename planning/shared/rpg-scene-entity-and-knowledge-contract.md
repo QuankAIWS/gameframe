@@ -10,7 +10,7 @@ applies_to:
   - Monster Master RPG
   - future bespoke campaigns
 shared_document_id: rpg-scene-entity-and-knowledge-contract-v1
-shared_document_version: 1
+shared_document_version: 2
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-scene-entity-and-knowledge-contract.md
 mirrors:
@@ -28,18 +28,18 @@ related:
 
 ## Decision
 
-The RPG platform promotes **durable entities**, **authoritative scene membership**, and **player-character knowledge** into first-class runtime concepts.
+The RPG platform promotes **durable entities**, **authoritative scene membership**, and **viewer-specific character knowledge** into first-class runtime concepts.
 
-The campaign journal remains authoritative history. The committed CampaignPackage remains immutable authored truth. The new scene/entity/knowledge surfaces are deterministic projections and services over those authorities; they do not create a second campaign database or a third campaign agent.
+The campaign journal remains authoritative history. The committed CampaignPackage remains immutable authored truth. Entity/scene/knowledge surfaces are deterministic projections and services over those authorities; they do not create a second campaign database or a third campaign agent.
 
 The purpose is to prevent the Dungeon Master model from being used as implicit memory for questions the runtime can answer exactly:
 
 - who exists;
-- who is physically present;
-- what a person is called by this player;
+- who is physically present and in which scene;
+- what a person or creature is called by a particular viewer;
 - what a player character has actually learned;
-- what objects, creatures, exits, and hazards are in the current scene;
-- which participants and objectives must survive a scene-to-Arena handoff.
+- what relevant objects, exits, and hazards remain in a scene;
+- which entities and objectives must survive a scene-to-Arena handoff.
 
 ## Architecture
 
@@ -52,7 +52,7 @@ Entity Registry + Scene Registry
         ↓
 Runtime World Projection
         ↓
-Player Knowledge Projection
+Knowledge Graph / Viewer Knowledge Projection
         ↓
 Dungeon Master Context Compiler / GameFrame player views
 ```
@@ -60,7 +60,7 @@ Dungeon Master Context Compiler / GameFrame player views
 When tactical authority is needed:
 
 ```text
-current authoritative scene
+authoritative source scene + scene revision/digest
         ↓
 Encounter Scene Compiler
         ↓
@@ -122,7 +122,26 @@ The Character Factory may create ordinary incidental people. It may not silently
 
 Campaign-bearing actors are authored in the CampaignPackage by manual authoring or the Campaign Architect unless the package explicitly declares an open role.
 
-## 3. Promotion of incidental entities
+## 3. Incidental materialization transaction
+
+When a new incidental person is first introduced into active play, durable creation must not be split into loosely related model/projection side effects.
+
+The semantic transaction is conceptually:
+
+```text
+validated incidental-person request
+→ materialize stable entity
+→ admit entity to authoritative scene
+→ establish only the initial viewer awareness justified by the encounter
+→ commit one idempotent semantic result
+→ Dungeon Master may portray the committed entity
+```
+
+A crash or exact retry must not create an entity that exists without intended scene admission, duplicate the person, or reveal more identity than the committed awareness state permits.
+
+If a person is materialized for later/off-screen use rather than immediate presence, that distinction must be explicit in the request and no scene admission is implied.
+
+## 4. Promotion of incidental entities
 
 An incidental entity becomes durable/recurring when continuity matters, including when players:
 
@@ -136,45 +155,50 @@ Promotion preserves the same entity ID and presentation identity. It does not re
 
 Unique art is not required for promotion; GameFrame may retain a prepared portrait family, silhouette, or text card until a better asset deliberately supersedes it.
 
-## 4. Authoritative Scene Registry
+## 5. Authoritative Scene Registry
 
-The runtime maintains an explicit current-scene projection rather than asking the model to infer presence from recent prose.
+The runtime maintains **zero or more active scenes** rather than assuming the entire campaign always has one universal current scene. This permits later split-party or remote-play cases without changing the authority model.
 
-A scene has at least:
+A player-facing projection may still expose one current scene for the viewer's character.
+
+A durable scene has at least:
 
 ```text
 SceneStateV1
   sceneId
   locationId
-  participants[]
-  creatures[]
-  objects[]
+  membership[]
+  sceneLocalObjects[]
   hazards[]
   environmentalFeatures[]
   exits[]
   startedAt
+  revision
   state
 ```
 
-Scene participant membership records at least:
+`membership[]` is the single authoritative physical-presence collection for persistent entities. Do not duplicate the same entity's presence across separate people/creature arrays.
+
+Each membership record includes at least:
 
 - entity ID;
 - scene role;
 - presence state;
 - entry provenance;
 - current disposition where relevant;
-- audience/visibility constraints;
-- tactical eligibility when applicable.
+- tactical eligibility/role when applicable.
+
+Entity kind comes from Entity Registry. Player projections may split the same membership into `presentPeople`, `presentCreatures`, and other convenient read models.
 
 The registry owns enter, leave, transfer, remote-contact, and scene-end semantics.
 
-A character may physically act in or speak as present in a scene only when current scene state admits that character, unless an explicit remote-communication relationship is active.
+A character may physically act in or speak as present in a scene only when scene membership admits that character, unless an explicit remote-communication relationship is active.
 
 An absent known person may still be discussed, remembered, sought, messaged, or referenced. Scene membership limits physical presence, not ordinary thought or conversation about absent people.
 
-## 5. Scene object and creature continuity
+## 6. Scene object and creature continuity
 
-Objects, monsters, civilians, vehicles, hazards, barriers, containers, doors, exits, and other scene-relevant elements may be represented as stable or scene-local entities as appropriate.
+Persistent creatures/people use Entity Registry + scene membership. Scene-local geometry or low-value ephemeral material may remain scene-local when it does not need durable cross-scene identity.
 
 The scene registry must preserve materially relevant facts needed for later deterministic resolution, including examples such as:
 
@@ -187,11 +211,26 @@ The scene registry must preserve materially relevant facts needed for later dete
 
 The model may describe these facts, but description does not become authority until the corresponding semantic operation is validated and committed.
 
-## 6. Player-character knowledge
+## 7. Knowledge records and viewer projections
 
-World truth and player knowledge remain different domains.
+World truth and viewer knowledge remain different domains.
 
-The runtime derives a viewer-specific knowledge projection that answers what a particular player character is entitled to know now.
+The runtime should support a sparse semantic knowledge model keyed by observer/audience + subject + fact identity rather than storing player knowledge only as accumulated prose strings.
+
+A knowledge record may include:
+
+- observer/viewer or audience scope;
+- subject entity/location/fact ID;
+- semantic fact ID;
+- knowledge state such as observed, suspected, learned, confirmed, corrected, or disproven where the domain needs it;
+- provenance/source event;
+- first learned / last revised positions;
+- visibility scope;
+- optional player-safe display material.
+
+The platform does not need an eager all-entities-by-all-observers matrix. Create sparse knowledge edges only when campaign behavior needs them.
+
+Player Knowledge Projection is the viewer-safe read model over those records and other authorized campaign state.
 
 Knowledge may include:
 
@@ -207,7 +246,7 @@ Knowledge may include:
 
 Unknown entity existence remains omitted rather than represented by redacted IDs, empty slots, hidden counts, or `null` placeholders.
 
-## 7. Identity and name knowledge
+## 8. Identity and name knowledge
 
 A canonical runtime entity name is not automatically a player-known name.
 
@@ -225,11 +264,11 @@ The hidden Dungeon Master decision stage may refer to `npc.mara-venn`; the rende
 
 This is a structural authorization boundary, not a prompt-style preference.
 
-## 8. Known People projection
+## 9. Known People projection
 
-GameFrame should receive a narrow viewer-safe People projection rather than the runtime's complete entity registry.
+GameFrame receives a narrow viewer-safe People projection rather than the runtime's complete entity registry or raw knowledge records.
 
-A first version should support fields similar to:
+A first display projection may support fields similar to:
 
 ```text
 KnownPersonProjectionV1
@@ -244,32 +283,32 @@ KnownPersonProjectionV1
   portraitOrFallback?
 ```
 
+`knownFacts[]` here is presentation material, not the authoritative knowledge store. It is derived from semantic knowledge records so facts can be revised/corrected without conflicting prose strings becoming state.
+
 Only authorized knowledge appears. The presence of an entry itself must be authorized.
 
-This projection supports a People/Characters surface where the player can review whom their character has met and what they actually know without exposing runtime secrets.
+## 10. Dungeon Master Context Compiler
 
-## 9. Dungeon Master Context Compiler
+The production Dungeon Master should consume typed current-state context rather than use a bounded raw-journal dump as its primary memory mechanism.
 
-The production Dungeon Master should consume a typed current-state context rather than use a bounded raw-journal dump as its primary memory mechanism.
-
-The context compiler should assemble only the state relevant to the current trigger, including:
+The hidden context compiler should assemble only the state relevant to the current trigger, including:
 
 ```text
 immutable campaign invariants
-current authoritative scene
-present entity records required for hidden reasoning
+relevant authoritative scene(s)
+present/relevant entity records required for hidden reasoning
 current objectives / pressure / eligible events
 operational rosters and unresolved mechanics
-player/party knowledge relevant to the turn
+knowledge relevant to the acting player/party and relevant NPC observers
 bounded recent narrative context
 current GmTurnTrigger
 ```
 
 The journal remains the source of truth and audit trail. Typed projections are reconstructible read layers.
 
-The compiler must distinguish the hidden-decision context from the later player-safe rendering context.
+The compiler must distinguish hidden-decision context from later player-safe rendering context.
 
-## 10. Hidden decision and player-safe rendering
+## 11. Hidden decision and player-safe rendering
 
 The Dungeon Master path remains two-stage:
 
@@ -284,22 +323,24 @@ hidden authorized runtime context
 
 The renderer must never receive unrevealed canonical names, unknown entity IDs, hidden motives, hidden scene facts, event eligibility, clue meanings, or runtime-only relationships merely because the hidden decision model needed them.
 
-## 11. Player action versus player-to-GM query
+## 12. Player action versus player-to-GM query
 
 GameFrame must distinguish an in-fiction declaration from a player asking the Dungeon Master for information or rules clarification.
 
 At minimum the platform supports two intents:
 
 - **Act / Speak** — an in-character or fictional-world action that may advance the scene and may be perceived by present entities;
-- **Ask Game Master** — a player-to-GM query answered from player-authorized knowledge and mechanics without automatically becoming fictional speech or advancing time.
+- **Ask Game Master** — a player-to-GM query answered from viewer-authorized character knowledge and mechanics without automatically becoming fictional speech or advancing time.
 
-The transport contract should represent these as distinct command/trigger semantics rather than rely on the model to guess from prose.
+The transport contract represents these as distinct command/trigger semantics rather than relying on the model to guess from prose.
 
 A player-to-GM query must not make NPCs hear the question unless the player separately takes an in-fiction action.
 
-## 12. Presentation origin
+**Default audience posture:** Ask-GM request/response is player-private unless a future command explicitly requests a broader table/party-visible audience. Fictional audibility and presentation audience are separate fields.
 
-GameFrame presentation events should identify their semantic origin separately from audience.
+## 13. Presentation origin
+
+GameFrame presentation events identify semantic origin separately from audience.
 
 Useful origins include:
 
@@ -311,30 +352,33 @@ Useful origins include:
 
 The UI may then render clear labels such as `PLAYER — Orange`, `GAME MASTER`, or a viewer-safe NPC label instead of generic bookkeeping headings such as `Action Submitted`.
 
-## 13. Scene-to-Arena projection
+## 14. Scene-to-Arena projection
 
 A tactical encounter is a stricter resolution mode for the current fictional scene, not an unrelated duel that happens to share creature IDs.
 
-The runtime **Encounter Scene Compiler** projects the subset of current scene truth that GameFrame must execute authoritatively.
+The runtime **Encounter Scene Compiler** projects the subset of source-scene truth that GameFrame must execute authoritatively.
 
-A first encounter-scene contract should represent:
+A first encounter-scene contract should carry:
 
+- source scene ID;
+- source scene revision or equivalent authoritative position;
+- deterministic source-scene digest over combat-relevant semantic state;
 - exact campaign entity/participant IDs;
 - tactical role;
 - controller or behavior authority;
 - team/faction;
-- deployed or scene-present creatures;
-- trainer participation when supported;
-- civilians or noncombatants when relevant;
-- neutral/escaping entities;
-- encounter objects and barriers required by the objective;
+- trainer/creature rules profiles as supported;
+- scene-present persistent entities that materially affect legal actions/objectives;
+- scene-local objects/barriers required by the objective;
 - battlefield/exit zones derived from the current scene;
 - objectives and alternate terminal conditions;
 - package/rules capability profile.
 
 GameFrame validates the projection against an explicit tactical capability set and fails closed if it cannot execute a combat-relevant requirement truthfully.
 
-## 14. Tactical participation roles
+If source scene state changes materially between compilation and encounter custody, the request must be revalidated/recompiled rather than silently launching stale tactical truth.
+
+## 15. Tactical participation and representation
 
 Campaign encounters require more than `human side` and `opposition side`.
 
@@ -349,9 +393,16 @@ The tactical contract should support bounded roles such as:
 - scripted or deterministic support entity;
 - environmental/objective entity.
 
-The first implementation may support only a subset, but unsupported roles must fail closed rather than disappear.
+Every individually instantiated persistent person/creature physically present when tactical mode begins must either:
 
-## 15. Withdrawal, escape, surrender, recall, and death semantics
+1. be represented in the tactical encounter in a truthful supported form; or
+2. have an explicit pre-launch scene transition proving that they left/withdrew/were moved out of the encounter.
+
+Not every present entity must be a fully controllable combat unit. A present civilian may be represented as a protected/noncombatant entity, a support participant, or another explicit supported abstraction. Large anonymous crowds may be represented by an aggregate crowd entity when individual identity is not materially relevant.
+
+Unsupported required roles must fail closed rather than disappear.
+
+## 16. Withdrawal, escape, surrender, recall, and death semantics
 
 Campaign tactical outcomes require explicit terminal participant states rather than treating defeat as the only meaningful exit.
 
@@ -368,15 +419,28 @@ If the selected campaign/ruleset supports lethal outcomes, `dead` is a separate 
 
 Escape should be represented by legal movement/objective mechanics such as visible exit zones or other explicit withdrawal conditions. A creature trying to flee should not be forced to remain in combat because the only terminal rule is elimination.
 
-## 16. Monster Master RPG relationship to MM-0001
+## 17. Campaign-bound tactical terminal UX
+
+A campaign battle is not a standalone replay loop.
+
+When an Arena match is campaign-bound and reaches terminal state, GameFrame should present campaign-specific terminal UX:
+
+- primary action: **Return to Campaign**;
+- no ordinary `New Duel` action that creates an unrelated follow-up match;
+- no primary `Return Home` path that abandons the campaign lifecycle;
+- terminal copy should describe the committed encounter result and campaign return state, not a generic duel completion.
+
+Navigation back to the campaign page is not itself proof that the runtime consumed the outcome. Narrative input remains fenced until authoritative aftermath/reconciliation produces a later resumable campaign state.
+
+## 18. Monster Master RPG relationship to MM-0001
 
 The fixed standalone Monster Master duel remains a useful small game and regression target.
 
 Do not silently broaden MM-0001 until it becomes the entire RPG encounter engine.
 
-Monster Master RPG should define a separate campaign-configured encounter contract that reuses GameFrame tactical primitives and `MatchSession` authority while adding only the scene-fidelity capabilities proven necessary by campaigns.
+Monster Master RPG defines a separate campaign-configured encounter contract that reuses GameFrame tactical primitives and `MatchSession` authority while adding only the scene-fidelity capabilities proven necessary by campaigns.
 
-## 17. Handcrafted and generated campaigns
+## 19. Handcrafted and generated campaigns
 
 Both handcrafted and Campaign-Architect-generated packages use the same entity, scene, knowledge, context, and encounter contracts.
 
@@ -395,14 +459,14 @@ brief / source material
 
 An active committed package is not silently rewritten. Later campaign-foundation changes require an explicit version/amendment/migration lifecycle.
 
-## 18. Repository authority
+## 20. Repository authority
 
 ### RPG GM Runtime owns
 
 - entity registry and stable campaign entity identities;
 - Character Factory validation/materialization;
 - authoritative scene projection over campaign truth;
-- player/party knowledge derivation;
+- semantic knowledge records and player/party knowledge derivation;
 - Dungeon Master context compilation;
 - hidden decision validation and revelations;
 - scene-to-encounter semantic projection;
@@ -416,27 +480,32 @@ An active committed package is not silently rewritten. Later campaign-foundation
 - deterministic mechanics explicitly implemented in GameFrame;
 - tactical encounter validation/materialization;
 - legal tactical actions, replay, persistence, and terminal outcome authority;
+- campaign-bound tactical terminal UX;
 - semantic media resolution and rendering.
 
 Neither repository reads the other's private database.
 
-## 19. Evidence requirements
+## 21. Evidence requirements
 
 The implementation must separately prove:
 
 1. incidental entity creation produces one stable ID and exact retry does not duplicate it;
-2. promoted incidental NPCs return with the same identity and continuity;
-3. a character cannot physically act from an absent scene without an explicit remote channel;
-4. hidden canonical names stay out of renderer input until authorized;
-5. two different players may receive different valid identity/knowledge projections for the same runtime entity;
-6. People projections omit unknown entity existence;
-7. player-to-GM queries do not become in-fiction speech;
-8. typed current-scene context survives runtime restart;
-9. scene-to-Arena projection preserves exact participant identities and required scene roles;
-10. unsupported tactical roles/configuration fail before encounter custody;
-11. withdrawal/escape outcomes return as structured campaign consequences when supported;
-12. tactical aftermath reconciles back into the same scene/world entities without duplication or retcon.
+2. immediate incidental materialization + scene admission + initial viewer awareness is atomic/idempotent;
+3. promoted incidental NPCs return with the same identity and continuity;
+4. a character cannot physically act from an absent scene without an explicit remote channel;
+5. hidden canonical names stay out of renderer input until authorized;
+6. two different players may receive different valid identity/knowledge projections for the same runtime entity;
+7. corrected/superseded knowledge does not remain authoritative merely as contradictory prose strings;
+8. People projections omit unknown entity existence;
+9. player-to-GM queries do not become in-fiction speech and default to player-private presentation;
+10. typed active-scene state survives runtime restart;
+11. scene-to-Arena projection preserves exact source scene identity/revision, participant identities, and required roles;
+12. stale source-scene encounter requests fail/recompile before custody;
+13. unsupported tactical roles/configuration fail before encounter custody;
+14. withdrawal/escape outcomes return as structured campaign consequences when supported;
+15. tactical aftermath reconciles back into the same scene/world entities without duplication or retcon;
+16. campaign-bound terminal UI does not offer unrelated standalone-duel continuation and narrative input unlocks only after authoritative aftermath.
 
 ## Governing rule
 
-> The model may interpret and portray the world, but durable entities, physical scene presence, player knowledge, and tactical participant identity are explicit runtime state. The RPG should never depend on the Dungeon Master model to remember who exists, who is here, what the player knows, or which people disappear when the minis come out.
+> The model may interpret and portray the world, but durable entities, physical scene presence, semantic knowledge, and tactical participant identity are explicit runtime state. The RPG should never depend on the Dungeon Master model to remember who exists, who is here, what a viewer knows, or which people disappear when the minis come out.

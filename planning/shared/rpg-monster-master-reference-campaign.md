@@ -3,13 +3,13 @@ title: Monster Master RPG Reference Campaign
 status: accepted
 document_type: decision
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-05
+last_updated: 2026-08-08
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
   - Monster Master product family
 shared_document_id: rpg-monster-master-reference-campaign-v1
-shared_document_version: 5
+shared_document_version: 6
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-monster-master-reference-campaign.md
 mirrors:
@@ -17,6 +17,7 @@ mirrors:
 sync_policy: exact-byte-copy
 related:
   - rpg-agent-architecture-and-campaign-package.md
+  - rpg-scene-entity-and-knowledge-contract.md
   - rpg-platform-roadmap.md
   - rpg-campaign-architect-contract.md
   - rpg-event-and-plot-pool-contract.md
@@ -34,7 +35,7 @@ The product family is:
 
 - **Monster Master: Arena Battles** — the standalone tactical battler currently represented by existing Monster Master tactical identifiers;
 - **Monster Master RPG** — the first complete campaign product using the same trainer, creature, tactical, and presentation foundation;
-- **RPG platform** — the reusable Campaign Architect, CampaignPackage, Dungeon Master, GameFrame, and integration architecture proven by Monster Master.
+- **RPG platform** — the reusable Campaign Architect, CampaignPackage, Dungeon Master, durable world substrate, GameFrame, and integration architecture proven by Monster Master.
 
 Monster Master does not use a special Dungeon Master. It is authored into the same CampaignPackage contract that future generated campaigns must satisfy.
 
@@ -50,6 +51,7 @@ The team manually creates everything the Campaign Architect should eventually pr
 - campaign spine and opening;
 - plot structure, clues, event pools, escalation, and resolution;
 - checks, tactical opportunities, objectives, and consequences;
+- initial entity/scene/knowledge state required for deterministic world initialization;
 - semantic asset and media requirements;
 - provenance, validation, versions, and deterministic fallbacks.
 
@@ -57,15 +59,16 @@ This gives the project:
 
 1. a playable first campaign;
 2. a complete reference CampaignPackage;
-3. a quality bar for generated campaigns;
+3. a quality bar for later generated campaigns;
 4. a stable Dungeon Master behavior fixture;
-5. a GameFrame and Arena Battles integration fixture.
+5. an Entity/Scene/Knowledge continuity fixture;
+6. a GameFrame and Arena Battles integration fixture.
 
 ## Current source material versus executable package
 
 The current lore, plot-family catalog, event pools, NPC pool, asset register, and deterministic fixture are valuable source material.
 
-They are not automatically a complete CampaignPackage. The first campaign implementation must select and finish one coherent package with actual actors, locations, clue graph, event eligibility, pressure state, resolution, and presentation requirements.
+They are not automatically a complete CampaignPackage. The first campaign implementation must select and finish one coherent package with actual actors, locations, clue graph, event eligibility, pressure state, resolution, player-safe identity state, initial scene truth, and presentation requirements.
 
 Additional catalog families become later packages or package templates after the first complete campaign loop works.
 
@@ -77,8 +80,8 @@ GameFrame owns the prepared Monster Master theme and asset foundation, including
 - reusable NPC portrait families and incidental fallbacks;
 - creature sprites, silhouettes, field derivatives, and effects;
 - field-station, settled-route, work-zone, public-event, and tactical environments;
-- route, cube, kit, barrier, cargo, permit, evidence, and inspection props;
-- private observation, investigation, warning, objective, and aftermath presentation;
+- route, handheld cube, cube-case/rack, kit, barrier, cargo, permit, evidence, and inspection props;
+- private observation, investigation, warning, objective, People/current-scene, and aftermath presentation;
 - deterministic placeholders and fallback mappings;
 - stable asset IDs, manifests, provenance, rights notes, and derivative recipes.
 
@@ -103,32 +106,39 @@ The first gold-standard Monster Master package must include:
 - multiple social, practical, care, investigative, deceptive, avoidant, and tactical approaches where credible;
 - one deterministic noncombat check opportunity;
 - one persistent choice or consequence;
+- explicit initial scene participants/objects/exits and player-known identity state sufficient for runtime bootstrap;
 - one Arena Battles encounter only when state reaches a tactical threshold;
-- structured survivors, injuries, creature condition, evidence, custody, route, relationship, and resource consequences;
+- structured survivors, injuries, escape/withdrawal/custody, creature condition, evidence, route, relationship, and resource consequences as supported;
 - one complete immediate resolution;
 - one optional continuation seed;
 - text-first and deterministic asset fallbacks;
 - restart and resume support.
 
+The first engineering proof may use a bounded starter chapter. Monster Master remains intended to grow into a durable multi-session campaign rather than a one-shot-only product.
+
 ## Dungeon Master boundary
 
 The Dungeon Master may generate or adapt:
 
-- narration, names, dialogue, descriptions, humor, and local history;
-- NPC mannerisms and package-compatible relationships;
+- narration, dialogue, descriptions, humor, and local history;
+- NPC mannerisms and package-compatible reactions;
 - clue wording and sensory framing;
 - secondary complications and optional leads;
 - reactions to expected and unexpected player plans;
-- incidental NPCs and connective detail.
+- requests for ordinary incidental people or local entities when live play needs them;
+- connective detail that does not become durable campaign truth until validated and committed.
 
-It may not:
+When an unprepared ordinary person is needed, the Dungeon Master requests a bounded role from **Character Factory**. Character Factory materializes the stable entity; Scene Registry admits that entity to the appropriate scene; player knowledge is updated only as authorized. The Dungeon Master then portrays that committed entity.
+
+The Dungeon Master may not:
 
 - change package truth;
 - switch plot after commitment;
+- directly mint unconstrained durable NPC IDs through prose or generic state writes;
 - move or invent decisive evidence to force an outcome;
 - replace a responsible actor because players suspect correctly;
-- contradict discovered clues, prior consequences, or tactical outcomes;
-- reveal runtime-only package fields;
+- contradict discovered clues, prior consequences, scene presence, or tactical outcomes;
+- reveal runtime-only package fields or hidden canonical names;
 - turn suggestions into the complete action space.
 
 ## Deterministic fixture rule
@@ -141,14 +151,17 @@ A deterministic fixture proves contracts, visibility, retry, persistence, and in
 
 1. define and implement the CampaignPackage contract;
 2. complete one handcrafted Monster Master package;
-3. commit and run it through the Dungeon Master;
-4. prove it with scripted multi-turn players and mock providers;
-5. add the minimum checks, clue state, event progression, NPC continuity, and tactical handoff required by that package;
-6. make the package playable through GameFrame;
-7. implement the Campaign Architect against the proven contract;
-8. generate and run a materially different bespoke campaign through the same Dungeon Master;
-9. expand Monster Master packages, assets, and multi-session systems;
-10. add richer intake and media generation.
+3. establish durable entity, scene, player-knowledge, and safe-rendering substrate;
+4. commit and run Monster Master through the Dungeon Master;
+5. prove it with scripted multi-turn players and mock/configured providers;
+6. add the minimum checks, clue state, event progression, Character Factory continuity, and scene-faithful tactical handoff required by that package;
+7. make the package playable through GameFrame and prove authoritative Arena return/recovery;
+8. author and run a materially different **second handcrafted package** through the same runtime architecture;
+9. repair common abstractions if that second package exposes campaign-specific control-plane assumptions;
+10. implement Campaign Architect against the now-proven package/runtime contract;
+11. generate and run a materially different bespoke campaign through the same Dungeon Master;
+12. expand Monster Master packages, assets, and multi-session systems;
+13. add richer intake and media generation.
 
 ## Testing role
 
@@ -157,17 +170,20 @@ Monster Master is the principal end-to-end campaign fixture.
 Testing must separately prove:
 
 - package validation and commitment;
+- durable entity identity and scene presence;
+- viewer-specific names/People knowledge;
 - Dungeon Master continuity and freeform behavior;
-- hidden-truth stability and secrecy;
-- incidental NPC identity and recurrence;
+- hidden-truth and hidden-name stability/secrecy;
+- incidental NPC request/materialization and later reappearance;
 - missed-clue recovery;
+- Act/Speak versus Ask-GM;
 - checks and consequences;
-- actual Arena Battles launch and return;
+- actual Arena Battles launch, structured terminal outcome, and authoritative campaign unlock/return;
 - reconnect, restart, exact retry, and resume;
-- a second materially different package;
+- a second materially different handcrafted package;
 - eventual Campaign Architect output through the same harness.
 
-A transport round trip, catalog-shape test, or canned opening does not satisfy this campaign proof.
+A transport round trip, catalog-shape test, canned opening, or browser return link does not satisfy this campaign proof by itself.
 
 ## Ownership
 
@@ -175,13 +191,14 @@ A transport round trip, catalog-shape test, or canned opening does not satisfy t
 
 - handcrafted package encoding and future Campaign Architect orchestration;
 - package validation, commitment, persistence, and hidden truth;
-- Dungeon Master context and model orchestration;
+- Entity Registry, Character Factory, Scene Registry, player knowledge, and Dungeon Master context/orchestration;
 - freeform interpretation, NPC continuity, clues, events, consequences, and tactical requests.
 
 ### GameFrame owns
 
 - campaign intake and player-safe preview interfaces;
 - authenticated player experience and audience projections;
+- People/current-scene/Act-Speak/Ask-GM presentation;
 - semantic asset resolution and media materialization;
 - prepared Monster Master presentation;
 - structured mechanics deliberately promoted into GameFrame;
@@ -194,12 +211,13 @@ The reference campaign does not require:
 - one canonical mystery every group replays;
 - a separate Monster Master Dungeon Master;
 - unrestricted campaign invention during live play;
+- Dungeon Master-owned durable incidental identities;
 - generated media as a logic dependency;
 - production art for every catalog family before the first package works;
-- an open world before the bounded campaign is complete;
+- an open world before the bounded campaign proof is complete;
 - immediate migration of compatibility identifiers;
 - copying protected settings, creatures, characters, terminology, or plots.
 
 ## Governing rule
 
-> Handcraft one complete Monster Master CampaignPackage, use it to prove the Dungeon Master and GameFrame loop, and make every future generated campaign meet the same standard.
+> Handcraft one complete Monster Master CampaignPackage, make it a durable world with explicit entities/scenes/knowledge, prove authoritative GameFrame tactical return, prove the same runtime with a second handcrafted package, and only then automate campaign construction with the Campaign Architect.

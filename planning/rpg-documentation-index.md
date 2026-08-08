@@ -35,9 +35,9 @@ related:
 
 1. [`shared/rpg-platform-product-goals.md`](shared/rpg-platform-product-goals.md) — durable product objective and non-negotiable platform goals.
 2. [`shared/rpg-agent-architecture-and-campaign-package.md`](shared/rpg-agent-architecture-and-campaign-package.md) — controlling two-agent architecture, CampaignPackage boundary, and runtime-substrate roles.
-3. [`shared/rpg-scene-entity-and-knowledge-contract.md`](shared/rpg-scene-entity-and-knowledge-contract.md) — durable entities, Character Factory, Scene Registry, player knowledge, Context Compiler, Ask-GM semantics, and scene-to-Arena continuity.
+3. [`shared/rpg-scene-entity-and-knowledge-contract.md`](shared/rpg-scene-entity-and-knowledge-contract.md) — durable entities, Character Factory, Scene Registry, semantic/viewer knowledge, Context Compiler, Ask-GM semantics, and scene-to-Arena continuity.
 4. [`shared/rpg-platform-roadmap.md`](shared/rpg-platform-roadmap.md) — controlling cross-repository milestone order and exit gates.
-5. [`ROADMAP.md`](ROADMAP.md) — current GameFrame-local implementation direction.
+5. [`ROADMAP.md`](ROADMAP.md) — current GameFrame-local implementation direction and live blockers.
 6. [`monster-master-rpg-canonical-baseline.md`](monster-master-rpg-canonical-baseline.md) — Monster Master-specific campaign/lore authority.
 7. [`monster-master-rules.md`](monster-master-rules.md) — fixed standalone MM-0001 Arena rules.
 8. [`monster-master-rpg-encounter-rules.md`](monster-master-rpg-encounter-rules.md) — evolving campaign-specific scene-faithful tactical rules.
@@ -51,9 +51,9 @@ Do not reconstruct architecture from chat history, a sample fixture, a raw premi
 | --- | --- |
 | `shared/rpg-platform-product-goals.md` | What durable product behavior must the RPG platform ultimately provide? |
 | `shared/rpg-agent-architecture-and-campaign-package.md` | What are the two agents and durable package boundary? |
-| `shared/rpg-scene-entity-and-knowledge-contract.md` | Who exists, who is present, what does the player know, and how does that survive tactical mode? |
+| `shared/rpg-scene-entity-and-knowledge-contract.md` | Who exists, who is present, what does each viewer know, and how does that survive tactical mode? |
 | `shared/rpg-platform-roadmap.md` | Where is the cross-repository platform going? |
-| `ROADMAP.md` | What GameFrame platform work is complete, active, or deferred? |
+| `ROADMAP.md` | What GameFrame platform work is complete, active, blocked, or deferred? |
 | `rpg-gameframe-interface-contract.md` | What does GameFrame expose to players/runtime? |
 | `monster-master-rpg-canonical-baseline.md` | What Monster Master campaign/lore decisions are authoritative? |
 | `monster-master-rules.md` | What does fixed MM-0001 actually implement? |
@@ -64,12 +64,13 @@ Do not create a second local roadmap or competing architecture memo when one of 
 
 ## Official terms
 
-- **Campaign Architect** creates complete CampaignPackages before ordinary play.
+- **Campaign Architect** creates complete CampaignPackage drafts before ordinary play and remains deferred until two handcrafted packages prove the common runtime abstraction.
 - **Dungeon Master** conducts live play from a committed package and durable campaign state.
 - **Character Factory** is deterministic/schema-first runtime substrate for bounded incidental-character materialization, not a third campaign agent.
-- **Scene Registry** owns current physical presence as runtime state.
-- **Player Knowledge Projection** owns viewer-specific known people/facts.
-- **Encounter Scene Compiler** carries current-scene entity/objective identity into tactical authority.
+- **Entity Registry** owns stable campaign entity identity.
+- **Scene Registry** owns zero-or-more active scenes and explicit physical membership.
+- **Semantic Knowledge / Player Knowledge Projection** owns sparse knowledge records and viewer-safe known people/facts.
+- **Encounter Scene Compiler** carries exact source-scene entity/objective identity and scene revision/digest into tactical authority.
 - Campaign compiler, plot agent, and intro agent are retired as separate services/interfaces.
 
 ## Core ownership
@@ -80,7 +81,7 @@ Owns private package truth, campaign journal, entity/scene/knowledge state, Char
 
 ### GameFrame
 
-Owns authenticated player identity, complete player interface, viewer-safe People/scene projections, Act/Speak and Ask-GM UI, deterministic mechanics explicitly implemented in GameFrame, tactical authority, and media materialization.
+Owns authenticated player identity, complete player interface, viewer-safe People/scene projections, Act/Speak and Ask-GM UI, deterministic mechanics explicitly implemented in GameFrame, tactical authority, campaign-bound terminal UX, and media materialization.
 
 ### Scribbles Runtime
 
@@ -90,29 +91,53 @@ Owns Theo and any future connector that lets Theo occupy an ordinary GameFrame s
 
 1. [`monster-master-rpg-current-creative-direction.md`](monster-master-rpg-current-creative-direction.md) — product tone, agency, package direction, and creative priorities.
 2. [`monster-master-rpg-lore-and-story.md`](monster-master-rpg-lore-and-story.md) — accepted detailed world decisions.
-3. [`decisions/0006-monster-master-capture-cube-form-factor.md`](decisions/0006-monster-master-capture-cube-form-factor.md) — ordinary cubes are handheld externally despite large interior living spaces.
+3. [`decisions/0006-monster-master-capture-cube-form-factor.md`](decisions/0006-monster-master-capture-cube-form-factor.md) — controlling clarification that ordinary cubes are handheld externally despite large interior living spaces.
 4. [`monster-master-rpg-npc-pool.md`](monster-master-rpg-npc-pool.md) — prepared role/portrait coverage and continuity expectations.
 5. [`monster-master-rules.md`](monster-master-rules.md) — fixed standalone duel.
-6. [`monster-master-rpg-encounter-rules.md`](monster-master-rpg-encounter-rules.md) — campaign encounter semantics: scene fidelity, trainers, escape/withdrawal, asymmetric forces, and noncombatant/support roles as implemented.
+6. [`monster-master-rpg-encounter-rules.md`](monster-master-rpg-encounter-rules.md) — campaign encounter semantics: source-scene provenance, scene fidelity, campaign terminal UX, trainers, escape/withdrawal, asymmetric forces, and noncombatant/support roles as implemented.
+
+`0006` resolves any ambiguity left by older lore prose that described cube interiors without stating exterior scale. Do not interpret the older interior/accommodation discussion as permission to depict ordinary cubes as cage-sized.
 
 ## Campaign authoring
 
 - [`shared/rpg-campaign-architect-contract.md`](shared/rpg-campaign-architect-contract.md) defines the future generated-draft → owner-refinement → validation → commitment lifecycle.
 - Handcrafted and generated packages use the same validator and runtime path.
+- A materially different second handcrafted package is the generality gate before Campaign Architect implementation.
 - An active package is not silently rewritten; foundational changes require explicit amendment/version/migration.
 - Incidental live-play NPCs use Character Factory rather than rerunning Campaign Architect.
 
 ## GameFrame player experience
 
-[`rpg-gameframe-interface-contract.md`](rpg-gameframe-interface-contract.md) now requires the architecture to distinguish:
+[`rpg-gameframe-interface-contract.md`](rpg-gameframe-interface-contract.md) requires the architecture to distinguish:
 
 - **Act / Speak** versus **Ask Game Master**;
+- Ask-GM fictional audibility versus presentation audience;
 - event audience versus presentation origin;
 - canonical runtime entity identity versus viewer-safe display identity;
+- semantic knowledge authority versus display `knownFacts`;
 - current scene projection versus tactical match state;
-- fixed MM-0001 duel versus campaign-specific Monster Master RPG encounter semantics.
+- fixed MM-0001 duel versus campaign-specific Monster Master RPG encounter semantics;
+- browser return navigation versus authoritative post-encounter campaign unlock.
 
-The target People surface must show only persons/facts known to that player character. Unknown entities are absent, not redacted placeholders.
+The target People surface shows only persons/facts known to that player character. Unknown entities are absent, not redacted placeholders.
+
+## Shared fixtures and parallel development
+
+The public shared fixture set is the preferred coordination seam for parallel GameFrame/runtime development.
+
+As implementation lands, add versioned fixtures for:
+
+- current scene;
+- Known People descriptor→role→name progression;
+- Act/Speak and Ask-GM;
+- presentation origin and audience;
+- player-safe entity inspection;
+- encounter source scene/revision/digest;
+- tactical roles/objectives;
+- escape/withdrawal outcomes;
+- authoritative campaign aftermath/unlock.
+
+Do not encode private package secrets into public fixtures.
 
 ## Asset and media authority
 
@@ -125,14 +150,14 @@ Generated media remains optional presentation. It does not own campaign truth or
 ## Roadmap authority
 
 - `shared/rpg-platform-roadmap.md` owns durable cross-repository milestone order.
-- `ROADMAP.md` owns GameFrame-local status/direction.
+- `ROADMAP.md` owns GameFrame-local status/direction/live blockers.
 - `rpg-platform-delivery-plan.md` maps GameFrame delivery onto the shared roadmap and must not reorder it.
 
 The current path is:
 
 ```text
-executable package
-→ entity / scene / player-knowledge substrate
+preserve executable staging + fix authoritative Arena return blocker
+→ entity / scene / semantic knowledge substrate
 → secure hidden decision + safe rendering
 → Act/Speak vs Ask-GM + People/scene UI
 → executable events and typed campaign operations
