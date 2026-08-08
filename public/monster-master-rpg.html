@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/monster-master-rpg.css">
   <link rel="stylesheet" href="/monster-master-rpg-choice.css">
+  <link rel="stylesheet" href="/monster-master-rpg-onboarding.css">
 </head>
 <body class="monster-master-rpg-route">
   <main class="mm-rpg-shell">
@@ -28,11 +29,123 @@
 
     <div id="mm-rpg-error" class="mm-rpg-error" role="alert" hidden></div>
 
+    <section id="mm-rpg-onboarding" class="mm-rpg-onboarding" aria-labelledby="mm-rpg-onboarding-title" hidden>
+      <header class="mm-rpg-onboarding-header">
+        <div>
+          <p class="mm-rpg-label">NEW CAMPAIGN · STAGING PROFILE</p>
+          <h2 id="mm-rpg-onboarding-title">Build your Master</h2>
+          <p>This is the first pass at the long-form campaign shell. Your staging selections are saved in this browser while deeper character systems are wired into campaign authority.</p>
+        </div>
+        <span id="mm-rpg-onboarding-progress" class="mm-rpg-onboarding-progress">1 / 3</span>
+      </header>
+
+      <section class="mm-rpg-onboarding-step" data-onboarding-step="1">
+        <div class="mm-rpg-onboarding-step-copy">
+          <p class="mm-rpg-label">STEP 1 · YOUR MASTER</p>
+          <h3>Field identity</h3>
+          <p>You are a provisional field-certification candidate assigned to a supervised route. For staging, the existing campaign mechanics use the Caller archetype and Caravan Handler background; the other cards show the shape of later character creation.</p>
+        </div>
+        <label class="mm-rpg-profile-name" for="mm-rpg-trainer-name">
+          <span>Trainer name</span>
+          <input id="mm-rpg-trainer-name" maxlength="40" autocomplete="nickname" placeholder="Choose a trainer name">
+        </label>
+        <div class="mm-rpg-choice-grid mm-rpg-archetype-grid" aria-label="Trainer archetype">
+          <button class="mm-rpg-profile-choice is-selected" type="button" data-profile-choice="caller" aria-pressed="true">
+            <span class="mm-rpg-placeholder-art" aria-hidden="true">CALLER</span>
+            <strong>Caller</strong>
+            <small>Coordinate creatures and read the field.</small>
+            <em>STAGING LOADOUT</em>
+          </button>
+          <button class="mm-rpg-profile-choice" type="button" disabled>
+            <span class="mm-rpg-placeholder-art" aria-hidden="true">MEDIC</span>
+            <strong>Field Medic</strong>
+            <small>Recovery, support, and creature care.</small>
+            <em>COMING SOON</em>
+          </button>
+          <button class="mm-rpg-profile-choice" type="button" disabled>
+            <span class="mm-rpg-placeholder-art" aria-hidden="true">FIGHTER</span>
+            <strong>Field Fighter</strong>
+            <small>Stand in the line beside your monsters.</small>
+            <em>COMING SOON</em>
+          </button>
+          <button class="mm-rpg-profile-choice" type="button" disabled>
+            <span class="mm-rpg-placeholder-art" aria-hidden="true">HANDLER</span>
+            <strong>Specialist Handler</strong>
+            <small>Control hazardous creatures and terrain.</small>
+            <em>COMING SOON</em>
+          </button>
+        </div>
+        <div class="mm-rpg-onboarding-actions">
+          <span>Background: <strong>Caravan Handler</strong> · staging package</span>
+          <button id="mm-rpg-onboarding-to-starter" type="button">Choose starter</button>
+        </div>
+      </section>
+
+      <section class="mm-rpg-onboarding-step" data-onboarding-step="2" hidden>
+        <div class="mm-rpg-onboarding-step-copy">
+          <p class="mm-rpg-label">STEP 2 · YOUR FIRST MONSTER</p>
+          <h3>Choose a starter</h3>
+          <p>The staging campaign is currently authored around Cinder, an Emberling skirmisher. The locked cards are temporary placeholders for the larger starter pool.</p>
+        </div>
+        <div class="mm-rpg-choice-grid mm-rpg-starter-grid" aria-label="Starter monster">
+          <button class="mm-rpg-profile-choice is-selected" type="button" data-profile-choice="cinder" aria-pressed="true">
+            <span class="mm-rpg-placeholder-art mm-rpg-placeholder-creature" aria-hidden="true">EMBERLING</span>
+            <strong>Cinder</strong>
+            <small>Emberling · mobile skirmisher</small>
+            <em>STAGING STARTER</em>
+          </button>
+          <button class="mm-rpg-profile-choice" type="button" disabled>
+            <span class="mm-rpg-placeholder-art mm-rpg-placeholder-creature" aria-hidden="true">???</span>
+            <strong>Starter species</strong>
+            <small>Alternate temperament and tactical role.</small>
+            <em>COMING SOON</em>
+          </button>
+          <button class="mm-rpg-profile-choice" type="button" disabled>
+            <span class="mm-rpg-placeholder-art mm-rpg-placeholder-creature" aria-hidden="true">???</span>
+            <strong>Starter species</strong>
+            <small>Alternate temperament and tactical role.</small>
+            <em>COMING SOON</em>
+          </button>
+        </div>
+        <div class="mm-rpg-onboarding-actions">
+          <button id="mm-rpg-onboarding-back-master" class="mm-rpg-secondary" type="button">Back</button>
+          <button id="mm-rpg-onboarding-to-briefing" type="button">Review assignment</button>
+        </div>
+      </section>
+
+      <section class="mm-rpg-onboarding-step" data-onboarding-step="3" hidden>
+        <div class="mm-rpg-briefing-hero">
+          <span class="mm-rpg-placeholder-art mm-rpg-briefing-art" aria-hidden="true">FIELD ASSIGNMENT ART<br>PLACEHOLDER</span>
+          <div>
+            <p class="mm-rpg-label">STEP 3 · FIRST FIELD ASSIGNMENT</p>
+            <h3>Crooked Checkpoint Route</h3>
+            <p>You are beginning a supervised field-certification run. The campaign already contains the durable world truth; this briefing exists so you know your role before the first scene asks you to act.</p>
+          </div>
+        </div>
+        <dl class="mm-rpg-briefing-grid">
+          <div><dt>Your role</dt><dd>Provisional Master · Caller · Caravan Handler</dd></div>
+          <div><dt>Starter</dt><dd>Cinder · Emberling skirmisher</dd></div>
+          <div><dt>Assignment</dt><dd>Investigate irregular activity along the Crooked Checkpoint route and complete the supervised field run.</dd></div>
+          <div><dt>Play style</dt><dd>Inspect, question, improvise, use your monster, or attempt something the suggested actions never mention.</dd></div>
+        </dl>
+        <div class="mm-rpg-coming-soon-row" aria-label="Future campaign systems">
+          <span>Inventory <small>COMING SOON</small></span>
+          <span>Master progression <small>COMING SOON</small></span>
+          <span>Monster roster <small>COMING SOON</small></span>
+          <span>Quest journal <small>COMING SOON</small></span>
+        </div>
+        <div class="mm-rpg-onboarding-actions">
+          <button id="mm-rpg-onboarding-back-starter" class="mm-rpg-secondary" type="button">Back</button>
+          <button id="mm-rpg-onboarding-begin" type="button">Begin field assignment</button>
+        </div>
+      </section>
+    </section>
+
     <section id="mm-rpg-join" class="mm-rpg-join" aria-labelledby="mm-rpg-join-title">
       <div class="mm-rpg-join-copy">
         <p class="mm-rpg-label">CAMPAIGN ACCESS</p>
         <h2 id="mm-rpg-join-title">Join or resume a campaign</h2>
-        <p>Enter the campaign code supplied by the Game Master. The reference campaign remains available for local development and integration testing.</p>
+        <p>Enter a campaign code supplied by the Game Master. Staging launches directly into the seeded Monster Master campaign.</p>
       </div>
       <form id="mm-rpg-join-form" class="mm-rpg-join-form">
         <label for="mm-rpg-campaign-id">Campaign code</label>
@@ -40,7 +153,7 @@
           <input id="mm-rpg-campaign-id" name="campaign" autocomplete="off" spellcheck="false" maxlength="160" required>
           <button id="mm-rpg-connect" type="submit">Open campaign</button>
         </div>
-        <button id="mm-rpg-reference" class="mm-rpg-text-button" type="button">Use reference campaign</button>
+        <button id="mm-rpg-reference" class="mm-rpg-text-button" type="button">Use development reference campaign</button>
       </form>
     </section>
 
@@ -74,6 +187,36 @@
         </section>
 
         <aside class="mm-rpg-sidebar">
+          <section class="mm-rpg-objective-card">
+            <p class="mm-rpg-label">CURRENT OBJECTIVE</p>
+            <strong id="mm-rpg-current-objective">Complete your supervised field assignment.</strong>
+            <p id="mm-rpg-current-situation">Review the campaign feed for the immediate situation.</p>
+          </section>
+
+          <section class="mm-rpg-player-card">
+            <p class="mm-rpg-label">YOUR MASTER</p>
+            <div class="mm-rpg-sidebar-profile">
+              <span class="mm-rpg-sidebar-avatar" aria-hidden="true">PORTRAIT<br>PLACEHOLDER</span>
+              <span>
+                <strong id="mm-rpg-sidebar-player">Player</strong>
+                <small id="mm-rpg-trainer-summary">Caller · Caravan Handler</small>
+              </span>
+            </div>
+            <span id="mm-rpg-player-id"></span>
+            <button id="mm-rpg-edit-staging-profile" class="mm-rpg-text-button" type="button" hidden>Edit staging profile</button>
+          </section>
+
+          <section class="mm-rpg-companion-card">
+            <p class="mm-rpg-label">ACTIVE COMPANION</p>
+            <div class="mm-rpg-sidebar-profile">
+              <span class="mm-rpg-sidebar-avatar mm-rpg-sidebar-creature" aria-hidden="true">MONSTER<br>PLACEHOLDER</span>
+              <span>
+                <strong id="mm-rpg-starter-name">Cinder</strong>
+                <small id="mm-rpg-starter-summary">Emberling · skirmisher</small>
+              </span>
+            </div>
+          </section>
+
           <section class="mm-rpg-status-card">
             <p class="mm-rpg-label">CAMPAIGN POSITION</p>
             <dl>
@@ -83,11 +226,14 @@
             </dl>
           </section>
 
-          <section class="mm-rpg-player-card">
-            <p class="mm-rpg-label">YOUR TRAINER</p>
-            <strong id="mm-rpg-sidebar-player">Player</strong>
-            <span id="mm-rpg-player-id"></span>
-            <p>Character, party, inventory, objectives, and encounter state will populate here as structured projections come online.</p>
+          <section class="mm-rpg-future-card">
+            <p class="mm-rpg-label">CAMPAIGN SYSTEMS</p>
+            <div class="mm-rpg-future-grid">
+              <button type="button" disabled>Inventory <small>COMING SOON</small></button>
+              <button type="button" disabled>Roster <small>COMING SOON</small></button>
+              <button type="button" disabled>Journal <small>COMING SOON</small></button>
+              <button type="button" disabled>Progression <small>COMING SOON</small></button>
+            </div>
           </section>
         </aside>
       </div>
@@ -113,5 +259,6 @@
   </main>
 
   <script type="module" src="/auth-launcher.js" data-entry="/monster-master-rpg-app.js"></script>
+  <script type="module" src="/monster-master-rpg-onboarding.js"></script>
 </body>
 </html>
