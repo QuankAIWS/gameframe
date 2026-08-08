@@ -4,7 +4,7 @@ status: developing
 document_type: design
 authority: owner-approved decisions
 owner: Scribbles GameFrame
-last_updated: 2026-08-04
+last_updated: 2026-08-08
 applies_to:
   - Monster Master RPG
   - Monster Master: Arena Battles presentation
@@ -13,6 +13,7 @@ related:
   - shared/rpg-media-theme-and-audio-pipeline.md
   - shared/rpg-rendering-and-asset-contract.md
   - monster-master-rules.md
+  - decisions/0006-monster-master-capture-cube-form-factor.md
 ---
 
 # Monster Master RPG Lore and Story Decisions
@@ -40,6 +41,8 @@ The comedy should be dry, situational, and frequently sardonic. The setting may 
 
 Trainers capture, carry, and call monsters using capture cubes. A cube contains a private interior living space for its assigned monster rather than functioning as a cramped physical container.
 
+**Ordinary capture cubes are small handheld devices externally.** The private living space inside a cube can be vastly larger than the device's exterior volume. A trainer may carry ordinary cubes by hand, on a belt or harness, or inside a compact case or rack. A cart may carry many cube cases, but an ordinary capture cube is not itself a person-sized cage, kennel, crate, or shipping container. Purpose-built relocation, quarantine, prison, industrial, or other specialist containment equipment may use larger external housings when explicitly authored.
+
 Capture cubes have quality tiers. As a monster becomes stronger and more accomplished, it expects better accommodations. A neglected monster becomes increasingly irritated and may eventually refuse to leave its cube until its trainer provides an acceptable upgrade.
 
 Entry-level cubes provide basic shelter. Premium cubes can contain extravagant customized residences. A high-level monster may reasonably demand a mansion, luxury furnishings, automated amenities, and unnecessary fixtures such as gold toilets.
@@ -52,6 +55,7 @@ Cube expectations create a recurring progression cost, relationship pressure, st
 - Progression and economy design must include cube purchases or upgrades.
 - Refusal to deploy is a possible consequence of severe accommodation neglect, not a random combat failure.
 - Cube interiors can become character scenes, customization spaces, rewards, and visual assets.
+- Narration, package invariants, and GameFrame assets must distinguish ordinary handheld cubes from cube cases/racks, carts carrying cases, and explicitly larger specialist containment equipment.
 
 ## Decision 3 — Mixed capture rules
 
@@ -501,24 +505,24 @@ These objectives provide structure without fixing one mandatory order or solutio
 
 One apparently routine problem develops into the real adventure. The escalation should grow out of evidence and choices made during the circuit rather than arriving as an unrelated attack. The guide explains legal and practical context, intervenes only when responsibility requires it, and does not solve the central problem for the party.
 
-The opening remains small enough to support a compact first session or micro-campaign: one starting settlement or academy, one nearby route or wilderness location, one guide, a few connected scenes, one meaningful noncombat check, at least one social or investigative action, one bounded decision with a visible consequence, one Arena Battles encounter where appropriate, and a return scene with assessment and recap.
+The opening remains bounded enough to support a compact first chapter and engineering vertical slice: one starting settlement or academy, one nearby route or wilderness location, one guide, a few connected scenes, one meaningful noncombat check, at least one social or investigative action, one bounded decision with a visible consequence, one Arena Battles encounter where appropriate, and a return scene with assessment and recap. This bounded opening is not the mature campaign-length ceiling; it is designed to flow into later sessions, relationships, progression, locations, and campaign arcs when the product supports them.
 
 ### Implementation consequences
 
 - The default opening template needs route inspection, field-care, supervised-capture, and delivery objectives that can be reordered or approached differently.
 - At least one routine objective must contain clues leading into the central complication.
-- The GM state machine must preserve freeform investigation, bounded choices, noncombat checks, visible consequences, encounter transition, and return-scene interpretation.
+- Runtime and Dungeon Master state must preserve freeform investigation, bounded choices, noncombat checks, visible consequences, encounter transition, and return-scene interpretation.
 - The guide must have clear intervention triggers but leave the decisive investigation and response to the players.
 - Completion should evaluate judgment, care, evidence handling, teamwork, and legal conduct rather than requiring one perfect route through the circuit.
 - The circuit should establish reusable NPCs, a local route, and a nearby settlement without presenting itself as a generalized open-world map.
 
-## Decision 29 — Replayable hybrid starter campaign
+## Decision 29 — Reusable authored starter chassis
 
-The default certification expedition is a reusable campaign chassis rather than one fixed canonical mystery. Its authored structure should remain polished and recognizable while the hidden incident, evidence, motives, and consequences can differ between campaigns.
+The default certification expedition is a reusable **campaign-authoring chassis**, not a runtime-randomized mystery that silently changes underneath a campaign. Its structural roles may be reused across multiple CampaignPackages, while every committed package binds one concrete incident, causal history, cast, evidence graph, escalation, and resolution before ordinary play begins.
 
-The authored spine includes the joint academy-and-warden sponsorship, the veteran guide, the mixed certification circuit, the required opportunities for social play, investigation, field care, supervised capture, meaningful choice, tactical conflict where appropriate, return assessment, and a conclusion that works as either a complete one-shot or the beginning of a longer campaign.
+The authored chassis includes joint academy-and-warden sponsorship, the veteran guide, the mixed certification circuit, opportunities for social play, investigation, field care, supervised capture, meaningful choice, tactical conflict where appropriate, return assessment, and continuation into later campaign arcs. The current handcrafted reference package concretely uses the Crooked Checkpoint/false-warden incident. Other incident families remain source material for separate future packages or templates rather than alternate hidden plots inside the same active package.
 
-At campaign creation, the RPG GM Runtime commits a hidden incident package before meaningful investigation begins. The package should define at minimum:
+During manual authoring—or later through Campaign Architect—the package construction process must commit at minimum:
 
 - the initial anomaly;
 - the underlying cause;
@@ -532,20 +536,20 @@ At campaign creation, the RPG GM Runtime commits a hidden incident package befor
 - the viable resolution branches and consequences;
 - the optional continuation hook.
 
-The model may realize that package through names, dialogue, descriptions, local history, relationships, motives, clue presentation, secondary NPC behavior, and compatible complications. It must not rewrite committed campaign truth merely because the players investigate an unexpected lead or reject the anticipated solution.
+The Dungeon Master may realize that committed package through dialogue, descriptions, local history, relationships, motives, clue presentation, secondary NPC behavior, and compatible complications. It must not rewrite committed campaign truth merely because the players investigate an unexpected lead or reject the anticipated solution.
 
-Secondary details may remain unresolved until they become relevant, especially after players commit to a route or approach, but every later detail must remain compatible with established facts, previously exposed clues, and the committed incident package. This preserves surprise and model creativity without allowing retroactive mystery construction.
+Secondary details may remain unresolved until they become relevant, especially after players commit to a route or approach, but every later detail must remain compatible with established facts, previously exposed clues, and the committed CampaignPackage. This preserves surprise and model creativity without allowing retroactive mystery construction.
 
-The hidden package is runtime-only campaign truth. It should not appear in ordinary player projections, GameFrame screens, Discord narration, or normal session recaps. A designer who knows the available pools should still be able to play without knowing which incident, culprit, evidence arrangement, or continuation hook was selected.
+The hidden package is runtime-only campaign truth. It should not appear in ordinary player projections, GameFrame screens, Discord narration, or normal session recaps. A designer who knows the available authoring catalogs should still be able to play a committed package without being shown its selected incident details, culprit, evidence arrangement, or continuation hook.
 
-Deterministic seeds and fixed packages are used for integration tests and reproducible acceptance journeys. Live campaigns may select from approved pools and use model realization, but the selected seed and committed package must be persisted so retries, reconnects, restarts, and later sessions do not change the mystery.
+Deterministic seeds and fixed packages are useful for integration tests and reproducible acceptance journeys. Future generated packages may select from approved authoring pools **before commitment**, but the selected package identity, version, provenance, seed where applicable, and committed truth must persist so retries, reconnects, restarts, and later sessions do not change the campaign.
 
 ### Implementation consequences
 
-- The starter must separate authored campaign spine, curated incident pools, committed hidden truth, and model-generated realization.
-- Campaign creation must persist an incident seed, package version, committed facts, required clues, allowed variations, and unresolved secondary details.
-- The GM must distinguish additive realization from forbidden revision of established truth.
-- Player-facing projections must never expose hidden incident fields before discovery.
-- A fixed deterministic starter fixture and a replayable player-facing starter can share the same chassis without being the same run.
-- New campaigns should materially vary while retaining the same instructional coverage, pacing bounds, prepared asset support, and Arena Battles handoff.
-- The ending must close the immediate incident cleanly while allowing an optional continuation hook to seed a new campaign arc.
+- The starter architecture must separate reusable authoring chassis/source catalogs, the concrete committed CampaignPackage, and Dungeon Master realization.
+- Package construction must persist package identity/version, provenance/seed where applicable, committed facts, required clues, allowed variations, and unresolved secondary details.
+- The Dungeon Master must distinguish additive realization from forbidden revision of established truth.
+- Player-facing projections must never expose hidden package fields before discovery.
+- A fixed deterministic fixture and the player-facing handcrafted reference package can share structural contracts without the fixture becoming product canon.
+- Separate future packages may materially vary while retaining compatible instructional coverage, prepared asset support, and Arena Battles handoff.
+- The opening chapter should close its immediate incident cleanly while preserving continuation hooks inside the same durable multi-session campaign where authored.
