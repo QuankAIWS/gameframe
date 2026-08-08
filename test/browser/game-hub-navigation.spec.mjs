@@ -31,6 +31,12 @@ test("a first visit uses the cold terminal boot and only marks it seen after suc
   await expect(page.locator("#gameframe-boot-message")).toContainText("NEGOTIATING PLAYER HANDSHAKE");
   expect(await page.evaluate((key) => localStorage.getItem(key), bootSeenStorageKey)).toBeNull();
 
+  const brandBox = await page.locator(".gameframe-boot-ident").boundingBox();
+  const statusBox = await page.locator(".gameframe-boot-layout").boundingBox();
+  expect(brandBox).not.toBeNull();
+  expect(statusBox).not.toBeNull();
+  expect(brandBox.y + brandBox.height).toBeLessThanOrEqual(statusBox.y + 1);
+
   releaseSession();
   await navigation;
 
