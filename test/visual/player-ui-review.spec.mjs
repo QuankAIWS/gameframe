@@ -36,7 +36,7 @@ async function openPlayerHub(page, viewport) {
   await expect(page.locator(".hero")).toBeHidden();
   await expect(page.locator(".game-grid .game-card")).toHaveCount(5);
   await expect(page.locator(".game-card-play")).toHaveCount(5);
-  await expect(page.locator('.game-card[href="/monster-master-rpg.html"]')).toHaveCount(1);
+  await expect(page.locator('.game-card[href="/monster-master-rpg.html?campaign=monster-master-staging"]')).toHaveCount(1);
   await expect(page.locator('.game-card[href="/monster-master.html"]')).toHaveCount(1);
   await expect(page.locator('.game-card[href="/othello.html"]')).toHaveCount(1);
   await expect(page.locator('.game-card[href="/?game=american-checkers&menu=1"]')).toHaveCount(1);

@@ -12,6 +12,8 @@ for (const href of navStylesheetUrls) {
   document.head.append(stylesheet);
 }
 
+const sharedRecentMatchStorageKey = "scribbles-gameframe.recent-match";
+
 function navigationTheme() {
   const menuTheme = document.body.dataset.gameframeMenuGame;
   if (menuTheme) return menuTheme;
@@ -35,6 +37,11 @@ function gameLabel() {
   if (document.body.classList.contains("tic-tac-toe-noir-running")) return "TIC-TAC-TOE";
   if (document.querySelector("#board.board-checkers") && !document.querySelector("#match-panel")?.hidden) return "CLOCKWORK CHECKERS";
   return "GAMEFRAME";
+}
+
+function sharedMatchRunning() {
+  const panel = document.querySelector("#match-panel");
+  return Boolean(panel && !panel.hidden);
 }
 
 function installDestinationBar() {
@@ -63,15 +70,29 @@ function installDestinationBar() {
     document.body.prepend(bar);
   }
 
-  const home = bar.querySelector("[data-gameframe-home]");
-  home?.addEventListener("click", (event) => {
-    const navigation = new CustomEvent("gameframe:before-home", {
-      bubbles: true,
-      cancelable: true,
-      detail: { destination: "/" },
+  const homeLinks = [
+    bar.querySelector(".gameframe-destination-brand"),
+    bar.querySelector("[data-gameframe-home]"),
+  ].filter(Boolean);
+  for (const home of homeLinks) {
+    home.addEventListener("click", (event) => {
+      const navigation = new CustomEvent("gameframe:before-home", {
+        bubbles: true,
+        cancelable: true,
+        detail: { destination: "/" },
+      });
+      if (!document.dispatchEvent(navigation)) {
+        event.preventDefault();
+        return;
+      }
+      if (!sharedMatchRunning()) return;
+      if (!window.confirm("Leave this match and return to GameFrame?")) {
+        event.preventDefault();
+        return;
+      }
+      window.localStorage.removeItem(sharedRecentMatchStorageKey);
     });
-    if (!document.dispatchEvent(navigation)) event.preventDefault();
-  });
+  }
 
   document.body.classList.add("gameframe-has-destination-bar");
   return bar;

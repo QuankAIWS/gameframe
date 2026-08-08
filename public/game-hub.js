@@ -28,7 +28,7 @@ const menuGame = parameters.get("menu") === "1"
 const games = [
   {
     id: "monster-master-rpg",
-    href: "/monster-master-rpg.html",
+    href: "/monster-master-rpg.html?campaign=monster-master-staging",
     kicker: "CAMPAIGN",
     title: "Monster Master RPG",
     description: "Resume a Dungeon-Master-driven campaign, review the story feed, and send your trainer’s next action.",

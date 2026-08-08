@@ -36,6 +36,22 @@ test("the destination bar is the only product navigation header during play", as
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
   await expect(page.locator(".shell > .hero")).toBeHidden();
 
+  const activeMatchId = (await page.locator("#match-id").textContent())?.trim();
+  expect(activeMatchId).toBeTruthy();
+  await page.evaluate((matchId) => {
+    localStorage.setItem("scribbles-gameframe.recent-match", matchId);
+  }, activeMatchId);
+
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toContain("Leave this match");
+    await dialog.accept();
+  });
+  await page.locator("#gameframe-destination-bar [data-gameframe-home]").click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
+  await expect(page.locator("#match-panel")).toBeHidden();
+  expect(await page.evaluate(() => localStorage.getItem("scribbles-gameframe.recent-match"))).toBeNull();
+
   await page.goto("/monster-master.html?player=monster-navigation-test");
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
   await expect(page.locator(".monster-master-shell > .hero")).toBeHidden();
