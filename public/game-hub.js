@@ -29,17 +29,26 @@ const games = [
   {
     id: "monster-master-rpg",
     href: "/monster-master-rpg.html?campaign=monster-master-staging",
-    kicker: "CAMPAIGN",
+    kicker: "BESPOKE RPG",
     title: "Monster Master RPG",
-    description: "Resume a Dungeon-Master-driven campaign, review the story feed, and send your trainer’s next action.",
+    description: "Enter the handcrafted Monster Master campaign as the first playable world built on GameFrame RPG.",
     accent: "monster",
+  },
+  {
+    id: "gameframe-rpg",
+    href: "/gameframe-rpg.html",
+    kicker: "RPG PLATFORM · COMING SOON",
+    title: "GameFrame RPG",
+    description: "Create persistent campaigns from an idea, resume your worlds, or import a campaign package.",
+    accent: "rpg",
+    status: "coming-soon",
   },
   {
     id: "monster-master",
     href: "/monster-master.html",
-    kicker: "TACTICAL DUEL",
-    title: "Monster Master",
-    description: "Command a hand-illustrated creature squad through an initiative-driven battle.",
+    kicker: "BATTLE SIMULATOR",
+    title: "Monster Master Battle Arena",
+    description: "Build a squad and fight standalone tactical battles. This evolves toward the same combat rules used by Monster Master RPG.",
     accent: "monster",
   },
   {
@@ -69,12 +78,25 @@ const games = [
 ];
 
 function artwork(game) {
+  if (game.accent === "rpg") {
+    return `
+      <span class="game-card-visual game-card-visual-rpg" aria-hidden="true">
+        <span class="game-card-rpg-grid"></span>
+        <i class="game-card-rpg-node rpg-node-a"></i>
+        <i class="game-card-rpg-node rpg-node-b"></i>
+        <i class="game-card-rpg-node rpg-node-c"></i>
+        <i class="game-card-rpg-route rpg-route-a"></i>
+        <i class="game-card-rpg-route rpg-route-b"></i>
+        <span class="game-card-visual-mark">RPG</span>
+      </span>
+    `;
+  }
   if (game.accent === "monster") {
     return `
       <span class="game-card-visual game-card-visual-monster" aria-hidden="true">
         <span class="game-card-atmosphere"></span>
         <span class="game-card-monster-creature"></span>
-        <span class="game-card-visual-mark">${game.id === "monster-master-rpg" ? "RPG" : "MM"}</span>
+        <span class="game-card-visual-mark">${game.id === "monster-master-rpg" ? "RPG" : "ARENA"}</span>
       </span>
     `;
   }
@@ -117,8 +139,11 @@ function createLibraryCard(game) {
   const card = document.createElement("a");
   card.id = `game-card-${game.id}`;
   card.className = `game-card game-hub-${game.accent}`;
+  if (game.status === "coming-soon") card.classList.add("is-coming-soon");
   card.href = game.href;
-  card.setAttribute("aria-label", `Open the ${game.title} game menu`);
+  card.setAttribute("aria-label", game.status === "coming-soon"
+    ? `Preview the ${game.title} coming-soon menu`
+    : `Open the ${game.title} game menu`);
   card.innerHTML = `
     ${artwork(game)}
     <span class="game-card-body">
@@ -127,7 +152,7 @@ function createLibraryCard(game) {
       <small class="game-card-description">${game.description}</small>
     </span>
     <span class="game-card-footer">
-      <span class="game-card-play">Play now</span>
+      <span class="game-card-play">${game.status === "coming-soon" ? "Preview" : "Play now"}</span>
       <span class="game-card-arrow" aria-hidden="true">›</span>
     </span>
   `;
