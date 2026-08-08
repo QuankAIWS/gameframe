@@ -58,6 +58,7 @@ const state = {
   reconnectAttempt: 0,
   pollTimer: null,
   attachInFlight: null,
+  pendingRealtimeRefresh: false,
   pendingCommand: null,
 };
 
@@ -158,18 +159,22 @@ async function requestJson(path, body) {
   }
 }
 
-function campaignPath(operation) {
-  return `/api/rpg/campaigns/${encodeURIComponent(state.campaignId)}/${operation}`;
+function campaignPath(operation, campaignId = state.campaignId) {
+  return `/api/rpg/campaigns/${encodeURIComponent(campaignId)}/${operation}`;
 }
 
 async function attachCampaign({ quiet = false } = {}) {
-  if (!state.campaignId) return null;
-  if (state.attachInFlight) return state.attachInFlight;
+  const campaignId = state.campaignId;
+  if (!campaignId) return null;
+  if (state.attachInFlight?.campaignId === campaignId) return state.attachInFlight.promise;
   if (!quiet) setConnection("Refreshing", "connecting");
-  state.attachInFlight = requestJson(
-    campaignPath("attach"),
-    buildAttachRequest(state.campaignId),
+
+  let promise;
+  promise = requestJson(
+    campaignPath("attach", campaignId),
+    buildAttachRequest(campaignId),
   ).then((value) => {
+    if (state.campaignId !== campaignId) return null;
     const projection = normalizeProjection(value);
     state.projection = projection;
     state.events = mergeCampaignEvents(state.events, projection.events);
@@ -180,6 +185,7 @@ async function attachCampaign({ quiet = false } = {}) {
     showError("");
     return projection;
   }).catch((error) => {
+    if (state.campaignId !== campaignId) return null;
     if (!quiet) {
       setConnection("Disconnected", "error");
       showError(error.message || "Unable to refresh this campaign.");
@@ -188,9 +194,17 @@ async function attachCampaign({ quiet = false } = {}) {
     }
     throw error;
   }).finally(() => {
-    state.attachInFlight = null;
+    if (state.attachInFlight?.promise === promise) state.attachInFlight = null;
+    if (state.campaignId !== campaignId || !state.pendingRealtimeRefresh) return;
+    state.pendingRealtimeRefresh = false;
+    queueMicrotask(() => {
+      if (state.campaignId === campaignId) {
+        void attachCampaign({ quiet: true }).catch(() => undefined);
+      }
+    });
   });
-  return state.attachInFlight;
+  state.attachInFlight = { campaignId, promise };
+  return promise;
 }
 
 async function openCampaign(campaignIdValue) {
@@ -199,6 +213,7 @@ async function openCampaign(campaignIdValue) {
   state.campaignId = campaignId;
   state.projection = null;
   state.events = [];
+  state.pendingRealtimeRefresh = false;
   state.pendingCommand = null;
   updateComposer();
   setJoinBusy(true);
@@ -206,6 +221,7 @@ async function openCampaign(campaignIdValue) {
   setConnection("Connecting", "connecting");
   try {
     await attachCampaign();
+    if (state.campaignId !== campaignId) return;
     window.localStorage.setItem(storageKey, campaignId);
     const url = new URL(window.location.href);
     url.searchParams.set("campaign", campaignId);
@@ -214,7 +230,7 @@ async function openCampaign(campaignIdValue) {
     elements.campaign.hidden = false;
     startRealtime();
   } catch (error) {
-    state.campaignId = null;
+    if (state.campaignId === campaignId) state.campaignId = null;
     showError(error.message || "Unable to open that campaign.");
   } finally {
     setJoinBusy(false);
@@ -427,9 +443,12 @@ function connectRealtime(campaignId) {
       || message.protocolVersion !== 2
       || message.campaignId !== campaignId
     ) return;
-    if (campaignPositionAdvanced(message)) {
-      void attachCampaign({ quiet: true }).catch(() => undefined);
+    if (!campaignPositionAdvanced(message)) return;
+    if (state.attachInFlight?.campaignId === campaignId) {
+      state.pendingRealtimeRefresh = true;
+      return;
     }
+    void attachCampaign({ quiet: true }).catch(() => undefined);
   };
 
   socket.onclose = () => {
@@ -482,6 +501,7 @@ function stopRealtime() {
   if (state.reconnectTimer) window.clearTimeout(state.reconnectTimer);
   state.reconnectTimer = null;
   state.reconnectAttempt = 0;
+  state.pendingRealtimeRefresh = false;
   stopFallbackPolling();
   if (state.socket) {
     state.socket.onclose = null;
@@ -554,6 +574,7 @@ elements.switchCampaign.addEventListener("click", () => {
   state.campaignId = null;
   state.projection = null;
   state.events = [];
+  state.pendingRealtimeRefresh = false;
   state.pendingCommand = null;
   updateComposer();
   elements.campaign.hidden = true;
