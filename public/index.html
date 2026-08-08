@@ -4,58 +4,69 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1020">
-  <title>Tic-Tac-Toe · Scribbles GameFrame</title>
+  <title>Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/gameframe-boot.css">
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/game-polish.css">
   <link rel="stylesheet" href="/clockwork-eclipse.css">
 </head>
-<body>
-  <main class="shell">
+<body class="gameframe-booting">
+  <section id="gameframe-boot" class="gameframe-boot" aria-label="GameFrame startup">
+    <div class="gameframe-boot-terminal">
+      <div class="gameframe-boot-meta" aria-hidden="true">
+        <span>GF.OS // BOOTSTRAP</span>
+        <span data-gameframe-boot-host>NODE: INITIALIZING</span>
+      </div>
+      <p class="gameframe-boot-command">&gt; INIT GAMEFRAME SURFACE</p>
+      <ol class="gameframe-boot-stages" aria-label="Startup progress">
+        <li data-gameframe-boot-stage="session" data-state="active">
+          <span>&gt; VERIFY PLAYER SESSION</span>
+          <strong aria-label="in progress"></strong>
+        </li>
+        <li data-gameframe-boot-stage="navigation" data-state="wait">
+          <span>&gt; MOUNT NAVIGATION</span>
+          <strong aria-label="waiting"></strong>
+        </li>
+        <li data-gameframe-boot-stage="library" data-state="wait">
+          <span>&gt; LOAD DESTINATION REGISTRY</span>
+          <strong aria-label="waiting"></strong>
+        </li>
+        <li data-gameframe-boot-stage="runtime" data-state="wait">
+          <span>&gt; START GAME CLIENT</span>
+          <strong aria-label="waiting"></strong>
+        </li>
+      </ol>
+      <p id="gameframe-boot-message" class="gameframe-boot-message" role="status" aria-live="polite">
+        &gt; BOOTSTRAP INITIALIZED<span class="gameframe-boot-cursor" aria-hidden="true"></span>
+      </p>
+      <button id="gameframe-boot-retry" class="gameframe-boot-retry" type="button" hidden>Retry startup</button>
+    </div>
+  </section>
+
+  <main class="shell" aria-busy="true">
     <header class="hero">
       <p class="eyebrow">SCRIBBLES GAMEFRAME</p>
-      <h1 id="game-title">Tic-Tac-Toe</h1>
-      <p id="hero-copy" class="hero-copy">A small complete game proving authoritative turns, deterministic opponents, resumable browser play, and the same match contracts intended for larger GameFrame modules.</p>
+      <h1 id="game-title">GameFrame</h1>
+      <p id="hero-copy" class="hero-copy">Choose a game or campaign from the GameFrame library.</p>
     </header>
 
     <div id="error-banner" class="error-banner" role="alert" hidden></div>
 
     <section id="lobby" class="panel lobby" aria-labelledby="lobby-title">
       <div class="section-heading">
-        <p class="section-label">GAME AND MATCH SETUP</p>
-        <h2 id="lobby-title">Choose a game</h2>
-        <p id="lobby-message" class="muted" role="status">Preparing the browser client…</p>
+        <p class="section-label">GAME LIBRARY</p>
+        <h2 id="lobby-title">Choose your game</h2>
+        <p id="lobby-message" class="muted" role="status">Loading GameFrame destinations…</p>
       </div>
 
-      <div class="game-grid" role="group" aria-label="Game selection">
-        <button id="select-tic-tac-toe" class="game-card is-selected" type="button" data-game-id="tic-tac-toe" aria-pressed="true">
-          <span class="game-glyph" aria-hidden="true">XO</span>
-          <span>
-            <strong>Tic-Tac-Toe</strong>
-            <small>The compact delivery-stack proof.</small>
-          </span>
-        </button>
-        <button id="select-checkers" class="game-card" type="button" data-game-id="american-checkers" aria-pressed="false">
-          <span class="game-glyph checkers-glyph" aria-hidden="true">●</span>
-          <span>
-            <strong>American Checkers</strong>
-            <small>Mandatory captures, multi-jumps, kings, and longer match history.</small>
-          </span>
-        </button>
-        <a id="open-tactical-canary" class="game-card tactical-game-link" href="/tactical.html">
-          <span class="game-glyph tactical-glyph" aria-hidden="true">▦</span>
-          <span>
-            <strong>Tactical Movement</strong>
-            <small>Open the 24×24 Canvas camera and movement canary.</small>
-          </span>
-        </a>
-      </div>
+      <div id="game-grid" class="game-grid" role="group" aria-label="Game selection"></div>
 
-      <div class="mode-grid">
+      <div class="mode-grid" hidden>
         <button id="challenge-bot" class="mode-card" type="button">
           <span class="mode-icon" aria-hidden="true">CPU</span>
           <span>
             <strong id="bot-challenge-label">Challenge CPU Opponent</strong>
-            <small id="bot-description">Play X against the perfect deterministic GameFrameBot.</small>
+            <small id="bot-description">Play against the deterministic GameFrameBot.</small>
           </span>
         </button>
 
@@ -106,7 +117,7 @@
 
         <div class="board-wrap">
           <div id="board" class="board board-tic-tac-toe" role="grid" aria-label="Tic-tac-toe board"></div>
-          <p id="board-help" class="board-help">Choose an open cell.</p>
+          <p id="board-help" class="board-help">Choose an opponent to begin.</p>
         </div>
       </div>
 
