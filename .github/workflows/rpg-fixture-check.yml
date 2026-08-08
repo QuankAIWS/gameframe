@@ -38,7 +38,7 @@ on:
       - "src/server/durable-rpg-http-server.ts"
       - "src/server/durable-rpg-http-server.test.ts"
       - "src/server/durable-rpg-realtime-hub.ts"
-      - "src/server/durable-rpg-realtime.test.ts"
+      - "src/server/durable-rpg-realtime*.test.ts"
       - "src/server/durable-rpg-encounter-match-http.test.ts"
       - "src/server/durable-rpg-configured-terminal-http.test.ts"
       - "src/server/durable-rpg-process-config.ts"
@@ -136,6 +136,7 @@ jobs:
           src/rpg/structured-choice-flow.test.ts
           src/server/durable-rpg-http-server.test.ts
           src/server/durable-rpg-realtime.test.ts
+          src/server/durable-rpg-realtime-hmac.test.ts
           src/server/durable-rpg-encounter-match-http.test.ts
           src/server/durable-rpg-configured-terminal-http.test.ts
           src/server/durable-rpg-process-config.test.ts
