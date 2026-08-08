@@ -13,6 +13,15 @@ for (const href of navStylesheetUrls) {
 }
 
 const sharedRecentMatchStorageKey = "scribbles-gameframe.recent-match";
+const internalHomeReturnStorageKey = "scribbles-gameframe.internal-home-return:v1";
+
+function markInternalHomeReturn() {
+  try {
+    window.sessionStorage.setItem(internalHomeReturnStorageKey, String(Date.now()));
+  } catch {
+    // Internal-return presentation state is cosmetic and must never block navigation.
+  }
+}
 
 function navigationTheme() {
   const menuTheme = document.body.dataset.gameframeMenuGame;
@@ -85,12 +94,14 @@ function installDestinationBar() {
         event.preventDefault();
         return;
       }
-      if (!sharedMatchRunning()) return;
-      if (!window.confirm("Leave this match and return to GameFrame?")) {
-        event.preventDefault();
-        return;
+      if (sharedMatchRunning()) {
+        if (!window.confirm("Leave this match and return to GameFrame?")) {
+          event.preventDefault();
+          return;
+        }
+        window.localStorage.removeItem(sharedRecentMatchStorageKey);
       }
-      window.localStorage.removeItem(sharedRecentMatchStorageKey);
+      markInternalHomeReturn();
     });
   }
 
