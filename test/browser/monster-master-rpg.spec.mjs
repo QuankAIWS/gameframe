@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const campaignId = "campaign-ui-test";
+const stagingCampaignId = "monster-master-staging";
 
 function projection({ coordination = 3, presentation = 2, narrative = 1, includeResult = false } = {}) {
   const events = [
@@ -40,6 +41,28 @@ function projection({ coordination = 3, presentation = 2, narrative = 1, include
     presentationSequence: presentation,
     linkedNarrativeRevision: narrative,
     events,
+  };
+}
+
+function stagingProjection() {
+  return {
+    protocolVersion: 2,
+    campaignId: stagingCampaignId,
+    title: "Monster Master: Crooked Checkpoint",
+    status: "active",
+    gameframeCoordinationRevision: 2,
+    presentationSequence: 2,
+    linkedNarrativeRevision: 1,
+    events: [{
+      eventId: "event:staging-opening",
+      kind: "scene.presented",
+      audience: { kind: "public" },
+      payload: {
+        speakerName: "Pell",
+        narration: "Pell waits beside the Crooked Checkpoint marker while the route ahead disappears into the trees.",
+      },
+      createdAt: "2026-08-08T02:40:00.000Z",
+    }],
   };
 }
 
@@ -107,4 +130,56 @@ test("lists Monster Master RPG as the seeded staging campaign destination", asyn
   await expect(card).toBeVisible();
   await expect(card).toHaveAttribute("href", "/monster-master-rpg.html?campaign=monster-master-staging");
   await expect(card).toContainText("Monster Master RPG");
+});
+
+test("staging campaign onboards a Master before exposing the long-form campaign console", async ({ page }) => {
+  await page.route(`**/api/rpg/campaigns/${stagingCampaignId}/attach`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(stagingProjection()),
+    });
+  });
+
+  await page.goto(`/monster-master-rpg.html?player=rpg-onboarding-player&campaign=${stagingCampaignId}`);
+
+  await expect(page.locator("#mm-rpg-onboarding")).toBeVisible();
+  await expect(page.locator("#mm-rpg-campaign")).toBeHidden();
+  await expect(page.locator('[data-onboarding-step="1"]')).toBeVisible();
+  await expect(page.getByText("Field Medic", { exact: true })).toBeDisabled();
+
+  await page.locator("#mm-rpg-trainer-name").fill("Rook");
+  await page.locator("#mm-rpg-onboarding-to-starter").click();
+  await expect(page.locator('[data-onboarding-step="2"]')).toBeVisible();
+  await expect(page.getByText("Cinder", { exact: true })).toBeVisible();
+
+  await page.locator("#mm-rpg-onboarding-to-briefing").click();
+  await expect(page.locator('[data-onboarding-step="3"]')).toBeVisible();
+  await expect(page.locator('[data-onboarding-step="3"]')).toContainText("Crooked Checkpoint Route");
+  await expect(page.locator('[data-onboarding-step="3"]')).toContainText("Investigate irregular activity");
+
+  await page.locator("#mm-rpg-onboarding-begin").click();
+  await expect(page.locator("#mm-rpg-onboarding")).toBeHidden();
+  await expect(page.locator("#mm-rpg-campaign")).toBeVisible();
+  await expect(page.locator("#mm-rpg-sidebar-player")).toHaveText("Rook");
+  await expect(page.locator("#mm-rpg-trainer-summary")).toHaveText("Caller · Caravan Handler");
+  await expect(page.locator("#mm-rpg-starter-name")).toHaveText("Cinder");
+  await expect(page.locator("#mm-rpg-current-objective")).toContainText("Crooked Checkpoint route");
+  await expect(page.locator("#mm-rpg-current-situation")).toContainText("Pell waits beside the Crooked Checkpoint marker");
+  await expect(page.locator("#mm-rpg-edit-staging-profile")).toBeVisible();
+
+  const persisted = await page.evaluate(() => JSON.parse(
+    localStorage.getItem("scribbles-gameframe.monster-master-rpg.profile.v1:monster-master-staging"),
+  ));
+  expect(persisted).toMatchObject({
+    campaignId: stagingCampaignId,
+    trainerName: "Rook",
+    archetypeId: "trainer.archetype.caller",
+    starterSpeciesId: "monster.emberling-skirmisher",
+  });
+
+  await page.reload();
+  await expect(page.locator("#mm-rpg-onboarding")).toBeHidden();
+  await expect(page.locator("#mm-rpg-campaign")).toBeVisible();
+  await expect(page.locator("#mm-rpg-sidebar-player")).toHaveText("Rook");
 });
