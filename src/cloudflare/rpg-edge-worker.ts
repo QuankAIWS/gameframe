@@ -3,10 +3,18 @@ import {
   type RequestAuthenticator,
 } from "../auth/request-authenticator.ts";
 import {
+  isStagingAdminPrincipal,
+  requireStagingAdminPrincipal,
+} from "../auth/staging-admin.ts";
+import {
   SignedCookieSessionAuthenticator,
   SignedSessionCodec,
 } from "../auth/signed-session.ts";
 import { errorResponse, json } from "./http-utils.ts";
+import {
+  isPublicRpgAdminRoute,
+  proxyPublicRpgAdminRequest,
+} from "./rpg-admin-edge-proxy.ts";
 import {
   proxyPublicRpgMatchRequest,
   publicRpgMatchEdgeRoute,
@@ -29,6 +37,11 @@ export interface RpgEdgeWorkerOptions {
  * Authenticated RPG campaign and RPG-bound tactical requests are HMAC-proxied to
  * the durable VM service. Ordinary games, OAuth, invitations, assets, and their
  * Durable Object match authority remain on the existing worker router.
+ *
+ * Staging administrator authority is deliberately independent from ordinary
+ * Discord staging access. Only explicitly configured administrator Discord IDs
+ * may enter /api/rpg/admin/*; the VM still requires the normal signed HMAC edge
+ * envelope before accepting the privileged request.
  */
 export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {}) {
   const gameFrame = createGameFrameWorker();
@@ -72,6 +85,21 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           });
         }
 
+        // Surface the server-derived admin capability in the normal session
+        // payload. The browser uses this only to decide whether to render admin
+        // controls; every privileged route independently rechecks authority.
+        if (request.method === "GET" && url.pathname === "/api/session") {
+          const principal = await authenticatorFor(env).authenticate(request);
+          return json(200, {
+            authenticated: true,
+            playerId: principal.playerId,
+            source: principal.source,
+            displayName: principal.displayName ?? null,
+            avatarUrl: principal.avatarUrl ?? null,
+            admin: isStagingAdminPrincipal(env, principal),
+          });
+        }
+
         // The generic health endpoint advertises the Durable Object WebSocket
         // transport used by ordinary matches. An RPG battle page is intentionally
         // bound to VM SQLite authority, so keep that client on its existing HTTP
@@ -89,6 +117,12 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
             realtime: "http-polling",
             rpgMatchAuthority: "vm-sqlite",
           });
+        }
+
+        if (isPublicRpgAdminRoute(url.pathname)) {
+          const principal = await authenticatorFor(env).authenticate(request);
+          const admin = requireStagingAdminPrincipal(env, principal);
+          return await proxyPublicRpgAdminRequest(request, env, admin);
         }
 
         if (publicRpgEdgeRoute(url.pathname)) {

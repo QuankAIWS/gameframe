@@ -186,6 +186,10 @@ export function createConfiguredDurableRpgService(input: {
   gmServiceToken: string;
   authenticator?: RequestAuthenticator;
   bootstrapCampaigns?: DurableCampaignBootstrap[];
+  stagingAdminReset?: {
+    campaignId: string;
+    requestReset: () => void | Promise<void>;
+  };
   clock?: () => string;
   pollIntervalMs?: number;
   deliveryTimeoutMs?: number;
@@ -195,6 +199,7 @@ export function createConfiguredDurableRpgService(input: {
     filePath: input.filePath,
     ...(input.authenticator ? { authenticator: input.authenticator } : {}),
     ...(input.bootstrapCampaigns ? { bootstrapCampaigns: input.bootstrapCampaigns } : {}),
+    ...(input.stagingAdminReset ? { stagingAdminReset: input.stagingAdminReset } : {}),
     clock,
   });
   const outbox = new SqliteRuntimeCommandOutbox({ filePath: input.filePath });

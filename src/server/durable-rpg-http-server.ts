@@ -26,6 +26,8 @@ import {
 } from "../rpg/sqlite-rpg-encounter-store.ts";
 
 const MAX_REQUEST_BODY_BYTES = 131_072;
+const STAGING_ADMIN_RESET_PATH = "/api/rpg/admin/reset-staging";
+const STAGING_ADMIN_RESET_CONFIRMATION = "RESET MONSTER MASTER STAGING";
 
 type ApiError = Error & {
   code?: string;
@@ -41,6 +43,10 @@ export type DurableRpgHttpServerOptions = {
   authenticator?: RequestAuthenticator;
   clock?: () => string;
   bootstrapCampaigns?: DurableCampaignBootstrap[];
+  stagingAdminReset?: {
+    campaignId: string;
+    requestReset: () => void | Promise<void>;
+  };
 };
 
 /**
@@ -83,6 +89,50 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
             "durable-encounters",
             "terminal-outcomes",
           ],
+        });
+      }
+
+      if (url.pathname === STAGING_ADMIN_RESET_PATH) {
+        if (!options.stagingAdminReset) {
+          return sendJson(response, 404, {
+            error: "not-found",
+            message: "Staging administrator controls are not configured.",
+            retryable: false,
+          });
+        }
+        if (request.method !== "POST") {
+          response.setHeader("allow", "POST");
+          return sendJson(response, 405, {
+            error: "method-not-allowed",
+            message: "The staging reset route accepts POST only.",
+            retryable: false,
+          });
+        }
+        const bodyBytes = await readRequestBody(request);
+        const principal = await authenticate(authenticator, request, url, bodyBytes);
+        if (principal.source !== "discord") {
+          throw new AuthenticationError(
+            "forbidden",
+            "Staging administrator controls require a Discord-authenticated edge principal.",
+          );
+        }
+        const body = parseJsonBody(bodyBytes);
+        requireBodyIdentity(
+          body.campaignId,
+          options.stagingAdminReset.campaignId,
+          "campaignId",
+        );
+        if (body.confirmation !== STAGING_ADMIN_RESET_CONFIRMATION) {
+          throw new HttpBoundaryError(
+            400,
+            "reset-confirmation-required",
+            `confirmation must equal ${STAGING_ADMIN_RESET_CONFIRMATION}`,
+          );
+        }
+        await options.stagingAdminReset.requestReset();
+        return sendJson(response, 202, {
+          status: "resetting",
+          campaignId: options.stagingAdminReset.campaignId,
         });
       }
 

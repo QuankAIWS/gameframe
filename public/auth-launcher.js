@@ -63,5 +63,8 @@ if (entry === "/app.js") {
   await import("./monster-master-results.js");
 } else {
   await import(entry);
+  if (entry === "/monster-master-rpg-app.js") {
+    await import("./monster-master-rpg-admin.js");
+  }
 }
 installAuthenticatedInvitationFlow({ identity, entry });
