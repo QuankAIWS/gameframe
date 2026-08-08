@@ -106,13 +106,19 @@ function hideOnboarding() {
 
 function renderProfile() {
   if (!profile) return;
-  if (elements.sidebarPlayer) elements.sidebarPlayer.textContent = profile.trainerName;
-  if (elements.trainerSummary) {
-    elements.trainerSummary.textContent = `${profile.archetypeLabel} · ${profile.backgroundLabel}`;
+  if (elements.sidebarPlayer && elements.sidebarPlayer.textContent !== profile.trainerName) {
+    elements.sidebarPlayer.textContent = profile.trainerName;
   }
-  if (elements.starterName) elements.starterName.textContent = profile.starterDisplayName;
-  if (elements.starterSummary) {
-    elements.starterSummary.textContent = `${profile.starterSpeciesLabel} · ${profile.starterRole}`;
+  const trainerSummary = `${profile.archetypeLabel} · ${profile.backgroundLabel}`;
+  if (elements.trainerSummary && elements.trainerSummary.textContent !== trainerSummary) {
+    elements.trainerSummary.textContent = trainerSummary;
+  }
+  if (elements.starterName && elements.starterName.textContent !== profile.starterDisplayName) {
+    elements.starterName.textContent = profile.starterDisplayName;
+  }
+  const starterSummary = `${profile.starterSpeciesLabel} · ${profile.starterRole}`;
+  if (elements.starterSummary && elements.starterSummary.textContent !== starterSummary) {
+    elements.starterSummary.textContent = starterSummary;
   }
 }
 
@@ -175,6 +181,7 @@ if (stagingCampaign) {
     if (!profile && elements.name && !boundedName(elements.name.value)) {
       elements.name.value = identityDisplayName();
     }
+    renderProfile();
   }, 400);
 
   elements.toStarter?.addEventListener("click", () => {
@@ -192,4 +199,11 @@ const orientationObserver = new MutationObserver(updateOrientation);
 if (elements.events) orientationObserver.observe(elements.events, { childList: true, subtree: true });
 if (elements.action) orientationObserver.observe(elements.action, { attributes: true, attributeFilter: ["disabled"] });
 if (elements.actionStatus) orientationObserver.observe(elements.actionStatus, { childList: true, characterData: true, subtree: true });
+
+const profileObserver = new MutationObserver(() => renderProfile());
+if (stagingCampaign && elements.sidebarPlayer) {
+  profileObserver.observe(elements.sidebarPlayer, { childList: true, characterData: true, subtree: true });
+}
+
 updateOrientation();
+renderProfile();
