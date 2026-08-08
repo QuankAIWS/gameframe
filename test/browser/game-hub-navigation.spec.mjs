@@ -22,7 +22,7 @@ test("a first visit uses the cold terminal boot and only marks it seen after suc
 
   await expect(page.locator("#gameframe-boot")).toBeVisible();
   await expect(page.locator("#gameframe-boot")).toHaveAttribute("data-mode", "cold");
-  await expect(page.locator('[data-gameframe-boot-mode]')).toHaveText("COLD START");
+  await expect(page.locator(".gameframe-boot-window-mode")).toHaveText("COLD START");
   await expect(page.locator('[data-gameframe-boot-stage="session"]')).toHaveAttribute("data-state", "active");
   await expect(page.locator("#gameframe-boot-progress")).toBeVisible();
   await expect(page.locator("#gameframe-boot-progress")).toHaveAttribute("aria-valuenow", "8");
@@ -63,7 +63,7 @@ test("repeat visits use the compact warm terminal boot", async ({ page }) => {
 
   await expect(page.locator("#gameframe-boot")).toBeVisible();
   await expect(page.locator("#gameframe-boot")).toHaveAttribute("data-mode", "warm");
-  await expect(page.locator('[data-gameframe-boot-mode]')).toHaveText("WARM START");
+  await expect(page.locator(".gameframe-boot-window-mode")).toHaveText("WARM START");
   await expect(page.locator(".gameframe-boot-telemetry")).toBeHidden();
   await expect(page.locator(".gameframe-boot-rail")).toBeHidden();
   await expect(page.locator("#lobby")).toBeHidden();
