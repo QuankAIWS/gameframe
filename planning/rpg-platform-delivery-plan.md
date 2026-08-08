@@ -8,8 +8,10 @@ applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime-integration
 depends_on:
+  - shared/rpg-platform-product-goals.md
   - shared/rpg-agent-architecture-and-campaign-package.md
   - shared/rpg-scene-entity-and-knowledge-contract.md
+  - shared/rpg-embodied-exploration-and-character-performance-contract.md
   - shared/rpg-platform-roadmap.md
   - rpg-campaign-experience-directions.md
   - rpg-gm-runtime-boundary.md
@@ -29,256 +31,350 @@ related:
 
 `shared/rpg-platform-roadmap.md` controls cross-repository milestone order. This document maps GameFrame responsibilities onto that roadmap and must not reorder it.
 
-The architecture is:
+The mature architecture is:
 
 ```text
 brief / handcrafted source
 → Campaign Architect or manual authoring
-→ validated CampaignPackage
-→ runtime Entity + Scene + Knowledge substrate
-→ Dungeon Master semantic decisions
-→ GameFrame player experience and mechanics
+→ validated semantic CampaignPackage
+→ runtime World + Entity + Scene + Observer Knowledge
+→ GameFrame exploration materialization
+→ direct embodied play
+→ Dungeon Master referee / character-performance / GM intervention as needed
+→ deterministic mechanics / Arena
+→ reconciliation back into the embodied world
 ```
 
-Monster Master is the handcrafted gold standard, not a special platform or Dungeon Master path.
+Monster Master is the handcrafted gold standard, not a special platform/GM/world-engine path.
 
 ## Current GameFrame foundation
 
-GameFrame already contains substantial infrastructure:
+GameFrame already contains substantial useful infrastructure:
 
-- durable campaign membership and audience-scoped projections;
-- durable command acceptance and runtime-delivery custody;
-- runtime event linkage with separate coordination/presentation/narrative positions;
+- durable campaign membership/audience-scoped projections;
+- durable command acceptance/runtime-delivery custody;
+- separate coordination/presentation/narrative positions;
 - authenticated HTTP/Cloudflare boundaries;
-- a Monster Master RPG shell with freeform input, realtime/polling recovery, onboarding, objective/profile presentation, and admin/reset support;
-- durable encounter authority and configured Monster Master match binding;
-- exact participant→creature mapping for the narrow supported RPG tactical profile;
+- Monster Master RPG shell with freeform input/realtime recovery/onboarding/objectives/admin support;
+- durable encounter authority/configured Monster Master match binding;
+- exact participant→creature mapping for the narrow supported tactical profile;
 - shared-team cooperative tactical authorization substrate;
-- VM process/deployment/staging material.
+- PixiJS Monster Master renderer and tactical world interaction foundations;
+- VM process/deployment/staging material;
+- VM-backed WebSocket projection transport.
 
-This is useful substrate, not proof of a complete durable campaign-world experience. In particular, a campaign battle return link or terminal match alone does not prove authoritative runtime aftermath and composer unlock.
+This is substrate, not proof of the embodied campaign product.
 
-## Delivery work by shared milestone
+## Preserve live correctness while pivoting the player loop
 
-### Package support
+Do not discard current staging/package/Arena work.
 
-GameFrame must provide:
+The live P0 remains authoritative tactical return:
 
-- versioned mechanic/presentation capability declarations;
-- player-safe package preview;
-- deterministic text/card/silhouette/media fallbacks;
-- shared contract fixtures.
+```text
+terminal tactical result
+→ runtime observes exact outcome
+→ world/scene/roster consequences reconcile once
+→ aftermath links
+→ later resumable campaign state appears
+→ GameFrame updates surrounding exploration world
+→ movement/interaction unlock
+```
 
-GameFrame never stores/exposes the runtime-only campaign bible to ordinary clients.
+Fixing this remains valuable because embodied exploration must return correctly from Arena too.
 
-### Entity, Scene, and Knowledge support
+## Entity, Scene, Observer Knowledge support
 
-GameFrame must implement player-facing surfaces for viewer-safe runtime projections:
+GameFrame must consume viewer-safe runtime projections for:
 
-- current scene;
-- known people;
-- known identity labels;
-- known facts/relationships;
-- entity inspection;
+- current semantic scene/location;
+- known people/identity labels/facts/relationships;
 - current presence;
-- character/companion state.
+- visible/known objects/hazards/exits/routes;
+- player-safe entity inspection;
+- materialization reference/identity.
 
-Unknown entities are omitted. A hidden canonical runtime name must not appear merely because the runtime model knows it.
+Unknown entities are omitted. Hidden canonical names never appear merely because runtime knows them.
 
-The first People UI can remain simple and text-first. Correct viewer knowledge outranks elaborate presentation.
+## GF exploration materialization slice
 
-The runtime may track zero or more active scenes; GameFrame normally presents the scene occupied by the authenticated player's character.
+The first new product slice should create one real **Crooked Checkpoint exploration scene** in GameFrame.
 
-### Secure Dungeon Master support
+Required foundation:
 
-GameFrame accepts player commands and renders only runtime-approved player-safe presentation.
+- Pixi campaign exploration scene shell;
+- authenticated player avatar;
+- movement/facing;
+- camera;
+- collision and picking;
+- interaction range/targeting;
+- semantic anchor binding for Pell, important objects, and exits;
+- accepted materialization ID/version;
+- reconnect/recovery to the same materialization;
+- realtime movement/session path that does not create RPG journal events per frame;
+- text/fallback representation if enhanced rendering is unavailable.
 
-It must preserve explicit audience and semantic origin independently.
+This should reuse existing Pixi/tactical renderer expertise rather than create a disconnected engine.
 
-A runtime turn may produce multiple events for different audiences; GameFrame must not collapse those into one source-command visibility.
+## Direct character interaction
 
-### Interaction semantics
+After one walkable scene:
 
-The RPG composer must evolve from one ambiguous text box into two explicit semantic modes:
+- player approaches Pell;
+- interaction identifies stable `npc.pell` through viewer-authorized semantic scene projection;
+- runtime performs Pell-scoped character performance;
+- GameFrame renders Pell as entity-origin dialogue, not `GAME MASTER`;
+- Pell dialogue/memory remains tied to stable entity identity;
+- consequential relationship/knowledge/action state commits through runtime semantics.
 
-- **Act / Speak** — fictional-world action;
-- **Ask Game Master** — out-of-fiction rules/knowledge/clarification query.
+GameFrame should support a focused conversation panel/log or in-world dialogue presentation while maintaining a separate GM communication history.
 
-GameFrame sends different versioned commands so runtime does not guess intent from prose.
+## Ask-GM
 
-Ask-GM is player-private by default unless a future explicit action requests broader visibility. Fictional audibility and presentation audience remain separate.
+Retain a dedicated player-to-GM surface.
 
-Transcript/presentation should use clear origins such as PLAYER, GAME MASTER, viewer-safe NPC label, SYSTEM, and TACTICAL ENCOUNTER.
+Ask-GM is:
 
-### Checks, events, and typed projections
+- out-of-fiction;
+- player-private by default;
+- not automatically heard by NPCs;
+- not automatically time-advancing;
+- separate from targeted NPC dialogue.
 
-GameFrame implements/presents only mechanics actually promoted into its authority, including as required:
+## Do Something Else
+
+The old all-purpose freeform composer evolves into the **tabletop escape hatch**, not the default movement interface.
+
+Do Something Else submits plausible fictional intent when direct controls do not cover the action.
+
+Examples:
+
+- climb a tree;
+- cut through woods;
+- improvise a distraction;
+- manipulate a world object unusually.
+
+GameFrame sends a dedicated semantic command so runtime does not have to guess whether the user is asking the GM or acting in fiction.
+
+## GM intervention presentation
+
+GameFrame should support explicit GM-origin presentation with intensity/control metadata.
+
+Initial levels may be:
+
+- advisory/nonblocking;
+- narration/brief pause;
+- dramatic/freeze-scene.
+
+The dramatic version should support the desired large Game Master text frame/bubble with local world controls paused until the intervention completes/acknowledges.
+
+Presentation is not semantic mutation authority.
+
+## Connected scene materialization
+
+After Crooked Checkpoint works, add one connected location—preferably a credible alternate route such as the west woods.
+
+Required behavior:
+
+- runtime exposes route/semantic destination;
+- GameFrame loads/materializes destination;
+- authoritative scene transfer commits once;
+- player arrives through defined spawn/entry zone;
+- previous materialization remains stable for revisit;
+- materialized scene uses world-kit/catalog/procedural composition/fallbacks as appropriate.
+
+This is the first proof that the system is a world rather than one fancy map.
+
+## Single-map party posture
+
+The first two-human embodied implementation should keep the active party in one exploration scene at a time.
+
+GameFrame should support:
+
+- separate authenticated avatars;
+- nearby-player realtime transforms;
+- one authoritative shared semantic scene;
+- readiness/edge-zone indication;
+- party-cohesion transition when required members are in the destination zone;
+- one semantic transfer + destination scene session.
+
+Do not make the browser the authority for whether everyone actually transferred.
+
+## Multi-map/split-party posture
+
+Architectural hooks should not assume one universal scene, but full split-party UI is deferred.
+
+Later GameFrame requirements include:
+
+- player-specific scene/session subscriptions;
+- scene-scoped projections;
+- remote/separated party UI;
+- cross-scene communication mechanics;
+- independent materialization/recovery;
+- multiple simultaneous realtime scene rooms;
+- one subgroup entering Arena without incorrectly moving/freezing another.
+
+Do not implement split party by broadcasting every active scene to every client.
+
+## Checks, events, and typed world interactions
+
+GameFrame implements/presents only mechanics promoted into its authority, including as required:
 
 - deterministic check requests/results;
 - clue/objective/condition/consequence projections;
-- structured choices;
+- supported world-object interactions;
+- structured choices where genuinely useful;
 - scene/location changes;
 - encounter readiness.
 
-GameFrame does not parse narration to infer state.
+GameFrame does not parse narration to infer durable state.
 
-### Shared fixture evolution
+## Scene-faithful tactical handoff
 
-As the durable-world slices land, the public shared fixture set must add versioned cases for:
+The existing creature-only materializer remains baseline, but the campaign path evolves under `monster-master-rpg-encounter-rules.md`.
 
-- current-scene projection;
-- Known People descriptor→role→name upgrade;
-- Act/Speak versus Ask-GM;
-- presentation origin separate from audience;
-- safe entity inspection;
-- encounter source scene/revision/digest;
-- tactical role/objective projection;
-- escape/withdrawal outcomes once supported.
+Order:
 
-This fixture surface is the primary coordination seam for parallel public GameFrame and private runtime work.
-
-### Scene-faithful tactical handoff
-
-The existing creature-only configured RPG materializer remains the implementation baseline, but the campaign path must evolve according to `monster-master-rpg-encounter-rules.md`.
-
-GameFrame should add only capabilities demonstrated by actual campaigns:
-
-1. validated encounter-scene role contract with source scene ID/revision/digest;
-2. campaign-specific terminal UX and authoritative post-battle unlock validation;
-3. withdrawal/escape and visible exit-zone mechanics;
+1. source scene ID/revision/digest + entity-role contract;
+2. campaign-specific terminal UX + authoritative post-battle embodied unlock;
+3. withdrawal/escape and exit-zone mechanics;
 4. asymmetric materialization;
 5. trainer tactical profiles;
 6. protected/noncombatant/support/neutral roles;
 7. additional objectives;
-8. structured scene-reconciliation outcome fields.
+8. structured scene/object reconciliation fields.
 
-Every individually instantiated persistent person/creature present at tactical start must either be represented truthfully or have an explicit pre-launch scene transition out. Unsupported combat-relevant configuration fails closed before encounter custody.
+Every materially relevant persistent entity/object at tactical start must be represented truthfully or explicitly leave the source scene before launch.
 
-MM-0001 remains fixed and separately testable.
+## Embodied campaign return
 
-### Campaign-bound terminal behavior
+Campaign Arena Battles must not end in standalone-duel behavior.
 
-Campaign Arena Battles must not end in the standalone-duel loop.
+Required:
 
-Required behavior:
+- primary terminal action `Return to Campaign`;
+- no generic `New Duel` for campaign-bound match;
+- exploration remains fenced while runtime reconciliation is pending;
+- updated semantic scene arrives;
+- materialization reflects supported consequences;
+- movement/interaction unlocks only after authoritative resume.
 
-- primary terminal action is **Return to Campaign**;
-- `New Duel` is suppressed for campaign-bound matches;
-- generic `Return Home` is not the primary path;
-- returning to the RPG route does not bypass runtime aftermath;
-- campaign composer stays fenced while outcome reconciliation/aftermath is pending;
-- once a later authoritative post-encounter campaign state arrives, the composer unlocks and the player can continue.
+Browser acceptance tests state, not merely URL navigation.
 
-Browser acceptance must test the full state transition, not only URL navigation.
+## Media/materialization delivery
 
-### Complete Monster Master player product
+GameFrame owns:
 
-The first complete campaign UI should provide, at minimum:
-
-- authenticated campaign opening/resume;
-- current scene/narration/dialogue;
-- Act/Speak and Ask-GM;
-- People/Characters;
-- companion/player state;
-- objectives/clues/known information needed by the package;
-- tactical transition/return;
-- recap/history;
-- reconnect/restart recovery;
-- text-first operation with missing media.
-
-Desktop/mobile quality follows the same authority contracts.
-
-The first engineering proof may remain a bounded starter chapter; the mature product is a durable multi-session campaign system.
-
-### Multiplayer
-
-After the single-player architecture is proven, add/complete:
-
-- invitation/join lifecycle;
-- public/party/player-private presentation;
-- viewer-divergent People/knowledge projections;
-- shared-team tactical control;
-- reconnect/resume for both players.
-
-### Generality before Campaign Architect
-
-Before Campaign Architect generation becomes active, GameFrame must prove a materially different second handcrafted package through the same package preview/projection/entity/scene/knowledge/tactical primitives.
-
-If the second package exposes a missing reusable GameFrame primitive, add that primitive rather than create a campaign-specific client control plane.
-
-### Campaign Architect
-
-GameFrame later adds only player-facing authoring surfaces required by the proven package model:
-
-- concept submission;
-- safe assumptions/repair questions;
-- draft package preview;
-- optional owner editing/refinement;
-- explicit commit;
-- later explicit amendment/version/migration flows.
-
-GameFrame must never expose the hidden campaign bible through owner/player preview surfaces unless the authenticated role is explicitly an authorized campaign author/admin.
-
-### Media materialization
-
-After campaign correctness, GameFrame owns:
-
-- semantic asset catalogs;
+- semantic asset/world-kit catalogs;
 - provider-neutral prompt compilation;
+- deterministic composition/prefabs;
+- scene materialization recipe/seed/versioning;
 - Cloudflare-backed or other configured generation;
 - validation/moderation/provenance;
 - caching/storage/replacement;
 - stable recurring character/location identities;
-- deterministic fallbacks.
+- cinematic script execution;
+- text/silhouette/placeholder fallbacks.
 
-Media remains optional presentation.
+Media remains optional presentation. Generated images do not own collision or world truth.
 
-## Monster Master capture-cube presentation
+## Shared fixture evolution
 
-Ordinary capture cubes are handheld externally. GameFrame should maintain separate semantic assets for:
+Add canonical fixtures for:
 
-- ordinary handheld cube;
-- cube case/rack;
-- cart/storage carrying cube cases;
-- specialist relocation/quarantine/industrial containment equipment.
+- semantic current scene;
+- materialization ref;
+- Known People descriptor→role→name;
+- observer/entity knowledge;
+- direct entity interaction;
+- Do Something Else;
+- Ask-GM;
+- GM intervention origin/intensity/audience;
+- scene transfer/route identity;
+- encounter source scene/revision/digest;
+- tactical roles/objectives;
+- escape/withdrawal;
+- authoritative embodied aftermath/unlock.
 
-Do not render an ordinary cube as a cage-sized container because its interior living space is large.
+## Complete Monster Master player product
+
+The first complete GameFrame campaign proof should provide:
+
+- authenticated opening/resume;
+- Crooked Checkpoint exploration;
+- direct Pell conversation;
+- Ask-GM;
+- Do Something Else;
+- People/Characters;
+- relevant character/companion/objective information;
+- second connected scene/alternate route;
+- scene revisit;
+- check/event progression;
+- tactical transition/return;
+- GM intervention/history;
+- reconnect/restart recovery;
+- text/fallback operation when optional media is missing.
+
+The mature product is a durable multi-session campaign system.
+
+## Multiplayer
+
+After single-player:
+
+- invitation/join lifecycle;
+- two authenticated avatars;
+- one-scene realtime party play;
+- public/party/player-private presentation;
+- viewer-divergent knowledge;
+- cohesion transition;
+- shared-team tactical control;
+- reconnect/resume.
+
+Split-party/multi-map acceptance is later and separate.
+
+## Generality before Campaign Architect
+
+Before Campaign Architect generation becomes active, GameFrame must prove a materially different second handcrafted world through the same world/materialization/entity/scene/knowledge/interaction/tactical primitives.
+
+If it exposes a reusable missing primitive, add that primitive rather than a campaign-specific control plane.
 
 ## Deployment posture
 
-Initial production remains GameFrame and RPG GM Runtime as separate services on one VM, with Cloudflare exposing player-facing GameFrame routes while runtime/data/admin surfaces remain private.
+Initial production remains GameFrame + RPG GM Runtime as separate services on one VM, with Cloudflare exposing player-facing GameFrame while runtime/data/admin surfaces remain private.
 
-Deployment blockers that prevent campaign development/play should be fixed promptly. Additional hardening or Cloudflare-native state migration does not outrank durable campaign-world correctness unless a concrete operational defect demands it.
+Exploration movement may extend the authenticated VM WebSocket path. Semantic commands/recovery remain durable authority paths. Realtime socket state remains disposable.
 
 ## Validation posture
 
-Use the evidence layer that matches the claim:
+Use the evidence layer matching the claim:
 
 - unit/contract tests for GameFrame authority/projections;
+- materialization/movement tests for exploration;
 - shared fixtures for cross-repo schema stability;
-- runtime machine-play for Dungeon Master behavior;
-- actual GameFrame integration for entity/scene/encounter truth;
-- real Arena match tests for tactical claims;
-- browser tests for player experience and authoritative return/unlock;
-- VM canaries for public deployment claims;
-- media-specific canaries for generation claims.
+- runtime machine-play for referee/entity-performance behavior;
+- actual integration for world/scene/encounter truth;
+- real Arena matches for tactical claims;
+- browser tests for embodied player experience;
+- VM canaries for public/realtime deployment claims;
+- media canaries for generation claims.
 
 ## Immediate GameFrame execution order
 
-1. keep staging/player shell operational and treat broken campaign battle return/unlock as a P0 product blocker;
-2. define/consume current-scene and Known People projections;
-3. add Act/Speak versus Ask-GM command/UI distinction and typed presentation origin;
-4. preserve viewer-safe entity labels through all campaign rendering;
-5. extend shared machine-readable fixtures for those contracts;
-6. define encounter-scene request capability with source scene/revision/digest;
-7. fix campaign-specific terminal UX and prove authoritative post-battle unlock;
-8. add escape/withdrawal semantics before expanding tactical roster breadth;
-9. add asymmetric materialization and trainer profiles required by Crooked Checkpoint;
-10. run complete single-player campaign/browser/deployment proof;
-11. add multiplayer acceptance;
-12. prove second handcrafted package;
-13. support Campaign Architect authoring surfaces later.
+1. keep staging operational and repair authoritative Arena aftermath/unlock whenever it blocks testing;
+2. consume semantic current-scene/People projections as runtime work lands;
+3. build one Crooked Checkpoint Pixi exploration scene with avatar movement/collision/Pell/object/exit anchors;
+4. add exploration realtime/session state without per-frame RPG commits;
+5. add targeted Pell interaction + separate Ask-GM + Do Something Else + GM intervention presentation;
+6. add a second connected exploration scene/alternate-route transition and stable revisit;
+7. extend shared fixtures for materialization/interaction/transition;
+8. make events/checks/world interactions react to embodied scene state;
+9. define/consume encounter-scene contract and prove authoritative Arena return to exploration;
+10. run complete single-player embodied campaign/browser/deployment proof;
+11. add two-human one-scene campaign;
+12. prove second handcrafted world;
+13. support Campaign Architect authoring surfaces;
+14. productize split-party/multi-map later.
 
 ## Governing rule
 
-> GameFrame delivery should make the durable campaign world visible and playable. Presentation may evolve rapidly, but the player should never have to infer who is present, what their character knows, or whether clicking back from Arena actually completed the authoritative campaign transition.
+> GameFrame delivery should make the durable campaign world literally playable while preserving the tabletop escape hatch: direct controls for the common case, a real GM for adjudication, perspective-bounded characters, and no loss of agency when a button does not exist.
