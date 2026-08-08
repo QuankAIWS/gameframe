@@ -20,6 +20,10 @@ import {
   publicRpgMatchEdgeRoute,
 } from "./rpg-match-edge-proxy.ts";
 import {
+  proxyPublicRpgRealtimeRequest,
+  publicRpgRealtimeEdgeRoute,
+} from "./rpg-realtime-edge-proxy.ts";
+import {
   proxyPublicRpgRequest,
   publicRpgEdgeRoute,
   type RpgEdgeProxyDependencies,
@@ -78,6 +82,7 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
             runtime: "cloudflare-worker",
             authentication: "discord-oauth-session",
             upstreamAuthentication: "gameframe-hmac-v1",
+            rpgRealtime: "websocket-origin",
             configured: Boolean(
               env.GAMEFRAME_RPG_ORIGIN_URL?.trim()
               && env.GAMEFRAME_RPG_PROXY_HMAC_SECRET?.trim(),
@@ -100,10 +105,10 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           });
         }
 
-        // The generic health endpoint advertises the Durable Object WebSocket
-        // transport used by ordinary matches. An RPG battle page is intentionally
-        // bound to VM SQLite authority, so keep that client on its existing HTTP
-        // polling fallback instead of letting /events reconnect to another store.
+        // monster-master-app.js currently treats this field as a boolean
+        // capability token. Preserve that accepted token while reporting the
+        // actual RPG transport separately: RPG matches use an origin WebSocket
+        // through the Worker/Tunnel and remain authoritative in VM SQLite.
         if (
           request.method === "GET"
           && url.pathname === "/api/health"
@@ -114,7 +119,8 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           const value = await baseHealth.json() as Record<string, unknown>;
           return json(200, {
             ...value,
-            realtime: "http-polling",
+            realtime: "websocket-hibernation",
+            realtimeTransport: "websocket-origin",
             rpgMatchAuthority: "vm-sqlite",
           });
         }
@@ -123,6 +129,19 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           const principal = await authenticatorFor(env).authenticate(request);
           const admin = requireStagingAdminPrincipal(env, principal);
           return await proxyPublicRpgAdminRequest(request, env, admin);
+        }
+
+        // This must run before both RPG HTTP routing and the generic GameFrame
+        // match router. Otherwise an rpg:* /events request can accidentally bind
+        // to the ordinary Durable Object authority and split tactical custody.
+        if (publicRpgRealtimeEdgeRoute(url.pathname)) {
+          const principal = await authenticatorFor(env).authenticate(request);
+          return await proxyPublicRpgRealtimeRequest(
+            request,
+            env,
+            principal,
+            options.proxyDependencies,
+          );
         }
 
         if (publicRpgEdgeRoute(url.pathname)) {
