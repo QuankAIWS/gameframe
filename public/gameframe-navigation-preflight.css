@@ -1,0 +1,12 @@
+html.gameframe-internal-home-return body.gameframe-booting:not(:has(#gameframe-boot.is-failed)) {
+  overflow: auto;
+  background: #0b1020;
+}
+
+html.gameframe-internal-home-return body.gameframe-booting:not(:has(#gameframe-boot.is-failed)) > .shell {
+  visibility: visible;
+}
+
+html.gameframe-internal-home-return body.gameframe-booting:not(:has(#gameframe-boot.is-failed)) > #gameframe-boot {
+  display: none !important;
+}
