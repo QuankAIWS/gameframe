@@ -3,16 +3,18 @@ title: RPG GameFrame Documentation Index
 status: active
 document_type: index
 owner: Scribbles GameFrame
-last_updated: 2026-08-07
+last_updated: 2026-08-08
 applies_to:
   - scribbles-gameframe-rpg-planning
 related:
   - README.md
   - ROADMAP.md
   - shared/rpg-agent-architecture-and-campaign-package.md
+  - shared/rpg-scene-entity-and-knowledge-contract.md
   - shared/rpg-platform-roadmap.md
   - monster-master-rpg-canonical-baseline.md
   - monster-master-rules.md
+  - monster-master-rpg-encounter-rules.md
   - rpg-campaign-experience-directions.md
   - rpg-gm-runtime-boundary.md
   - rpg-gameframe-interface-contract.md
@@ -23,97 +25,128 @@ related:
   - shared/rpg-media-theme-and-audio-pipeline.md
   - shared/rpg-rendering-and-asset-contract.md
   - shared/rpg-cross-repository-integration-testing.md
+  - decisions/0006-monster-master-capture-cube-form-factor.md
 ---
 
 # RPG GameFrame Documentation
 
 ## Required reading order
 
-1. [`shared/rpg-agent-architecture-and-campaign-package.md`](shared/rpg-agent-architecture-and-campaign-package.md) — controlling two-agent architecture, official names, CampaignPackage handoff, handcrafted/generated equivalence, Monster Master role, campaign-opening rules, and testing requirements.
-2. [`shared/rpg-platform-roadmap.md`](shared/rpg-platform-roadmap.md) — controlling cross-repository implementation order and milestone gates.
-3. [`ROADMAP.md`](ROADMAP.md) — current GameFrame-local implementation direction and completed/active platform slices.
-4. [`monster-master-rpg-canonical-baseline.md`](monster-master-rpg-canonical-baseline.md) — Monster Master-specific campaign authority, lore, assets, and gold-standard package posture.
-5. [`monster-master-rules.md`](monster-master-rules.md) — fixed MM-0001 Arena rules and the boundary between the standalone duel and future campaign-configured encounters.
-6. Read the specific GameFrame interface, creative, asset, or deployment contract required by the active slice.
+1. [`shared/rpg-agent-architecture-and-campaign-package.md`](shared/rpg-agent-architecture-and-campaign-package.md) — controlling two-agent architecture, CampaignPackage boundary, and runtime-substrate roles.
+2. [`shared/rpg-scene-entity-and-knowledge-contract.md`](shared/rpg-scene-entity-and-knowledge-contract.md) — durable entities, Character Factory, Scene Registry, player knowledge, Context Compiler, Ask-GM semantics, and scene-to-Arena continuity.
+3. [`shared/rpg-platform-roadmap.md`](shared/rpg-platform-roadmap.md) — controlling cross-repository milestone order and exit gates.
+4. [`ROADMAP.md`](ROADMAP.md) — current GameFrame-local implementation direction.
+5. [`monster-master-rpg-canonical-baseline.md`](monster-master-rpg-canonical-baseline.md) — Monster Master-specific campaign/lore authority.
+6. [`monster-master-rules.md`](monster-master-rules.md) — fixed standalone MM-0001 Arena rules.
+7. [`monster-master-rpg-encounter-rules.md`](monster-master-rpg-encounter-rules.md) — evolving campaign-specific scene-faithful tactical rules.
+8. Read the specific interface, creative, asset, deployment, or testing contract needed by the active slice.
 
-Do not reconstruct the architecture from chat history, a sample fixture, a raw premise, an old work order, or an implementation branch.
+Do not reconstruct architecture from chat history, a sample fixture, a raw premise, an old work order, or implementation accidents.
 
 ## What the core documents answer
 
 | Document | Question |
 | --- | --- |
-| `shared/rpg-agent-architecture-and-campaign-package.md` | What is the canonical RPG agent/package architecture? |
-| `shared/rpg-platform-roadmap.md` | Where is the cross-repository RPG platform going? |
+| `shared/rpg-agent-architecture-and-campaign-package.md` | What are the two agents and durable package boundary? |
+| `shared/rpg-scene-entity-and-knowledge-contract.md` | Who exists, who is present, what does the player know, and how does that survive tactical mode? |
+| `shared/rpg-platform-roadmap.md` | Where is the cross-repository platform going? |
 | `ROADMAP.md` | What GameFrame platform work is complete, active, or deferred? |
 | `rpg-gameframe-interface-contract.md` | What does GameFrame expose to players/runtime? |
 | `monster-master-rpg-canonical-baseline.md` | What Monster Master campaign/lore decisions are authoritative? |
-| `monster-master-rules.md` | What does the current fixed Arena duel actually implement, and what must a future RPG encounter configure explicitly? |
-| `rpg-platform-delivery-plan.md` | How does GameFrame delivery map onto the shared roadmap? |
+| `monster-master-rules.md` | What does fixed MM-0001 actually implement? |
+| `monster-master-rpg-encounter-rules.md` | What must campaign tactical encounters eventually preserve? |
+| `rpg-platform-delivery-plan.md` | How does GameFrame delivery map to the shared roadmap? |
 
 Do not create a second local roadmap or competing architecture memo when one of these controlling documents can be updated.
 
-## Official agent terms
+## Official terms
 
-- **Campaign Architect** creates complete CampaignPackages before play.
-- **Dungeon Master** conducts live play from a committed CampaignPackage and the durable journal. Live DM is acceptable internal shorthand.
-- Campaign compiler and plot agent are retired aliases for capabilities inside the Campaign Architect, not compatibility interfaces.
-- There is no separate intro agent or intro-agent contract. The opening is the first Dungeon Master turn and is governed by the main agent/package contract.
+- **Campaign Architect** creates complete CampaignPackages before ordinary play.
+- **Dungeon Master** conducts live play from a committed package and durable campaign state.
+- **Character Factory** is deterministic/schema-first runtime substrate for bounded incidental-character materialization, not a third campaign agent.
+- **Scene Registry** owns current physical presence as runtime state.
+- **Player Knowledge Projection** owns viewer-specific known people/facts.
+- **Encounter Scene Compiler** carries current-scene entity/objective identity into tactical authority.
+- Campaign compiler, plot agent, and intro agent are retired as separate services/interfaces.
 
-## Platform and ownership
+## Core ownership
 
-1. [`rpg-campaign-experience-directions.md`](rpg-campaign-experience-directions.md) — accepted all-GameFrame player experience.
-2. [`shared/rpg-platform-product-goals.md`](shared/rpg-platform-product-goals.md) — durable product objective.
-3. [`rpg-gm-runtime-boundary.md`](rpg-gm-runtime-boundary.md) — repository and authority boundaries.
-4. [`rpg-gameframe-interface-contract.md`](rpg-gameframe-interface-contract.md) — player-facing and cross-repository interface contract.
-5. [`shared/rpg-cloudflare-deployment-architecture.md`](shared/rpg-cloudflare-deployment-architecture.md) — VM-first deployment and later migration boundaries.
+### RPG GM Runtime
 
-## Campaign architecture
+Owns private package truth, campaign journal, entity/scene/knowledge state, Character Factory, Dungeon Master orchestration, hidden semantic decisions, event eligibility, NPC continuity, and mapping GameFrame outcomes back into campaign truth.
 
-1. [`shared/rpg-campaign-architect-contract.md`](shared/rpg-campaign-architect-contract.md) — detailed future Campaign Architect brief normalization and package construction contract.
-2. [`shared/rpg-event-and-plot-pool-contract.md`](shared/rpg-event-and-plot-pool-contract.md) — plot families, committed truth, events, clues, consequences, and asset roles.
-3. [`shared/rpg-monster-master-reference-campaign.md`](shared/rpg-monster-master-reference-campaign.md) — Monster Master as the handcrafted reference package and Arena Battles proving ground.
-4. [`shared/rpg-cross-repository-integration-testing.md`](shared/rpg-cross-repository-integration-testing.md) — mock, fixture, actual service, durable recovery, complete single-player, multiplayer, browser, VM, and later migration test layers.
+### GameFrame
 
-Campaign Architect is intentionally downstream of the handcrafted Monster Master proof and a materially different second package. Future-agent contracts must not displace current vertical-slice work.
+Owns authenticated player identity, complete player interface, viewer-safe People/scene projections, Act/Speak and Ask-GM UI, deterministic mechanics explicitly implemented in GameFrame, tactical authority, and media materialization.
 
-## Monster Master creative, campaign, and Arena authority
+### Scribbles Runtime
 
-1. [`monster-master-rpg-current-creative-direction.md`](monster-master-rpg-current-creative-direction.md) — current product, tone, agency, and production direction.
+Owns Theo and any future connector that lets Theo occupy an ordinary GameFrame seat. Theo has no Dungeon Master or hidden-package authority.
+
+## Monster Master documents
+
+1. [`monster-master-rpg-current-creative-direction.md`](monster-master-rpg-current-creative-direction.md) — product tone, agency, package direction, and creative priorities.
 2. [`monster-master-rpg-lore-and-story.md`](monster-master-rpg-lore-and-story.md) — accepted detailed world decisions.
-3. [`monster-master-rpg-lore-tone-and-agent-realization.md`](monster-master-rpg-lore-tone-and-agent-realization.md) — compatibility pointer only.
-4. [`monster-master-rpg-npc-pool.md`](monster-master-rpg-npc-pool.md) — prepared role coverage and incidental NPC continuity.
-5. [`monster-master-rules.md`](monster-master-rules.md) — current fixed MM-0001 tactical rules and campaign-configured encounter boundary.
+3. [`decisions/0006-monster-master-capture-cube-form-factor.md`](decisions/0006-monster-master-capture-cube-form-factor.md) — ordinary cubes are handheld externally despite large interior living spaces.
+4. [`monster-master-rpg-npc-pool.md`](monster-master-rpg-npc-pool.md) — prepared role/portrait coverage and continuity expectations.
+5. [`monster-master-rules.md`](monster-master-rules.md) — fixed standalone duel.
+6. [`monster-master-rpg-encounter-rules.md`](monster-master-rpg-encounter-rules.md) — campaign encounter semantics: scene fidelity, trainers, escape/withdrawal, asymmetric forces, and noncombatant/support roles as implemented.
+
+## Campaign authoring
+
+- [`shared/rpg-campaign-architect-contract.md`](shared/rpg-campaign-architect-contract.md) defines the future generated-draft → owner-refinement → validation → commitment lifecycle.
+- Handcrafted and generated packages use the same validator and runtime path.
+- An active package is not silently rewritten; foundational changes require explicit amendment/version/migration.
+- Incidental live-play NPCs use Character Factory rather than rerunning Campaign Architect.
+
+## GameFrame player experience
+
+[`rpg-gameframe-interface-contract.md`](rpg-gameframe-interface-contract.md) now requires the architecture to distinguish:
+
+- **Act / Speak** versus **Ask Game Master**;
+- event audience versus presentation origin;
+- canonical runtime entity identity versus viewer-safe display identity;
+- current scene projection versus tactical match state;
+- fixed MM-0001 duel versus campaign-specific Monster Master RPG encounter semantics.
+
+The target People surface must show only persons/facts known to that player character. Unknown entities are absent, not redacted placeholders.
 
 ## Asset and media authority
 
-1. [`shared/rpg-media-theme-and-audio-pipeline.md`](shared/rpg-media-theme-and-audio-pipeline.md) — Campaign Architect asset intent, GameFrame materialization, and Dungeon Master usage boundary.
-2. [`monster-master-rpg-asset-register.md`](monster-master-rpg-asset-register.md) — product-wide coverage, priority, lifecycle, and production sequence.
-3. `assets/monster-master-rpg-asset-register.json` — machine-readable product registry.
-4. `assets/monster-master-rpg-npc-role-catalog.json` — role-to-portrait-family planning.
-5. `monster-master/assets/README.md` — concrete asset records.
-6. [`shared/rpg-rendering-and-asset-contract.md`](shared/rpg-rendering-and-asset-contract.md) — renderer, source-master, derivative, and fallback rules.
+- [`shared/rpg-media-theme-and-audio-pipeline.md`](shared/rpg-media-theme-and-audio-pipeline.md) controls semantic asset intent and materialization ownership.
+- [`monster-master-rpg-asset-register.md`](monster-master-rpg-asset-register.md) remains the product-wide asset inventory/provenance authority.
+- [`shared/rpg-rendering-and-asset-contract.md`](shared/rpg-rendering-and-asset-contract.md) controls rendering/source-master/fallback rules.
+
+Generated media remains optional presentation. It does not own campaign truth or block text-first play.
 
 ## Roadmap authority
 
-- `shared/rpg-platform-roadmap.md` is the durable cross-repository roadmap and owns RPG milestone order.
-- `ROADMAP.md` is the GameFrame-local roadmap and records completed/active platform work.
+- `shared/rpg-platform-roadmap.md` owns durable cross-repository milestone order.
+- `ROADMAP.md` owns GameFrame-local status/direction.
 - `rpg-platform-delivery-plan.md` maps GameFrame delivery onto the shared roadmap and must not reorder it.
 
-The current product path remains: executable package/Dungeon Master semantics → truthful and durable Monster Master Arena handoff → complete single-player campaign proof → multiplayer/cooperative control → second package → Campaign Architect.
+The current path is:
 
-## Private runtime boundary
-
-RPG GM Runtime owns package schemas, validation, private packages, hidden truth, Campaign Architect orchestration, Dungeon Master orchestration, prompts, continuity, clue answers, event eligibility, and instantiated NPC continuity.
-
-GameFrame owns player-facing intake, package preview, presentation, semantic asset resolution and generation, structured deterministic mechanics, and Arena Battles authority.
+```text
+executable package
+→ entity / scene / player-knowledge substrate
+→ secure hidden decision + safe rendering
+→ Act/Speak vs Ask-GM + People/scene UI
+→ executable events and typed campaign operations
+→ scene-faithful Monster Master RPG tactical handoff
+→ complete single-player campaign
+→ multiplayer
+→ second handcrafted package
+→ Campaign Architect
+```
 
 ## Shared-document policy
 
-`planning/shared/shared-rpg-documents.json` is canonical. Every listed document is mirrored byte-for-byte into RPG GM Runtime only after the GameFrame change merges.
+`planning/shared/shared-rpg-documents.json` is canonical. Listed shared documents are mirrored byte-for-byte into RPG GM Runtime only after GameFrame canonical changes merge.
 
 Accepted order:
 
-1. merge canonical GameFrame documents and manifest;
+1. merge canonical GameFrame documents/manifest;
 2. synchronize runtime mirrors;
 3. run exact-byte drift and focused integration checks;
 4. merge runtime updates.
@@ -129,7 +162,7 @@ Managed RPG planning Markdown must have YAML front matter containing at least:
 - `last_updated`;
 - `applies_to`.
 
-Local `related` and `depends_on` references must resolve. Selected engineering documents also validate backticked repository-relative source paths such as `src/...`, `planning/...`, and `scripts/...` so an Atlas/contract cannot remain structurally green while pointing engineers at a nonexistent module. Shared documents additionally carry canonical repository/path/version metadata and `sync_policy: exact-byte-copy`.
+Local `related` and `depends_on` paths must resolve. Shared documents additionally carry canonical repository/path/version metadata and `sync_policy: exact-byte-copy`.
 
 Validate with:
 
@@ -137,8 +170,6 @@ Validate with:
 python3 scripts/check-rpg-planning-docs.py
 ```
 
-A focused GitHub Actions lane runs this check for RPG planning changes without requiring the full GameFrame test suite.
-
 ## Decision hygiene
 
-Every new architecture or roadmap decision must update or explicitly supersede the controlling document. Do not add competing direction memos merely to preserve historical wording; Git history already preserves history.
+Every new architecture or roadmap decision must update or explicitly supersede the controlling document. Git history preserves old wording; do not create duplicate roadmaps/status memos merely to preserve history.
