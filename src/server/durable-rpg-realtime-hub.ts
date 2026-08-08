@@ -10,6 +10,8 @@ import {
 } from "../auth/request-authenticator.ts";
 
 const MAX_CLIENT_MESSAGE_BYTES = 4_096;
+const MAX_SOCKETS_PER_PLAYER = 6;
+const MIN_CLIENT_REFRESH_INTERVAL_MS = 1_000;
 const HEARTBEAT_INTERVAL_MS = 30_000;
 const SERVICE_RESTART_CODE = 1012;
 const NORMAL_CLOSE_CODE = 1000;
@@ -39,6 +41,7 @@ type CampaignAttachment = {
   resourceId: string;
   playerId: string;
   alive: boolean;
+  lastClientRefreshAt: number;
   queuedReason?: RealtimeReason;
   refreshInFlight?: Promise<void>;
 };
@@ -48,6 +51,7 @@ type MatchAttachment = {
   resourceId: string;
   playerId: string;
   alive: boolean;
+  lastClientRefreshAt: number;
   queuedReason?: RealtimeReason;
   refreshInFlight?: Promise<void>;
 };
@@ -77,6 +81,7 @@ export class DurableRpgRealtimeHub {
     perMessageDeflate: false,
   });
   readonly #attachments = new Map<WebSocket, SocketAttachment>();
+  readonly #pendingByPlayer = new Map<string, number>();
   readonly #heartbeat: NodeJS.Timeout;
   #closing = false;
 
@@ -110,15 +115,19 @@ export class DurableRpgRealtimeHub {
       });
     }
 
+    let releaseReservation: (() => void) | undefined;
     try {
       const principal = await authenticateUpgrade(this.#authenticator, request);
       requirePlayerPrincipal(principal);
       const playerId = principal.playerId;
+      releaseReservation = this.#reservePlayerConnection(playerId);
       const initial = route.kind === "campaign"
         ? await this.#campaignPosition(route.resourceId, playerId)
         : await this.#matchView(route.resourceId, playerId);
 
       this.#server.handleUpgrade(request, socket, head, (webSocket) => {
+        releaseReservation?.();
+        releaseReservation = undefined;
         if (this.#closing) {
           webSocket.close(SERVICE_RESTART_CODE, "RPG service is restarting.");
           return;
@@ -128,6 +137,7 @@ export class DurableRpgRealtimeHub {
           resourceId: route.resourceId,
           playerId,
           alive: true,
+          lastClientRefreshAt: 0,
         };
         this.#attachments.set(webSocket, attachment);
         webSocket.on("pong", () => {
@@ -152,6 +162,7 @@ export class DurableRpgRealtimeHub {
         }
       });
     } catch (error) {
+      releaseReservation?.();
       const status = upgradeErrorStatus(error);
       return rejectUpgrade(socket, status, status === 401
         ? "Unauthorized"
@@ -159,7 +170,9 @@ export class DurableRpgRealtimeHub {
           ? "Forbidden"
           : status === 404
             ? "Not Found"
-            : "Internal Server Error");
+            : status === 429
+              ? "Too Many Requests"
+              : "Internal Server Error");
     }
   }
 
@@ -202,6 +215,7 @@ export class DurableRpgRealtimeHub {
       timer.unref?.();
     })));
     this.#attachments.clear();
+    this.#pendingByPlayer.clear();
   }
 
   terminateAll(): void {
@@ -215,6 +229,29 @@ export class DurableRpgRealtimeHub {
       }
     }
     this.#attachments.clear();
+    this.#pendingByPlayer.clear();
+  }
+
+  #reservePlayerConnection(playerId: string): () => void {
+    const active = [...this.#attachments.values()].filter(
+      (attachment) => attachment.playerId === playerId,
+    ).length;
+    const pending = this.#pendingByPlayer.get(playerId) ?? 0;
+    if (active + pending >= MAX_SOCKETS_PER_PLAYER) {
+      throw Object.assign(new Error("The player already has the maximum number of RPG realtime connections."), {
+        status: 429,
+        code: "realtime_connection_limit",
+      });
+    }
+    this.#pendingByPlayer.set(playerId, pending + 1);
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      const remaining = (this.#pendingByPlayer.get(playerId) ?? 1) - 1;
+      if (remaining > 0) this.#pendingByPlayer.set(playerId, remaining);
+      else this.#pendingByPlayer.delete(playerId);
+    };
   }
 
   #notify(kind: SocketAttachment["kind"], resourceId: string): void {
@@ -290,6 +327,15 @@ export class DurableRpgRealtimeHub {
       });
     }
     if ((parsed as { type?: unknown } | null)?.type === "refresh") {
+      const now = Date.now();
+      if (now - attachment.lastClientRefreshAt < MIN_CLIENT_REFRESH_INTERVAL_MS) {
+        return sendJson(socket, {
+          type: "protocol_error",
+          code: "refresh_rate_limited",
+          message: "RPG realtime refresh requests are rate limited.",
+        });
+      }
+      attachment.lastClientRefreshAt = now;
       this.#queueRefresh(socket, "refresh");
       return;
     }
