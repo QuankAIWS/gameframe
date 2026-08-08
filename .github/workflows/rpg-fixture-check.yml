@@ -31,11 +31,14 @@ on:
       - "src/auth/request-authenticator.ts"
       - "src/cloudflare/rpg-edge-*.ts"
       - "src/cloudflare/rpg-match-edge-*.ts"
+      - "src/cloudflare/rpg-realtime-edge-*.ts"
       - "src/cloudflare/runtime-contracts.ts"
       - "src/cloudflare/worker.ts"
       - "src/server/http-server.ts"
       - "src/server/durable-rpg-http-server.ts"
       - "src/server/durable-rpg-http-server.test.ts"
+      - "src/server/durable-rpg-realtime-hub.ts"
+      - "src/server/durable-rpg-realtime.test.ts"
       - "src/server/durable-rpg-encounter-match-http.test.ts"
       - "src/server/durable-rpg-configured-terminal-http.test.ts"
       - "src/server/durable-rpg-process-config.ts"
@@ -67,7 +70,7 @@ jobs:
       || github.event.action == 'ready_for_review'
       || github.event.label.name == 'canonical-validation'
       || contains(github.event.pull_request.labels.*.name, 'canonical-validation')
-    name: Validate RPG fixtures and Node HTTP boundary
+    name: Validate RPG fixtures and Node HTTP/realtime boundary
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
@@ -94,18 +97,20 @@ jobs:
         run: >-
           node --experimental-strip-types --check src/server/run-durable-rpg-service.ts
           && node --experimental-strip-types --check src/server/http-server.ts
+          && node --experimental-strip-types --check src/server/durable-rpg-realtime-hub.ts
           && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
           && node --experimental-strip-types --check src/rpg/monster-master-rpg-encounter-materializer.ts
           && node --experimental-strip-types --check src/rpg/sqlite-rpg-encounter-match-binding-store.ts
           && node --experimental-strip-types --check src/rpg/sqlite-rpg-encounter-match-coordinator.ts
           && node --experimental-strip-types --check src/platform/sqlite-match-store.ts
           && node --experimental-strip-types --check src/cloudflare/rpg-match-edge-proxy.ts
+          && node --experimental-strip-types --check src/cloudflare/rpg-realtime-edge-proxy.ts
           && node --check public/gameframe-auth.js
           && node --check public/monster-master-rpg-model.js
           && node --check public/monster-master-rpg-app.js
           && node --check public/monster-master-rpg-return.js
 
-      - name: Validate canonical fixtures and Node HTTP behavior
+      - name: Validate canonical fixtures and Node HTTP/realtime behavior
         run: >-
           node --experimental-strip-types --test
           src/browser/monster-master-rpg-model.test.ts
@@ -114,6 +119,7 @@ jobs:
           src/cloudflare/rpg-edge-proxy.test.ts
           src/cloudflare/rpg-edge-worker-match-routing.test.ts
           src/cloudflare/rpg-match-edge-proxy.test.ts
+          src/cloudflare/rpg-realtime-edge-proxy.test.ts
           src/platform/sqlite-match-store.test.ts
           src/rpg/monster-master-rpg-encounter-materializer.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
@@ -129,6 +135,7 @@ jobs:
           src/rpg/in-memory-rpg-encounter-match-coordinator.test.ts
           src/rpg/structured-choice-flow.test.ts
           src/server/durable-rpg-http-server.test.ts
+          src/server/durable-rpg-realtime.test.ts
           src/server/durable-rpg-encounter-match-http.test.ts
           src/server/durable-rpg-configured-terminal-http.test.ts
           src/server/durable-rpg-process-config.test.ts
