@@ -36,6 +36,12 @@ test("the destination bar is the only product navigation header during play", as
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
   await expect(page.locator(".shell > .hero")).toBeHidden();
 
+  const activeMatchId = (await page.locator("#match-id").textContent())?.trim();
+  expect(activeMatchId).toBeTruthy();
+  await page.evaluate((matchId) => {
+    localStorage.setItem("scribbles-gameframe.recent-match", matchId);
+  }, activeMatchId);
+
   page.once("dialog", async (dialog) => {
     expect(dialog.message()).toContain("Leave this match");
     await dialog.accept();
