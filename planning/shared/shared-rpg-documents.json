@@ -6,53 +6,17 @@
   "mirrorRepository": "QuankAIWS/rpg-gm-runtime",
   "mirrorRoot": "docs/shared",
   "documents": [
-    {
-      "id": "rpg-platform-product-goals-v1",
-      "filename": "rpg-platform-product-goals.md"
-    },
-    {
-      "id": "rpg-agent-architecture-and-campaign-package-v1",
-      "filename": "rpg-agent-architecture-and-campaign-package.md"
-    },
-    {
-      "id": "rpg-scene-entity-and-knowledge-contract-v1",
-      "filename": "rpg-scene-entity-and-knowledge-contract.md"
-    },
-    {
-      "id": "rpg-embodied-exploration-and-character-performance-v1",
-      "filename": "rpg-embodied-exploration-and-character-performance-contract.md"
-    },
-    {
-      "id": "rpg-platform-roadmap-v1",
-      "filename": "rpg-platform-roadmap.md"
-    },
-    {
-      "id": "rpg-cloudflare-deployment-architecture-v1",
-      "filename": "rpg-cloudflare-deployment-architecture.md"
-    },
-    {
-      "id": "rpg-media-theme-and-audio-pipeline-v1",
-      "filename": "rpg-media-theme-and-audio-pipeline.md"
-    },
-    {
-      "id": "rpg-rendering-and-asset-contract-v1",
-      "filename": "rpg-rendering-and-asset-contract.md"
-    },
-    {
-      "id": "rpg-campaign-architect-contract-v1",
-      "filename": "rpg-campaign-architect-contract.md"
-    },
-    {
-      "id": "rpg-event-and-plot-pool-contract-v1",
-      "filename": "rpg-event-and-plot-pool-contract.md"
-    },
-    {
-      "id": "rpg-monster-master-reference-campaign-v1",
-      "filename": "rpg-monster-master-reference-campaign.md"
-    },
-    {
-      "id": "rpg-cross-repository-integration-testing-v1",
-      "filename": "rpg-cross-repository-integration-testing.md"
-    }
+    {"id":"rpg-platform-product-goals-v1","filename":"rpg-platform-product-goals.md"},
+    {"id":"rpg-agent-architecture-and-campaign-package-v1","filename":"rpg-agent-architecture-and-campaign-package.md"},
+    {"id":"rpg-scene-entity-and-knowledge-contract-v1","filename":"rpg-scene-entity-and-knowledge-contract.md"},
+    {"id":"rpg-embodied-exploration-and-character-performance-v1","filename":"rpg-embodied-exploration-and-character-performance-contract.md"},
+    {"id":"rpg-platform-roadmap-v1","filename":"rpg-platform-roadmap.md"},
+    {"id":"rpg-cloudflare-deployment-architecture-v1","filename":"rpg-cloudflare-deployment-architecture.md"},
+    {"id":"rpg-media-theme-and-audio-pipeline-v1","filename":"rpg-media-theme-and-audio-pipeline.md"},
+    {"id":"rpg-rendering-and-asset-contract-v1","filename":"rpg-rendering-and-asset-contract.md"},
+    {"id":"rpg-campaign-architect-contract-v1","filename":"rpg-campaign-architect-contract.md"},
+    {"id":"rpg-event-and-plot-pool-contract-v1","filename":"rpg-event-and-plot-pool-contract.md"},
+    {"id":"rpg-monster-master-reference-campaign-v1","filename":"rpg-monster-master-reference-campaign.md"},
+    {"id":"rpg-cross-repository-integration-testing-v1","filename":"rpg-cross-repository-integration-testing.md"}
   ]
 }
