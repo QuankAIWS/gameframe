@@ -84,24 +84,24 @@ Complete authoritative rules, deterministic CheckersBot, persistence, browser fl
 - three-unit standalone trainer teams;
 - deterministic deployment/initiative/movement/attacks/health;
 - command energy and Warden Master Mend;
-- Monster Master BattleBot;
-- replay/persistence/invitations/browser/Pixi rendering.
+- **Human-versus-human and human-versus-Monster-Master-BattleBot flows**;
+- **Replay, persistence, invitations, browser play, Pixi/Canvas rendering, and visual review**.
 
 MM-0001 is deliberately small. It remains a useful standalone game and regression target.
 
-### GF-0011A — Node-local RPG campaign → Arena semantic loop
+### GF-0011A — Node-local Monster Master RPG encounter loop
 
-The first campaign-to-battle loop proved one authenticated human plus BattleBot can move from a campaign presentation into a Monster Master match and return a structured result. Later work added shared-team cooperative tactical control without mapping allied humans onto opposing duel seats.
+PR #124 established the first one-human campaign-to-Arena semantic/UI loop. **PR #152 then extended the Node-local adapter with explicit shared-team cooperative control** without mapping allied humans onto opposing duel seats.
 
 This was a semantic/in-memory adapter proof, not the final durable RPG encounter authority.
 
-### GF-0011B — Durable Monster Master RPG encounter production substrate
+### GF-0011B — Durable Monster Master RPG encounter productionization
 
 Current durable implementation provides:
 
 - existing SQLite RPG campaign/encounter custody;
 - durable RPG-bound MatchSession snapshots;
-- restart-safe encounter↔match binding;
+- the **encounter↔match binding survives process restart**;
 - exact participant→creature mapping through `participantUnitIds`;
 - shared-team action authorization distinct from assignment;
 - process-death reconciliation after launch;
@@ -109,7 +109,8 @@ Current durable implementation provides:
 - terminal outcome derivation from authoritative match state;
 - private VM RPG match routes behind authenticated/HMAC Worker proxying;
 - HTTP polling for VM-owned `rpg:*` match projections;
-- configured revision-zero Monster Master state for supported creatures;
+- **`rulesState.creatureIds` is validated and converted into the exact revision-zero tactical roster** for the supported species surface;
+- **terminal participant results are calculated from each participant's exact mapped creature health/defeat state**;
 - fail-closed unsupported configuration.
 
 Current campaign tactical materializer is intentionally narrow:
@@ -123,6 +124,12 @@ Current campaign tactical materializer is intentionally narrow:
 - trainers remain encounter participants/controllers but are not tactical units.
 
 That bounded surface is proven substrate, not the desired final campaign rules model.
+
+### Team-aware RPG battles
+
+The existing shared-team substrate preserves separate authenticated human principals while allowing one allied tactical team. **Exact configured participant→creature assignments persist in `participantUnitIds`** while shared-team authorization may allow teammates to operate the allied roster.
+
+The current implementation does not claim exclusive per-player unit ownership, arbitrary species/rules, or **asymmetric tactical deployment**.
 
 ### GF-0012 — RPG staging delivery/control substrate
 
