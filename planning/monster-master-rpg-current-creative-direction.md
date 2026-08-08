@@ -17,8 +17,10 @@ related:
   - monster-master-rpg-npc-pool.md
   - monster-master-rpg-encounter-rules.md
   - decisions/0006-monster-master-capture-cube-form-factor.md
+  - shared/rpg-platform-product-goals.md
   - shared/rpg-agent-architecture-and-campaign-package.md
   - shared/rpg-scene-entity-and-knowledge-contract.md
+  - shared/rpg-embodied-exploration-and-character-performance-contract.md
   - shared/rpg-platform-roadmap.md
   - shared/rpg-event-and-plot-pool-contract.md
   - shared/rpg-monster-master-reference-campaign.md
@@ -28,92 +30,182 @@ related:
 
 ## Purpose
 
-This document controls current Monster Master creative direction. Platform architecture is controlled by the shared agent/package and scene/entity/knowledge contracts; implementation order is controlled by the shared roadmap.
+This document controls current Monster Master creative direction. Platform architecture is controlled by shared contracts; implementation order is controlled by the shared roadmap.
 
 Monster Master is the first handcrafted CampaignPackage and gold standard for future Campaign Architect output.
 
 ## Current creative deliverable
 
-The immediate creative deliverable is **one complete executable Monster Master CampaignPackage** that feels like a durable world rather than a sequence of model-written scenes.
+The immediate creative deliverable is **one complete executable embodied Monster Master CampaignPackage** that feels like a durable world rather than a sequence of model-written scenes.
 
 The first package must commit:
 
-- player-safe premise and group role;
-- setting rules and continuity invariants;
-- actual major actors, goals, fears, leverage, secrets, and limits;
-- actual locations and relationships;
-- opening situation and initial scene membership;
-- hidden cause and causal history;
-- clue/evidence graph with recovery paths;
-- event eligibility and pressure state;
+- player-safe premise/group role;
+- setting rules/continuity invariants;
+- actual major actors/goals/fears/leverage/secrets/limits;
+- actual locations and semantic relationships;
+- opening situation/initial scene membership;
+- hidden cause/causal history;
+- clue/evidence graph/recovery paths;
+- event eligibility/pressure state;
 - tactical thresholds/objectives;
 - consequence/resolution conditions;
-- semantic assets/fallbacks;
-- forbidden retcons and provenance.
+- semantic world/materialization/asset requirements;
+- forbidden retcons/provenance.
 
-Additional plot families remain source material/future packages. They are not all one executable campaign.
+Additional plot families remain source material/future packages rather than one giant executable campaign.
 
-## Campaign Architect and Dungeon Master
+## Embodied Monster Master direction
 
-For Monster Master, the team manually performs Campaign Architect work and may refine the package for as long as useful before commitment.
+Monster Master should normally be **played by inhabiting the world**:
 
-The future generated workflow should produce the same artifact:
+- walk around materialized 2D locations;
+- approach characters/creatures/objects;
+- talk directly to present NPCs;
+- inspect/interact with world features;
+- use supported mechanics directly;
+- ask the Game Master separately when needed;
+- use freeform Do Something Else for plausible actions outside fixed controls;
+- enter Arena Battles from the same physical/semantic campaign scene.
 
-```text
-brief
-→ generated draft
-→ optional owner refinement
-→ validation
-→ commitment
-```
+The existing text/event shell remains fallback/testing/accessibility/GM-history infrastructure, not the mature ordinary movement loop.
 
-The Dungeon Master runs the committed package. It owns narration, dialogue, pacing, interpretation of arbitrary plausible action, selection among eligible events, consequences, checks, and tactical requests.
+## Crooked Checkpoint as first embodied reference location
 
-The Dungeon Master does not own exact entity identity, scene membership, player knowledge, tactical outcomes, or package truth.
+Crooked Checkpoint is now the first gold-standard exploration/world-materialization target.
+
+The semantic area should support at least:
+
+- main road approach;
+- checkpoint/inspection area;
+- cart/cube storage situation;
+- road barrier;
+- Warden Pell starting/present area as appropriate;
+- nearby woods as a credible alternate approach;
+- creek/embankment/ridge or equivalent environment features where consistent with final package geography;
+- exits/routes whose availability is semantic state rather than decorative art;
+- tactical-capable space/exit semantics when an encounter is justified.
+
+The exact Pixi layout belongs to GameFrame materialization. The package owns the meaning, relationships, required landmarks, and traversal assumptions.
+
+## Alternate-route creative rule
+
+The package should permit credible approaches that are not simply menu choices.
+
+If the player says to Pell, "Let's cut through the woods and come at them from the other side," the system should be able to treat that as a real proposal when the established geography permits it.
+
+The woods may already have a prepared materialization or may be materialized on demand from semantic world truth/world-kit requirements. Once accepted, revisiting those woods should return to that location identity rather than a freshly unrelated random forest.
+
+Unexpected exploration may expose different event/hazard/encounter opportunities than the obvious road approach.
+
+## Dungeon Master role
+
+The Dungeon Master remains a distinct real GM.
+
+It owns:
+
+- adjudication of unusual/freeform actions;
+- Ask-GM rules/character-knowledge responses;
+- meaningful narration/framing;
+- eligible event selection/pacing;
+- campaign-compatible consequences;
+- checks/tactical requests;
+- occasional dramatic GM interventions;
+- perspective-bounded portrayal of NPCs/entities.
+
+The GM does not need to narrate every movement the renderer already makes obvious.
+
+## Pell and character performance
+
+Pell is the first preferred perspective-bounded character-performance proof.
+
+When the player talks to Pell:
+
+- Pell is physically present or explicitly remotely reachable;
+- the interaction targets Pell's stable entity ID;
+- Pell's performance context includes Pell's relevant goals, relationships, knowledge/beliefs, memories, observations, conditions, and bounded conversation context;
+- package secrets Pell does not know are absent;
+- Pell may be mistaken, uncertain, deceptive, helpful, annoyed, or otherwise character-consistent without becoming omniscient;
+- durable promises/relationships/learned facts promote into semantic state when they matter.
+
+The interface should clearly present Pell as Pell, not label his dialogue as GAME MASTER.
+
+## Game Master communication
+
+Players retain a dedicated GM communication/history surface for questions like:
+
+- "Would my license authorize this?"
+- "Do I recognize that insignia?"
+- "What do I remember about intelligent-monster capture law?"
+- "Would my character think going through the creek is dangerous?"
+
+Ask-GM is out-of-fiction. NPCs do not hear it unless the player separately speaks/acts.
+
+The GM may proactively intervene. A dramatic intervention may freeze the scene and present a large GM frame/bubble before returning control.
+
+## Tabletop-agency rule
+
+The graphics are a representation of the imagined world, not the complete list of possible actions.
+
+If a player wants to:
+
+- climb something;
+- take an odd route;
+- ask Pell to wait;
+- improvise with an object;
+- create a distraction;
+- attempt another plausible action with no dedicated interaction;
+
+they should be able to use Do Something Else and receive Dungeon Master adjudication.
+
+Repeated valuable behaviors may become mechanics later. One-off creativity remains legal without permanent UI support.
 
 ## Durable-world creative rule
 
-If a fact matters to continuity, it should become explicit semantic state rather than survive only because the model remembers prose.
+If a fact matters to continuity, it becomes explicit semantic state rather than surviving only because a model remembers prose.
 
 Examples:
 
-- who is physically in the scene;
+- who is in the scene;
 - which monster is in which cube;
 - whether the cart still contains confiscated cubes;
 - whether the road barrier is intact;
-- which suspect fled;
+- which suspect fled and toward which route;
 - who learned a person's name;
+- what Pell knows/believes;
 - which character knows a clue;
 - where an escaped monster went;
 - who owes whom a favor;
-- which NPC was injured.
+- which NPC was injured;
+- whether a path/bridge/door changed;
+- which accepted materialization represents a revisited location.
 
-This should make the Dungeon Master **more** improvisational, not less: the model can spend context on interpreting the scene instead of reconstructing bookkeeping.
+This lets the Dungeon Master spend context on interpretation/characterization rather than bookkeeping.
 
 ## Player knowledge and identity
 
-The player should not automatically know every package actor's canonical name because the runtime does.
+The player does not automatically know every package actor's canonical name.
 
-Monster Master presentation should freely use descriptive identities before introductions:
+Monster Master presentation should freely use descriptive identities before introductions, for example:
 
 - "the woman in inspector's gear";
 - "the man holding the pack lizard";
 - "the courier in the maintenance shed";
 - "the glowing salamander inside the locked cube".
 
-Once play establishes a name/role, the People projection upgrades the same durable entity instead of creating a new character.
+Once play establishes a name/role, People projection upgrades the same durable entity.
 
-The target People surface lets players review whom they have met and what their character actually knows.
+NPCs may have their own distinct knowledge/beliefs about those entities.
 
 ## Incidental NPC posture
 
 The prepared NPC pool remains an open foundation, not a closed cast.
 
-When players reasonably seek an unprepared person, the Dungeon Master requests that role and runtime Character Factory materializes one stable incidental entity.
+When players reasonably seek an unprepared person, the Dungeon Master requests that role and Character Factory materializes one stable entity.
 
-The Dungeon Master then portrays that person. If players create a promise, debt, relationship, injury, task, recurring interaction, or other continuity, the same entity persists.
+If players create a promise/debt/relationship/injury/task/recurring interaction, the same entity persists.
 
-Incidental people cannot retroactively replace package-bearing culprits, decisive witnesses, clue owners, or secret authorities unless the package intentionally left that role open.
+Incidental people cannot retroactively replace package-bearing culprits/decisive witnesses/clue owners/secret authorities unless the package intentionally left that role open.
 
 Promotion does not require bespoke art.
 
@@ -121,9 +213,9 @@ Promotion does not require bespoke art.
 
 Monster Master is for adult gamers and should feel like a functioning society rather than a training simulator.
 
-Good, competent, selfish, foolish, corrupt, compromised, dangerous, and ordinary people coexist. Institutions may help, fail, contradict themselves, contain decent professionals, or contain abusive individuals.
+Good, competent, selfish, foolish, corrupt, compromised, dangerous, and ordinary people coexist. Institutions may help/fail/contradict themselves and contain both decent and abusive individuals.
 
-Heroic/lawful choices are valid but not mandatory. Practical, selfish, opportunistic, illegal, reckless, avoidant, and unexpected actions may all be credible when the fiction supports them.
+Heroic/lawful choices are valid but not mandatory. Practical, selfish, opportunistic, illegal, reckless, avoidant, and unexpected actions may all be credible when fiction supports them.
 
 Consequences arise through danger, relationships, resources, exposure, injury, reputation, law, creature welfare, opportunity, and lasting world changes rather than a morality lecture.
 
@@ -131,7 +223,7 @@ Consequences arise through danger, relationships, resources, exposure, injury, r
 
 Monster Master can move among:
 
-- dry and sardonic humor;
+- dry/sardonic humor;
 - broad situational comedy;
 - slapstick;
 - absurd professional titles/institutions/customs;
@@ -143,7 +235,7 @@ Monster Master can move among:
 - tactical danger;
 - wonder/emotional weight.
 
-The setting takes continuity and consequences seriously without protecting its dignity.
+The setting takes continuity/consequences seriously without protecting its dignity.
 
 ## Accepted character concept — Master Baiter
 
@@ -155,9 +247,9 @@ Use the character when a package gives him a functional role; do not turn every 
 
 ## Capture-cube physical presentation
 
-Ordinary capture cubes are handheld externally despite containing substantial private interior living spaces.
+Ordinary capture cubes are handheld externally despite substantial private interior living spaces.
 
-Creative and generated descriptions should distinguish:
+Distinguish:
 
 - handheld capture cube;
 - cube case/rack;
@@ -166,11 +258,9 @@ Creative and generated descriptions should distinguish:
 
 A normal cube is not a person-sized cage. See `decisions/0006-monster-master-capture-cube-form-factor.md`.
 
-This rule preserves the existing comedic/luxury interior concept: a monster can demand a mansion, expensive kitchen, or gold toilet inside a device a trainer still carries in one hand.
-
 ## Starter source families
 
-The broader source catalog includes materially different families such as:
+Broader source catalog includes materially different families such as:
 
 - displaced domestic migration;
 - counterfeit cube recall;
@@ -186,87 +276,83 @@ The current executable reference package uses the false-warden/crooked-checkpoin
 
 The opening should establish pressure without prematurely revealing hidden canonical identities.
 
-The party knows Warden Pell because he is their assigned guide. Other checkpoint figures should begin through observable descriptors/roles until introductions, documents, dialogue, or investigation establish names.
+The party knows Warden Pell because he is their assigned guide. Other checkpoint figures begin through observable descriptors/roles until play establishes names.
 
-The opening should therefore avoid assuming the player already knows "Mara Venn" or "Tollan Reed" merely because those names exist in hidden package truth.
+The first framing may use a GM intervention/narration, then hand control to embodied exploration rather than forcing a sequence of narration turns.
 
 ## Scene and tactical relationship
 
-Arena Battles should feel like the campaign scene becoming tactically strict, not like the fiction being replaced with an unrelated duel.
+Arena Battles should feel like the embodied campaign scene becoming tactically strict.
 
-When a checkpoint scene becomes tactical, important current-scene truth should survive as supported:
+When checkpoint scene becomes tactical, important current-scene truth should survive as supported:
 
-- Orange/the player trainer;
+- player trainer;
 - selected monster such as Cinder;
-- Pell or other allies if they are still present and participating;
+- Pell/allies if still present and participating;
 - actual established hostiles;
 - Emberglass if present;
-- the pack lizard if still relevant;
-- cart/barrier/exits if they matter to objectives;
+- pack lizard if relevant;
+- cart/barrier/exits if they matter;
 - escape/protection/recovery objectives.
 
-Not every present entity must become a full combatant. But materially relevant people/creatures/objects should not vanish because tactical mode has only a fixed duel vocabulary.
+Not every present entity must become a full combatant. Materially relevant people/creatures/objects should not vanish because tactical mode has a fixed duel vocabulary.
+
+After outcome, the exploration scene should reflect committed fleeing/withdrawal/injury/custody/object consequences before control resumes.
 
 ## Fleeing and surrender
 
 Campaign encounters should allow consequences other than fight-to-the-death elimination.
 
-A creature or NPC whose established goal is to escape should be able to pursue an explicit exit objective. Structured outcomes should eventually distinguish fleeing, withdrawing, surrendering, being recalled, being incapacitated, and—where lethal rules explicitly support it—death.
+A creature/NPC whose goal is escape should be able to pursue an explicit exit objective. Structured outcomes eventually distinguish fleeing, withdrawing, surrendering, recall, incapacitation, and death only under explicit lethal rules.
 
-For the Crooked Checkpoint, Emberglass is an obvious proving case: depending on circumstances, a frightened intelligent monster may want to escape rather than participate as ordinary opposition.
-
-## Player-to-GM questions
-
-The interface should let a player ask the Dungeon Master a rules/knowledge question without making their character say it aloud.
-
-This supports natural questions such as:
-
-- "Would my license authorize this?"
-- "Do I recognize that insignia?"
-- "What do I remember about intelligent-monster capture law?"
-
-The answer should use player-authorized character knowledge. NPCs should not react unless the player separately speaks or acts in the fiction.
+Emberglass remains an obvious proving case.
 
 ## Asset-production mode
 
-The package declares semantic asset needs. GameFrame resolves them through prepared assets, generated assets, deterministic composition, silhouettes, cards, or text fallbacks.
+The package declares semantic asset/world-kit needs. GameFrame resolves through prepared assets, generated assets, deterministic composition, silhouettes/cards, or text fallbacks.
 
-Likely foundation coverage includes:
+Foundation coverage should increasingly include:
 
 - academy/field-station environments;
-- settled routes/modular roadside states;
-- Warden Pell and reusable NPC portrait families;
+- roads/paths/woods/creeks/modular roadside states;
+- structures, doors, barriers, carts, signs, field props;
+- reusable foliage/terrain/world kits;
+- player/NPC exploration sprites and interaction states;
+- Warden Pell and reusable NPC presentation families;
 - incidental NPC cards/silhouettes;
-- handheld cubes, cube cases/racks, carts, signs, field kits, barriers, evidence/inspection props;
-- conventional monsters and hazards;
-- People/knowledge/current-scene UI;
-- private observation/investigation/objective/aftermath UI;
+- conventional monsters/hazards;
+- handheld cubes/cases/racks;
+- People/GM communication/current-scene UI;
+- cinematic pose/effect vocabulary;
 - reusable Arena terrain/effects.
 
-Cloudflare-backed image generation remains a later/parallel presentation capability, not a requirement for campaign correctness.
+Cloudflare-backed image generation is presentation capability, not campaign correctness.
 
-## Deterministic fixture rule
+## Cinematic posture
 
-A deterministic fixture may select one package for CI but remains test-only as evidence. It must not dictate broader lore merely because it is convenient to simulate.
+Ordinary cutscenes should be semantic GameFrame cinematic scripts using camera/entity/dialogue/GM/effect/audio commands.
+
+Generate special poses/splash art only when worthwhile. Do not make generated video a dependency.
 
 ## Creative acceptance
 
 Monster Master is on target when:
 
-- one complete package produces a memorable coherent campaign;
+- one complete package produces a memorable coherent embodied campaign;
+- Crooked Checkpoint is a place the player can walk around, not just prose;
+- Pell can be approached/talked to directly without omniscient leakage;
+- Ask-GM remains visibly distinct from talking to Pell;
+- a plausible unsupported action can be adjudicated through Do Something Else;
+- an alternate route such as the woods can become real exploration/world state;
+- revisiting a location returns to the same durable place;
 - package truth survives unexpected play;
-- the Dungeon Master adapts rather than recites a scene outline;
 - people retain identity/continuity independently of model memory;
-- players learn names/facts through play rather than hidden-package leakage;
-- a plausible ordinary NPC can become durable without blocking play;
-- People/current-scene views make the player's knowledge legible;
-- heroic/opportunistic/avoidant/unexpected play remain credible;
-- comedy, sincerity, and horror coexist;
+- comedy/sincerity/horror coexist;
 - tactical mode preserves the same scene/entities/objectives as supported;
-- fleeing/surrender/withdrawal can become real consequences;
-- campaign reaches a satisfying resolution and optional continuation;
-- other source families can later become materially different packages.
+- tactical aftermath returns to the embodied world;
+- campaign reaches satisfying resolution/continuation;
+- other source families can later become materially different worlds/packages.
 
 ## Governing rule
 
-> Handcraft Monster Master as a durable living campaign: let the Dungeon Master improvise aggressively inside exact world state, reveal people as the players actually learn them, and make Arena Battles resolve the scene they were already in rather than replacing it.
+> Handcraft Monster Master as a world worth inhabiting: let players walk through it, let Pell be Pell instead of an omniscient mask, keep the real Game Master available, preserve freeform tabletop agency, and make every important consequence survive when the scene changes modes.
