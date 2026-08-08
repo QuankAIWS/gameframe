@@ -12,34 +12,78 @@
 </head>
 <body class="gameframe-booting">
   <section id="gameframe-boot" class="gameframe-boot" aria-label="GameFrame startup">
+    <div class="gameframe-boot-noise" aria-hidden="true"></div>
     <div class="gameframe-boot-terminal">
+      <div class="gameframe-boot-windowbar" aria-hidden="true">
+        <span class="gameframe-boot-lamp is-magenta"></span>
+        <span class="gameframe-boot-lamp is-amber"></span>
+        <span class="gameframe-boot-lamp is-cyan"></span>
+        <span class="gameframe-boot-window-title">root@gameframe:~/boot</span>
+        <span class="gameframe-boot-window-mode" data-gameframe-boot-mode>COLD START</span>
+      </div>
+
       <div class="gameframe-boot-meta" aria-hidden="true">
-        <span>GF.OS // BOOTSTRAP</span>
+        <span>GF.OS // USERSpace TTY-01</span>
         <span data-gameframe-boot-host>NODE: INITIALIZING</span>
       </div>
-      <p class="gameframe-boot-command">&gt; INIT GAMEFRAME SURFACE</p>
-      <ol class="gameframe-boot-stages" aria-label="Startup progress">
-        <li data-gameframe-boot-stage="session" data-state="active">
-          <span>&gt; VERIFY PLAYER SESSION</span>
-          <strong aria-label="in progress"></strong>
-        </li>
-        <li data-gameframe-boot-stage="navigation" data-state="wait">
-          <span>&gt; MOUNT NAVIGATION</span>
-          <strong aria-label="waiting"></strong>
-        </li>
-        <li data-gameframe-boot-stage="library" data-state="wait">
-          <span>&gt; LOAD DESTINATION REGISTRY</span>
-          <strong aria-label="waiting"></strong>
-        </li>
-        <li data-gameframe-boot-stage="runtime" data-state="wait">
-          <span>&gt; START GAME CLIENT</span>
-          <strong aria-label="waiting"></strong>
-        </li>
-      </ol>
-      <p id="gameframe-boot-message" class="gameframe-boot-message" role="status" aria-live="polite">
-        &gt; BOOTSTRAP INITIALIZED<span class="gameframe-boot-cursor" aria-hidden="true"></span>
-      </p>
-      <button id="gameframe-boot-retry" class="gameframe-boot-retry" type="button" hidden>Retry startup</button>
+
+      <div class="gameframe-boot-layout">
+        <aside class="gameframe-boot-rail gameframe-boot-rail-left" aria-hidden="true">
+          <span>SYS</span><i></i><i></i><i></i><i></i><i></i><i></i><small>01</small>
+        </aside>
+
+        <div class="gameframe-boot-core">
+          <div class="gameframe-boot-ident" aria-hidden="true">
+            <small>SCRIBBLES SYSTEMS</small>
+            <strong>GAME<span>FRAME</span></strong>
+            <em>PLAYER INTERFACE KERNEL</em>
+          </div>
+
+          <p class="gameframe-boot-command">&gt; INIT GAMEFRAME SURFACE</p>
+          <ol class="gameframe-boot-stages" aria-label="Startup progress">
+            <li data-gameframe-boot-stage="session" data-state="active" data-accent="cyan">
+              <span>&gt; VERIFY PLAYER SESSION</span>
+              <strong aria-label="in progress"></strong>
+            </li>
+            <li data-gameframe-boot-stage="navigation" data-state="wait" data-accent="magenta">
+              <span>&gt; MOUNT NAVIGATION</span>
+              <strong aria-label="waiting"></strong>
+            </li>
+            <li data-gameframe-boot-stage="library" data-state="wait" data-accent="amber">
+              <span>&gt; LOAD DESTINATION REGISTRY</span>
+              <strong aria-label="waiting"></strong>
+            </li>
+            <li data-gameframe-boot-stage="runtime" data-state="wait" data-accent="acid">
+              <span>&gt; START GAME CLIENT</span>
+              <strong aria-label="waiting"></strong>
+            </li>
+          </ol>
+
+          <p id="gameframe-boot-message" class="gameframe-boot-message" role="status" aria-live="polite">
+            &gt; BOOTSTRAP INITIALIZED<span class="gameframe-boot-cursor" aria-hidden="true"></span>
+          </p>
+          <button id="gameframe-boot-retry" class="gameframe-boot-retry" type="button" hidden>Retry startup</button>
+        </div>
+
+        <aside class="gameframe-boot-telemetry" aria-hidden="true">
+          <span>BUS <b>GF-16</b></span>
+          <span>TTY <b>256C</b></span>
+          <span>IO <b>SYNC</b></span>
+          <div class="gameframe-boot-spectrum"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <small data-gameframe-boot-packet>PKT 0000:7F</small>
+        </aside>
+      </div>
+
+      <div class="gameframe-boot-progress-wrap">
+        <div class="gameframe-boot-progress-copy">
+          <span data-gameframe-boot-progress-label>INITIALIZING PLAYER ENVIRONMENT</span>
+          <strong data-gameframe-boot-progress-value>08%</strong>
+        </div>
+        <div id="gameframe-boot-progress" class="gameframe-boot-progress" role="progressbar" aria-label="GameFrame startup progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="8">
+          <span class="gameframe-boot-progress-fill"></span>
+          <span class="gameframe-boot-progress-scan" aria-hidden="true"></span>
+        </div>
+      </div>
     </div>
   </section>
 
