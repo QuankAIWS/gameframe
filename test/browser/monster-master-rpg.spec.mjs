@@ -146,12 +146,13 @@ test("staging campaign onboards a Master before exposing the long-form campaign 
   await expect(page.locator("#mm-rpg-onboarding")).toBeVisible();
   await expect(page.locator("#mm-rpg-campaign")).toBeHidden();
   await expect(page.locator('[data-onboarding-step="1"]')).toBeVisible();
-  await expect(page.getByText("Field Medic", { exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Field Medic/ })).toBeDisabled();
 
   await page.locator("#mm-rpg-trainer-name").fill("Rook");
   await page.locator("#mm-rpg-onboarding-to-starter").click();
-  await expect(page.locator('[data-onboarding-step="2"]')).toBeVisible();
-  await expect(page.getByText("Cinder", { exact: true })).toBeVisible();
+  const starterStep = page.locator('[data-onboarding-step="2"]');
+  await expect(starterStep).toBeVisible();
+  await expect(starterStep.getByRole("button", { name: /Cinder/ })).toBeVisible();
 
   await page.locator("#mm-rpg-onboarding-to-briefing").click();
   await expect(page.locator('[data-onboarding-step="3"]')).toBeVisible();
