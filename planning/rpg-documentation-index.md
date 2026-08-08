@@ -9,6 +9,7 @@ applies_to:
 related:
   - README.md
   - ROADMAP.md
+  - shared/rpg-platform-product-goals.md
   - shared/rpg-agent-architecture-and-campaign-package.md
   - shared/rpg-scene-entity-and-knowledge-contract.md
   - shared/rpg-platform-roadmap.md
@@ -32,14 +33,15 @@ related:
 
 ## Required reading order
 
-1. [`shared/rpg-agent-architecture-and-campaign-package.md`](shared/rpg-agent-architecture-and-campaign-package.md) — controlling two-agent architecture, CampaignPackage boundary, and runtime-substrate roles.
-2. [`shared/rpg-scene-entity-and-knowledge-contract.md`](shared/rpg-scene-entity-and-knowledge-contract.md) — durable entities, Character Factory, Scene Registry, player knowledge, Context Compiler, Ask-GM semantics, and scene-to-Arena continuity.
-3. [`shared/rpg-platform-roadmap.md`](shared/rpg-platform-roadmap.md) — controlling cross-repository milestone order and exit gates.
-4. [`ROADMAP.md`](ROADMAP.md) — current GameFrame-local implementation direction.
-5. [`monster-master-rpg-canonical-baseline.md`](monster-master-rpg-canonical-baseline.md) — Monster Master-specific campaign/lore authority.
-6. [`monster-master-rules.md`](monster-master-rules.md) — fixed standalone MM-0001 Arena rules.
-7. [`monster-master-rpg-encounter-rules.md`](monster-master-rpg-encounter-rules.md) — evolving campaign-specific scene-faithful tactical rules.
-8. Read the specific interface, creative, asset, deployment, or testing contract needed by the active slice.
+1. [`shared/rpg-platform-product-goals.md`](shared/rpg-platform-product-goals.md) — durable product objective and non-negotiable platform goals.
+2. [`shared/rpg-agent-architecture-and-campaign-package.md`](shared/rpg-agent-architecture-and-campaign-package.md) — controlling two-agent architecture, CampaignPackage boundary, and runtime-substrate roles.
+3. [`shared/rpg-scene-entity-and-knowledge-contract.md`](shared/rpg-scene-entity-and-knowledge-contract.md) — durable entities, Character Factory, Scene Registry, player knowledge, Context Compiler, Ask-GM semantics, and scene-to-Arena continuity.
+4. [`shared/rpg-platform-roadmap.md`](shared/rpg-platform-roadmap.md) — controlling cross-repository milestone order and exit gates.
+5. [`ROADMAP.md`](ROADMAP.md) — current GameFrame-local implementation direction.
+6. [`monster-master-rpg-canonical-baseline.md`](monster-master-rpg-canonical-baseline.md) — Monster Master-specific campaign/lore authority.
+7. [`monster-master-rules.md`](monster-master-rules.md) — fixed standalone MM-0001 Arena rules.
+8. [`monster-master-rpg-encounter-rules.md`](monster-master-rpg-encounter-rules.md) — evolving campaign-specific scene-faithful tactical rules.
+9. Read the specific interface, creative, asset, deployment, or testing contract needed by the active slice.
 
 Do not reconstruct architecture from chat history, a sample fixture, a raw premise, an old work order, or implementation accidents.
 
@@ -47,6 +49,7 @@ Do not reconstruct architecture from chat history, a sample fixture, a raw premi
 
 | Document | Question |
 | --- | --- |
+| `shared/rpg-platform-product-goals.md` | What durable product behavior must the RPG platform ultimately provide? |
 | `shared/rpg-agent-architecture-and-campaign-package.md` | What are the two agents and durable package boundary? |
 | `shared/rpg-scene-entity-and-knowledge-contract.md` | Who exists, who is present, what does the player know, and how does that survive tactical mode? |
 | `shared/rpg-platform-roadmap.md` | Where is the cross-repository platform going? |
