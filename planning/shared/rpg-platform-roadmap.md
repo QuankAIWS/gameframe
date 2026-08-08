@@ -3,14 +3,14 @@ title: RPG Platform Roadmap
 status: accepted
 document_type: roadmap
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-07
+last_updated: 2026-08-08
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
   - Monster Master RPG
   - future bespoke campaigns
 shared_document_id: rpg-platform-roadmap-v1
-shared_document_version: 3
+shared_document_version: 4
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-platform-roadmap.md
 mirrors:
@@ -18,6 +18,7 @@ mirrors:
 sync_policy: exact-byte-copy
 related:
   - rpg-agent-architecture-and-campaign-package.md
+  - rpg-scene-entity-and-knowledge-contract.md
   - rpg-campaign-architect-contract.md
   - rpg-monster-master-reference-campaign.md
   - rpg-cross-repository-integration-testing.md
@@ -29,301 +30,339 @@ related:
 
 ## Objective
 
-Build a reusable RPG platform in which a Campaign Architect can create bespoke CampaignPackages and one Dungeon Master can run any validated package through GameFrame.
+Build a reusable RPG platform in which a Campaign Architect can create bespoke CampaignPackages and one Dungeon Master can run any validated package through GameFrame while durable runtime state—not model memory—owns entity identity, physical scene presence, player knowledge, mechanics, and tactical participant continuity.
 
-The first proof is a handcrafted Monster Master CampaignPackage. The next proof is a materially different bespoke package produced through the Campaign Architect boundary. Deployment, media generation, and richer mechanics support that product sequence; they do not replace it.
+The first proof is a handcrafted Monster Master CampaignPackage. The next proof is a materially different package through the same runtime abstractions. Campaign Architect generation follows only after those abstractions survive real handcrafted campaigns.
 
 ## Status rule
 
-This shared roadmap defines destination, milestone order, and exit gates. It intentionally does **not** maintain volatile repository implementation status.
+This shared roadmap defines cross-repository destination, milestone order, and exit gates. Volatile implementation evidence belongs in repository-local ledgers:
 
-Current implementation/evidence belongs in repository-local status and roadmap documents:
-
-- GameFrame: `planning/ROADMAP.md` and the RPG documentation index;
+- GameFrame: `planning/ROADMAP.md`;
 - RPG GM Runtime: `docs/project-status.md` and `docs/implementation-plan.md`.
 
-When code advances, update those local ledgers. Change this shared roadmap only when the cross-repository destination, ordering, or acceptance criteria change.
-
-The platform already contains meaningful package, journal, command, persistence, GameFrame, Arena, and Dungeon Master substrate. Possessing a lower-level substrate does not satisfy a later milestone until that milestone's exit gate is actually exercised.
+Lower-level substrate does not satisfy a later milestone until that milestone's exit gate is actually exercised.
 
 ## Milestone 0 — Architecture and documentation baseline
 
-- Keep the two-agent architecture and CampaignPackage boundary canonical in GameFrame and mirrored into runtime.
-- Use Campaign Architect and Dungeon Master as the official role names.
-- Retire campaign compiler, plot agent, and intro agent as file names and compatibility surfaces.
-- Remove or supersede plans that send raw premises directly to the Dungeon Master.
-- Keep Monster Master identified as the handcrafted gold standard.
-- Keep shared documents stable and push volatile evidence/status into repository-local ledgers.
+- Keep Campaign Architect and Dungeon Master as the only campaign agents.
+- Keep CampaignPackage as the durable pre-play handoff.
+- Treat Entity Registry, Character Factory, Scene Registry, player knowledge, Context Compiler, and Encounter Scene Compiler as runtime substrate rather than additional agents.
+- Retire campaign compiler, plot agent, and intro agent as compatibility surfaces.
+- Keep Monster Master as the handcrafted gold standard.
+- Keep shared documents canonical in GameFrame and mirrored byte-for-byte into runtime.
 
-**Exit gate:** documentation indexes, local architecture documents, shared contracts, and roadmaps agree on one architecture and implementation order.
+**Exit gate:** documentation indexes, roadmaps, architecture documents, specialist contracts, and repository boundaries agree on one architecture and implementation order.
 
 ## Milestone 1 — Executable CampaignPackage contract
 
-Implement the smallest complete package substrate before building more agent behavior.
-
 Required runtime work:
 
-- versioned `CampaignPackageV1`;
-- strict validation and bounded schemas;
+- strict versioned package schema and bounded validation;
 - visibility scopes;
 - package hash and provenance;
-- persistence, reload, migration posture, and immutable commitment events;
-- bounded package context supplied to the Dungeon Master without truncation;
-- player-safe projection separated from runtime-only truth.
+- persistence, reload, migration posture, and immutable commitment;
+- player-safe projection separated from runtime-only truth;
+- initial actors, locations, scene membership, clue graph, event definitions, mechanics, and resolution material sufficient for executable play.
 
 Required GameFrame work:
 
 - capability declaration supplied to package validation;
 - player-safe package preview primitives;
-- deterministic placeholders for unresolved semantic assets.
+- deterministic presentation fallbacks.
 
-**Exit gate:** the handcrafted Monster Master package validates, serializes, commits, reloads, and projects without semantic loss or secret leakage.
+**Exit gate:** the handcrafted Monster Master package validates, commits, reloads, and projects without semantic loss or secret leakage.
 
 ## Milestone 2 — Handcrafted Monster Master gold-standard package
 
-Convert the Monster Master source material into one complete executable CampaignPackage.
-
-It must contain:
+The package must contain:
 
 - campaign bible and operating rules;
-- player roles and group-cohesion mechanism;
+- player roles and group cohesion;
 - actual opening situation;
 - fixed hidden truth;
-- actual major actors and locations;
-- clue and evidence graph;
+- concrete important actors and locations;
+- initial scene state;
+- clue/evidence graph;
 - event eligibility and pressure material;
 - multiple credible approaches;
-- check and tactical opportunities;
+- checks and tactical opportunities;
 - complete resolution conditions;
 - optional continuation seed;
 - semantic asset manifest and deterministic fallbacks.
 
-Keep additional plot families as future packages or package templates rather than pretending the entire catalog is already executable.
+Additional plot families remain future packages or templates rather than being treated as one giant executable campaign.
 
-**Exit gate:** the package passes validation and can be committed without a model or media provider.
+**Exit gate:** the package can be committed without a model or media provider and contains enough exact state to initialize the runtime world.
 
-## Milestone 3 — Dungeon Master consumes committed packages
+## Milestone 3 — Durable entity, scene, and knowledge substrate
 
-Specialize the model-backed turn mechanism into the actual Dungeon Master agent.
+Before expecting model quality to cover continuity gaps, make exact campaign facts first-class runtime state.
+
+Required runtime work:
+
+- stable Entity Registry for package actors, trainers, monsters, promoted incidental NPCs, and materially relevant entities;
+- deterministic/schema-first Character Factory for incidental NPC requests;
+- Scene Registry with explicit enter/leave/current-presence semantics;
+- durable scene-relevant objects, creatures, hazards, exits, and local continuity;
+- viewer-specific player knowledge and Known People projections;
+- canonical-name versus player-known-name separation;
+- package-authored and incidental entity promotion rules;
+- restart-safe reconstruction from committed journal state.
+
+Required GameFrame work:
+
+- player-safe People/Characters view primitives;
+- viewer-safe identity labels and entity inspection;
+- current scene/participant presentation where useful.
+
+**Exit gate:** scripted play can create an incidental person, revisit that same person, move entities between scenes, and show different valid identity/knowledge projections to different viewers without relying on model recollection.
+
+## Milestone 4 — Secure package-aware Dungeon Master
+
+Specialize the model-backed turn mechanism into the production Dungeon Master.
+
+Required flow:
+
+```text
+GmTurnTrigger
+→ typed hidden context compiled from package + current world/scene state
+→ semantic decision without player-facing prose
+→ deterministic validation/materialization
+→ durable semantic commitment
+→ authorized revelations/consequences
+→ audience-specific safe scene/world/knowledge projection
+→ separate player-facing renderer
+→ GameFrame presentation
+```
 
 Required behavior:
 
-- opening is generated only after package commitment;
-- context includes relevant package truth, current scene, players, NPC state, discovered information, active pressure, eligible events, and previous consequences;
-- freeform text remains primary;
-- model output is structured and validated;
+- opening and later turns use the same path;
+- freeform player action remains primary;
 - local improvisation is allowed without changing package invariants;
-- state changes are committed before player presentation;
-- exact retry reuses committed turns;
-- one Dungeon Master path serves Monster Master and future packages.
+- state changes commit before presentation;
+- exact retry reuses committed semantic truth;
+- renderer never receives unrevealed entity names, hidden motives, clue meanings, event eligibility, or unauthorized entity existence;
+- Dungeon Master requests incidental NPCs through Character Factory instead of minting arbitrary durable people itself.
 
-Security/correctness boundary:
+**Exit gate:** the Monster Master package produces coherent multi-turn play while hidden canonical names and secrets are absent from renderer input until explicitly authorized.
 
-- hidden campaign truth may inform a semantic decision;
-- player-facing prose must be rendered from player-safe/authorized knowledge rather than from unrestricted hidden context;
-- one turn may produce multiple explicitly audience-scoped presentation events.
+## Milestone 5 — Interaction semantics and machine-play harness
 
-**Exit gate:** the handcrafted Monster Master package produces a coherent opening and multiple subsequent turns through the same Dungeon Master path without unauthorized knowledge flow.
+Required player/runtime semantics:
 
-## Milestone 4 — Machine-play Dungeon Master harness
+- distinct **Act / Speak** and **Ask Game Master** commands/triggers;
+- presentation origin separate from audience;
+- player action, player choice, campaign opening, encounter outcome, system event, and player-to-GM query remain distinct causes.
 
-Build campaign-behavior testing before relying on human playtest feedback.
+Required harness cases:
 
-Required fixtures:
-
-- mock Dungeon Master provider;
-- scripted players;
-- at least two player behavior profiles;
-- multi-turn transcript and state assertions;
-- early correct guess;
+- expected, chaotic, avoidant, and early-correct-guess players;
 - ignored or missed clue;
-- refusal of the obvious assignment;
-- unexpected social or practical action;
-- incidental NPC creation and later revisit;
-- partial and paraphrased secret-leak attempts;
-- exact retry and restart.
+- refusal of obvious assignment;
+- incidental NPC creation and revisit;
+- absent-character physical-action rejection;
+- name revelation and People projection update;
+- partial/paraphrased secret-leak attempts;
+- exact retry and restart;
+- Ask-GM query that does not become NPC-heard dialogue.
 
-Required assertions:
+**Exit gate:** deterministic machine-play reaches valid progression without plot drift, entity discontinuity, secret leakage, or action/query confusion.
 
-- package truth remains unchanged;
-- audience scopes remain correct;
-- unknown entities are not exposed merely by redacted placeholders or IDs;
-- NPC identities and relationships persist;
-- recovery routes remain available;
-- consequences accumulate coherently;
-- the session reaches a valid resolution or tactical threshold.
-
-**Exit gate:** deterministic machine-play completes the Monster Master package without plot drift, secret leakage, or dead-end state.
-
-## Milestone 5 — Checks, event progression, and tactical handoff
+## Milestone 6 — Checks, executable events, and typed campaign operations
 
 Implement only mechanics required by the gold-standard campaign.
 
 - deterministic noncombat check authority;
 - clue discovery and confidence state;
-- small executable event-eligibility predicates plus authoring guidance;
-- consequence application;
-- durable tactical encounter request;
-- exact campaign participant identity through GameFrame encounter authority;
-- Arena Battles launch through GameFrame authority;
-- structured terminal participant outcome retrieval;
-- campaign consequence application and resumed narration.
+- executable event eligibility/cooldown/use predicates;
+- typed domain operations for reveal, NPC continuity, scene transition, objective update, event selection, check request, and encounter request;
+- typed current-state context instead of generic fact/flag writes as the long-term primary domain model;
+- restart-safe bounded semantic repair.
 
-Do not build a generalized RPG rule DSL merely to express the first package. Add only executable primitives demonstrated by actual package needs.
+**Exit gate:** Monster Master can progress deterministically through relevant clues/events/checks and reach or avoid a tactical threshold without forged event authority or model-owned state-machine behavior.
 
-**Exit gate:** the Monster Master campaign enters and returns from the actual Arena Battles path with participant-faithful outcomes and can still reach a complete resolution.
+## Milestone 7 — Scene-faithful tactical handoff
 
-## Milestone 6A — Complete single-player Monster Master engineering proof
+The existing participant-faithful creature-only Arena path is useful substrate but not the final campaign encounter model.
 
-Before multiplayer broadens the authority model, prove the entire product architecture with one authenticated human plus Monster Master BattleBot.
+Required direction:
 
-Required:
+- encounter request derives from the authoritative current scene;
+- exact campaign entity IDs survive scene → GameFrame → terminal outcome → runtime aftermath;
+- trainers participate when their deterministic tactical profiles are implemented;
+- campaign-required allies, hostiles, neutrals, noncombatants, protected entities, or escaping entities are represented truthfully or launch fails closed;
+- materially relevant scene objects/exits/objectives survive the handoff;
+- asymmetric scenes are supported when implemented rather than reshaped into fake symmetric duels;
+- withdrawal, escape, surrender, recall, and incapacitation are distinct structured outcomes;
+- lethal outcomes, if enabled, use explicit rules rather than assuming zero health means death;
+- GameFrame remains sole tactical authority.
 
-- real handcrafted package;
-- configured Dungeon Master provider;
+MM-0001 remains the fixed standalone Monster Master duel. Monster Master RPG evolves through its own campaign encounter contract while reusing tactical-core and MatchSession infrastructure.
+
+**Exit gate:** the Crooked Checkpoint can enter Arena Battles from actual scene truth and return structured outcomes for the exact campaign entities and objectives without participants disappearing or being replaced by unrelated fixed-duel identities.
+
+## Milestone 8A — Complete single-player Monster Master engineering proof
+
+Prove one authenticated human plus Monster Master BattleBot through the complete production-shaped journey:
+
+- package-first startup;
+- real current scene/entity state;
 - multiple freeform turns;
-- public/player-safe information handling;
+- People/knowledge continuity;
+- Ask-GM and in-fiction action distinction;
 - executable event progression;
 - deterministic check;
-- participant-faithful actual Arena match;
-- exact terminal consequences;
+- scene-faithful actual Arena match when triggered;
+- exact participant outcomes including escape/withdrawal where applicable;
 - automatic aftermath;
 - bounded campaign resolution;
-- restart/resume of both services.
+- runtime + GameFrame restart/resume.
 
-**Exit gate:** the complete one-human-plus-BattleBot campaign passes without fabricated tactical outcomes or developer intervention in ordinary execution. This proves the full-stack architecture but not multiplayer behavior.
+**Exit gate:** the complete one-human campaign passes without fabricated tactical outcomes, developer intervention in ordinary execution, hidden-name leakage, or scene/entity discontinuity.
 
-## Milestone 6B — Playable two-human Monster Master through GameFrame
+## Milestone 8B — Playable two-human Monster Master
 
-Add the multiplayer lifecycle only after the single-player architecture is proven.
+After single-player architecture is proven:
 
 Required runtime work:
 
-- campaign join distinct from campaign startup;
-- explicit party assignment and party-scoped knowledge;
-- per-player roster/knowledge initialization;
-- resume/recap behavior for joined players.
+- campaign join distinct from startup;
+- explicit party assignment;
+- per-player roster and knowledge initialization;
+- player-private and party-private knowledge projection;
+- resume/recap behavior.
 
-Required GameFrame/Arena work:
+Required GameFrame work:
 
-- authenticated invitations and membership;
+- authenticated invitations/membership;
 - public, party, and player-private presentation;
-- team-aware cooperative encounter control without mapping allied humans onto opposing duel seats;
-- exact participant/unit authorization and terminal outcomes;
-- reconnect, recap, restart, and resume;
-- desktop and mobile acceptance;
-- text-first operation when media is missing.
+- cooperative tactical control without placing allied humans on opposing duel seats;
+- exact participant/unit authorization and structured outcomes;
+- reconnect/resume;
+- desktop/mobile acceptance.
 
-**Exit gate:** two authenticated human players can complete the bounded Monster Master campaign, including a real cooperative Arena encounter, without developer intervention for ordinary play.
+**Exit gate:** two authenticated humans complete the bounded campaign, including a cooperative Arena encounter, without ordinary developer intervention or audience leakage.
 
-## Milestone 7 — Campaign Architect implementation
+## Milestone 9 — Generality proof with second handcrafted package
 
-Implement the campaign-authoring agent only after the package contract and Dungeon Master requirements are proven by Monster Master.
+Run a materially different handcrafted package through the same:
 
-Before starting the Campaign Architect, run at least one materially different second handcrafted package through the same package validator and Dungeon Master path. If the second package requires a Monster-Master-specific Dungeon Master execution branch, repair the abstraction first.
+- validator;
+- Entity Registry;
+- Scene Registry;
+- knowledge projection;
+- Dungeon Master path;
+- typed mechanics;
+- GameFrame presentation;
+- tactical handoff where relevant.
 
-Initial Campaign Architect inputs:
+If the second package requires a campaign-specific Dungeon Master execution branch or breaks the generic entity/scene/knowledge model, repair the abstraction before automating campaign creation.
+
+**Exit gate:** two materially different handcrafted campaigns use the same runtime architecture without campaign-specific control planes.
+
+## Milestone 10 — Campaign Architect implementation
+
+Implement Campaign Architect only after the common package/runtime abstraction is proven.
+
+Initial inputs:
 
 - concise freeform concept;
-- structured owner or test brief;
-- prepared mechanic and theme capabilities.
+- structured owner/test brief;
+- prepared mechanic/theme capabilities.
 
-Initial outputs:
+Initial output lifecycle:
 
-- one validated CampaignPackage;
-- explicit assumptions and repair requests;
-- originality transformation record;
-- semantic asset and media intents;
-- deterministic provenance and package hash.
+```text
+brief
+→ generated draft CampaignPackage
+→ optional owner refinement
+→ validation / repair
+→ player-safe preview
+→ explicit commitment
+```
 
-Initial tests should create at least two materially different original campaigns, including an original medieval supernatural-response concept and an original 1920s steampunk paranormal-response concept.
+Initial tests should create materially different original campaigns and run them through the same validator, entity/scene/knowledge substrate, and Dungeon Master harness as Monster Master.
 
-**Exit gate:** Campaign Architect output passes the same validator and Dungeon Master machine-play harness as Monster Master without a campaign-specific Dungeon Master code path.
+**Exit gate:** generated packages require no campaign-specific Dungeon Master or entity/scene runtime path.
 
-## Milestone 8 — Rich campaign intake
+## Milestone 11 — Rich intake and authoring tools
 
-- versioned `CampaignBriefV1`;
+- versioned `CampaignBrief`;
 - player-facing campaign sheet;
-- guided clarification and repair;
-- interactive GameFrame creation flow;
-- optional Discord interview flow;
-- preview and confirmation of player-safe assumptions;
-- operator review and amendment tools;
-- package versioning and explicit recompilation policy.
+- guided clarification/repair;
+- GameFrame creation flow;
+- optional Discord interview;
+- draft package inspection and owner editing;
+- preview/confirmation of player-safe assumptions;
+- explicit package amendment/version/migration tools.
 
-**Exit gate:** a player can move from a short idea or guided interview to an accepted CampaignPackage without seeing hidden campaign truth.
+**Exit gate:** a player or owner can move from concept to accepted package without exposing hidden truth or requiring direct repository edits.
 
-## Milestone 9 — Campaign media materialization
-
-Integrate the Campaign Architect with the GameFrame-owned media pipeline.
+## Milestone 12 — Campaign media materialization
 
 - semantic campaign theme and asset intents;
 - prepared catalog reuse;
 - deterministic composition;
-- Cloudflare-backed or provider-neutral image generation when available;
-- recurring character and location continuity;
+- provider-neutral/Cloudflare-backed image generation where configured;
+- recurring entity and location continuity;
 - validation, provenance, moderation, budgets, caching, and replacement;
-- text and placeholder fallbacks at every step.
+- text and placeholder fallbacks.
 
-The Campaign Architect declares what the campaign needs. GameFrame resolves and stores it. The Dungeon Master uses accepted identities during play.
+Media is presentation, not campaign authority.
 
-**Exit gate:** a generated bespoke campaign receives a coherent accepted asset pack without making media generation a gameplay dependency.
+**Exit gate:** a campaign receives coherent accepted media coverage without making live generation a gameplay dependency.
 
-## Milestone 10 — Multi-session systems and operational quality
+## Milestone 13 — Multi-session systems and operational quality
 
 Promote only systems proven necessary by playable campaigns:
 
-- progression, rest, inventory, equipment, injuries, and recovery;
+- progression, rest, inventory, equipment, injuries, care, cube accommodation, and recovery;
 - recurring quests, factions, relationships, and locations;
-- campaign inspection and correction;
+- campaign inspection/correction;
 - exports, backups, restore, retention, and deletion;
-- provider, storage, tunnel, and service observability;
+- provider/storage/tunnel/service observability;
 - cost, latency, continuity, and failure metrics;
 - Theo as an ordinary GameFrame player;
 - staged rollout and rollback.
 
-**Exit gate:** multiple handcrafted and generated campaigns run across sessions without authority drift or routine operator repair.
-
 ## Deployment sequencing
 
-The first production topology remains separate GameFrame and RPG GM Runtime services on one VM. Cloudflare exposes GameFrame only. Runtime, databases, and administration remain private.
+Initial production remains GameFrame and RPG GM Runtime as separate services on one VM behind Cloudflare, with runtime/data/admin surfaces private and no player VPN or router port forwarding.
 
-Deployment work should maintain a runnable environment, but additional hardening must not outrank the package, Dungeon Master, tactical fidelity, and complete campaign gates unless a concrete deployment defect blocks campaign development or testing.
-
-Cloudflare-native state migration remains optional and evidence-driven. Cloudflare image generation belongs to campaign preparation and media materialization, not campaign authority.
+Deployment defects that block campaign development or play are P0. Additional infrastructure hardening does not outrank entity/scene/knowledge correctness, secure Dungeon Master behavior, scene-faithful Arena handoff, and complete campaign proof.
 
 ## Validation policy
 
-Every milestone requires focused machine evidence. Use:
+Use the evidence layer that matches the claim:
 
-- schema and unit tests for package invariants;
-- mock providers and scripted players for agent behavior;
-- actual cross-repository Node integration for contract truth;
-- durable local services for restart and persistence truth;
-- complete single-player campaign proof before multiplayer claims;
-- two-human integration for party/team claims;
+- schema/unit tests for package/entity/scene/knowledge invariants;
+- deterministic machine-play for Dungeon Master behavior;
+- actual cross-repository services for integration truth;
+- real Arena matches for tactical claims;
 - browser tests for player experience;
-- VM canaries for public deployment claims;
-- separate media and Cloudflare canaries for provider-specific claims.
+- VM/Cloudflare/Discord canaries for deployment claims;
+- separate media-provider canaries for generation claims.
 
-Do not claim RPG functionality from transport tests, catalog-shape tests, a single canned opening, or a lower evidence layer.
+Do not claim a working campaign from transport tests, catalog shape, a canned opening, or a lower evidence layer.
 
 ## Priority rule
 
-The order of importance is:
+Current priority is:
 
-1. executable CampaignPackage;
-2. handcrafted Monster Master package;
-3. package-aware Dungeon Master;
-4. machine-play campaign proof;
-5. truthful Arena participant/configuration handoff;
-6. complete single-player Monster Master journey;
-7. two-human join/party/cooperative journey;
-8. second handcrafted package proving generality;
-9. Campaign Architect generated-campaign proof;
-10. richer intake and generated media;
-11. broader mechanics, scale, and operational polish.
+1. preserve the executable Monster Master package and current live staging path;
+2. establish durable entity/scene/player-knowledge contracts and implementation substrate;
+3. structurally split hidden decision from player-safe rendering;
+4. distinguish Act/Speak from Ask-GM and improve presentation origin;
+5. make event authority and typed current-state semantics executable/durable;
+6. make Monster Master RPG tactical handoff scene-faithful, including escape/withdrawal and trainer support as implemented;
+7. prove the complete single-player campaign;
+8. add multiplayer lifecycle;
+9. prove a second handcrafted package;
+10. implement Campaign Architect;
+11. add richer authoring/media/multi-session systems.
 
 ## Governing rule
 
-> Prove the package boundary with Monster Master, secure and prove the Dungeon Master with machine-play, prove the complete single-player architecture, then add multiplayer and only afterward automate campaign creation.
+> Prove campaigns as durable worlds, not model transcripts: packages define the world, runtime owns identity/presence/knowledge, the Dungeon Master interprets it, and GameFrame preserves that same world when presentation or tactical mode changes.
