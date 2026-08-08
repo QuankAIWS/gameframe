@@ -1,5 +1,38 @@
 import { test, expect } from "@playwright/test";
 
+test("the terminal bootstrap is the only visible home surface while session initialization is pending", async ({ page }) => {
+  let releaseSession;
+  let markSessionRequested;
+  const sessionRequested = new Promise((resolve) => {
+    markSessionRequested = resolve;
+  });
+
+  await page.route("**/api/session", async (route) => {
+    markSessionRequested();
+    await new Promise((resolve) => {
+      releaseSession = resolve;
+    });
+    await route.continue();
+  });
+
+  const navigation = page.goto("/?player=hub-boot-test");
+  await sessionRequested;
+
+  await expect(page.locator("#gameframe-boot")).toBeVisible();
+  await expect(page.locator('[data-gameframe-boot-stage="session"]')).toHaveAttribute("data-state", "active");
+  await expect(page.locator("#lobby")).toBeHidden();
+  await expect(page.locator("#select-tic-tac-toe")).toHaveCount(0);
+  await expect(page.locator("#gameframe-boot-message")).toContainText("VERIFYING PLAYER SESSION");
+
+  releaseSession();
+  await navigation;
+
+  await expect(page.locator("#gameframe-boot")).toBeHidden();
+  await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
+  await expect(page.locator("#game-card-tic-tac-toe")).toBeVisible();
+  await expect(page.locator(".mode-grid")).toBeHidden();
+});
+
 test("the complete game cards open their game-specific menus", async ({ page }) => {
   await page.goto("/?player=hub-navigation-test");
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();

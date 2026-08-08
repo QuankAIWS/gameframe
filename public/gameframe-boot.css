@@ -1,0 +1,191 @@
+body.gameframe-booting {
+  overflow: hidden;
+  background: #050807;
+}
+
+body.gameframe-booting > .shell {
+  visibility: hidden;
+}
+
+.gameframe-boot[hidden] {
+  display: none !important;
+}
+
+.gameframe-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(167, 244, 61, .08), transparent 30rem),
+    linear-gradient(145deg, #060a08 0%, #030504 58%, #080c09 100%);
+  color: #d7ff9c;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  transition: opacity 160ms ease;
+}
+
+.gameframe-boot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .14;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 3px,
+    rgba(214, 255, 156, .06) 4px
+  );
+}
+
+.gameframe-boot.is-complete {
+  opacity: 0;
+}
+
+.gameframe-boot.is-failed {
+  color: #ffd3a5;
+}
+
+.gameframe-boot-terminal {
+  position: relative;
+  z-index: 1;
+  width: min(760px, 100%);
+  padding: clamp(22px, 4vw, 38px);
+  border: 1px solid rgba(183, 255, 94, .22);
+  border-radius: 12px;
+  background: rgba(2, 6, 3, .78);
+  box-shadow: inset 0 0 34px rgba(133, 214, 61, .035);
+}
+
+.gameframe-boot-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 26px;
+  color: rgba(215, 255, 156, .58);
+  font-size: .72rem;
+  letter-spacing: .12em;
+}
+
+.gameframe-boot-command,
+.gameframe-boot-message {
+  margin: 0;
+  font-size: clamp(.88rem, 2vw, 1rem);
+  letter-spacing: .055em;
+}
+
+.gameframe-boot-command {
+  margin-bottom: 20px;
+  color: #efffd8;
+}
+
+.gameframe-boot-stages {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+}
+
+.gameframe-boot-stages li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  color: rgba(215, 255, 156, .46);
+  font-size: clamp(.76rem, 1.8vw, .9rem);
+  letter-spacing: .045em;
+}
+
+.gameframe-boot-stages li[data-state="active"] {
+  color: #efffd8;
+}
+
+.gameframe-boot-stages li[data-state="ok"] {
+  color: #c8ff76;
+}
+
+.gameframe-boot-stages li[data-state="failed"] {
+  color: #ffd3a5;
+}
+
+.gameframe-boot-stages strong {
+  font-weight: 700;
+}
+
+.gameframe-boot-stages li[data-state="active"] strong::before {
+  content: "[ .. ]";
+}
+
+.gameframe-boot-stages li[data-state="ok"] strong::before {
+  content: "[ OK ]";
+}
+
+.gameframe-boot-stages li[data-state="failed"] strong::before {
+  content: "[FAIL]";
+}
+
+.gameframe-boot-stages li[data-state="wait"] strong::before {
+  content: "[    ]";
+}
+
+.gameframe-boot-message {
+  min-height: 1.4em;
+  color: #efffd8;
+}
+
+.gameframe-boot-cursor {
+  display: inline-block;
+  width: .62em;
+  height: 1em;
+  margin-left: .22em;
+  transform: translateY(.16em);
+  background: currentColor;
+  animation: gameframe-boot-cursor 820ms steps(1, end) infinite;
+}
+
+.gameframe-boot-retry {
+  margin-top: 20px;
+  padding: 8px 12px;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+html.gameframe-auth-blocked .gameframe-boot {
+  display: none !important;
+}
+
+@keyframes gameframe-boot-cursor {
+  0%, 48% { opacity: 1; }
+  49%, 100% { opacity: 0; }
+}
+
+@media (max-width: 560px) {
+  .gameframe-boot {
+    padding: 14px;
+  }
+
+  .gameframe-boot-meta {
+    display: grid;
+    gap: 5px;
+  }
+
+  .gameframe-boot-stages li {
+    gap: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gameframe-boot {
+    transition: none;
+  }
+
+  .gameframe-boot-cursor {
+    animation: none;
+  }
+}
