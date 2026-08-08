@@ -1,0 +1,201 @@
+:root {
+  color-scheme: dark;
+}
+
+body.gameframe-rpg-preview-route {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 82% 10%, rgba(78, 185, 255, .12), transparent 26rem),
+    radial-gradient(circle at 12% 72%, rgba(160, 80, 255, .1), transparent 30rem),
+    #070a11;
+  color: #e7f2fb;
+}
+
+.rpg-preview-shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 64px;
+}
+
+.rpg-preview-back {
+  display: inline-flex;
+  margin-bottom: 24px;
+  color: #9ec9e5;
+  text-decoration: none;
+}
+
+.rpg-preview-back:hover {
+  color: #fff;
+}
+
+.rpg-preview-hero,
+.rpg-preview-powered {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 28px;
+  align-items: center;
+  border: 1px solid rgba(143, 196, 231, .22);
+  border-radius: 24px;
+  background: rgba(11, 17, 28, .86);
+  padding: clamp(24px, 5vw, 52px);
+}
+
+.rpg-preview-eyebrow,
+.rpg-preview-section-heading p,
+.rpg-preview-powered p {
+  margin: 0 0 8px;
+  color: #8ccdf3;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.rpg-preview-hero h1 {
+  margin: 0;
+  max-width: 720px;
+  font-size: clamp(2.3rem, 6vw, 5.4rem);
+  line-height: .96;
+}
+
+.rpg-preview-hero p:last-child {
+  max-width: 760px;
+  margin: 22px 0 0;
+  color: #b5c9d7;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.rpg-preview-engine-mark {
+  width: 172px;
+  aspect-ratio: 1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  border: 1px solid rgba(121, 211, 255, .32);
+  border-radius: 28px;
+  background:
+    linear-gradient(rgba(96, 205, 255, .08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(96, 205, 255, .08) 1px, transparent 1px),
+    rgba(9, 20, 34, .92);
+  background-size: 18px 18px;
+}
+
+.rpg-preview-engine-mark span,
+.rpg-preview-engine-mark small {
+  color: #8ebcd6;
+  letter-spacing: .16em;
+}
+
+.rpg-preview-engine-mark strong {
+  font-size: 2.6rem;
+  letter-spacing: .08em;
+}
+
+.rpg-preview-actions,
+.rpg-preview-engine {
+  margin-top: 42px;
+}
+
+.rpg-preview-section-heading h2,
+.rpg-preview-powered h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.rpg-preview-action-grid,
+.rpg-preview-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.rpg-preview-action-grid button,
+.rpg-preview-feature-grid article {
+  min-height: 170px;
+  border: 1px solid rgba(143, 196, 231, .18);
+  border-radius: 18px;
+  background: rgba(12, 19, 31, .78);
+  color: inherit;
+  padding: 22px;
+  text-align: left;
+}
+
+.rpg-preview-action-grid button {
+  display: flex;
+  flex-direction: column;
+  opacity: .82;
+}
+
+.rpg-preview-action-grid button > span,
+.rpg-preview-action-grid button > em {
+  color: #86caef;
+  font-size: .72rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+
+.rpg-preview-action-grid button strong,
+.rpg-preview-feature-grid article strong {
+  display: block;
+  margin: 10px 0 8px;
+  font-size: 1.1rem;
+}
+
+.rpg-preview-action-grid button small,
+.rpg-preview-feature-grid article span,
+.rpg-preview-powered span {
+  color: #a9becd;
+  line-height: 1.55;
+}
+
+.rpg-preview-action-grid button > em {
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.rpg-preview-feature-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rpg-preview-feature-grid article {
+  min-height: 112px;
+}
+
+.rpg-preview-powered {
+  margin-top: 42px;
+  padding: 28px 32px;
+}
+
+.rpg-preview-powered a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(149, 226, 173, .45);
+  border-radius: 12px;
+  background: rgba(34, 92, 58, .28);
+  color: #dff9e7;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .rpg-preview-hero,
+  .rpg-preview-powered {
+    grid-template-columns: 1fr;
+  }
+
+  .rpg-preview-engine-mark {
+    width: 132px;
+  }
+
+  .rpg-preview-action-grid,
+  .rpg-preview-feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
