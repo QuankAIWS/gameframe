@@ -1,5 +1,5 @@
 {
-  "manifestVersion": 4,
+  "manifestVersion": 5,
   "canonicalRepository": "QuankAIWS/scribbles-gameframe",
   "canonicalRef": "main",
   "canonicalRoot": "planning/shared",
@@ -13,6 +13,10 @@
     {
       "id": "rpg-agent-architecture-and-campaign-package-v1",
       "filename": "rpg-agent-architecture-and-campaign-package.md"
+    },
+    {
+      "id": "rpg-scene-entity-and-knowledge-contract-v1",
+      "filename": "rpg-scene-entity-and-knowledge-contract.md"
     },
     {
       "id": "rpg-platform-roadmap-v1",
