@@ -14,6 +14,10 @@ import { createDurableRpgHttpServer } from "./durable-rpg-http-server.ts";
 
 const DEFAULT_POLL_INTERVAL_MS = 250;
 
+type IngressServer = Server & {
+  closeRealtime?: () => Promise<void>;
+};
+
 export type DurableRpgServiceState =
   | "created"
   | "starting"
@@ -32,12 +36,13 @@ type DeliveryWorker = {
 };
 
 /**
- * Owns the durable RPG HTTP ingress and the single GameFrame-to-GM outbox loop.
- * Retirement closes player/runtime ingress first, then drains immediately
- * deliverable command work until idle or a retry must be left for a later run.
+ * Owns the durable RPG HTTP/WebSocket ingress and the single GameFrame-to-GM
+ * outbox loop. Retirement closes both player transport surfaces first, then
+ * drains immediately deliverable command work until idle or a retry must be
+ * left for a later run.
  */
 export class DurableRpgServiceLifecycle {
-  readonly #server: Server;
+  readonly #server: IngressServer;
   readonly #worker: DeliveryWorker;
   readonly #pollIntervalMs: number;
   readonly #closeResources?: () => void | Promise<void>;
@@ -49,7 +54,7 @@ export class DurableRpgServiceLifecycle {
   #resourcesClosed = false;
 
   constructor(input: {
-    server: Server;
+    server: IngressServer;
     worker: DeliveryWorker;
     pollIntervalMs?: number;
     closeResources?: () => void | Promise<void>;
@@ -166,10 +171,13 @@ export class DurableRpgServiceLifecycle {
 
   async #closeIngress(): Promise<void> {
     if (this.#serverClose) return await this.#serverClose;
-    if (!this.#server.listening) return;
-    this.#serverClose = new Promise<void>((resolve, reject) => {
-      this.#server.close((error) => error ? reject(error) : resolve());
-    });
+    const realtimeClose = this.#server.closeRealtime?.() ?? Promise.resolve();
+    const httpClose = this.#server.listening
+      ? new Promise<void>((resolve, reject) => {
+          this.#server.close((error) => error ? reject(error) : resolve());
+        })
+      : Promise.resolve();
+    this.#serverClose = Promise.all([realtimeClose, httpClose]).then(() => undefined);
     return await this.#serverClose;
   }
 
