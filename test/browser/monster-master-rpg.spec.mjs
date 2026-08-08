@@ -124,6 +124,28 @@ test("opens the RPG destination, resumes a campaign, and submits an action", asy
   await expect(page.locator("#mm-rpg-action-status")).toContainText("Action accepted");
 });
 
+test("idle RPG campaign no longer uses the former 2.5-second polling loop", async ({ page }) => {
+  let attachCount = 0;
+  await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, async (route) => {
+    attachCount += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(projection()),
+    });
+  });
+
+  await page.goto(`/monster-master-rpg.html?player=rpg-idle-player&campaign=${campaignId}`);
+  await expect(page.locator("#mm-rpg-campaign")).toBeVisible();
+  await expect.poll(() => attachCount).toBe(1);
+
+  // This is deliberately longer than the retired 2.5 second loop. Local
+  // development cannot attach its synthetic identity to browser WebSocket
+  // headers, so it uses the new 15 second degraded recovery interval instead.
+  await page.waitForTimeout(3_200);
+  expect(attachCount).toBe(1);
+});
+
 test("lists Monster Master RPG as the seeded staging campaign destination", async ({ page }) => {
   await page.goto("/?player=rpg-library-player");
   const card = page.locator("#game-card-monster-master-rpg");
