@@ -120,6 +120,34 @@ test("Discord OAuth exchanges an authorization code and creates a stable princip
   assert.equal(requests[1].init?.headers && new Headers(requests[1].init?.headers).get("authorization"), "Bearer discord-access-token");
 });
 
+test("default OAuth fetch preserves Worker global fetch call semantics", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  try {
+    globalThis.fetch = (async function (this: unknown, input: RequestInfo | URL) {
+      assert.equal(this, undefined);
+      calls += 1;
+      assert.equal(String(input), "https://discord.com/api/v10/oauth2/token");
+      return new Response(JSON.stringify({
+        access_token: "discord-access-token",
+        token_type: "Bearer",
+        expires_in: 3600,
+        scope: "identify",
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    }) as typeof fetch;
+
+    const client = new DiscordOAuthClient(environment);
+    const token = await client.exchangeCode(
+      "authorization-code",
+      "https://games.example/auth/discord/callback",
+    );
+    assert.equal(token.access_token, "discord-access-token");
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("staging allowlist fails closed and rejects unapproved Discord users", () => {
   const client = new DiscordOAuthClient(environment);
   assert.throws(

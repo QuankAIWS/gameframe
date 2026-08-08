@@ -271,7 +271,7 @@ export class DiscordOAuthClient {
     this.#clientSecret = configuration.clientSecret;
     this.#allowAll = configuration.allowAll;
     this.#allowedUserIds = configuration.allowedUserIds;
-    this.#fetcher = dependencies.fetcher ?? fetch;
+    this.#fetcher = dependencies.fetcher ?? ((input, init) => fetch(input, init));
     this.stateCodec = new DiscordOAuthStateCodec(configuration.sessionSecret, dependencies);
   }
 
