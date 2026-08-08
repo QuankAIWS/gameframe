@@ -101,10 +101,10 @@ test("opens the RPG destination, resumes a campaign, and submits an action", asy
   await expect(page.locator("#mm-rpg-action-status")).toContainText("Action accepted");
 });
 
-test("lists Monster Master RPG as a separate library destination", async ({ page }) => {
+test("lists Monster Master RPG as the seeded staging campaign destination", async ({ page }) => {
   await page.goto("/?player=rpg-library-player");
   const card = page.locator("#game-card-monster-master-rpg");
   await expect(card).toBeVisible();
-  await expect(card).toHaveAttribute("href", "/monster-master-rpg.html");
+  await expect(card).toHaveAttribute("href", "/monster-master-rpg.html?campaign=monster-master-staging");
   await expect(card).toContainText("Monster Master RPG");
 });
