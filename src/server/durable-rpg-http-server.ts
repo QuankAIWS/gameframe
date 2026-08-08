@@ -1,4 +1,9 @@
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type IncomingMessage,
+  type Server,
+  type ServerResponse,
+} from "node:http";
 
 import {
   AuthenticationError,
@@ -24,6 +29,10 @@ import {
   SqliteRpgEncounterError,
   SqliteRpgEncounterStore,
 } from "../rpg/sqlite-rpg-encounter-store.ts";
+import {
+  DurableRpgRealtimeHub,
+  type RpgCampaignPosition,
+} from "./durable-rpg-realtime-hub.ts";
 
 const MAX_REQUEST_BODY_BYTES = 131_072;
 const STAGING_ADMIN_RESET_PATH = "/api/rpg/admin/reset-staging";
@@ -49,11 +58,20 @@ export type DurableRpgHttpServerOptions = {
   };
 };
 
+export type DurableRpgHttpServer = Server & {
+  closeRealtime(): Promise<void>;
+};
+
 /**
- * Production-shaped RPG-only HTTP boundary over the durable SQLite services.
- * The existing GameFrame development server remains an explicit memory fixture.
+ * Production-shaped RPG boundary over the durable SQLite services.
+ *
+ * HTTP remains the only mutation/recovery authority. The attached WebSocket hub
+ * exposes authenticated player projections after durable commits and can be
+ * discarded/recreated without changing campaign or tactical truth.
  */
-export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions) {
+export function createDurableRpgHttpServer(
+  options: DurableRpgHttpServerOptions,
+): DurableRpgHttpServer {
   if (!options || typeof options.filePath !== "string" || !options.filePath.trim()) {
     throw new TypeError("filePath is required");
   }
@@ -73,6 +91,24 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
     campaigns.bootstrapCampaign(bootstrap);
   }
 
+  const realtime = new DurableRpgRealtimeHub({
+    authenticator,
+    campaignPosition: async (campaignId, playerId): Promise<RpgCampaignPosition> => {
+      const projection = await campaigns.attachCampaign(
+        { protocolVersion: 2, campaignId },
+        { kind: "player", playerId },
+      );
+      return {
+        protocolVersion: 2,
+        campaignId: projection.campaignId,
+        gameframeCoordinationRevision: projection.gameframeCoordinationRevision,
+        presentationSequence: projection.presentationSequence,
+        linkedNarrativeRevision: projection.linkedNarrativeRevision,
+      };
+    },
+    matchView: (matchId, playerId) => encounterMatches.viewMatchForPlayer(matchId, playerId),
+  });
+
   const server = createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? "/", "http://127.0.0.1");
@@ -82,12 +118,14 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
           service: "scribbles-gameframe-rpg",
           protocolVersion: 2,
           storage: "sqlite",
+          realtime: "websocket-origin",
           capabilities: [
             "durable-campaigns",
             "durable-command-outbox",
             "runtime-narrative-linkage",
             "durable-encounters",
             "terminal-outcomes",
+            "websocket-realtime",
           ],
         });
       }
@@ -151,17 +189,13 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
           );
         }
         if (campaignRoute.operation === "commands") {
-          return sendJson(
-            response,
-            200,
-            await campaigns.handleCommand(body, rpgPrincipal),
-          );
+          const committed = await campaigns.handleCommand(body, rpgPrincipal);
+          realtime.notifyCampaign(campaignRoute.campaignId);
+          return sendJson(response, 200, committed);
         }
-        return sendJson(
-          response,
-          200,
-          await campaigns.appendRuntimeEvents(body, rpgPrincipal),
-        );
+        const linked = await campaigns.appendRuntimeEvents(body, rpgPrincipal);
+        realtime.notifyCampaign(campaignRoute.campaignId);
+        return sendJson(response, 200, linked);
       }
 
       const encounterRoute = matchEncounterRoute(url.pathname);
@@ -229,17 +263,15 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
         requirePlayerPrincipal(principal);
         const body = parseJsonBody(bodyBytes);
         rejectIdentityClaim(principal, body.playerId);
-        return sendJson(
-          response,
-          200,
-          await encounterMatches.submitMatchActionForPlayer({
-            matchId: matchRoute.matchId,
-            playerId: principal.playerId,
-            actionId: String(body.actionId ?? ""),
-            expectedRevision: Number(body.expectedRevision),
-            action: body.action,
-          }),
-        );
+        const view = await encounterMatches.submitMatchActionForPlayer({
+          matchId: matchRoute.matchId,
+          playerId: principal.playerId,
+          actionId: String(body.actionId ?? ""),
+          expectedRevision: Number(body.expectedRevision),
+          action: body.action,
+        });
+        realtime.notifyMatch(matchRoute.matchId);
+        return sendJson(response, 200, view);
       }
 
       return sendJson(response, 404, {
@@ -251,12 +283,18 @@ export function createDurableRpgHttpServer(options: DurableRpgHttpServerOptions)
       const normalized = normalizeError(error);
       return sendJson(response, normalized.status, normalized.body);
     }
+  }) as DurableRpgHttpServer;
+
+  server.closeRealtime = () => realtime.closeAll();
+  server.on("upgrade", (request, socket, head) => {
+    void realtime.handleUpgrade(request, socket, head).catch(() => socket.destroy());
   });
 
   let closed = false;
   server.once("close", () => {
     if (closed) return;
     closed = true;
+    realtime.terminateAll();
     encounterMatches.close();
     encounters.close();
     campaigns.close();
