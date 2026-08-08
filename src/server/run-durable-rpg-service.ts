@@ -33,7 +33,9 @@ async function requestStagingReset(): Promise<void> {
   }
   if (resetScheduled) return;
 
-  const response = await fetch(new URL("/v1/staging/reset", config.gmBaseUrl), {
+  const resetUrl = new URL("/v1/staging/reset", config.gmBaseUrl);
+  resetUrl.port = "8792";
+  const response = await fetch(resetUrl, {
     method: "POST",
     headers: {
       accept: "application/json",
