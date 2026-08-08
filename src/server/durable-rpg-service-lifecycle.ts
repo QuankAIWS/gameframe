@@ -247,7 +247,7 @@ function listen(server: Server, host: string, port: number): Promise<void> {
     };
     server.once("error", onError);
     server.once("listening", onListening);
-    server.listen(port, host, port);
+    server.listen(port, host);
   });
 }
 
