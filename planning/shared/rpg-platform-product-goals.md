@@ -3,13 +3,13 @@ title: RPG Platform Product Goals
 status: accepted
 document_type: decision
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-05
+last_updated: 2026-08-08
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
   - scribbles-runtime-theo-connector
 shared_document_id: rpg-platform-product-goals-v1
-shared_document_version: 3
+shared_document_version: 4
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-platform-product-goals.md
 mirrors:
@@ -17,6 +17,7 @@ mirrors:
 sync_policy: exact-byte-copy
 related:
   - rpg-agent-architecture-and-campaign-package.md
+  - rpg-scene-entity-and-knowledge-contract.md
   - rpg-platform-roadmap.md
   - ../rpg-campaign-experience-directions.md
   - ../rpg-gm-runtime-boundary.md
@@ -30,27 +31,33 @@ related:
 
 The RPG platform is a persistent, publicly accessible role-playing system played through GameFrame.
 
-A specialized Campaign Architect creates validated CampaignPackages. A specialized Dungeon Master runs committed packages through freeform play. GameFrame presents the complete player experience and owns deterministic mechanics and tactical authority.
+A specialized Campaign Architect creates validated CampaignPackages. A specialized Dungeon Master runs committed packages through freeform play. Deterministic runtime substrate owns exact entity identity, physical scene presence, player knowledge, event/mechanic authority, and scene-to-tactical continuity. GameFrame presents the complete player experience and owns deterministic mechanics and tactical authority.
 
-The first campaign proof is the handcrafted Monster Master gold-standard package. The next platform proof is a materially different bespoke package created through the Campaign Architect boundary and run by the same Dungeon Master.
+The first campaign proof is the handcrafted Monster Master gold-standard package. The next platform generality proof is a materially different **second handcrafted package** running through the same package/entity/scene/knowledge/Dungeon Master/GameFrame path. Campaign Architect generation follows only after those two handcrafted campaigns prove the common abstraction.
 
 ## Settled architecture
 
 ### Campaign Architect
 
-The Campaign Architect converts a concise concept, detailed specification, structured sheet, later GameFrame or Discord interview, prepared campaign family, or imported package into one validated CampaignPackage.
+The Campaign Architect converts a concise concept, detailed specification, structured sheet, later GameFrame or Discord interview, prepared campaign family, or imported package into one validated CampaignPackage draft.
 
-It owns campaign construction, not live play.
+It owns campaign construction, not live play. Generated output may be owner-refined before explicit commitment.
 
 ### Dungeon Master
 
-The Dungeon Master consumes a committed CampaignPackage and durable campaign state. It owns narration, NPC performance, freeform interpretation, pacing, eligible events, compatible improvisation, and campaign consequences.
+The Dungeon Master consumes a committed CampaignPackage and durable campaign state. It owns narration, NPC performance, freeform interpretation, pacing, eligible events, compatible improvisation, and campaign consequences through validated semantic operations.
 
-It may not replace package truth or use a separate campaign-specific execution path.
+It may not replace package truth, directly mint unconstrained durable NPCs, infer physical presence from prose, expose hidden canonical identity, or use a separate campaign-specific execution path.
+
+### Durable runtime substrate
+
+Entity Registry, Character Factory, Scene Registry, player/party knowledge projection, Dungeon Master Context Compiler, typed campaign-operation validators, and Encounter Scene Compiler are deterministic runtime substrate rather than additional campaign agents.
+
+They make exact campaign facts explicit so model memory is not campaign authority.
 
 ### CampaignPackage
 
-Handcrafted and generated campaigns use the same package schema, validation, persistence, commitment, visibility, and Dungeon Master interface.
+Handcrafted and generated campaigns use the same package schema, validation, persistence, commitment, visibility, entity/scene initialization, and Dungeon Master interface.
 
 Monster Master is manually authored to establish the expected package quality.
 
@@ -60,9 +67,11 @@ GameFrame is the primary and authoritative player-facing application for:
 
 - campaign concept submission, package preview, joining, invitations, and resume;
 - narration, scenes, dialogue, freeform actions, optional suggestions, and structured choices;
+- distinct **Act / Speak** and **Ask Game Master** interaction modes;
+- viewer-safe current-scene and People/Characters views;
 - characters, creatures, abilities, conditions, inventory, equipment, progression, quests, clues, and objectives;
 - maps, exploration, locations, points of interest, checks, handouts, and player-private information;
-- tactical encounters and return to the surrounding campaign;
+- tactical encounters and authoritative return to the surrounding campaign;
 - history, recap, reconnect, recovery, and later-session continuation;
 - presentation of accepted campaign art, animation, sound, music, and narration.
 
@@ -75,9 +84,12 @@ Campaigns are durable products, not disposable model conversations.
 The platform must support:
 
 - authoritative CampaignPackages and campaign journals;
-- campaigns continuing across sessions;
+- campaigns continuing across multiple play sessions;
+- bounded engineering/starter chapters without implying that the mature product is limited to one-shot length;
 - audience-scoped secrets;
-- stable player, character, NPC, location, item, faction, quest, encounter, and asset identities;
+- stable player, character, NPC, creature, location, item, faction, quest, encounter, and asset identities;
+- explicit current scene membership and materially relevant local state;
+- viewer-specific knowledge and identity labels;
 - deterministic retry and reconnect;
 - operator inspection and explicit correction;
 - backup, restore, recap, and resume;
@@ -101,7 +113,7 @@ The system preserves desired high-level qualities while replacing protected name
 
 ## Ownership principle
 
-> The Campaign Architect defines the campaign package; the Dungeon Master conducts the campaign; GameFrame turns the campaign into a coherent player experience and authoritative mechanics.
+> The Campaign Architect defines the campaign package; runtime owns exact durable world state; the Dungeon Master conducts the campaign; GameFrame turns the campaign into a coherent player experience and authoritative mechanics.
 
 ### RPG GM Runtime owns
 
@@ -109,18 +121,22 @@ The system preserves desired high-level qualities while replacing protected name
 - CampaignBrief and CampaignPackage schemas;
 - package validation, hashing, persistence, migration, and hidden truth;
 - runtime campaign journal and narrative revision;
+- Entity Registry, Character Factory, Scene Registry, and viewer knowledge projection;
 - NPC motives, memories, relationships, clues, events, and consequences;
 - freeform player-intent interpretation;
-- audience classification;
-- model context, provider routing, proposal validation, retry, and fallback;
+- audience classification and knowledge authorization;
+- model context, provider routing, semantic validation, retry, and fallback;
 - semantic media and mechanic intents;
-- mapping GameFrame outcomes into campaign consequences.
+- scene-to-encounter semantic projection;
+- mapping GameFrame outcomes into campaign/world/scene consequences.
 
 ### GameFrame owns
 
 - complete authenticated campaign creation and play interfaces;
-- player commands, identity, seats, invitations, and projections;
+- player commands, identity, seats, invitations, and viewer-safe projections;
 - player-safe package preview and confirmation;
+- People/current-scene presentation and entity inspection authorization;
+- Act/Speak and Ask-GM UI semantics;
 - structured mechanics deliberately implemented in GameFrame;
 - Arena Battles authority, replay, reconnect, and committed outcomes;
 - semantic asset catalogs, composition, generation, validation, provenance, storage, delivery, and fallback;
@@ -148,7 +164,7 @@ The Campaign Architect declares semantic requirements and importance. GameFrame 
 7. display placeholders or text immediately;
 8. replace presentation assets without altering campaign truth.
 
-Cloudflare-backed image generation should eventually help the Campaign Architect materialize complete campaign packs. It is not required to prove CampaignPackage logic or Dungeon Master behavior.
+Cloudflare-backed image generation should eventually help materialize complete campaign packs. It is not required to prove CampaignPackage logic, durable world state, or Dungeon Master behavior.
 
 ## Deployment goals
 
@@ -163,7 +179,7 @@ The first production profile should:
 7. support backup, restore, observability, and recovery;
 8. retain an evidence-based path to later Cloudflare-native migration.
 
-Deployment must remain runnable, but additional hardening does not outrank the executable package and agent loop unless a concrete defect blocks development or play.
+Deployment must remain runnable, but additional hardening does not outrank executable campaign correctness unless a concrete defect blocks development or play.
 
 ## Product quality goals
 
@@ -172,54 +188,70 @@ The system should be:
 - coherent enough to feel authored rather than like disconnected AI demonstrations;
 - capable of multiple campaign genres without separate Dungeon Master code paths;
 - durable across provider failure and long gaps;
-- resistant to plot drift and secret leakage;
+- resistant to plot drift, identity drift, scene discontinuity, and secret leakage;
 - visually consistent across recurring campaign identities;
 - responsive on desktop and mobile;
 - inspectable and recoverable;
 - machine-testable through mock providers and scripted players;
 - provider-flexible for language, image, audio, storage, and delivery;
-- explicit about identity, audience, provenance, revision, and authority.
+- explicit about identity, scene, knowledge, audience, provenance, revision, and authority.
 
 ## First product proof — Monster Master
 
-The first convincing proof is complete when players can:
+The first convincing engineering proof is complete when players can:
 
 1. enter one handcrafted and validated Monster Master CampaignPackage;
 2. receive a Dungeon Master opening derived from the committed package;
 3. submit arbitrary freeform actions across multiple scenes;
-4. encounter coherent NPCs, clues, events, checks, and consequences;
-5. receive correctly scoped public and private information;
-6. enter and complete an Arena Battles encounter;
-7. return with the tactical outcome applied;
-8. disconnect, restart services, and resume without package drift or duplicated commands;
-9. complete a bounded campaign resolution;
-10. play through text and deterministic fallbacks when media is missing.
+4. encounter coherent durable NPCs, clues, events, checks, and consequences;
+5. see only viewer-authorized people, identities, facts, and private information;
+6. distinguish Act/Speak from Ask-GM;
+7. enter and complete an Arena Battles encounter derived from supported current-scene truth;
+8. return with the tactical outcome applied and narrative input authoritatively resumed;
+9. disconnect, restart services, and resume without package drift or duplicated commands;
+10. complete a bounded campaign-resolution proof;
+11. play through text and deterministic fallbacks when media is missing.
+
+The engineering proof may use a bounded starter chapter. The mature product remains a multi-session campaign system rather than a one-shot-only product.
 
 This proof must be machine-tested before being treated as human-ready.
 
-## Second product proof — Campaign Architect
+## Second product proof — handcrafted generality
 
-The next major proof is complete when:
+Before implementing Campaign Architect generation, a materially different **second handcrafted CampaignPackage** must:
+
+1. pass the same validator used by Monster Master;
+2. initialize through the same Entity/Scene/Knowledge substrate;
+3. run through the same Dungeon Master without campaign-specific control-plane code;
+4. complete scripted multi-turn play without plot drift or secret leakage;
+5. use existing GameFrame primitives/fallbacks or expose a genuinely reusable missing capability.
+
+If this package requires a special Dungeon Master execution branch or breaks the common world model, repair the abstraction first.
+
+## Third product proof — Campaign Architect
+
+After the two handcrafted campaigns prove the runtime abstraction:
 
 1. a player or test supplies a materially different concept;
-2. the Campaign Architect produces an original validated CampaignPackage;
-3. the package passes the same validator used by Monster Master;
-4. the same Dungeon Master runs it without campaign-specific code;
-5. scripted players complete the package without plot drift or secret leakage;
-6. GameFrame presents it through existing primitives and accepted fallbacks.
+2. the Campaign Architect produces an original validated draft CampaignPackage;
+3. optional owner refinement preserves the same validator boundary;
+4. the package passes the same validator/entity/scene/knowledge path;
+5. the same Dungeon Master runs it without campaign-specific code;
+6. scripted players complete the package without plot drift or secret leakage;
+7. GameFrame presents it through existing primitives and accepted fallbacks.
 
-A medieval supernatural-response package and a 1920s steampunk paranormal-response package are suitable initial tests, provided they are original rather than direct franchise copies.
+A medieval supernatural-response package and a 1920s steampunk paranormal-response package are suitable initial generation tests, provided they are original rather than direct franchise copies.
 
 ## Later product expansion
 
-After both proofs:
+After those proofs:
 
 - structured campaign sheets;
 - guided GameFrame creation;
 - Discord interviews;
 - Campaign Architect repair and operator review;
 - Cloudflare-backed campaign image generation;
-- richer multi-session systems;
+- richer multi-session progression and world systems;
 - additional prepared themes;
 - Theo participation;
 - optional Cloudflare-native state migration;
@@ -242,4 +274,4 @@ The product direction does not require:
 
 ## Governing rule
 
-> Prove the two-agent system with one handcrafted Monster Master package, then prove the Campaign Architect can create a different package that the same Dungeon Master can run.
+> Prove one durable handcrafted campaign, prove the same architecture with a materially different handcrafted campaign, then automate campaign construction with the Campaign Architect.
