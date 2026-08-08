@@ -3,7 +3,7 @@ title: Monster Master Duel Rules — MM-0001
 status: accepted
 document_type: contract
 owner: Scribbles GameFrame
-last_updated: 2026-08-07
+last_updated: 2026-08-08
 applies_to:
   - scribbles-gameframe
   - Monster Master Arena Battles
@@ -11,6 +11,7 @@ applies_to:
 related:
   - ROADMAP.md
   - monster-master-rpg-canonical-baseline.md
+  - monster-master-rpg-encounter-rules.md
   - rpg-gameframe-interface-contract.md
   - tactical-battler-rpg-foundation.md
 ---
@@ -19,47 +20,53 @@ related:
 
 ## Purpose
 
-MM-0001 is the first playable original game built on Scribbles GameFrame's validated tactical substrate. It is intentionally small enough to implement, simulate, and revise before finalizing the long-term combat feel.
+MM-0001 is the first small standalone Monster Master game built on GameFrame's tactical substrate. It is intentionally bounded enough to implement, simulate, and preserve as a regression target while the campaign-facing Monster Master RPG encounter model grows separately.
 
-Monster Master is a separate game definition. It reuses platform, map, movement, line-of-sight, replay, storage, projection, agent, and rendering infrastructure without inheriting the tactical combat canary's state or forcing later RPG and D&D-style encounters into this ruleset.
+MM-0001 reuses platform/map/movement/line-of-sight/replay/storage/rendering infrastructure without defining the complete future RPG combat system.
 
 ## First duel roster
 
-Each player owns three stable units:
+Each player owns three fixed units:
 
-- **Master — Warden Master**
-  - 14 health
-  - 4 movement
-  - 7 initiative
-  - range 4
-  - 3 damage
-  - knows `Mend`
-- **Monster — Stone Bulwark**
-  - 12 health
-  - 3 movement
-  - 5 initiative
-  - range 1
-  - 4 damage
-- **Monster — Emberling Skirmisher**
-  - 8 health
-  - 6 movement
-  - 9 initiative
-  - range 3
-  - 3 damage
+### Warden Master
 
-Content IDs and unit IDs are stable. Rules refer to semantic roles and content definitions rather than browser artwork.
+- 14 health;
+- 4 movement;
+- 7 initiative;
+- range 4;
+- 3 damage;
+- `Mend`.
 
-## Deployment phase
+### Stone Bulwark
 
-- The duel begins in `deployment` rather than combat.
-- Players alternate one unit deployment at a time.
-- Each player may deploy only their own undeployed units.
-- The first player uses the left deployment zone; the second uses the right deployment zone.
-- Blocked or occupied cells are illegal.
-- Deployment actions are authoritative commands containing the stable unit ID and destination coordinate.
-- After every unit in both rosters is deployed, initiative is calculated and the duel enters combat at round one.
+- 12 health;
+- 3 movement;
+- 5 initiative;
+- range 1;
+- 4 damage.
 
-The first deployment system is intentionally deterministic and public. Its alternating-seat transition currently requires equal roster counts on the two tactical sides. Campaign-configured encounters with asymmetric counts therefore fail closed before match creation until asymmetric deployment is deliberately implemented. Hidden placement, simultaneous reveal, drafting, reserve units, and reinforcement waves are later possibilities.
+### Emberling Skirmisher
+
+- 8 health;
+- 6 movement;
+- 9 initiative;
+- range 3;
+- 3 damage.
+
+Content/unit identities are stable. Artwork does not define rules.
+
+## Deployment
+
+- duel begins in `deployment`;
+- players alternate one unit deployment at a time;
+- players deploy only their own undeployed units;
+- left/right deployment zones are fixed;
+- blocked/occupied cells are illegal;
+- after every unit is deployed, initiative begins round one.
+
+The alternating two-side deployment transition currently requires equal roster counts.
+
+That constraint belongs to MM-0001/current shared implementation. It must not silently reshape campaign scenes. Campaign RPG requests with asymmetric required forces fail closed until the RPG encounter rules implement an appropriate deployment/materialization path.
 
 ## Combat activations
 
@@ -69,119 +76,125 @@ During one activation a unit may:
 
 - move once;
 - use one primary action once;
-- perform those opportunities in either order; and
-- explicitly end its activation early.
+- perform them in either order;
+- end activation early.
 
-Using both opportunities automatically ends the activation. There is no generalized action-point economy in MM-0001.
+Using both opportunities ends the activation automatically.
 
 ## Movement and attacks
 
-- Movement uses the validated weighted cardinal pathfinding rules.
-- Units cannot cross walls or occupied cells.
-- Basic attacks require row, column, or exact 45-degree diagonal alignment.
-- Walls and intervening living units block line of sight.
-- Damage is deterministic.
-- Units at zero health are defeated and removed from occupancy.
+- weighted cardinal pathfinding;
+- no crossing walls/occupied cells;
+- row/column/exact-45-degree basic attacks;
+- walls/living units block line of sight;
+- deterministic damage;
+- zero-health units are defeated and removed from occupancy.
 
-Random hit rolls, critical hits, reactions, facing, elevation, cover percentages, overwatch, opportunity attacks, destructible terrain, and complex status catalogs are deferred.
+MM-0001 does not define death semantics for RPG campaigns. A campaign rules profile must explicitly define whether tactical defeat means incapacitation, withdrawal, death, or another consequence.
 
 ## Command energy
 
-Each player begins with two command energy and has a maximum of three.
+Each player begins with two command energy and has a maximum of three. One restores at the start of each new round up to the cap.
 
-At the beginning of each new round:
+## Mend
 
-- each player restores one command energy;
-- energy cannot exceed the cap; and
-- restoration is represented by structured authoritative effects.
+Warden Master may use `Mend`:
 
-This resource is deliberately small and visible. It proves resource-backed abilities without committing the project to a large mana, card, cooldown, or action-point system.
-
-## Mend ability
-
-The Warden Master may use `Mend` as its primary action:
-
-- command cost: 1;
-- target: a living friendly unit with missing health;
-- range: 3;
-- line of sight: required;
-- healing: up to 3, capped by maximum health.
-
-`Mend` proves that Monster Master actions can target allies, spend a player resource, and produce non-damage effects. Additional abilities should be added only after the first duel is playable enough to evaluate.
+- primary action;
+- cost 1 command;
+- living friendly damaged target;
+- range 3;
+- line of sight required;
+- heals up to 3, capped by maximum health.
 
 ## Victory and draw
 
-- A player wins only after every opposing unit has been defeated and removed from the battlefield.
-- Defeating the opposing Warden Master does not end the duel while that player still controls a living Bulwark or Emberling; this rule describes the standalone MM-0001 roster.
-- If neither force is eliminated, the duel becomes a draw when the final activation of round 24 ends. The authoritative round remains 24; a phantom round 25 is not started.
+- a player wins only after every opposing MM-0001 unit is defeated;
+- defeating only the Warden Master does not end the duel while that side has a living Bulwark/Emberling;
+- if neither force is eliminated, round 24 completion is a draw.
 
-Alternative objectives, capture points, escort rules, retreats, surrender, and multi-stage encounters remain future rules.
+This **defeat-all-opposition** rule belongs to the standalone duel. It is not the universal Monster Master RPG objective model.
 
 ## Authoritative state
 
-The game authority owns:
+MM-0001 authority owns:
 
 - phase;
-- map and deployed unit state;
-- complete rosters and undeployed IDs;
+- map/deployed units;
+- rosters/undeployed IDs;
 - active deployment player;
-- initiative order and active unit;
-- movement and primary-action usage;
+- initiative/active unit;
+- movement/primary-action use;
 - command energy;
-- health, defeat history, winner, and draw state;
-- legal actions; and
+- health/defeat history;
+- winner/draw;
+- legal actions;
 - structured effects.
 
-The browser owns only presentation state such as camera, hover, selection, path animation, visual effects, and local UI mode.
+Browser owns camera/hover/selection/animation/local UI only.
 
-## Campaign-configured encounter boundary
+## Current configured RPG reuse
 
-MM-0001 remains the fixed standalone duel definition. RPG campaigns reuse its tactical primitives and ordinary match authority without silently replacing supplied trainer/monster identities with the standalone three-unit roster.
-
-The implemented `monster-master-rpg` path is:
+The existing `monster-master-rpg` adapter reuses MM-0001 creature templates and MatchSession authority for a narrow configured campaign surface:
 
 ```text
-validated RPG encounter `rulesState.creatureIds`
-→ validate supported creature/objective/difficulty/battlefield configuration
-→ configured Monster Master initial state
-→ authoritative revision-zero MatchSession snapshot
-→ ordinary actions, replay, durable persistence, and terminal state
-→ exact participant-to-creature aftermath
+validated RPG `rulesState.creatureIds`
+→ supported creature/objective/difficulty/battlefield validation
+→ configured revision-zero Monster Master state
+→ ordinary MatchSession actions/replay/persistence
+→ exact participant-to-creature terminal aftermath
 ```
 
-Current configured RPG semantics:
+Current supported semantics:
 
-- trainers remain RPG encounter participants/controllers and are not materialized as Warden Master tactical creatures;
-- exact campaign creature IDs are retained as tactical unit IDs;
-- Emberling IDs use the existing Emberling Skirmisher rules profile;
-- Bulwark IDs use the existing Stone Bulwark rules profile;
-- each tactical side may contain one through three supported creatures;
-- both sides must currently contain the same number of creatures because deployment alternates between two tactical seats;
-- the current compact-duel map, normal difficulty semantics, and defeat-opposition objective are the only accepted combat configuration;
-- `participantUnitIds` persists exact participant→creature assignment for terminal aftermath;
-- shared-team player authorization remains distinct from assignment: an authorized teammate may operate the allied roster even though `assignedUnitIds` identifies the creatures mapped to that player's participant records.
+- trainers remain encounter participants/controllers, not Warden Master tactical creatures;
+- exact campaign creature IDs become tactical unit IDs;
+- Emberling IDs use Emberling rules;
+- Bulwark IDs use Stone Bulwark rules;
+- one through three supported creatures per side;
+- equal creature counts;
+- compact-duel geometry;
+- normal difficulty;
+- defeat-opposition objective;
+- exact `participantUnitIds` mapping;
+- shared-team authorization is separate from exact participant assignment.
 
-A configured initial state does not broaden the rules implemented by this file. Unknown species, arbitrary trainer combat profiles, custom abilities/resources/status mechanics, custom maps, unsupported objectives/difficulty values, or asymmetric rosters are rejected before durable encounter custody. New package mechanics require corresponding deterministic Arena implementation and tests; they are never accepted as ignored metadata.
+Unsupported combat-relevant configuration fails closed.
 
-## Future compatibility
+## Campaign-facing evolution is separate
 
-A later open-world or campaign layer may contain exploration maps, NPCs, dialogue, parties, and encounter triggers. It should launch explicit Monster Master or other encounter definitions and receive structured outcomes.
+The final Monster Master RPG encounter model is controlled by [`monster-master-rpg-encounter-rules.md`](monster-master-rpg-encounter-rules.md).
 
-A D&D-style system should use its own rules definition or family of definitions. It may reuse GameFrame infrastructure and tactical primitives while retaining different initiative, turns, actions, reactions, resources, conditions, character data, visibility, and licensing boundaries.
+That contract may add, as actual campaigns require:
+
+- scene-derived participant roles;
+- trainer tactical profiles;
+- neutral/noncombatant/protected/support entities;
+- scene objects/exits;
+- escape/withdrawal/surrender/recall;
+- asymmetric forces;
+- alternative objectives;
+- structured scene reconciliation.
+
+Those capabilities should reuse tactical-core and MatchSession when appropriate, but they do not have to pretend the fixed MM-0001 duel is the entire campaign combat system.
 
 ## Explicitly outside MM-0001
 
-- final balance;
-- large rosters or collection progression;
-- summoning during combat;
-- randomized loot;
-- deck construction;
-- fog of war;
+- final campaign balance;
+- collection/progression systems;
+- campaign scene registry;
+- current-scene entity projection;
+- campaign trainer archetype implementations;
+- escape/withdrawal/surrender;
+- asymmetric campaign encounters;
+- civilians/noncombatants/protection objectives;
 - open-world exploration;
-- NPC dialogue;
-- campaign persistence;
+- NPC dialogue/campaign persistence;
 - procedural encounters;
-- final artwork or animation;
-- deployed Cloudflare behavior;
-- Discord Activity delivery; and
+- final artwork/animation;
+- deployment/cloud behavior;
 - live Scribbles Runtime control of Theo.
+
+## Governing rule
+
+> Keep MM-0001 small and deterministic. Reuse what is useful, but evolve Monster Master RPG combat through a separate campaign encounter contract so a richer campaign never has to lie about who is present or what the objective is just to fit the old duel.
