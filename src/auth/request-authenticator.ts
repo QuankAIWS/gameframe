@@ -5,6 +5,11 @@ export interface AuthenticatedPrincipal {
   source: PrincipalSource;
   displayName?: string;
   avatarUrl?: string;
+  /**
+   * Server-derived operator authority. Browsers never get to assert this bit;
+   * Cloudflare may bind it into the signed VM request contract.
+   */
+  admin?: boolean;
 }
 
 export interface RequestAuthenticator {
