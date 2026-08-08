@@ -46,12 +46,19 @@ const elements = {
 };
 
 const storageKey = "scribbles-gameframe.monster-master-rpg.campaign";
+const fallbackPollIntervalMs = 15_000;
+const maximumReconnectDelayMs = 15_000;
+const fallbackAfterReconnectAttempt = 3;
 const state = {
   campaignId: null,
   projection: null,
   events: [],
+  socket: null,
+  reconnectTimer: null,
+  reconnectAttempt: 0,
   pollTimer: null,
   attachInFlight: null,
+  pendingRealtimeRefresh: false,
   pendingCommand: null,
 };
 
@@ -75,6 +82,18 @@ function showError(message) {
 function setConnection(label, status) {
   elements.connection.textContent = label;
   elements.connection.dataset.state = status;
+}
+
+function updateConnectionStatus() {
+  if (state.socket?.readyState === WebSocket.OPEN) {
+    setConnection("Live", "live");
+  } else if (state.pollTimer) {
+    setConnection("Degraded · periodic recovery", "connecting");
+  } else if (state.reconnectTimer || state.socket?.readyState === WebSocket.CONNECTING) {
+    setConnection("Reconnecting", "connecting");
+  } else if (state.campaignId) {
+    setConnection("Disconnected", "error");
+  }
 }
 
 function setJoinBusy(busy) {
@@ -140,41 +159,61 @@ async function requestJson(path, body) {
   }
 }
 
-function campaignPath(operation) {
-  return `/api/rpg/campaigns/${encodeURIComponent(state.campaignId)}/${operation}`;
+function campaignPath(operation, campaignId = state.campaignId) {
+  return `/api/rpg/campaigns/${encodeURIComponent(campaignId)}/${operation}`;
 }
 
 async function attachCampaign({ quiet = false } = {}) {
-  if (!state.campaignId) return null;
-  if (state.attachInFlight) return state.attachInFlight;
+  const campaignId = state.campaignId;
+  if (!campaignId) return null;
+  if (state.attachInFlight?.campaignId === campaignId) return state.attachInFlight.promise;
   if (!quiet) setConnection("Refreshing", "connecting");
-  state.attachInFlight = requestJson(
-    campaignPath("attach"),
-    buildAttachRequest(state.campaignId),
+
+  let promise;
+  promise = requestJson(
+    campaignPath("attach", campaignId),
+    buildAttachRequest(campaignId),
   ).then((value) => {
+    if (state.campaignId !== campaignId) return null;
     const projection = normalizeProjection(value);
     state.projection = projection;
     state.events = mergeCampaignEvents(state.events, projection.events);
     renderCampaign();
-    setConnection("Live", "live");
+    if (state.socket?.readyState === WebSocket.OPEN) setConnection("Live", "live");
+    else if (!quiet && !state.reconnectTimer && !state.pollTimer) setConnection("Connected", "live");
+    else updateConnectionStatus();
     showError("");
     return projection;
   }).catch((error) => {
-    setConnection("Disconnected", "error");
-    if (!quiet) showError(error.message || "Unable to refresh this campaign.");
+    if (state.campaignId !== campaignId) return null;
+    if (!quiet) {
+      setConnection("Disconnected", "error");
+      showError(error.message || "Unable to refresh this campaign.");
+    } else {
+      updateConnectionStatus();
+    }
     throw error;
   }).finally(() => {
-    state.attachInFlight = null;
+    if (state.attachInFlight?.promise === promise) state.attachInFlight = null;
+    if (state.campaignId !== campaignId || !state.pendingRealtimeRefresh) return;
+    state.pendingRealtimeRefresh = false;
+    queueMicrotask(() => {
+      if (state.campaignId === campaignId) {
+        void attachCampaign({ quiet: true }).catch(() => undefined);
+      }
+    });
   });
-  return state.attachInFlight;
+  state.attachInFlight = { campaignId, promise };
+  return promise;
 }
 
 async function openCampaign(campaignIdValue) {
   const campaignId = normalizeCampaignId(campaignIdValue);
-  stopPolling();
+  stopRealtime();
   state.campaignId = campaignId;
   state.projection = null;
   state.events = [];
+  state.pendingRealtimeRefresh = false;
   state.pendingCommand = null;
   updateComposer();
   setJoinBusy(true);
@@ -182,15 +221,16 @@ async function openCampaign(campaignIdValue) {
   setConnection("Connecting", "connecting");
   try {
     await attachCampaign();
+    if (state.campaignId !== campaignId) return;
     window.localStorage.setItem(storageKey, campaignId);
     const url = new URL(window.location.href);
     url.searchParams.set("campaign", campaignId);
     window.history.replaceState({}, "", url);
     elements.join.hidden = true;
     elements.campaign.hidden = false;
-    startPolling();
+    startRealtime();
   } catch (error) {
-    state.campaignId = null;
+    if (state.campaignId === campaignId) state.campaignId = null;
     showError(error.message || "Unable to open that campaign.");
   } finally {
     setJoinBusy(false);
@@ -343,17 +383,132 @@ function formatTime(value) {
     : new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(date);
 }
 
-function startPolling() {
-  stopPolling();
+function startRealtime() {
+  stopRealtime();
+  if (!state.campaignId) return;
+  // Browser WebSocket APIs cannot attach the explicit development identity
+  // header used by local fixtures. Hosted Discord sessions authenticate with the
+  // existing signed cookie at the Worker; development uses the slow recovery
+  // path rather than reintroducing an identity query parameter.
+  if (identity.source !== "discord") {
+    startFallbackPolling();
+    return;
+  }
+  connectRealtime(state.campaignId);
+}
+
+function realtimeUrl(campaignId) {
+  const url = new URL(
+    `/api/rpg/campaigns/${encodeURIComponent(campaignId)}/realtime`,
+    window.location.href,
+  );
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  return url;
+}
+
+function connectRealtime(campaignId) {
+  if (!state.campaignId || state.campaignId !== campaignId) return;
+  if (state.socket && (
+    state.socket.readyState === WebSocket.OPEN
+    || state.socket.readyState === WebSocket.CONNECTING
+  )) return;
+
+  const socket = new WebSocket(realtimeUrl(campaignId));
+  state.socket = socket;
+  setConnection("Connecting live updates", "connecting");
+
+  socket.onopen = () => {
+    if (state.socket !== socket || state.campaignId !== campaignId) return;
+    state.reconnectAttempt = 0;
+    if (state.reconnectTimer) window.clearTimeout(state.reconnectTimer);
+    state.reconnectTimer = null;
+    stopFallbackPolling();
+    setConnection("Live", "live");
+  };
+
+  socket.onmessage = (event) => {
+    if (state.socket !== socket || state.campaignId !== campaignId) return;
+    let message;
+    try {
+      message = JSON.parse(event.data);
+    } catch {
+      return;
+    }
+    if (message?.type === "protocol_error") {
+      showError(message.message || "The live campaign connection reported a protocol error.");
+      return;
+    }
+    if (
+      message?.type !== "campaign_position"
+      || message.protocolVersion !== 2
+      || message.campaignId !== campaignId
+    ) return;
+    if (!campaignPositionAdvanced(message)) return;
+    if (state.attachInFlight?.campaignId === campaignId) {
+      state.pendingRealtimeRefresh = true;
+      return;
+    }
+    void attachCampaign({ quiet: true }).catch(() => undefined);
+  };
+
+  socket.onclose = () => {
+    if (state.socket === socket) state.socket = null;
+    if (!state.campaignId || state.campaignId !== campaignId) return;
+    scheduleReconnect(campaignId);
+  };
+  socket.onerror = () => socket.close();
+}
+
+function campaignPositionAdvanced(message) {
+  const projection = state.projection;
+  if (!projection) return true;
+  return Number(message.gameframeCoordinationRevision) > projection.gameframeCoordinationRevision
+    || Number(message.presentationSequence) > projection.presentationSequence
+    || Number(message.linkedNarrativeRevision) > projection.linkedNarrativeRevision;
+}
+
+function scheduleReconnect(campaignId) {
+  if (!state.campaignId || state.campaignId !== campaignId || state.reconnectTimer) return;
+  const baseDelay = Math.min(
+    1_000 * (2 ** state.reconnectAttempt),
+    maximumReconnectDelayMs,
+  );
+  const jitter = Math.round(baseDelay * 0.2 * Math.random());
+  state.reconnectAttempt += 1;
+  if (state.reconnectAttempt >= fallbackAfterReconnectAttempt) startFallbackPolling();
+  state.reconnectTimer = window.setTimeout(() => {
+    state.reconnectTimer = null;
+    connectRealtime(campaignId);
+  }, baseDelay + jitter);
+  updateConnectionStatus();
+}
+
+function startFallbackPolling() {
+  if (state.pollTimer || !state.campaignId) return;
   state.pollTimer = window.setInterval(() => {
     if (document.hidden || !state.campaignId || state.attachInFlight) return;
     void attachCampaign({ quiet: true }).catch(() => undefined);
-  }, 2_500);
+  }, fallbackPollIntervalMs);
+  updateConnectionStatus();
 }
 
-function stopPolling() {
+function stopFallbackPolling() {
   if (state.pollTimer) window.clearInterval(state.pollTimer);
   state.pollTimer = null;
+}
+
+function stopRealtime() {
+  if (state.reconnectTimer) window.clearTimeout(state.reconnectTimer);
+  state.reconnectTimer = null;
+  state.reconnectAttempt = 0;
+  state.pendingRealtimeRefresh = false;
+  stopFallbackPolling();
+  if (state.socket) {
+    state.socket.onclose = null;
+    state.socket.onerror = null;
+    state.socket.close();
+  }
+  state.socket = null;
 }
 
 async function submitAction() {
@@ -415,10 +570,11 @@ elements.reference.addEventListener("click", () => {
 });
 
 elements.switchCampaign.addEventListener("click", () => {
-  stopPolling();
+  stopRealtime();
   state.campaignId = null;
   state.projection = null;
   state.events = [];
+  state.pendingRealtimeRefresh = false;
   state.pendingCommand = null;
   updateComposer();
   elements.campaign.hidden = true;
@@ -451,11 +607,15 @@ elements.discardRetry.addEventListener("click", () => {
 });
 
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && state.campaignId) void attachCampaign({ quiet: true }).catch(() => undefined);
+  if (document.hidden || !state.campaignId) return;
+  void attachCampaign({ quiet: true }).catch(() => undefined);
+  if (identity.source === "discord" && !state.socket && !state.reconnectTimer) {
+    connectRealtime(state.campaignId);
+  }
 });
 
-document.addEventListener("gameframe:before-home", () => stopPolling(), { once: true });
-window.addEventListener("pagehide", stopPolling, { once: true });
+document.addEventListener("gameframe:before-home", () => stopRealtime(), { once: true });
+window.addEventListener("pagehide", stopRealtime, { once: true });
 
 if (parameters.has("campaign")) {
   void openCampaign(elements.campaignInput.value).catch((error) => showError(error.message));

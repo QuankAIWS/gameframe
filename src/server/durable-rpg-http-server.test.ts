@@ -138,12 +138,14 @@ test("serves durable campaign command and runtime-result flow over authenticated
       service: "scribbles-gameframe-rpg",
       protocolVersion: 2,
       storage: "sqlite",
+      realtime: "websocket-origin",
       capabilities: [
         "durable-campaigns",
         "durable-command-outbox",
         "runtime-narrative-linkage",
         "durable-encounters",
         "terminal-outcomes",
+        "websocket-realtime",
       ],
     });
 

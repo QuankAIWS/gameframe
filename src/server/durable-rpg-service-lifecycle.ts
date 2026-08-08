@@ -14,6 +14,10 @@ import { createDurableRpgHttpServer } from "./durable-rpg-http-server.ts";
 
 const DEFAULT_POLL_INTERVAL_MS = 250;
 
+type IngressServer = Server & {
+  closeRealtime?: () => Promise<void>;
+};
+
 export type DurableRpgServiceState =
   | "created"
   | "starting"
@@ -32,12 +36,13 @@ type DeliveryWorker = {
 };
 
 /**
- * Owns the durable RPG HTTP ingress and the single GameFrame-to-GM outbox loop.
- * Retirement closes player/runtime ingress first, then drains immediately
- * deliverable command work until idle or a retry must be left for a later run.
+ * Owns the durable RPG HTTP/WebSocket ingress and the single GameFrame-to-GM
+ * outbox loop. Retirement closes both player transport surfaces first, then
+ * drains immediately deliverable command work until idle or a retry must be
+ * left for a later run.
  */
 export class DurableRpgServiceLifecycle {
-  readonly #server: Server;
+  readonly #server: IngressServer;
   readonly #worker: DeliveryWorker;
   readonly #pollIntervalMs: number;
   readonly #closeResources?: () => void | Promise<void>;
@@ -49,7 +54,7 @@ export class DurableRpgServiceLifecycle {
   #resourcesClosed = false;
 
   constructor(input: {
-    server: Server;
+    server: IngressServer;
     worker: DeliveryWorker;
     pollIntervalMs?: number;
     closeResources?: () => void | Promise<void>;
@@ -166,10 +171,16 @@ export class DurableRpgServiceLifecycle {
 
   async #closeIngress(): Promise<void> {
     if (this.#serverClose) return await this.#serverClose;
-    if (!this.#server.listening) return;
-    this.#serverClose = new Promise<void>((resolve, reject) => {
-      this.#server.close((error) => error ? reject(error) : resolve());
-    });
+    this.#serverClose = (async () => {
+      // Close upgraded sockets first. The HTTP server's close event releases the
+      // SQLite services; allowing that event to win the race could invalidate an
+      // in-flight projection while the realtime hub is still retiring it.
+      await this.#server.closeRealtime?.();
+      if (!this.#server.listening) return;
+      await new Promise<void>((resolve, reject) => {
+        this.#server.close((error) => error ? reject(error) : resolve());
+      });
+    })();
     return await this.#serverClose;
   }
 
