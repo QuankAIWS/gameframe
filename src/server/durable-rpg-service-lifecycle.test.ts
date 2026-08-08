@@ -71,6 +71,35 @@ test("closes ingress first and drains immediately deliverable outbox work", asyn
   await assert.rejects(fetch(`http://127.0.0.1:${address.port}`));
 });
 
+test("retires upgraded realtime sockets before closing the HTTP server", async () => {
+  const order: string[] = [];
+  const realtimeClosed = deferred<void>();
+  const server = createServer((_request, response) => response.end("ok")) as ReturnType<typeof createServer> & {
+    closeRealtime(): Promise<void>;
+  };
+  server.closeRealtime = async () => {
+    order.push("realtime-start");
+    await realtimeClosed.promise;
+    order.push("realtime-done");
+  };
+  server.once("close", () => order.push("http-closed"));
+
+  const lifecycle = new DurableRpgServiceLifecycle({
+    server,
+    pollIntervalMs: 10,
+    worker: { async runOnce() { return { kind: "idle" }; } },
+  });
+  await lifecycle.start();
+  const retirement = lifecycle.retire();
+  await waitFor(() => order.includes("realtime-start"));
+  assert.equal(server.listening, true);
+  assert.deepEqual(order, ["realtime-start"]);
+
+  realtimeClosed.resolve();
+  await retirement;
+  assert.deepEqual(order, ["realtime-start", "realtime-done", "http-closed"]);
+});
+
 test("leaves retryable outbox work for a later process during retirement", async () => {
   const first = deferred<RuntimeCommandDeliveryWorkerResult>();
   let calls = 0;
