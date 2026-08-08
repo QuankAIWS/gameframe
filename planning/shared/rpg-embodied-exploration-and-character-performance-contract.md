@@ -7,10 +7,12 @@ last_updated: 2026-08-08
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
+  - GameFrame RPG
   - Monster Master RPG
+  - Monster Master Battle Arena
   - future bespoke campaigns
 shared_document_id: rpg-embodied-exploration-and-character-performance-v1
-shared_document_version: 1
+shared_document_version: 2
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-embodied-exploration-and-character-performance-contract.md
 mirrors:
@@ -31,15 +33,99 @@ related:
 
 ## Decision
 
-The mature RPG player experience is an **embodied persistent 2D campaign world** presented through GameFrame rather than a transcript-first adventure with occasional tactical scenes.
+The mature RPG player experience is an **embodied persistent 2D campaign world** presented through GameFrame rather than a transcript-first adventure with separate battle maps.
 
-Players normally move through materialized locations, approach entities, inspect objects, use supported mechanics, talk directly to characters, and enter tactical encounters from the same durable campaign world. The Dungeon Master remains a distinct live campaign authority and player-facing presence for adjudication, framing, dramatic intervention, rules/knowledge questions, unusual actions, and consequences that cannot or should not be reduced to fixed videogame affordances.
+Players normally move through materialized locations, approach entities, inspect objects, use supported mechanics, talk directly to characters, and continue through the same world when initiative or other structured resolution begins.
+
+The Dungeon Master remains a distinct live campaign authority and player-facing presence for adjudication, framing, dramatic intervention, rules/knowledge questions, unusual actions, and consequences that cannot or should not be reduced to fixed videogame affordances.
 
 The graphical world must **increase legibility without reducing tabletop agency**.
 
 > GameFrame materializes the campaign world but does not define the limits of player intent. Ordinary supported actions are performed directly through the embodied world. Any plausible action not represented by an existing interaction may be expressed as freeform intent and adjudicated by the Dungeon Master.
 
-The existing text-first campaign surface remains useful as a fallback, accessibility surface, testing harness, recovery/debug surface, and optional presentation mode. It is not the mature primary loop.
+The existing text-first campaign surface remains useful as fallback, accessibility surface, testing harness, recovery/debug surface, GM communication history, and optional alternate presentation. It is not the mature primary loop.
+
+## Product and engine hierarchy
+
+The platform distinguishes reusable engine capability, rulesets, campaign content, and standalone games.
+
+### GameFrame RPG Engine
+
+**GameFrame RPG Engine** is the campaign-agnostic reusable RPG layer inside GameFrame. It owns or provides reusable contracts for:
+
+- exploration/world rendering;
+- scene materialization;
+- entities and party presence;
+- direct interaction;
+- character/control authority;
+- tactical mode over an existing world scene;
+- deterministic mechanics integration;
+- world/camera/collision/picking/pathing presentation;
+- ruleset integration;
+- campaign integration;
+- realtime player/session transport;
+- player-facing RPG UI primitives.
+
+GameFrame RPG Engine is architecture/platform terminology. The player-facing library destination may simply be called **GameFrame RPG**.
+
+### RPG Ruleset
+
+An **RPG Ruleset** supplies the campaign-agnostic engine with game-specific deterministic rules and capabilities, including as applicable:
+
+- character statistics/classes/archetypes;
+- resources and conditions;
+- ability/action vocabulary;
+- initiative/action economy;
+- control/deployment relationships;
+- tactical movement/range/line-of-sight semantics;
+- legal objectives/outcomes;
+- progression/inventory/equipment semantics;
+- ruleset-specific world interactions.
+
+A ruleset must not depend on one specific CampaignPackage.
+
+### Monster Master Ruleset
+
+The **Monster Master Ruleset** is the first major rules/content family. It eventually defines one shared source of truth for Monster Master character and combat mechanics used by both Monster Master RPG and Monster Master Battle Arena.
+
+### Monster Master RPG
+
+**Monster Master RPG** is the bespoke Monster Master campaign product:
+
+```text
+GameFrame RPG Engine
++ Monster Master Ruleset
++ handcrafted/generated CampaignPackage
++ Monster Master theme/content/assets
+```
+
+Monster Master is the first proving family, not the generic engine.
+
+### Monster Master Battle Arena
+
+**Monster Master Battle Arena** is the standalone battle-simulator product:
+
+```text
+GameFrame RPG tactical/world subset
++ Monster Master Ruleset
++ standalone BattleScenario
+```
+
+It may let players build characters/loadouts, choose or generate a map, create teams/objectives, fight bots or humans, rematch, and inspect/replay battles.
+
+It is deliberately separate from campaign play, but it should converge on the same Monster Master tactical rules and rendering/control semantics as Monster Master RPG.
+
+### GameFrame RPG player surface
+
+**GameFrame RPG** is the future generic player-facing campaign destination for:
+
+- Create Campaign;
+- My Campaigns;
+- Import CampaignPackage;
+- future Campaign Architect intake/refinement;
+- generic campaign resume/management.
+
+Monster Master RPG may remain a bespoke library title while using this engine underneath.
 
 ## Two-agent architecture remains
 
@@ -50,11 +136,11 @@ The two specialized campaign agents remain:
 1. **Campaign Architect** — constructs validated CampaignPackages before ordinary play.
 2. **Dungeon Master** — conducts live play from committed package truth and durable campaign state.
 
-Entity Registry, Character Factory, Scene Registry, semantic knowledge, exploration materialization adapters, encounter compilation, deterministic mechanics, and GameFrame rendering remain runtime/platform substrate.
+Entity Registry, Character Factory, Scene Registry, semantic observer knowledge, world/location services, GameFrame scene materialization, rulesets, tactical activation, deterministic mechanics, and rendering remain substrate rather than additional campaign agents.
 
 The Dungeon Master may execute in several **context modes** without becoming several agents:
 
-- **referee / world adjudication** — broad hidden campaign context required to interpret unusual actions, consequences, checks, events, pacing, and world reactions;
+- **referee / world adjudication** — broad hidden context required to interpret unusual actions, consequences, checks, events, pacing, and world reactions;
 - **Game Master communication** — player-facing rules, character-knowledge, clarification, and table-management responses;
 - **entity performance** — portrayal of one specific NPC/entity using only the knowledge, beliefs, memories, observations, goals, relationships, and permitted local context available to that entity;
 - **aftermath / intervention** — framing and consequences after deterministic mechanics, scene transitions, or major campaign events.
@@ -82,17 +168,27 @@ Ask Game Master
 Do Something Else / freeform action
 ```
 
-When campaign circumstances justify it, the Dungeon Master may issue a narration/intervention presentation. When tactical authority is needed, the current exploration scene becomes tactically strict through the Encounter Scene Compiler and Arena Battles.
+When circumstances require initiative or another strict action economy, the **same materialized scene** enters tactical mode.
+
+```text
+exploration
+→ Tactical Activation
+→ same scene under turn-based authority
+→ tactical resolution
+→ same scene returns to exploration
+```
+
+There is no campaign battle-map loading step and no campaign-only Return-to-Campaign screen because the player never leaves the campaign world.
 
 ## Player-facing interaction modes
 
-GameFrame should support the following semantic modes even if the first UI combines some of them:
+GameFrame should support the following semantic modes even if the first UI combines some of them.
 
 ### Explore
 
-- walk or otherwise navigate the current materialized scene;
-- camera movement/rotation/zoom where the renderer supports it;
-- select or approach visible entities and interactables;
+- walk/navigate the current materialized scene;
+- camera movement/rotation/zoom where supported;
+- select/approach visible entities and interactables;
 - inspect viewer-authorized world information;
 - operate deterministic world mechanisms;
 - use supported inventory/ability/mechanic actions.
@@ -103,7 +199,7 @@ The player targets a specific present entity or object.
 
 Talking to `npc.pell` is an in-fiction act directed at Pell. Pell may hear, remember, react, move, refuse, lie, cooperate, or form a relationship according to committed state and Pell-scoped performance context.
 
-Nearby entities may perceive the interaction only according to explicit scene/audibility rules. The runtime must not assume all dialogue is global merely because presentation appears in one client.
+Nearby entities perceive the interaction only according to explicit scene/audibility rules. The runtime must not assume all dialogue is global merely because presentation appears in one client.
 
 ### Do Something Else
 
@@ -111,13 +207,13 @@ A first-class freeform escape hatch for plausible actions not represented by a d
 
 Examples:
 
-- climb a tree to scout the checkpoint;
-- cut through the woods instead of using the road;
+- climb a tree to scout;
+- cut through woods instead of using the road;
 - ask Pell to wait while the player circles around;
 - wedge a door with an improvised object;
 - attempt a distraction the UI does not model directly.
 
-The Dungeon Master interprets the intent. Deterministic validators/mechanics resolve supported aspects. New durable entities/scenes/objects use the appropriate runtime services. The absence of a dedicated button is not itself evidence that an action is impossible.
+The Dungeon Master interprets intent. Deterministic validators/mechanics resolve supported aspects. Durable consequences use the appropriate runtime/GameFrame services. The absence of a dedicated button is not itself evidence that an action is impossible.
 
 ### Ask Game Master
 
@@ -140,13 +236,15 @@ Interventions may range from a small nonblocking message to a dramatic scene-fre
 
 ### Tactical
 
-Arena Battles is a stricter deterministic resolution mode for the same campaign scene. Exact supported entities, roles, objects, exits, objectives, and source-scene provenance survive the handoff and aftermath returns to the surrounding campaign world.
+Tactical mode is a stricter deterministic control regime over the **current materialized world scene**.
+
+It adds initiative, action economy, turn order, legal tactical movement, targeting, attacks/abilities, objective rules, and terminal conditions without replacing the world map.
 
 ## World graph
 
 CampaignPackages should be able to declare a semantic **WorldGraph** rather than require one exhaustive authored videogame map.
 
-A WorldGraph represents meaningful regions/locations and their relationships, for example:
+A WorldGraph represents meaningful regions/locations and relationships, for example:
 
 ```text
 academy
@@ -166,16 +264,16 @@ west-woods
   -> old-mill
 ```
 
-The graph may encode or reference:
+The graph may encode/reference:
 
-- location identity and role;
+- location identity/role;
 - parent region;
 - known/hidden adjacency;
-- route type and traversal conditions;
+- route type/traversal conditions;
 - biome/environment family;
 - important landmarks;
 - package-bearing objects/entities;
-- authored or generated encounter/event hooks;
+- event hooks;
 - danger/pressure characteristics;
 - scene-materialization profile;
 - theme/media requirements;
@@ -183,7 +281,7 @@ The graph may encode or reference:
 
 The WorldGraph is semantic campaign truth. It is not Pixi geometry.
 
-## Location semantics and exploration scene specifications
+## Location semantics and scene specifications
 
 A location may define or derive an exploration-scene specification such as:
 
@@ -198,13 +296,12 @@ traversability rules
 spawn/arrival zones
 important entity placement constraints
 interaction affordances
-encounter-capable areas
 lighting/weather/time intent
 asset/theme requirements
 seed/materialization version
 ```
 
-The Campaign Architect or manual authoring decides what the world means. GameFrame decides how supported semantics become playable geometry.
+The Campaign Architect/manual authoring decides what the world means. GameFrame decides how supported semantics become playable geometry.
 
 A semantic location must not prescribe Pixi classes, texture coordinates, exact atlas frames, or provider-specific prompts.
 
@@ -215,53 +312,51 @@ GameFrame owns deterministic or reproducible materialization of semantic explora
 Materialization may combine:
 
 1. accepted catalog assets;
-2. authored prefabs and location kits;
+2. authored prefabs/world kits;
 3. seeded procedural layout;
 4. deterministic composition rules;
 5. bounded generation of presentation assets;
 6. approved fallbacks.
 
-Generated imagery never defines collision or campaign truth by itself. Playable geometry, interactions, and semantic anchors are produced through validated GameFrame structures.
+Generated imagery never defines collision or campaign truth by itself. Playable geometry, interactions, and semantic anchors are validated GameFrame structures.
 
-A newly required scene may be materialized on demand when campaign truth establishes that the place plausibly exists. Once accepted/materialized for a campaign instance, its stable materialization identity, semantic anchors, and durable meaningful changes must be preserved so revisiting the location returns to **that location**, not a fresh random replacement.
+A newly required scene may be materialized on demand when campaign truth establishes that the place plausibly exists. Once accepted for a campaign instance, stable materialization identity, semantic anchors, and durable meaningful changes are preserved so revisiting returns to **that location**, not a fresh random replacement.
 
 This is bounded on-demand world realization, not unrestricted infinite world generation.
 
 ## Three levels of spatial state
 
-Keep three distinct concepts separate.
+Keep three concepts separate.
 
 ### Semantic world truth — RPG GM Runtime
 
 Examples:
 
-- the checkpoint lies east of the woods;
+- checkpoint lies east of the woods;
 - Pell is currently at the checkpoint;
-- the bridge is destroyed;
-- the west woods are traversable;
-- a monster fled toward the quarry road.
+- bridge is destroyed;
+- west woods are traversable;
+- monster fled toward quarry road.
 
-This state is durable campaign truth.
+This is durable campaign truth.
 
-### Materialized exploration authority — GameFrame
+### Materialized world authority — GameFrame
 
 Examples:
 
 - accepted scene materialization ID/version;
-- playable collision geometry;
+- playable collision/navigation geometry;
 - semantic anchor positions;
 - spawn/transition zones;
 - interactive-object bindings;
-- deterministic navigation data;
-- stable scene layout required for reconnect/revisit.
-
-GameFrame owns the playable realization of the semantic scene.
+- stable scene layout required for revisit/reconnect;
+- current deterministic tactical state when tactical mode is active.
 
 ### Ephemeral realtime transforms — GameFrame session transport
 
 Examples:
 
-- avatar x/y position while walking;
+- avatar x/y while walking;
 - facing;
 - current movement vector;
 - transient animation state;
@@ -277,10 +372,9 @@ Durable semantic operations are appropriate when movement crosses a meaningful b
 
 - entity enters/leaves/transfers between authoritative scenes;
 - player crosses a locked/guarded narrative threshold;
-- a significant object is moved, destroyed, taken, or activated;
-- an encounter acquires custody;
-- a player establishes or breaks contact with a remote/isolated scene;
-- an entity reaches a semantic exit that changes campaign location/presence.
+- significant object is moved/destroyed/taken/activated;
+- tactical activation changes a semantic state requiring campaign authority;
+- entity reaches an exit that changes campaign location/presence.
 
 Do not journal every coordinate update.
 
@@ -288,20 +382,9 @@ Do not journal every coordinate update.
 
 The first embodied multiplayer implementation should preserve a **single active party exploration scene** unless a campaign explicitly requires otherwise.
 
-A bounded first transition rule may require all active party members who are required for group travel to enter a transition/edge zone before the party transfers to the destination scene. The transfer is one authoritative scene operation and GameFrame loads/materializes the destination as needed.
+A bounded first transition rule may require all active party members required for group travel to enter a transition/edge zone before the party transfers to the destination scene. The transfer is one authoritative scene operation and GameFrame loads/materializes the destination as needed.
 
 This keeps party state, NPC context, event eligibility, and model calls tractable while preserving the existing zero-or-more Scene Registry architecture for later expansion.
-
-The Scene Registry remains capable of multiple simultaneous active scenes so later versions may support:
-
-- split parties;
-- scouting groups;
-- remote contacts;
-- separated combat/exploration scenes;
-- simultaneous conversations;
-- asynchronous or temporarily isolated players.
-
-Multiple active scenes are a capability, not the required default UX.
 
 ## Multi-scene authority rule
 
@@ -313,9 +396,12 @@ The runtime must keep separate:
 - observation/knowledge acquisition;
 - audibility/communication relationships;
 - presentation audience;
-- party membership.
+- party membership;
+- scene-local event/mechanic custody.
 
-Party membership does not imply magical shared sensory knowledge. A future campaign may deliberately share information through radios, telepathy, party UI policy, or later conversation, but that must be explicit.
+Party membership does not imply magically shared sensory knowledge.
+
+Multiple active scenes are a capability, not the required default UX. Split-party productization remains later because it adds substantial causality, observer-knowledge, concurrency, recovery, and tactical-mode complexity.
 
 ## Character performance and perspective custody
 
@@ -323,33 +409,22 @@ A character-performance turn is bound to exactly one performing durable entity.
 
 The context compiler should include only what that entity needs, such as:
 
-- stable entity identity and role;
-- personality/behavioral constraints;
-- current goals and pressures;
-- relationships relevant to the interaction;
-- semantic knowledge/beliefs available to that entity;
-- memories and promises relevant to the interaction;
+- stable identity/role;
+- personality/behavior constraints;
+- current goals/pressures;
+- relevant relationships;
+- semantic knowledge/beliefs available to the entity;
+- relevant memories/promises;
 - current scene observations;
-- current conditions/injuries/resources where relevant;
-- bounded recent conversation with the interacting actor(s);
-- package invariants that constrain portrayal without exposing unrelated hidden truth.
+- conditions/injuries/resources where relevant;
+- bounded recent conversation;
+- package invariants required for portrayal without exposing unrelated hidden truth.
 
-The context must exclude unrelated runtime-only campaign facts merely because they exist in the CampaignPackage.
-
-The model may propose:
-
-- speech;
-- local emotional/reaction state;
-- a bounded local action;
-- relationship/memory intent;
-- a request for a check or mechanic;
-- an escalation or handoff request to referee mode when the interaction requires broader adjudication.
-
-Consequential output remains a proposal until validated and committed.
+The model may propose speech, local reaction, bounded local action, relationship/memory intent, a mechanic request, or escalation to referee mode. Consequential output remains a proposal until validated/committed.
 
 ## Observer knowledge
 
-The existing semantic knowledge model should generalize from player-only language to **observer knowledge** where required by implementation.
+The semantic knowledge model generalizes from player-only language to **observer knowledge** where implementation requires it.
 
 Observers may include:
 
@@ -357,19 +432,19 @@ Observers may include:
 - NPCs;
 - intelligent creatures;
 - explicit party/table audiences;
-- other bounded campaign observers when a real mechanic requires them.
+- other bounded observers justified by a real mechanic.
 
 The system remains sparse. Do not eagerly create every possible observer × fact edge.
 
-Player-facing People/knowledge projections remain viewer-safe projections over this broader semantic model.
+Player-facing People/knowledge projections remain viewer-safe read models over this broader semantic model.
 
 ## NPC conversation persistence
 
-Conversation history is not the sole authority for what an NPC remembers.
+Conversation transcript is not the sole authority for what an NPC remembers.
 
-Durable facts such as promises, debts, insults, tasks, relationships, learned names, witnessed events, injuries, custody, suspicions, and important disclosures should promote into typed semantic knowledge/memory/relationship state when they matter.
+Durable promises, debts, insults, tasks, relationships, learned names, witnessed events, injuries, custody, suspicions, and important disclosures should promote into typed semantic knowledge/memory/relationship state when they matter.
 
-Bounded recent dialogue may support conversational continuity, but model transcript history must not become the only source of persistent character memory.
+Bounded recent dialogue may support conversational continuity, but transcript history must not become the only persistent character-memory mechanism.
 
 ## GM communication log
 
@@ -377,13 +452,13 @@ GameFrame should retain a dedicated Game Master communication/history surface se
 
 It may contain:
 
-- player Ask-GM requests and answers;
-- GM-initiated narration/interventions appropriate to that audience;
+- player Ask-GM requests/answers;
+- GM-initiated narration/interventions for that audience;
 - mechanical clarifications;
 - player-private knowledge responses;
 - important GM/system rulings where review is useful.
 
-Talking to an NPC should not be represented as talking to the GM merely because the Dungeon Master capability performed the character.
+Talking to an NPC must not be represented as talking to the GM merely because the Dungeon Master capability performed the character.
 
 ## GM interventions
 
@@ -396,13 +471,11 @@ intensity: advisory | narration | dramatic
 interaction: nonblocking | pause-local-control | freeze-scene
 ```
 
-The exact schema may differ, but the client must not guess a dramatic world freeze from prose style.
-
-A dramatic intervention may temporarily pause local exploration input while narration/cinematic presentation runs. Pausing input is presentation/control state, not permission to mutate campaign truth without a semantic operation.
+A dramatic intervention may temporarily pause local exploration/tactical input while narration/cinematic presentation runs. Pausing input is presentation/control state, not permission to mutate campaign truth without a semantic operation.
 
 ## Cinematic scripts
 
-Generated cutscenes should normally be **semantic cinematic scripts**, not generated video.
+Ordinary cutscenes should normally be **semantic cinematic scripts**, not generated video.
 
 A cinematic script may request supported operations such as:
 
@@ -418,71 +491,97 @@ gm.intervention
 sound.play
 music.transition
 effect.play
-encounter.transition
+resolution_mode.change
 ```
 
-GameFrame validates and executes only supported presentation commands. The script may reference stable semantic asset/entity IDs but does not become campaign authority.
+GameFrame validates/executes supported presentation commands. The script may reference stable semantic asset/entity IDs but does not become campaign authority.
 
-Special generated poses, splash art, or scene assets may be requested through the media pipeline when justified. Existing/fallback presentation must remain available when generation is unavailable.
+## Tactical activation
 
-## Exploration-to-Arena continuity
+### Same-world rule
 
-Exploration and tactical play are two resolution modes over one campaign world.
+Campaign combat does not spin up Monster Master Battle Arena or a separate tactical map.
 
-Target flow:
+A **Tactical Activation** changes the rules of control over the current GameFrame scene.
 
-```text
-authoritative semantic scene
-+ accepted exploration materialization
-+ current campaign entities/objects/objectives
-→ Encounter Scene Compiler
-→ GameFrame tactical materialization
-→ authoritative tactical outcome
-→ runtime world/scene reconciliation
-→ GameFrame exploration scene update
-→ control returns to embodied campaign
-```
+Before activation, GameFrame/runtime establish a validated tactical snapshot using:
 
-The post-encounter exploration scene must reflect supported durable consequences: defeated/fled/withdrawn entities, damaged/moved objects, changed exits, custody, injuries, conditions, or other committed outcomes.
+- semantic scene ID/revision;
+- materialization ID/version;
+- current tactically relevant entity positions/facing;
+- factions/teams/dispositions;
+- control authority;
+- health/resources/conditions;
+- current deterministic map geometry;
+- relevant objects/hazards/exits/objectives;
+- ruleset/version/capability profile.
 
-Returning to the same route or renderer without reconciliation is not proof of continuity.
+The player's current positions become tactical starting positions unless an explicit supported rule says otherwise.
 
-## Incidental explorable areas
+During tactical mode:
 
-A player may choose a plausible route that was not expected by the authored starter path.
+- map identity is unchanged;
+- important world objects are the same objects;
+- entity identity is unchanged;
+- deterministic movement/actions use the same GameFrame geometry;
+- escape/withdrawal uses actual supported exits/zones;
+- tactical UI/overlays may change substantially without creating a replacement world.
 
-If campaign/world semantics establish that the area exists and exploration is allowed, the system may materialize an incidental scene instead of rejecting the action merely because no handcrafted map exists.
+When terminal tactical conditions are satisfied, consequences commit and the scene returns to exploration control. There is no campaign `Return to Campaign` navigation step.
 
-The runtime may need the Dungeon Master to adjudicate semantic properties before materialization, for example:
+### Tactical Activation Coordinator
 
-- whether the terrain is traversable;
-- what known hazards apply;
-- which event/encounter pools are eligible;
-- which exits connect back to known locations;
-- which entities plausibly occupy the area.
+The campaign-side semantic coordinator formerly described as an Encounter Scene Compiler should evolve into a **Tactical Activation Coordinator** or equivalent.
 
-GameFrame then materializes only validated semantics.
+Its job is to validate/coordinate entry into tactical authority, not compile a second scene.
 
-Incidental generation may not silently create package-bearing culprits, mandatory clues, decisive witnesses, or hidden campaign foundations that conflict with the committed package.
+## Control authority and rulesets
+
+The engine must not hardcode "one player controls one character" or "one trainer controls exactly one monster."
+
+A ruleset defines legal control relationships.
+
+For Monster Master, one human principal may control:
+
+- their Master/trainer character;
+- one or more deployed monsters according to class/ruleset limits;
+- additional bounded entities only when explicit mechanics authorize it.
+
+The generic engine should be able to represent a principal, player-character entity, and controlled/commandable entity set without assuming Monster Master-specific counts.
+
+## Standalone BattleScenario
+
+Monster Master Battle Arena should use a standalone scenario contract rather than CampaignPackage authority.
+
+A future `BattleScenario` may describe:
+
+- map/materialization selection or generation request;
+- ruleset/profile/version;
+- players/trainers/monsters/loadouts;
+- teams/controllers;
+- deployment/starting-position rules;
+- objectives;
+- bot profiles;
+- environment options.
+
+After setup, the Battle Arena should use the same Monster Master tactical rules and GameFrame tactical-mode implementation as the RPG wherever capabilities match.
 
 ## Realtime transport posture
 
 The existing hybrid Cloudflare + VM architecture remains valid.
 
-For embodied exploration, distinguish:
-
 ### Durable HTTP/service commands
 
-Appropriate for:
+Appropriate for semantic mutations such as:
 
 - campaign attachment/recovery;
 - Ask-GM;
 - freeform semantic actions;
-- inventory/equipment mutations;
-- accepted object interactions that change durable state;
+- inventory/equipment changes;
+- meaningful object interactions;
 - authoritative scene transfers;
 - mechanics/checks;
-- encounter lifecycle;
+- tactical activation/termination coordination;
 - recovery snapshots.
 
 ### Realtime WebSocket/session traffic
@@ -492,11 +591,11 @@ Appropriate for:
 - bounded movement input/state;
 - facing/transient avatar transforms;
 - nearby-player transform projection;
-- local realtime entity animation/projection;
+- local realtime animation/projection;
 - post-commit change notifications;
 - scene-presence/session coordination where it does not replace durable authority.
 
-WebSocket/session state is disposable transport/session state. Durable campaign truth remains reconstructible from runtime/GameFrame authority after disconnect/restart.
+WebSocket/session state is disposable transport/session state. Durable campaign truth remains reconstructible after disconnect/restart.
 
 ## Failure and recovery
 
@@ -504,35 +603,36 @@ If the realtime exploration connection drops:
 
 - campaign truth remains intact;
 - local movement input stops/degrades safely;
-- reconnect restores the authoritative materialized scene and valid participant spawn/position according to GameFrame policy;
+- reconnect restores authoritative materialized scene and valid participant position according to GameFrame policy;
 - semantic scene membership is recovered from durable state;
-- the client does not replay arbitrary stale movement packets as campaign actions.
+- client does not replay arbitrary stale movement packets as campaign actions.
 
-If an optional generated asset is unavailable, play uses a catalog/composed/fallback representation.
+If optional generated media is unavailable, play uses catalog/composed/fallback representation.
 
-If a Dungeon Master provider is unavailable, supported deterministic movement and existing scene interaction remain usable where they do not require new semantic adjudication; actions requiring the DM may fail/defer explicitly rather than corrupt world truth.
+If a Dungeon Master provider is unavailable, deterministic movement and already-supported scene interactions may remain usable where they do not require new semantic adjudication.
 
 ## First Monster Master embodied proof
 
 A convincing first reference journey should prove:
 
 1. load one materialized Crooked Checkpoint exploration scene;
-2. move the player avatar through authoritative GameFrame geometry;
-3. approach and talk directly to Pell;
+2. move player avatar through authoritative GameFrame geometry;
+3. approach/talk directly to Pell;
 4. prove Pell-scoped context cannot access a campaign fact Pell does not know;
-5. Ask the Game Master an out-of-fiction character-knowledge/rules question;
+5. Ask the Game Master an out-of-fiction rules/knowledge question;
 6. inspect/interact with one semantic world object;
 7. choose a plausible alternate route such as the woods;
 8. transfer/materialize a second connected exploration scene;
 9. use Do Something Else for one unsupported plausible action;
-10. have the Dungeon Master adjudicate and commit the resulting semantic consequence;
-11. trigger or avoid an event/check based on resulting state;
+10. adjudicate/commit resulting semantic consequence;
+11. trigger/avoid an event/check based on resulting state;
 12. revisit a previously materialized scene without identity/layout/world-state drift;
-13. enter Arena Battles from actual current-scene truth;
-14. complete the encounter with exact supported participant/objective identity;
-15. reconcile aftermath back into the embodied exploration world;
-16. resume movement/interaction in the same campaign;
-17. restart services and recover world, scene, NPC, knowledge, and materialization identity without duplication.
+13. trigger Tactical Activation in the current scene;
+14. roll/establish initiative without loading a replacement battlefield;
+15. resolve tactical actions using current map geometry/positions;
+16. commit exact tactical/world consequences;
+17. remove tactical control UI and resume exploration on the same map;
+18. restart services and recover world, scene, NPC, knowledge, materialization, and tactical aftermath without duplication.
 
 The first proof may keep the party in one exploration scene at a time.
 
@@ -546,50 +646,53 @@ Acceptance should prove:
 - realtime movement projection;
 - one authoritative semantic scene membership;
 - distinct player knowledge where applicable;
-- shared and private GM communication audiences;
+- shared/private GM communication audiences;
 - direct NPC interaction custody;
 - deterministic party transition to another scene;
-- tactical cooperative handoff/return;
+- same-map cooperative tactical activation;
 - reconnect without duplicate presence.
 
 Split-party play is a later acceptance layer.
 
 ## Split-party / multi-map posture
 
-Multiple simultaneous active scenes are supported by the authority model but carry materially higher implementation and operational weight.
+Multiple simultaneous active scenes are supported by the authority model but carry materially higher implementation/operational weight.
 
 They require at least:
 
 - per-player authoritative scene assignment;
 - independent realtime scene subscriptions;
-- scene-scoped event and entity projections;
-- observer knowledge divergence from separate experiences;
+- scene-scoped event/entity projections;
+- observer-knowledge divergence;
 - explicit cross-scene communication semantics;
-- concurrency-safe Dungeon Master turns when events happen in different scenes;
+- concurrency-safe Dungeon Master turns;
 - independent scene materialization/recovery;
-- rules for party-wide clocks, pressure, events, and shared objectives;
+- rules for party-wide clocks/pressure/events/shared objectives;
 - clear behavior when one scene enters tactical mode while another remains exploratory;
-- player-facing UI that makes separation and communication legible.
+- player-facing UI making separation/communication legible.
 
-Therefore the platform should **architect for multiple scenes now but productize one shared party scene first**.
+Therefore architect for multiple scenes now but productize one shared party scene first.
 
 ## Non-goals of the first embodied implementation
 
 - unrestricted infinite open-world generation;
 - persistent frame-by-frame coordinate journaling in RPG GM Runtime;
-- fully autonomous background LLM agents continuously running for every NPC;
+- fully autonomous background LLM processes for every NPC;
 - generating a new image for every movement/action;
-- generated video as the ordinary cutscene mechanism;
+- generated video as ordinary cutscene mechanism;
 - split-party multiplayer before one-scene party exploration is proven;
-- replacing the Dungeon Master with NPC agents;
+- replacing Dungeon Master with NPC agents;
 - making every decorative object a durable campaign entity;
 - treating visual map geometry as hidden campaign truth;
-- forcing every plausible freeform action into a permanent bespoke mechanic.
+- forcing every plausible freeform action into a permanent bespoke mechanic;
+- separate campaign battlefields merely because tactical rules activate.
 
 ## Governing rules
 
 > The campaign is a durable semantic world that GameFrame materializes into playable space; the materialized world makes ordinary action direct and legible without becoming the boundary of imagination.
 
 > The Dungeon Master remains the referee and narrative authority, but a character portrayed by the Dungeon Master receives character-scoped knowledge rather than omniscient hidden truth.
+
+> Tactical activation changes the rules of control, not the place. Standalone Monster Master Battle Arena is a separate product that begins from battle setup but should share the same Monster Master tactical rules.
 
 > Architect for multiple active scenes; prove one shared party scene first; split the party only after scene-scoped realtime, knowledge, event, mechanic, and recovery semantics are trustworthy.
