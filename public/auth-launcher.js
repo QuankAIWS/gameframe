@@ -7,15 +7,111 @@ if (!entry || !entry.startsWith("/") || !entry.endsWith(".js")) {
   throw new Error("The GameFrame authentication launcher requires a local JavaScript entry path.");
 }
 
+const bootSeenStorageKey = "scribbles-gameframe.boot-seen:v2";
 const bootSurface = document.querySelector("#gameframe-boot");
 const bootMessage = document.querySelector("#gameframe-boot-message");
 const bootRetry = document.querySelector("#gameframe-boot-retry");
+const bootProgress = document.querySelector("#gameframe-boot-progress");
+const bootProgressValue = document.querySelector("[data-gameframe-boot-progress-value]");
+const bootProgressLabel = document.querySelector("[data-gameframe-boot-progress-label]");
+const bootPacket = document.querySelector("[data-gameframe-boot-packet]");
 const bootStartedAt = performance.now();
 const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+let bootTelemetryTimer = null;
+let currentBootProgress = 8;
+
+function hasSeenColdBoot() {
+  try {
+    return window.localStorage.getItem(bootSeenStorageKey) === "seen";
+  } catch {
+    return false;
+  }
+}
+
+const bootMode = bootSurface && !hasSeenColdBoot() ? "cold" : "warm";
+
+function setBootMode() {
+  if (!bootSurface) return;
+  bootSurface.dataset.mode = bootMode;
+  document.body.dataset.gameframeBootMode = bootMode;
+  const label = bootSurface.querySelector("[data-gameframe-boot-mode]");
+  if (label) label.textContent = bootMode === "cold" ? "COLD START" : "WARM START";
+
+  if (bootMode === "cold") {
+    const labels = {
+      session: "> HANDSHAKE PLAYER SESSION",
+      navigation: "> MOUNT NAVIGATION BUS",
+      library: "> INDEX DESTINATION REGISTRY",
+      runtime: "> SPIN GAME CLIENT",
+    };
+    for (const [stageName, text] of Object.entries(labels)) {
+      const stage = bootSurface.querySelector(`[data-gameframe-boot-stage="${stageName}"] span`);
+      if (stage) stage.textContent = text;
+    }
+  }
+}
 
 function setBootHost() {
   const host = bootSurface?.querySelector("[data-gameframe-boot-host]");
   if (host) host.textContent = `NODE: ${window.location.host || "LOCAL"}`;
+}
+
+function startBootTelemetry() {
+  if (!bootSurface || bootMode !== "cold" || reducedMotion || !bootPacket) return;
+  let sequence = 0x7f;
+  bootTelemetryTimer = window.setInterval(() => {
+    sequence = (sequence + 0x13) & 0xffff;
+    bootPacket.textContent = `PKT ${sequence.toString(16).toUpperCase().padStart(4, "0")}:${(sequence ^ 0xa7).toString(16).toUpperCase().slice(-2)}`;
+  }, 180);
+}
+
+function stopBootTelemetry() {
+  if (bootTelemetryTimer) window.clearInterval(bootTelemetryTimer);
+  bootTelemetryTimer = null;
+}
+
+function setBootProgress(percent, label) {
+  const bounded = Math.max(currentBootProgress, Math.min(100, Math.round(percent)));
+  currentBootProgress = bounded;
+  bootSurface?.style.setProperty("--gameframe-boot-progress", `${bounded}%`);
+  bootProgress?.setAttribute("aria-valuenow", String(bounded));
+  if (bootProgressValue) bootProgressValue.textContent = `${String(bounded).padStart(2, "0")}%`;
+  if (label && bootProgressLabel) bootProgressLabel.textContent = label;
+}
+
+function animateBootProgress(target, durationMs, label) {
+  if (!bootSurface || reducedMotion || durationMs <= 0 || target <= currentBootProgress) {
+    setBootProgress(target, label);
+    return Promise.resolve();
+  }
+
+  const start = performance.now();
+  const initial = currentBootProgress;
+  if (label && bootProgressLabel) bootProgressLabel.textContent = label;
+
+  return new Promise((resolve) => {
+    function frame(now) {
+      const ratio = Math.min(1, (now - start) / durationMs);
+      const steppedRatio = Math.floor(ratio * 14) / 14;
+      setBootProgress(initial + (target - initial) * steppedRatio);
+      if (ratio >= 1) {
+        setBootProgress(target);
+        resolve();
+        return;
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+async function paceColdBoot(targetElapsedMs, targetProgress, label) {
+  if (bootMode !== "cold" || reducedMotion) {
+    setBootProgress(targetProgress, label);
+    return;
+  }
+  const remaining = Math.max(0, targetElapsedMs - (performance.now() - bootStartedAt));
+  await animateBootProgress(targetProgress, remaining, label);
 }
 
 function setBootStage(name, state) {
@@ -40,16 +136,32 @@ function setBootMessage(message) {
   bootMessage.append(cursor);
 }
 
+function rememberColdBoot() {
+  if (!bootSurface || bootMode !== "cold") return;
+  try {
+    window.localStorage.setItem(bootSeenStorageKey, "seen");
+  } catch {
+    // Cosmetic boot history should never block startup.
+  }
+}
+
 async function finishBoot() {
   if (!bootSurface) return;
-  setBootMessage("GAMEFRAME ONLINE");
   const shell = document.querySelector(".shell");
   shell?.setAttribute("aria-busy", "false");
 
-  const minimumVisibleMs = reducedMotion ? 0 : 320;
-  const remaining = Math.max(0, minimumVisibleMs - (performance.now() - bootStartedAt));
-  if (remaining) await new Promise((resolve) => setTimeout(resolve, remaining));
+  if (bootMode === "cold") {
+    setBootMessage("PLAYER ENVIRONMENT READY // WELCOME TO GAMEFRAME");
+    await paceColdBoot(3000, 100, "GAMEFRAME SYSTEM READY");
+  } else {
+    setBootMessage("GAMEFRAME ONLINE");
+    const minimumVisibleMs = reducedMotion ? 0 : 900;
+    const remaining = Math.max(0, minimumVisibleMs - (performance.now() - bootStartedAt));
+    await animateBootProgress(100, remaining, "GAMEFRAME ONLINE");
+  }
 
+  rememberColdBoot();
+  stopBootTelemetry();
   document.body.classList.remove("gameframe-booting");
   if (reducedMotion) {
     bootSurface.hidden = true;
@@ -57,23 +169,28 @@ async function finishBoot() {
   }
 
   bootSurface.classList.add("is-complete");
-  await new Promise((resolve) => setTimeout(resolve, 170));
+  await new Promise((resolve) => setTimeout(resolve, bootMode === "cold" ? 260 : 170));
   bootSurface.hidden = true;
 }
 
 function failBoot(error) {
   if (!bootSurface) return;
+  stopBootTelemetry();
   bootSurface.classList.add("is-failed");
   const active = bootSurface.querySelector('[data-state="active"]');
   if (active) {
     active.dataset.state = "failed";
     active.querySelector("strong")?.setAttribute("aria-label", "failed");
   }
+  setBootProgress(Math.min(96, currentBootProgress), "STARTUP INTERRUPTED");
   setBootMessage(error instanceof Error ? `STARTUP FAILED // ${error.message}` : "STARTUP FAILED");
   if (bootRetry) bootRetry.hidden = false;
 }
 
+setBootMode();
 setBootHost();
+setBootProgress(8, bootMode === "cold" ? "COLD-START PLAYER ENVIRONMENT" : "VERIFYING PLAYER ENVIRONMENT");
+startBootTelemetry();
 bootRetry?.addEventListener("click", () => window.location.reload());
 
 async function launch() {
@@ -81,9 +198,10 @@ async function launch() {
   const preferredDevelopmentPlayerId = parameters.get("player");
 
   setBootStage("session", "active");
-  setBootMessage("VERIFYING PLAYER SESSION");
+  setBootMessage(bootMode === "cold" ? "NEGOTIATING PLAYER HANDSHAKE" : "VERIFYING PLAYER SESSION");
   const identity = await establishGameFrameIdentity({ preferredDevelopmentPlayerId });
   setBootStage("session", "ok");
+  await paceColdBoot(700, 30, "PLAYER SESSION VERIFIED");
 
   window.gameFrameIdentity = identity;
   if (identity.source === "discord") {
@@ -96,21 +214,27 @@ async function launch() {
   }
 
   setBootStage("navigation", "active");
+  setBootProgress(34, "MOUNTING NAVIGATION BUS");
   setBootMessage("MOUNTING NAVIGATION");
   await import("./gameframe-nav.js");
   setBootStage("navigation", "ok");
+  await paceColdBoot(1250, 50, "NAVIGATION BUS ONLINE");
 
   if (entry === "/app.js") {
     setBootStage("library", "active");
+    setBootProgress(55, "INDEXING DESTINATION REGISTRY");
     setBootMessage("LOADING DESTINATION REGISTRY");
     await import("./game-hub.js");
     setBootStage("library", "ok");
+    await paceColdBoot(1900, 72, "DESTINATION REGISTRY INDEXED");
 
     setBootStage("runtime", "active");
+    setBootProgress(78, "STARTING GAME CLIENT");
     setBootMessage("STARTING GAME CLIENT");
     await import("./tic-tac-toe-noir.js");
     await import(entry);
     setBootStage("runtime", "ok");
+    await paceColdBoot(2500, 92, "GAME CLIENT READY");
   } else if (entry === "/monster-master-app.js") {
     const pixiFallbackKey = "gameframe:monster-master:legacy-renderer-fallback";
     const useLegacyRenderer = sessionStorage.getItem(pixiFallbackKey) === "true";

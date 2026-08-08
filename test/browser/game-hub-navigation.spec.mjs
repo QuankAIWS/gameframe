@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 
-test("the terminal bootstrap is the only visible home surface while session initialization is pending", async ({ page }) => {
+const bootSeenStorageKey = "scribbles-gameframe.boot-seen:v2";
+
+test("a first visit uses the cold terminal boot and only marks it seen after successful startup", async ({ page }) => {
   let releaseSession;
   let markSessionRequested;
   const sessionRequested = new Promise((resolve) => {
@@ -15,14 +17,19 @@ test("the terminal bootstrap is the only visible home surface while session init
     await route.continue();
   });
 
-  const navigation = page.goto("/?player=hub-boot-test");
+  const navigation = page.goto("/?player=hub-cold-boot-test");
   await sessionRequested;
 
   await expect(page.locator("#gameframe-boot")).toBeVisible();
+  await expect(page.locator("#gameframe-boot")).toHaveAttribute("data-mode", "cold");
+  await expect(page.locator(".gameframe-boot-window-mode")).toHaveText("COLD START");
   await expect(page.locator('[data-gameframe-boot-stage="session"]')).toHaveAttribute("data-state", "active");
+  await expect(page.locator("#gameframe-boot-progress")).toBeVisible();
+  await expect(page.locator("#gameframe-boot-progress")).toHaveAttribute("aria-valuenow", "8");
   await expect(page.locator("#lobby")).toBeHidden();
   await expect(page.locator("#select-tic-tac-toe")).toHaveCount(0);
-  await expect(page.locator("#gameframe-boot-message")).toContainText("VERIFYING PLAYER SESSION");
+  await expect(page.locator("#gameframe-boot-message")).toContainText("NEGOTIATING PLAYER HANDSHAKE");
+  expect(await page.evaluate((key) => localStorage.getItem(key), bootSeenStorageKey)).toBeNull();
 
   releaseSession();
   await navigation;
@@ -31,6 +38,42 @@ test("the terminal bootstrap is the only visible home surface while session init
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
   await expect(page.locator("#game-card-tic-tac-toe")).toBeVisible();
   await expect(page.locator(".mode-grid")).toBeHidden();
+  expect(await page.evaluate((key) => localStorage.getItem(key), bootSeenStorageKey)).toBe("seen");
+});
+
+test("repeat visits use the compact warm terminal boot", async ({ page }) => {
+  await page.addInitScript((key) => localStorage.setItem(key, "seen"), bootSeenStorageKey);
+
+  let releaseSession;
+  let markSessionRequested;
+  const sessionRequested = new Promise((resolve) => {
+    markSessionRequested = resolve;
+  });
+
+  await page.route("**/api/session", async (route) => {
+    markSessionRequested();
+    await new Promise((resolve) => {
+      releaseSession = resolve;
+    });
+    await route.continue();
+  });
+
+  const navigation = page.goto("/?player=hub-warm-boot-test");
+  await sessionRequested;
+
+  await expect(page.locator("#gameframe-boot")).toBeVisible();
+  await expect(page.locator("#gameframe-boot")).toHaveAttribute("data-mode", "warm");
+  await expect(page.locator(".gameframe-boot-window-mode")).toHaveText("WARM START");
+  await expect(page.locator(".gameframe-boot-telemetry")).toBeHidden();
+  await expect(page.locator(".gameframe-boot-rail")).toBeHidden();
+  await expect(page.locator("#lobby")).toBeHidden();
+  await expect(page.locator("#gameframe-boot-message")).toContainText("VERIFYING PLAYER SESSION");
+
+  releaseSession();
+  await navigation;
+
+  await expect(page.locator("#gameframe-boot")).toBeHidden();
+  await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
 });
 
 test("the complete game cards open their game-specific menus", async ({ page }) => {
