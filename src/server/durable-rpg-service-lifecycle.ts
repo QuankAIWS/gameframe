@@ -171,13 +171,16 @@ export class DurableRpgServiceLifecycle {
 
   async #closeIngress(): Promise<void> {
     if (this.#serverClose) return await this.#serverClose;
-    const realtimeClose = this.#server.closeRealtime?.() ?? Promise.resolve();
-    const httpClose = this.#server.listening
-      ? new Promise<void>((resolve, reject) => {
-          this.#server.close((error) => error ? reject(error) : resolve());
-        })
-      : Promise.resolve();
-    this.#serverClose = Promise.all([realtimeClose, httpClose]).then(() => undefined);
+    this.#serverClose = (async () => {
+      // Close upgraded sockets first. The HTTP server's close event releases the
+      // SQLite services; allowing that event to win the race could invalidate an
+      // in-flight projection while the realtime hub is still retiring it.
+      await this.#server.closeRealtime?.();
+      if (!this.#server.listening) return;
+      await new Promise<void>((resolve, reject) => {
+        this.#server.close((error) => error ? reject(error) : resolve());
+      });
+    })();
     return await this.#serverClose;
   }
 
@@ -244,7 +247,7 @@ function listen(server: Server, host: string, port: number): Promise<void> {
     };
     server.once("error", onError);
     server.once("listening", onListening);
-    server.listen(port, host);
+    server.listen(port, host, port);
   });
 }
 
