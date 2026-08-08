@@ -21,8 +21,8 @@ function bootstrap(): DurableCampaignBootstrap {
     status: "active",
     state: {
       gameframeCoordinationRevision: 7,
-      presentationSequence: 3,
-      linkedNarrativeRevision: 2,
+      presentationSequence: 0,
+      linkedNarrativeRevision: 0,
     },
     memberships: [{
       playerId: "player:ada",
@@ -88,8 +88,8 @@ test("VM realtime accepts the exact gameframe-hmac-v1 WebSocket handshake produc
       protocolVersion: 2,
       campaignId: "campaign-hmac",
       gameframeCoordinationRevision: 7,
-      presentationSequence: 3,
-      linkedNarrativeRevision: 2,
+      presentationSequence: 0,
+      linkedNarrativeRevision: 0,
     });
   } finally {
     socket?.close();
