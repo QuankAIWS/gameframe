@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/monster-master-rpg.css">
   <link rel="stylesheet" href="/monster-master-rpg-choice.css">
   <link rel="stylesheet" href="/monster-master-rpg-onboarding.css">
+  <link rel="stylesheet" href="/monster-master-rpg-world.css">
 </head>
 <body class="monster-master-rpg-route">
   <main class="mm-rpg-shell">
@@ -169,6 +170,26 @@
           <button id="mm-rpg-switch" class="mm-rpg-secondary" type="button">Switch campaign</button>
         </div>
       </header>
+
+      <section id="mm-rpg-world" class="mm-rpg-world" aria-labelledby="mm-rpg-world-location">
+        <header class="mm-rpg-world-header">
+          <div>
+            <p class="mm-rpg-label">CURRENT PLACE</p>
+            <h3 id="mm-rpg-world-location">Materializing campaign scene…</h3>
+          </div>
+          <span id="mm-rpg-world-status" class="mm-rpg-world-status">Attaching semantic world…</span>
+        </header>
+        <div class="mm-rpg-world-stage monster-master-battlefield-stage">
+          <div class="combat-canvas-frame">
+            <canvas id="monster-master-canvas" width="960" height="720" tabindex="-1" aria-label="Monster Master RPG exploration scene"></canvas>
+            <div id="mm-rpg-world-anchors" class="mm-rpg-world-anchors" aria-label="Known places and people in the current scene"></div>
+          </div>
+        </div>
+        <footer class="mm-rpg-world-footer">
+          <span>GameFrame physical scene · Runtime semantic authority</span>
+          <code id="mm-rpg-world-materialization">No materialization attached</code>
+        </footer>
+      </section>
 
       <div class="mm-rpg-layout">
         <section class="mm-rpg-story" aria-labelledby="mm-rpg-story-title">
