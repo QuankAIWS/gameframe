@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const campaignId = "campaign-ui-test";
-const stagingCampaignId = "monster-master-staging";
+const stagingCampaignId = "monster-master-staging-v5";
 
 function projection({ coordination = 3, presentation = 2, narrative = 1, includeResult = false } = {}) {
   const events = [
@@ -157,7 +157,7 @@ test("lists Monster Master RPG under Role-Playing Games", async ({ page }) => {
   await expect(page).toHaveURL(/\/gameframe-rpg\.html$/);
   await expect(page.getByRole("heading", { name: "Monster Master RPG" })).toBeVisible();
   const monsterMasterRpg = page.getByRole("link", { name: "Open Monster Master RPG" });
-  await expect(monsterMasterRpg).toHaveAttribute("href", "/monster-master-rpg.html?campaign=monster-master-staging");
+  await expect(monsterMasterRpg).toHaveAttribute("href", `/monster-master-rpg.html?campaign=${stagingCampaignId}`);
 });
 
 test("staging campaign onboards a Master before exposing the long-form campaign console", async ({ page }) => {
@@ -197,9 +197,9 @@ test("staging campaign onboards a Master before exposing the long-form campaign 
   await expect(page.locator("#mm-rpg-current-situation")).toContainText("Pell waits beside the Crooked Checkpoint marker");
   await expect(page.locator("#mm-rpg-edit-staging-profile")).toBeVisible();
 
-  const persisted = await page.evaluate(() => JSON.parse(
-    localStorage.getItem("scribbles-gameframe.monster-master-rpg.profile.v1:monster-master-staging"),
-  ));
+  const persisted = await page.evaluate((expectedCampaignId) => JSON.parse(
+    localStorage.getItem(`scribbles-gameframe.monster-master-rpg.profile.v1:${expectedCampaignId}`),
+  ), stagingCampaignId);
   expect(persisted).toMatchObject({
     campaignId: stagingCampaignId,
     trainerName: "Rook",
