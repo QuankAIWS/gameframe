@@ -4,7 +4,10 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { deriveRpgExplorationMaterializationRef } from "./rpg-exploration-contract.ts";
-import { materializeRpgExplorationProjection } from "./rpg-exploration-materializer.ts";
+import {
+  materializeRpgExplorationProjection,
+  RpgExplorationMaterializationError,
+} from "./rpg-exploration-materializer.ts";
 
 const fixturePath = fileURLToPath(
   new URL("../../planning/fixtures/rpg/v1/exploration-port-a.json", import.meta.url),
@@ -12,6 +15,14 @@ const fixturePath = fileURLToPath(
 
 function fixture() {
   return JSON.parse(readFileSync(fixturePath, "utf8")) as Record<string, unknown>;
+}
+
+function extraObject(index: number) {
+  return {
+    entityId: `object.extra-${index}`,
+    displayLabel: `visible object ${index}`,
+    interactionTargetId: `entity:object.extra-${index}`,
+  };
 }
 
 test("Crooked Checkpoint materializes deterministically from the canonical S6 projection", () => {
@@ -47,6 +58,58 @@ test("Crooked Checkpoint materializes deterministically from the canonical S6 pr
     { x: cartObject.x, y: cartObject.y },
     { x: cartLandmark.x, y: cartLandmark.y },
     "the cart object and location landmark must not paint labels directly on top of each other",
+  );
+});
+
+test("additional visible entities never reuse Pell or other occupied physical anchors", () => {
+  const root = fixture();
+  const projection = structuredClone(root.projection) as any;
+  projection.scene.entities.push({
+    entityId: "npc.visible-extra",
+    entityClass: "actor",
+    displayLabel: "another visible traveler",
+    identityStage: "descriptor",
+    interactionTargetId: "entity:npc.visible-extra",
+  });
+
+  const materialization = materializeRpgExplorationProjection(projection);
+  const pell = materialization.anchors.find((anchor) => anchor.semanticId === "npc.warden-pell");
+  const extra = materialization.anchors.find((anchor) => anchor.semanticId === "npc.visible-extra");
+  assert.ok(pell);
+  assert.ok(extra);
+  assert.notDeepEqual(
+    { x: extra.x, y: extra.y },
+    { x: pell.x, y: pell.y },
+  );
+
+  const entityPositions = materialization.anchors
+    .filter((anchor) => anchor.kind === "player" || anchor.kind === "entity")
+    .map((anchor) => `${anchor.x},${anchor.y}`);
+  assert.equal(new Set(entityPositions).size, entityPositions.length);
+});
+
+test("three additional visible objects allocate distinct bounded fallback anchors", () => {
+  const root = fixture();
+  const projection = structuredClone(root.projection) as any;
+  projection.scene.objects.push(extraObject(1), extraObject(2), extraObject(3));
+
+  const materialization = materializeRpgExplorationProjection(projection);
+  const objectPositions = materialization.anchors
+    .filter((anchor) => anchor.kind === "object")
+    .map((anchor) => `${anchor.x},${anchor.y}`);
+  assert.equal(objectPositions.length, 4);
+  assert.equal(new Set(objectPositions).size, objectPositions.length);
+});
+
+test("unsupported object density fails closed instead of cycling through occupied slots", () => {
+  const root = fixture();
+  const projection = structuredClone(root.projection) as any;
+  projection.scene.objects.push(...Array.from({ length: 12 }, (_, index) => extraObject(index + 1)));
+
+  assert.throws(
+    () => materializeRpgExplorationProjection(projection),
+    (error: unknown) => error instanceof RpgExplorationMaterializationError
+      && error.message.includes("no remaining physical anchor slots"),
   );
 });
 
