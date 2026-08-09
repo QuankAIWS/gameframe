@@ -2,6 +2,11 @@
   position: relative;
 }
 
+.cascade-board-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
 #life-timer {
   display: block;
   margin-top: 3px;
