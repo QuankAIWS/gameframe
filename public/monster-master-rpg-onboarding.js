@@ -1,4 +1,4 @@
-const STAGING_CAMPAIGN_ID = "monster-master-staging";
+const STAGING_CAMPAIGN_ID = "monster-master-staging-v5";
 const PROFILE_KEY_PREFIX = "scribbles-gameframe.monster-master-rpg.profile.v1";
 const DEFAULT_OBJECTIVE = "Investigate irregular activity along the Crooked Checkpoint route and complete your supervised field assignment.";
 
