@@ -27,20 +27,20 @@ const menuGame = parameters.get("menu") === "1"
 
 const games = [
   {
-    id: "monster-master-rpg",
-    href: "/monster-master-rpg.html?campaign=monster-master-staging",
-    kicker: "CAMPAIGN",
-    title: "Monster Master RPG",
-    description: "Resume a Dungeon-Master-driven campaign, review the story feed, and send your trainer’s next action.",
-    accent: "monster",
+    id: "role-playing-games",
+    href: "/gameframe-rpg.html",
+    kicker: "PERSISTENT WORLDS",
+    title: "Role-Playing Games",
+    description: "Enter persistent campaigns, resume your worlds, or eventually create a new RPG from an idea.",
+    accent: "rpg",
   },
   {
-    id: "monster-master",
-    href: "/monster-master.html",
-    kicker: "TACTICAL DUEL",
-    title: "Monster Master",
-    description: "Command a hand-illustrated creature squad through an initiative-driven battle.",
-    accent: "monster",
+    id: "battle-simulator",
+    href: "/battle-simulator.html",
+    kicker: "TACTICAL SANDBOX",
+    title: "Battle Simulator",
+    description: "Build teams, choose or generate a map, and run standalone battles from supported game families.",
+    accent: "simulator",
   },
   {
     id: "othello",
@@ -69,12 +69,37 @@ const games = [
 ];
 
 function artwork(game) {
+  if (game.accent === "rpg") {
+    return `
+      <span class="game-card-visual game-card-visual-rpg" aria-hidden="true">
+        <span class="game-card-rpg-grid"></span>
+        <i class="game-card-rpg-node rpg-node-a"></i>
+        <i class="game-card-rpg-node rpg-node-b"></i>
+        <i class="game-card-rpg-node rpg-node-c"></i>
+        <i class="game-card-rpg-route rpg-route-a"></i>
+        <i class="game-card-rpg-route rpg-route-b"></i>
+        <span class="game-card-visual-mark">RPG</span>
+      </span>
+    `;
+  }
+  if (game.accent === "simulator") {
+    return `
+      <span class="game-card-visual game-card-visual-simulator" aria-hidden="true">
+        <span class="game-card-simulator-grid"></span>
+        <i class="game-card-simulator-zone simulator-zone-a"></i>
+        <i class="game-card-simulator-zone simulator-zone-b"></i>
+        <i class="game-card-simulator-unit simulator-unit-a"></i>
+        <i class="game-card-simulator-unit simulator-unit-b"></i>
+        <span class="game-card-visual-mark">SIM</span>
+      </span>
+    `;
+  }
   if (game.accent === "monster") {
     return `
       <span class="game-card-visual game-card-visual-monster" aria-hidden="true">
         <span class="game-card-atmosphere"></span>
         <span class="game-card-monster-creature"></span>
-        <span class="game-card-visual-mark">${game.id === "monster-master-rpg" ? "RPG" : "MM"}</span>
+        <span class="game-card-visual-mark">MM</span>
       </span>
     `;
   }
@@ -118,7 +143,7 @@ function createLibraryCard(game) {
   card.id = `game-card-${game.id}`;
   card.className = `game-card game-hub-${game.accent}`;
   card.href = game.href;
-  card.setAttribute("aria-label", `Open the ${game.title} game menu`);
+  card.setAttribute("aria-label", `Open ${game.title}`);
   card.innerHTML = `
     ${artwork(game)}
     <span class="game-card-body">
@@ -127,7 +152,7 @@ function createLibraryCard(game) {
       <small class="game-card-description">${game.description}</small>
     </span>
     <span class="game-card-footer">
-      <span class="game-card-play">Play now</span>
+      <span class="game-card-play">Open</span>
       <span class="game-card-arrow" aria-hidden="true">›</span>
     </span>
   `;
@@ -156,7 +181,7 @@ function installGameMenu() {
     menu = document.createElement("section");
     menu.className = `game-menu-hero game-menu-${selected.accent}`;
     menu.innerHTML = `
-      <a class="game-menu-back" href="/">← Back to library</a>
+      <a class="game-menu-back" href="/">← Back to games</a>
       <div class="game-menu-art">${artwork(selected)}</div>
       <div class="game-menu-copy">
         <small>${selected.kicker}</small>
@@ -172,20 +197,20 @@ function installGameMenu() {
   if (lobbyMessage) lobbyMessage.textContent = gameMenuMessage(selected);
 }
 
-function installLibrary() {
+function installGames() {
   if (!gameGrid) return;
   tacticalLink?.remove();
   gameGrid.replaceChildren(...games.map(createLibraryCard));
   gameGrid.hidden = false;
   if (modeGrid) modeGrid.hidden = true;
-  if (sectionLabel) sectionLabel.textContent = "GAME LIBRARY";
-  if (lobbyTitle) lobbyTitle.textContent = "Choose your game";
-  if (lobbyMessage) lobbyMessage.textContent = "Select a game to open its menu.";
+  if (sectionLabel) sectionLabel.textContent = "GAMES";
+  if (lobbyTitle) lobbyTitle.textContent = "Choose how to play";
+  if (lobbyMessage) lobbyMessage.textContent = "Open a role-playing world, the battle simulator, or a standalone game.";
 }
 
 hero?.querySelector(".game-hub-topbar")?.remove();
 if (menuGame) installGameMenu();
-else installLibrary();
+else installGames();
 
 let syncPending = false;
 function syncHubState() {
@@ -199,7 +224,7 @@ function syncHubState() {
     const selected = games.find((game) => game.id === menuGame);
     const expectedMessage = menuGame
       ? gameMenuMessage(selected)
-      : "Select a game to open its menu.";
+      : "Open a role-playing world, the battle simulator, or a standalone game.";
     if (lobbyMessage && lobbyMessage.textContent !== expectedMessage) lobbyMessage.textContent = expectedMessage;
     document.title = menuGame
       ? `${selected?.title || "Game"} · Scribbles GameFrame`

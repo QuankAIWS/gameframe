@@ -34,16 +34,43 @@ async function openPlayerHub(page, viewport) {
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
   await expectDestinationBar(page, "hub");
   await expect(page.locator(".hero")).toBeHidden();
+  await expect(page.locator("#lobby .section-label")).toHaveText("GAMES");
   await expect(page.locator(".game-grid .game-card")).toHaveCount(5);
   await expect(page.locator(".game-card-play")).toHaveCount(5);
-  await expect(page.locator('.game-card[href="/monster-master-rpg.html?campaign=monster-master-staging"]')).toHaveCount(1);
-  await expect(page.locator('.game-card[href="/monster-master.html"]')).toHaveCount(1);
+  await expect(page.locator('.game-card[href="/gameframe-rpg.html"]')).toHaveCount(1);
+  await expect(page.locator('.game-card[href="/battle-simulator.html"]')).toHaveCount(1);
+  await expect(page.locator('.game-card[href="/monster-master-rpg.html?campaign=monster-master-staging"]')).toHaveCount(0);
+  await expect(page.locator('.game-card[href="/monster-master.html"]')).toHaveCount(0);
   await expect(page.locator('.game-card[href="/othello.html"]')).toHaveCount(1);
   await expect(page.locator('.game-card[href="/?game=american-checkers&menu=1"]')).toHaveCount(1);
   await expect(page.locator('.game-card[href="/?game=tic-tac-toe&menu=1"]')).toHaveCount(1);
+  await expect(page.locator("#game-card-role-playing-games")).toContainText("Role-Playing Games");
+  await expect(page.locator("#game-card-battle-simulator")).toContainText("Battle Simulator");
   await expect(page.locator(".mode-grid")).toBeHidden();
   await expect(page.locator("#open-tactical-canary")).toHaveCount(0);
   await expect(page.getByText("Combat Canary", { exact: true })).toHaveCount(0);
+}
+
+async function openRolePlayingGames(page, viewport) {
+  await page.setViewportSize(viewport);
+  await page.goto("/gameframe-rpg.html");
+  await expect(page.getByRole("heading", { name: "Persistent worlds. Real campaigns." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Monster Master RPG" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open Monster Master RPG" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Create RPG/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /My Campaigns/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Import Campaign/ })).toBeDisabled();
+}
+
+async function openBattleSimulator(page, viewport) {
+  await page.setViewportSize(viewport);
+  await page.goto("/battle-simulator.html");
+  await expect(page.getByRole("heading", { name: "Build the fight. Skip the campaign." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Monster Master Arena Battles" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open Monster Master Arena" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Custom Battle/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Generate Battlefield/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Import Battle Pack/ })).toBeDisabled();
 }
 
 async function openSharedGameMenu(page, viewport, game, theme) {
@@ -194,11 +221,23 @@ async function openMonsterMasterRpg(page, viewport) {
 
 test.beforeAll(prepareOutput);
 
-test("capture the player game hub at desktop and mobile sizes", async ({ page }) => {
+test("capture the player Games hub at desktop and mobile sizes", async ({ page }) => {
   await openPlayerHub(page, desktop);
   await page.screenshot({ path: `${output}/game-hub-desktop.png`, fullPage: true });
   await openPlayerHub(page, mobile);
   await page.screenshot({ path: `${output}/game-hub-mobile.png`, fullPage: true });
+});
+
+test("capture Role-Playing Games and Battle Simulator at desktop and mobile sizes", async ({ page }) => {
+  await openRolePlayingGames(page, desktop);
+  await page.screenshot({ path: `${output}/role-playing-games-desktop.png`, fullPage: true });
+  await openRolePlayingGames(page, mobile);
+  await page.screenshot({ path: `${output}/role-playing-games-mobile.png`, fullPage: true });
+
+  await openBattleSimulator(page, desktop);
+  await page.screenshot({ path: `${output}/battle-simulator-desktop.png`, fullPage: true });
+  await openBattleSimulator(page, mobile);
+  await page.screenshot({ path: `${output}/battle-simulator-mobile.png`, fullPage: true });
 });
 
 test("capture the Monster Master RPG campaign shell at desktop and mobile sizes", async ({ page }) => {

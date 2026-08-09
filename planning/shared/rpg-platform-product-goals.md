@@ -7,9 +7,13 @@ last_updated: 2026-08-08
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
+  - Role-Playing Games
+  - Battle Simulator
+  - Monster Master RPG
+  - Monster Master Arena Battles
   - scribbles-runtime-theo-connector
 shared_document_id: rpg-platform-product-goals-v1
-shared_document_version: 4
+shared_document_version: 7
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-platform-product-goals.md
 mirrors:
@@ -18,6 +22,7 @@ sync_policy: exact-byte-copy
 related:
   - rpg-agent-architecture-and-campaign-package.md
   - rpg-scene-entity-and-knowledge-contract.md
+  - rpg-embodied-exploration-and-character-performance-contract.md
   - rpg-platform-roadmap.md
   - ../rpg-campaign-experience-directions.md
   - ../rpg-gm-runtime-boundary.md
@@ -29,249 +34,437 @@ related:
 
 ## Product statement
 
-The RPG platform is a persistent, publicly accessible role-playing system played through GameFrame.
+The RPG platform is a persistent, publicly accessible **embodied generative role-playing system** played through GameFrame.
 
-A specialized Campaign Architect creates validated CampaignPackages. A specialized Dungeon Master runs committed packages through freeform play. Deterministic runtime substrate owns exact entity identity, physical scene presence, player knowledge, event/mechanic authority, and scene-to-tactical continuity. GameFrame presents the complete player experience and owns deterministic mechanics and tactical authority.
+A specialized Campaign Architect creates validated CampaignPackages and, later, the reusable game-family material required to make generated combat-capable RPGs available through both campaign play and standalone Battle Simulator play. RPG GM Runtime owns durable semantic campaign truth, entity identity, scene membership, observer knowledge, events, consequences, and Dungeon Master intelligence. GameFrame materializes that truth into persistent playable 2D worlds and owns deterministic game mechanics, realtime player interaction, tactical authority, and presentation.
 
-The first campaign proof is the handcrafted Monster Master gold-standard package. The next platform generality proof is a materially different **second handcrafted package** running through the same package/entity/scene/knowledge/Dungeon Master/GameFrame path. Campaign Architect generation follows only after those two handcrafted campaigns prove the common abstraction.
+Ordinary supported actions happen directly in the world. The Dungeon Master remains a distinct real Game Master for rulings, player knowledge questions, dramatic narration/intervention, unusual freeform actions, character performance, and consequences that fixed controls cannot express.
 
-## Settled architecture
+> The graphics visualize and operationalize the imagination; they do not define the limits of the imagination.
+
+## Player-facing Games hierarchy
+
+The top-level GameFrame destination is **Games**.
+
+It may contain broad play surfaces as well as direct standalone games. The initial hierarchy is:
+
+```text
+Games
+├── Role-Playing Games
+│   ├── Monster Master RPG
+│   ├── future handcrafted/generated RPGs
+│   └── Create RPG / My Campaigns / Import Campaign
+├── Battle Simulator
+│   ├── Monster Master Arena Battles
+│   ├── future handcrafted/generated Battle Packs
+│   └── Custom Battle / map generation / import
+├── Clockwork Checkers
+├── Othello
+└── Tic-Tac-Toe
+```
+
+**GameFrame RPG Engine** is internal architecture terminology, not a player-facing top-level game card. The player-facing campaign surface is **Role-Playing Games**.
+
+**Battle Simulator** is the player-facing standalone tactical sandbox. A game family such as Monster Master appears *inside* Battle Simulator rather than occupying a second top-level card beside its RPG.
+
+## Product hierarchy
+
+The platform distinguishes **engine**, **ruleset**, **game family/content**, **campaign content**, and **standalone battle content**.
+
+### GameFrame RPG Engine
+
+**GameFrame RPG Engine** is the reusable campaign-agnostic RPG layer inside GameFrame.
+
+It provides reusable capability for:
+
+- persistent world/scene materialization;
+- realtime exploration;
+- entity/party/player presence;
+- direct interaction and inspection;
+- character and controlled-entity authority;
+- tactical mode over the current scene;
+- deterministic mechanics;
+- ruleset integration;
+- camera/collision/pathing/picking/rendering;
+- campaign integration;
+- realtime transport/recovery;
+- player-facing RPG UI primitives.
+
+### RPG Ruleset
+
+An **RPG Ruleset** defines game-specific deterministic mechanics independent of one CampaignPackage, including as applicable:
+
+- character/class/archetype rules;
+- resources/conditions;
+- abilities/actions;
+- initiative/action economy;
+- tactical movement/range/line-of-sight;
+- character-to-controlled-entity relationships;
+- deployment limits;
+- objectives/outcomes;
+- progression/inventory/equipment;
+- ruleset-specific world interactions.
+
+The generic engine must not assume that every future generated RPG uses Monster Master rules. Long-term Campaign Architect work may select an existing ruleset, parameterize a validated ruleset profile, or produce a new bounded ruleset definition only after the reusable ruleset schema/capability system is itself proven.
+
+### Game family
+
+A **Game Family** is the reusable rules/content identity shared by related campaign and simulator experiences.
+
+Conceptually it may bind:
+
+- one compatible RPG Ruleset/version/profile family;
+- character/archetype/creature definitions;
+- equipment/abilities/conditions;
+- factions/opponent families;
+- world/materialization themes and kits;
+- reusable asset catalog entries;
+- tactical objectives and environment semantics;
+- compatible CampaignPackages;
+- one or more Battle Packs.
+
+A Game Family is not required to expose every surface. A narrative-only RPG may have no Battle Pack. A tactical-only family may exist only in Battle Simulator.
+
+### Monster Master Ruleset / Game Family
+
+**Monster Master** is the first major rules/content family. The **Monster Master Ruleset** should eventually be the shared deterministic source for Monster Master character and combat rules across campaign and standalone battle products.
+
+### Monster Master RPG
+
+**Monster Master RPG** is the first bespoke campaign product:
+
+```text
+GameFrame RPG Engine
++ Monster Master Ruleset / game-family content
++ committed Monster Master CampaignPackage
+```
+
+The handcrafted reference campaign proves the engine and package architecture without making Monster Master itself the generic platform.
+
+### Battle Simulator
+
+**Battle Simulator** is the standalone tactical product surface.
+
+It can host multiple game families without creating separate tactical engines for each one.
+
+A standalone battle conceptually uses:
+
+```text
+GameFrame tactical/world systems
++ selected RPG Ruleset / game-family content
++ selected Battle Pack
++ BattleScenario
+```
+
+Its setup may eventually include character/loadout construction, map selection/generation, teams, deployment, objectives, humans/bots, replay, and rematch.
+
+Campaign combat never launches Battle Simulator. Campaign tactical play and standalone Battle Simulator play converge on shared ruleset/tactical implementation, but their setup and lifecycle are different.
+
+### Monster Master Arena Battles
+
+**Monster Master Arena Battles** is the Monster Master entry inside Battle Simulator.
+
+It evolves from the existing standalone Monster Master tactical game and should converge on the same Monster Master Ruleset, control semantics, terrain semantics, legal actions, objectives, and terminal outcomes used by Monster Master RPG.
+
+### Battle Pack
+
+A **Battle Pack** is the simulator-safe reusable tactical content surface for one game family/ruleset profile. It is not a second ruleset and must not fork combat behavior from the corresponding RPG.
+
+A Battle Pack may expose/reference:
+
+- playable character/archetype templates;
+- creatures/opponents/factions;
+- equipment/loadouts/abilities available to standalone setup;
+- map themes, world kits, terrain/hazard families, and map-generation constraints;
+- deployment options;
+- objective presets;
+- bot behavior profiles;
+- scenario presets/examples;
+- compatible asset bundles;
+- ruleset/profile/version requirements;
+- visibility/unlock policy.
+
+A Battle Pack deliberately excludes or masks campaign-only hidden truth unless an explicit exposure/unlock rule allows it.
+
+For example, a secret campaign villain or unrevealed monster form must not automatically appear in Battle Simulator merely because the underlying campaign package knows it exists.
+
+### Role-Playing Games
+
+**Role-Playing Games** is the generic player-facing campaign destination for:
+
+- available bespoke/generated RPGs;
+- Create RPG from an idea;
+- My Campaigns;
+- Import CampaignPackage;
+- Campaign Architect intake/refinement;
+- campaign preview/commit/resume/management.
+
+Monster Master RPG appears inside this surface while using GameFrame RPG Engine underneath.
+
+## Two specialized agents
+
+The platform retains exactly two campaign-agent responsibilities.
 
 ### Campaign Architect
 
-The Campaign Architect converts a concise concept, detailed specification, structured sheet, later GameFrame or Discord interview, prepared campaign family, or imported package into one validated CampaignPackage draft.
+Campaign Architect converts a concise concept, detailed specification, structured sheet, prepared campaign family, or imported source into one validated CampaignPackage draft before ordinary play.
 
-It owns campaign construction, not live play. Generated output may be owner-refined before explicit commitment.
+Long-term, when a concept requires a new game family rather than only a new campaign under an existing family, Campaign Architect may also coordinate generation/selection of validated reusable ruleset-profile/content definitions and a simulator-safe Battle Pack. That broader generation capability remains deferred until the generic engine and ruleset interfaces survive multiple handcrafted families.
+
+It owns campaign construction, not live turns. Drafts may be owner-refined before explicit commitment.
 
 ### Dungeon Master
 
-The Dungeon Master consumes a committed CampaignPackage and durable campaign state. It owns narration, NPC performance, freeform interpretation, pacing, eligible events, compatible improvisation, and campaign consequences through validated semantic operations.
+Dungeon Master consumes a committed CampaignPackage and durable campaign state.
 
-It may not replace package truth, directly mint unconstrained durable NPCs, infer physical presence from prose, expose hidden canonical identity, or use a separate campaign-specific execution path.
+It owns or proposes, through validated operations:
 
-### Durable runtime substrate
+- referee/world adjudication;
+- narration/framing;
+- arbitrary plausible freeform intent interpretation;
+- character/NPC performance;
+- Ask-GM rules/knowledge responses;
+- eligible events and pacing;
+- package-compatible improvisation;
+- consequences;
+- checks and deterministic-mechanic requests;
+- tactical activation requests/reasons;
+- aftermath/intervention.
 
-Entity Registry, Character Factory, Scene Registry, player/party knowledge projection, Dungeon Master Context Compiler, typed campaign-operation validators, and Encounter Scene Compiler are deterministic runtime substrate rather than additional campaign agents.
+Dungeon Master does not replace package truth, durable identity, semantic scene presence, viewer/observer authorization, or deterministic GameFrame outcomes.
 
-They make exact campaign facts explicit so model memory is not campaign authority.
+Character performance is a Dungeon Master context mode, not a third agent. A Pell performance context receives Pell-authorized knowledge and observations, not the full hidden campaign bible.
 
-### CampaignPackage
+## CampaignPackage
 
-Handcrafted and generated campaigns use the same package schema, validation, persistence, commitment, visibility, entity/scene initialization, and Dungeon Master interface.
+Handcrafted and generated campaigns use the same package schema, validation, persistence, commitment, visibility, world/entity/scene initialization, and Dungeon Master interface.
 
-Monster Master is manually authored to establish the expected package quality.
+A package should be able to declare:
+
+- campaign identity/premise/tone;
+- runtime-only bible/secrets/causality;
+- package-bearing actors/entities;
+- WorldGraph/location semantics/routes;
+- initial scenes/presence;
+- observer/player knowledge bootstrap;
+- events/clues/objectives/consequences;
+- supported ruleset/capability requirements;
+- semantic materialization/media intents;
+- complete starter/resolution material;
+- provenance/version/hash/migration data.
+
+Generated pixels, client coordinates, and Pixi implementation details are not CampaignPackage truth.
+
+CampaignPackage and Battle Pack are distinct artifacts with different visibility/lifecycle requirements. They may reference the same game-family rules/content/assets without duplicating them.
 
 ## One complete GameFrame experience
 
-GameFrame is the primary and authoritative player-facing application for:
+GameFrame is the primary authenticated player application for:
 
-- campaign concept submission, package preview, joining, invitations, and resume;
-- narration, scenes, dialogue, freeform actions, optional suggestions, and structured choices;
-- distinct **Act / Speak** and **Ask Game Master** interaction modes;
-- viewer-safe current-scene and People/Characters views;
-- characters, creatures, abilities, conditions, inventory, equipment, progression, quests, clues, and objectives;
-- maps, exploration, locations, points of interest, checks, handouts, and player-private information;
-- tactical encounters and authoritative return to the surrounding campaign;
-- history, recap, reconnect, recovery, and later-session continuation;
-- presentation of accepted campaign art, animation, sound, music, and narration.
+- Games navigation;
+- Role-Playing Games selection/creation/preview/join/resume;
+- Battle Simulator family/scenario selection;
+- persistent materialized maps and exploration;
+- direct NPC/entity/object interaction;
+- character/party/controlled-entity views;
+- People/knowledge/current-scene information;
+- **Do Something Else** freeform intent;
+- **Ask Game Master** communication;
+- GM interventions/cinematics;
+- inventory/equipment/abilities/conditions/progression as rulesets implement them;
+- objectives/clues/factions/locations/handouts;
+- deterministic checks/mechanics;
+- same-map tactical mode;
+- standalone tactical simulation through shared ruleset primitives;
+- history/recap/reconnect/recovery;
+- accepted art/animation/sound/music/narration.
 
-Discord may provide authentication, invitations, voice, social conversation, notifications, links, and a future campaign-intake interview. Discord does not own campaign truth or ordinary gameplay.
+Discord may provide authentication, invitations, voice, social conversation, notifications, links, and later campaign-intake interviews. Discord does not own campaign truth or ordinary gameplay.
 
-## Persistent campaign goal
+## Persistent world goal
 
-Campaigns are durable products, not disposable model conversations.
+Campaigns are durable worlds, not disposable model conversations.
 
-The platform must support:
+The platform must preserve:
 
-- authoritative CampaignPackages and campaign journals;
-- campaigns continuing across multiple play sessions;
-- bounded engineering/starter chapters without implying that the mature product is limited to one-shot length;
-- audience-scoped secrets;
-- stable player, character, NPC, creature, location, item, faction, quest, encounter, and asset identities;
-- explicit current scene membership and materially relevant local state;
-- viewer-specific knowledge and identity labels;
-- deterministic retry and reconnect;
-- operator inspection and explicit correction;
-- backup, restore, recap, and resume;
-- separate GameFrame coordination and runtime narrative authority.
+- stable campaign/entity/location/item/asset identities;
+- zero-or-more authoritative semantic scenes;
+- explicit physical scene membership;
+- persistent/reproducible GameFrame scene materializations;
+- meaningful environmental changes;
+- observer-specific knowledge/beliefs;
+- deterministic retry/reconnect;
+- semantic history and correction;
+- backup/restore/recap/resume;
+- separate runtime and GameFrame authority positions.
 
-Storage adapters may change without changing these product properties.
+High-frequency movement coordinates remain GameFrame realtime/session state unless they cross a meaningful semantic boundary.
 
-## Creative flexibility
+## Embodied freedom rule
 
-Bespoke campaign creation is a core platform goal, but not the first implementation prerequisite.
+The default mature loop is direct play through the world, but direct UI affordances are not the complete action space.
 
-Players should eventually be able to request concepts such as:
+At any time a player may submit a plausible unsupported intent through **Do Something Else**. Dungeon Master interprets it, deterministic systems resolve supported mechanics, and validated semantic consequences return to world state.
 
-- an original medieval supernatural-response campaign;
-- an original 1920s steampunk paranormal-response campaign;
-- western, gothic horror, undersea workplace comedy, science-fiction mystery, mythic adventure, or other broad themes.
+This is a core product property, not a fallback for a broken UI.
 
-The Campaign Architect turns the request into an original campaign identity, complete CampaignPackage, and semantic asset plan.
+## Same-map tactical rule
 
-The system preserves desired high-level qualities while replacing protected names, characters, organizations, creatures, terminology, plots, logos, and signature designs. Transformation and review are product controls, not guarantees of legal clearance.
+When circumstances require initiative or strict turn-based mechanics, the current materialized scene enters **Tactical Mode** through a validated **Tactical Activation**.
 
-## Ownership principle
+The map does not change.
 
-> The Campaign Architect defines the campaign package; runtime owns exact durable world state; the Dungeon Master conducts the campaign; GameFrame turns the campaign into a coherent player experience and authoritative mechanics.
+- current positions become tactical starting positions;
+- current people/monsters/objects remain the same entities;
+- current collision/navigation geometry remains the same GameFrame world geometry;
+- tactical overlays/action economy/turn order become active;
+- escape/withdrawal uses real supported scene exits/zones;
+- terminal tactical consequences update the same world;
+- exploration resumes in place after safe semantic/mechanical reconciliation.
 
-### RPG GM Runtime owns
+There is no campaign `Return to Campaign` screen because campaign combat never leaves the campaign world.
 
-- Campaign Architect and Dungeon Master orchestration;
-- CampaignBrief and CampaignPackage schemas;
-- package validation, hashing, persistence, migration, and hidden truth;
-- runtime campaign journal and narrative revision;
-- Entity Registry, Character Factory, Scene Registry, and viewer knowledge projection;
-- NPC motives, memories, relationships, clues, events, and consequences;
-- freeform player-intent interpretation;
-- audience classification and knowledge authorization;
-- model context, provider routing, semantic validation, retry, and fallback;
-- semantic media and mechanic intents;
-- scene-to-encounter semantic projection;
-- mapping GameFrame outcomes into campaign/world/scene consequences.
+The old `Encounter Scene Compiler` destination should be replaced by **Tactical Activation Coordinator** semantics: validate and coordinate entry into tactical authority rather than compile another battlefield.
 
-### GameFrame owns
+## Player/control authority goal
 
-- complete authenticated campaign creation and play interfaces;
-- player commands, identity, seats, invitations, and viewer-safe projections;
-- player-safe package preview and confirmation;
-- People/current-scene presentation and entity inspection authorization;
-- Act/Speak and Ask-GM UI semantics;
-- structured mechanics deliberately implemented in GameFrame;
-- Arena Battles authority, replay, reconnect, and committed outcomes;
-- semantic asset catalogs, composition, generation, validation, provenance, storage, delivery, and fallback;
-- narration synthesis and playback;
-- desktop, mobile, browser, and Discord Activity presentation.
+The engine must support ruleset-defined control relationships rather than hardcode one player → one unit.
 
-### Scribbles Runtime owns
+For Monster Master, a human principal may control:
 
-- Theo's behavior and the narrow connector allowing Theo to occupy an ordinary GameFrame player seat.
+- their own Master/trainer character;
+- one or more deployed monsters according to class/ruleset limits;
+- other entities only when explicit rules grant authority.
 
-Theo is never the Campaign Architect or Dungeon Master and receives no hidden campaign state.
+This control model must support future classes and future game families with different deployment counts and action/control patterns without changing the generic engine contract.
 
-## Media and audio goals
+## World/materialization goal
 
-Generated or composed media is a campaign-preparation and presentation capability, not campaign authority.
+CampaignPackage semantic WorldGraph/location intent is materialized by GameFrame into playable scenes using:
 
-The Campaign Architect declares semantic requirements and importance. GameFrame should:
+1. accepted catalog reuse;
+2. deterministic authored/procedural composition;
+3. reusable world kits/prefabs;
+4. bounded generated presentation assets when justified;
+5. validated fallbacks.
 
-1. reuse accepted catalog assets when suitable;
-2. compose deterministic assets where practical;
-3. generate new assets asynchronously when justified;
-4. preserve recurring identity and provenance;
-5. validate and moderate outputs;
-6. enforce budgets and provider limits;
-7. display placeholders or text immediately;
-8. replace presentation assets without altering campaign truth.
+Once accepted for a campaign instance, a scene materialization retains stable identity and meaningful state so revisiting returns to the same place.
 
-Cloudflare-backed image generation should eventually help materialize complete campaign packs. It is not required to prove CampaignPackage logic, durable world state, or Dungeon Master behavior.
+Battle Simulator may use the same materialization/world-kit systems to create standalone battlefields from Battle Pack constraints without creating campaign semantic history.
 
-## Deployment goals
+The product does not require unrestricted infinite procedural generation. It does require bounded on-demand realization of plausible semantic locations/approaches and bounded standalone battlefield generation.
 
-The first production profile should:
+## Shared asset/content reuse goal
 
-1. run GameFrame and RPG GM Runtime as separate services on one dedicated VM;
-2. expose only GameFrame through Cloudflare;
-3. require no inbound router forwarding or player VPN;
-4. keep runtime, databases, and administration private;
-5. persist each authority domain separately;
-6. allow independent deployment and rollback;
-7. support backup, restore, observability, and recovery;
-8. retain an evidence-based path to later Cloudflare-native migration.
+If a campaign/game family already has usable character art, creature art, terrain, props, effects, map kits, abilities, equipment, and tactical definitions, Battle Simulator should reuse them rather than require a second asset pipeline.
 
-Deployment must remain runnable, but additional hardening does not outrank executable campaign correctness unless a concrete defect blocks development or play.
+The same principle applies in reverse: simulator-proven generic tactical primitives may become reusable GameFrame RPG Engine or ruleset capability when deliberately promoted.
 
-## Product quality goals
+Reuse does not override visibility. Campaign-only spoilers remain hidden unless the Battle Pack exposure policy permits them.
 
-The system should be:
+## Media goal
 
-- coherent enough to feel authored rather than like disconnected AI demonstrations;
-- capable of multiple campaign genres without separate Dungeon Master code paths;
-- durable across provider failure and long gaps;
-- resistant to plot drift, identity drift, scene discontinuity, and secret leakage;
-- visually consistent across recurring campaign identities;
-- responsive on desktop and mobile;
-- inspectable and recoverable;
-- machine-testable through mock providers and scripted players;
-- provider-flexible for language, image, audio, storage, and delivery;
-- explicit about identity, scene, knowledge, audience, provenance, revision, and authority.
+Generated/composed media is presentation, not campaign authority.
 
-## First product proof — Monster Master
+GameFrame should reuse first, compose second, generate when justified, preserve recurring identities/provenance, enforce budgets, and keep legal play possible through fallbacks.
 
-The first convincing engineering proof is complete when players can:
+Ordinary cutscenes should primarily use semantic cinematic scripts executed by GameFrame rather than generated video.
 
-1. enter one handcrafted and validated Monster Master CampaignPackage;
-2. receive a Dungeon Master opening derived from the committed package;
-3. submit arbitrary freeform actions across multiple scenes;
-4. encounter coherent durable NPCs, clues, events, checks, and consequences;
-5. see only viewer-authorized people, identities, facts, and private information;
-6. distinguish Act/Speak from Ask-GM;
-7. enter and complete an Arena Battles encounter derived from supported current-scene truth;
-8. return with the tactical outcome applied and narrative input authoritatively resumed;
-9. disconnect, restart services, and resume without package drift or duplicated commands;
-10. complete a bounded campaign-resolution proof;
-11. play through text and deterministic fallbacks when media is missing.
+## Deployment goal
 
-The engineering proof may use a bounded starter chapter. The mature product remains a multi-session campaign system rather than a one-shot-only product.
+The first production profile remains hybrid Cloudflare + private VM:
 
-This proof must be machine-tested before being treated as human-ready.
+- public GameFrame through Cloudflare;
+- no inbound router forwarding/player VPN requirement;
+- private loopback GameFrame RPG authority and RPG GM Runtime on the VM;
+- separate durable stores/services/secrets;
+- WebSocket/realtime transport for embodied session state;
+- durable semantic commands/recovery preserved independently;
+- evidence-based path to future migration rather than architecture churn for its own sake.
 
-## Second product proof — handcrafted generality
+## First product proof — embodied Monster Master
 
-Before implementing Campaign Architect generation, a materially different **second handcrafted CampaignPackage** must:
+The first convincing engineering proof should demonstrate:
 
-1. pass the same validator used by Monster Master;
-2. initialize through the same Entity/Scene/Knowledge substrate;
-3. run through the same Dungeon Master without campaign-specific control-plane code;
-4. complete scripted multi-turn play without plot drift or secret leakage;
-5. use existing GameFrame primitives/fallbacks or expose a genuinely reusable missing capability.
+1. committed handcrafted Monster Master package/world;
+2. materialized Crooked Checkpoint exploration scene;
+3. direct movement/interaction;
+4. direct Pell conversation using Pell-scoped knowledge;
+5. Ask-GM and Do Something Else;
+6. observer-safe People/knowledge state;
+7. meaningful world object interaction;
+8. alternate-route/second-scene materialization and stable revisit;
+9. event/check progression;
+10. same-map Tactical Activation using current positions/geometry;
+11. Monster Master character + controlled-monster authority;
+12. structured non-elimination outcome where appropriate;
+13. direct return from tactical to exploration control on the same scene;
+14. restart/reconnect/resume without duplication, secret leakage, or world drift;
+15. bounded campaign resolution.
 
-If this package requires a special Dungeon Master execution branch or breaks the common world model, repair the abstraction first.
+The first multiplayer proof should use two humans in one shared active scene before split-party productization.
 
-## Third product proof — Campaign Architect
+## Generality proof before Campaign Architect
 
-After the two handcrafted campaigns prove the runtime abstraction:
+A materially different second handcrafted CampaignPackage/game family must use the same:
 
-1. a player or test supplies a materially different concept;
-2. the Campaign Architect produces an original validated draft CampaignPackage;
-3. optional owner refinement preserves the same validator boundary;
-4. the package passes the same validator/entity/scene/knowledge path;
-5. the same Dungeon Master runs it without campaign-specific code;
-6. scripted players complete the package without plot drift or secret leakage;
-7. GameFrame presents it through existing primitives and accepted fallbacks.
+- GameFrame RPG Engine;
+- package validator;
+- Entity/Scene/Observer Knowledge substrate;
+- Dungeon Master context-mode architecture;
+- world/materialization contracts;
+- ruleset interface;
+- campaign UI primitives;
+- Tactical Activation framework where relevant.
 
-A medieval supernatural-response package and a 1920s steampunk paranormal-response package are suitable initial generation tests, provided they are original rather than direct franchise copies.
+If it requires a campaign-specific engine/control plane, repair the abstraction before automating campaign generation.
 
-## Later product expansion
+## Campaign Architect proof
 
-After those proofs:
+Only after handcrafted generality is proven:
 
-- structured campaign sheets;
-- guided GameFrame creation;
-- Discord interviews;
-- Campaign Architect repair and operator review;
-- Cloudflare-backed campaign image generation;
-- richer multi-session progression and world systems;
-- additional prepared themes;
-- Theo participation;
-- optional Cloudflare-native state migration;
-- production operational quality.
+```text
+player idea
+→ Campaign Architect draft
+→ select/create compatible ruleset profile + reusable game-family content as needed
+→ CampaignPackage
+→ Battle Pack when combat-capable and appropriate
+→ optional owner refinement
+→ validation/repair
+→ player-safe preview
+→ explicit commitment
+→ materialized playable campaign through Role-Playing Games
+→ standalone simulator content available through Battle Simulator under exposure policy
+```
+
+Generated campaigns must not require a special Dungeon Master or bespoke GameFrame engine branch. Generated Battle Packs must not create a second combat-rules implementation.
+
+## Multi-scene posture
+
+Architect the semantic Scene Registry for zero-or-more active scenes now, but productize one shared party scene first.
+
+Simultaneous split-party scenes require additional scene-scoped realtime, observer-knowledge divergence, concurrency, event/time semantics, recovery, and rules for one scene entering tactical mode while another continues. That complexity is deferred until one-scene embodied multiplayer is proven.
 
 ## Non-goals
 
 The product direction does not require:
 
-- sending raw premises directly to the Dungeon Master;
 - a separate Monster Master Dungeon Master;
-- a third intro agent;
-- every improvised object becoming a custom mechanic;
-- generated media before campaign logic works;
+- a third NPC agent;
+- generated media before logic works;
 - a new image for every action;
-- Tailscale or router forwarding for players;
-- Cloudflare-native stateful compute before the VM profile works;
-- direct copying of protected campaigns or media;
-- merging all repositories, services, or databases.
+- unrestricted infinite open-world generation;
+- per-frame movement journaling in RPG GM Runtime;
+- separate campaign battle maps;
+- using Battle Simulator as the campaign combat lifecycle;
+- duplicating an RPG's combat rules inside its Battle Pack;
+- automatically exposing campaign secrets in Battle Simulator;
+- every improvised object becoming a permanent mechanic;
+- split-party multiplayer in the first embodied slice;
+- Tailscale/router forwarding for players;
+- direct copying of protected campaigns/media;
+- merging all repositories/services/databases.
 
 ## Governing rule
 
-> Prove one durable handcrafted campaign, prove the same architecture with a materially different handcrafted campaign, then automate campaign construction with the Campaign Architect.
+> Build one campaign-agnostic GameFrame RPG Engine and reusable rules/content families underneath the player-facing Games surfaces. Role-Playing Games hosts persistent campaigns; Battle Simulator hosts standalone scenarios through Battle Packs; when the same game family appears in both, it shares one ruleset and one reusable content/asset foundation rather than two drifting combat systems.

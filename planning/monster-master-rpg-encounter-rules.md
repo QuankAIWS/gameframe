@@ -1,5 +1,5 @@
 ---
-title: Monster Master RPG Encounter Rules
+title: Monster Master RPG Tactical Activation Rules
 status: accepted
 document_type: contract
 owner: Scribbles GameFrame
@@ -7,248 +7,364 @@ last_updated: 2026-08-08
 applies_to:
   - scribbles-gameframe
   - Monster Master RPG
+  - Monster Master Battle Arena
   - RPG GM Runtime integration
 related:
   - monster-master-rules.md
   - rpg-gameframe-interface-contract.md
   - shared/rpg-scene-entity-and-knowledge-contract.md
+  - shared/rpg-embodied-exploration-and-character-performance-contract.md
   - shared/rpg-monster-master-reference-campaign.md
   - ROADMAP.md
 ---
 
-# Monster Master RPG Encounter Rules
+# Monster Master RPG Tactical Activation Rules
 
-## Purpose
+## Decision
 
-Monster Master RPG encounters reuse GameFrame tactical primitives and ordinary authoritative match/session infrastructure, but they are not constrained forever to the fixed standalone `monster-master-duel` scenario defined by MM-0001.
+Monster Master RPG combat does **not** launch a separate Arena map or replace the campaign scene with a tactical copy.
 
-MM-0001 remains the small deterministic standalone duel and regression target. This contract defines the campaign-facing direction for tactical encounters that must preserve the current fictional scene rather than replacing it with a generic duel roster.
+Exploration and turn-based combat are two control/rules modes over the **same materialized GameFrame world scene**.
 
-## Governing principle
+```text
+exploration mode
+  realtime movement / direct interaction
+        ↓ tactical trigger
+same scene + same coordinates + same entities + same objects
+        ↓
+tactical activation
+  initiative / turn order / action economy / legal tactical movement
+        ↓ terminal tactical condition
+same scene updated by authoritative tactical consequences
+        ↓
+exploration mode resumes
+```
 
-> Arena Battles is a stricter resolution mode for the current campaign scene. When tactical play starts, people, creatures, objectives, and materially relevant objects do not disappear merely because the rules engine changed modes.
+The existing standalone Monster Master tactical game evolves separately into **Monster Master Battle Arena**: a battle simulator that may load or generate a map, construct combatants/loadouts, and run the same Monster Master tactical rules without requiring a campaign.
 
-## Input contract
+The campaign and Battle Arena should converge on the same reusable Monster Master rules and GameFrame tactical-mode implementation. They differ in **how the scene and participants are established**, not in the meaning of combat rules.
 
-The runtime supplies a validated encounter-scene projection derived from authoritative current scene state.
+## Product and engine hierarchy
 
-Every request must include source-scene provenance sufficient to reject stale tactical truth:
+The intended layering is:
 
-- source scene ID;
-- source scene revision or equivalent authoritative position;
-- deterministic digest over combat-relevant source-scene state.
+```text
+GameFrame RPG Engine
+  ├─ exploration/world materialization
+  ├─ entity/party/control authority
+  ├─ direct interaction
+  ├─ tactical mode
+  ├─ map/materialization services
+  └─ ruleset interface
 
-The projection retains exact campaign entity identity for every required tactical participant and may include:
+Monster Master Ruleset
+  ├─ trainer/player-character rules
+  ├─ monster deployment/control rules
+  ├─ actions/abilities/resources
+  ├─ initiative/action economy
+  ├─ conditions/outcomes
+  └─ Monster Master tactical objectives
 
-- human trainers;
-- owned or allied monsters;
-- hostile trainers and monsters;
-- NPC allies;
-- civilians and protected entities;
-- neutral or frightened creatures;
-- escaping entities;
-- scene objects and barriers;
-- exit/withdrawal zones;
-- objectives and alternate terminal conditions.
+Monster Master RPG
+  = GameFrame RPG Engine
+  + Monster Master Ruleset
+  + committed CampaignPackage/world
 
-If combat-relevant source-scene truth changes before encounter custody, launch must reject/recompile rather than run a stale scene.
+Monster Master Battle Arena
+  = GameFrame tactical/world subset
+  + Monster Master Ruleset
+  + standalone BattleScenario
+```
 
-GameFrame validates the requested surface against explicit implemented capability. Unsupported combat-relevant requirements fail closed before encounter custody.
+Monster Master is therefore a rules/content family and bespoke RPG title, not the generic engine itself.
 
-## Tactical participant roles
+## Tactical activation
 
-The target bounded role vocabulary is:
+A **Tactical Activation** is the atomic transition that places an already materialized world scene under turn-based tactical authority.
 
-- `allied-combatant`;
-- `hostile-combatant`;
-- `neutral`;
-- `noncombatant`;
-- `protected`;
-- `escaping`;
-- `support`;
-- `objective-entity`.
+It does not create another physical scene.
 
-The first implementation does not need every role at once. It must never silently omit a requested role that materially affects the encounter.
+Before activation, GameFrame/runtime must establish and validate a tactical activation snapshot containing the semantic and deterministic state needed to begin combat, including as applicable:
 
-## Scene-membership preservation rule
+- source campaign/scene identity and semantic scene revision;
+- current GameFrame materialization identity/version;
+- exact persistent entities currently present;
+- current GameFrame positions/facing of tactically relevant entities;
+- factions/teams/dispositions;
+- controlling principal or deterministic behavior authority;
+- player-character and deployed-monster control relationships;
+- current health/resources/conditions;
+- initiative inputs and rules profile;
+- tactically relevant collision/navigation geometry already present on the map;
+- relevant objects, barriers, hazards, elevation, cover, exits, and objective zones;
+- tactical objectives and alternate terminal conditions.
 
-Every individually instantiated persistent person or creature physically present in the source scene when tactical mode begins must either:
+Activation fails closed if required state is contradictory or the selected Monster Master rules cannot execute a materially relevant requirement truthfully.
 
-1. be represented in the tactical encounter in a truthful supported form; or
-2. have an explicit pre-launch scene transition proving that the entity left, withdrew, was evacuated, or otherwise ceased to be present before tactical custody.
+Once activation commits, tactical starting positions are the positions the entities actually occupied when initiative began unless an explicit supported rule says otherwise.
 
-Not every present entity must be a fully controllable combatant. A civilian may be represented as protected/noncombatant state, Pell may be support, and a frightened monster may be escaping. Large anonymous crowds may use an aggregate crowd entity if individual identity is not materially relevant.
+## Same-world invariant
 
-GameFrame may not silently make a present named character disappear merely to fit the current duel schema.
+During campaign tactical mode:
 
-## Trainers
+- the map does not change;
+- the player's character does not teleport to a deployment zone;
+- Pell does not disappear because he lacks a legacy duel slot;
+- a cart, barrier, creek, doorway, tree line, ridge, or other mechanically relevant world feature remains the same object/geometry already in the scene;
+- entities not participating as combatants remain represented truthfully if their presence matters;
+- escape uses real supported exits/zones in the current world;
+- tactical consequences update the same persistent entities and world objects.
 
-Campaign trainers are real player characters and may eventually participate tactically according to their committed trainer archetype and implemented GameFrame rules profile.
+There is no campaign-only `Return to Campaign` navigation step after combat. When tactical custody ends and consequences commit, GameFrame removes/changes the tactical UI/control regime and ordinary exploration resumes in place.
 
-The current production materializer excludes trainers and materializes only supported creatures. That remains a bounded compatibility surface, not the desired final Monster Master RPG rule.
+## Scene resolution modes
 
-Trainer tactical support should be added through explicit profiles such as Vanguard, Commander, Arcanist, Medic, and Caller only when GameFrame implements their legal actions deterministically.
+A GameFrame RPG scene may conceptually operate under a small bounded mode vocabulary such as:
 
-A trainer may not be silently replaced by the standalone MM-0001 `Warden Master` merely because that unit already exists.
+- `exploration` — realtime movement and ordinary direct interaction;
+- `tactical` — initiative/turn-based deterministic action authority;
+- `cinematic-pause` — local input paused for explicit presentation/GM intervention;
+- `transitioning` — bounded scene/materialization transfer state.
 
-## Scene fidelity
+Conversation may be an interaction overlay/state within exploration rather than a mutually exclusive world mode.
 
-The Encounter Scene Compiler should preserve the source-scene elements required by fiction and objectives.
+The exact schema may differ. The important invariant is that changing resolution mode does not create a replacement world scene.
 
-Examples for the Crooked Checkpoint package include:
+## Player and controlled-entity authority
 
-- the player's trainer;
-- the player's deployed monster;
-- Warden Pell if still present and participating;
-- relevant opposition people/monsters;
-- Emberglass if physically present;
-- the pack lizard if still attached to the cart;
-- the confiscation cart and road barrier when they materially constrain the scene;
-- side-road or route exits used by escape objectives.
+Monster Master must not hardcode tactical control as "one trainer plus exactly one monster."
 
-Whether every present entity becomes an independently controlled tactical unit is ruleset-specific. Presence must nevertheless be represented truthfully where it affects legal actions or terminal outcomes.
+The ruleset determines what a character may control and how many controlled entities may be deployed.
 
-## Objectives
+A generic control relationship should be capable of representing concepts such as:
 
-Campaign encounters must not be limited forever to `defeat all opposition`.
+```text
+principal
+  controls player-character entity
+  controls or issues commands to deployed monster entity/entities
+  may gain/lose/control different entities according to class/ruleset state
+```
 
-The target objective vocabulary should support bounded forms such as:
+The concrete contract may use controller IDs, controlled-entity IDs, command authority records, or another validated representation.
 
-- defeat or incapacitate opposition;
+For the current Monster Master reference direction:
+
+- the human player controls their own Master/trainer character when the trainer has tactical actions;
+- the same human issues the legal tactical commands for their deployed monster(s) according to class/loadout/ruleset limits;
+- future classes may support different deployment counts, command styles, support actions, or direct fighting roles;
+- allied human players retain separate authenticated principals even when tactical rules allow cooperative control of shared assets.
+
+Client-authored entity IDs never grant control authority by themselves.
+
+## Participants and noncombatants
+
+Tactical mode must support truthful representation of the current scene.
+
+Useful bounded roles include:
+
+- allied combatant;
+- hostile combatant;
+- neutral;
+- noncombatant;
+- protected entity;
+- escaping entity;
+- support entity;
+- objective/environmental entity.
+
+Not every present person must receive a full combat action set. A civilian may remain a protected/noncombatant entity, Pell may have a support or full trainer profile, and a frightened monster may primarily have escape behavior.
+
+A persistent present entity may be omitted from tactical processing only when its absence is semantically and mechanically irrelevant, or after an explicit pre-activation semantic transition establishes that it left the scene. Important named entities do not silently vanish to satisfy a legacy duel schema.
+
+## Trainers and classes
+
+Campaign trainers are player characters, not merely abstract controllers standing outside the battlefield.
+
+The target Monster Master ruleset should support explicit trainer/class tactical profiles as they are implemented. Examples may include Caller, Field Medic, Field Fighter, Specialist Handler, Commander, Vanguard, Arcanist, or later finalized class names.
+
+The exact class catalog is content/ruleset work. The engine contract only requires that:
+
+- a player-character entity can have legal tactical actions;
+- a class can alter control/deployment limits and available actions;
+- monster commands and personal actions can share one deterministic turn/action-economy contract as defined by the Monster Master ruleset;
+- unsupported class mechanics fail closed rather than being improvised by the Dungeon Master during tactical authority.
+
+## Objectives and termination
+
+Campaign combat is not limited to defeat-all-opposition.
+
+The Monster Master tactical rules should support bounded objectives as actual campaign/Battle Arena needs prove them, including:
+
+- defeat/incapacitate opposition;
 - protect an entity;
 - prevent removal of an object;
-- reach or hold a location;
-- escape or withdraw;
-- prevent an escape;
+- reach/hold a location;
+- escape/withdraw;
+- prevent escape;
 - survive for a bounded interval;
-- force surrender;
-- recover or secure an objective entity.
+- force/accept surrender;
+- recover/secure an objective entity.
 
-A package may combine a small number of supported objectives. Unknown objective semantics fail closed.
+Participant terminal states should distinguish as supported:
+
+- active;
+- incapacitated;
+- withdrew;
+- fled;
+- surrendered;
+- recalled;
+- dead only when an explicit lethal rules profile supports it.
+
+A tactical encounter ends when its validated objective/termination rules say it ends, not merely when one side reaches zero creatures.
 
 ## Escape and withdrawal
 
-Campaign combat requires legal ways to leave tactical play without being eliminated.
+Escape is spatially grounded in the current world map.
 
-Supported terminal participant outcomes should distinguish at least:
+A participant may withdraw/flee through a legal exit, route, edge zone, or other explicit supported objective already represented in the materialized scene.
 
-- `active`;
-- `incapacitated`;
-- `withdrew`;
-- `fled`;
-- `surrendered`;
-- `recalled`.
+A frightened intelligent monster whose established goal is escape should not be forced into attack-until-defeat behavior because the old standalone duel lacked exit semantics.
 
-When lethal rules are later enabled, `dead` is explicit and separate.
+When an entity leaves the scene through tactical action, the resulting semantic destination/scene-presence consequence is committed before ordinary exploration fully resumes.
 
-The preferred first primitive for physical withdrawal is an authored visible exit zone. A participant with an escape objective reaches the legal exit and leaves tactical state through an authoritative action/effect.
+## Tactical world geometry
 
-A neutral or frightened creature whose fiction says it wants to flee should not be forced to attack indefinitely because elimination is the only terminal state.
+The campaign uses the exploration map's authoritative GameFrame geometry.
 
-## Asymmetric forces
+Tactical mode may add overlays and derived data such as:
 
-Campaign encounters may naturally contain unequal numbers of tactical participants.
+- movement range;
+- paths;
+- line of sight;
+- targeting;
+- cover/elevation interpretation;
+- objective/exit highlighting;
+- threat/area effects;
+- turn order and action UI.
 
-The current MM-0001 alternating deployment algorithm requires equal roster counts. The RPG path should eventually implement a deployment/materialization rule that can represent asymmetric sides without inventing duplicate units or dropping scene entities.
+Those overlays do not replace the underlying world geometry.
 
-Until then, asymmetric requests fail closed rather than being reshaped into a symmetric duel.
+If a generated/materialized map cannot provide the deterministic tactical geometry required by the active ruleset, GameFrame must repair/fail the materialization before play reaches that state. It must not create a visually similar second battlefield as a workaround.
 
-## Opposition and non-player behavior
+## Tactical state and persistence
 
-Built-in deterministic behavior remains `GameFrameBot`/game-specific bot behavior, not an AI persona claim.
+Tactical activation creates/uses deterministic tactical state associated with the same scene/materialization.
 
-Campaign encounter participants may eventually use bounded deterministic behavior profiles such as:
+It must preserve enough authority for:
 
-- defend;
-- pursue;
-- protect;
-- flee;
-- surrender-under-pressure;
-- hold-position;
-- escort;
-- scripted-support.
+- legal action validation;
+- serialized revisions/idempotency;
+- turn/initiative order;
+- player/control authorization;
+- replay/debug evidence where supported;
+- reconnect/recovery during combat;
+- terminal result commitment;
+- transition back to exploration control.
 
-These are rules policies executed by GameFrame, not hidden Dungeon Master authority over tactical results.
+The tactical subsystem may internally use MatchSession/tactical-core machinery. Internal reuse does not imply that the player entered a separate match location.
 
-## Terminal outcome
+## Crooked Checkpoint target
 
-GameFrame returns structured outcomes for exact campaign participant identities.
+A correct reference implementation can begin initiative directly in the materialized Crooked Checkpoint scene.
 
-The result should be able to report:
+Depending on prior play, the tactical state may include:
 
-- participant terminal state;
-- health/condition/injury state supported by the ruleset;
-- withdrawal/escape destination where relevant;
-- captured or secured objectives;
-- object damage or custody where supported;
-- spent resources;
-- winning/losing team when meaningful;
-- objective completion/failure;
-- source scene ID/revision/digest;
-- authoritative tactical revision and commit time.
+- the player's Master at their actual current position;
+- Cinder or other deployed monster(s) at their actual positions;
+- Pell if present;
+- actual established hostiles;
+- Emberglass if present, potentially with an escape goal;
+- relevant pack lizard/noncombatant state;
+- the same cart/barrier/road/woods/creek/exits already present in exploration;
+- objectives derived from what is actually happening.
 
-Runtime maps those exact results back into campaign world/scene truth and only then asks the Dungeon Master to narrate aftermath.
+When tactical mode ends:
 
-## Campaign-bound terminal presentation
+- people/monsters remain wherever the outcome left them, subject to explicit terminal/removal semantics;
+- fled/withdrew entities have semantic destination/presence updates;
+- injuries/resources/conditions persist;
+- object custody/damage persists;
+- the camera/UI may transition smoothly back to exploration;
+- the player does not click a separate `Return to Campaign` button to re-enter the world they never left.
 
-A campaign encounter does not become a standalone replay loop after victory/defeat.
+## Monster Master Battle Arena
 
-For campaign-bound matches:
+The standalone simulator is intentionally different at the **setup boundary**.
 
-- primary action is **Return to Campaign**;
-- generic `New Duel` is suppressed;
-- generic `Return Home` is not presented as the primary continuation path;
-- terminal copy describes the campaign encounter result rather than generic duel completion;
-- returning to the campaign route does not itself authorize a new narrative turn.
+A future `BattleScenario` may define or select:
 
-The campaign composer/input remains fenced until runtime has consumed the authoritative terminal outcome, reconciled world/scene truth, and published a later resumable campaign state.
+- map/materialization recipe or generated map request;
+- Monster Master ruleset version/profile;
+- player characters/trainers;
+- monsters/loadouts/classes;
+- teams/controllers;
+- starting positions or deployment rules;
+- objectives;
+- deterministic bot profiles;
+- environment options.
 
-This distinction must be browser-tested. A test that only clicks a return link and verifies the URL is insufficient.
+After setup, it should use the same tactical-mode rules, legal actions, renderer, entity presentation, control-authority concepts, conditions, objectives, and outcome vocabulary as Monster Master RPG wherever the selected ruleset version/capabilities match.
 
-## Crooked Checkpoint target proof
+The Battle Arena may provide standalone conveniences that a campaign does not need:
 
-The reference campaign should eventually prove one encounter where tactical state derives from the actual checkpoint scene.
+- character/loadout builder;
+- map selection/generation;
+- team setup;
+- quick rematch;
+- scenario presets;
+- deterministic bot opponents;
+- replay/analysis tools.
 
-A valid implementation should support a scenario in which, depending on prior play:
-
-- Orange and Cinder are present as exact campaign entities;
-- Pell may be present as a bounded support ally rather than disappearing;
-- Mara/Tollan or other established opposition are represented if they are the hostile participants;
-- Emberglass can have an escape objective rather than a mandatory fight-to-the-death policy;
-- the cart/barrier/exits required by the objective are preserved;
-- the structured outcome records who fled, surrendered, was incapacitated, remained at the scene, and what happened to the cubes/evidence.
-
-The exact participant set must come from current scene truth, not from a canned fixture.
+Those conveniences must not fork the actual Monster Master combat rules.
 
 ## Relationship to MM-0001
 
-Do not delete or silently mutate MM-0001's fixed three-unit standalone duel contract merely to obtain campaign fidelity.
+MM-0001 is the current narrow standalone tactical proof: fixed duel assumptions, bounded creatures, and existing MatchSession/tactical infrastructure.
 
-Use this campaign-specific contract to evolve RPG encounter capability while continuing to reuse:
+Do not delete that regression surface prematurely. Evolve the standalone product toward Monster Master Battle Arena while extracting/promoting reusable Monster Master tactical rules and GameFrame tactical-mode primitives.
 
-- tactical map primitives;
-- legal action machinery;
-- MatchSession;
-- replay;
-- persistence;
-- authenticated action authority;
-- deterministic bot infrastructure;
-- rendering infrastructure.
+The convergence target is:
 
-When a capability becomes generally useful and stable, it may be promoted into reusable tactical-core or Monster Master rules primitives deliberately.
+```text
+current MM-0001 tactical proof
+            ↓ extract/generalize
+shared Monster Master tactical rules + GameFrame tactical mode
+        ↙                              ↘
+Monster Master RPG              Monster Master Battle Arena
+same-map campaign combat        standalone scenario combat
+```
+
+## Runtime relationship
+
+RPG GM Runtime owns semantic reasons and consequences for campaign combat, not the tactical engine.
+
+Runtime may request/authorize tactical activation by expressing:
+
+- why tactical resolution is required;
+- relevant semantic factions/dispositions/objectives;
+- hidden/known information required to validate the activation;
+- expected semantic scene revision.
+
+GameFrame validates the current materialized scene and activates deterministic tactical mode.
+
+After terminal tactical state, GameFrame commits structured mechanic outcomes and runtime reconciles campaign-semantic consequences that are not already GameFrame-owned mechanics. Ordinary exploration resumes only after the two authority domains agree on the post-combat state required for safe continuation.
+
+This boundary should be named **Tactical Activation**, not `Encounter Scene Compiler`, because no second scene is compiled.
+
+A runtime-side coordinator/type may be named **Tactical Activation Coordinator** or equivalent.
 
 ## Implementation order
 
-1. retain current participant-faithful creature-only configured RPG path as the existing baseline;
-2. add explicit encounter-scene contract with source-scene revision/digest and fail-closed role validation;
-3. add campaign-specific terminal UX and authoritative post-battle unlock acceptance;
-4. add withdrawal/escape terminal semantics and exit zones;
-5. add asymmetric scene materialization;
-6. add trainer tactical profiles required by the reference campaign;
-7. add protected/noncombatant/support roles as actual package needs prove them;
-8. prove the Crooked Checkpoint scene-faithful encounter and aftermath;
-9. broaden only from demonstrated campaign requirements.
+1. preserve current MM-0001/Monster Master tactical regression coverage;
+2. define the campaign-agnostic GameFrame tactical-mode boundary over an existing materialized scene;
+3. define Monster Master ruleset/control-authority contracts independent of campaign versus Battle Arena setup;
+4. activate initiative in Crooked Checkpoint using actual current positions/geometry;
+5. add trainer/player-character tactical participation required by the reference class;
+6. add escape/withdrawal and real exit-zone semantics;
+7. add asymmetric participants/objectives/noncombatants as campaign needs prove them;
+8. prove tactical completion returns directly to exploration control on the same map;
+9. evolve the standalone product into Monster Master Battle Arena using the same rules/tactical implementation;
+10. broaden BattleScenario/map generation only after shared tactical semantics are proven.
 
 ## Governing rule
 
-> Keep the standalone duel small, but make Monster Master RPG combat a faithful tactical projection of the campaign scene, with exact entities, explicit source-scene provenance, meaningful non-elimination outcomes, and a campaign return that does not unlock until authoritative aftermath is complete.
+> In Monster Master RPG, combat is something that happens **in the world you are already standing in**. Tactical activation changes the rules of control, not the place. Monster Master Battle Arena is the separate standalone simulator that deliberately starts from battle setup, and both products converge on one Monster Master ruleset and one GameFrame tactical implementation.

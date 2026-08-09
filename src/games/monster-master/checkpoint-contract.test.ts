@@ -37,18 +37,18 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
   assert.match(readme, /\/monster-master\.html/);
   assert.match(readme, /src\/games\//);
 
-  assert.match(roadmap, /### MM-0001 — Monster Master Arena Battles foundation/);
-  assert.match(roadmap, /Human-versus-human and human-versus-Monster-Master-BattleBot flows/);
-  assert.match(roadmap, /Replay, persistence, invitations, browser play, Pixi\/Canvas rendering, and visual review/);
-  assert.match(roadmap, /### GF-0011A — Node-local Monster Master RPG encounter loop/);
-  assert.match(roadmap, /PR #152 then extended the Node-local adapter with explicit shared-team cooperative control/);
-  assert.match(roadmap, /### GF-0011B — Durable Monster Master RPG encounter productionization/);
-  assert.match(roadmap, /encounter↔match binding survives process restart/);
-  assert.match(roadmap, /`rulesState\.creatureIds` is validated and converted into the exact revision-zero tactical roster/);
-  assert.match(roadmap, /terminal participant results are calculated from each participant's exact mapped creature health\/defeat state/);
-  assert.match(roadmap, /### Team-aware RPG battles/);
-  assert.match(roadmap, /exact configured participant→creature assignments persist in `participantUnitIds`/);
-  assert.match(roadmap, /asymmetric tactical deployment/);
+  assert.match(roadmap, /MM-0001 remains useful standalone Monster Master regression substrate/);
+  assert.match(roadmap, /Monster Master Arena Battles/);
+  assert.match(roadmap, /## Transitional legacy tactical correctness/);
+  assert.match(roadmap, /legacy terminal result/);
+  assert.match(roadmap, /result consumed exactly once/);
+  assert.match(roadmap, /## GF-RPG-06 — Monster Master Ruleset extraction \/ control authority/);
+  assert.match(roadmap, /class-defined deployed monster counts/);
+  assert.match(roadmap, /## GF-RPG-07 — Same-map Tactical Activation/);
+  assert.match(roadmap, /current positions become tactical starting positions/);
+  assert.match(roadmap, /No replacement campaign battlefield or Return-to-Campaign navigation occurs/);
+  assert.match(roadmap, /## GF-RPG-12 — Dynamic Battle Simulator/);
+  assert.match(roadmap, /Matching RPG Ruleset\/profile versions must produce equivalent legal tactical semantics\/outcomes/);
 
   assert.match(agents, /GameFrameBot.*stable player ID `gameframe-bot`/s);
   assert.match(agents, /Monster Master BattleBot/);

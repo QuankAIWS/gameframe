@@ -1,5 +1,5 @@
 {
-  "manifestVersion": 6,
+  "manifestVersion": 7,
   "canonicalRepository": "QuankAIWS/scribbles-gameframe",
   "canonicalRef": "main",
   "canonicalRoot": "planning/shared",
@@ -17,6 +17,10 @@
     {
       "id": "rpg-scene-entity-and-knowledge-contract-v1",
       "filename": "rpg-scene-entity-and-knowledge-contract.md"
+    },
+    {
+      "id": "rpg-embodied-exploration-and-character-performance-v1",
+      "filename": "rpg-embodied-exploration-and-character-performance-contract.md"
     },
     {
       "id": "rpg-platform-roadmap-v1",

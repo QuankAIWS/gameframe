@@ -43,6 +43,8 @@ test("a first visit uses the cold terminal boot and only marks it seen after suc
 
   await expect(page.locator("#gameframe-boot")).toBeHidden();
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
+  await expect(page.locator("#game-card-role-playing-games")).toBeVisible();
+  await expect(page.locator("#game-card-battle-simulator")).toBeVisible();
   await expect(page.locator("#game-card-tic-tac-toe")).toBeVisible();
   await expect(page.locator(".mode-grid")).toBeHidden();
   expect(await page.evaluate((key) => localStorage.getItem(key), bootSeenStorageKey)).toBe("seen");
@@ -119,15 +121,41 @@ test("Home returns to the hub without replaying the terminal boot", async ({ pag
   await expect(page.locator("#gameframe-boot")).toBeHidden();
 });
 
-test("the complete game cards open their game-specific menus", async ({ page }) => {
+test("the Games cards open Role-Playing Games, Battle Simulator, and standalone game surfaces", async ({ page }) => {
   await page.goto("/?player=hub-navigation-test");
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
   await expect(page.locator(".mode-grid")).toBeHidden();
-  await expect(page.locator("#game-card-tic-tac-toe")).toContainText("CPU Opponent");
+  await expect(page.locator("#lobby .section-label")).toHaveText("GAMES");
+  await expect(page.locator(".game-grid .game-card")).toHaveCount(5);
 
+  const rpgCard = page.locator("#game-card-role-playing-games");
+  await expect(rpgCard).toContainText("Role-Playing Games");
+  await expect(rpgCard).toHaveAttribute("href", "/gameframe-rpg.html");
+  await expect(rpgCard.locator(".game-card-play")).toHaveText("Open");
+  await rpgCard.click();
+  await expect(page).toHaveURL(/\/gameframe-rpg\.html$/);
+  await expect(page.getByRole("heading", { name: "Persistent worlds. Real campaigns." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Monster Master RPG" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open Monster Master RPG" })).toHaveAttribute("href", "/monster-master-rpg.html?campaign=monster-master-staging");
+  await expect(page.getByRole("button", { name: /Create RPG/ })).toBeDisabled();
+
+  await page.goto("/?player=hub-navigation-test");
+  const simulatorCard = page.locator("#game-card-battle-simulator");
+  await expect(simulatorCard).toContainText("Battle Simulator");
+  await expect(simulatorCard).toHaveAttribute("href", "/battle-simulator.html");
+  await expect(simulatorCard.locator(".game-card-play")).toHaveText("Open");
+  await simulatorCard.click();
+  await expect(page).toHaveURL(/\/battle-simulator\.html$/);
+  await expect(page.getByRole("heading", { name: "Build the fight. Skip the campaign." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Monster Master Arena Battles" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open Monster Master Arena" })).toHaveAttribute("href", "/monster-master.html");
+  await expect(page.getByRole("button", { name: /Custom Battle/ })).toBeDisabled();
+
+  await page.goto("/?player=hub-navigation-test");
+  await expect(page.locator("#game-card-tic-tac-toe")).toContainText("CPU Opponent");
   const ticCard = page.locator("#game-card-tic-tac-toe");
   await expect(ticCard).toHaveAttribute("href", "/?game=tic-tac-toe&menu=1");
-  await expect(ticCard.locator(".game-card-play")).toHaveText("Play now");
+  await expect(ticCard.locator(".game-card-play")).toHaveText("Open");
   await ticCard.locator(".game-card-body").click();
   await expect(page).toHaveURL(/game=tic-tac-toe&menu=1/);
   await expect(page.locator("body.gameframe-game-menu")).toBeVisible();

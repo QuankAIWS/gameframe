@@ -1,153 +1,217 @@
 ---
-title: RPG Media, Theme, and Audio Pipeline
+title: RPG Media, Theme, World-Kit, and Audio Pipeline
 status: accepted
 document_type: architecture
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-05
+last_updated: 2026-08-08
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
   - campaign media generation
+  - embodied exploration materialization
   - narration audio
 shared_document_id: rpg-media-theme-and-audio-pipeline-v1
-shared_document_version: 3
+shared_document_version: 4
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-media-theme-and-audio-pipeline.md
 mirrors:
   - QuankAIWS/rpg-gm-runtime:docs/shared/rpg-media-theme-and-audio-pipeline.md
 sync_policy: exact-byte-copy
 related:
+  - rpg-platform-product-goals.md
   - rpg-agent-architecture-and-campaign-package.md
+  - rpg-embodied-exploration-and-character-performance-contract.md
   - rpg-platform-roadmap.md
   - rpg-campaign-architect-contract.md
-  - rpg-platform-product-goals.md
-  - rpg-cloudflare-deployment-architecture.md
+  - rpg-rendering-and-asset-contract.md
 ---
 
-# RPG Media, Theme, and Audio Pipeline
+# RPG Media, Theme, World-Kit, and Audio Pipeline
 
 ## Decision
 
-Media responsibilities follow the two-agent architecture.
+Media responsibilities follow the two-agent architecture and the embodied exploration contract.
 
-- **Campaign Architect:** decides which semantic themes, characters, creatures, locations, props, terrain, effects, handouts, interface elements, narration styles, and audio roles a CampaignPackage requires.
-- **GameFrame:** resolves, composes, generates, validates, stores, versions, caches, delivers, replaces, and moderates player-facing assets.
-- **Dungeon Master:** uses accepted semantic identities during play and may request compatible incidental presentation, but does not redesign the campaign asset pack every turn.
+- **Campaign Architect:** declares semantic themes, world-kit needs, characters, creatures, locations, structures, props, terrain, effects, handouts, interface elements, narration styles, and audio/cinematic roles required by a CampaignPackage.
+- **GameFrame:** resolves, composes, generates, validates, stores, versions, caches, delivers, replaces, and moderates player-facing assets and uses them to materialize playable scenes.
+- **Dungeon Master:** uses accepted semantic identities during play and may request compatible incidental presentation, special poses, scene assets, or cinematic presentation, but does not redesign the campaign asset pack every turn.
 
-RPG GM Runtime does not manage image or speech provider credentials and does not handcraft provider-specific prompts. GameFrame owns provider adapters and prompt compilation.
+RPG GM Runtime does not manage image/speech provider credentials and does not handcraft provider-specific prompts. GameFrame owns provider adapters/prompt compilation.
 
-Generated media is never campaign authority and never a prerequisite for package validation or legal play.
+Generated media is never campaign authority, collision authority, or a prerequisite for legal play.
 
 ## Goals
 
-The media system should provide:
+The media/materialization system should provide:
 
 - coherent art direction for each campaign;
-- recurring character and location consistency;
-- rapid preparation of new bespoke campaigns;
+- recurring character/location/world-kit consistency;
+- rapid preparation of bespoke campaigns;
 - economical reuse and deterministic composition;
-- nonblocking text and placeholder fallbacks;
+- stable materialization identities for revisited locations;
+- nonblocking text/silhouette/world-kit fallbacks;
 - provider portability;
 - inspectable provenance;
 - stable campaign asset identities;
-- bounded cost, moderation, and replacement behavior.
+- bounded cost/moderation/replacement behavior;
+- reusable vocabulary that grows more capable/cheaper across campaigns.
 
-## CampaignPackage media profile
+## CampaignPackage media/world profile
 
 A CampaignPackage may declare:
 
 - campaign theme intent;
-- palette, materials, architecture, clothing, terrain, prop, and interface vocabularies;
-- recurring character, creature, location, faction, item, effect, and handout roles;
-- tactical terrain and unit presentation requirements;
-- narration voice and audio mood intents;
+- palette/material/architecture/clothing/terrain/prop/interface vocabularies;
+- semantic world-kit families for roads, woods, water, structures, interiors, industrial/settled spaces, etc.;
+- recurring character/creature/location/faction/item/effect/handout roles;
+- exploration sprite/avatar/interaction-state requirements;
+- tactical terrain/unit presentation requirements;
+- narration voice/audio mood intents;
+- cinematic-script requirements;
 - continuity references;
 - audience scope;
-- priority and urgency;
-- required, optional, and deferred assets;
+- priority/urgency;
+- required/optional/deferred assets;
 - deterministic fallback rules;
-- originality and recognizable-copy avoidance constraints.
+- originality/recognizable-copy avoidance constraints.
 
-These are semantic requirements, not provider prompts, storage keys, URLs, or executable rendering instructions.
+These are semantic requirements, not provider prompts, storage keys, URLs, Pixi geometry, or executable provider instructions.
 
 ## Campaign Architect relationship
 
-During campaign preparation, the Campaign Architect:
+During campaign preparation, Campaign Architect:
 
-1. identifies reusable and campaign-specific presentation roles;
+1. identifies reusable and campaign-specific world/media roles;
 2. records stable semantic IDs in the CampaignPackage;
-3. supplies continuity descriptions and avoid constraints;
-4. marks required, optional, and deferred assets;
-5. provides text and deterministic fallback requirements;
-6. submits player-safe media previews for review where appropriate;
-7. records accepted asset identities in package amendments or preparation state without changing hidden campaign truth.
+3. declares WorldGraph/location materialization needs;
+4. supplies continuity descriptions/avoid constraints;
+5. marks required/optional/deferred assets;
+6. provides text/deterministic fallback requirements;
+7. submits player-safe media previews for review where appropriate;
+8. records accepted asset identities in package/preparation state without changing hidden truth.
 
-When Cloudflare-backed image generation becomes available, the Campaign Architect may orchestrate a campaign preparation workflow through GameFrame's media API. GameFrame remains the generation and storage authority.
+Cloudflare-backed image generation may later help materialize the campaign asset/world kit through GameFrame's media API. GameFrame remains generation/storage/materialization authority.
 
 ## Dungeon Master relationship
 
-During play, the Dungeon Master:
+During play, Dungeon Master:
 
-- references accepted campaign asset IDs and semantic roles;
-- requests scene, character, item, effect, narration, or ambience presentation when needed;
-- may request an incidental NPC card, portrait-family assignment, or location fallback compatible with package rules;
-- continues play through text or existing fallbacks while better media is unavailable.
+- references accepted campaign asset IDs/semantic roles;
+- requests scene/entity/item/effect/narration/ambience presentation when needed;
+- may request an incidental NPC sprite/card/portrait-family assignment;
+- may request a special action pose or high-value reveal image;
+- may request a cinematic script using supported semantic presentation commands;
+- continues play through existing/fallback presentation while better media is unavailable.
 
-The Dungeon Master may not silently replace recurring asset identity, alter campaign truth through media, expose hidden entities to providers or players, or issue provider-specific generation prompts.
+Dungeon Master may not silently replace recurring asset identity, alter campaign truth through media, expose hidden entities to providers/players, or issue provider-specific prompts.
 
 ## Inspiration-to-original transformation
 
-Player shorthand may reference recognizable media. The Campaign Architect first converts that shorthand into an original campaign identity.
+Player shorthand may reference recognizable media. Campaign Architect first converts shorthand into an original campaign identity.
 
-The process should:
+The process should extract broad genre/era/emotional/comedic/environmental/gameplay qualities while replacing protected names/logos/characters/distinctive phrases/copied plots/signature designs and creating original setting/world-kit vocabulary.
 
-1. extract broad genre, era, emotional, comedic, environmental, and gameplay qualities;
-2. remove protected names, logos, characters, distinctive phrases, copied plots, and signature designs;
-3. create original setting rules, factions, terminology, architecture, clothing, props, silhouettes, conflicts, and motifs;
-4. record explicit avoid constraints;
-5. produce a versioned theme profile and CampaignPackage;
-6. keep player intent while avoiding claims of official affiliation.
-
-This is a product quality and risk-control practice, not legal certification.
+This is a product quality/risk-control practice, not legal certification.
 
 ## Resolution hierarchy
 
-Every media requirement follows this order.
+Every media/world-kit requirement follows this order.
 
 ### Level 1 — Accepted catalog reuse
 
-Reuse an approved asset when it satisfies the semantic role and continuity requirement.
+Reuse an approved asset/world-kit piece when it satisfies semantic role and continuity.
+
+Examples:
+
+- terrain materials;
+- trees/foliage;
+- roads/paths;
+- doors/windows/fences;
+- carts/crates/signs;
+- generic structures;
+- body/pose/equipment families;
+- common effects/icons.
 
 ### Level 2 — Deterministic composition
 
-Compose approved layers, templates, palettes, accessories, scene elements, terrain families, card frames, silhouettes, and effects through versioned reproducible recipes.
+Compose approved layers/templates/palettes/accessories/scene elements/terrain families/structure kits/character parts through versioned reproducible recipes.
+
+For exploration, prefer deterministic world composition over generating entire final map screenshots.
 
 ### Level 3 — Asynchronous generation
 
-Use a configured provider when reuse and composition are inadequate or the asset has sufficient recurring or narrative value.
+Use a configured provider when reuse/composition is inadequate or the asset has sufficient recurring/narrative value.
 
-High-value candidates include principal NPCs, major locations, chapter art, unusual creatures, boss reveals, exceptional artifacts, and reusable campaign-specific terrain.
+High-value candidates include:
 
-Routine actions, ordinary props, and minor incidental details should usually use catalog, composition, silhouette, card, or text fallback.
+- principal NPCs;
+- unusual monsters;
+- major locations/unique facades;
+- campaign-specific architecture/terrain family masters;
+- chapter/reveal art;
+- exceptional artifacts;
+- special cinematic poses.
+
+Routine movement/actions/minor props should normally use catalog/composition/state changes rather than fresh inference.
+
+## World-kit model
+
+A world kit is a versioned collection of presentation/materialization assets/recipes usable by exploration scene compilation.
+
+It may include:
+
+- ground/terrain material families;
+- roads/paths/shorelines/creeks;
+- vegetation families;
+- rocks/cliffs/elevation faces;
+- structure shells/facades/doors/windows/roofs;
+- fences/barriers/signage;
+- carts/crates/furniture/field props;
+- interaction-state variants;
+- lighting/weather overlays;
+- scene ambience/music roles;
+- deterministic composition rules/compatibility metadata.
+
+World kits do not own semantic location truth or collision. GameFrame materialization binds kit output to authoritative gameplay geometry.
+
+## Character presentation model
+
+Recurring entities should use stable presentation identity.
+
+Where practical, ordinary gameplay states should use prepared/deterministic variants such as:
+
+- idle;
+- walk/move;
+- face/direction;
+- talk/interact;
+- combat-ready;
+- weapon/equipment state;
+- damage/condition;
+- defeat/recovery;
+- contextual gesture.
+
+Generate new imagery only when the existing state vocabulary cannot adequately present a high-value moment.
+
+Small inconsistencies in one-off generated source art must never fork durable entity identity.
 
 ## Prompt compiler
 
-GameFrame owns the provider-neutral prompt compiler. It combines:
+GameFrame owns provider-neutral prompt compiler combining:
 
-- semantic asset intent;
+- semantic asset/world-kit intent;
 - CampaignPackage theme profile;
-- established entity continuity;
+- established entity/location continuity;
 - asset-kind recipe;
-- dimensions, perspective, anchoring, transparency, crop, and safe-region requirements;
-- style and palette constraints;
-- originality and avoid constraints;
-- provider-specific formatting and limits.
+- dimensions/perspective/anchoring/transparency/crop/safe-region requirements;
+- style/palette constraints;
+- originality/avoid constraints;
+- provider-specific formatting/limits.
 
 Material prompt-compiler changes receive new versions and do not silently overwrite accepted recurring assets.
 
-## Asset registry and lifecycle
+## Asset/materialization registry lifecycle
 
-Each accepted asset receives stable identity and provenance.
+Each accepted asset receives stable identity/provenance.
 
 Lifecycle may include:
 
@@ -157,47 +221,40 @@ requested -> fallback-ready -> queued -> generating
           -> rejected | failed | superseded
 ```
 
-Cache and identity should account for:
-
-- campaign and semantic role;
-- recurring entity identity;
-- theme profile version;
-- recipe and prompt-compiler version;
-- provider and model or workflow version when generated;
-- source content hash;
-- dimensions and derivative profile;
-- audience scope.
+Cache/identity should account for campaign/semantic role, recurring entity/location identity, theme/world-kit version, recipe/prompt compiler version, provider/model/workflow version, source hash, dimensions/derivatives, and audience scope.
 
 Accepted recurring assets remain stable until deliberately superseded.
 
+Materialized scenes separately retain stable materialization identity/version/recipe/seed/semantic-anchor relationships under GameFrame authority.
+
 ## Provenance and rights metadata
 
-Record:
+Record as applicable:
 
-- source type: catalog, composed, generated, imported, or user-supplied;
-- source asset IDs and license or rights notes;
-- provider, model, workflow, adapter, recipe, and prompt-compiler versions;
-- content hash, creation time, and storage identity;
-- moderation and review status;
-- campaign and audience scope;
-- originality and avoid constraints;
-- replacement and deletion relationships.
+- source type: catalog/composed/generated/imported/user-supplied;
+- source IDs/license/rights notes;
+- provider/model/workflow/adapter/recipe/prompt-compiler versions;
+- content hash/creation time/storage identity;
+- moderation/review status;
+- campaign/audience scope;
+- originality/avoid constraints;
+- replacement/deletion relationships.
 
-Assets without adequate provenance do not enter the reusable global catalog.
+Assets without adequate provenance do not enter reusable global catalog.
 
 ## Validation before acceptance
 
 Validation may check:
 
-- file type, dimensions, duration, and size;
-- transparency, crop, anchoring, and safe bounds;
-- corruption, blank output, or unusable framing;
+- file type/dimensions/duration/size;
+- transparency/crop/anchoring/safe bounds;
+- corruption/blank output/unusable framing;
 - visual continuity;
-- prohibited text, logos, watermarks, or recognizable copying;
-- content moderation;
+- prohibited text/logos/watermarks/recognizable copying;
+- moderation;
 - deterministic derivatives;
-- manifest and provenance completeness;
-- tactical readability where required.
+- manifest/provenance completeness;
+- exploration/tactical readability.
 
 Generated output remains source material until accepted.
 
@@ -205,81 +262,95 @@ Generated output remains source material until accepted.
 
 GameFrame immediately presents one of:
 
-- an accepted campaign asset;
-- a prepared theme fallback;
-- a deterministic composition;
-- a neutral placeholder;
-- a silhouette or character card;
-- text-only presentation.
+- accepted campaign asset/world kit;
+- deterministic composition;
+- prepared theme fallback;
+- neutral placeholder/silhouette/card;
+- text-only fallback.
 
-A later replacement changes presentation only. It does not replay commands, reorder events, alter mechanics, or change campaign truth.
+Later replacement changes presentation only. It does not replay commands/reorder events/alter mechanics/campaign truth.
+
+A scene may be legally playable with approved fallback assets when required semantic/gameplay geometry exists.
+
+## Cinematic scripts
+
+Ordinary cutscenes should be semantic scripts executed by GameFrame, not generated video.
+
+Supported script vocabulary may include:
+
+- camera focus/pan/shake;
+- entity move/face/pose;
+- dialogue;
+- GM intervention;
+- effect playback;
+- sound/music transition;
+- encounter transition.
+
+A script references accepted semantic identities and supported presentation commands. It does not own campaign truth.
+
+Generated special poses/splash art may be requested when a high-value scene benefits.
 
 ## Narration and audio
 
 Authoritative narration remains text.
 
-Initial optional audio should support:
+Optional audio should support captions identical to authoritative text, bounded tone/pace tags, caching by normalized text/speaker mapping/language/voice version/settings, and immediate text fallback.
 
-- one narrator voice;
-- captions identical to authoritative text;
-- bounded tone and pace tags;
-- caching by normalized text, speaker mapping, language, voice version, and settings;
-- play, pause, replay, mute, and volume;
-- immediate text fallback.
+Later versions may add recurring voices/pronunciation/music/ambience/streaming/accessibility without changing semantic narration intent.
 
-Later versions may add recurring voices, pronunciation dictionaries, higher-quality synthesis, music, ambience, streaming, and accessibility preferences without changing the narration intent contract.
-
-## Budgets and provider selection
+## Budgets/provider selection
 
 GameFrame enforces:
 
 - concurrent job limits;
-- campaign and account budgets;
+- campaign/account budgets;
 - quality tiers;
-- timeout and retry limits;
-- dimensions and duration bounds;
+- timeout/retry limits;
+- dimension/duration bounds;
 - generation quotas;
-- fallback after budget exhaustion;
-- immediate, deferred, operator-approved, or disabled policy.
+- fallback after exhaustion;
+- immediate/deferred/operator-approved/disabled policy.
 
-The Campaign Architect and Dungeon Master may express importance and urgency but do not override deployment budgets or safety controls.
+Campaign Architect/Dungeon Master may express importance/urgency but do not override budgets/safety controls.
 
-## Security and privacy
+## Security/privacy
 
-- Runtime-only campaign truth and unrevealed entities are not sent to providers without explicit policy.
-- Provider credentials never reach browsers or RPG GM Runtime prompts.
-- Asset URLs and metadata follow campaign audience rules.
-- Logs do not expose private prompts, provider responses, secrets, or unrevealed content by default.
-- Retention and deletion cover prompts, binaries, audio, provenance, and derivatives.
+- runtime-only campaign truth/unrevealed entities are not sent to providers without explicit policy;
+- provider credentials never reach browsers/RPG GM prompts;
+- asset URLs/metadata follow audience rules;
+- logs do not expose private prompts/provider responses/secrets/unrevealed content by default;
+- retention/deletion covers prompts/binaries/audio/provenance/derivatives.
 
 ## Delivery sequence
 
-1. freeze semantic theme, asset, narration, registry, and adapter contracts;
-2. prove catalog reuse and deterministic composition;
-3. support Monster Master prepared assets and fallbacks;
-4. add queued image generation and accepted result storage;
-5. connect Campaign Architect media preparation;
-6. add economical optional narration audio;
-7. prove a generated bespoke campaign asset pack;
-8. improve recurring continuity, quality tiers, voices, music, and metrics.
+1. preserve semantic theme/asset/fallback contracts;
+2. prove catalog reuse/deterministic composition;
+3. build Monster Master exploration world-kit foundations;
+4. support stable exploration materialization/revisit using those assets;
+5. add queued image generation/accepted-result storage;
+6. connect Campaign Architect media/world preparation;
+7. add economical narration/audio;
+8. prove a generated bespoke campaign world/asset pack;
+9. improve recurring continuity/quality tiers/voices/music/metrics.
 
-This sequence follows `rpg-platform-roadmap.md`; media work does not outrank the executable CampaignPackage and Dungeon Master proof.
+Media work does not outrank executable world/entity/scene/knowledge/exploration correctness.
 
 ## Acceptance criteria
 
 The pipeline is established when a CampaignPackage can:
 
-1. declare original theme and asset requirements;
+1. declare original theme/world-kit/asset requirements;
 2. reuse accepted assets;
-3. compose deterministic portrait, card, scene, and terrain presentation;
-4. queue and accept a high-value custom asset;
-5. continue play with fallback during generation;
-6. replace fallback without changing campaign truth;
-7. reuse accepted recurring identities after reconnect;
-8. synthesize optional narration and fall back to text;
-9. retain provenance and bounded cost evidence;
-10. reject invalid or recognizable-copy output without blocking the campaign.
+3. compose deterministic terrain/structure/character/scene presentation;
+4. materialize a playable exploration scene without generated pixels owning collision;
+5. queue/accept a high-value custom asset;
+6. continue play with fallback during generation;
+7. replace fallback without changing campaign truth;
+8. reuse accepted recurring entities/locations after reconnect/revisit;
+9. execute a semantic cinematic script;
+10. retain provenance/bounded cost evidence;
+11. reject invalid/recognizable-copy output without blocking campaign.
 
 ## Governing rule
 
-> The Campaign Architect declares what the campaign needs; GameFrame materializes and governs the media; the Dungeon Master uses accepted identities; and no provider becomes campaign authority or a gameplay dependency.
+> The Campaign Architect declares what the campaign world needs; GameFrame builds and governs the reusable visual vocabulary/materialization; the Dungeon Master uses accepted identities; and no media provider becomes campaign, geometry, or gameplay authority.

@@ -1,0 +1,64 @@
+body.battle-simulator-route {
+  background:
+    radial-gradient(circle at 82% 10%, rgba(255, 114, 92, .13), transparent 27rem),
+    radial-gradient(circle at 12% 74%, rgba(255, 185, 84, .08), transparent 30rem),
+    #090608;
+}
+
+.battle-simulator-route .rpg-preview-back {
+  color: #e3b0a4;
+}
+
+.battle-simulator-route .rpg-preview-back:hover {
+  color: #fff;
+}
+
+.battle-simulator-route .rpg-preview-hero,
+.battle-simulator-route .rpg-preview-powered {
+  border-color: rgba(239, 150, 127, .24);
+  background: rgba(25, 12, 15, .88);
+}
+
+.battle-simulator-route .rpg-preview-eyebrow,
+.battle-simulator-route .rpg-preview-section-heading p,
+.battle-simulator-route .rpg-preview-powered p {
+  color: #f0a58e;
+}
+
+.battle-simulator-route .rpg-preview-hero p:last-child,
+.battle-simulator-route .rpg-preview-action-grid button small,
+.battle-simulator-route .rpg-preview-feature-grid article span,
+.battle-simulator-route .rpg-preview-powered span {
+  color: #cfb7b1;
+}
+
+.battle-simulator-route .rpg-preview-engine-mark {
+  border-color: rgba(255, 153, 120, .36);
+  background:
+    linear-gradient(rgba(255, 137, 104, .08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 137, 104, .08) 1px, transparent 1px),
+    rgba(33, 14, 17, .94);
+  background-size: 18px 18px;
+}
+
+.battle-simulator-route .rpg-preview-engine-mark span,
+.battle-simulator-route .rpg-preview-engine-mark small {
+  color: #d59c8e;
+}
+
+.battle-simulator-route .rpg-preview-action-grid button,
+.battle-simulator-route .rpg-preview-feature-grid article {
+  border-color: rgba(236, 151, 129, .2);
+  background: rgba(29, 14, 18, .8);
+}
+
+.battle-simulator-route .rpg-preview-action-grid button > span,
+.battle-simulator-route .rpg-preview-action-grid button > em {
+  color: #ef9d84;
+}
+
+.battle-simulator-route .rpg-preview-powered a {
+  border-color: rgba(255, 176, 116, .45);
+  background: rgba(116, 52, 28, .3);
+  color: #fff0df;
+}
