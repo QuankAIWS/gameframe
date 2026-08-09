@@ -5,7 +5,7 @@
   "canonicalRoot": "planning/fixtures/rpg/v1",
   "mirrorRepository": "QuankAIWS/rpg-gm-runtime",
   "mirrorRoot": "fixtures/rpg/v1",
-  "contractVersion": 2,
+  "contractVersion": 3,
   "fixtures": [
     {
       "id": "campaign-port-a",
@@ -21,6 +21,11 @@
       "id": "campaign-revision-linkage",
       "filename": "campaign-revision-linkage.json",
       "description": "Separate GameFrame coordination revision, GameFrame presentation sequence, and RPG GM narrative revision with source-revision linkage and exact retry/conflict cases."
+    },
+    {
+      "id": "exploration-port-a",
+      "filename": "exploration-port-a.json",
+      "description": "Viewer-authorized Crooked Checkpoint semantic projection, stable materialization identity/reconnect, hidden-state omission, and movement-authority boundaries."
     }
   ]
 }
