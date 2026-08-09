@@ -45,6 +45,7 @@ test("a first visit uses the cold terminal boot and only marks it seen after suc
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
   await expect(page.locator("#game-card-role-playing-games")).toBeVisible();
   await expect(page.locator("#game-card-battle-simulator")).toBeVisible();
+  await expect(page.locator("#game-card-casual-games")).toBeVisible();
   await expect(page.locator("#game-card-tic-tac-toe")).toBeVisible();
   await expect(page.locator(".mode-grid")).toBeHidden();
   expect(await page.evaluate((key) => localStorage.getItem(key), bootSeenStorageKey)).toBe("seen");
@@ -121,12 +122,12 @@ test("Home returns to the hub without replaying the terminal boot", async ({ pag
   await expect(page.locator("#gameframe-boot")).toBeHidden();
 });
 
-test("the Games cards open Role-Playing Games, Battle Simulator, and standalone game surfaces", async ({ page }) => {
+test("the Games cards open Role-Playing Games, Battle Simulator, Casual Games, and standalone game surfaces", async ({ page }) => {
   await page.goto("/?player=hub-navigation-test");
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
   await expect(page.locator(".mode-grid")).toBeHidden();
   await expect(page.locator("#lobby .section-label")).toHaveText("GAMES");
-  await expect(page.locator(".game-grid .game-card")).toHaveCount(5);
+  await expect(page.locator(".game-grid .game-card")).toHaveCount(6);
 
   const rpgCard = page.locator("#game-card-role-playing-games");
   await expect(rpgCard).toContainText("Role-Playing Games");
@@ -150,6 +151,20 @@ test("the Games cards open Role-Playing Games, Battle Simulator, and standalone 
   await expect(page.getByRole("heading", { name: "Monster Master Arena Battles" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Open Monster Master Arena" })).toHaveAttribute("href", "/monster-master.html");
   await expect(page.getByRole("button", { name: /Custom Battle/ })).toBeDisabled();
+
+  await page.goto("/?player=hub-navigation-test");
+  const casualCard = page.locator("#game-card-casual-games");
+  await expect(casualCard).toContainText("Casual Games");
+  await expect(casualCard).toHaveAttribute("href", "/casual-games.html");
+  await casualCard.click();
+  await expect(page).toHaveURL(/\/casual-games\.html$/);
+  await expect(page.getByRole("heading", { name: "Short games. Dangerous “one more round” energy." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open Cascade" })).toHaveAttribute("href", "/cascade.html");
+  await page.getByRole("link", { name: "Open Cascade" }).click();
+  await expect(page).toHaveURL(/\/cascade\.html$/);
+  await expect(page.getByRole("heading", { name: "Cascade" })).toBeVisible();
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
+  await expect(page.locator("#iou-total")).toHaveText("$0");
 
   await page.goto("/?player=hub-navigation-test");
   await expect(page.locator("#game-card-tic-tac-toe")).toContainText("CPU Opponent");

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#16131e">
+  <title>Cascade · Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/cascade.css">
+</head>
+<body class="cascade-route">
+  <main class="cascade-shell">
+    <header class="cascade-header">
+      <div>
+        <p class="cascade-kicker">CASUAL / MATCH-3</p>
+        <h1>Cascade</h1>
+      </div>
+      <div class="cascade-ledger" aria-label="Fake IOU ledger">
+        <small>FAKE FAMILY TAB</small>
+        <strong id="iou-total">$0</strong>
+        <button id="open-ledger" type="button">Ledger</button>
+      </div>
+    </header>
+
+    <section class="cascade-status" aria-label="Level status">
+      <div><small>LEVEL</small><strong id="level-number">1</strong></div>
+      <div><small>SCORE</small><strong id="score">0</strong></div>
+      <div><small>TARGET</small><strong id="target">1200</strong></div>
+      <div><small>MOVES</small><strong id="moves">18</strong></div>
+      <div><small>LIVES</small><strong id="lives">♥♥♥♥♥</strong></div>
+    </section>
+
+    <section class="cascade-game">
+      <aside class="cascade-map" aria-label="Progress">
+        <p>RUN</p>
+        <ol id="level-map"></ol>
+      </aside>
+
+      <div class="cascade-board-wrap">
+        <div class="cascade-objective">
+          <span id="objective-label">Hit the target before moves run out.</span>
+          <b id="combo-label" aria-live="polite"></b>
+        </div>
+        <div id="board" class="cascade-board" role="grid" aria-label="Cascade board"></div>
+        <p class="cascade-help">Tap one tile, then an adjacent tile. Swaps that do not make a match are rejected.</p>
+      </div>
+
+      <aside class="cascade-side">
+        <div class="cascade-card">
+          <small>STREAK</small>
+          <strong id="streak">0</strong>
+          <span>Levels cleared without a loss.</span>
+        </div>
+        <div class="cascade-card">
+          <small>BOOSTERS</small>
+          <button id="booster-hammer" type="button">Hammer <b id="hammer-count">2</b></button>
+          <span>Remove one tile without spending a move.</span>
+        </div>
+        <div class="cascade-card cascade-research-note">
+          <small>RESEARCH BUILD</small>
+          <span>All “IOUs” are fictional, local-only, capped, and never create a real debt or charge.</span>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <dialog id="result-dialog" class="cascade-dialog">
+    <form method="dialog">
+      <small id="result-kicker">LEVEL COMPLETE</small>
+      <h2 id="result-title">Nice run.</h2>
+      <p id="result-copy"></p>
+      <div id="result-actions" class="cascade-dialog-actions"></div>
+    </form>
+  </dialog>
+
+  <dialog id="ledger-dialog" class="cascade-dialog cascade-ledger-dialog">
+    <form method="dialog">
+      <small>FAKE FAMILY TAB</small>
+      <h2>IOU ledger</h2>
+      <p>Research-only continuation choices. No payment method exists and the total has no real-world value.</p>
+      <ul id="ledger-list"></ul>
+      <div class="cascade-dialog-actions">
+        <button value="close" class="primary">Close</button>
+        <button id="reset-ledger" type="button">Reset fake tab</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/gameframe-nav.js"></script>
+  <script type="module" src="/cascade.js"></script>
+</body>
+</html>

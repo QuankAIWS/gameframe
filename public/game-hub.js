@@ -43,6 +43,14 @@ const games = [
     accent: "simulator",
   },
   {
+    id: "casual-games",
+    href: "/casual-games.html",
+    kicker: "QUICK PLAY",
+    title: "Casual Games",
+    description: "Short-form puzzle and arcade games, starting with the Cascade match-3 research build.",
+    accent: "casual",
+  },
+  {
     id: "othello",
     href: "/othello.html",
     kicker: "STRATEGY",
@@ -91,6 +99,30 @@ function artwork(game) {
         <i class="game-card-simulator-unit simulator-unit-a"></i>
         <i class="game-card-simulator-unit simulator-unit-b"></i>
         <span class="game-card-visual-mark">SIM</span>
+      </span>
+    `;
+  }
+  if (game.accent === "casual") {
+    return `
+      <span
+        class="game-card-visual"
+        aria-hidden="true"
+        style="background:
+          radial-gradient(circle at 50% 38%, rgba(255,216,77,.2), transparent 34%),
+          linear-gradient(145deg, #28162d, #0b1b24 74%);"
+      >
+        <span style="position:absolute;inset:13%;display:grid;grid-template-columns:repeat(3,1fr);gap:7%;transform:rotate(-3deg);">
+          <i style="border-radius:24%;background:#ff5ca8;box-shadow:inset 0 3px 7px rgba(255,255,255,.28),0 10px 18px rgba(0,0,0,.3);"></i>
+          <i style="border-radius:24%;background:#59e1ef;box-shadow:inset 0 3px 7px rgba(255,255,255,.28),0 10px 18px rgba(0,0,0,.3);"></i>
+          <i style="border-radius:24%;background:#ffd84d;box-shadow:inset 0 3px 7px rgba(255,255,255,.28),0 10px 18px rgba(0,0,0,.3);"></i>
+          <i style="border-radius:24%;background:#83ef7b;box-shadow:inset 0 3px 7px rgba(255,255,255,.28),0 10px 18px rgba(0,0,0,.3);"></i>
+          <i style="border-radius:24%;background:#a982ff;box-shadow:inset 0 3px 7px rgba(255,255,255,.28),0 10px 18px rgba(0,0,0,.3);"></i>
+          <i style="border-radius:24%;background:#ff8b4d;box-shadow:inset 0 3px 7px rgba(255,255,255,.28),0 10px 18px rgba(0,0,0,.3);"></i>
+          <i style="border-radius:24%;background:#ffd84d;box-shadow:inset 0 3px 7px rgba(255,255,255,.28),0 10px 18px rgba(0,0,0,.3);"></i>
+          <i style="border-radius:24%;background:#ff5ca8;box-shadow:inset 0 3px 7px rgba(255,255,255,.28),0 10px 18px rgba(0,0,0,.3);"></i>
+          <i style="border-radius:24%;background:#59e1ef;box-shadow:inset 0 3px 7px rgba(255,255,255,.28),0 10px 18px rgba(0,0,0,.3);"></i>
+        </span>
+        <span class="game-card-visual-mark" style="border-color:rgba(255,216,77,.6);color:#ffd84d;">FUN</span>
       </span>
     `;
   }
@@ -143,6 +175,7 @@ function createLibraryCard(game) {
   card.id = `game-card-${game.id}`;
   card.className = `game-card game-hub-${game.accent}`;
   card.href = game.href;
+  if (game.accent === "casual") card.style.setProperty("--hub-accent", "#ffd84d");
   card.setAttribute("aria-label", `Open ${game.title}`);
   card.innerHTML = `
     ${artwork(game)}
@@ -205,7 +238,7 @@ function installGames() {
   if (modeGrid) modeGrid.hidden = true;
   if (sectionLabel) sectionLabel.textContent = "GAMES";
   if (lobbyTitle) lobbyTitle.textContent = "Choose how to play";
-  if (lobbyMessage) lobbyMessage.textContent = "Open a role-playing world, the battle simulator, or a standalone game.";
+  if (lobbyMessage) lobbyMessage.textContent = "Open a role-playing world, the battle simulator, casual games, or a standalone game.";
 }
 
 hero?.querySelector(".game-hub-topbar")?.remove();
@@ -224,7 +257,7 @@ function syncHubState() {
     const selected = games.find((game) => game.id === menuGame);
     const expectedMessage = menuGame
       ? gameMenuMessage(selected)
-      : "Open a role-playing world, the battle simulator, or a standalone game.";
+      : "Open a role-playing world, the battle simulator, casual games, or a standalone game.";
     if (lobbyMessage && lobbyMessage.textContent !== expectedMessage) lobbyMessage.textContent = expectedMessage;
     document.title = menuGame
       ? `${selected?.title || "Game"} · Scribbles GameFrame`
