@@ -26,6 +26,11 @@ import {
   RpgExplorationMaterializationError,
 } from "../rpg/rpg-exploration-materializer.ts";
 import {
+  normalizeMoveRequest,
+  RpgExplorationMovementError,
+  RpgExplorationMovementService,
+} from "../rpg/rpg-exploration-movement-service.ts";
+import {
   RuntimeExplorationTransportError,
   type RuntimeExplorationHttpTransport,
 } from "../rpg/runtime-exploration-transport.ts";
@@ -37,6 +42,9 @@ import {
   SqliteRpgEncounterError,
   SqliteRpgEncounterStore,
 } from "../rpg/sqlite-rpg-encounter-store.ts";
+import {
+  SqliteRpgExplorationPositionStore,
+} from "../rpg/sqlite-rpg-exploration-position-store.ts";
 import {
   DurableRpgRealtimeHub,
   type RpgCampaignPosition,
@@ -74,9 +82,9 @@ export type DurableRpgHttpServer = Server & {
 /**
  * Production-shaped RPG boundary over the durable SQLite services.
  *
- * HTTP remains the only mutation/recovery authority. The attached WebSocket hub
- * exposes authenticated player projections after durable commits and can be
- * discarded/recreated without changing campaign or tactical truth.
+ * HTTP remains the semantic mutation/recovery authority. Campaign WebSockets
+ * also carry GameFrame-owned physical exploration movement, which is persisted
+ * separately from RPG campaign truth and can be discarded/rebuilt on attach.
  */
 export function createDurableRpgHttpServer(
   options: DurableRpgHttpServerOptions,
@@ -94,6 +102,13 @@ export function createDurableRpgHttpServer(
   const encounterMatches = new SqliteRpgEncounterMatchCoordinator({
     filePath: options.filePath,
     encounters,
+    clock,
+  });
+  const explorationPositions = new SqliteRpgExplorationPositionStore({
+    filePath: options.filePath,
+  });
+  const explorationMovement = new RpgExplorationMovementService({
+    positions: explorationPositions,
     clock,
   });
   for (const bootstrap of options.bootstrapCampaigns ?? []) {
@@ -116,6 +131,11 @@ export function createDurableRpgHttpServer(
       };
     },
     matchView: (matchId, playerId) => encounterMatches.viewMatchForPlayer(matchId, playerId),
+    explorationMove: (campaignId, playerId, message) => {
+      const normalized = normalizeMoveRequest(message);
+      requireBodyIdentity(normalized.campaignId, campaignId, "campaignId");
+      return explorationMovement.move(playerId, normalized);
+    },
   });
 
   const server = createServer(async (request, response) => {
@@ -135,7 +155,9 @@ export function createDurableRpgHttpServer(
             "durable-encounters",
             "terminal-outcomes",
             "websocket-realtime",
-            ...(options.explorationTransport ? ["rpg-exploration-materialization"] : []),
+            ...(options.explorationTransport
+              ? ["rpg-exploration-materialization", "rpg-exploration-movement"]
+              : []),
           ],
         });
       }
@@ -190,10 +212,21 @@ export function createDurableRpgHttpServer(
           response.setHeader("allow", "POST");
           return sendJson(response, 405, {
             error: "method-not-allowed",
-            message: "Exploration attachment accepts POST only.",
+            message: "Exploration routes accept POST only.",
             retryable: false,
           });
         }
+        const bodyBytes = await readRequestBody(request);
+        const principal = await authenticate(authenticator, request, url, bodyBytes);
+        requirePlayerPrincipal(principal);
+        const body = parseJsonBody(bodyBytes);
+
+        if (explorationRoute.operation === "move") {
+          const normalized = normalizeMoveRequest(body);
+          requireBodyIdentity(normalized.campaignId, explorationRoute.campaignId, "campaignId");
+          return sendJson(response, 200, explorationMovement.move(principal.playerId, normalized));
+        }
+
         if (!options.explorationTransport) {
           return sendJson(response, 503, {
             error: "runtime-exploration-unavailable",
@@ -201,20 +234,23 @@ export function createDurableRpgHttpServer(
             retryable: true,
           });
         }
-        const bodyBytes = await readRequestBody(request);
-        const principal = await authenticate(authenticator, request, url, bodyBytes);
-        requirePlayerPrincipal(principal);
-        const body = parseJsonBody(bodyBytes);
         normalizeBrowserExplorationAttach(body, explorationRoute.campaignId);
         const projection = await options.explorationTransport.attach({
           campaignId: explorationRoute.campaignId,
           authenticatedPlayerId: principal.playerId,
         });
+        const materialization = materializeRpgExplorationProjection(projection);
+        const playerPosition = explorationMovement.attach({
+          playerId: principal.playerId,
+          projection,
+          materialization,
+        });
         return sendJson(response, 200, {
           protocolVersion: 1,
           kind: "campaign.exploration_materialized",
           projection,
-          materialization: materializeRpgExplorationProjection(projection),
+          materialization,
+          playerPosition,
         });
       }
 
@@ -339,6 +375,7 @@ export function createDurableRpgHttpServer(
     if (closed) return;
     closed = true;
     realtime.terminateAll();
+    explorationPositions.close();
     encounterMatches.close();
     encounters.close();
     campaigns.close();
@@ -346,10 +383,15 @@ export function createDurableRpgHttpServer(
   return server;
 }
 
-function matchExplorationRoute(pathname: string): { campaignId: string } | undefined {
-  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/exploration\/attach$/.exec(pathname);
+function matchExplorationRoute(
+  pathname: string,
+): { campaignId: string; operation: "attach" | "move" } | undefined {
+  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/exploration\/(attach|move)$/.exec(pathname);
   if (!match) return undefined;
-  return { campaignId: decodeURIComponent(match[1]!) };
+  return {
+    campaignId: decodeURIComponent(match[1]!),
+    operation: match[2] as "attach" | "move",
+  };
 }
 
 function matchCampaignRoute(
@@ -524,6 +566,14 @@ function normalizeError(error: unknown): {
   }
   if (error instanceof RpgExplorationMaterializationError) {
     return failure(422, "unsupported-materialization", error.message, false);
+  }
+  if (error instanceof RpgExplorationMovementError) {
+    return failure(
+      error.code === "invalid-input" ? 400 : 409,
+      error.code,
+      error.message,
+      false,
+    );
   }
   if (error instanceof DurableRpgCampaignServiceError) {
     return failure(
