@@ -1,0 +1,121 @@
+.cascade-status > div {
+  position: relative;
+}
+
+.cascade-board-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+#life-timer {
+  display: block;
+  margin-top: 3px;
+  color: #ffd84d;
+  font-size: .56rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+.cascade-life-lock {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  border-radius: inherit;
+  background: rgba(7, 8, 12, .78);
+  backdrop-filter: blur(4px);
+  text-align: center;
+}
+
+.cascade-life-lock[hidden] {
+  display: none;
+}
+
+.cascade-life-lock-card {
+  display: grid;
+  gap: 8px;
+  width: min(320px, 88%);
+  padding: 18px;
+  border: 1px solid rgba(255, 216, 77, .36);
+  border-radius: 16px;
+  background: rgba(17, 19, 27, .96);
+  box-shadow: 0 20px 54px rgba(0, 0, 0, .42);
+}
+
+.cascade-life-lock-card small,
+.cascade-life-lock-card strong,
+.cascade-life-lock-card span {
+  display: block;
+}
+
+.cascade-life-lock-card small {
+  color: #ff6cab;
+  font-size: .62rem;
+  font-weight: 950;
+  letter-spacing: .15em;
+}
+
+.cascade-life-lock-card strong {
+  font-size: 1.35rem;
+}
+
+.cascade-life-lock-card span {
+  color: #aeb4c2;
+  font-size: .8rem;
+}
+
+.cascade-life-lock-card button,
+.cascade-boost-actions button,
+#open-boost-info {
+  min-height: 42px;
+  border: 1px solid rgba(255, 216, 77, .32);
+  border-radius: 11px;
+  background: rgba(255, 216, 77, .08);
+  color: #ffd84d;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+#open-boost-info {
+  width: 100%;
+  margin-top: 2px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.cascade-boost-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.cascade-boost-actions button.iou {
+  min-height: 56px;
+  border-color: rgba(255, 255, 255, .28);
+  background: linear-gradient(135deg, #ff4fa3 0%, #ae68ff 55%, #4ddff0 100%);
+  color: #fff;
+}
+
+.cascade-boost-actions button:disabled {
+  opacity: .38;
+  cursor: not-allowed;
+  filter: grayscale(.2);
+}
+
+.cascade-boost-state {
+  margin: 10px 0 0;
+  color: #ffd84d;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.cascade-no-lives #board {
+  pointer-events: none;
+}
+
+.cascade-no-lives #booster-hammer {
+  pointer-events: none;
+}

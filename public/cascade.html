@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/cascade.css">
   <link rel="stylesheet" href="/cascade-vfx.css">
   <link rel="stylesheet" href="/cascade-family.css">
+  <link rel="stylesheet" href="/cascade-life-ui.css">
   <link rel="stylesheet" href="/cascade-admin.css">
 </head>
 <body class="cascade-route">
@@ -30,7 +31,7 @@
       <div><small>SCORE</small><strong id="score">0</strong></div>
       <div><small>TARGET</small><strong id="target">1200</strong></div>
       <div><small>MOVES</small><strong id="moves">18</strong></div>
-      <div><small>LIVES</small><strong id="lives">♥♥♥♥♥</strong></div>
+      <div><small>LIVES</small><strong id="lives">♥♥♥♥♥</strong><span id="life-timer" hidden></span></div>
     </section>
 
     <section class="cascade-game">
@@ -46,6 +47,14 @@
         </div>
         <div id="board" class="cascade-board" role="grid" aria-label="Cascade board"></div>
         <p class="cascade-help">Match 4 to blast a full line. Match 5+ to sweep that color off the board.</p>
+        <div id="life-lock" class="cascade-life-lock" hidden>
+          <div class="cascade-life-lock-card">
+            <small>OUT OF LIVES</small>
+            <strong>Next life in <span id="life-lock-timer">10:00</span></strong>
+            <span>The board unlocks automatically when a life comes back.</span>
+            <button id="life-lock-boost" type="button">Need a boost?</button>
+          </div>
+        </div>
       </div>
 
       <aside class="cascade-side">
@@ -62,7 +71,8 @@
         <div class="cascade-card cascade-tab-card">
           <small>IOU$</small>
           <strong>Need a boost?</strong>
-          <span>Moves, lives, and boosters can be added to the IOU ledger.</span>
+          <span>See what is available now and when the other offers appear.</span>
+          <button id="open-boost-info" type="button">Open boosts</button>
         </div>
       </aside>
     </section>
@@ -74,6 +84,21 @@
       <h2 id="result-title">Nice run.</h2>
       <p id="result-copy"></p>
       <div id="result-actions" class="cascade-dialog-actions"></div>
+    </form>
+  </dialog>
+
+  <dialog id="boost-info-dialog" class="cascade-dialog">
+    <form method="dialog">
+      <small>BOOSTS</small>
+      <h2>Need a boost?</h2>
+      <p>Extra moves are offered when you hit 0 moves. Hammer bundles appear when you are out of hammers. If you are out of lives, you can refill them here.</p>
+      <p id="boost-state" class="cascade-boost-state"></p>
+      <div class="cascade-boost-actions">
+        <button id="boost-refill-lives" type="button" class="iou">REFILL 5 LIVES · 5 IOU$</button>
+        <button id="boost-hammers" type="button">Open hammer offer</button>
+        <button id="boost-view-ious" type="button">View IOUs</button>
+        <button value="close" class="primary">Close</button>
+      </div>
     </form>
   </dialog>
 
@@ -93,6 +118,7 @@
 
   <script type="module" src="/gameframe-nav.js"></script>
   <script type="module" src="/cascade.js"></script>
+  <script type="module" src="/cascade-life-ui.js"></script>
   <script type="module" src="/cascade-admin.js"></script>
 </body>
 </html>
