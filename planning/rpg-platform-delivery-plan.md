@@ -69,7 +69,7 @@ For the current RPG path:
 
 - reuse the existing Pixi renderer;
 - reuse terrain projection/material infrastructure;
-- reuse realtime WebSocket/session infrastructure;
+- reuse authenticated HTTP command authority and realtime WebSocket projection/session infrastructure;
 - reuse deterministic tactical primitives;
 - reuse authenticated player/control infrastructure;
 - reuse Runtime semantic authorities rather than creating GameFrame copies.
@@ -131,25 +131,64 @@ SEE does not prove:
 - Tactical Activation;
 - final art.
 
-## Slice B — MOVE: realtime exploration — ACTIVE NEXT
+## Slice B — MOVE: embodied realtime session — bounded implementation complete
 
-Add only the physical/session state necessary for ordinary walking:
+The implemented movement path is:
 
-- player x/y/facing;
-- WASD/keyboard movement;
-- camera-follow/pan behavior appropriate to exploration;
-- collision/navigation against the existing Crooked Checkpoint geometry;
-- scene-scoped realtime state;
-- valid position persistence/recovery;
-- reconnect without duplicate semantic presence.
+```text
+Runtime semantic attach/materialization
+→ GameFrame scene-scoped exploration movement session
+→ authenticated HTTP exploration_move command
+→ GameFrame collision + position revision + SQLite checkpoint
+→ exploration_position response
+→ existing Pixi player transform + camera follow
+```
 
-Frame-by-frame state stays in GameFrame. Runtime receives no movement stream.
+### Implemented
 
-### MOVE acceptance
+- GameFrame owns player x/y/facing as physical session state; these fields are not added to Runtime semantic projection or journal traffic;
+- the current Crooked Checkpoint player spawn seeds movement only when no valid exact-materialization position exists;
+- accepted positions are checkpointed in GameFrame SQLite against campaign, player, scene, materialization ID/version/hash, and position revision;
+- restart/reconnect restores only a position belonging to the exact current physical materialization and falls back to a valid spawn otherwise;
+- when a previously saved exact-materialization tile becomes non-traversable because newly visible occupancy claims it, GameFrame durably checkpoints the fallback spawn as a new position revision before accepting another move;
+- WASD performs bounded cardinal tile steps; Q/E keeps the existing Pixi camera rotation controls;
+- WASD is camera-quarter-relative so the key directions remain screen-oriented after rotating the isometric view;
+- walls, map bounds, visible non-player entity anchors, and visible object anchors are collision blockers;
+- blocked movement may still commit facing when facing changes, but never changes x/y;
+- accepted movement updates only the player unit transform in the existing Pixi exploration adapter and recenters the exploration camera on that player;
+- one movement request is in flight per browser movement controller and only the newest queued direction is retained as bounded backpressure;
+- movement commands use authenticated `POST /api/rpg/campaigns/:id/exploration/move` in both local and hosted play, preserving the repository invariant that HTTP owns commands/mutations;
+- the existing campaign WebSocket remains projection-only; an `exploration_move` frame sent there is rejected as unsupported;
+- Cloudflare exposes the movement HTTP route through the existing same-origin authenticated HMAC Worker proxy;
+- movement does not call the Runtime exploration transport; Runtime is re-entered only by attach/recovery of semantic scene truth.
 
-A browser player walks around Crooked Checkpoint, cannot walk through blocked geometry, refreshes/reconnects, and resumes a valid position on the same physical materialization without creating semantic duplicate presence.
+### MOVE acceptance evidence
 
-## Slice C — TALK: context custody through real interaction
+Focused tests prove:
+
+- canonical Crooked Checkpoint movement cannot cross wall terrain or occupied Pell/cart cells;
+- stale client position revisions fail closed;
+- a changed materialization identity cannot inherit an old position;
+- a newly occupied recovered tile is reset to a traversable spawn with a durable replacement revision;
+- a GameFrame service restart over the same SQLite file recovers exact x/y/facing and position revision;
+- WebSocket movement attempts are rejected while HTTP movement leaves campaign coordination/presentation/narrative revisions unchanged and does not invoke Runtime exploration again;
+- the public Cloudflare edge exposes only the authenticated movement command route rather than a generic exploration mutation surface;
+- browser WASD moves the Pixi player through HTTP authority, blocked movement stays in place, camera follows accepted movement, camera rotation changes screen-relative movement mapping, and refresh recovers the same position/materialization.
+
+### MOVE evidence boundary
+
+MOVE does not claim:
+
+- direct Talk/Interact or target-range semantics;
+- Pell entity-performance context custody;
+- Ask Game Master / Do Something Else / intervention mode UX;
+- semantic object/world mutations;
+- West Woods semantic transfer;
+- same-map Tactical Activation;
+- multi-player avatar movement or occupancy reconciliation;
+- continuous analog/sub-tile locomotion.
+
+## Slice C — TALK: context custody through real interaction — ACTIVE NEXT
 
 Once the player can stand next to Pell:
 
@@ -224,7 +263,7 @@ Each RPG PR begins with a concrete behavior statement. Avoid “add framework X�
 
 ### Inspect before designing
 
-Search current GameFrame/Runtime renderer, terrain, realtime, tactical, authority, and fixture mechanisms before adding a subsystem. SEE validated this rule by reusing the existing Monster Master Pixi world rather than forking an exploration renderer.
+Search current GameFrame/Runtime renderer, terrain, realtime, tactical, authority, and fixture mechanisms before adding a subsystem. SEE validated this rule by reusing the existing Monster Master Pixi world rather than forking an exploration renderer. MOVE validated it again by reusing the authenticated HTTP mutation boundary, existing SQLite durability, and existing Pixi player transform rather than creating an exploration command transport or renderer.
 
 ### Narrow proof first
 
@@ -236,7 +275,7 @@ A PR may cross files/layers if required to complete one player-visible step. Do 
 
 ### Cross-repository ordering
 
-Coordinate both repos only when a real seam is missing or changes. SEE required a small Runtime companion because the S6 projection existed only in-process and was not reachable by the production-shaped GameFrame service. The projection schema itself did not change.
+Coordinate both repos only when a real seam is missing or changes. SEE required a small Runtime companion because the S6 projection existed only in-process and was not reachable by the production-shaped GameFrame service. MOVE requires no Runtime schema or implementation change because physical transforms remain wholly GameFrame-owned.
 
 When a shared canonical contract changes, preserve canonical GameFrame-first / exact Runtime mirror ordering.
 
@@ -252,7 +291,7 @@ During iteration run the smallest trustworthy lane. Before merge select broader 
 - Runtime behavior → Fast Check;
 - shared contract change → shared drift;
 - Runtime↔GameFrame seam → current integration;
-- persistence/recovery semantics → durable two-service recovery.
+- persistence/recovery semantics → durable recovery proof.
 
 Known unrelated broad-suite failures must be classified rather than silently treated as feature evidence or pulled into the slice.
 
@@ -272,7 +311,7 @@ Use evidence matching the claim:
 
 - semantic contracts: deterministic unit/fixture tests;
 - physical scene: materialization/geometry tests + browser acceptance;
-- movement: realtime/session/reconnect browser tests;
+- movement: authenticated HTTP/session/reconnect browser tests plus projection-only WebSocket regression;
 - NPC/GM correctness: deterministic context-custody/machine-play tests;
 - world change/transfer: Runtime semantic tests + cross-repo integration + browser journey;
 - tactical mode: deterministic rules tests + same-map browser transition;
@@ -282,16 +321,15 @@ A screenshot is supporting visual evidence, not state correctness.
 
 ## Immediate GameFrame execution order
 
-1. **MOVE — walking/collision/camera/reconnect.**
-2. **TALK — Pell interaction + Runtime context custody + Ask-GM + Do Something Else.**
-3. **CHANGE/TRAVEL — concrete world operations + West Woods round trip.**
-4. **FIGHT — Monster Master control/rules boundary + same-map Tactical Activation.**
-5. **PROVE — complete single-player chapter, restart/resume, live provider, staging.**
-6. two-human one-scene.
-7. second handcrafted Game Family.
-8. Campaign Architect + dynamic Role-Playing Games + Battle Pack authoring.
-9. dynamic Battle Simulator convergence.
-10. split-party later.
+1. **TALK — Pell interaction + Runtime context custody + Ask-GM + Do Something Else.**
+2. **CHANGE/TRAVEL — concrete world operations + West Woods round trip.**
+3. **FIGHT — Monster Master control/rules boundary + same-map Tactical Activation.**
+4. **PROVE — complete single-player chapter, restart/resume, live provider, staging.**
+5. two-human one-scene.
+6. second handcrafted Game Family.
+7. Campaign Architect + dynamic Role-Playing Games + Battle Pack authoring.
+8. dynamic Battle Simulator convergence.
+9. split-party later.
 
 ## Governing rule
 
