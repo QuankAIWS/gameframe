@@ -1,0 +1,17 @@
+{
+  "assetId": "gameframe.card.role-playing-games.v1",
+  "role": "gameframe-destination-card-art",
+  "destinationId": "role-playing-games",
+  "runtimePath": "/assets/gameframe/cards/role-playing-games-card.svg",
+  "aspectRatio": "16:9",
+  "runtimeViewport": {
+    "width": 384,
+    "height": 216
+  },
+  "master": {
+    "width": 2048,
+    "height": 1152,
+    "format": "png",
+    "externalArchive": "Google Drive/gameframe asset masters/gameframe-rpg-card-master-2048x1152.png"
+  }
+}
