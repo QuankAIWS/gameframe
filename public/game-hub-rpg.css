@@ -16,71 +16,15 @@
 
 .game-card-visual-rpg {
   background:
-    radial-gradient(circle at 72% 24%, rgba(94, 213, 255, .26), transparent 24%),
-    radial-gradient(circle at 27% 78%, rgba(182, 92, 255, .25), transparent 30%),
-    linear-gradient(145deg, #12182a, #070912 70%);
+    url("/assets/gameframe/cards/role-playing-games-card.svg") center / cover no-repeat,
+    #070912;
 }
 
-.game-card-rpg-grid,
-.game-card-simulator-grid {
-  position: absolute;
-  inset: 0;
-  opacity: .32;
-  background-image:
-    linear-gradient(rgba(126, 202, 255, .18) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(126, 202, 255, .18) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-
-.game-card-rpg-grid {
-  transform: perspective(260px) rotateX(56deg) scale(1.4) translateY(16%);
-  transform-origin: center bottom;
-}
-
-.game-card-rpg-node,
-.game-card-rpg-route {
-  position: absolute;
-  display: block;
-}
-
-.game-card-rpg-node {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(220, 246, 255, .9);
-  border-radius: 50%;
-  background: rgba(20, 44, 70, .9);
-  box-shadow: 0 0 18px rgba(98, 213, 255, .45);
-  z-index: 2;
-}
-
-.rpg-node-a { left: 22%; top: 62%; }
-.rpg-node-b { left: 52%; top: 31%; }
-.rpg-node-c { left: 72%; top: 67%; }
-
-.game-card-rpg-route {
-  height: 2px;
-  background: rgba(148, 222, 255, .68);
-  transform-origin: left center;
-  z-index: 1;
-}
-
-.rpg-route-a {
-  width: 44%;
-  left: 27%;
-  top: 61%;
-  transform: rotate(-35deg);
-}
-
-.rpg-route-b {
-  width: 30%;
-  left: 56%;
-  top: 39%;
-  transform: rotate(48deg);
-}
-
+.game-card-visual-rpg .game-card-rpg-grid,
+.game-card-visual-rpg .game-card-rpg-node,
+.game-card-visual-rpg .game-card-rpg-route,
 #game-card-role-playing-games .game-card-visual-mark {
-  right: 8%;
-  bottom: 8%;
+  display: none;
 }
 
 .game-card-visual-simulator {
@@ -91,6 +35,8 @@
 }
 
 .game-card-simulator-grid {
+  position: absolute;
+  inset: 0;
   opacity: .38;
   background-image:
     linear-gradient(rgba(255, 156, 125, .16) 1px, transparent 1px),
