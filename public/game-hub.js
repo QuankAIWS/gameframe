@@ -197,7 +197,7 @@ function installGameMenu() {
   if (lobbyMessage) lobbyMessage.textContent = gameMenuMessage(selected);
 }
 
-function installLibrary() {
+function installGames() {
   if (!gameGrid) return;
   tacticalLink?.remove();
   gameGrid.replaceChildren(...games.map(createLibraryCard));
@@ -210,7 +210,7 @@ function installLibrary() {
 
 hero?.querySelector(".game-hub-topbar")?.remove();
 if (menuGame) installGameMenu();
-else installLibrary();
+else installGames();
 
 let syncPending = false;
 function syncHubState() {
