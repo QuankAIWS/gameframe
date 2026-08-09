@@ -60,3 +60,11 @@ if (jsonPath) {
   await writeFile(jsonPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   console.log(`JSON report written to ${jsonPath}`);
 }
+
+if (!allLookaheadBeatable) {
+  const deadLevels = report.levels
+    .filter((level) => level.strategies.lookahead.wins === 0)
+    .map((level) => level.level);
+  console.error(`Lookahead sampled no wins on levels: ${deadLevels.join(", ")}`);
+  process.exitCode = 1;
+}
