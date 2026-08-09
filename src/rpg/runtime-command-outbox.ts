@@ -17,6 +17,10 @@ export type RuntimePlayerCommandV1 =
       kind: "campaign.submit_action";
       visibility: "public" | "private-to-runtime";
       text: string;
+      interaction?: {
+        kind: "talk";
+        targetEntityId: string;
+      };
     }
   | {
       kind: "campaign.submit_choice";
@@ -613,10 +617,12 @@ function normalizeCommand(value: unknown): RuntimePlayerCommandV1 {
     if (command.visibility !== "public" && command.visibility !== "private-to-runtime") {
       throw invalid("command.visibility is not supported");
     }
+    const interaction = normalizeInteraction(command.interaction);
     return {
       kind: "campaign.submit_action",
       visibility: command.visibility,
       text: normalizeText(command.text, "command.text", MAX_RUNTIME_COMMAND_TEXT_LENGTH),
+      ...(interaction ? { interaction } : {}),
     };
   }
   if (command.kind === "campaign.submit_choice") {
@@ -627,6 +633,29 @@ function normalizeCommand(value: unknown): RuntimePlayerCommandV1 {
     };
   }
   throw invalid("command.kind is not supported");
+}
+
+function normalizeInteraction(
+  value: unknown,
+): { kind: "talk"; targetEntityId: string } | undefined {
+  if (value === undefined) return undefined;
+  const interaction = record(value, "command.interaction");
+  const unknown = Object.keys(interaction).filter(
+    (key) => key !== "kind" && key !== "targetEntityId",
+  );
+  if (unknown.length > 0) {
+    throw invalid(`command.interaction contains unsupported fields: ${unknown.sort().join(", ")}`);
+  }
+  if (interaction.kind !== "talk") {
+    throw invalid("command.interaction.kind is not supported");
+  }
+  return {
+    kind: "talk",
+    targetEntityId: normalizeIdentifier(
+      interaction.targetEntityId,
+      "command.interaction.targetEntityId",
+    ),
+  };
 }
 
 function normalizeLeaseDuration(value: unknown): number {

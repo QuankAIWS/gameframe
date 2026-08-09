@@ -133,6 +133,90 @@ body.monster-master-pixi-ready .mm-rpg-world-stage .monster-master-pixi-canvas {
   cursor: default;
 }
 
+.mm-rpg-world-interact {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 6;
+  min-height: 44px;
+  max-width: min(72%, 360px);
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border: 1px solid rgba(145, 242, 188, .56);
+  border-radius: 999px;
+  background: rgba(6, 24, 18, .91);
+  color: #eaffef;
+  box-shadow:
+    0 12px 34px rgba(0, 0, 0, .42),
+    0 0 24px rgba(77, 210, 140, .14);
+  font: 800 .78rem/1 ui-monospace, "SFMono-Regular", Consolas, monospace;
+  letter-spacing: .04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  touch-action: manipulation;
+  backdrop-filter: blur(8px);
+}
+
+.mm-rpg-world-interact:hover,
+.mm-rpg-world-interact:focus-visible {
+  background: rgba(21, 62, 42, .95);
+  border-color: rgba(165, 255, 205, .82);
+}
+
+.mm-rpg-world-interact:active {
+  transform: translateX(-50%) translateY(1px) scale(.98);
+}
+
+.mm-rpg-world-interact-chooser {
+  position: absolute;
+  left: 50%;
+  bottom: 70px;
+  z-index: 7;
+  display: grid;
+  width: min(360px, calc(100% - 28px));
+  max-height: min(260px, 58%);
+  gap: 6px;
+  overflow-y: auto;
+  transform: translateX(-50%);
+  padding: 10px;
+  border: 1px solid rgba(145, 242, 188, .42);
+  border-radius: 16px;
+  background: rgba(3, 14, 11, .96);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, .5);
+  backdrop-filter: blur(10px);
+}
+
+.mm-rpg-world-interact-chooser[hidden] {
+  display: none;
+}
+
+.mm-rpg-world-interact-chooser-label {
+  padding: 2px 6px 5px;
+  color: #91ab9f;
+  font: 800 .64rem/1 ui-monospace, "SFMono-Regular", Consolas, monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.mm-rpg-world-interact-choice {
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid rgba(173, 226, 194, .22);
+  border-radius: 11px;
+  background: rgba(16, 39, 30, .92);
+  color: #eaffef;
+  font: 750 .75rem/1.2 ui-monospace, "SFMono-Regular", Consolas, monospace;
+  text-align: left;
+  touch-action: manipulation;
+}
+
+.mm-rpg-world-interact-choice:hover,
+.mm-rpg-world-interact-choice:focus-visible {
+  border-color: rgba(165, 255, 205, .72);
+  background: rgba(28, 67, 48, .96);
+}
+
 .mm-rpg-touch-controls {
   position: absolute;
   inset: auto 12px 12px;
@@ -212,6 +296,23 @@ body.monster-master-pixi-ready .mm-rpg-world-stage .monster-master-pixi-canvas {
   .mm-rpg-world-anchor-label {
     max-width: 150px;
     font-size: .58rem;
+  }
+
+  .mm-rpg-world-interact {
+    bottom: 170px;
+    min-height: 48px;
+    max-width: calc(100% - 24px);
+    padding-inline: 14px;
+    font-size: .72rem;
+  }
+
+  .mm-rpg-world-interact-chooser {
+    bottom: 226px;
+    max-height: 138px;
+  }
+
+  .mm-rpg-world-interact-choice {
+    min-height: 48px;
   }
 
   .mm-rpg-touch-controls {

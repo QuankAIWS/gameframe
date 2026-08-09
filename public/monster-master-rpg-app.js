@@ -117,6 +117,13 @@ function activeEncounterEvent() {
 }
 
 function updateComposer() {
+  const talk = window.gameFrameMonsterRpgTalk;
+  if (!state.pendingCommand && talk?.ownsComposer?.()) {
+    elements.action.disabled = false;
+    talk.applyComposerState?.();
+    updateCharacterCount();
+    return;
+  }
   const retrying = Boolean(state.pendingCommand);
   const encounterActive = Boolean(activeEncounterEvent());
   elements.send.textContent = retrying ? "Retry exact action" : "Send to Game Master";
