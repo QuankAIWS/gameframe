@@ -30,10 +30,8 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
   ]);
 
   assert.match(readme, /### Monster Master Arena Battles/);
-  assert.match(readme, /Separate `monster-master-duel` game definition/);
-  assert.match(readme, /configured encounter restoration/);
-  assert.match(readme, /Human-versus-Monster-Master-BattleBot/);
-  assert.match(readme, /bounded draws/);
+  assert.match(readme, /standalone tactical\/regression substrate inside Battle Simulator/);
+  assert.match(readme, /not the campaign combat lifecycle/);
   assert.match(readme, /\/monster-master\.html/);
   assert.match(readme, /src\/games\//);
 
