@@ -1,8 +1,13 @@
+import { gameFrameFetch } from "./gameframe-auth.js";
+
 const VIEW_EVENT = "gameframe:monster-master-pixi-view";
+const identity = window.gameFrameIdentity;
 
 const state = {
   payload: null,
   view: null,
+  campaignId: null,
+  attachPromise: null,
 };
 
 function requireMaterializedPayload(value) {
@@ -116,9 +121,15 @@ function updateWorldHeader(payload) {
   }
 }
 
+function setWorldStatus(message) {
+  const status = document.querySelector("#mm-rpg-world-status");
+  if (status) status.textContent = message;
+}
+
 function present(value) {
   const payload = requireMaterializedPayload(value);
   state.payload = payload;
+  state.campaignId = payload.projection.campaignId;
   state.view = toRendererView(payload);
   updateWorldHeader(payload);
   window.dispatchEvent(new CustomEvent(VIEW_EVENT, { detail: { view: state.view } }));
@@ -129,9 +140,63 @@ function present(value) {
 function clear() {
   state.payload = null;
   state.view = null;
+  state.campaignId = null;
   anchorLayer()?.replaceChildren();
-  const status = document.querySelector("#mm-rpg-world-status");
-  if (status) status.textContent = "No scene attached";
+  setWorldStatus("No scene attached");
+}
+
+function currentCampaignId() {
+  const panel = document.querySelector("#mm-rpg-campaign");
+  if (!panel || panel.hidden) return null;
+  const value = new URLSearchParams(window.location.search).get("campaign")?.trim();
+  return value || null;
+}
+
+async function attachCurrentCampaign({ quiet = false } = {}) {
+  const campaignId = currentCampaignId();
+  if (!campaignId || !identity?.playerId) return null;
+  if (state.attachPromise?.campaignId === campaignId) return state.attachPromise.promise;
+  if (!quiet) setWorldStatus("Materializing…");
+
+  let promise;
+  promise = gameFrameFetch(
+    `/api/rpg/campaigns/${encodeURIComponent(campaignId)}/exploration/attach`,
+    {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        protocolVersion: 1,
+        kind: "campaign.exploration.attach",
+        campaignId,
+      }),
+    },
+    identity,
+  ).then(async (response) => {
+    const text = await response.text();
+    const value = text ? JSON.parse(text) : null;
+    if (!response.ok) {
+      throw new Error(value?.message || `Exploration materialization failed (${response.status}).`);
+    }
+    if (currentCampaignId() !== campaignId) return null;
+    return present(value);
+  }).catch((error) => {
+    if (currentCampaignId() === campaignId) {
+      setWorldStatus("Scene unavailable");
+      const banner = document.querySelector("#mm-rpg-error");
+      if (banner && !quiet) {
+        banner.hidden = false;
+        banner.textContent = error instanceof Error ? error.message : "The campaign scene could not be materialized.";
+      }
+    }
+    throw error;
+  }).finally(() => {
+    if (state.attachPromise?.promise === promise) state.attachPromise = null;
+  });
+  state.attachPromise = { campaignId, promise };
+  return promise;
 }
 
 window.gameFrameMonsterController = Object.freeze({
@@ -142,9 +207,25 @@ window.gameFrameMonsterController = Object.freeze({
 window.gameFrameMonsterRpgWorld = Object.freeze({
   present,
   clear,
+  attachCurrentCampaign,
   refreshAnchors: scheduleAnchors,
   getPayload: () => state.payload,
   getView: () => state.view,
 });
 
+const campaignPanel = document.querySelector("#mm-rpg-campaign");
+if (campaignPanel) {
+  new MutationObserver(() => {
+    if (campaignPanel.hidden) {
+      clear();
+      return;
+    }
+    void attachCurrentCampaign().catch(() => undefined);
+  }).observe(campaignPanel, { attributes: true, attributeFilter: ["hidden"] });
+}
+
+document.querySelector("#mm-rpg-refresh")?.addEventListener("click", () => {
+  window.setTimeout(() => void attachCurrentCampaign({ quiet: true }).catch(() => undefined), 0);
+});
+document.querySelector("#mm-rpg-switch")?.addEventListener("click", clear);
 window.addEventListener("resize", scheduleAnchors);
