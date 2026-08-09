@@ -1,17 +1,38 @@
 export const BOARD_SIZE = 8;
 export const TILE_KINDS = 6;
-export const LEVEL_COUNT = 20;
+export const LEVEL_COUNT = 30;
 
-export const CASCADE_LEVELS = Object.freeze(Array.from({ length: LEVEL_COUNT }, (_, index) => {
-  const level = index + 1;
-  const hard = level % 5 === 0;
+function targetFor(level, hard = false) {
+  return 900 + (level * 185) + (hard ? 550 : 0);
+}
+
+function level(level, { target, moves, hard = false, mechanics = [] } = {}) {
   return Object.freeze({
     level,
-    target: 900 + (level * 185) + (hard ? 550 : 0),
-    moves: Math.max(14, 20 - Math.floor(level / 4)) + (hard ? 1 : 0),
+    target: target ?? targetFor(level, hard),
+    moves: moves ?? (Math.max(14, 20 - Math.floor(level / 4)) + (hard ? 1 : 0)),
     hard,
+    mechanics: Object.freeze(mechanics.slice()),
   });
-}));
+}
+
+export const CASCADE_LEVELS = Object.freeze([
+  level(1), level(2), level(3), level(4), level(5, { hard: true }),
+  level(6), level(7), level(8, { mechanics: ["power-match"] }), level(9, { mechanics: ["power-match"] }), level(10, { hard: true, mechanics: ["power-match"] }),
+  level(11, { mechanics: ["power-match"] }), level(12, { mechanics: ["power-match"] }),
+  level(13, { mechanics: ["power-match", "color-sweep"] }), level(14, { mechanics: ["power-match", "color-sweep"] }), level(15, { hard: true, mechanics: ["power-match", "color-sweep"] }),
+  level(16, { mechanics: ["power-match", "color-sweep"] }), level(17, { mechanics: ["power-match", "color-sweep"] }), level(18, { mechanics: ["power-match", "color-sweep"] }), level(19, { mechanics: ["power-match", "color-sweep"] }), level(20, { hard: true, mechanics: ["power-match", "color-sweep"] }),
+  level(21, { target: 7600, moves: 15, mechanics: ["power-match", "color-sweep"] }),
+  level(22, { target: 8200, moves: 15, mechanics: ["power-match", "color-sweep"] }),
+  level(23, { target: 8800, moves: 15, mechanics: ["power-match", "color-sweep"] }),
+  level(24, { target: 9400, moves: 15, mechanics: ["power-match", "color-sweep"] }),
+  level(25, { target: 10200, moves: 15, hard: true, mechanics: ["power-match", "color-sweep"] }),
+  level(26, { target: 10800, moves: 14, mechanics: ["power-match", "color-sweep"] }),
+  level(27, { target: 11400, moves: 14, mechanics: ["power-match", "color-sweep"] }),
+  level(28, { target: 12100, moves: 14, mechanics: ["power-match", "color-sweep"] }),
+  level(29, { target: 12800, moves: 14, mechanics: ["power-match", "color-sweep"] }),
+  level(30, { target: 13600, moves: 14, hard: true, mechanics: ["power-match", "color-sweep"] }),
+]);
 
 export function createRng(seed) {
   let value = (Number(seed) >>> 0) || 1;
@@ -57,18 +78,23 @@ export function swap(board, a, b) {
   return board;
 }
 
-export function findMatches(board) {
-  const matched = new Set();
+export function findMatchGroups(board) {
+  const groups = [];
 
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     let start = 0;
     for (let col = 1; col <= BOARD_SIZE; col += 1) {
       const index = row * BOARD_SIZE + col;
       const startIndex = row * BOARD_SIZE + start;
-      const same = col < BOARD_SIZE && board[index] === board[startIndex] && board[index] !== null;
+      const kind = board[startIndex];
+      const same = col < BOARD_SIZE && kind !== null && board[index] === kind;
       if (same) continue;
-      if (col - start >= 3) {
-        for (let fill = start; fill < col; fill += 1) matched.add(row * BOARD_SIZE + fill);
+      if (kind !== null && col - start >= 3) {
+        groups.push({
+          orientation: "row",
+          kind,
+          indices: Array.from({ length: col - start }, (_, offset) => row * BOARD_SIZE + start + offset),
+        });
       }
       start = col;
     }
@@ -79,15 +105,28 @@ export function findMatches(board) {
     for (let row = 1; row <= BOARD_SIZE; row += 1) {
       const index = row * BOARD_SIZE + col;
       const startIndex = start * BOARD_SIZE + col;
-      const same = row < BOARD_SIZE && board[index] === board[startIndex] && board[index] !== null;
+      const kind = board[startIndex];
+      const same = row < BOARD_SIZE && kind !== null && board[index] === kind;
       if (same) continue;
-      if (row - start >= 3) {
-        for (let fill = start; fill < row; fill += 1) matched.add(fill * BOARD_SIZE + col);
+      if (kind !== null && row - start >= 3) {
+        groups.push({
+          orientation: "column",
+          kind,
+          indices: Array.from({ length: row - start }, (_, offset) => (start + offset) * BOARD_SIZE + col),
+        });
       }
       start = row;
     }
   }
 
+  return groups;
+}
+
+export function findMatches(board) {
+  const matched = new Set();
+  for (const group of findMatchGroups(board)) {
+    for (const index of group.indices) matched.add(index);
+  }
   return matched;
 }
 
@@ -159,28 +198,73 @@ export function collapseBoard(board, rng) {
   return { board: next, falls, spawns };
 }
 
+function expandPowerMatches(board, groups) {
+  const clearSet = new Set();
+  const powerClears = [];
+  const colorSweeps = [];
+
+  for (const group of groups) {
+    for (const index of group.indices) clearSet.add(index);
+
+    if (group.indices.length >= 5) {
+      const swept = [];
+      for (let index = 0; index < board.length; index += 1) {
+        if (board[index] === group.kind) {
+          clearSet.add(index);
+          swept.push(index);
+        }
+      }
+      colorSweeps.push({ kind: group.kind, source: group.indices.slice(), cleared: swept });
+      continue;
+    }
+
+    if (group.indices.length === 4) {
+      const anchor = group.indices[Math.floor(group.indices.length / 2)];
+      const row = Math.floor(anchor / BOARD_SIZE);
+      const col = anchor % BOARD_SIZE;
+      const blast = group.orientation === "row"
+        ? Array.from({ length: BOARD_SIZE }, (_, offset) => row * BOARD_SIZE + offset)
+        : Array.from({ length: BOARD_SIZE }, (_, offset) => offset * BOARD_SIZE + col);
+      blast.forEach((index) => clearSet.add(index));
+      powerClears.push({ orientation: group.orientation, source: group.indices.slice(), cleared: blast });
+    }
+  }
+
+  return { clearSet, powerClears, colorSweeps };
+}
+
 export function resolveCascades(board, rng, { startingCascade = 1 } = {}) {
   let current = board.slice();
   let cascade = startingCascade;
   let scoreGained = 0;
   const transitions = [];
+  let powerClearCount = 0;
+  let colorSweepCount = 0;
 
   while (true) {
-    const matches = findMatches(current);
-    if (!matches.size) break;
+    const groups = findMatchGroups(current);
+    if (!groups.length) break;
 
-    const matched = [...matches].sort((a, b) => a - b);
+    const originalMatched = new Set();
+    for (const group of groups) {
+      for (const index of group.indices) originalMatched.add(index);
+    }
+    const expanded = expandPowerMatches(current, groups);
+    const matched = [...expanded.clearSet].sort((a, b) => a - b);
     const before = current.slice();
     const cleared = current.slice();
     for (const index of matched) cleared[index] = null;
 
     const gained = matched.length * 80 * cascade;
     scoreGained += gained;
+    powerClearCount += expanded.powerClears.length;
+    colorSweepCount += expanded.colorSweeps.length;
     const collapsed = collapseBoard(cleared, rng);
 
     transitions.push({
       type: "cascade",
       cascade,
+      matchIndices: [...originalMatched].sort((a, b) => a - b),
       matched,
       gained,
       before,
@@ -188,6 +272,8 @@ export function resolveCascades(board, rng, { startingCascade = 1 } = {}) {
       after: collapsed.board.slice(),
       falls: collapsed.falls,
       spawns: collapsed.spawns,
+      powerClears: expanded.powerClears,
+      colorSweeps: expanded.colorSweeps,
     });
 
     current = collapsed.board;
@@ -207,6 +293,8 @@ export function resolveCascades(board, rng, { startingCascade = 1 } = {}) {
     board: current,
     scoreGained,
     transitions,
+    powerClearCount,
+    colorSweepCount,
     shuffled,
     shuffle,
     maxCascade: transitions.length ? transitions.at(-1).cascade : 0,

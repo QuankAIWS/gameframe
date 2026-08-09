@@ -15,7 +15,10 @@ function evaluateImmediate(board, move, boardRng) {
     move,
     result,
     rng: trialRng,
-    value: result.scoreGained + (result.maxCascade * 20),
+    value: result.scoreGained
+      + (result.maxCascade * 20)
+      + ((result.powerClearCount || 0) * 90)
+      + ((result.colorSweepCount || 0) * 180),
   };
 }
 
@@ -78,6 +81,8 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
   let maxCascade = 0;
   let shuffles = 0;
   let branchingTotal = 0;
+  let powerClearCount = 0;
+  let colorSweepCount = 0;
   const moveHistory = [];
 
   while (movesRemaining > 0 && score < definition.target) {
@@ -93,6 +98,8 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     score += result.scoreGained;
     cascadeCount += result.transitions.length;
     maxCascade = Math.max(maxCascade, result.maxCascade);
+    powerClearCount += result.powerClearCount || 0;
+    colorSweepCount += result.colorSweepCount || 0;
     if (result.shuffled) shuffles += 1;
     board = result.board;
     moveHistory.push({
@@ -101,6 +108,8 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
       gained: result.scoreGained,
       cascades: result.transitions.length,
       maxCascade: result.maxCascade,
+      powerClearCount: result.powerClearCount || 0,
+      colorSweepCount: result.colorSweepCount || 0,
       shuffled: result.shuffled,
       score,
       movesRemaining,
@@ -121,6 +130,8 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     cascadeCount,
     maxCascade,
     shuffles,
+    powerClearCount,
+    colorSweepCount,
     averageBranching: moveHistory.length ? branchingTotal / moveHistory.length : 0,
     moveHistory,
   };
@@ -141,6 +152,7 @@ function summarizeRuns(level, strategy, runs) {
     hard: level.hard,
     target: level.target,
     moves: level.moves,
+    mechanics: level.mechanics,
     strategy,
     runs: runs.length,
     wins: wins.length,
@@ -149,13 +161,15 @@ function summarizeRuns(level, strategy, runs) {
     p90MovesToWin: percentile(movesToWin, 0.9),
     averageScoreMargin: margins.reduce((sum, value) => sum + value, 0) / runs.length,
     averageCascadeCount: runs.reduce((sum, run) => sum + run.cascadeCount, 0) / runs.length,
+    averagePowerClears: runs.reduce((sum, run) => sum + run.powerClearCount, 0) / runs.length,
+    averageColorSweeps: runs.reduce((sum, run) => sum + run.colorSweepCount, 0) / runs.length,
     maxCascade: Math.max(...runs.map((run) => run.maxCascade)),
     averageBranching: runs.reduce((sum, run) => sum + run.averageBranching, 0) / runs.length,
     shuffleRate: runs.filter((run) => run.shuffles > 0).length / runs.length,
   };
 }
 
-export function profileCascadeLevels({ runsPerLevel = 40, strategies = ["random", "greedy", "lookahead"], seedBase = 0xc45cade }) {
+export function profileCascadeLevels({ runsPerLevel = 40, strategies = ["random", "greedy", "lookahead"], seedBase = 0xc45cade } = {}) {
   const levels = [];
   for (const level of CASCADE_LEVELS) {
     const strategyReports = {};
@@ -167,6 +181,7 @@ export function profileCascadeLevels({ runsPerLevel = 40, strategies = ["random"
       }
       strategyReports[strategy] = summarizeRuns(level, strategy, runs);
     }
+    const random = strategyReports.random;
     const greedy = strategyReports.greedy;
     const lookahead = strategyReports.lookahead;
     levels.push({
@@ -174,7 +189,9 @@ export function profileCascadeLevels({ runsPerLevel = 40, strategies = ["random"
       hard: level.hard,
       target: level.target,
       moves: level.moves,
+      mechanics: level.mechanics,
       strategies: strategyReports,
+      skillSensitivity: random && lookahead ? lookahead.winRate - random.winRate : null,
       planningSensitivity: greedy && lookahead ? lookahead.winRate - greedy.winRate : null,
     });
   }
