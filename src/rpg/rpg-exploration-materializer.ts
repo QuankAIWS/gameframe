@@ -52,6 +52,8 @@ const CROOKED_CHECKPOINT_INTENT_ID = "mm.materialization.crooked-checkpoint.v1";
 const CROOKED_CHECKPOINT_PROFILE_ID = "gameframe.rpg.semantic-scene.v1";
 const CROOKED_CHECKPOINT_WIDTH = 18;
 const CROOKED_CHECKPOINT_HEIGHT = 14;
+const PLAYER_ANCHOR = Object.freeze({ x: 14, y: 7 });
+const PELL_ANCHOR = Object.freeze({ x: 9, y: 7 });
 
 const STATIC_ANCHORS: Readonly<Record<string, { x: number; y: number }>> = Object.freeze({
   "location.maintenance-shed": { x: 12, y: 3 },
@@ -59,6 +61,30 @@ const STATIC_ANCHORS: Readonly<Record<string, { x: number; y: number }>> = Objec
   "object.checkpoint-cart": { x: 10, y: 8 },
   "route.crooked-checkpoint-west-woods": { x: 1, y: 7 },
 });
+
+const ENTITY_SLOTS = Object.freeze([
+  { x: 13, y: 8 },
+  { x: 11, y: 9 },
+  { x: 7, y: 8 },
+  { x: 14, y: 6 },
+  { x: 12, y: 7 },
+  { x: 13, y: 6 },
+  { x: 12, y: 9 },
+  { x: 6, y: 8 },
+  { x: 15, y: 8 },
+  { x: 5, y: 7 },
+] as const);
+
+const OBJECT_SLOTS = Object.freeze([
+  { x: 10, y: 9 },
+  { x: 13, y: 5 },
+  { x: 9, y: 9 },
+  { x: 12, y: 5 },
+  { x: 5, y: 8 },
+  { x: 5, y: 9 },
+  { x: 15, y: 6 },
+  { x: 15, y: 9 },
+] as const);
 
 /**
  * Materializes the first accepted semantic-layout profile into GameFrame-owned
@@ -138,6 +164,7 @@ function crookedCheckpointMap(): RpgExplorationPhysicalMaterializationV1["map"] 
 
 function projectAnchors(projection: RpgExplorationProjectionV1): RpgExplorationAnchorV1[] {
   const anchors: RpgExplorationAnchorV1[] = [];
+  const unavailable = reservedAnchorPositions(projection);
 
   for (const landmark of projection.scene.landmarks) {
     const position = STATIC_ANCHORS[landmark.locationId];
@@ -151,23 +178,14 @@ function projectAnchors(projection: RpgExplorationProjectionV1): RpgExplorationA
     });
   }
 
-  const occupied = new Set<string>();
-  const entitySlots = [
-    { x: 9, y: 7 },
-    { x: 13, y: 8 },
-    { x: 11, y: 9 },
-    { x: 7, y: 8 },
-    { x: 14, y: 6 },
-  ];
-  let entitySlot = 0;
   for (const entity of projection.scene.entities) {
     const isPlayer = entity.entityId === projection.viewer.playerCharacterEntityId;
     const position = isPlayer
-      ? { x: 14, y: 7 }
+      ? PLAYER_ANCHOR
       : entity.entityId === "npc.warden-pell"
-        ? { x: 9, y: 7 }
-        : entitySlots[entitySlot++ % entitySlots.length]!;
-    occupied.add(`${position.x},${position.y}`);
+        ? PELL_ANCHOR
+        : claimAvailableSlot(ENTITY_SLOTS, unavailable, `entity ${entity.entityId}`);
+    unavailable.add(positionKey(position));
     anchors.push({
       anchorId: `entity:${entity.entityId}`,
       kind: isPlayer ? "player" : "entity",
@@ -181,14 +199,10 @@ function projectAnchors(projection: RpgExplorationProjectionV1): RpgExplorationA
     });
   }
 
-  const objectSlots = [{ x: 10, y: 8 }, { x: 10, y: 9 }, { x: 13, y: 5 }];
-  let objectSlot = 0;
   for (const object of projection.scene.objects) {
-    let position = STATIC_ANCHORS[object.entityId] ?? objectSlots[objectSlot++ % objectSlots.length]!;
-    while (occupied.has(`${position.x},${position.y}`)) {
-      position = objectSlots[objectSlot++ % objectSlots.length]!;
-    }
-    occupied.add(`${position.x},${position.y}`);
+    const position = STATIC_ANCHORS[object.entityId]
+      ?? claimAvailableSlot(OBJECT_SLOTS, unavailable, `object ${object.entityId}`);
+    unavailable.add(positionKey(position));
     anchors.push({
       anchorId: `object:${object.entityId}`,
       kind: "object",
@@ -212,4 +226,47 @@ function projectAnchors(projection: RpgExplorationProjectionV1): RpgExplorationA
   }
 
   return anchors.sort((left, right) => left.anchorId.localeCompare(right.anchorId));
+}
+
+function reservedAnchorPositions(projection: RpgExplorationProjectionV1): Set<string> {
+  const reserved = new Set<string>();
+  for (const landmark of projection.scene.landmarks) {
+    const position = STATIC_ANCHORS[landmark.locationId];
+    if (position) reserved.add(positionKey(position));
+  }
+  for (const route of projection.scene.routes) {
+    const position = STATIC_ANCHORS[route.routeId];
+    if (position) reserved.add(positionKey(position));
+  }
+  for (const object of projection.scene.objects) {
+    const position = STATIC_ANCHORS[object.entityId];
+    if (position) reserved.add(positionKey(position));
+  }
+  for (const entity of projection.scene.entities) {
+    if (entity.entityId === projection.viewer.playerCharacterEntityId) {
+      reserved.add(positionKey(PLAYER_ANCHOR));
+    } else if (entity.entityId === "npc.warden-pell") {
+      reserved.add(positionKey(PELL_ANCHOR));
+    }
+  }
+  return reserved;
+}
+
+function claimAvailableSlot(
+  slots: readonly { x: number; y: number }[],
+  unavailable: Set<string>,
+  label: string,
+): { x: number; y: number } {
+  for (const slot of slots) {
+    if (unavailable.has(positionKey(slot))) continue;
+    unavailable.add(positionKey(slot));
+    return slot;
+  }
+  throw new RpgExplorationMaterializationError(
+    `Crooked Checkpoint has no remaining physical anchor slots for ${label}.`,
+  );
+}
+
+function positionKey(position: { x: number; y: number }): string {
+  return `${position.x},${position.y}`;
 }
