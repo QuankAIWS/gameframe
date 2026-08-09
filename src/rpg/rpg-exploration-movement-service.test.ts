@@ -169,6 +169,68 @@ test("exploration position survives GameFrame restart only for the exact materia
   }
 });
 
+test("a newly occupied recovered tile resets and persists a usable spawn revision", () => {
+  const filePath = databasePath();
+  const positions = new SqliteRpgExplorationPositionStore({ filePath });
+  const semantic = projection();
+  const materialization = materializeRpgExplorationProjection(semantic);
+  const service = new RpgExplorationMovementService({
+    positions,
+    clock: () => "2026-08-09T13:02:00.000Z",
+  });
+  try {
+    const attached = service.attach({
+      playerId: semantic.viewer.playerId,
+      projection: semantic,
+      materialization,
+    });
+    const saved = service.move(
+      semantic.viewer.playerId,
+      moveRequest(semantic, attached.positionRevision, "north"),
+    );
+    assert.deepEqual(saved.transform, { x: 14, y: 6, facing: "north" });
+    assert.equal(saved.positionRevision, 1);
+
+    const newlyOccupied = structuredClone(materialization);
+    newlyOccupied.anchors.push({
+      anchorId: "entity:npc.newly-visible",
+      kind: "entity",
+      semanticId: "npc.newly-visible",
+      interactionTargetId: "entity:npc.newly-visible",
+      label: "newly visible traveler",
+      x: 14,
+      y: 6,
+      entityClass: "actor",
+      identityStage: "descriptor",
+    });
+    const reset = service.attach({
+      playerId: semantic.viewer.playerId,
+      projection: semantic,
+      materialization: newlyOccupied,
+    });
+    assert.deepEqual(reset.transform, { x: 14, y: 7, facing: "west" });
+    assert.equal(reset.positionRevision, 2);
+
+    const afterReset = service.move(
+      semantic.viewer.playerId,
+      moveRequest(semantic, reset.positionRevision, "west"),
+    );
+    assert.deepEqual(afterReset.transform, { x: 13, y: 7, facing: "west" });
+    assert.equal(afterReset.positionRevision, 3);
+
+    const third = new RpgExplorationMovementService({ positions });
+    const recovered = third.attach({
+      playerId: semantic.viewer.playerId,
+      projection: semantic,
+      materialization: newlyOccupied,
+    });
+    assert.deepEqual(recovered.transform, { x: 13, y: 7, facing: "west" });
+    assert.equal(recovered.positionRevision, 3);
+  } finally {
+    positions.close();
+  }
+});
+
 test("movement rejects stale client position revisions", () => {
   const filePath = databasePath();
   const positions = new SqliteRpgExplorationPositionStore({ filePath });
