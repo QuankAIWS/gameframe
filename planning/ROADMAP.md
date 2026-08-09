@@ -3,7 +3,7 @@ title: Scribbles GameFrame Roadmap
 status: active
 document_type: roadmap
 owner: Scribbles GameFrame
-last_updated: 2026-08-08
+last_updated: 2026-08-09
 applies_to:
   - scribbles-gameframe
   - Games
@@ -29,162 +29,170 @@ related:
 ## Canonical boundaries
 
 - **Games** is the top-level player-facing GameFrame destination.
-- **Role-Playing Games** is the player-facing campaign surface. **GameFrame RPG Engine** remains internal campaign-agnostic architecture terminology.
-- **Battle Simulator** is the player-facing standalone tactical sandbox. Monster Master Arena Battles is the first Battle Simulator entry.
-- A reusable **Game Family** can appear in both Role-Playing Games and Battle Simulator through one shared RPG Ruleset/content/asset foundation.
-- A future **Battle Pack** is simulator-safe tactical content/configuration for a Game Family; it must not duplicate rules or automatically expose campaign secrets.
-- GameFrame is the authoritative player application, exploration/materialization authority, realtime session authority, and deterministic mechanic/tactical authority.
-- `rpg-gm-runtime` owns CampaignPackages, semantic world truth, Dungeon Master orchestration, hidden campaign truth, campaign journal, entity/scene/observer-knowledge state, and narrative/world consequences.
-- The mature RPG player loop is embodied exploration/direct interaction with GM/freeform escape hatches, not transcript-first movement.
-- Campaign tactical combat uses **Tactical Activation** on the current materialized map. It never launches Battle Simulator or a replacement campaign battlefield.
-- Built-in deterministic opponents use `gameframe-bot` and game-specific bot presentation.
-- Scribbles Runtime is a separate future integration host for Theo.
-- MM-0001 remains useful standalone Monster Master regression substrate and the seed for Monster Master Arena Battles, not the RPG campaign lifecycle.
+- **Role-Playing Games** is the player-facing campaign surface; **GameFrame RPG Engine** remains internal architecture terminology.
+- **Battle Simulator** is the standalone tactical sandbox; Monster Master Arena Battles is its first Monster Master entry.
+- GameFrame owns physical materialization, realtime transforms, collision/pathing/camera, direct interaction UI, deterministic RPG Ruleset execution, control authorization, and tactical state.
+- `rpg-gm-runtime` owns CampaignPackages, semantic world truth, Dungeon Master orchestration, hidden campaign truth, journaled entity/scene/observer-knowledge state, and semantic consequences.
+- Campaign combat uses **Tactical Activation** on the current materialized map; it never launches Battle Simulator or a replacement campaign battlefield.
+- MM-0001 remains standalone/regression substrate and the seed for Monster Master Arena Battles.
 
-## Player navigation baseline
+## Current development mode
 
-The intended static information architecture is allowed to land before the underlying generic data-driven systems:
+The platform has enough semantic substrate. The active risk is no longer missing architecture; it is continuing to build invisible infrastructure without forcing it through a playable loop.
+
+From this point, the primary GameFrame development target is:
 
 ```text
-Games
-├── Role-Playing Games
-│   ├── Monster Master RPG
-│   ├── future handcrafted/generated RPGs
-│   └── Create RPG / My Campaigns / Import Campaign
-├── Battle Simulator
-│   ├── Monster Master Arena Battles
-│   ├── future Battle Packs
-│   └── Custom Battle / generated battlefield / import
-├── Clockwork Checkers
-├── Othello
-└── Tic-Tac-Toe
+SEE
+→ MOVE
+→ TALK
+→ CHANGE / TRAVEL
+→ FIGHT
+→ PROVE
 ```
 
-Dynamic campaign discovery, Battle Pack discovery, Campaign Architect output, generated map setup, unlock policy, and generic builders remain later milestones.
+Every substantive RPG PR should advance that bounded Monster Master journey or remove a demonstrated blocker to it.
 
-## Completed platform proofs
+Do not create a new RPG renderer. Reuse the existing Pixi world/tactical renderer and terrain foundations.
 
-GameFrame already has useful proven substrate that should be preserved while the RPG architecture evolves:
+Do not block the first playable scene on final art or generalized procedural generation. Deterministic semantic-layout materialization and placeholder assets are acceptable.
 
-- authenticated players/seats/invitations and server-derived control identity;
+## Completed foundations
+
+Preserve the useful current GameFrame substrate:
+
+- authenticated players/seats/invitations and server-derived identity;
 - durable coordination/presentation revisions and idempotent command foundations;
 - audience-scoped presentation;
 - Worker/Cloudflare/VM/Tunnel deployment surfaces;
-- VM-backed RPG WebSocket projection/recovery work;
-- PixiJS Monster Master tactical renderer and world interaction primitives;
+- authenticated RPG WebSocket/recovery substrate;
+- PixiJS Monster Master renderer;
+- reusable terrain projection/geometry/material pipeline;
 - tactical movement/initiative/attack/health/effect machinery;
-- standalone deterministic Monster Master BattleBot/regression surface;
-- narrow exact campaign-creature → configured tactical unit → terminal participant result → roster consequence integration;
-- Monster Master RPG shell/recovery/admin tooling.
+- standalone Monster Master BattleBot/regression surface;
+- Role-Playing Games / Battle Simulator player navigation;
+- strict `campaign.exploration_projection` contract;
+- viewer-independent materialization identity and scene-bound accepted-ref validation;
+- canonical Crooked Checkpoint exploration fixture aligned to CampaignPackage v5.
 
-These proofs do not yet establish the mature embodied RPG engine, same-map Tactical Activation, generic Game Family/Battle Pack loading, or generated campaigns.
+Runtime foundations consumed by GameFrame now include Entity Registry, Scene Registry, Observer Knowledge / People, WorldGraph/materialization intent, and the viewer-safe exploration projection.
 
-## Transitional legacy tactical correctness
+## GF-RPG-01 — Generic semantic/physical boundary — bounded foundation complete
 
-Current staging may still exercise the old separate-match campaign path while replacement work is built.
-
-Repair it only as needed to preserve reliable development evidence:
+The current accepted boundary is:
 
 ```text
-legacy terminal result
-→ result consumed exactly once
-→ semantic/roster consequence preserved
-→ aftermath/resumable state published
-→ reconnect/refresh does not duplicate or lose outcome
+Runtime semantic authority
+→ viewer-safe campaign.exploration_projection
+→ GameFrame physical materialization/session authority
 ```
 
-Do not add new product features by deepening the legacy Return-to-Campaign lifecycle.
+The exploration contract carries campaign/package/ruleset identity, semantic scene/revision, authorized entities/objects/routes, materialization intent, and optional accepted materialization ref.
 
-## GF-RPG-01 — Generic engine / ruleset / game-family boundary
+It deliberately carries no x/y/facing/geometry/collision/pathfinding/camera authority.
 
-Establish explicit reusable contracts for:
+## GF-RPG-02 — SEE: Crooked Checkpoint materialization — ACTIVE
 
-- GameFrame RPG Engine;
-- RPG Ruleset/profile/version/capabilities;
-- Game Family identity and reusable content linkage;
-- principal → player-character → controlled-entity authority;
-- scene materialization identity/version;
-- exploration/tactical resolution state;
-- Tactical Activation;
-- standalone Battle Pack/BattleScenario setup.
+Build the first real physical RPG campaign scene from the S6 projection.
 
-Monster Master-specific rules/content plug into these contracts rather than defining them.
+Implement the minimum deterministic scene needed by the reference package:
+
+- `scene.crooked-checkpoint` materialization;
+- accepted `rpg-scene:<campaignId>:scene.crooked-checkpoint` identity/version/hash;
+- settled road;
+- timber checkpoint barrier;
+- inspection shelter;
+- Road Maintenance Shed;
+- Confiscation Cart;
+- drainage edge;
+- westbound route/exit anchor;
+- player avatar anchor;
+- Pell and viewer-authorized entity anchors;
+- known object anchors;
+- collision/picking/navigation primitives required by the scene;
+- placeholder/world-kit visuals where final assets are absent.
+
+Use the existing Pixi/terrain renderer. Do not fork a new exploration renderer from the tactical renderer.
 
 ### Exit
 
-A Monster Master rules/profile identity can be referenced by both a campaign tactical scene and a standalone scenario without separate combat-rule implementations.
+Opening Monster Master RPG produces a physical Crooked Checkpoint derived from the semantic projection. Refresh/reconnect reuses the same accepted materialization rather than generating a different place.
 
-## GF-RPG-02 — Crooked Checkpoint materialization
+## GF-RPG-03 — MOVE: embodied realtime session
 
-Build one persistent playable Monster Master campaign scene:
+Add GameFrame-owned:
 
-- Pixi exploration scene;
-- authenticated player avatar;
-- movement/facing/camera;
-- collision/pathing/picking;
-- Pell and important semantic object/entity anchors;
-- road/barrier/cart/woods/creek/exits sufficient for the reference semantics;
-- stable materialization identity/version;
-- deterministic placeholder/world-kit presentation where final assets are missing;
-- reconnect/revisit without replacing the location.
+- WASD/player movement;
+- facing;
+- camera;
+- collision/navigation behavior;
+- valid position persistence/recovery;
+- scene-scoped realtime projection;
+- bounded reconnect/backpressure.
 
-Runtime owns semantic meaning; GameFrame owns playable geometry.
+No movement frame becomes RPG Runtime journal traffic.
 
-## GF-RPG-03 — Embodied realtime session
+### Exit
 
-Extend the authenticated GameFrame realtime path for:
+The player can move around Crooked Checkpoint responsively and reconnect into a valid position on the same materialization without duplicate semantic presence.
 
-- scene-scoped player movement/facing;
-- nearby-player/entity transforms as needed;
-- local animation/session state;
-- bounded reconnect/backpressure;
-- materialization/session recovery;
-- no frame-by-frame RPG journal/provider calls.
+## GF-RPG-04 — TALK: Pell interaction + GM surfaces
 
-## GF-RPG-04 — Direct interaction and GM surfaces
+Drive the next Runtime context-mode work through the physical scene.
 
-Implement player-facing:
+GameFrame player surfaces:
 
-- Talk / Interact;
-- Do Something Else;
+- targetable Talk / Interact;
 - Ask Game Master;
-- GM Intervention/pause/freeze presentation;
-- People/character/control views.
+- Do Something Else;
+- GM intervention/pause/freeze presentation;
+- People/character/control views as required.
 
-Pell is the first perspective-custody target. Entity-origin dialogue must not masquerade as omniscient GM speech.
+Pell is the first entity-performance target. GameFrame sends a stable interaction target; Runtime determines perspective-correct semantic context.
 
-## GF-RPG-05 — Connected world
+### Exit
 
-Add a second connected persistent scene such as West Woods and prove:
+The player walks to Pell, talks to Pell, separately asks the GM, and submits a freeform action without confusing entity speech, referee authority, or deterministic mechanic results.
 
-- runtime WorldGraph route identity;
-- GameFrame transition zone;
+## GF-RPG-05 — CHANGE / TRAVEL: persistent world and West Woods
+
+Promote only concrete world interactions the Crooked Checkpoint chapter uses.
+
+GameFrame should present/execute deterministic mechanics requested by Runtime for concrete interactions such as checks and object actions; narration is never parsed to infer state.
+
+Then add West Woods:
+
+- current available route/exit interaction;
 - authoritative semantic transfer;
-- destination materialization;
+- `scene.west-woods` materialization;
+- destination scene session;
 - stable revisit;
-- meaningful state continuity;
-- alternate route chosen through play rather than a menu-only script.
+- return to the same Crooked Checkpoint materialization;
+- meaningful object/entity/world continuity.
 
-The first multiplayer product keeps the party together while still supporting many persistent maps.
+### Exit
 
-## GF-RPG-06 — Monster Master Ruleset extraction / control authority
+The player can cause at least one persistent world change, travel Crooked Checkpoint ↔ West Woods through ordinary play, and revisit the same places without drift.
 
-Promote reusable Monster Master deterministic semantics out of standalone-only assumptions:
+## GF-RPG-06 — FIGHT foundation: Monster Master rules/control authority
 
-- Master/trainer participation;
+Promote existing tactical semantics into the reusable RPG boundary only as required by same-map campaign combat:
+
+- Monster Master Ruleset/profile/version;
+- principal → Master/player-character → controlled entity set;
 - class/archetype/profile;
-- class-defined deployed monster counts;
-- principal/player-character/controlled-entity authorization;
+- class-defined monster deployment/control limits;
+- Master tactical participation;
 - initiative/action economy;
 - movement/range/targeting/actions;
 - conditions/resources/objectives/outcomes;
-- escape/withdrawal/surrender/recall/incapacitation as implemented.
+- escape/withdrawal/surrender/recall/incapacitation where implemented.
 
-Do not hardcode one player = one unit or one Master = one monster as generic engine rules.
+Do not hardcode one player = one unit or one Master = one monster into the generic engine.
 
-## GF-RPG-07 — Same-map Tactical Activation
+## GF-RPG-07 — FIGHT: same-map Tactical Activation
 
-Prove a real campaign location can change control modes without changing world identity:
+Use the existing physical campaign scene:
 
 ```text
 exploration
@@ -192,170 +200,138 @@ exploration
 → validate current semantic/materialized/ruleset/control state
 → Tactical Activation
 → current positions become tactical starting positions
-→ turn-based actions on current geometry
+→ deterministic turn-based actions on current geometry
 → deterministic consequences
 → semantic reconciliation where required
-→ exploration resumes on same map
+→ exploration resumes on the same map
 ```
+
+No replacement campaign battlefield and no Return-to-Campaign navigation.
 
 ### Exit
 
-No replacement campaign battlefield or Return-to-Campaign navigation occurs, and reconnect/restart preserves resulting state.
+The player can enter and finish combat on the existing scene, then immediately continue exploration with exact resulting state after reconnect/restart.
 
-## GF-RPG-08 — Complete single-player embodied Monster Master
+## GF-RPG-08 — PROVE: complete single-player Monster Master
 
-Require one bounded journey through:
+Required player journey:
 
-- committed campaign package/world;
-- Crooked Checkpoint exploration;
-- direct Pell interaction;
-- perspective-bounded entity performance;
-- Ask-GM + Do Something Else;
-- Observer Knowledge/People;
-- connected second scene/revisit;
-- event/check/world consequence;
-- same-map Tactical Activation;
-- Master + controlled-monster actions;
-- tactical result → same-scene exploration;
-- bounded resolution;
-- restart/reconnect.
+```text
+Role-Playing Games
+→ Monster Master RPG
+→ Crooked Checkpoint materialization
+→ movement
+→ Pell interaction
+→ Ask-GM
+→ Do Something Else
+→ persistent world change
+→ West Woods travel/revisit
+→ event/check consequence
+→ same-map Tactical Activation
+→ Master + controlled monster actions
+→ deterministic tactical result
+→ same-scene exploration resume
+→ bounded campaign resolution
+→ restart/resume
+```
+
+Validation order:
+
+1. human playthroughs;
+2. deterministic/machine-play regression;
+3. live provider proof;
+4. deployed staging proof.
 
 ## GF-RPG-09 — Two-human one-scene campaign
 
-Add/prove:
-
-- separate authenticated avatars/principals;
-- one shared active scene;
-- realtime movement;
-- viewer-divergent knowledge;
-- direct interaction custody;
-- public/party/private GM presentation;
-- cohesive scene transitions;
-- cooperative ruleset-defined tactical control;
-- same-map Tactical Activation;
-- reconnect/resume.
+Only after single-player proof, add separate authenticated avatars/principals, one shared active scene, viewer-divergent knowledge, party/public/private presentation, cohesive transitions, cooperative control, same-map tactical mode, and reconnect.
 
 Split-party simultaneous scenes remain later.
 
 ## GF-RPG-10 — Second handcrafted Game Family
 
-Run a materially different handcrafted campaign/game family through the same:
+Run a materially different handcrafted campaign/game family through the same GameFrame RPG Engine, Runtime semantic architecture, materialization framework, context modes, RPG Ruleset boundary, and Tactical Activation framework.
 
-- GameFrame RPG Engine;
-- package/entity/scene/observer architecture;
-- materialization framework;
-- interaction/GM surfaces;
-- RPG Ruleset capability boundary;
-- Tactical Activation where combat exists.
+Repair generic abstractions rather than adding family-specific engine branches.
 
-Repair generic abstractions rather than introducing family-specific engine branches.
+## GF-RPG-11 — Campaign Architect / dynamic Role-Playing Games / Battle Pack authoring
 
-## GF-RPG-11 — Dynamic Role-Playing Games / Campaign Architect / Battle Pack contract
-
-After two handcrafted game families prove the architecture:
+Only after two handcrafted game families prove the architecture:
 
 - data-driven Role-Playing Games discovery/resume;
 - Create RPG / My Campaigns / Import Campaign;
 - Campaign Architect draft/refinement/preview/commit;
-- generated/selectable validated ruleset profile and reusable game-family content as needed;
+- generated/selectable validated ruleset profiles and reusable game-family content;
 - Battle Pack authoring/export for combat-capable families;
-- spoiler-safe exposure/unlock policy;
-- package/family/assets provenance and validation.
-
-A generated combat-capable family should be able to produce both:
-
-```text
-CampaignPackage → Role-Playing Games
-Battle Pack     → Battle Simulator
-```
-
-without creating two combat-rule implementations.
+- spoiler-safe exposure/unlock policy.
 
 ## GF-RPG-12 — Dynamic Battle Simulator
 
-Turn the static Battle Simulator hub into a data-driven simulator product:
+After the shared rules/game-family boundary is proven:
 
 - Battle Pack discovery/selection;
 - Monster Master Arena Battles as the first pack/family;
 - character/class/loadout builder;
-- creature/opponent/team setup;
+- opponent/team setup;
 - map selection/generation;
 - BattleScenario setup;
 - objectives/deployment;
 - humans/BattleBot;
 - replay/rematch/analysis;
-- unlock/exposure enforcement;
-- imported/generated Battle Packs.
-
-### Generality gate
-
-At least one non-Monster-Master Battle Pack should load through the same simulator control plane without bespoke code.
-
-### Equivalence gate
-
-Matching RPG Ruleset/profile versions must produce equivalent legal tactical semantics/outcomes in campaign Tactical Mode and Battle Simulator.
+- imported/generated Battle Packs;
+- ruleset equivalence with campaign Tactical Mode.
 
 ## GF-RPG-13 — Split-party multi-scene
 
-Only after one-scene multiplayer is trustworthy, add:
+Only after one-scene multiplayer is trustworthy, add independent live scene subscriptions, scene-local knowledge/audibility, cross-scene communication, independent recovery/materialization, and explicit cross-scene tactical/global-clock rules.
 
-- player-specific scene subscriptions;
-- multiple simultaneous live scene sessions;
-- separated-party UI;
-- scene-local knowledge/audibility/events;
-- cross-scene communication;
-- independent recovery/materialization;
-- rules for one scene tactical while another remains exploratory.
+## Explicitly deferred until GF-RPG-08
 
-## GF-RPG-14 — Richer media/multi-session systems
+Do not prioritize:
 
-Promote only capabilities proven useful through actual campaigns:
+- Campaign Architect implementation;
+- generated RPG systems;
+- dynamic Battle Pack generation;
+- Battle Simulator expansion beyond blocker fixes;
+- unrestricted procedural world generation;
+- giant final-art production;
+- generalized RPG DSLs;
+- elaborate autonomous NPC systems;
+- split-party work;
+- deeper separate-match campaign features;
+- unrelated hub polish.
 
-- richer world-kit/generated asset coverage;
-- semantic cinematic scripts;
-- progression/rest/equipment/injury/care;
-- recurring objectives/factions/relationships;
-- campaign inspection/correction;
-- backups/restore/export/retention;
-- provider/storage/deployment observability;
-- cost/latency/continuity/failure metrics;
-- Theo as an ordinary future player integration.
+## Development discipline
+
+For RPG work before GF-RPG-08:
+
+1. start from the next incomplete player-journey step;
+2. write the narrow acceptance test/fixture for that step;
+3. implement only the authority necessary to make it work;
+4. reuse existing Pixi/tactical/realtime infrastructure first;
+5. run focused GameFrame checks while iterating;
+6. run current Runtime integration when the seam changes;
+7. update local docs in the implementation PR when evidence changes;
+8. reserve separate docs-only PRs for major architectural reconciliations, not every completed slice.
+
+If a proposed PR cannot be located in SEE → MOVE → TALK → CHANGE/TRAVEL → FIGHT → PROVE, its priority is suspect.
 
 ## Immediate execution order
 
-1. Keep staging usable; repair legacy separate-match consequence defects only when blocking.
-2. Generic RPG Engine / Ruleset / Game Family boundary.
-3. Consume Entity/Scene/Observer Knowledge from runtime.
-4. Crooked Checkpoint materialization/movement.
-5. Embodied realtime scene session.
-6. Pell interaction + Ask-GM + Do Something Else + GM intervention.
-7. Second connected scene/stable revisit.
-8. Monster Master Ruleset extraction + generic control authority.
-9. Same-map Tactical Activation.
-10. Complete single-player embodied Monster Master.
-11. Two-human one-scene campaign.
-12. Second handcrafted Game Family.
-13. Dynamic Role-Playing Games + Campaign Architect + Battle Pack contract.
-14. Dynamic Battle Simulator + Monster Master convergence.
-15. Split-party multi-scene.
-16. Richer media/multi-session systems.
+1. **GF-RPG-02 SEE — Crooked Checkpoint physical materialization.**
+2. **GF-RPG-03 MOVE — movement/collision/camera/reconnect.**
+3. **GF-RPG-04 TALK — Pell context custody + interaction + Ask-GM + Do Something Else.**
+4. **GF-RPG-05 CHANGE/TRAVEL — concrete world operations + West Woods persistent transfer/revisit.**
+5. **GF-RPG-06/07 FIGHT — rules/control authority + same-map Tactical Activation.**
+6. **GF-RPG-08 PROVE — one complete single-player engineering campaign, live provider, staging.**
+7. two-human one-scene campaign.
+8. second handcrafted Game Family.
+9. Campaign Architect + dynamic Role-Playing Games + Battle Pack authoring.
+10. dynamic Battle Simulator convergence.
+11. split-party multi-scene.
 
-The static Games / Role-Playing Games / Battle Simulator navigation is intentionally ahead of steps 13–14 so the product information architecture is already correct while backend capability catches up.
-
-## Validation posture
-
-Use the evidence layer matching the claim:
-
-- schema/unit tests for ruleset/game-family/Battle-Pack/authority contracts;
-- materialization/geometry tests;
-- runtime machine-play for Dungeon Master behavior/perspective custody;
-- cross-repository integration for semantic/materialized boundaries;
-- deterministic tactical tests for shared rules;
-- campaign-versus-simulator equivalence tests;
-- browser acceptance for Games navigation and embodied/tactical transitions;
-- VM/Cloudflare canaries for deployed realtime/recovery;
-- separate generation/media canaries.
+The static Games / Role-Playing Games / Battle Simulator navigation is intentionally ahead of dynamic productization and should not pull development away from the playable Monster Master loop.
 
 ## Governing rule
 
-> GameFrame should expose a clear Games hierarchy while sharing implementation underneath it: Role-Playing Games hosts durable campaigns, Battle Simulator hosts standalone scenarios, and a reusable Game Family must not fork its combat rules merely because the player entered through a different menu.
+> Reuse the existing GameFrame Pixi/tactical world, make Crooked Checkpoint playable end to end, and derive new abstraction only from requirements that the real player journey exposes.
