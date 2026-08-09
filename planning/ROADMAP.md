@@ -38,24 +38,13 @@ related:
 
 ## Current development mode
 
-The platform has enough semantic substrate. The active risk is no longer missing architecture; it is continuing to build invisible infrastructure without forcing it through a playable loop.
-
-From this point, the primary GameFrame development target is:
-
 ```text
-SEE
-→ MOVE
-→ TALK
-→ CHANGE / TRAVEL
-→ FIGHT
-→ PROVE
+SEE → MOVE → TALK → CHANGE / TRAVEL → FIGHT → PROVE
 ```
 
 Every substantive RPG PR should advance that bounded Monster Master journey or remove a demonstrated blocker to it.
 
-Do not create a new RPG renderer. Reuse the existing Pixi world/tactical renderer and terrain foundations.
-
-Do not block the first playable scene on final art or generalized procedural generation. Deterministic semantic-layout materialization and placeholder assets are acceptable.
+Reuse the existing Pixi world/tactical renderer and terrain foundations. Do not block the first playable scene on final art or generalized procedural generation.
 
 ## Completed foundations
 
@@ -75,11 +64,9 @@ Preserve the useful current GameFrame substrate:
 - viewer-independent materialization identity and scene-bound accepted-ref validation;
 - canonical Crooked Checkpoint exploration fixture aligned to CampaignPackage v5.
 
-Runtime foundations consumed by GameFrame now include Entity Registry, Scene Registry, Observer Knowledge / People, WorldGraph/materialization intent, and the viewer-safe exploration projection.
+Runtime foundations consumed by GameFrame include Entity Registry, Scene Registry, Observer Knowledge / People, WorldGraph/materialization intent, and the viewer-safe exploration projection.
 
 ## GF-RPG-01 — Generic semantic/physical boundary — bounded foundation complete
-
-The current accepted boundary is:
 
 ```text
 Runtime semantic authority
@@ -87,46 +74,60 @@ Runtime semantic authority
 → GameFrame physical materialization/session authority
 ```
 
-The exploration contract carries campaign/package/ruleset identity, semantic scene/revision, authorized entities/objects/routes, materialization intent, and optional accepted materialization ref.
+The exploration contract carries campaign/package/ruleset identity, semantic scene/revision, authorized entities/objects/routes, materialization intent, and optional accepted materialization ref. It deliberately carries no x/y/facing/geometry/collision/pathfinding/camera authority.
 
-It deliberately carries no x/y/facing/geometry/collision/pathfinding/camera authority.
+## GF-RPG-02 — SEE: Crooked Checkpoint materialization — bounded implementation complete
 
-## GF-RPG-02 — SEE: Crooked Checkpoint materialization — ACTIVE
+The first physical campaign scene now has a production-shaped path:
 
-Build the first real physical RPG campaign scene from the S6 projection.
+```text
+authenticated GameFrame player
+→ GameFrame private Runtime client
+→ bearer-authenticated Runtime S6 exploration projection
+→ strict GameFrame projection normalization
+→ deterministic Crooked Checkpoint semantic-layout materializer
+→ existing Monster Master Pixi terrain/world renderer
+```
 
-Implement the minimum deterministic scene needed by the reference package:
+Implemented bounded evidence:
 
-- `scene.crooked-checkpoint` materialization;
-- accepted `rpg-scene:<campaignId>:scene.crooked-checkpoint` identity/version/hash;
-- settled road;
-- timber checkpoint barrier;
-- inspection shelter;
-- Road Maintenance Shed;
-- Confiscation Cart;
-- drainage edge;
-- westbound route/exit anchor;
-- player avatar anchor;
-- Pell and viewer-authorized entity anchors;
-- known object anchors;
-- collision/picking/navigation primitives required by the scene;
-- placeholder/world-kit visuals where final assets are absent.
+- `scene.crooked-checkpoint` materialization from the real S6 contract;
+- existing `rpg-scene:<campaignId>:scene.crooked-checkpoint` materialization identity/version/hash derivation;
+- deterministic 18×14 physical layout containing the settled road, checkpoint barrier, inspection edge, maintenance-shed mass, drainage edge, and westbound route mouth;
+- viewer-authorized player/Pell/object/route anchors with stable semantic/interaction IDs;
+- existing Monster Master Pixi renderer and terrain assets reused rather than forked;
+- RPG browser attaches the physical scene without supplying a viewer/player override;
+- refresh reattaches and derives the same physical materialization identity;
+- viewer-specific labels/entity disclosure/route visibility do not change physical geometry identity;
+- no tactical legal actions are exposed through the exploration adapter.
 
-Use the existing Pixi/terrain renderer. Do not fork a new exploration renderer from the tactical renderer.
+Focused Node and browser acceptance prove the materializer, Runtime transport, authenticated GameFrame route, terrain/world rendering, safe Pell/cart/route overlays, and stable refresh identity.
 
-### Exit
+### SEE evidence boundary
 
-Opening Monster Master RPG produces a physical Crooked Checkpoint derived from the semantic projection. Refresh/reconnect reuses the same accepted materialization rather than generating a different place.
+This does **not** yet prove:
 
-## GF-RPG-03 — MOVE: embodied realtime session
+- WASD movement/facing;
+- collision authority during movement;
+- camera-follow behavior as an exploration control surface;
+- durable/reconnect-safe x/y position;
+- Runtime Scene Registry persistence of a newly accepted GameFrame materialization ref;
+- Pell interaction/context custody;
+- West Woods transfer;
+- same-map Tactical Activation;
+- final production art.
+
+The physical scene currently proves deterministic materialization and rendering, not the full revisit/travel milestone.
+
+## GF-RPG-03 — MOVE: embodied realtime session — ACTIVE NEXT
 
 Add GameFrame-owned:
 
 - WASD/player movement;
 - facing;
-- camera;
-- collision/navigation behavior;
-- valid position persistence/recovery;
+- camera follow/pan rules appropriate to exploration;
+- collision/navigation behavior over the existing Crooked Checkpoint geometry;
+- valid local position persistence/recovery;
 - scene-scoped realtime projection;
 - bounded reconnect/backpressure.
 
@@ -138,9 +139,9 @@ The player can move around Crooked Checkpoint responsively and reconnect into a 
 
 ## GF-RPG-04 — TALK: Pell interaction + GM surfaces
 
-Drive the next Runtime context-mode work through the physical scene.
+Drive Runtime context-mode work through the physical scene.
 
-GameFrame player surfaces:
+GameFrame surfaces:
 
 - targetable Talk / Interact;
 - Ask Game Master;
@@ -156,9 +157,7 @@ The player walks to Pell, talks to Pell, separately asks the GM, and submits a f
 
 ## GF-RPG-05 — CHANGE / TRAVEL: persistent world and West Woods
 
-Promote only concrete world interactions the Crooked Checkpoint chapter uses.
-
-GameFrame should present/execute deterministic mechanics requested by Runtime for concrete interactions such as checks and object actions; narration is never parsed to infer state.
+Promote only concrete world interactions the Crooked Checkpoint chapter uses. GameFrame presents/executes deterministic mechanics requested by Runtime for concrete interactions such as checks and object actions; narration is never parsed to infer state.
 
 Then add West Woods:
 
@@ -192,8 +191,6 @@ Do not hardcode one player = one unit or one Master = one monster into the gener
 
 ## GF-RPG-07 — FIGHT: same-map Tactical Activation
 
-Use the existing physical campaign scene:
-
 ```text
 exploration
 → tactical trigger
@@ -213,8 +210,6 @@ No replacement campaign battlefield and no Return-to-Campaign navigation.
 The player can enter and finish combat on the existing scene, then immediately continue exploration with exact resulting state after reconnect/restart.
 
 ## GF-RPG-08 — PROVE: complete single-player Monster Master
-
-Required player journey:
 
 ```text
 Role-Playing Games
@@ -250,9 +245,7 @@ Split-party simultaneous scenes remain later.
 
 ## GF-RPG-10 — Second handcrafted Game Family
 
-Run a materially different handcrafted campaign/game family through the same GameFrame RPG Engine, Runtime semantic architecture, materialization framework, context modes, RPG Ruleset boundary, and Tactical Activation framework.
-
-Repair generic abstractions rather than adding family-specific engine branches.
+Run a materially different handcrafted campaign/game family through the same GameFrame RPG Engine, Runtime semantic architecture, materialization framework, context modes, RPG Ruleset boundary, and Tactical Activation framework. Repair generic abstractions rather than adding family-specific engine branches.
 
 ## GF-RPG-11 — Campaign Architect / dynamic Role-Playing Games / Battle Pack authoring
 
@@ -287,19 +280,7 @@ Only after one-scene multiplayer is trustworthy, add independent live scene subs
 
 ## Explicitly deferred until GF-RPG-08
 
-Do not prioritize:
-
-- Campaign Architect implementation;
-- generated RPG systems;
-- dynamic Battle Pack generation;
-- Battle Simulator expansion beyond blocker fixes;
-- unrestricted procedural world generation;
-- giant final-art production;
-- generalized RPG DSLs;
-- elaborate autonomous NPC systems;
-- split-party work;
-- deeper separate-match campaign features;
-- unrelated hub polish.
+Do not prioritize Campaign Architect implementation, generated RPG systems, dynamic Battle Pack generation, Battle Simulator expansion beyond blocker fixes, unrestricted procedural world generation, giant final-art production, generalized RPG DSLs, elaborate autonomous NPC systems, split-party work, deeper separate-match campaign features, or unrelated hub polish.
 
 ## Development discipline
 
@@ -318,17 +299,16 @@ If a proposed PR cannot be located in SEE → MOVE → TALK → CHANGE/TRAVEL �
 
 ## Immediate execution order
 
-1. **GF-RPG-02 SEE — Crooked Checkpoint physical materialization.**
-2. **GF-RPG-03 MOVE — movement/collision/camera/reconnect.**
-3. **GF-RPG-04 TALK — Pell context custody + interaction + Ask-GM + Do Something Else.**
-4. **GF-RPG-05 CHANGE/TRAVEL — concrete world operations + West Woods persistent transfer/revisit.**
-5. **GF-RPG-06/07 FIGHT — rules/control authority + same-map Tactical Activation.**
-6. **GF-RPG-08 PROVE — one complete single-player engineering campaign, live provider, staging.**
-7. two-human one-scene campaign.
-8. second handcrafted Game Family.
-9. Campaign Architect + dynamic Role-Playing Games + Battle Pack authoring.
-10. dynamic Battle Simulator convergence.
-11. split-party multi-scene.
+1. **GF-RPG-03 MOVE — movement/collision/camera/reconnect.**
+2. **GF-RPG-04 TALK — Pell context custody + interaction + Ask-GM + Do Something Else.**
+3. **GF-RPG-05 CHANGE/TRAVEL — concrete world operations + West Woods persistent transfer/revisit.**
+4. **GF-RPG-06/07 FIGHT — rules/control authority + same-map Tactical Activation.**
+5. **GF-RPG-08 PROVE — one complete single-player engineering campaign, live provider, staging.**
+6. two-human one-scene campaign.
+7. second handcrafted Game Family.
+8. Campaign Architect + dynamic Role-Playing Games + Battle Pack authoring.
+9. dynamic Battle Simulator convergence.
+10. split-party multi-scene.
 
 The static Games / Role-Playing Games / Battle Simulator navigation is intentionally ahead of dynamic productization and should not pull development away from the playable Monster Master loop.
 
