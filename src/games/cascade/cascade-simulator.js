@@ -1,24 +1,49 @@
 import {
   CASCADE_LEVELS,
+  TILE_KINDS,
+  applyLevelProgress,
   applySwap,
   createBoard,
+  createLevelProgress,
   createRng,
   listLegalMoves,
+  objectiveComplete,
+  objectiveRemaining,
 } from "../../../public/cascade-engine.js";
 
 const STRATEGIES = new Set(["random", "greedy", "lookahead"]);
 
-function evaluateImmediate(board, move, boardRng) {
+function objectiveAdvanceValue(level, before, after) {
+  let value = 0;
+  for (const goal of level.objective?.collect || []) {
+    const beforeCount = Math.min(goal.count, Number(before?.collected?.[goal.kind] || 0));
+    const afterCount = Math.min(goal.count, Number(after?.collected?.[goal.kind] || 0));
+    value += Math.max(0, afterCount - beforeCount) * 150;
+  }
+  const beforeIce = (before?.ice || []).reduce((sum, layers) => sum + Math.max(0, Number(layers) || 0), 0);
+  const afterIce = (after?.ice || []).reduce((sum, layers) => sum + Math.max(0, Number(layers) || 0), 0);
+  value += Math.max(0, beforeIce - afterIce) * 190;
+  return value;
+}
+
+function evaluateImmediate(level, progress, board, move, boardRng) {
   const trialRng = boardRng.clone();
-  const result = applySwap(board, move.from, move.to, trialRng);
+  const result = applySwap(board, move.from, move.to, trialRng, {
+    mechanics: level.mechanics,
+    ice: progress.ice,
+  });
+  const nextProgress = applyLevelProgress(level, progress, result);
   return {
     move,
     result,
+    progress: nextProgress,
     rng: trialRng,
     value: result.scoreGained
+      + objectiveAdvanceValue(level, progress, nextProgress)
       + (result.maxCascade * 20)
       + ((result.powerClearCount || 0) * 90)
-      + ((result.colorSweepCount || 0) * 180),
+      + ((result.colorSweepCount || 0) * 180)
+      + ((result.crossBlastCount || 0) * 220),
   };
 }
 
@@ -26,10 +51,10 @@ function chooseRandom(moves, decisionRng) {
   return moves[Math.floor(decisionRng.next() * moves.length)];
 }
 
-function chooseGreedy(board, moves, boardRng) {
+function chooseGreedy(level, progress, board, moves, boardRng) {
   let best = null;
   for (const move of moves) {
-    const evaluated = evaluateImmediate(board, move, boardRng);
+    const evaluated = evaluateImmediate(level, progress, board, move, boardRng);
     if (!best || evaluated.value > best.value || (evaluated.value === best.value && move.from < best.move.from)) {
       best = evaluated;
     }
@@ -37,9 +62,9 @@ function chooseGreedy(board, moves, boardRng) {
   return best.move;
 }
 
-function chooseLookahead(board, moves, boardRng) {
+function chooseLookahead(level, progress, board, moves, boardRng) {
   const firstPass = moves
-    .map((move) => evaluateImmediate(board, move, boardRng))
+    .map((move) => evaluateImmediate(level, progress, board, move, boardRng))
     .sort((a, b) => b.value - a.value || a.move.from - b.move.from || a.move.to - b.move.to)
     .slice(0, 10);
 
@@ -48,7 +73,7 @@ function chooseLookahead(board, moves, boardRng) {
     const nextMoves = listLegalMoves(candidate.result.board);
     let futureBest = 0;
     for (const nextMove of nextMoves) {
-      const nextEval = evaluateImmediate(candidate.result.board, nextMove, candidate.rng);
+      const nextEval = evaluateImmediate(level, candidate.progress, candidate.result.board, nextMove, candidate.rng);
       if (nextEval.value > futureBest) futureBest = nextEval.value;
     }
     const value = candidate.value + (futureBest * 0.68);
@@ -56,15 +81,15 @@ function chooseLookahead(board, moves, boardRng) {
       best = { move: candidate.move, value };
     }
   }
-  return best?.move ?? chooseGreedy(board, moves, boardRng);
+  return best?.move ?? chooseGreedy(level, progress, board, moves, boardRng);
 }
 
-export function chooseMove(strategy, board, moves, boardRng, decisionRng) {
+export function chooseMove(strategy, level, progress, board, moves, boardRng, decisionRng) {
   if (!STRATEGIES.has(strategy)) throw new Error(`Unknown Cascade bot strategy: ${strategy}`);
   if (!moves.length) return null;
   if (strategy === "random") return chooseRandom(moves, decisionRng);
-  if (strategy === "greedy") return chooseGreedy(board, moves, boardRng);
-  return chooseLookahead(board, moves, boardRng);
+  if (strategy === "greedy") return chooseGreedy(level, progress, board, moves, boardRng);
+  return chooseLookahead(level, progress, board, moves, boardRng);
 }
 
 export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
@@ -75,6 +100,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
   const boardRng = createRng((baseSeed ^ (definition.level * 0x9e3779b1)) >>> 0);
   const decisionRng = createRng((baseSeed ^ 0xa5a5a5a5 ^ (definition.level * 0x85ebca6b)) >>> 0);
   let board = createBoard({ rng: boardRng });
+  let progress = createLevelProgress(definition);
   let score = 0;
   let movesRemaining = definition.moves;
   let cascadeCount = 0;
@@ -83,23 +109,33 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
   let branchingTotal = 0;
   let powerClearCount = 0;
   let colorSweepCount = 0;
+  let crossBlastCount = 0;
+  let iceHitCount = 0;
+  const collectedTotals = Array(TILE_KINDS).fill(0);
   const moveHistory = [];
 
-  while (movesRemaining > 0 && score < definition.target) {
+  while (movesRemaining > 0 && !objectiveComplete(definition, progress, score)) {
     const legalMoves = listLegalMoves(board);
     branchingTotal += legalMoves.length;
     if (!legalMoves.length) throw new Error(`Cascade engine returned a board with no legal moves at level ${definition.level}`);
 
-    const move = chooseMove(strategy, board, legalMoves, boardRng, decisionRng);
-    const result = applySwap(board, move.from, move.to, boardRng);
+    const move = chooseMove(strategy, definition, progress, board, legalMoves, boardRng, decisionRng);
+    const result = applySwap(board, move.from, move.to, boardRng, {
+      mechanics: definition.mechanics,
+      ice: progress.ice,
+    });
     if (!result.legal) throw new Error(`Cascade bot selected an illegal move ${move.from}->${move.to}`);
 
     movesRemaining -= 1;
     score += result.scoreGained;
+    progress = applyLevelProgress(definition, progress, result);
     cascadeCount += result.transitions.length;
     maxCascade = Math.max(maxCascade, result.maxCascade);
     powerClearCount += result.powerClearCount || 0;
     colorSweepCount += result.colorSweepCount || 0;
+    crossBlastCount += result.crossBlastCount || 0;
+    iceHitCount += result.iceHitCount || 0;
+    for (let kind = 0; kind < TILE_KINDS; kind += 1) collectedTotals[kind] += Number(result.clearedKindCounts?.[kind] || 0);
     if (result.shuffled) shuffles += 1;
     board = result.board;
     moveHistory.push({
@@ -110,13 +146,17 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
       maxCascade: result.maxCascade,
       powerClearCount: result.powerClearCount || 0,
       colorSweepCount: result.colorSweepCount || 0,
+      crossBlastCount: result.crossBlastCount || 0,
+      iceHitCount: result.iceHitCount || 0,
       shuffled: result.shuffled,
       score,
       movesRemaining,
+      objectiveRemaining: objectiveRemaining(definition, progress, score),
     });
   }
 
-  const win = score >= definition.target;
+  const win = objectiveComplete(definition, progress, score);
+  const remaining = objectiveRemaining(definition, progress, score);
   return {
     level: definition.level,
     strategy,
@@ -132,6 +172,11 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     shuffles,
     powerClearCount,
     colorSweepCount,
+    crossBlastCount,
+    iceHitCount,
+    collectedTotals,
+    objectiveRemaining: remaining,
+    objectiveComplete: win,
     averageBranching: moveHistory.length ? branchingTotal / moveHistory.length : 0,
     moveHistory,
   };
@@ -153,6 +198,7 @@ function summarizeRuns(level, strategy, runs) {
     target: level.target,
     moves: level.moves,
     mechanics: level.mechanics,
+    objective: level.objective,
     strategy,
     runs: runs.length,
     wins: wins.length,
@@ -163,9 +209,12 @@ function summarizeRuns(level, strategy, runs) {
     averageCascadeCount: runs.reduce((sum, run) => sum + run.cascadeCount, 0) / runs.length,
     averagePowerClears: runs.reduce((sum, run) => sum + run.powerClearCount, 0) / runs.length,
     averageColorSweeps: runs.reduce((sum, run) => sum + run.colorSweepCount, 0) / runs.length,
+    averageCrossBlasts: runs.reduce((sum, run) => sum + run.crossBlastCount, 0) / runs.length,
+    averageIceHits: runs.reduce((sum, run) => sum + run.iceHitCount, 0) / runs.length,
     maxCascade: Math.max(...runs.map((run) => run.maxCascade)),
     averageBranching: runs.reduce((sum, run) => sum + run.averageBranching, 0) / runs.length,
     shuffleRate: runs.filter((run) => run.shuffles > 0).length / runs.length,
+    objectiveFailureRate: runs.filter((run) => !run.win && run.objectiveRemaining.some((item) => item.type !== "score")).length / runs.length,
   };
 }
 
@@ -190,6 +239,7 @@ export function profileCascadeLevels({ runsPerLevel = 40, strategies = ["random"
       target: level.target,
       moves: level.moves,
       mechanics: level.mechanics,
+      objective: level.objective,
       strategies: strategyReports,
       skillSensitivity: random && lookahead ? lookahead.winRate - random.winRate : null,
       planningSensitivity: greedy && lookahead ? lookahead.winRate - greedy.winRate : null,
