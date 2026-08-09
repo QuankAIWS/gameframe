@@ -17,6 +17,16 @@ function installStylesheet() {
   document.head.append(link);
 }
 
+function activeCampaignId() {
+  const displayed = document.querySelector("#mm-rpg-campaign-code")?.textContent?.trim() || "";
+  const requested = new URLSearchParams(window.location.search).get("campaign")?.trim() || "";
+  const campaignId = displayed || requested;
+  if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/.test(campaignId)) {
+    throw new Error("The active staging campaign identity is unavailable.");
+  }
+  return campaignId;
+}
+
 function installAdminControls() {
   const headerActions = document.querySelector(".mm-rpg-header-actions");
   if (!headerActions || document.querySelector("#mm-rpg-admin-open")) return;
@@ -45,7 +55,7 @@ function installAdminControls() {
 
       <dl class="mm-rpg-admin-facts">
         <div><dt>Principal</dt><dd data-admin-principal></dd></div>
-        <div><dt>Campaign</dt><dd>monster-master-staging</dd></div>
+        <div><dt>Campaign</dt><dd data-admin-campaign></dd></div>
         <div><dt>Authority</dt><dd>Discord staging administrator</dd></div>
       </dl>
 
@@ -71,12 +81,20 @@ function installAdminControls() {
   document.body.append(overlay);
 
   overlay.querySelector("[data-admin-principal]").textContent = identity.playerId;
+  const campaignFact = overlay.querySelector("[data-admin-campaign]");
   const close = overlay.querySelector(".mm-rpg-admin-close");
   const reset = overlay.querySelector("[data-admin-reset]");
   const status = overlay.querySelector("[data-admin-status]");
   let confirmationExpiresAt = 0;
 
   open.addEventListener("click", () => {
+    try {
+      campaignFact.textContent = activeCampaignId();
+      status.textContent = "No administrator action is running.";
+    } catch (error) {
+      campaignFact.textContent = "Unavailable";
+      status.textContent = error instanceof Error ? error.message : "Campaign identity is unavailable.";
+    }
     overlay.hidden = false;
     reset.focus();
   });
@@ -98,11 +116,19 @@ function installAdminControls() {
   });
 
   reset.addEventListener("click", async () => {
+    let campaignId;
+    try {
+      campaignId = activeCampaignId();
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : "Campaign identity is unavailable.";
+      return;
+    }
+
     const now = Date.now();
     if (now > confirmationExpiresAt) {
       confirmationExpiresAt = now + 10_000;
       reset.textContent = "Confirm reset — click again";
-      status.textContent = "Confirmation armed for 10 seconds. This will erase all current staging RPG progress.";
+      status.textContent = `Confirmation armed for 10 seconds. This will erase all progress in ${campaignId}.`;
       window.setTimeout(() => {
         if (Date.now() <= confirmationExpiresAt) return;
         reset.textContent = "Reset staging campaign";
@@ -123,7 +149,7 @@ function installAdminControls() {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          campaignId: "monster-master-staging",
+          campaignId,
           confirmation: "RESET MONSTER MASTER STAGING",
         }),
       }, identity);
@@ -133,16 +159,16 @@ function installAdminControls() {
       }
 
       window.localStorage.removeItem(
-        "scribbles-gameframe.monster-master-rpg.profile.v1:monster-master-staging",
+        `scribbles-gameframe.monster-master-rpg.profile.v1:${campaignId}`,
       );
       window.localStorage.setItem(
         "scribbles-gameframe.monster-master-rpg.campaign",
-        "monster-master-staging",
+        campaignId,
       );
       status.textContent = "Services are restarting. Reloading the fresh campaign shortly…";
       window.setTimeout(() => {
         const url = new URL("/monster-master-rpg", window.location.origin);
-        url.searchParams.set("campaign", "monster-master-staging");
+        url.searchParams.set("campaign", campaignId);
         window.location.assign(url);
       }, 5_000);
     } catch (error) {
