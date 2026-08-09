@@ -55,7 +55,7 @@ const CROOKED_CHECKPOINT_HEIGHT = 14;
 
 const STATIC_ANCHORS: Readonly<Record<string, { x: number; y: number }>> = Object.freeze({
   "location.maintenance-shed": { x: 12, y: 3 },
-  "location.confiscation-cart": { x: 10, y: 8 },
+  "location.confiscation-cart": { x: 11, y: 8 },
   "object.checkpoint-cart": { x: 10, y: 8 },
   "route.crooked-checkpoint-west-woods": { x: 1, y: 7 },
 });
@@ -117,24 +117,16 @@ function crookedCheckpointMap(): RpgExplorationPhysicalMaterializationV1["map"] 
     cells[y * CROOKED_CHECKPOINT_WIDTH + x] = { terrain };
   };
 
-  // Timber checkpoint barrier. The center gap remains traversable and becomes
-  // the later interaction/authority seam rather than baked semantic state.
   for (const y of [3, 4, 5, 6, 8, 9, 10]) set(8, y, "wall");
 
-  // Road maintenance shed mass.
   for (const [x, y] of [[11, 2], [12, 2], [11, 3], [12, 3], [11, 4], [12, 4]]) {
     set(x, y, "wall");
   }
 
-  // Inspection shelter / citation-crate edge. Kept low and sparse so this
-  // first scene proves semantic composition without pretending final art exists.
   for (const [x, y] of [[6, 4], [6, 5], [7, 4]]) set(x, y, "wall");
 
-  // Drainage/gravel edge along the settled road.
   for (let x = 2; x <= 15; x += 1) set(x, 11, "difficult");
 
-  // Physical westbound route mouth. Route authorization remains semantic and
-  // viewer-specific; this tile merely makes the world opening visible.
   set(1, 7, "objective");
 
   return {
