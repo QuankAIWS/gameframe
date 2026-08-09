@@ -7,6 +7,7 @@ import test from "node:test";
 
 import { SqliteRpgCampaignStore } from "../rpg/sqlite-rpg-campaign-store.ts";
 import {
+  CURRENT_STAGING_CAMPAIGN_ID,
   durableRpgStagingBootstrap,
   durableRpgStagingBootstrapForDatabase,
   parseDurableRpgStagingBootstrapConfig,
@@ -26,9 +27,20 @@ test("staging campaign bootstrap is disabled when no staging identity is configu
   assert.equal(parseDurableRpgStagingBootstrapConfig({}), undefined);
 });
 
+test("installed legacy staging identity maps to the current durable generation", () => {
+  assert.equal(stagingConfig().campaignId, CURRENT_STAGING_CAMPAIGN_ID);
+
+  const explicit = parseDurableRpgStagingBootstrapConfig({
+    RPG_STAGING_CAMPAIGN_ID: "explicit-staging-campaign",
+    RPG_STAGING_PLAYER_ID: "discord:123456789",
+    RPG_STAGING_INITIALIZED_AT: "2026-08-07T22:00:00.000Z",
+  });
+  assert.equal(explicit?.campaignId, "explicit-staging-campaign");
+});
+
 test("staging campaign bootstrap creates stable party-main membership", () => {
   assert.deepEqual(durableRpgStagingBootstrap(stagingConfig()), {
-    campaignId: "monster-master-staging",
+    campaignId: CURRENT_STAGING_CAMPAIGN_ID,
     title: "Monster Master: The Crooked Checkpoint",
     status: "active",
     state: {
