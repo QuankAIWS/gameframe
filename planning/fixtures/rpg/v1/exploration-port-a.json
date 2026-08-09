@@ -1,0 +1,124 @@
+{
+  "fixtureVersion": 1,
+  "contract": "rpg-exploration-port",
+  "slice": "crooked-checkpoint",
+  "request": {
+    "protocolVersion": 1,
+    "kind": "campaign.exploration.attach",
+    "campaignId": "campaign-monster-master-reference",
+    "connectionId": "connection-ada"
+  },
+  "projection": {
+    "protocolVersion": 1,
+    "kind": "campaign.exploration_projection",
+    "campaignId": "campaign-monster-master-reference",
+    "campaignRevision": 40,
+    "package": {
+      "packageId": "mm.package.false-warden-roadblock.v1",
+      "packageVersion": 5,
+      "gameFamilyId": "monster-master",
+      "ruleset": {
+        "rulesetId": "monster-master-rpg",
+        "rulesetVersion": 1,
+        "capabilityProfileId": "mm.ruleset.embodied-campaign.v1"
+      }
+    },
+    "viewer": {
+      "playerId": "player:ada",
+      "playerCharacterEntityId": "player-character:player:ada",
+      "rulesProfileId": "mm.trainer.vanguard.v1"
+    },
+    "scene": {
+      "sceneId": "scene.crooked-checkpoint",
+      "semanticRevision": 3,
+      "lifecycleState": "active",
+      "resolutionMode": "exploration",
+      "worldNodeId": "world.node.crooked-checkpoint",
+      "location": {
+        "locationId": "location.settled-road-checkpoint",
+        "label": "Crooked Checkpoint",
+        "description": "A timber checkpoint blocks the settled road beside a maintenance shed and a covered confiscation cart."
+      },
+      "materialization": {
+        "intent": {
+          "intentId": "materialization.crooked-checkpoint.v1",
+          "materializationProfileId": "mm.materialization.settled-road-checkpoint.v1",
+          "themeId": "monster-master-field-road",
+          "seedPolicy": "stable-location",
+          "revisitPolicy": "reuse-accepted-materialization",
+          "requiredAssetRoleIds": [
+            "scene:mm-crooked-checkpoint-v1"
+          ],
+          "fallbackMode": "semantic-layout",
+          "fallbackLabel": "Crooked Checkpoint semantic field layout"
+        }
+      },
+      "landmarks": [
+        {
+          "locationId": "location.maintenance-shed",
+          "label": "Maintenance Shed",
+          "description": "A weathered roadside maintenance shed stands inside the checkpoint area."
+        },
+        {
+          "locationId": "location.confiscation-cart",
+          "label": "Confiscation Cart",
+          "description": "A covered cart sits under checkpoint custody."
+        }
+      ],
+      "entities": [
+        {
+          "entityId": "player-character:player:ada",
+          "entityClass": "player-character",
+          "displayLabel": "Ada",
+          "identityStage": "self",
+          "interactionTargetId": "entity:player-character:player:ada",
+          "rulesProfileId": "mm.trainer.vanguard.v1"
+        },
+        {
+          "entityId": "actor.warden-pell",
+          "entityClass": "actor",
+          "displayLabel": "veteran field warden",
+          "identityStage": "role",
+          "interactionTargetId": "entity:actor.warden-pell",
+          "knownRole": "Warden"
+        }
+      ],
+      "objects": [
+        {
+          "entityId": "object.confiscation-cart",
+          "displayLabel": "covered confiscation cart",
+          "interactionTargetId": "entity:object.confiscation-cart"
+        }
+      ],
+      "routes": [
+        {
+          "routeId": "route.crooked-checkpoint-west-woods",
+          "destinationNodeId": "world.node.west-woods",
+          "destinationSceneId": "scene.west-woods",
+          "destinationLocationId": "location.west-woods",
+          "destinationLabel": "West Woods",
+          "traversalKind": "walk",
+          "publicDescription": "The settled road continues toward the West Woods."
+        }
+      ]
+    }
+  },
+  "expected": {
+    "hiddenEntityIdsAbsent": [
+      "actor.counterfeit-inspector"
+    ],
+    "forbiddenProjectionFields": [
+      "privateFacts",
+      "x",
+      "y",
+      "facing",
+      "geometry",
+      "collision",
+      "pathfinding",
+      "camera"
+    ],
+    "materializationIdentityIgnoresDynamicEntityDisplay": true,
+    "reconnectReusesAcceptedMaterialization": true,
+    "movementFramesAreRuntimeJournalEvents": false
+  }
+}
