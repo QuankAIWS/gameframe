@@ -3,7 +3,7 @@ title: RPG Platform Roadmap
 status: accepted
 document_type: roadmap
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-08
+last_updated: 2026-08-09
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
@@ -13,7 +13,7 @@ applies_to:
   - Monster Master Arena Battles
   - future bespoke campaigns
 shared_document_id: rpg-platform-roadmap-v1
-shared_document_version: 7
+shared_document_version: 8
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-platform-roadmap.md
 mirrors:
@@ -37,9 +37,9 @@ related:
 
 Build one **campaign-agnostic GameFrame RPG Engine** that can materialize validated CampaignPackages into persistent playable 2D worlds, accept pluggable deterministic RPG Rulesets, and work with one Dungeon Master that remains a real referee/narrator while durable software owns identity, presence, observer knowledge, world state, mechanics, and recovery.
 
-The player-facing GameFrame hierarchy is **Games**. RPG campaigns live under **Role-Playing Games**. Standalone tactical scenarios live under **Battle Simulator**. Direct standalone games such as Clockwork Checkers, Othello, and Tic-Tac-Toe may remain top-level Games entries.
+The player-facing hierarchy is **Games**. RPG campaigns live under **Role-Playing Games**. Standalone tactical scenarios live under **Battle Simulator**.
 
-Monster Master proves one reusable game family across two surfaces without creating two combat engines:
+Monster Master proves one reusable game family across both surfaces without creating two combat engines:
 
 - **Monster Master RPG** proves the complete embodied campaign experience using GameFrame RPG Engine + Monster Master Ruleset + CampaignPackage.
 - **Monster Master Arena Battles** evolves inside Battle Simulator toward the same Monster Master Ruleset/tactical implementation using Battle Pack + BattleScenario setup instead of CampaignPackage lifecycle.
@@ -57,155 +57,224 @@ Volatile implementation evidence remains local:
 
 Do not describe lower-level infrastructure as proof of a later player-experience milestone.
 
-## Milestone 0 — Architecture/documentation/player-navigation alignment
+## Delivery mode decision — vertical playable evidence
 
-Required decisions:
+The architecture/substrate phase has produced enough durable authority to change development mode.
+
+Completed foundations now include:
+
+- executable CampaignPackage v5 / Game Family / ruleset requirements;
+- Entity Registry;
+- Character Factory;
+- Semantic Scene Registry;
+- Observer Knowledge / People;
+- authored WorldGraph/materialization intent;
+- a strict viewer-authorized Runtime → GameFrame exploration projection with stable materialization identity/reconnect semantics.
+
+From this point forward, the primary unit of progress is a **player journey**, not another generalized subsystem.
+
+The first product target is one continuously playable Monster Master Crooked Checkpoint journey:
+
+```text
+Role-Playing Games
+→ Monster Master RPG
+→ materialize Crooked Checkpoint
+→ walk around
+→ see/interact with Pell, people, and objects
+→ Ask Game Master / Do Something Else
+→ change meaningful world state
+→ travel to West Woods and return
+→ enter same-map Tactical Mode
+→ control the Master + ruleset-authorized monster(s)
+→ finish combat
+→ resume exploration on the same map
+→ quit/reconnect
+→ resume the same world
+```
+
+Development priority rule:
+
+> Every substantive RPG PR should either advance this bounded journey or remove a demonstrated blocker to it.
+
+Do not continue creating generalized architecture merely because a future system may need it. Add abstractions when the playable journey proves the requirement.
+
+## Milestone 0 — Architecture/documentation/player-navigation alignment — complete
+
+Accepted decisions:
 
 - Campaign Architect and Dungeon Master remain the only campaign agents.
-- GameFrame RPG Engine is internal reusable campaign-agnostic player/mechanics/world architecture, not a top-level game card.
-- the top-level player destination is **Games**;
-- the player-facing generic campaign surface is **Role-Playing Games**;
-- the player-facing standalone tactical surface is **Battle Simulator**;
-- RPG Ruleset is the reusable game-specific deterministic mechanic contract;
-- Game Family is reusable rules/content identity shared by related campaign/simulator experiences;
-- Battle Pack is the future simulator-safe tactical content artifact and never duplicates an RPG's rules;
-- Monster Master RPG and Monster Master Arena Battles use shared Monster Master rules rather than separate tactical semantics;
-- Campaign combat uses same-map Tactical Activation;
-- semantic WorldGraph/location truth remains separate from GameFrame geometry/materialization;
-- observer knowledge supports both player-safe projections and perspective-bounded entity performance;
-- one shared active party scene is the initial multiplayer product posture; zero-or-more semantic scenes remain architectural capability.
+- GameFrame RPG Engine is internal reusable campaign-agnostic architecture, not a top-level player card.
+- **Games** is the top-level player destination.
+- **Role-Playing Games** is the generic campaign surface.
+- **Battle Simulator** is the standalone tactical surface.
+- RPG Ruleset is the reusable deterministic mechanic contract.
+- Game Family is reusable rules/content identity shared by related campaign/simulator experiences.
+- Battle Pack is future simulator-safe tactical content and never duplicates the family rules.
+- campaign combat uses same-map Tactical Activation;
+- semantic WorldGraph truth remains separate from GameFrame geometry/materialization;
+- Observer Knowledge supports both player-safe projections and perspective-bounded entity performance;
+- one shared active party scene is the initial multiplayer posture.
 
-Current UI may expose static/stub Role-Playing Games and Battle Simulator menus before dynamic package discovery exists.
+## Milestone 1 — Executable CampaignPackage and ruleset capability boundary — bounded foundation complete
 
-**Exit gate:** canonical/mirrored docs, local roadmaps, interface contracts, GameFrame Games navigation, and Monster Master tactical direction agree on this model.
-
-## Milestone 1 — Executable CampaignPackage and ruleset capability boundary
-
-Preserve/complete:
+Preserve:
 
 - strict versioned CampaignPackage validation/hash/commitment/reload;
 - player-safe/runtime-only separation;
 - package provenance/migrations;
 - initial entities/locations/WorldGraph/scenes/knowledge/events/objectives;
-- ruleset/capability requirements rather than campaign-specific engine code;
+- ruleset/capability requirements rather than hidden Monster Master engine branches;
 - semantic materialization/media intents with deterministic fallbacks.
 
-Add the generic **RPG Ruleset capability boundary** required to keep Monster Master mechanics out of campaign-agnostic engine control flow.
+The current Monster Master package is normalized/committed as package v5 and explicitly declares Monster Master game-family/ruleset capability requirements.
 
-**Exit gate:** the handcrafted Monster Master package initializes through the generic engine/runtime contracts and explicitly requests Monster Master Ruleset capabilities rather than relying on hidden Monster Master-only branches.
+## Milestone 2 — Durable entity, scene, and observer-knowledge substrate — bounded foundation complete
 
-## Milestone 2 — Durable entity, scene, and observer-knowledge substrate
-
-Implement:
+Implemented foundations include:
 
 - Entity Registry;
 - deterministic/schema-first Character Factory;
-- zero-or-more semantic Scene Registry states with one authoritative presence collection;
-- semantic Observer Knowledge / player People projections;
+- zero-or-more semantic Scene Registry states with one authoritative membership collection;
+- semantic Observer Knowledge / People projections;
 - descriptor → role → known-name identity progression;
-- observer/NPC beliefs/memories needed for perspective custody;
 - restart-safe reconstruction;
-- typed scene enter/leave/transfer/object semantics.
+- atomic immediate-scene incidental creation + justified awareness;
+- viewer-authorized exploration projection to GameFrame.
 
-**Exit gate:** one incidental person can be created/admitted/revisited durably; two observers can validly know different facts about the same entity; physical scene membership remains exact across restart.
+The Runtime → GameFrame projection is a read-side semantic port only. It deliberately does not own or transmit x/y movement, geometry, collision, pathfinding, camera state, or frame-by-frame movement authority.
 
-## Milestone 3 — First GameFrame RPG world materialization
+## Milestone 3 — SEE: first physical GameFrame RPG scene — ACTIVE
 
-Use Monster Master Crooked Checkpoint as the first concrete proving scene.
+Use Monster Master Crooked Checkpoint as the first concrete playable scene.
 
-GameFrame must provide:
+GameFrame consumes the accepted viewer-safe exploration projection and reuses the existing Pixi/RPG rendering foundation rather than creating another RPG renderer.
 
-- persistent materialization identity/version;
+Implement:
+
+- deterministic semantic-layout materialization for `scene.crooked-checkpoint`;
+- persistent materialization ID/version/hash;
 - playable Pixi geometry;
-- collision/pathing/picking;
-- semantic object/entity anchors;
-- player avatar and world entities;
-- transition/exit zones;
+- road/checkpoint barrier/inspection shelter/maintenance shed/confiscation cart/drainage edge/westbound exit sufficient for package semantics;
+- semantic object/entity anchors for the player, Pell, known objects, and future interactable entities;
+- collision/picking/navigation primitives required by the first scene;
 - deterministic placeholder/world-kit assets where final art is missing;
-- reconnect/revisit without regenerating a different place.
+- exact reconnect to the same accepted materialization.
 
-Runtime provides semantic location/world truth, not pixel geometry.
+Do **not** block this milestone on final art or a generalized procedural world generator.
 
-**Exit gate:** the player can load, move through, leave, and revisit Crooked Checkpoint as the same durable location.
+**Exit gate:** an authenticated player opens Monster Master RPG and sees the actual Crooked Checkpoint materialized from the S6 semantic projection; refresh/reconnect returns the same accepted physical place without rematerialization drift.
 
-## Milestone 4 — Embodied realtime session
+## Milestone 4 — MOVE: embodied realtime session
 
-Extend GameFrame realtime transport for high-frequency **session state**, not campaign journal traffic.
+Extend GameFrame realtime/session state for high-frequency physical state, not campaign-journal traffic.
 
 Required:
 
 - player movement/facing;
-- nearby-player/entity transform projection as needed;
+- camera and collision behavior;
+- valid local position recovery;
+- nearby transforms only where needed;
 - scene-scoped authorization;
-- reconnect/recovery from durable materialization + semantic presence;
-- bounded heartbeats/reconnect/backpressure;
-- no correctness dependency on permanently connected sockets.
+- bounded reconnect/backpressure;
+- no correctness dependency on a permanently connected socket;
+- no frame-by-frame Runtime journal/provider calls.
 
 Semantic scene transfers and meaningful world changes remain durable commands/commits.
 
-**Exit gate:** ordinary walking is responsive and restart/reconnect does not create duplicate presence or make frame-by-frame movement campaign authority.
+**Exit gate:** the player can walk around Crooked Checkpoint responsively, refresh/reconnect, and resume a valid position without duplicate semantic presence or Runtime movement journaling.
 
-## Milestone 5 — Direct interaction, character performance, and real GM surfaces
+## Milestone 5 — TALK: direct interaction, character performance, and real GM surfaces
+
+Drive Dungeon Master context-mode work through the real materialized scene rather than implementing it in isolation.
 
 Implement:
 
 - targetable Interact/Talk;
-- Dungeon Master entity-performance context mode;
-- perspective-bounded observer knowledge;
-- durable important NPC memory/relationship consequences;
-- Ask Game Master communication/log;
+- Dungeon Master referee/world context;
+- perspective-bounded entity-performance context;
+- Ask Game Master context/surface;
 - Do Something Else freeform intent;
-- GM intervention presentation including bounded world freeze/cinematic pause;
-- semantic origin/audience separation.
+- aftermath/intervention context and bounded pause/freeze presentation;
+- semantic origin/audience separation;
+- durable important NPC memory/relationship consequences only as the chapter requires them.
 
-Pell is the first correctness target.
+Pell is the first hard correctness target.
 
-**Exit gate:** a hidden fact available to referee context is structurally absent from Pell performance context when Pell does not know it, while the player can separately ask the GM about authorized character knowledge.
+Required custody canary:
 
-## Milestone 6 — Connected world / second persistent exploration scene
+```text
+referee context contains hidden fact X
+Pell does not know X
+→ Pell performance context excludes X
+→ Pell output cannot use X
 
-Materialize a second connected Monster Master location such as West Woods and prove:
+commit legitimate knowledge of X to Pell
+→ Pell context may now contain the authorized fact
+```
+
+This exclusion must happen during semantic context construction, not by filtering prose after omniscient context was assembled.
+
+**Exit gate:** the player can walk up to Pell, interact with Pell through entity-performance custody, separately Ask the GM, and use Do Something Else without confusing character speech, referee authority, or deterministic mechanics.
+
+## Milestone 6 — CHANGE + TRAVEL: meaningful world state and connected scene
+
+Promote only concrete typed world operations required by the Crooked Checkpoint chapter.
+
+Examples include:
+
+- important object state/custody;
+- knowledge reveal/correction;
+- objective/event state;
+- deterministic check request/result;
+- relationship/memory consequence;
+- semantic scene transfer.
+
+Then materialize West Woods and prove:
 
 - WorldGraph route semantics;
-- party-cohesion scene transfer;
-- alternate approach chosen through ordinary/freeform play;
-- on-demand scene materialization;
+- current Scene Registry exit authority;
+- source→destination semantic transfer;
+- on-demand destination materialization;
 - stable revisit;
-- world/object/entity state persisting across location changes;
-- event/check eligibility based on semantic world state rather than menu choices.
+- meaningful world/object/entity continuity across locations;
+- return to the same Crooked Checkpoint materialization;
+- event/check eligibility based on semantic state rather than scripted menu order.
 
-**Exit gate:** players can choose a plausible route not represented as a scripted scene-order button, explore it, and return without world drift.
+Do not build a generalized RPG DSL before these concrete operations require one.
 
-## Milestone 7 — GameFrame tactical mode, Monster Master Ruleset extraction, and game-family boundary
+**Exit gate:** the player can make at least one meaningful persistent world change, travel Crooked Checkpoint ↔ West Woods through ordinary play, and return without world or materialization drift.
 
-Preserve the useful current MM-0001 tactical substrate while extracting/promoting reusable semantics.
+## Milestone 7 — FIGHT foundation: Tactical Mode, Monster Master Ruleset, and control authority
 
-Define:
+Reuse the useful existing GameFrame Pixi/tactical substrate rather than creating a second combat renderer.
+
+Define/promote only what same-map campaign combat requires:
 
 - generic GameFrame **Tactical Mode** over an existing materialized scene;
-- **Tactical Activation** boundary;
-- generic Game Family identity/capability linkage;
+- **Tactical Activation** semantic boundary;
+- Game Family/ruleset identity linkage;
 - Monster Master Ruleset version/capability contract;
-- principal → player-character → controlled-entity authority;
+- principal → player-character/Master → controlled-entity authority;
 - trainer/player-character tactical participation;
 - class/ruleset-defined monster deployment/control counts;
 - initiative/action economy/legal actions;
-- tactical persistence/reconnect/replay evidence where useful.
+- tactical persistence/reconnect/replay where useful.
 
-MM-0001 remains a regression proof and the seed for Monster Master Arena Battles, not the campaign lifecycle.
+MM-0001 remains regression proof and the seed for Monster Master Arena Battles, not the campaign lifecycle.
 
-**Exit gate:** the same Monster Master tactical rule implementation can be exercised by a standalone scenario and by a current world scene without duplicating combat rules.
+**Exit gate:** the same Monster Master tactical rule implementation can operate over a standalone scenario and an already-materialized campaign scene without duplicated combat rules.
 
-## Milestone 8 — Same-map Monster Master campaign combat
+## Milestone 8 — FIGHT: same-map Monster Master campaign combat
 
-At Crooked Checkpoint or another real materialized campaign scene:
+At a real materialized campaign scene:
 
 ```text
 exploration
 → tactical trigger
 → validate current scene/materialization/entities/control/resources
 → Tactical Activation
-→ initiative / turn-based rules on current map
+→ current positions become tactical starting positions
+→ initiative / turn-based rules on current geometry
 → structured tactical consequences
 → semantic reconciliation
 → exploration resumes in place
@@ -213,42 +282,47 @@ exploration
 
 Required direction:
 
-- current positions are starting positions;
 - same map geometry/objects/exits remain authoritative;
-- present persistent entities are represented truthfully;
+- present persistent entities remain represented truthfully;
 - escape/withdrawal/surrender/recall/incapacitation are explicit as implemented;
-- noncombatants/support/protected/escaping roles are added as package needs prove them;
-- no campaign Return-to-Campaign navigation step exists.
+- noncombatants/support/protected/escaping roles are added only where the package proves the need;
+- no replacement campaign battlefield;
+- no campaign Return-to-Campaign navigation step.
 
-**Exit gate:** initiative begins and ends without loading a replacement battlefield, and post-combat exploration resumes on the same map with exact resulting state.
+**Exit gate:** initiative begins and ends on the existing physical scene, and post-combat exploration resumes on that same map with exact resulting state and reconnect safety.
 
-## Milestone 9 — Complete single-player embodied Monster Master proof
+## Milestone 9 — PROVE: complete single-player embodied Monster Master
 
 Required journey:
 
 ```text
 validated package
-→ persistent exploration scene
-→ direct movement/interaction
+→ viewer-safe semantic projection
+→ persistent Crooked Checkpoint materialization
+→ realtime movement
+→ direct Pell interaction
 → Pell perspective-bounded conversation
 → Ask-GM
 → Do Something Else
-→ People/observer knowledge continuity
-→ second connected scene / alternate route
-→ event/check/world consequence
+→ People/Observer Knowledge continuity
+→ persistent world-state change
+→ West Woods travel/revisit
+→ event/check consequence
 → same-map Tactical Activation
-→ player-character + controlled monster actions
+→ Master + ruleset-authorized monster actions
 → structured tactical result
 → exploration resumes in place
 → bounded campaign resolution
 → service/browser restart + resume
 ```
 
-**Exit gate:** one authenticated human completes the bounded engineering campaign without model-owned bookkeeping, secret leakage, duplicate entities, replacement battle maps, or developer intervention in ordinary execution.
+Run human play first, then deterministic/machine-play, then live provider/staging proof.
+
+**Exit gate:** one authenticated human completes the bounded engineering campaign without model-owned bookkeeping, secret leakage, duplicate entities, replacement battle maps, rematerialization drift, or developer intervention in ordinary execution.
 
 ## Milestone 10 — Two-human one-scene embodied campaign
 
-Add/prove:
+After the single-player loop is proven, add:
 
 - explicit join/party assignment;
 - separate authenticated avatars/principals;
@@ -264,120 +338,74 @@ Add/prove:
 
 ## Milestone 11 — Second handcrafted rules/content generality proof
 
-Run a materially different handcrafted campaign/game family through:
+Run a materially different handcrafted campaign/game family through the same:
 
-- same GameFrame RPG Engine;
-- same package/world/entity/scene/observer-knowledge architecture;
-- same Dungeon Master context-mode architecture;
-- same materialization framework;
-- a compatible existing or deliberately added RPG Ruleset interface;
-- same tactical activation framework where combat exists.
+- GameFrame RPG Engine;
+- package/world/entity/scene/observer architecture;
+- Dungeon Master context-mode architecture;
+- materialization framework;
+- compatible RPG Ruleset interface;
+- Tactical Activation framework where combat exists.
 
 If it requires a campaign-specific engine branch, repair the abstraction first.
 
-**Exit gate:** two materially different campaigns work without separate campaign engines/control planes, and the game-family/ruleset boundary is credible outside Monster Master.
+**Exit gate:** two materially different campaigns work without separate campaign engines/control planes.
 
-## Milestone 12 — Campaign Architect + Role-Playing Games product + Battle Pack authoring contract
+## Milestone 12 — Campaign Architect + dynamic Role-Playing Games + Battle Pack authoring
 
-Implement the future **Role-Playing Games** campaign home and Campaign Architect workflow:
+Only after the two handcrafted proofs, implement:
 
 ```text
 idea / brief
-→ identify/select/create compatible validated ruleset profile + game-family content as needed
+→ compatible validated ruleset/profile + reusable game-family content
 → Campaign Architect draft CampaignPackage
 → optional owner refinement
 → validation/repair
 → player-safe preview
 → explicit commitment
-→ world materialization
 → ordinary play through the same engine
 ```
 
-For combat-capable families, define and validate the **Battle Pack** authoring/export contract at the same boundary. Battle Pack material references the same ruleset/game-family content and exposes only simulator-safe material.
+For combat-capable families, emit a simulator-safe Battle Pack referencing the same rules/content/assets without exposing forbidden campaign secrets or duplicating combat rules.
 
-Battle Pack authoring requirements include:
+## Milestone 13 — Dynamic Battle Simulator and Monster Master convergence
 
-- stable game-family/ruleset/profile/version linkage;
-- playable templates/opponents/loadouts appropriate for standalone use;
-- reusable map themes/world kits/materialization constraints;
-- objectives/deployment/bot profiles/presets;
-- asset references/provenance;
-- spoiler-safe exposure/unlock policy;
-- no duplicated combat rules.
-
-Player-facing Role-Playing Games surfaces may include:
-
-- available RPGs;
-- Create RPG;
-- My Campaigns;
-- Import Campaign;
-- draft review/refinement;
-- explicit amendment/version/migration tools later.
-
-**Exit gate:** a generated original campaign uses the same engine/runtime/ruleset boundaries without campaign-specific Dungeon Master or GameFrame control-plane code, and a combat-capable generated family can emit a valid simulator-safe Battle Pack without exposing forbidden campaign secrets.
-
-## Milestone 13 — Battle Simulator dynamic packs and Monster Master convergence
-
-Evolve the existing standalone Monster Master tactical game into **Monster Master Arena Battles**, an entry inside the generic **Battle Simulator** surface.
-
-Implement Battle Simulator support for:
+Evolve Monster Master Arena Battles inside the generic Battle Simulator:
 
 - Battle Pack discovery/selection;
-- character/class/loadout builder;
-- creature/opponent/team setup;
-- map selection;
-- generated standalone maps through GameFrame materialization;
-- BattleScenario contract;
-- objectives/deployment options;
-- humans/bots;
+- character/class/loadout and opponent/team setup;
+- map selection/generation;
+- BattleScenario objectives/deployment;
+- humans/BattleBot;
 - replay/rematch/analysis;
 - exposure/unlock enforcement;
-- imported/generated game-family Battle Packs.
+- imported/generated Battle Packs.
 
-Convergence requirement:
-
-- use the same Monster Master Ruleset/tactical action semantics as Monster Master RPG where versions/capabilities match;
-- do not create simulator-only combat rules that drift from the RPG;
-- standalone setup convenience may differ from campaign lifecycle;
-- generated game families should become selectable in Battle Simulator from their validated Battle Packs rather than through bespoke UI code.
-
-**Exit gate:** equivalent ruleset profiles produce equivalent legal actions/outcomes in campaign tactical mode and Battle Simulator, and at least one non-Monster-Master Battle Pack can be discovered/rendered without changing the simulator control plane.
+Matching Monster Master ruleset/profile versions must produce equivalent tactical semantics in campaign Tactical Mode and Battle Simulator.
 
 ## Milestone 14 — Split-party / simultaneous multi-scene play
 
-Only after one-scene multiplayer is trustworthy, productize simultaneous active scenes.
-
-Required semantics include:
-
-- per-player scene assignment;
-- independent realtime scene subscriptions;
-- scene-local observation/audibility;
-- observer-knowledge divergence;
-- concurrent Dungeon Master/entity-performance work;
-- party/global time/event/pressure rules;
-- cross-scene communication;
-- independent recovery/materialization;
-- rules for one scene entering tactical mode while another remains in exploration;
-- safe handling of overlapping global consequences.
-
-**Exit gate:** split-party play remains one coherent campaign without knowledge leakage, causality corruption, duplicate world operations, or tactical/global-clock ambiguity.
+Only after one-scene multiplayer is trustworthy, productize simultaneous active scenes with player-specific scene assignment/subscriptions, scene-local knowledge/audibility, independent recovery/materialization, cross-scene communication, and explicit global/tactical time semantics.
 
 ## Milestone 15 — Rich media, authoring, and multi-session systems
 
-Promote only systems proven useful by real campaigns:
+Promote only systems proven useful by real campaigns, including richer authoring, richer world-kit/generated asset coverage, semantic cinematics, progression/rest/inventory/equipment/injury/care, recurring objectives/factions/relationships, campaign inspection/correction, backups/restore/export/retention, and provider/storage/deployment observability.
 
-- richer campaign-authoring interviews/sheets;
-- richer generated game-family/ruleset tooling;
-- world-kit and generated asset coverage;
-- semantic cinematic scripts;
-- progression/rest/inventory/equipment/injury/care;
-- recurring quests/factions/relationships;
-- campaign inspection/correction;
-- exports/backups/restore/retention/deletion;
-- provider/storage/tunnel/service observability;
-- cost/latency/continuity/failure metrics;
-- Theo as an ordinary GameFrame player;
-- staged production rollout/rollback.
+## Explicitly deferred while the first playable loop is incomplete
+
+Do not prioritize:
+
+- Campaign Architect implementation;
+- generated RPG productization;
+- Battle Pack generation/dynamic Battle Simulator expansion;
+- split-party concurrency;
+- unrestricted procedural/open-world generation;
+- generalized RPG DSLs;
+- large final-art production;
+- elaborate autonomous NPC-memory systems;
+- Cloudflare-native semantic state migration;
+- Theo integration;
+- deeper legacy separate-match campaign features.
 
 ## Deployment sequencing
 
@@ -391,41 +419,39 @@ Do not move frame-by-frame campaign state into RPG GM Runtime or add Cloudflare 
 
 Use the evidence layer matching the claim:
 
-- schema/unit tests for package/ruleset/game-family/Battle-Pack/entity/scene/knowledge invariants;
+- schema/unit tests for package/ruleset/entity/scene/knowledge invariants;
 - materialization/geometry tests for world correctness;
-- machine-play for Dungeon Master/context custody;
-- actual cross-repository services for integration truth;
+- browser tests for SEE/MOVE/TALK/TRAVEL/FIGHT player journeys;
+- deterministic/mock-provider tests for Dungeon Master context custody;
+- actual cross-repository services for semantic/materialization integration truth;
 - deterministic tactical tests for shared rules;
-- campaign-versus-simulator equivalence tests for matching ruleset profiles;
-- browser tests for embodied interaction and same-map tactical transitions;
-- Battle Simulator browser tests for dynamic pack/setup flows;
+- campaign-versus-simulator equivalence tests later;
 - VM/Cloudflare canaries for deployed realtime/recovery;
 - separate media-provider tests for generation claims.
 
-Do not claim campaign correctness from transport tests or Battle Simulator correctness from one campaign-specific scripted fixture.
+Prefer one end-to-end vertical acceptance path plus narrow authority tests over many disconnected low-level proofs.
 
 ## Immediate priority rule
 
-Current priority is:
+Current cross-repository order is:
 
-1. preserve staging and repair existing authoritative post-combat/resume defects that block development;
-2. Entity Registry → Character Factory → Scene Registry → Observer Knowledge;
-3. Crooked Checkpoint materialization and exploration;
-4. embodied realtime session;
-5. Pell direct interaction + Ask-GM + Do Something Else + GM intervention;
-6. second connected scene / alternate route;
-7. generic Tactical Mode + Monster Master Ruleset/control authority + game-family boundary;
-8. same-map tactical Monster Master campaign proof;
-9. complete single-player embodied campaign;
-10. two-human one-scene campaign;
-11. second handcrafted campaign/game family;
-12. Campaign Architect + dynamic Role-Playing Games product + Battle Pack authoring contract;
-13. Battle Simulator dynamic Battle Packs + Monster Master convergence;
-14. split-party multi-scene;
-15. richer media/multi-session systems.
+1. preserve staging; repair legacy separate-match defects only when they block the new journey;
+2. **SEE — materialize Crooked Checkpoint in GameFrame from the completed semantic exploration port**;
+3. **MOVE — realtime movement/collision/camera/reconnect without Runtime movement journaling**;
+4. **TALK — Dungeon Master context modes driven through Pell + Interact + Ask-GM + Do Something Else**;
+5. **CHANGE/TRAVEL — concrete world operations + Crooked Checkpoint ↔ West Woods persistent transfer/revisit**;
+6. **FIGHT foundation — Monster Master Ruleset/control authority + Tactical Activation over the current scene**;
+7. **FIGHT — complete same-map tactical campaign transition and exploration resume**;
+8. **PROVE — complete one-human Crooked Checkpoint engineering campaign, restart/resume, machine-play, live provider, staging**;
+9. two-human one-scene campaign;
+10. second handcrafted campaign/game family;
+11. Campaign Architect + dynamic Role-Playing Games + Battle Pack authoring;
+12. dynamic Battle Simulator + Monster Master convergence;
+13. split-party multi-scene;
+14. richer media/multi-session systems.
 
-The static Games / Role-Playing Games / Battle Simulator navigation can exist before milestones 12–13; those milestones implement dynamic data-driven behavior behind the already-correct information architecture.
+The static Games / Role-Playing Games / Battle Simulator navigation can exist before dynamic productization; it should not distract from completing the first playable RPG loop.
 
 ## Governing rule
 
-> Build the generic RPG engine underneath reusable game families. Role-Playing Games runs durable campaigns, Battle Simulator runs standalone scenarios through Battle Packs, and when a family appears in both surfaces it shares one ruleset and reusable content foundation while campaign combat itself remains on the current world map.
+> The graphics visualize the imagination; they do not define its boundaries. Build one truthful playable journey first, derive abstractions from the requirements that journey exposes, and keep Runtime as semantic campaign authority while GameFrame owns the physical playable world and deterministic control state.
