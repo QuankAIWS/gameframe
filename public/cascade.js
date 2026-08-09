@@ -12,6 +12,18 @@ const LIFE_MAX = 5;
 const LIFE_REGEN_MS = 10 * 60 * 1000;
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
+const PRESENTATION = Object.freeze({
+  swap: 170,
+  invalidHold: 90,
+  anticipateBase: 235,
+  anticipateCascadeStep: 35,
+  clear: 165,
+  fallBase: 225,
+  fallCascadeStep: 25,
+  landing: 80,
+  betweenCascades: 85,
+  shuffle: 240,
+});
 
 const $ = (selector) => document.querySelector(selector);
 const boardElement = $("#board");
@@ -33,6 +45,11 @@ const ledgerDialog = $("#ledger-dialog");
 const ledgerList = $("#ledger-list");
 const iouTotalElement = $("#iou-total");
 const boosterButton = $("#booster-hammer");
+const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+
+function presentationMs(value) {
+  return reducedMotion ? Math.min(30, value) : value;
+}
 
 function defaultState() {
   return {
@@ -197,19 +214,180 @@ function renderStatus() {
 }
 
 function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, presentationMs(ms)));
+}
+
+function tileAt(index) {
+  return boardElement.querySelector(`[data-index="${index}"]`);
+}
+
+function tileRect(index) {
+  return tileAt(index)?.getBoundingClientRect() ?? null;
+}
+
+function animateTileFromTo(from, to, duration = PRESENTATION.fallBase) {
+  if (reducedMotion) return;
+  const tile = tileAt(to);
+  const fromRect = tileRect(from);
+  const toRect = tile?.getBoundingClientRect();
+  if (!tile || !fromRect || !toRect) return;
+  tile.animate([
+    {
+      transform: `translate(${fromRect.left - toRect.left}px, ${fromRect.top - toRect.top}px) scale(.97)`,
+      filter: "brightness(1.08)",
+    },
+    { transform: "translate(0, 0) scale(1)", filter: "brightness(1)" },
+  ], {
+    duration,
+    easing: "cubic-bezier(.18,.76,.24,1)",
+    fill: "both",
+  });
+}
+
+function animateSwap(from, to, duration = PRESENTATION.swap) {
+  if (reducedMotion) return;
+  animateTileFromTo(to, from, duration);
+  animateTileFromTo(from, to, duration);
+}
+
+function animateSpawn(to, spawnOffset, duration) {
+  if (reducedMotion) return;
+  const tile = tileAt(to);
+  if (!tile) return;
+  const rect = tile.getBoundingClientRect();
+  const cells = Math.max(1, Number(spawnOffset) || 1);
+  const distance = Math.min(rect.height * (cells + 1.25), rect.height * 6);
+  tile.animate([
+    { transform: `translateY(${-distance}px) scale(.88)`, opacity: 0.3 },
+    { transform: "translateY(0) scale(1)", opacity: 1 },
+  ], {
+    duration,
+    easing: "cubic-bezier(.16,.78,.26,1)",
+    fill: "both",
+  });
+}
+
+function animateLanding(indices) {
+  if (reducedMotion) return;
+  for (const index of new Set(indices)) {
+    const tile = tileAt(index);
+    tile?.animate([
+      { transform: "scale(1)" },
+      { transform: "scale(1.055)" },
+      { transform: "scale(1)" },
+    ], {
+      duration: PRESENTATION.landing,
+      easing: "ease-out",
+    });
+  }
+}
+
+function flashBoard(cascade) {
+  boardElement.classList.remove("is-cascade-hit", "is-cascade-big");
+  void boardElement.offsetWidth;
+  boardElement.classList.add("is-cascade-hit");
+  if (cascade >= 3) boardElement.classList.add("is-cascade-big");
+  window.setTimeout(() => {
+    boardElement.classList.remove("is-cascade-hit", "is-cascade-big");
+  }, presentationMs(220));
+}
+
+function spawnScorePop(index, gained, cascade) {
+  if (reducedMotion) return;
+  const rect = tileRect(index);
+  if (!rect) return;
+  const pop = document.createElement("div");
+  pop.className = "cascade-score-pop";
+  pop.dataset.cascade = String(Math.min(5, cascade));
+  pop.textContent = `+${gained.toLocaleString()}`;
+  pop.style.left = `${rect.left + rect.width / 2}px`;
+  pop.style.top = `${rect.top + rect.height / 2}px`;
+  document.body.append(pop);
+  window.setTimeout(() => pop.remove(), 850);
+}
+
+function spawnBurst(index, cascade) {
+  if (reducedMotion) return;
+  const rect = tileRect(index);
+  if (!rect) return;
+  const burst = document.createElement("div");
+  burst.className = "cascade-burst";
+  burst.dataset.cascade = String(Math.min(5, cascade));
+  burst.style.left = `${rect.left + rect.width / 2}px`;
+  burst.style.top = `${rect.top + rect.height / 2}px`;
+
+  const ring = document.createElement("i");
+  ring.className = "cascade-burst-ring";
+  burst.append(ring);
+
+  const count = Math.min(12, 5 + cascade * 2);
+  for (let particle = 0; particle < count; particle += 1) {
+    const spark = document.createElement("i");
+    spark.className = "cascade-burst-spark";
+    spark.style.setProperty("--spark-angle", `${(360 / count) * particle + (cascade * 7)}deg`);
+    spark.style.setProperty("--spark-distance", `${24 + cascade * 7 + (particle % 3) * 5}px`);
+    spark.style.setProperty("--spark-delay", `${(particle % 4) * 9}ms`);
+    burst.append(spark);
+  }
+
+  document.body.append(burst);
+  window.setTimeout(() => burst.remove(), 650);
+}
+
+function setComboPresentation(cascade) {
+  comboLabelElement.classList.remove("is-hot", "is-wild");
+  if (cascade <= 1) {
+    comboLabelElement.textContent = "MATCH";
+    return;
+  }
+  comboLabelElement.textContent = `CASCADE ×${cascade}`;
+  if (cascade >= 3) comboLabelElement.classList.add("is-hot");
+  if (cascade >= 5) comboLabelElement.classList.add("is-wild");
+}
+
+async function presentFallTransition(transition) {
+  board = transition.after.slice();
+  renderBoard();
+  renderStatus();
+
+  const duration = PRESENTATION.fallBase + Math.min(4, transition.cascade - 1) * PRESENTATION.fallCascadeStep;
+  const landing = [];
+  for (const fall of transition.falls) {
+    animateTileFromTo(fall.from, fall.to, duration);
+    landing.push(fall.to);
+  }
+  for (const spawn of transition.spawns) {
+    animateSpawn(spawn.to, spawn.spawnOffset, duration + 40);
+    landing.push(spawn.to);
+  }
+
+  await sleep(duration);
+  animateLanding(landing);
+  await sleep(PRESENTATION.landing);
 }
 
 async function presentResolvedResult(result) {
   for (const transition of result.transitions) {
     board = transition.before.slice();
     renderBoard();
-    comboLabelElement.textContent = transition.cascade > 1 ? `CASCADE ×${transition.cascade}` : "";
-    const tiles = transition.matched
-      .map((index) => boardElement.querySelector(`[data-index="${index}"]`))
-      .filter(Boolean);
-    tiles.forEach((tile) => tile.classList.add("is-clearing"));
-    await sleep(190);
+    setComboPresentation(transition.cascade);
+
+    const tiles = transition.matched.map(tileAt).filter(Boolean);
+    tiles.forEach((tile) => tile.classList.add("is-matched"));
+
+    const anticipate = PRESENTATION.anticipateBase
+      + Math.min(4, transition.cascade - 1) * PRESENTATION.anticipateCascadeStep;
+    await sleep(anticipate);
+
+    const scoreAnchor = transition.matched[Math.floor(transition.matched.length / 2)];
+    spawnScorePop(scoreAnchor, transition.gained, transition.cascade);
+    transition.matched.forEach((index) => spawnBurst(index, transition.cascade));
+    tiles.forEach((tile) => {
+      tile.classList.remove("is-matched");
+      tile.classList.add("is-clearing");
+    });
+    flashBoard(transition.cascade);
+    await sleep(PRESENTATION.clear);
 
     score += transition.gained;
     track("clear", {
@@ -219,20 +397,55 @@ async function presentResolvedResult(result) {
       falls: transition.falls.length,
       spawns: transition.spawns.length,
     });
-    board = transition.after.slice();
-    renderBoard();
-    renderStatus();
-    await sleep(145);
+
+    await presentFallTransition(transition);
+    await sleep(PRESENTATION.betweenCascades);
   }
+
   comboLabelElement.textContent = "";
+  comboLabelElement.classList.remove("is-hot", "is-wild");
 
   if (result.shuffled) {
     track("board_shuffle");
-    await sleep(110);
+    boardElement.classList.add("is-shuffling");
+    await sleep(PRESENTATION.shuffle / 2);
+    board = result.board.slice();
+    renderBoard();
+    boardElement.classList.remove("is-shuffling");
+    boardElement.classList.add("is-shuffle-in");
+    await sleep(PRESENTATION.shuffle / 2);
+    boardElement.classList.remove("is-shuffle-in");
+  } else {
+    board = result.board.slice();
   }
-  board = result.board.slice();
+
   renderBoard();
   renderStatus();
+}
+
+async function presentHammer(result) {
+  const target = tileAt(result.hammer.index);
+  target?.classList.add("is-hammer-hit");
+  spawnBurst(result.hammer.index, 2);
+  await sleep(150);
+
+  board = result.hammer.after.slice();
+  renderBoard();
+  renderStatus();
+
+  const duration = PRESENTATION.fallBase;
+  const landing = [];
+  for (const fall of result.hammer.falls) {
+    animateTileFromTo(fall.from, fall.to, duration);
+    landing.push(fall.to);
+  }
+  for (const spawn of result.hammer.spawns) {
+    animateSpawn(spawn.to, spawn.spawnOffset, duration + 40);
+    landing.push(spawn.to);
+  }
+  await sleep(duration);
+  animateLanding(landing);
+  await sleep(PRESENTATION.landing);
 }
 
 async function onTileClick(index) {
@@ -244,13 +457,7 @@ async function onTileClick(index) {
     const result = applyHammer(board, index, boardRng);
     track("booster_used", { booster: "hammer" });
     locked = true;
-    board = result.hammer.cleared.slice();
-    renderBoard();
-    await sleep(120);
-    board = result.hammer.after.slice();
-    renderBoard();
-    renderStatus();
-    await sleep(120);
+    await presentHammer(result);
     await presentResolvedResult(result);
     locked = false;
     await checkLevelEnd();
@@ -284,11 +491,14 @@ async function onTileClick(index) {
     if (result.swapped) {
       board = result.swapped.slice();
       renderBoard();
-      await sleep(105);
+      animateSwap(first, index, PRESENTATION.swap);
+      await sleep(PRESENTATION.swap + PRESENTATION.invalidHold);
     }
     board = result.board.slice();
     renderBoard();
+    animateSwap(first, index, PRESENTATION.swap);
     track("invalid_swap");
+    await sleep(PRESENTATION.swap);
     locked = false;
     return;
   }
@@ -297,8 +507,9 @@ async function onTileClick(index) {
   track("move", { from: first, to: index });
   board = result.swapped.slice();
   renderBoard();
+  animateSwap(first, index, PRESENTATION.swap);
   renderStatus();
-  await sleep(80);
+  await sleep(PRESENTATION.swap);
   await presentResolvedResult(result);
   locked = false;
   await checkLevelEnd();
