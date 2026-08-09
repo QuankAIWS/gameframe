@@ -37,6 +37,7 @@ on:
       - "src/server/http-server.ts"
       - "src/server/durable-rpg-http-server.ts"
       - "src/server/durable-rpg-http-server.test.ts"
+      - "src/server/durable-rpg-exploration-http.test.ts"
       - "src/server/durable-rpg-realtime-hub.ts"
       - "src/server/durable-rpg-realtime*.test.ts"
       - "src/server/durable-rpg-encounter-match-http.test.ts"
@@ -97,8 +98,11 @@ jobs:
         run: >-
           node --experimental-strip-types --check src/server/run-durable-rpg-service.ts
           && node --experimental-strip-types --check src/server/http-server.ts
+          && node --experimental-strip-types --check src/server/durable-rpg-http-server.ts
           && node --experimental-strip-types --check src/server/durable-rpg-realtime-hub.ts
           && node --experimental-strip-types --check src/rpg/rpg-exploration-contract.ts
+          && node --experimental-strip-types --check src/rpg/rpg-exploration-materializer.ts
+          && node --experimental-strip-types --check src/rpg/runtime-exploration-transport.ts
           && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
           && node --experimental-strip-types --check src/rpg/monster-master-rpg-encounter-materializer.ts
           && node --experimental-strip-types --check src/rpg/sqlite-rpg-encounter-match-binding-store.ts
@@ -109,6 +113,7 @@ jobs:
           && node --check public/gameframe-auth.js
           && node --check public/monster-master-rpg-model.js
           && node --check public/monster-master-rpg-app.js
+          && node --check public/monster-master-rpg-world.js
           && node --check public/monster-master-rpg-return.js
 
       - name: Validate canonical fixtures and Node HTTP/realtime behavior
@@ -124,6 +129,8 @@ jobs:
           src/platform/sqlite-match-store.test.ts
           src/rpg/monster-master-rpg-encounter-materializer.test.ts
           src/rpg/rpg-exploration-contract.test.ts
+          src/rpg/rpg-exploration-materializer.test.ts
+          src/rpg/runtime-exploration-transport.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
           src/rpg/rpg-dual-revision-contract.test.ts
           src/rpg/rpg-choice-outcome-fixture.test.ts
@@ -137,6 +144,7 @@ jobs:
           src/rpg/in-memory-rpg-encounter-match-coordinator.test.ts
           src/rpg/structured-choice-flow.test.ts
           src/server/durable-rpg-http-server.test.ts
+          src/server/durable-rpg-exploration-http.test.ts
           src/server/durable-rpg-realtime.test.ts
           src/server/durable-rpg-realtime-hmac.test.ts
           src/server/durable-rpg-encounter-match-http.test.ts
