@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises";
 const output = "visual-results/player-ui-review";
 const desktop = { width: 1440, height: 960 };
 const mobile = { width: 390, height: 844 };
+const bootSeenStorageKey = "scribbles-gameframe.boot-seen:v2";
 
 async function prepareOutput() {
   await mkdir(output, { recursive: true });
@@ -28,10 +29,48 @@ async function expectBoardFirstOnMobile(page, selector) {
   expect(bounds.width).toBeGreaterThanOrEqual(viewport.width * .82);
 }
 
+async function captureBootSurface(page, viewport, mode, filename) {
+  if (mode === "warm") {
+    await page.addInitScript((key) => localStorage.setItem(key, "seen"), bootSeenStorageKey);
+  }
+
+  let releaseSession;
+  let markSessionRequested;
+  const sessionRequested = new Promise((resolve) => {
+    markSessionRequested = resolve;
+  });
+
+  await page.route("**/api/session", async (route) => {
+    markSessionRequested();
+    await new Promise((resolve) => {
+      releaseSession = resolve;
+    });
+    await route.continue();
+  });
+
+  await page.setViewportSize(viewport);
+  const navigation = page.goto(`/?player=visual-review-${mode}-boot`);
+  await sessionRequested;
+
+  const boot = page.locator("#gameframe-boot");
+  await expect(boot).toBeVisible();
+  await expect(boot).toHaveAttribute("data-mode", mode);
+  await expect(page.locator(".gameframe-boot-window-mode")).toHaveText(mode === "cold" ? "COLD START" : "WARM START");
+  await expect(page.locator('[data-gameframe-boot-stage="session"]')).toHaveAttribute("data-state", "active");
+  await expect(page.locator("#gameframe-boot-progress")).toHaveAttribute("aria-valuenow", "8");
+  await page.screenshot({ path: `${output}/${filename}`, fullPage: true });
+
+  releaseSession();
+  await navigation;
+  await expect(boot).toBeHidden({ timeout: 5_000 });
+  await page.unroute("**/api/session");
+}
+
 async function openPlayerHub(page, viewport) {
   await page.setViewportSize(viewport);
   await page.goto("/?player=visual-review-player");
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
+  await expect(page.locator("#gameframe-boot")).toBeHidden({ timeout: 5_000 });
   await expectDestinationBar(page, "hub");
   await expect(page.locator(".hero")).toBeHidden();
   await expect(page.locator("#lobby .section-label")).toHaveText("GAMES");
@@ -60,6 +99,7 @@ async function openRolePlayingGames(page, viewport) {
   await expect(page.getByRole("button", { name: /Create RPG/ })).toBeDisabled();
   await expect(page.getByRole("button", { name: /My Campaigns/ })).toBeDisabled();
   await expect(page.getByRole("button", { name: /Import Campaign/ })).toBeDisabled();
+  await expect(page.locator(".rpg-preview-engine")).toHaveCount(0);
 }
 
 async function openBattleSimulator(page, viewport) {
@@ -71,6 +111,7 @@ async function openBattleSimulator(page, viewport) {
   await expect(page.getByRole("button", { name: /Custom Battle/ })).toBeDisabled();
   await expect(page.getByRole("button", { name: /Generate Battlefield/ })).toBeDisabled();
   await expect(page.getByRole("button", { name: /Import Battle Pack/ })).toBeDisabled();
+  await expect(page.locator(".rpg-preview-engine")).toHaveCount(0);
 }
 
 async function openSharedGameMenu(page, viewport, game, theme) {
@@ -220,6 +261,22 @@ async function openMonsterMasterRpg(page, viewport) {
 }
 
 test.beforeAll(prepareOutput);
+
+test("capture cold boot at desktop size", async ({ page }) => {
+  await captureBootSurface(page, desktop, "cold", "boot-cold-desktop.png");
+});
+
+test("capture cold boot at mobile size", async ({ page }) => {
+  await captureBootSurface(page, mobile, "cold", "boot-cold-mobile.png");
+});
+
+test("capture warm boot at desktop size", async ({ page }) => {
+  await captureBootSurface(page, desktop, "warm", "boot-warm-desktop.png");
+});
+
+test("capture warm boot at mobile size", async ({ page }) => {
+  await captureBootSurface(page, mobile, "warm", "boot-warm-mobile.png");
+});
 
 test("capture the player Games hub at desktop and mobile sizes", async ({ page }) => {
   await openPlayerHub(page, desktop);
