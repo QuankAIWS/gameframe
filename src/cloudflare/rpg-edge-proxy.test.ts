@@ -164,7 +164,7 @@ test("edge proxy rejects cross-origin and non-Discord mutation attempts before o
   assert.equal(fetchCount, 0);
 });
 
-test("public route grammar exposes campaign attach, commands, and authenticated exploration attach only", () => {
+test("public route grammar exposes campaign, exploration attach, and exploration move only", () => {
   assert.deepEqual(publicRpgEdgeRoute("/api/rpg/campaigns/campaign%3Aedge/attach"), {
     campaignId: "campaign:edge",
     operation: "attach",
@@ -177,12 +177,17 @@ test("public route grammar exposes campaign attach, commands, and authenticated 
     campaignId: "campaign",
     operation: "exploration/attach",
   });
+  assert.deepEqual(publicRpgEdgeRoute("/api/rpg/campaigns/campaign/exploration/move"), {
+    campaignId: "campaign",
+    operation: "exploration/move",
+  });
   assert.equal(publicRpgEdgeRoute("/api/rpg/campaigns/campaign/events"), null);
+  assert.equal(publicRpgEdgeRoute("/api/rpg/campaigns/campaign/exploration/delete"), null);
   assert.equal(publicRpgEdgeRoute("/api/rpg/encounters/encounter"), null);
   assert.equal(publicRpgEdgeRoute("/api/rpg/encounters/encounter/complete"), null);
 });
 
-test("worker wrapper authenticates allowed RPG routes including exploration and blocks private runtime routes", async () => {
+test("worker wrapper authenticates exploration attach and move while blocking private runtime routes", async () => {
   let authenticated = 0;
   const forwardedPaths: string[] = [];
   const authenticator: RequestAuthenticator = {
@@ -229,10 +234,33 @@ test("worker wrapper authenticates allowed RPG routes including exploration and 
     },
   ), env);
   assert.equal(exploration.status, 200);
-  assert.equal(authenticated, 2);
+
+  const movement = await worker.fetch(new Request(
+    "https://game.example.test/api/rpg/campaigns/campaign/exploration/move",
+    {
+      method: "POST",
+      headers: { origin: "https://game.example.test", "content-type": "application/json" },
+      body: JSON.stringify({
+        type: "exploration_move",
+        protocolVersion: 1,
+        campaignId: "campaign",
+        sceneId: "scene.crooked-checkpoint",
+        materializationRef: {
+          materializationId: "rpg-scene:campaign:scene.crooked-checkpoint",
+          version: "1",
+          hash: "A".repeat(43),
+        },
+        expectedPositionRevision: 4,
+        direction: "west",
+      }),
+    },
+  ), env);
+  assert.equal(movement.status, 200);
+  assert.equal(authenticated, 3);
   assert.deepEqual(forwardedPaths, [
     "/api/rpg/campaigns/campaign/attach",
     "/api/rpg/campaigns/campaign/exploration/attach",
+    "/api/rpg/campaigns/campaign/exploration/move",
   ]);
 
   const privateRoute = await worker.fetch(new Request(
@@ -240,8 +268,8 @@ test("worker wrapper authenticates allowed RPG routes including exploration and 
     { method: "POST" },
   ), env);
   assert.equal(privateRoute.status, 404);
-  assert.equal(authenticated, 2);
-  assert.equal(forwardedPaths.length, 2);
+  assert.equal(authenticated, 3);
+  assert.equal(forwardedPaths.length, 3);
 
   const health = await worker.fetch(new Request(
     "https://game.example.test/api/rpg/edge/health",
