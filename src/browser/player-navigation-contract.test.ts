@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const read = (path: string) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 
-test("the player hub is a real game library with one semantic card-wide link per game", async () => {
+test("the player Games hub exposes Role-Playing Games, Battle Simulator, and standalone games", async () => {
   const launcher = await read("public/auth-launcher.js");
   const navigation = await read("public/gameframe-nav.js");
   const navigationStyles = await read("public/gameframe-nav.css");
@@ -16,6 +16,9 @@ test("the player hub is a real game library with one semantic card-wide link per
   const hubShellStyles = await read("public/game-hub-shell.css");
   const hubCardStyles = await read("public/game-hub-cards.css");
   const hubFlowStyles = await read("public/game-hub-flow.css");
+  const hubRpgStyles = await read("public/game-hub-rpg.css");
+  const rolePlayingGames = await read("public/gameframe-rpg.html");
+  const battleSimulator = await read("public/battle-simulator.html");
   const packageJson = JSON.parse(await read("package.json"));
 
   assert.ok(launcher.indexOf("gameframe-nav.js") < launcher.indexOf("game-hub.js"));
@@ -41,23 +44,45 @@ test("the player hub is a real game library with one semantic card-wide link per
   assert.match(sessionOverride, /gameframe-has-destination-bar\.monster-master-match-active/);
   assert.match(sessionOverride, /display: grid !important/);
 
-  assert.match(hub, /href: "\/monster-master\.html"/);
+  assert.match(hub, /id: "role-playing-games"/);
+  assert.match(hub, /href: "\/gameframe-rpg\.html"/);
+  assert.match(hub, /title: "Role-Playing Games"/);
+  assert.match(hub, /id: "battle-simulator"/);
+  assert.match(hub, /href: "\/battle-simulator\.html"/);
+  assert.match(hub, /title: "Battle Simulator"/);
   assert.match(hub, /href: "\/othello\.html"/);
   assert.match(hub, /\?game=american-checkers&menu=1/);
   assert.match(hub, /\?game=tic-tac-toe&menu=1/);
+  assert.doesNotMatch(hub, /href: "\/monster-master-rpg\.html\?campaign=monster-master-staging"/);
+  assert.doesNotMatch(hub, /href: "\/monster-master\.html"/);
   assert.match(hub, /document\.createElement\("a"\)/);
   assert.match(hub, /card\.href = game\.href/);
-  assert.match(hub, /setAttribute\("aria-label", `Open the \$\{game\.title\} game menu`\)/);
+  assert.match(hub, /setAttribute\("aria-label", `Open \$\{game\.title\}`\)/);
   assert.match(hub, /class="game-card-play"/);
-  assert.match(hub, /Play now/);
+  assert.match(hub, />Open</);
   assert.doesNotMatch(hub, /activateLibraryCard|playLink\.click/);
   assert.match(hub, /modeGrid\.hidden = true/);
   assert.match(hub, /game-menu-hero/);
   assert.match(hub, /Choose how to play/);
+  assert.match(hub, /sectionLabel\.textContent = "GAMES"/);
   assert.match(hub, /tacticalLink\?\.remove\(\)/);
   assert.match(hub, /hero\?\.querySelector\("\.game-hub-topbar"\)\?\.remove\(\)/);
   assert.doesNotMatch(hub, /href: "\/tactical\.html"/);
   assert.doesNotMatch(hub, /href: "\/combat\.html"/);
+
+  assert.match(rolePlayingGames, /ROLE-PLAYING GAMES/);
+  assert.match(rolePlayingGames, /Monster Master RPG/);
+  assert.match(rolePlayingGames, /href="\/monster-master-rpg\.html\?campaign=monster-master-staging"/);
+  assert.match(rolePlayingGames, /Create RPG/);
+  assert.match(rolePlayingGames, /My Campaigns/);
+  assert.match(rolePlayingGames, /Import Campaign/);
+
+  assert.match(battleSimulator, /BATTLE SIMULATOR/);
+  assert.match(battleSimulator, /Monster Master Arena Battles/);
+  assert.match(battleSimulator, /href="\/monster-master\.html"/);
+  assert.match(battleSimulator, /Custom Battle/);
+  assert.match(battleSimulator, /Generate Battlefield/);
+  assert.match(battleSimulator, /Import Battle Pack/);
 
   assert.match(hubStyles, /game-hub-monster/);
   assert.match(hubShellStyles, /game-hub-discord-safe/);
@@ -67,6 +92,8 @@ test("the player hub is a real game library with one semantic card-wide link per
   assert.match(hubFlowStyles, /cursor: pointer/);
   assert.match(hubFlowStyles, /game-card:focus-visible/);
   assert.match(hubFlowStyles, /game-menu-hero/);
+  assert.match(hubRpgStyles, /game-card-visual-rpg/);
+  assert.match(hubRpgStyles, /game-card-visual-simulator/);
   assert.match(packageJson.scripts["check:browser"], /public\/gameframe-nav\.js/);
   assert.match(packageJson.scripts["check:browser"], /public\/game-hub\.js/);
 });
