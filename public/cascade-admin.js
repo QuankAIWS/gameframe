@@ -2,6 +2,20 @@ import { LEVEL_COUNT } from "./cascade-engine.js";
 
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 
+function syncExpandedRunCopy() {
+  const kicker = document.querySelector("#result-kicker");
+  const title = document.querySelector("#result-title");
+  if (kicker?.textContent !== "RUN COMPLETE") return;
+  if (title?.textContent === "Twenty down.") title.textContent = `${LEVEL_COUNT} down.`;
+  const action = document.querySelector("#result-actions button");
+  if (action?.textContent === "Replay level 20") action.textContent = `Replay level ${LEVEL_COUNT}`;
+}
+
+const resultDialog = document.querySelector("#result-dialog");
+if (resultDialog) {
+  new MutationObserver(syncExpandedRunCopy).observe(resultDialog, { childList: true, subtree: true, characterData: true });
+}
+
 function parseLevelCommand(value) {
   const text = String(value || "").trim();
   const match = text.match(/^(?:go\s+to\s+)?(?:level\s+)?(\d+)$/i)
