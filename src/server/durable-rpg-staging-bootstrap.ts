@@ -7,6 +7,8 @@ const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
 const DEFAULT_TITLE = "Monster Master: The Crooked Checkpoint";
 const DEFAULT_PARTY_ID = "party:main";
 const METADATA_TABLE = "rpg_campaign_metadata_v1";
+const LEGACY_STAGING_CAMPAIGN_ID = "monster-master-staging";
+export const CURRENT_STAGING_CAMPAIGN_ID = "monster-master-staging-v5";
 
 export type DurableRpgStagingBootstrapConfig = {
   campaignId: string;
@@ -34,8 +36,14 @@ export function parseDurableRpgStagingBootstrapConfig(
   const enabled = Boolean(campaignId || playerId || initializedAt);
   if (!enabled) return undefined;
 
+  const validatedCampaignId = identifier(campaignId, "RPG_STAGING_CAMPAIGN_ID");
   return {
-    campaignId: identifier(campaignId, "RPG_STAGING_CAMPAIGN_ID"),
+    // The installed root-owned helper still emits the legacy unversioned
+    // staging ID. Translate only that deployment identity to the current
+    // durable generation so new code can seed beside the preserved old rows.
+    campaignId: validatedCampaignId === LEGACY_STAGING_CAMPAIGN_ID
+      ? CURRENT_STAGING_CAMPAIGN_ID
+      : validatedCampaignId,
     playerId: identifier(playerId, "RPG_STAGING_PLAYER_ID"),
     title: text(title, "RPG_STAGING_CAMPAIGN_TITLE", 160),
     partyId: identifier(partyId, "RPG_STAGING_PARTY_ID"),
