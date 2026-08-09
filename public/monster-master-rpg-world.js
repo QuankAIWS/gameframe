@@ -2,6 +2,13 @@ import { gameFrameFetch } from "./gameframe-auth.js";
 
 const VIEW_EVENT = "gameframe:monster-master-pixi-view";
 const identity = window.gameFrameIdentity;
+const SCREEN_DIRECTIONS = Object.freeze(["north", "east", "south", "west"]);
+const KEY_DIRECTION_INDEX = Object.freeze({
+  KeyW: 0,
+  KeyD: 1,
+  KeyS: 2,
+  KeyA: 3,
+});
 
 const state = {
   payload: null,
@@ -9,6 +16,11 @@ const state = {
   campaignId: null,
   attachPromise: null,
   cameraSignature: "",
+  playerPosition: null,
+  rendererRevision: 0,
+  moveInFlight: false,
+  queuedDirection: null,
+  movementSocket: null,
 };
 
 function requireMaterializedPayload(value) {
@@ -34,33 +46,66 @@ function requireMaterializedPayload(value) {
   return value;
 }
 
-function syntheticUnit(anchor, playerId) {
+function playerPositionFromPayload(payload) {
+  const position = payload.playerPosition;
+  if (
+    position?.type === "exploration_position"
+    && position.protocolVersion === 1
+    && position.playerEntityId === payload.projection.viewer.playerCharacterEntityId
+  ) return position;
+
+  const anchor = payload.materialization.anchors.find((candidate) =>
+    candidate.kind === "player"
+    && candidate.semanticId === payload.projection.viewer.playerCharacterEntityId
+  );
+  if (!anchor) throw new Error("Exploration materialization is missing the player position.");
+  return {
+    type: "exploration_position",
+    protocolVersion: 1,
+    campaignId: payload.projection.campaignId,
+    sceneId: payload.projection.scene.sceneId,
+    playerEntityId: payload.projection.viewer.playerCharacterEntityId,
+    materializationRef: { ...payload.materialization.materializationRef },
+    positionRevision: 0,
+    transform: { x: anchor.x, y: anchor.y, facing: "west" },
+    moved: false,
+  };
+}
+
+function syntheticUnit(anchor, playerId, playerPosition) {
   if (anchor.kind !== "player" && anchor.kind !== "entity") return null;
   const role = anchor.kind === "player"
     ? "master"
     : anchor.entityClass === "monster"
       ? "emberling"
       : "master";
+  const position = anchor.kind === "player"
+    ? playerPosition.transform
+    : anchor;
   return {
     id: anchor.semanticId,
     ownerId: anchor.kind === "player" ? playerId : "world",
     role,
-    position: { x: anchor.x, y: anchor.y },
+    position: { x: position.x, y: position.y },
     health: 1,
     maxHealth: 1,
   };
 }
 
-function toRendererView(payload) {
+function rendererRevision(payload, playerPosition) {
+  return payload.materialization.semanticRevision * 1_000_000 + playerPosition.positionRevision;
+}
+
+function toRendererView(payload, playerPosition) {
   const { projection, materialization } = payload;
   const playerId = projection.viewer.playerId;
   const units = materialization.anchors
-    .map((anchor) => syntheticUnit(anchor, playerId))
+    .map((anchor) => syntheticUnit(anchor, playerId, playerPosition))
     .filter(Boolean);
   return {
     gameId: "monster-master-duel",
     matchId: materialization.materializationRef.materializationId,
-    revision: materialization.semanticRevision,
+    revision: rendererRevision(payload, playerPosition),
     playerIds: [playerId, "world"],
     observation: {
       activePlayerId: playerId,
@@ -126,13 +171,23 @@ function watchCamera() {
 
 function updateWorldHeader(payload) {
   const location = document.querySelector("#mm-rpg-world-location");
-  const status = document.querySelector("#mm-rpg-world-status");
   const reference = document.querySelector("#mm-rpg-world-materialization");
   if (location) location.textContent = payload.projection.scene.location.label;
-  if (status) status.textContent = "Materialized · exploration";
   if (reference) {
     reference.textContent = `${payload.materialization.materializationRef.materializationId} · v${payload.materialization.materializationRef.version}`;
   }
+  updateMovementStatus(state.playerPosition);
+}
+
+function updateMovementStatus(position) {
+  if (!position) return setWorldStatus("Materialized · exploration");
+  if (position.blockedBy) {
+    setWorldStatus(`Blocked · ${position.blockedBy} · facing ${position.transform.facing}`);
+    return;
+  }
+  setWorldStatus(
+    `Exploring · ${position.transform.x},${position.transform.y} · facing ${position.transform.facing}`,
+  );
 }
 
 function setWorldStatus(message) {
@@ -142,21 +197,32 @@ function setWorldStatus(message) {
 
 function present(value) {
   const payload = requireMaterializedPayload(value);
+  const playerPosition = playerPositionFromPayload(payload);
   state.payload = payload;
   state.campaignId = payload.projection.campaignId;
   state.cameraSignature = "";
-  state.view = toRendererView(payload);
+  state.playerPosition = playerPosition;
+  state.rendererRevision = rendererRevision(payload, playerPosition);
+  state.moveInFlight = false;
+  state.queuedDirection = null;
+  state.view = toRendererView(payload, playerPosition);
   updateWorldHeader(payload);
   window.dispatchEvent(new CustomEvent(VIEW_EVENT, { detail: { view: state.view } }));
   scheduleAnchors();
+  ensureMovementSocket();
   return state.view;
 }
 
 function clear() {
+  stopMovementSocket();
   state.payload = null;
   state.view = null;
   state.campaignId = null;
   state.cameraSignature = "";
+  state.playerPosition = null;
+  state.rendererRevision = 0;
+  state.moveInFlight = false;
+  state.queuedDirection = null;
   anchorLayer()?.replaceChildren();
   setWorldStatus("No scene attached");
 }
@@ -215,6 +281,245 @@ async function attachCurrentCampaign({ quiet = false } = {}) {
   return promise;
 }
 
+function movementSocketUrl(campaignId) {
+  const url = new URL(
+    `/api/rpg/campaigns/${encodeURIComponent(campaignId)}/realtime`,
+    window.location.href,
+  );
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  return url;
+}
+
+function ensureMovementSocket() {
+  if (
+    identity?.source !== "discord"
+    || !state.campaignId
+    || typeof WebSocket !== "function"
+    || state.movementSocket?.readyState === WebSocket.OPEN
+    || state.movementSocket?.readyState === WebSocket.CONNECTING
+  ) return;
+  const campaignId = state.campaignId;
+  const socket = new WebSocket(movementSocketUrl(campaignId));
+  state.movementSocket = socket;
+  socket.onmessage = (event) => {
+    if (state.movementSocket !== socket || state.campaignId !== campaignId) return;
+    let message;
+    try {
+      message = JSON.parse(event.data);
+    } catch {
+      return;
+    }
+    if (message?.type === "exploration_position") {
+      acceptPosition(message);
+      return;
+    }
+    if (message?.type === "protocol_error" && state.moveInFlight) {
+      state.moveInFlight = false;
+      if (
+        message.code === "position-revision-conflict"
+        || message.code === "stale-materialization"
+        || message.code === "exploration-session-unavailable"
+      ) {
+        void attachCurrentCampaign({ quiet: true }).catch(() => undefined);
+      }
+      drainMoveQueue();
+    }
+  };
+  socket.onclose = () => {
+    if (state.movementSocket === socket) state.movementSocket = null;
+    if (state.moveInFlight) {
+      state.moveInFlight = false;
+      drainMoveQueue();
+    }
+  };
+  socket.onerror = () => socket.close();
+}
+
+function stopMovementSocket() {
+  const socket = state.movementSocket;
+  state.movementSocket = null;
+  if (!socket) return;
+  socket.onclose = null;
+  socket.onerror = null;
+  socket.onmessage = null;
+  try {
+    socket.close();
+  } catch {
+    // The physical movement channel is disposable.
+  }
+}
+
+function moveRequest(direction) {
+  if (!state.payload || !state.playerPosition) return null;
+  return {
+    type: "exploration_move",
+    protocolVersion: 1,
+    campaignId: state.payload.projection.campaignId,
+    sceneId: state.payload.projection.scene.sceneId,
+    materializationRef: { ...state.payload.materialization.materializationRef },
+    expectedPositionRevision: state.playerPosition.positionRevision,
+    direction,
+  };
+}
+
+function sendMovementSocket(request) {
+  const socket = state.movementSocket;
+  if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+  try {
+    socket.send(JSON.stringify(request));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function sendMovementHttp(request) {
+  const response = await gameFrameFetch(
+    `/api/rpg/campaigns/${encodeURIComponent(request.campaignId)}/exploration/move`,
+    {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(request),
+    },
+    identity,
+  );
+  const text = await response.text();
+  const value = text ? JSON.parse(text) : null;
+  if (!response.ok) {
+    const error = new Error(value?.message || `Exploration movement failed (${response.status}).`);
+    error.status = response.status;
+    error.code = value?.error;
+    throw error;
+  }
+  return value;
+}
+
+function queueMove(direction) {
+  if (!state.payload || !state.playerPosition || !SCREEN_DIRECTIONS.includes(direction)) return false;
+  state.queuedDirection = direction;
+  drainMoveQueue();
+  return true;
+}
+
+function drainMoveQueue() {
+  if (state.moveInFlight || !state.queuedDirection || !state.payload || !state.playerPosition) return;
+  const direction = state.queuedDirection;
+  state.queuedDirection = null;
+  const request = moveRequest(direction);
+  if (!request) return;
+  state.moveInFlight = true;
+  ensureMovementSocket();
+  if (sendMovementSocket(request)) return;
+
+  void sendMovementHttp(request).then((position) => {
+    acceptPosition(position);
+  }).catch((error) => {
+    state.moveInFlight = false;
+    if (
+      error?.status === 409
+      || error?.code === "position-revision-conflict"
+      || error?.code === "stale-materialization"
+      || error?.code === "exploration-session-unavailable"
+    ) {
+      void attachCurrentCampaign({ quiet: true }).catch(() => undefined);
+    } else {
+      const banner = document.querySelector("#mm-rpg-error");
+      if (banner) {
+        banner.hidden = false;
+        banner.textContent = error?.message || "Exploration movement could not be delivered.";
+      }
+    }
+    drainMoveQueue();
+  });
+}
+
+function acceptPosition(position) {
+  if (!state.payload || !state.view) return false;
+  if (
+    position?.type !== "exploration_position"
+    || position.protocolVersion !== 1
+    || position.campaignId !== state.payload.projection.campaignId
+    || position.sceneId !== state.payload.projection.scene.sceneId
+    || position.playerEntityId !== state.payload.projection.viewer.playerCharacterEntityId
+    || position.materializationRef?.materializationId !== state.payload.materialization.materializationRef.materializationId
+    || position.materializationRef?.version !== state.payload.materialization.materializationRef.version
+    || position.materializationRef?.hash !== state.payload.materialization.materializationRef.hash
+    || !Number.isSafeInteger(position.positionRevision)
+    || !position.transform
+    || !Number.isSafeInteger(position.transform.x)
+    || !Number.isSafeInteger(position.transform.y)
+    || !SCREEN_DIRECTIONS.includes(position.transform.facing)
+  ) return false;
+
+  state.playerPosition = position;
+  state.payload.playerPosition = position;
+  state.rendererRevision = rendererRevision(state.payload, position);
+  const playerEntityId = position.playerEntityId;
+  const units = state.view.observation.board.units.map((unit) =>
+    unit.id === playerEntityId
+      ? { ...unit, position: { x: position.transform.x, y: position.transform.y } }
+      : unit
+  );
+  state.view = {
+    ...state.view,
+    revision: state.rendererRevision,
+    observation: {
+      ...state.view.observation,
+      board: {
+        ...state.view.observation.board,
+        units,
+      },
+    },
+  };
+  updateMovementStatus(position);
+  window.dispatchEvent(new CustomEvent(VIEW_EVENT, { detail: { view: state.view } }));
+  scheduleAnchors();
+  requestAnimationFrame(() => window.gameFrameMonsterPixi?.centerActive?.());
+  state.moveInFlight = false;
+  drainMoveQueue();
+  return true;
+}
+
+function screenDirection(code) {
+  const base = KEY_DIRECTION_INDEX[code];
+  if (!Number.isInteger(base)) return null;
+  const quarter = ((Math.round(window.gameFrameMonsterPixi?.getCamera?.()?.quarter ?? 0) % 4) + 4) % 4;
+  return SCREEN_DIRECTIONS[(base - quarter + 4) % 4];
+}
+
+function isEditableTarget(target) {
+  if (!(target instanceof Element)) return false;
+  return Boolean(target.closest("input, textarea, select, [contenteditable='true'], [contenteditable='']"));
+}
+
+function handleKeydown(event) {
+  if (
+    event.defaultPrevented
+    || event.ctrlKey
+    || event.metaKey
+    || event.altKey
+    || isEditableTarget(event.target)
+    || !currentCampaignId()
+    || !state.payload
+  ) return;
+
+  const direction = screenDirection(event.code);
+  if (direction) {
+    if (queueMove(direction)) event.preventDefault();
+    return;
+  }
+  if ((event.code === "KeyQ" || event.code === "KeyE") && !event.repeat) {
+    const renderer = window.gameFrameMonsterPixi;
+    const rotated = event.code === "KeyQ"
+      ? renderer?.rotateLeft?.()
+      : renderer?.rotateRight?.();
+    if (rotated !== undefined || renderer) event.preventDefault();
+  }
+}
+
 window.gameFrameMonsterController = Object.freeze({
   getView: () => state.view,
   handleCoordinate: () => false,
@@ -225,8 +530,11 @@ window.gameFrameMonsterRpgWorld = Object.freeze({
   clear,
   attachCurrentCampaign,
   refreshAnchors: scheduleAnchors,
+  move: queueMove,
+  handleKeydown,
   getPayload: () => state.payload,
   getView: () => state.view,
+  getPlayerPosition: () => state.playerPosition,
 });
 
 const campaignPanel = document.querySelector("#mm-rpg-campaign");
@@ -244,5 +552,7 @@ document.querySelector("#mm-rpg-refresh")?.addEventListener("click", () => {
   window.setTimeout(() => void attachCurrentCampaign({ quiet: true }).catch(() => undefined), 0);
 });
 document.querySelector("#mm-rpg-switch")?.addEventListener("click", clear);
+window.addEventListener("keydown", handleKeydown);
 window.addEventListener("resize", scheduleAnchors);
+window.addEventListener("pagehide", stopMovementSocket, { once: true });
 requestAnimationFrame(watchCamera);
