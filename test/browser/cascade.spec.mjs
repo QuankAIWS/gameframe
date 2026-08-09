@@ -5,7 +5,7 @@ test("Cascade resolves a legal move through the animated presentation layer", as
 
   await expect(page.getByRole("heading", { name: "Cascade" })).toBeVisible();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
-  await expect(page.locator("#level-map > li")).toHaveCount(30);
+  await expect(page.locator("#level-map > li")).toHaveCount(100);
 
   const move = await page.evaluate(async () => {
     const { listLegalMoves } = await import("/cascade-engine.js");
@@ -26,6 +26,52 @@ test("Cascade resolves a legal move through the animated presentation layer", as
 
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   await expect(page.locator(".cascade-score-pop, .cascade-burst")).toHaveCount(0, { timeout: 2_000 });
+});
+
+test("Cascade late chapters expose ice, collection, cross-blast, and layered ice", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("scribbles-gameframe.cascade-state:v1", JSON.stringify({
+      level: 31,
+      lives: 5,
+      lastLifeAt: Date.now(),
+      streak: 0,
+      hammers: 2,
+      ledger: [],
+    }));
+  });
+
+  await page.goto("/cascade.html");
+  await expect(page.locator("#level-number")).toHaveText("31");
+  await expect(page.locator(".cascade-tile[data-ice]")).not.toHaveCount(0);
+  await expect(page.locator("#objective-label")).toContainText("ice");
+
+  await page.evaluate(() => {
+    const key = "scribbles-gameframe.cascade-state:v1";
+    const state = JSON.parse(window.localStorage.getItem(key));
+    state.level = 41;
+    window.localStorage.setItem(key, JSON.stringify(state));
+  });
+  await page.reload();
+  await expect(page.locator("#level-number")).toHaveText("41");
+  await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().level.objective.collect.length)).toBe(1);
+
+  await page.evaluate(() => {
+    const key = "scribbles-gameframe.cascade-state:v1";
+    const state = JSON.parse(window.localStorage.getItem(key));
+    state.level = 61;
+    window.localStorage.setItem(key, JSON.stringify(state));
+  });
+  await page.reload();
+  await expect(page.locator(".cascade-help")).toContainText("T/L matches blast a 3×3 area");
+
+  await page.evaluate(() => {
+    const key = "scribbles-gameframe.cascade-state:v1";
+    const state = JSON.parse(window.localStorage.getItem(key));
+    state.level = 71;
+    window.localStorage.setItem(key, JSON.stringify(state));
+  });
+  await page.reload();
+  await expect(page.locator(".cascade-tile[data-ice=\"2\"]")).not.toHaveCount(0);
 });
 
 test("Cascade IOU ledger has no player-facing reset control", async ({ page }) => {
@@ -70,7 +116,7 @@ test("Cascade Need a boost opens useful offer guidance during ordinary play", as
   await expect(page.getByText("Extra moves are offered when you hit 0 moves.")).toBeVisible();
 });
 
-test("Cascade admin console uses the authenticated admin identity to jump levels and reset IOUs", async ({ page }) => {
+test("Cascade admin console uses the authenticated admin identity to jump through 100 levels and reset IOUs", async ({ page }) => {
   await page.addInitScript(() => {
     const key = "scribbles-gameframe.cascade-state:v1";
     if (window.localStorage.getItem(key)) return;
@@ -103,6 +149,7 @@ test("Cascade admin console uses the authenticated admin identity to jump levels
   await expect(page.locator("#cascade-admin-open")).toBeVisible();
   await page.locator("#cascade-admin-open").click();
   await expect(page.locator("#cascade-admin-dialog")).toBeVisible();
+  await expect(page.locator("[data-level=\"100\"]")).toBeVisible();
 
   const reset = page.getByRole("button", { name: "Reset IOU ledger" });
   await reset.click();
@@ -115,11 +162,11 @@ test("Cascade admin console uses the authenticated admin identity to jump levels
     return state?.ledger?.length ?? -1;
   })).toBe(0);
 
-  await page.locator("#cascade-admin-command").fill("go to level 20");
+  await page.locator("#cascade-admin-command").fill("go to level 100");
   await page.getByRole("button", { name: "Run" }).click();
 
-  await expect(page.locator("#level-number")).toHaveText("20", { timeout: 5_000 });
-  await expect(page.locator("#level-map > li")).toHaveCount(30);
+  await expect(page.locator("#level-number")).toHaveText("100", { timeout: 5_000 });
+  await expect(page.locator("#level-map > li")).toHaveCount(100);
 });
 
 test("Cascade admin can force life and inventory edge states", async ({ page }) => {
