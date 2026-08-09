@@ -69,9 +69,19 @@
 
 .cascade-admin-panel > p,
 .cascade-admin-panel label,
-.cascade-admin-status {
+.cascade-admin-status,
+.cascade-admin-section p {
   color: #989eae;
   font-size: .76rem;
+}
+
+.cascade-admin-section {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  background: rgba(255,255,255,.025);
 }
 
 .cascade-admin-command-row {
@@ -120,6 +130,25 @@
 
 .cascade-admin-jumps button {
   padding: 7px;
+}
+
+.cascade-admin-reset-section {
+  border-color: rgba(255, 92, 168, .2);
+}
+
+.cascade-admin-reset {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 92, 168, .35);
+  border-radius: 10px;
+  background: rgba(255, 92, 168, .08);
+  color: #ff8ec0;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.cascade-admin-reset:hover {
+  background: rgba(255, 92, 168, .14);
 }
 
 @media (max-width: 600px) {

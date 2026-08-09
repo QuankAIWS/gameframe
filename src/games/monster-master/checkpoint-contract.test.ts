@@ -38,12 +38,13 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
   assert.match(roadmap, /Battle Simulator.*standalone tactical sandbox.*Monster Master Arena Battles/s);
   assert.match(roadmap, /Campaign combat uses \*\*Tactical Activation on the current materialized map\*\*/);
   assert.match(roadmap, /## GF-RPG-07 — FIGHT foundation: Monster Master rules\/control authority/);
-  assert.match(roadmap, /class\/archetype\/profile deployment limits/);
+  assert.match(roadmap, /class\/profile deployment limits/);
+  assert.match(roadmap, /same-map campaign combat requires/);
   assert.match(roadmap, /## GF-RPG-08 — FIGHT: same-map Tactical Activation/);
   assert.match(roadmap, /current positions become tactical starting positions/);
   assert.match(roadmap, /No Arena handoff, substitute campaign battlefield, or Return-to-Campaign step/);
-  assert.match(roadmap, /## GF-RPG-09 — PROVE: complete single-player Monster Master/);
-  assert.match(roadmap, /same-map FIGHT/);
+  assert.match(roadmap, /## GF-RPG-09 — PROVE/);
+  assert.match(roadmap, /Complete the bounded single-player journey/);
 
   assert.match(agents, /GameFrameBot.*stable player ID `gameframe-bot`/s);
   assert.match(agents, /Monster Master BattleBot/);

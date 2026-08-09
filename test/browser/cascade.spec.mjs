@@ -28,7 +28,29 @@ test("Cascade resolves a legal move through the animated presentation layer", as
   await expect(page.locator(".cascade-score-pop, .cascade-burst")).toHaveCount(0, { timeout: 2_000 });
 });
 
-test("Cascade admin console uses the authenticated admin identity to jump levels", async ({ page }) => {
+test("Cascade IOU ledger has no player-facing reset control", async ({ page }) => {
+  await page.goto("/cascade.html");
+  await page.getByRole("button", { name: "View IOUs" }).click();
+  await expect(page.locator("#ledger-dialog")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Clear IOUs" })).toHaveCount(0);
+  await expect(page.locator("#reset-ledger")).toBeHidden();
+});
+
+test("Cascade admin console uses the authenticated admin identity to jump levels and reset IOUs", async ({ page }) => {
+  await page.addInitScript(() => {
+    const key = "scribbles-gameframe.cascade-state:v1";
+    if (window.localStorage.getItem(key)) return;
+    window.localStorage.setItem(key, JSON.stringify({
+      level: 1,
+      lives: 5,
+      lastLifeAt: Date.now(),
+      streak: 0,
+      hammers: 2,
+      ledger: [
+        { at: new Date().toISOString(), reason: "Admin reset test", amount: 7, level: 1 },
+      ],
+    }));
+  });
   await page.route("**/api/session", async (route) => {
     await route.fulfill({
       status: 200,
@@ -43,9 +65,22 @@ test("Cascade admin console uses the authenticated admin identity to jump levels
   });
 
   await page.goto("/cascade.html");
+  await expect(page.locator("#iou-total")).toHaveText("IOU$ 7");
   await expect(page.locator("#cascade-admin-open")).toBeVisible();
   await page.locator("#cascade-admin-open").click();
   await expect(page.locator("#cascade-admin-dialog")).toBeVisible();
+
+  const reset = page.getByRole("button", { name: "Reset IOU ledger" });
+  await reset.click();
+  await expect(page.getByRole("button", { name: "Confirm reset — click again" })).toBeVisible();
+  await expect(page.locator("#iou-total")).toHaveText("IOU$ 7");
+  await page.getByRole("button", { name: "Confirm reset — click again" }).click();
+  await expect(page.locator("#iou-total")).toHaveText("IOU$ 0");
+  await expect.poll(async () => page.evaluate(() => {
+    const state = JSON.parse(window.localStorage.getItem("scribbles-gameframe.cascade-state:v1") || "null");
+    return state?.ledger?.length ?? -1;
+  })).toBe(0);
+
   await page.locator("#cascade-admin-command").fill("go to level 20");
   await page.getByRole("button", { name: "Run" }).click();
 
@@ -69,4 +104,6 @@ test("Cascade admin console stays hidden for a normal authenticated player", asy
 
   await page.goto("/cascade.html");
   await expect(page.locator("#cascade-admin-open")).toHaveCount(0);
+  await page.getByRole("button", { name: "View IOUs" }).click();
+  await expect(page.getByRole("button", { name: "Clear IOUs" })).toHaveCount(0);
 });

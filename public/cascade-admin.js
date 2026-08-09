@@ -55,23 +55,31 @@ function installConsole(identity) {
       <header>
         <div>
           <small>CASCADE ADMIN</small>
-          <h2>Level jump</h2>
+          <h2>Playtest controls</h2>
         </div>
         <button type="submit" value="close" aria-label="Close admin console">×</button>
       </header>
-      <p>Jump straight to a level for playtesting.</p>
-      <label for="cascade-admin-command">Command</label>
-      <div class="cascade-admin-command-row">
-        <input id="cascade-admin-command" autocomplete="off" spellcheck="false" placeholder="go to level 20">
-        <button type="button" data-admin-run>Run</button>
-      </div>
-      <div class="cascade-admin-jumps" aria-label="Quick level jumps">
-        <button type="button" data-level="1">1</button>
-        <button type="button" data-level="8">8</button>
-        <button type="button" data-level="13">13</button>
-        <button type="button" data-level="21">21</button>
-        <button type="button" data-level="30">30</button>
-      </div>
+      <section class="cascade-admin-section">
+        <small>LEVEL JUMP</small>
+        <p>Jump straight to a level for playtesting.</p>
+        <label for="cascade-admin-command">Command</label>
+        <div class="cascade-admin-command-row">
+          <input id="cascade-admin-command" autocomplete="off" spellcheck="false" placeholder="go to level 20">
+          <button type="button" data-admin-run>Run</button>
+        </div>
+        <div class="cascade-admin-jumps" aria-label="Quick level jumps">
+          <button type="button" data-level="1">1</button>
+          <button type="button" data-level="8">8</button>
+          <button type="button" data-level="13">13</button>
+          <button type="button" data-level="21">21</button>
+          <button type="button" data-level="30">30</button>
+        </div>
+      </section>
+      <section class="cascade-admin-section cascade-admin-reset-section">
+        <small>TEST STATE</small>
+        <p>Clear the accumulated IOU ledger when you need a clean test run.</p>
+        <button type="button" class="cascade-admin-reset" data-admin-reset-iou>Reset IOU ledger</button>
+      </section>
       <p class="cascade-admin-status" data-admin-status role="status">Signed in as ${identity.displayName || identity.playerId}.</p>
     </form>
   `;
@@ -79,6 +87,8 @@ function installConsole(identity) {
 
   const command = dialog.querySelector("#cascade-admin-command");
   const status = dialog.querySelector("[data-admin-status]");
+  const resetIou = dialog.querySelector("[data-admin-reset-iou]");
+  let resetIouExpiresAt = 0;
 
   function jump(level) {
     writeLevel(level);
@@ -96,11 +106,46 @@ function installConsole(identity) {
     jump(level);
   }
 
+  function clearIouConfirmation() {
+    resetIouExpiresAt = 0;
+    resetIou.textContent = "Reset IOU ledger";
+  }
+
+  function resetIouLedger() {
+    const now = Date.now();
+    if (now > resetIouExpiresAt) {
+      resetIouExpiresAt = now + 10_000;
+      resetIou.textContent = "Confirm reset — click again";
+      status.textContent = "IOU reset armed for 10 seconds.";
+      const armedUntil = resetIouExpiresAt;
+      window.setTimeout(() => {
+        if (resetIouExpiresAt !== armedUntil) return;
+        clearIouConfirmation();
+        status.textContent = "IOU reset confirmation expired.";
+      }, 10_100);
+      return;
+    }
+
+    const resetHook = document.querySelector("#reset-ledger");
+    if (!resetHook) {
+      clearIouConfirmation();
+      status.textContent = "IOU reset hook is unavailable.";
+      return;
+    }
+
+    resetHook.click();
+    clearIouConfirmation();
+    status.textContent = "IOU ledger cleared.";
+  }
+
   open.addEventListener("click", () => {
+    clearIouConfirmation();
     if (!dialog.open) dialog.showModal();
     command.focus();
   });
+  dialog.addEventListener("close", clearIouConfirmation);
   dialog.querySelector("[data-admin-run]").addEventListener("click", runCommand);
+  resetIou.addEventListener("click", resetIouLedger);
   command.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
