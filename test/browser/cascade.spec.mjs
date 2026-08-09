@@ -38,7 +38,9 @@ test("Cascade IOU ledger has no player-facing reset control", async ({ page }) =
 
 test("Cascade admin console uses the authenticated admin identity to jump levels and reset IOUs", async ({ page }) => {
   await page.addInitScript(() => {
-    window.localStorage.setItem("scribbles-gameframe.cascade-state:v1", JSON.stringify({
+    const key = "scribbles-gameframe.cascade-state:v1";
+    if (window.localStorage.getItem(key)) return;
+    window.localStorage.setItem(key, JSON.stringify({
       level: 1,
       lives: 5,
       lastLifeAt: Date.now(),
