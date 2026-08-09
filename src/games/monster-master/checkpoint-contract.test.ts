@@ -37,18 +37,18 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
   assert.match(readme, /\/monster-master\.html/);
   assert.match(readme, /src\/games\//);
 
-  assert.match(roadmap, /MM-0001 remains useful standalone Monster Master regression substrate/);
+  assert.match(roadmap, /MM-0001 remains standalone\/regression substrate and the seed for Monster Master Arena Battles/);
   assert.match(roadmap, /Monster Master Arena Battles/);
   assert.match(roadmap, /## Transitional legacy tactical correctness/);
   assert.match(roadmap, /legacy terminal result/);
   assert.match(roadmap, /result consumed exactly once/);
-  assert.match(roadmap, /## GF-RPG-06 — Monster Master Ruleset extraction \/ control authority/);
-  assert.match(roadmap, /class-defined deployed monster counts/);
-  assert.match(roadmap, /## GF-RPG-07 — Same-map Tactical Activation/);
+  assert.match(roadmap, /## GF-RPG-06 — FIGHT foundation: Monster Master rules\/control authority/);
+  assert.match(roadmap, /class-defined monster deployment\/control limits/);
+  assert.match(roadmap, /## GF-RPG-07 — FIGHT: same-map Tactical Activation/);
   assert.match(roadmap, /current positions become tactical starting positions/);
-  assert.match(roadmap, /No replacement campaign battlefield or Return-to-Campaign navigation occurs/);
+  assert.match(roadmap, /No replacement campaign battlefield and no Return-to-Campaign navigation/);
   assert.match(roadmap, /## GF-RPG-12 — Dynamic Battle Simulator/);
-  assert.match(roadmap, /Matching RPG Ruleset\/profile versions must produce equivalent legal tactical semantics\/outcomes/);
+  assert.match(roadmap, /ruleset equivalence with campaign Tactical Mode/);
 
   assert.match(agents, /GameFrameBot.*stable player ID `gameframe-bot`/s);
   assert.match(agents, /Monster Master BattleBot/);
