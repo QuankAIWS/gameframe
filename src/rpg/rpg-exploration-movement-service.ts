@@ -126,12 +126,28 @@ export class RpgExplorationMovementService {
     }
 
     const stored = this.#positions.load(identity);
-    const recovered = stored && isTraversable(materialization, blocked, stored.x, stored.y)
-      ? stored
-      : undefined;
-    const position = recovered
-      ? positionFromSnapshot(recovered)
-      : { x: playerAnchor.x, y: playerAnchor.y, facing: "west" as const, positionRevision: 0 };
+    let position: Session["position"];
+    if (stored && isTraversable(materialization, blocked, stored.x, stored.y)) {
+      position = positionFromSnapshot(stored);
+    } else if (stored) {
+      const reset = this.#positions.commit({
+        ...identity,
+        expectedPositionRevision: stored.positionRevision,
+        x: playerAnchor.x,
+        y: playerAnchor.y,
+        facing: "west",
+        updatedAt: this.#clock(),
+      });
+      position = positionFromSnapshot(reset);
+    } else {
+      position = {
+        x: playerAnchor.x,
+        y: playerAnchor.y,
+        facing: "west",
+        positionRevision: 0,
+      };
+    }
+
     const session: Session = {
       campaignId: projection.campaignId,
       playerId,
