@@ -5,7 +5,7 @@ Scope: Cascade presentation, cognitive variety, level design, automated difficul
 
 ## Product direction
 
-Cascade should remain a fun, immediately legible match-3 game first. Cognitive challenge is a design input, not a medical claim, a visible "brain training" mode, or a reason to make the game feel clinical.
+Cascade should remain a fun, immediately legible match-3 game first. Cognitive challenge is a design input for making the game richer, more varied, and more mentally active without turning it into homework.
 
 The target experience is:
 
@@ -14,24 +14,6 @@ The target experience is:
 - varied enough that players keep exercising visual search, planning, speed, memory, inhibition, and task switching instead of solving the same pattern forever;
 - adaptive enough that levels remain challenging without becoming arbitrary or frustrating;
 - instrumented enough that automated play and real players can tell us how difficult each mechanic and level actually is.
-
-## Health / cognition boundary
-
-We may describe Cascade internally as cognitively engaging or mentally stimulating. We should **not** claim that Cascade prevents, treats, or delays Alzheimer's disease or dementia.
-
-Current evidence supports keeping the mind challenged as one component of healthy aging, but specific disease-prevention effects cannot be generalized from one cognitive-training protocol to an ordinary match-3 game.
-
-Useful evidence informing the design:
-
-- The Alzheimer's Association recommends mentally engaging activities that remain interesting and challenging, and specifically notes that once an activity becomes easy, adding new challenge is useful.
-- The NIH reported in 2026 that one specific speed-of-processing intervention in the long-running ACTIVE study was associated with a lower rate of later dementia diagnoses. That result is specific to that training protocol and is not evidence that any fast puzzle game has the same effect.
-- The 2025 U.S. POINTER randomized trial found cognitive benefit from multidomain lifestyle interventions combining cognitive challenge with physical activity, diet, social engagement, and cardiovascular-risk management. This reinforces that Cascade can be one enjoyable cognitively active behavior, not a substitute for broader healthy-lifestyle factors.
-
-References:
-
-- Alzheimer's Association, "Challenge Your Mind" and "10 Healthy Habits for Your Brain."
-- NIH, "Cognitive speed training over weeks may delay the diagnosis of dementia over decades," February 10, 2026.
-- Baker et al., *Structured vs Self-Guided Multidomain Lifestyle Interventions for Global Cognitive Function: The US POINTER Randomized Clinical Trial*, JAMA 2025;334(8):681-691. DOI: 10.1001/jama.2025.12923.
 
 ## Presentation: make cascades worth watching
 
@@ -284,12 +266,10 @@ A level authoring loop becomes:
 7. update tuning heuristics;
 8. ship / iterate.
 
-## What the bot should not do
+## Bot limits
 
 - Do not let the bot define "fun" by itself.
-- Do not tune solely for maximum session length.
-- Do not make levels artificially fail because a solver says a lower pass rate improves retention.
-- Do not assume one automated strategy represents older adult players.
+- Do not assume one automated strategy represents every player.
 - Do not mix animation timing into deterministic game-state correctness.
 - Do not duplicate browser rules in a separate simulator implementation.
 
