@@ -33,7 +33,7 @@ Consumer research on endowed progress and goal pursuit shows that visible advanc
 
 Official Candy Crush documentation describes five-life gating, timed life regeneration, extra moves after failure, pre-game/in-game/end-game boosters, and Gold Bars as a currency used for continuation/help. Royal Match documentation similarly describes coins that can buy extra lives, extra moves, and boosters.
 
-**Implementation in the family build:** the same decision locations exist, but the currency is **IOU$**. The player sees what they currently owe and can inspect the full IOU ledger. The point is to observe which continuation choices players value enough to owe IOU$ for.
+**Implementation in the family build:** the same decision locations exist, but the currency is **IOU$**. The player sees the current IOU$ owed and can inspect the full IOU ledger. The point is to observe which continuation choices players value enough to owe IOU$ for.
 
 ### 5. Randomized paid rewards and deceptive purchase flows are a different risk class
 
@@ -79,7 +79,7 @@ Future boosters should be mechanically distinct, not merely larger numbers: row 
 
 ## IOU$ experiment
 
-IOU$ is a running game ledger. It does **not** have a cap: if a player keeps choosing continuation, the amount they owe keeps accumulating.
+IOU$ is a running game ledger. It does **not** have a cap: if a player keeps choosing continuation, the amount owed keeps accumulating.
 
 The first build has three explicit checkpoints:
 
@@ -91,9 +91,10 @@ Product rules:
 
 - no IOU$ cap;
 - no ledger-history cap;
-- player-facing copy uses direct IOU language rather than vague labels such as "Family Tab";
-- the persistent summary reads **YOU OWE** followed by the IOU$ total;
-- the detailed history is the **IOU Ledger**;
+- player-facing copy uses direct, neutral IOU language rather than vague labels or an implied narrator;
+- do not use first-person speaker copy such as "me," "owe me," or "what you owe me";
+- the persistent summary reads **IOU DOLLARS OWED** followed by the IOU$ total;
+- the detailed history is the **IOU LEDGER**;
 - offers use short, game-like copy rather than disclaimer language;
 - the IOU$ action is the large, colorful primary continuation button;
 - the ledger can be inspected and reset;
@@ -102,7 +103,7 @@ Product rules:
 - no external telemetry is sent;
 - one life regenerates every ten minutes.
 
-This gives us a behavioral signal at familiar monetization decision points while keeping the joke legible: the player chose something now and owes IOU$ for it.
+This gives us a behavioral signal at familiar monetization decision points while keeping the joke legible: the player chose something now and the IOU$ total grew.
 
 ## Local research events
 
