@@ -273,12 +273,14 @@ async function launch() {
     window.gameFrameMonsterRendererMode = "pixi";
     await import("./monster-master-pixi-bridge.js");
     await import("./monster-master-rpg-world.js");
+    await import("./monster-master-rpg-talk.js");
     await import(entry);
     await import("./monster-master-rpg-admin.js");
     await import("./monster-master-pixi-bundle.js");
     const pixiReady = await window.gameFrameMonsterPixi?.ready;
     if (pixiReady) {
       window.gameFrameMonsterRpgWorld?.refreshAnchors?.();
+      window.gameFrameMonsterRpgTalk?.refresh?.();
     } else {
       const errorBanner = document.querySelector("#mm-rpg-error");
       if (errorBanner) {

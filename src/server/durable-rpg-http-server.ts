@@ -19,6 +19,11 @@ import {
   type DurableRpgPrincipal,
 } from "../rpg/durable-rpg-campaign-service.ts";
 import {
+  authorizeRpgExplorationTalk,
+  normalizeRpgExplorationTalkRequest,
+  RpgExplorationInteractionError,
+} from "../rpg/rpg-exploration-interaction-service.ts";
+import {
   MonsterMasterRpgEncounterConfigurationError,
 } from "../rpg/monster-master-rpg-encounter-materializer.ts";
 import {
@@ -151,7 +156,11 @@ export function createDurableRpgHttpServer(
             "terminal-outcomes",
             "websocket-realtime",
             ...(options.explorationTransport
-              ? ["rpg-exploration-materialization", "rpg-exploration-movement"]
+              ? [
+                  "rpg-exploration-materialization",
+                  "rpg-exploration-movement",
+                  "rpg-exploration-talk",
+                ]
               : []),
           ],
         });
@@ -220,6 +229,74 @@ export function createDurableRpgHttpServer(
           const normalized = normalizeMoveRequest(body);
           requireBodyIdentity(normalized.campaignId, explorationRoute.campaignId, "campaignId");
           return sendJson(response, 200, explorationMovement.move(principal.playerId, normalized));
+        }
+
+        if (explorationRoute.operation === "interact") {
+          const normalized = normalizeRpgExplorationTalkRequest(body);
+          requireBodyIdentity(normalized.campaignId, explorationRoute.campaignId, "campaignId");
+          const committedRetry = campaigns.findCommittedExplorationTalk({
+            campaignId: normalized.campaignId,
+            commandId: normalized.commandId,
+            expectedGameframeCoordinationRevision:
+              normalized.expectedGameframeCoordinationRevision,
+            issuedAt: normalized.issuedAt,
+            interactionTargetId: normalized.interactionTargetId,
+            text: normalized.text,
+          }, { kind: "player", playerId: principal.playerId });
+          if (committedRetry) {
+            return sendJson(response, 200, {
+              protocolVersion: 1,
+              kind: "campaign.exploration_interaction_committed",
+              interaction: "talk",
+              interactionTargetId: normalized.interactionTargetId,
+              command: committedRetry,
+              replayed: true,
+            });
+          }
+
+          if (!options.explorationTransport) {
+            return sendJson(response, 503, {
+              error: "runtime-exploration-unavailable",
+              message: "Runtime exploration projection is not configured.",
+              retryable: true,
+            });
+          }
+          const projection = await options.explorationTransport.attach({
+            campaignId: explorationRoute.campaignId,
+            authenticatedPlayerId: principal.playerId,
+          });
+          const materialization = materializeRpgExplorationProjection(projection);
+          const playerPosition = explorationMovement.attach({
+            playerId: principal.playerId,
+            projection,
+            materialization,
+          });
+          const authorized = authorizeRpgExplorationTalk({
+            request: normalized,
+            materialization,
+            position: playerPosition,
+          });
+          const committed = campaigns.handleAuthorizedExplorationTalk({
+            campaignId: authorized.campaignId,
+            commandId: authorized.commandId,
+            expectedGameframeCoordinationRevision:
+              authorized.expectedGameframeCoordinationRevision,
+            issuedAt: authorized.issuedAt,
+            interactionTargetId: authorized.interactionTargetId,
+            targetEntityId: authorized.targetEntityId,
+            targetDisplayLabel: authorized.targetDisplayLabel,
+            text: authorized.text,
+          }, { kind: "player", playerId: principal.playerId });
+          realtime.notifyCampaign(explorationRoute.campaignId);
+          return sendJson(response, 200, {
+            protocolVersion: 1,
+            kind: "campaign.exploration_interaction_committed",
+            interaction: "talk",
+            interactionTargetId: authorized.interactionTargetId,
+            command: committed,
+            playerPosition,
+            replayed: false,
+          });
         }
 
         if (!options.explorationTransport) {
@@ -380,12 +457,12 @@ export function createDurableRpgHttpServer(
 
 function matchExplorationRoute(
   pathname: string,
-): { campaignId: string; operation: "attach" | "move" } | undefined {
-  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/exploration\/(attach|move)$/.exec(pathname);
+): { campaignId: string; operation: "attach" | "move" | "interact" } | undefined {
+  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/exploration\/(attach|move|interact)$/.exec(pathname);
   if (!match) return undefined;
   return {
     campaignId: decodeURIComponent(match[1]!),
-    operation: match[2] as "attach" | "move",
+    operation: match[2] as "attach" | "move" | "interact",
   };
 }
 
@@ -563,6 +640,14 @@ function normalizeError(error: unknown): {
     return failure(422, "unsupported-materialization", error.message, false);
   }
   if (error instanceof RpgExplorationMovementError) {
+    return failure(
+      error.code === "invalid-input" ? 400 : 409,
+      error.code,
+      error.message,
+      false,
+    );
+  }
+  if (error instanceof RpgExplorationInteractionError) {
     return failure(
       error.code === "invalid-input" ? 400 : 409,
       error.code,

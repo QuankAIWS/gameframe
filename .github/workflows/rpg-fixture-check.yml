@@ -38,6 +38,7 @@ on:
       - "src/server/durable-rpg-http-server.ts"
       - "src/server/durable-rpg-http-server.test.ts"
       - "src/server/durable-rpg-exploration-http.test.ts"
+      - "src/server/durable-rpg-exploration-talk.test.ts"
       - "src/server/durable-rpg-realtime-hub.ts"
       - "src/server/durable-rpg-realtime*.test.ts"
       - "src/server/durable-rpg-encounter-match-http.test.ts"
@@ -103,6 +104,7 @@ jobs:
           && node --experimental-strip-types --check src/rpg/rpg-exploration-contract.ts
           && node --experimental-strip-types --check src/rpg/rpg-exploration-materializer.ts
           && node --experimental-strip-types --check src/rpg/rpg-exploration-movement-service.ts
+          && node --experimental-strip-types --check src/rpg/rpg-exploration-interaction-service.ts
           && node --experimental-strip-types --check src/rpg/sqlite-rpg-exploration-position-store.ts
           && node --experimental-strip-types --check src/rpg/runtime-exploration-transport.ts
           && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
@@ -116,6 +118,7 @@ jobs:
           && node --check public/monster-master-rpg-model.js
           && node --check public/monster-master-rpg-app.js
           && node --check public/monster-master-rpg-world.js
+          && node --check public/monster-master-rpg-talk.js
           && node --check public/monster-master-rpg-return.js
 
       - name: Validate canonical fixtures and Node HTTP/realtime behavior
@@ -133,6 +136,7 @@ jobs:
           src/rpg/rpg-exploration-contract.test.ts
           src/rpg/rpg-exploration-materializer.test.ts
           src/rpg/rpg-exploration-movement-service.test.ts
+          src/rpg/rpg-exploration-interaction-service.test.ts
           src/rpg/runtime-exploration-transport.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
           src/rpg/rpg-dual-revision-contract.test.ts
@@ -148,6 +152,7 @@ jobs:
           src/rpg/structured-choice-flow.test.ts
           src/server/durable-rpg-http-server.test.ts
           src/server/durable-rpg-exploration-http.test.ts
+          src/server/durable-rpg-exploration-talk.test.ts
           src/server/durable-rpg-exploration-realtime.test.ts
           src/server/durable-rpg-realtime.test.ts
           src/server/durable-rpg-realtime-hmac.test.ts

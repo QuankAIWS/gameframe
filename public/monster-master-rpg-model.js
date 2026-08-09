@@ -44,6 +44,50 @@ export function buildActionCommand({
   };
 }
 
+export function buildExplorationTalkRequest({
+  campaignId: campaignIdValue,
+  commandId,
+  expectedGameframeCoordinationRevision,
+  sceneId,
+  materializationRef,
+  expectedPositionRevision,
+  interactionTargetId,
+  text,
+}) {
+  const campaignId = normalizeCampaignId(campaignIdValue);
+  validateCommandIdAndRevision(commandId, expectedGameframeCoordinationRevision);
+  const action = String(text ?? "").trim();
+  if (!action || action.length > 2_000) {
+    throw new TypeError("Talk must contain 1 through 2,000 characters.");
+  }
+  if (!materializationRef || typeof materializationRef !== "object" || Array.isArray(materializationRef)) {
+    throw new TypeError("Talk requires the current materialization reference.");
+  }
+  return {
+    type: "exploration_interact",
+    protocolVersion: 1,
+    campaignId,
+    sceneId: boundedIdentifier(sceneId, "sceneId"),
+    materializationRef: {
+      materializationId: boundedIdentifier(
+        materializationRef.materializationId,
+        "materializationId",
+      ),
+      version: boundedIdentifier(materializationRef.version, "materializationVersion"),
+      hash: boundedIdentifier(materializationRef.hash, "materializationHash"),
+    },
+    expectedPositionRevision: nonNegativeInteger(
+      expectedPositionRevision,
+      "expectedPositionRevision",
+    ),
+    expectedGameframeCoordinationRevision,
+    commandId,
+    interaction: "talk",
+    interactionTargetId: boundedIdentifier(interactionTargetId, "interactionTargetId"),
+    text: action,
+  };
+}
+
 export function buildChoiceCommand({
   campaignId: campaignIdValue,
   commandId,
@@ -208,38 +252,47 @@ export function presentCampaignChoice(eventValue, playerIdValue, allEventsValue 
 export function presentCampaignEvent(eventValue) {
   const event = normalizeEvent(eventValue);
   const payload = event.payload;
-  const speaker = readableText(payload.speakerName, 120)
+  const dialogue = firstDialogue(payload.dialogue);
+  const speaker = dialogue?.speakerName
+    ?? readableText(payload.speakerName, 120)
     ?? readableText(payload.speaker, 120)
     ?? readableText(payload.actorName, 120);
   const heading = speaker
     ?? readableText(payload.title, 160)
     ?? headingForKind(event.kind);
-  const body = readableText(payload.narration, 4_000)
-    ?? readableText(payload.text, 4_000)
-    ?? readableText(payload.dialogue, 4_000)
-    ?? readableText(payload.message, 4_000)
-    ?? readableText(payload.description, 4_000)
-    ?? compactPayload(payload);
+  const narration = readableText(payload.narration, 4_000);
+  const body = dialogue
+    ? [narration, dialogue.text].filter(Boolean).join("\n\n")
+    : narration
+      ?? readableText(payload.text, 4_000)
+      ?? readableText(payload.dialogue, 4_000)
+      ?? readableText(payload.message, 4_000)
+      ?? readableText(payload.description, 4_000)
+      ?? compactPayload(payload);
   return {
     eventId: event.eventId,
     kind: event.kind,
     heading,
     body,
     createdAt: event.createdAt ?? null,
-    tone: toneForKind(event.kind),
+    tone: dialogue ? "dialogue" : toneForKind(event.kind),
     audience: audienceLabel(event.audience),
   };
 }
 
 function validateCommandIdentity(commandId, issuedAt, expectedGameframeCoordinationRevision) {
+  validateCommandIdAndRevision(commandId, expectedGameframeCoordinationRevision);
+  if (!issuedAt || Number.isNaN(Date.parse(issuedAt))) {
+    throw new TypeError("A valid command timestamp is required.");
+  }
+}
+
+function validateCommandIdAndRevision(commandId, expectedGameframeCoordinationRevision) {
   if (!COMMAND_ID_PATTERN.test(String(commandId ?? ""))) {
     throw new TypeError("A stable command ID is required.");
   }
   if (!Number.isInteger(expectedGameframeCoordinationRevision) || expectedGameframeCoordinationRevision < 0) {
     throw new TypeError("A non-negative GameFrame coordination revision is required.");
-  }
-  if (!issuedAt || Number.isNaN(Date.parse(issuedAt))) {
-    throw new TypeError("A valid command timestamp is required.");
   }
 }
 
@@ -279,6 +332,17 @@ function normalizeChoiceOptions(value) {
     throw new TypeError("Choice option IDs must be unique.");
   }
   return options;
+}
+
+function firstDialogue(value) {
+  if (!Array.isArray(value) || value.length < 1) return null;
+  for (const candidate of value) {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) continue;
+    const speakerName = readableText(candidate.speakerName, 120);
+    const text = readableText(candidate.text, 4_000);
+    if (speakerName && text) return { speakerName, text };
+  }
+  return null;
 }
 
 function normalizeEvent(value) {

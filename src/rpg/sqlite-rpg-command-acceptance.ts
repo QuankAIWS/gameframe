@@ -55,6 +55,12 @@ export type StoredRpgPresentationEvent = DurableRpgPresentationEvent & {
   createdAt: string;
 };
 
+export type DurableCommittedGameFrameCommand = {
+  receipt: DurableGameFrameCommandReceipt;
+  delivery: RuntimeCommandDeliveryV1;
+  presentationEvents: StoredRpgPresentationEvent[];
+};
+
 export class SqliteRpgCommandAcceptanceError extends Error {
   readonly code:
     | "invalid-input"
@@ -288,6 +294,50 @@ export class SqliteRpgCommandAcceptanceRepository {
     const campaignId = identifier(campaignIdValue, "campaignId");
     const row = this.#selectState.get(campaignId) as CoordinationRow | undefined;
     return row ? stateFromRow(row) : undefined;
+  }
+
+  committedCommand(
+    campaignIdValue: unknown,
+    commandIdValue: unknown,
+  ): DurableCommittedGameFrameCommand | undefined {
+    const campaignId = identifier(campaignIdValue, "campaignId");
+    const commandId = identifier(commandIdValue, "commandId");
+    const commandRow = this.#selectCommand.get(campaignId, commandId) as CommandRow | undefined;
+    if (!commandRow) return undefined;
+    const receipt = parseReceipt(commandRow.receipt_json, campaignId, commandId);
+    const outboxRow = this.#selectOutboxByCommand.get(campaignId, commandId) as OutboxRow | undefined;
+    if (!outboxRow) {
+      throw new SqliteRpgCommandAcceptanceError(
+        "corrupt-store",
+        `Command ${campaignId}/${commandId} has no durable outbox record.`,
+      );
+    }
+    const delivery = normalizeRuntimeCommandDelivery(JSON.parse(outboxRow.payload_json));
+    const deliveryFingerprint = fingerprint(stableJson(delivery));
+    if (
+      outboxRow.delivery_id !== receipt.deliveryId
+      || outboxRow.campaign_id !== campaignId
+      || outboxRow.command_id !== commandId
+      || delivery.deliveryId !== receipt.deliveryId
+      || delivery.campaignId !== campaignId
+      || delivery.commandId !== commandId
+      || outboxRow.fingerprint !== deliveryFingerprint
+    ) {
+      throw new SqliteRpgCommandAcceptanceError(
+        "corrupt-store",
+        `Command ${campaignId}/${commandId} durable identity is corrupt.`,
+      );
+    }
+    const eventIds = new Set(receipt.eventIds);
+    const presentationEvents = this.presentationEvents(campaignId, 0)
+      .filter((event) => eventIds.has(event.eventId));
+    if (presentationEvents.length !== receipt.eventIds.length) {
+      throw new SqliteRpgCommandAcceptanceError(
+        "corrupt-store",
+        `Command ${campaignId}/${commandId} presentation custody is incomplete.`,
+      );
+    }
+    return { receipt, delivery, presentationEvents };
   }
 
   acceptCommand(inputValue: unknown): DurableGameFrameCommandReceipt {
@@ -551,10 +601,12 @@ function normalizePlayerCommand(value: unknown): RuntimePlayerCommandV1 {
     if (command.visibility !== "public" && command.visibility !== "private-to-runtime") {
       throw invalid("command.visibility is not supported");
     }
+    const interaction = normalizeInteraction(command.interaction);
     return {
       kind: "campaign.submit_action",
       visibility: command.visibility,
       text: text(command.text, "command.text", 4_000),
+      ...(interaction ? { interaction } : {}),
     };
   }
   if (command.kind === "campaign.submit_choice") {
@@ -565,6 +617,26 @@ function normalizePlayerCommand(value: unknown): RuntimePlayerCommandV1 {
     };
   }
   throw invalid("command.kind is not supported");
+}
+
+function normalizeInteraction(
+  value: unknown,
+): { kind: "talk"; targetEntityId: string } | undefined {
+  if (value === undefined) return undefined;
+  const interaction = record(value, "command.interaction");
+  const unknown = Object.keys(interaction).filter(
+    (key) => key !== "kind" && key !== "targetEntityId",
+  );
+  if (unknown.length > 0) {
+    throw invalid(`command.interaction contains unsupported fields: ${unknown.sort().join(", ")}`);
+  }
+  if (interaction.kind !== "talk") {
+    throw invalid("command.interaction.kind is not supported");
+  }
+  return {
+    kind: "talk",
+    targetEntityId: identifier(interaction.targetEntityId, "command.interaction.targetEntityId"),
+  };
 }
 
 function normalizePresentationEvent(value: unknown): DurableRpgPresentationEvent {

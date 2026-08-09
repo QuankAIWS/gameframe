@@ -37,6 +37,20 @@ export type DurableRpgPrincipal =
   | { kind: "player"; playerId: string }
   | { kind: "runtime"; serviceId: string };
 
+export type ExplorationTalkRetryCommand = {
+  campaignId: string;
+  commandId: string;
+  expectedGameframeCoordinationRevision: number;
+  issuedAt: string;
+  interactionTargetId: string;
+  text: string;
+};
+
+export type AuthorizedExplorationTalkCommand = ExplorationTalkRetryCommand & {
+  targetEntityId: string;
+  targetDisplayLabel: string;
+};
+
 export class DurableRpgCampaignServiceError extends Error {
   readonly code: string;
   readonly status: number;
@@ -169,6 +183,129 @@ export class DurableRpgCampaignService {
       message: "The durable campaign service accepts campaign.submit_action and campaign.submit_choice.",
       status: 400,
     });
+  }
+
+  /**
+   * Resolves an exact already-committed Talk retry before current-world physical
+   * authorization is repeated. The command ID remains bound to the original
+   * authenticated player, text, viewer-safe target handle, coordination source,
+   * and issuedAt timestamp. A changed retry fails closed as a command conflict.
+   */
+  findCommittedExplorationTalk(
+    inputValue: ExplorationTalkRetryCommand,
+    principalValue: DurableRpgPrincipal,
+  ): DurableGameFrameCommandReceipt | undefined {
+    const principal = playerPrincipal(principalValue);
+    const input = requestRecord(inputValue, "exploration Talk retry");
+    const campaignId = identifier(input.campaignId, "campaignId");
+    const commandId = identifier(input.commandId, "commandId");
+    const expected = nonNegativeInteger(
+      input.expectedGameframeCoordinationRevision,
+      "expectedGameframeCoordinationRevision",
+    );
+    const issuedAt = timestamp(input.issuedAt, "issuedAt");
+    const interactionTargetId = identifier(input.interactionTargetId, "interactionTargetId");
+    const text = boundedText(input.text, "text", MAX_ACTION_TEXT_LENGTH);
+
+    let committed;
+    try {
+      committed = this.#commands.committedCommand(campaignId, commandId);
+    } catch (error) {
+      throw mapCommandError(error, this.#commands.state(campaignId));
+    }
+    if (!committed) return undefined;
+
+    const command = committed.delivery.command;
+    const presentation = committed.presentationEvents.find((event) =>
+      event.kind === "campaign.action_submitted"
+    );
+    const payload = presentation?.payload;
+    const exact = committed.delivery.authenticatedPlayerId === principal.playerId
+      && committed.delivery.sourceGameframeCoordinationRevision === expected
+      && committed.delivery.issuedAt === issuedAt
+      && command.kind === "campaign.submit_action"
+      && command.visibility === "private-to-runtime"
+      && command.text === text
+      && command.interaction?.kind === "talk"
+      && presentation?.audience.kind === "player"
+      && presentation.audience.playerId === principal.playerId
+      && payload?.actorId === principal.playerId
+      && payload?.text === text
+      && payload?.interaction === "talk"
+      && payload?.interactionTargetId === interactionTargetId;
+    if (!exact) {
+      throw new DurableRpgCampaignServiceError({
+        code: "command-conflict",
+        message: `Command ${campaignId}/${commandId} was reused with different Talk content.`,
+        status: 409,
+      });
+    }
+    return committed.receipt;
+  }
+
+  /**
+   * Accepts Talk only after the HTTP exploration boundary has converted a
+   * viewer-safe interactionTargetId into a current adjacent canonical entity.
+   * The generic browser `/commands` path has no way to attach this semantic
+   * target metadata.
+   */
+  handleAuthorizedExplorationTalk(
+    inputValue: AuthorizedExplorationTalkCommand,
+    principalValue: DurableRpgPrincipal,
+  ): DurableGameFrameCommandReceipt {
+    const principal = playerPrincipal(principalValue);
+    const input = requestRecord(inputValue, "authorized exploration Talk");
+    const campaignId = identifier(input.campaignId, "campaignId");
+    const commandId = identifier(input.commandId, "commandId");
+    const expected = nonNegativeInteger(
+      input.expectedGameframeCoordinationRevision,
+      "expectedGameframeCoordinationRevision",
+    );
+    const issuedAt = timestamp(input.issuedAt, "issuedAt");
+    const interactionTargetId = identifier(input.interactionTargetId, "interactionTargetId");
+    const targetEntityId = identifier(input.targetEntityId, "targetEntityId");
+    const targetDisplayLabel = boundedText(
+      input.targetDisplayLabel,
+      "targetDisplayLabel",
+      MAX_CHOICE_LABEL_LENGTH,
+    );
+    const text = boundedText(input.text, "text", MAX_ACTION_TEXT_LENGTH);
+
+    try {
+      return this.#commands.acceptCommand({
+        campaignId,
+        commandId,
+        authenticatedPlayerId: principal.playerId,
+        expectedGameframeCoordinationRevision: expected,
+        issuedAt,
+        command: {
+          kind: "campaign.submit_action",
+          visibility: "private-to-runtime",
+          text,
+          interaction: {
+            kind: "talk",
+            targetEntityId,
+          },
+        },
+        presentationEvents: [
+          {
+            eventId: actionEventId(campaignId, commandId),
+            kind: "campaign.action_submitted",
+            audience: { kind: "player", playerId: principal.playerId },
+            payload: {
+              commandId,
+              actorId: principal.playerId,
+              text,
+              interaction: "talk",
+              interactionTargetId,
+              targetDisplayLabel,
+            },
+          },
+        ],
+      });
+    } catch (error) {
+      throw mapCommandError(error, this.#commands.state(campaignId));
+    }
   }
 
   #acceptAction(input: {
