@@ -1,7 +1,6 @@
 const BOARD_SIZE = 8;
 const TILE_KINDS = 6;
 const LEVEL_COUNT = 20;
-const IOU_CAP = 50;
 const LIFE_MAX = 5;
 const LIFE_REGEN_MS = 10 * 60 * 1000;
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
@@ -61,7 +60,7 @@ function loadState() {
       lives: Math.min(LIFE_MAX, Math.max(0, Number(parsed.lives) || 0)),
       streak: Math.max(0, Number(parsed.streak) || 0),
       hammers: Math.max(0, Number(parsed.hammers) || 0),
-      ledger: Array.isArray(parsed.ledger) ? parsed.ledger.slice(-100) : [],
+      ledger: Array.isArray(parsed.ledger) ? parsed.ledger : [],
     };
   } catch {
     return defaultState();
@@ -94,7 +93,7 @@ function track(type, detail = {}) {
     });
     localStorage.setItem(ANALYTICS_KEY, JSON.stringify(events.slice(-500)));
   } catch {
-    // Research telemetry is local-only and must never break gameplay.
+    // Local telemetry must never break gameplay.
   }
 }
 
@@ -112,16 +111,11 @@ function applyLifeRegen() {
   saveState();
 }
 
-function fakeIouTotal() {
+function iouTotal() {
   return state.ledger.reduce((sum, item) => sum + Number(item.amount || 0), 0);
 }
 
-function canAddIou(amount) {
-  return fakeIouTotal() + amount <= IOU_CAP;
-}
-
 function addIou(reason, amount) {
-  if (!canAddIou(amount)) return false;
   state.ledger.push({
     at: new Date().toISOString(),
     reason,
@@ -129,25 +123,24 @@ function addIou(reason, amount) {
     level: activeLevel.level,
   });
   saveState();
-  track("iou_accept", { reason, amount, total: fakeIouTotal() });
+  track("iou_accept", { reason, amount, total: iouTotal() });
   renderLedger();
-  return true;
 }
 
 function renderLedger() {
-  const total = fakeIouTotal();
-  iouTotalElement.textContent = `$${total}`;
+  const total = iouTotal();
+  iouTotalElement.textContent = `IOU$ ${total.toLocaleString()}`;
   ledgerList.replaceChildren();
   if (!state.ledger.length) {
     const empty = document.createElement("li");
-    empty.innerHTML = "<span>No fake IOUs yet.</span><strong>$0</strong>";
+    empty.innerHTML = "<span>No IOUs yet.</span><strong>IOU$ 0</strong>";
     ledgerList.append(empty);
     return;
   }
   for (const item of [...state.ledger].reverse()) {
     const li = document.createElement("li");
     const time = new Date(item.at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-    li.innerHTML = `<span>${escapeHtml(item.reason)} · L${item.level} · ${time}</span><strong>+$${item.amount}</strong>`;
+    li.innerHTML = `<span>${escapeHtml(item.reason)} · L${item.level} · ${time}</span><strong>+${item.amount} IOU$</strong>`;
     ledgerList.append(li);
   }
 }
@@ -474,25 +467,24 @@ async function checkLevelEnd() {
 
 function showExtraMovesOffer() {
   const amount = 2;
-  const canIou = canAddIou(amount);
   showDialog({
     kicker: "OUT OF MOVES",
-    title: `You were ${Math.max(0, activeLevel.target - score).toLocaleString()} points short.`,
-    copy: "End the attempt, or use a research-only fake IOU for five extra moves. The IOU is not money and cannot be collected.",
+    title: `Only ${Math.max(0, activeLevel.target - score).toLocaleString()} points short.`,
+    copy: "Five more moves and you're right back in it.",
     eventType: "offer_shown",
     actions: [
-      button("End attempt", "", () => {
+      button("Take the loss", "", () => {
         track("offer_decline", { offer: "extra_moves" });
         closeResultDialog();
         consumeLifeAndRetry();
       }),
-      button(canIou ? "Put +5 moves on my fake tab ($2)" : `Fake tab cap reached ($${IOU_CAP})`, "iou", () => {
-        if (!addIou("Five extra moves", amount)) return;
+      button("GET +5 MOVES · 2 IOU$", "iou", () => {
+        addIou("Five extra moves", amount);
         movesRemaining += 5;
         locked = false;
         closeResultDialog();
         renderStatus();
-      }, !canIou),
+      }),
     ],
   });
 }
@@ -514,49 +506,47 @@ function consumeLifeAndRetry() {
 
 function showLivesOffer() {
   const amount = 5;
-  const canIou = canAddIou(amount);
   showDialog({
     kicker: "OUT OF LIVES",
-    title: "Run paused.",
-    copy: "A life regenerates every 10 minutes. The fake IOU option exists only to measure how much immediate continuation is worth in this family test.",
+    title: "Keep playing?",
+    copy: "Refill all five lives and jump straight back in.",
     eventType: "offer_shown",
     actions: [
-      button("Stop here", "", () => {
+      button("I'll wait", "", () => {
         track("offer_decline", { offer: "lives_refill" });
         closeResultDialog();
       }),
-      button(canIou ? "Refill 5 lives on my fake tab ($5)" : `Fake tab cap reached ($${IOU_CAP})`, "iou", () => {
-        if (!addIou("Five-life refill", amount)) return;
+      button("REFILL 5 LIVES · 5 IOU$", "iou", () => {
+        addIou("Five-life refill", amount);
         state.lives = LIFE_MAX;
         state.lastLifeAt = Date.now();
         saveState();
         closeResultDialog();
         startLevel(activeLevel.level);
-      }, !canIou),
+      }),
     ],
   });
 }
 
 function showHammerOffer() {
   const amount = 3;
-  const canIou = canAddIou(amount);
   showDialog({
     kicker: "NO HAMMERS",
-    title: "Booster shelf is empty.",
-    copy: "Three hammers can be added to the fake family tab. This is a transparent research checkpoint, not a purchase.",
+    title: "Need more firepower?",
+    copy: "Grab three fresh hammers instantly.",
     eventType: "offer_shown",
     actions: [
-      button("No thanks", "", () => {
+      button("Not now", "", () => {
         track("offer_decline", { offer: "hammer_bundle" });
         closeResultDialog();
       }),
-      button(canIou ? "Add 3 hammers to fake tab ($3)" : `Fake tab cap reached ($${IOU_CAP})`, "iou", () => {
-        if (!addIou("Three-hammer bundle", amount)) return;
+      button("GET 3 HAMMERS · 3 IOU$", "iou", () => {
+        addIou("Three-hammer bundle", amount);
         state.hammers += 3;
         saveState();
         closeResultDialog();
         renderStatus();
-      }, !canIou),
+      }),
     ],
   });
 }

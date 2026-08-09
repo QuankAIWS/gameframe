@@ -5,7 +5,7 @@ Scope: GameFrame casual-games lane and the first match-3 title, **Cascade**
 
 ## Product thesis
 
-The first casual GameFrame title should prove one narrow thing before the platform grows: can a simple, highly polished match-3 loop make an ordinary adult player voluntarily choose "one more level" and, in the family research build, choose a clearly fictional IOU continuation option?
+The first casual GameFrame title should prove one narrow thing before the platform grows: can a simple, highly polished match-3 loop make an ordinary adult player voluntarily choose "one more level" and, in the family build, choose to put continuation on the **Family Tab** using **IOU Dollars (IOU$)**?
 
 The game must be original in presentation, content, level design, art, names, progression, and implementation. Match-3 swapping, limited moves, score/objective levels, boosters, lives, and cascades are genre mechanics; Candy Crush, Royal Match, and other products are references for product research rather than assets or level templates.
 
@@ -33,13 +33,13 @@ Consumer research on endowed progress and goal pursuit shows that visible advanc
 
 Official Candy Crush documentation describes five-life gating, timed life regeneration, extra moves after failure, pre-game/in-game/end-game boosters, and Gold Bars as a currency used for continuation/help. Royal Match documentation similarly describes coins that can buy extra lives, extra moves, and boosters.
 
-**Implementation in the family research build:** the same *decision locations* exist, but there is no payment method. The only artificial currency is a plainly labeled fake family IOU ledger.
+**Implementation in the family build:** the same decision locations exist, but the currency is **IOU$** recorded on a running Family Tab. The point is to observe which continuation choices players value enough to put on the tab.
 
 ### 5. Randomized paid rewards and deceptive purchase flows are a different risk class
 
 Systematic reviews consistently associate loot-box engagement/spending with problem gambling/problem gaming, while experimental work finds rare randomized rewards unusually arousing and urge-inducing. The FTC has also taken enforcement action over dark patterns that caused unintended in-game purchases.
 
-**Implementation boundary:** no loot boxes, no paid randomness, no hidden prices, no default purchase, no false countdowns, no impossible-to-dismiss modal, no personalized targeting of vulnerable behavior, and no real debt. The IOU experiment is transparent, local-only, resettable, and capped.
+**Implementation boundary:** no loot boxes, no paid randomness, no hidden prices, no default purchase, no false countdowns, and no impossible-to-dismiss modal. Family Tab choices remain explicit button presses with visible IOU$ prices.
 
 ## First playable: Cascade
 
@@ -73,31 +73,33 @@ The first booster is a hammer:
 
 - two are granted initially;
 - a hammer removes one selected tile without consuming a move;
-- zero inventory exposes a fake-IOU booster checkpoint.
+- zero inventory exposes a Family Tab booster checkpoint.
 
 Future boosters should be mechanically distinct, not merely larger numbers: row clear, column clear, color clear, free swap, pre-level special placement, and objective-specific tools.
 
-## Fake IOU experiment
+## Family Tab / IOU$ experiment
 
-All IOUs are fictional. There is no real payment instrument, debt, collection mechanism, interest, credit, or enforceability.
+The Family Tab is a running game currency ledger. It does **not** have a cap: if a player keeps choosing continuation, the IOU$ total keeps accumulating.
 
 The first build has three explicit checkpoints:
 
-1. **Out of moves:** +5 moves for a $2 fake IOU.
-2. **Out of lives:** refill five lives for a $5 fake IOU.
-3. **Out of hammers:** three hammers for a $3 fake IOU.
+1. **Out of moves:** +5 moves for 2 IOU$.
+2. **Out of lives:** refill five lives for 5 IOU$.
+3. **Out of hammers:** three hammers for 3 IOU$.
 
-Controls:
+Product rules:
 
-- total fake tab capped at $50;
-- every offer says it is fictional;
-- ledger can be inspected and reset;
+- no IOU$ cap;
+- no ledger-history cap;
+- offers use short, game-like copy rather than disclaimer language;
+- the IOU$ action is the large, colorful primary continuation button;
+- the ledger can be inspected and reset;
 - state stays in browser localStorage;
 - analytics stay in browser localStorage;
 - no external telemetry is sent;
 - one life regenerates every ten minutes.
 
-This gives us a behavioral signal at familiar monetization decision points without turning the family build into a real-money product.
+This gives us a behavioral signal at familiar monetization decision points while preserving the Family Tab as part of the game's joke and competitive family context.
 
 ## Local research events
 
@@ -114,14 +116,14 @@ Events include:
 - booster armed/used;
 - offer shown;
 - offer declined;
-- fake IOU accepted;
+- IOU accepted;
 - ledger reset.
 
-The event store is bounded to the most recent 500 events.
+The event store is bounded to the most recent 500 events. The **IOU ledger itself is not bounded**.
 
 ## Metrics for the first family test
 
-The first question is not "how long can we trap somebody in the app?" It is whether the core game is strong enough that continuation is voluntarily valuable.
+The first question is whether the core game is strong enough that continuation is voluntarily valuable.
 
 Track:
 
@@ -134,11 +136,11 @@ Track:
 - maximum level reached;
 - streak length;
 - booster use rate;
-- fake-IOU offer impressions;
-- fake-IOU acceptance rate by offer type;
-- fake IOU total per player profile.
+- IOU$ offer impressions;
+- IOU$ acceptance rate by offer type;
+- cumulative IOU$ total per player profile.
 
-A useful early success signal is an IOU acceptance occurring **after several genuinely enjoyable levels**, not immediately because the opening levels are artificially frustrating.
+A useful early signal is an IOU$ acceptance occurring after several genuinely enjoyable levels rather than immediately because the opening levels are artificially frustrating.
 
 ## Next development slices
 
@@ -148,7 +150,7 @@ A useful early success signal is an IOU acceptance occurring **after several gen
 4. Add an automated match-3 playtester to estimate solvability, expected remaining moves, and difficulty variance.
 5. Add sound, haptics, better clear/cascade animation, and distinctive original art.
 6. Add a lightweight level map and reward cadence.
-7. Add a family-facing research summary screen showing play/IOU metrics.
+7. Add a family-facing summary screen showing play/IOU$ metrics.
 8. Only after real traces exist, tune difficulty and offer placement from evidence.
 
 ## Sources used for the initial design
