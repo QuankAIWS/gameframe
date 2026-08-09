@@ -43,6 +43,7 @@ function nearbyTalkTargets() {
   return payload.materialization.anchors
     .filter((anchor) =>
       anchor?.kind === "entity"
+      && anchor.entityClass === "actor"
       && typeof anchor.interactionTargetId === "string"
       && anchor.interactionTargetId
       && Number.isSafeInteger(anchor.x)
