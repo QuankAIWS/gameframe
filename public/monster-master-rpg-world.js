@@ -20,7 +20,6 @@ const state = {
   rendererRevision: 0,
   moveInFlight: false,
   queuedDirection: null,
-  movementSocket: null,
 };
 
 function requireMaterializedPayload(value) {
@@ -209,12 +208,10 @@ function present(value) {
   updateWorldHeader(payload);
   window.dispatchEvent(new CustomEvent(VIEW_EVENT, { detail: { view: state.view } }));
   scheduleAnchors();
-  ensureMovementSocket();
   return state.view;
 }
 
 function clear() {
-  stopMovementSocket();
   state.payload = null;
   state.view = null;
   state.campaignId = null;
@@ -281,74 +278,6 @@ async function attachCurrentCampaign({ quiet = false } = {}) {
   return promise;
 }
 
-function movementSocketUrl(campaignId) {
-  const url = new URL(
-    `/api/rpg/campaigns/${encodeURIComponent(campaignId)}/realtime`,
-    window.location.href,
-  );
-  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-  return url;
-}
-
-function ensureMovementSocket() {
-  if (
-    identity?.source !== "discord"
-    || !state.campaignId
-    || typeof WebSocket !== "function"
-    || state.movementSocket?.readyState === WebSocket.OPEN
-    || state.movementSocket?.readyState === WebSocket.CONNECTING
-  ) return;
-  const campaignId = state.campaignId;
-  const socket = new WebSocket(movementSocketUrl(campaignId));
-  state.movementSocket = socket;
-  socket.onmessage = (event) => {
-    if (state.movementSocket !== socket || state.campaignId !== campaignId) return;
-    let message;
-    try {
-      message = JSON.parse(event.data);
-    } catch {
-      return;
-    }
-    if (message?.type === "exploration_position") {
-      acceptPosition(message);
-      return;
-    }
-    if (message?.type === "protocol_error" && state.moveInFlight) {
-      state.moveInFlight = false;
-      if (
-        message.code === "position-revision-conflict"
-        || message.code === "stale-materialization"
-        || message.code === "exploration-session-unavailable"
-      ) {
-        void attachCurrentCampaign({ quiet: true }).catch(() => undefined);
-      }
-      drainMoveQueue();
-    }
-  };
-  socket.onclose = () => {
-    if (state.movementSocket === socket) state.movementSocket = null;
-    if (state.moveInFlight) {
-      state.moveInFlight = false;
-      drainMoveQueue();
-    }
-  };
-  socket.onerror = () => socket.close();
-}
-
-function stopMovementSocket() {
-  const socket = state.movementSocket;
-  state.movementSocket = null;
-  if (!socket) return;
-  socket.onclose = null;
-  socket.onerror = null;
-  socket.onmessage = null;
-  try {
-    socket.close();
-  } catch {
-    // The physical movement channel is disposable.
-  }
-}
-
 function moveRequest(direction) {
   if (!state.payload || !state.playerPosition) return null;
   return {
@@ -360,17 +289,6 @@ function moveRequest(direction) {
     expectedPositionRevision: state.playerPosition.positionRevision,
     direction,
   };
-}
-
-function sendMovementSocket(request) {
-  const socket = state.movementSocket;
-  if (!socket || socket.readyState !== WebSocket.OPEN) return false;
-  try {
-    socket.send(JSON.stringify(request));
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 async function sendMovementHttp(request) {
@@ -411,8 +329,6 @@ function drainMoveQueue() {
   const request = moveRequest(direction);
   if (!request) return;
   state.moveInFlight = true;
-  ensureMovementSocket();
-  if (sendMovementSocket(request)) return;
 
   void sendMovementHttp(request).then((position) => {
     acceptPosition(position);
@@ -554,5 +470,4 @@ document.querySelector("#mm-rpg-refresh")?.addEventListener("click", () => {
 document.querySelector("#mm-rpg-switch")?.addEventListener("click", clear);
 window.addEventListener("keydown", handleKeydown);
 window.addEventListener("resize", scheduleAnchors);
-window.addEventListener("pagehide", stopMovementSocket, { once: true });
 requestAnimationFrame(watchCamera);
