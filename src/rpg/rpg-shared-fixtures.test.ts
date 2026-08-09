@@ -35,7 +35,7 @@ function unique(values: string[], label: string): void {
 test("shared RPG fixture manifest names versioned canonical files", () => {
   const manifest = readJson("shared-rpg-fixtures.json");
   assert.equal(manifest.manifestVersion, 1);
-  assert.equal(manifest.contractVersion, 2);
+  assert.equal(manifest.contractVersion, 3);
   assert.equal(manifest.canonicalRepository, "QuankAIWS/scribbles-gameframe");
   assert.equal(manifest.canonicalRoot, "planning/fixtures/rpg/v1");
   assert.equal(manifest.mirrorRepository, "QuankAIWS/rpg-gm-runtime");
@@ -50,6 +50,7 @@ test("shared RPG fixture manifest names versioned canonical files", () => {
   unique(ids, "fixture IDs");
   unique(filenames, "fixture filenames");
   assert.ok(ids.includes("campaign-revision-linkage"));
+  assert.ok(ids.includes("exploration-port-a"));
   for (const filename of filenames) {
     assert.match(filename, /^[A-Za-z0-9][A-Za-z0-9._-]*\.json$/);
     readJson(filename);
@@ -118,4 +119,23 @@ test("campaign port slice A is internally consistent", () => {
   assert.ok(array(encounterRequest.participants, "encounter participants").length >= 1);
   assert.ok(array(encounterRequest.objectives, "encounter objectives").length >= 1);
   assert.equal(record(encounter.expected, "encounter expected").exactRetryReturnsSameHandle, true);
+});
+
+test("exploration port fixture carries no physical-state authority", () => {
+  const fixture = readJson("exploration-port-a.json");
+  assert.equal(fixture.fixtureVersion, 1);
+  assert.equal(fixture.contract, "rpg-exploration-port");
+  const request = record(fixture.request, "request");
+  assert.equal(request.protocolVersion, 1);
+  assert.equal(request.kind, "campaign.exploration.attach");
+  const projection = record(fixture.projection, "projection");
+  assert.equal(projection.protocolVersion, 1);
+  assert.equal(projection.kind, "campaign.exploration_projection");
+  const expected = record(fixture.expected, "expected");
+  assert.equal(expected.movementFramesAreRuntimeJournalEvents, false);
+  const serialized = JSON.stringify(projection);
+  for (const field of array(expected.forbiddenProjectionFields, "forbiddenProjectionFields")) {
+    const name = string(field, "forbidden field");
+    assert.equal(serialized.includes(`\"${name}\"`), false, `projection contains forbidden field ${name}`);
+  }
 });
