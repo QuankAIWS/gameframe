@@ -162,3 +162,44 @@ test("Talk rejects stale position and browser-supplied semantic target fields", 
     positions.close();
   }
 });
+
+test("first-slice Talk rejects an adjacent non-actor entity", () => {
+  const semantic = projection();
+  const materialization = materializeRpgExplorationProjection(semantic);
+  materialization.anchors.push({
+    anchorId: "entity:monster.synthetic",
+    kind: "entity",
+    semanticId: "monster.synthetic",
+    interactionTargetId: "entity:monster.synthetic",
+    label: "nearby monster",
+    x: 15,
+    y: 7,
+    entityClass: "monster",
+    identityStage: "name",
+  });
+  const positions = new SqliteRpgExplorationPositionStore({ filePath: databasePath() });
+  const movement = new RpgExplorationMovementService({ positions });
+  try {
+    const position = movement.attach({
+      playerId: semantic.viewer.playerId,
+      projection: semantic,
+      materialization,
+    });
+    assert.deepEqual(position.transform, { x: 14, y: 7, facing: "west" });
+    assert.throws(
+      () => authorizeRpgExplorationTalk({
+        request: talkRequest(
+          semantic,
+          position.positionRevision,
+          "entity:monster.synthetic",
+        ),
+        materialization,
+        position,
+      }),
+      (error: unknown) => error instanceof RpgExplorationInteractionError
+        && error.code === "interaction-target-unavailable",
+    );
+  } finally {
+    positions.close();
+  }
+});
