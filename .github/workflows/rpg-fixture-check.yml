@@ -98,6 +98,7 @@ jobs:
           node --experimental-strip-types --check src/server/run-durable-rpg-service.ts
           && node --experimental-strip-types --check src/server/http-server.ts
           && node --experimental-strip-types --check src/server/durable-rpg-realtime-hub.ts
+          && node --experimental-strip-types --check src/rpg/rpg-exploration-contract.ts
           && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
           && node --experimental-strip-types --check src/rpg/monster-master-rpg-encounter-materializer.ts
           && node --experimental-strip-types --check src/rpg/sqlite-rpg-encounter-match-binding-store.ts
@@ -122,6 +123,7 @@ jobs:
           src/cloudflare/rpg-realtime-edge-proxy.test.ts
           src/platform/sqlite-match-store.test.ts
           src/rpg/monster-master-rpg-encounter-materializer.test.ts
+          src/rpg/rpg-exploration-contract.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
           src/rpg/rpg-dual-revision-contract.test.ts
           src/rpg/rpg-choice-outcome-fixture.test.ts
