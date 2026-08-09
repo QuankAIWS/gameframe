@@ -3,13 +3,12 @@ title: RPG Campaign Experience Direction
 status: accepted
 document_type: decision
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-08
+last_updated: 2026-08-09
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
-  - GameFrame RPG
+  - Role-Playing Games
   - Monster Master RPG
-  - scribbles-runtime-theo-connector
 supersedes:
   - Discord-first illustrated campaign direction
   - unresolved Discord-first versus game-heavy evaluation
@@ -17,8 +16,6 @@ supersedes:
   - separate Arena-map campaign combat as the mature tactical experience
 related:
   - shared/rpg-platform-product-goals.md
-  - shared/rpg-agent-architecture-and-campaign-package.md
-  - shared/rpg-scene-entity-and-knowledge-contract.md
   - shared/rpg-embodied-exploration-and-character-performance-contract.md
   - shared/rpg-platform-roadmap.md
   - rpg-gm-runtime-boundary.md
@@ -29,204 +26,158 @@ related:
 
 ## Decision
 
-The RPG is an **all-GameFrame embodied campaign experience** built on the reusable GameFrame RPG Engine.
-
-GameFrame is the complete authenticated player application for campaign creation/resume, persistent world exploration, direct interaction, Game Master communication, deterministic mechanics, same-map tactical play, history, and recovery.
+The RPG is an **all-GameFrame embodied campaign experience**.
 
 The mature primary loop is a playable persistent 2D world:
 
 ```text
 explore
-→ approach/interact/talk
+→ approach / target / interact
 → supported deterministic action or freeform adjudication
-→ world changes persist
+→ accepted world/semantic change
+→ world presentation updates
 → continue exploring
 ```
 
-When circumstances require initiative:
+The player can always use **Do Something Else** for plausible intent outside fixed controls and **Ask Game Master** for out-of-fiction rules/knowledge/clarification.
+
+When initiative is required, the current world scene enters same-map Tactical Mode. No campaign Battle Simulator/Arena handoff occurs.
+
+## Current evidence and priority
 
 ```text
-current world scene
-→ Tactical Activation
-→ same map under turn-based rules
-→ tactical consequences
-→ same scene returns to exploration
+SEE      ✅
+MOVE     ✅
+MOBILE   ✅
+TALK     ← ACTIVE
+CHANGE
+TRAVEL
+FIGHT
+PROVE
 ```
 
-No replacement campaign battlefield is loaded and no campaign `Return to Campaign` step exists.
+Staging currently supports entering Crooked Checkpoint and walking it on desktop/mobile with durable physical recovery. West Woods is visible as a route affordance but is not yet a functioning scene transfer. Direct Talk/object interaction is not yet implemented.
 
-## Product family relationship
-
-- **GameFrame RPG Engine** is the reusable campaign-agnostic world/player/mechanics engine.
-- **GameFrame RPG** is the future generic campaign creation/library/resume destination.
-- **Monster Master RPG** is a bespoke title using GameFrame RPG Engine + Monster Master Ruleset + Monster Master CampaignPackage/content.
-- **Monster Master Battle Arena** is a separate standalone battle simulator using Monster Master Ruleset + BattleScenario setup.
-
-The RPG and Battle Arena should share Monster Master tactical rules where capabilities/versions match, but campaign combat never launches the standalone Arena product.
-
-## Campaign creation experience
-
-GameFrame should eventually let a player/group create a campaign through:
-
-- a concise freeform idea;
-- a detailed description;
-- a structured campaign sheet;
-- a guided GameFrame flow;
-- an optional Discord interview;
-- a prepared campaign such as Monster Master;
-- imported compatible CampaignPackage material.
-
-Those inputs become a Campaign Architect draft, optional owner refinement, validation/repair, player-safe preview, and explicit commitment.
-
-Monster Master remains handcrafted first. A materially different second handcrafted campaign must prove the same engine/runtime/ruleset abstractions before Campaign Architect generation becomes an active dependency.
-
-## Player interaction modes
+## Interaction modes
 
 ### Explore
 
-Move through persistent materialized maps with normal avatar/camera controls, collision/pathing, inspection, and supported object/world interaction.
+Move through persistent materialized maps with avatar/camera controls, collision, picking, and supported world mechanisms.
 
-### Talk / Interact
+### Interact
 
-Approach and interact with a present entity/object directly.
+Target a nearby viewer-authorized person, creature, object, or route. GameFrame owns physical target/range eligibility. Contextual actions are conveniences, not the complete action space.
 
-NPC dialogue is in-fiction. A character performer receives perspective-bounded context for the selected entity rather than omniscient GM truth.
+### Talk
+
+Talk is in-fiction communication directed at a specific entity. Entity performance uses that entity's perspective-bound context rather than omniscient referee context.
 
 ### Do Something Else
 
-A first-class freeform tabletop escape hatch for plausible actions not represented by fixed controls.
+First-class arbitrary plausible in-fiction intent.
 
-This preserves the core RPG property that the map/interface visualizes possibilities without defining the complete action space.
+Text describes what the player attempts. It does not directly write state.
+
+```text
+"I release Cinder from her cube."
+→ interpret intent
+→ validate rules/state
+→ commit accepted deployment
+→ Cinder appears
+→ narration/history reports the result
+```
 
 ### Ask Game Master
 
-A dedicated out-of-fiction player→GM communication surface for:
-
-- character knowledge;
-- rules;
-- clarification;
-- reminders;
-- adjudication questions.
-
-Present NPCs do not automatically hear it. It does not advance fictional time by default.
+Out-of-fiction player→GM communication. Private by default. Present NPCs do not hear it and fictional time does not advance merely because the player asked.
 
 ### GM Intervention
 
-The real Dungeon Master may proactively address one player, the party, or the table.
-
-Presentation may be nonblocking or may pause/freeze local control for dramatic narration/cinematic framing. World-state changes still require the correct semantic/mechanic authority.
+The Dungeon Master may present audience-scoped narration/advisory/dramatic framing. Presentation may temporarily pause local control, but world-state consequences still require the correct semantic/mechanic commit.
 
 ### Tactical Mode
 
-Initiative/action economy/legal tactical movement/actions become active on the current materialized scene.
+Initiative/action economy/legal tactical actions activate on the current materialized scene. Current positions/entities/objects/terrain/exits remain.
 
-Current positions, entities, objects, terrain, exits, and relevant hazards remain the same world state.
+## Speech and social presence
 
-## Persistent-world player expectation
+In-fiction speech should feel like part of the world, not a universal chat room.
 
-Players should not reconstruct important truth solely from old narration.
+- ordinary speech may be heard by nearby observers;
+- a whisper can intentionally restrict hearing;
+- players outside audibility should not gain dialogue/knowledge merely because another client displayed it;
+- Ask-GM remains outside the fiction;
+- one authorized dialogue event may render as temporary in-world speech and later as campaign history.
 
-GameFrame should make legible as implemented:
+The first TALK UI may be simple. Correct audience/audibility semantics matter before final speech-bubble polish.
 
-- current materialized location;
-- who/what is present;
-- whom the character knows;
-- viewer-authorized identity labels/facts;
-- player character/controlled entities;
-- objectives/known information;
-- inventory/equipment/conditions/resources;
-- whether the scene is exploratory, tactical, paused, or transitioning;
-- meaningful world changes and prior GM rulings/history.
+## Campaign Chronicle
 
-Hidden canonical names/secrets never become visible merely because referee context knows them.
+The current campaign feed should mature into a **Campaign Chronicle**: a readable observer-authorized record of meaningful play.
 
-## Ruleset/control experience
+It may preserve:
 
-GameFrame RPG Engine is not hardcoded to one control pattern.
+- opening/scene narration;
+- dialogue the observer actually heard or participated in;
+- discoveries and knowledge reveals;
+- consequential player actions;
+- deterministic mechanic outcomes;
+- persistent world changes;
+- scene travel;
+- relevant GM interventions/rulings.
 
-An RPG Ruleset defines character/action/control relationships.
+It should not collapse into a tiny combat log. It also should not remain the mature primary controller once the world supports ordinary actions directly.
 
-For Monster Master, the player's authenticated principal may control:
+Different observers may legitimately have different chronicle entries.
 
-- their own Master/trainer character;
-- one or more deployed monsters according to class/ruleset limits;
-- other entities only through explicit mechanics.
+## Opening/pacing expectation
 
-This supports classes that fight personally, command one or multiple monsters, heal/support, or otherwise use different action/control profiles without making Monster Master campaign logic the generic engine.
+Narration should establish place, pressure, and sensory context, then give control back.
+
+Do not rely on the text-adventure habit of ending every narration beat with a forced two/four-option funnel. Suggested approaches can be optional help, but the physical world and Do Something Else provide the actual action space.
+
+## Persistent-world expectation
+
+Players should not reconstruct important facts solely from old prose. GameFrame/Runtime should retain and expose as implemented:
+
+- current location/scene;
+- present entities/objects;
+- observer-authorized identities/knowledge;
+- player character and deployed/controlled entities;
+- objectives/resources/conditions/inventory where supported;
+- meaningful world changes;
+- campaign chronicle/history.
+
+Hidden names/secrets never appear merely because referee context knows them.
 
 ## World/materialization experience
 
-The campaign provides semantic WorldGraph/location meaning. GameFrame materializes supported locations into persistent playable scenes using authored/world-kit/procedural/generated assets as appropriate.
+CampaignPackage/Runtime owns semantic WorldGraph/location meaning. GameFrame materializes supported locations into persistent playable scenes.
 
-Players may take alternate routes such as entering woods instead of following a road when semantic world truth allows it.
+When semantic geography permits alternate routes, the player can propose/use them without being forced back onto a scripted path. Once a location materializes for the campaign, revisit returns to that durable place rather than rerolling an unrelated map.
 
-A newly materialized campaign location becomes **that location** for the campaign and is revisited consistently rather than rerolled every entry.
+## Many maps, one active party scene first
 
-Generated imagery enhances presentation but never owns collision or hidden campaign truth.
+The campaign may contain many persistent scenes while initial multiplayer keeps the party in one shared active scene. Later split-party support can add simultaneous scenes without conflating party membership with sensory knowledge.
 
-## Map transition posture
+## Same-map tactical experience
 
-The world may contain many persistent maps/scenes while the first multiplayer product keeps the party in one active scene at a time.
+Tactical Activation validates semantic scene/revision, materialization, current positions, participants/roles/control, ruleset/profile, resources/conditions, current geometry/objects/hazards/exits, and objectives.
 
-A group transition may use edge/door/route zones and one authoritative semantic scene transfer.
+A player twenty yards away when initiative begins remains there unless an explicit rule changes positioning.
 
-The architecture retains zero-or-more semantic scenes so split-party play can later allow simultaneous locations without redesigning identity/presence/knowledge authority.
+When tactical resolution completes and consequences reconcile, ordinary exploration resumes in place.
 
-## Same-map tactical posture
+## Monster Master Arena Battles
 
-Tactical Activation validates:
+Monster Master Arena Battles is separate standalone Battle Simulator play. It may offer setup/loadouts/teams/maps/objectives/BattleBot/replay/rematch conveniences while converging on the same Monster Master Ruleset semantics used by campaign tactical mode.
 
-- semantic scene/revision;
-- materialization/version;
-- current relevant positions;
-- ruleset/profile;
-- factions/participants/roles;
-- control authority;
-- health/resources/conditions;
-- existing map geometry/objects/hazards/exits;
-- objectives/alternate terminal conditions.
-
-Then the same scene enters turn-based tactical control.
-
-A player standing twenty yards away when initiative begins remains twenty yards away unless a specific rule explicitly changes deployment.
-
-When tactical mode terminates and consequences reconcile, ordinary exploration controls resume in place.
-
-## Monster Master Battle Arena posture
-
-Battle Arena is intentionally setup-first rather than campaign-first.
-
-It may eventually offer:
-
-- character/class/loadout creation;
-- monster/team setup;
-- selected/generated maps;
-- starting positions/deployment rules;
-- objectives;
-- human/BattleBot opponents;
-- replay/rematch/analysis.
-
-Once battle starts, equivalent Monster Master Ruleset versions/profiles should behave equivalently to Monster Master RPG tactical mode.
-
-## Presentation/media direction
-
-The world renderer should accumulate reusable world kits, terrain, structures, props, characters, effects, and animation states.
-
-Materialization preference remains:
-
-1. reuse accepted assets;
-2. deterministic composition/prefabs;
-3. bounded async generation for high-value/unusual gaps;
-4. readable fallback.
-
-Ordinary cutscenes should use semantic cinematic scripts executed by GameFrame rather than generated video by default.
+Setup/lifecycle differ; compatible combat rules should not fork.
 
 ## Campaign-length posture
 
-The engineering vertical slice may remain a bounded starter chapter. That is an evidence strategy, not the mature ceiling.
-
-The platform targets durable multi-session campaigns with recurring locations/relationships, progression, inventory/care, and world changes promoted as campaigns prove their need.
+The engineering vertical can be a bounded starter chapter, but the product targets durable multi-session campaigns. Progression, inventory/care, recurring places/relationships/factions, richer media, and broader systems are promoted only when proven useful by real play.
 
 ## Governing rule
 
-> GameFrame RPG should feel like one persistent world, not narration wrapped around separate minigames: players explore directly, the GM preserves tabletop freedom, rulesets define deterministic behavior, and combat begins exactly where initiative was rolled.
+> GameFrame RPG should feel like one world the player inhabits: act directly when the game knows how, express anything plausible when it does not, keep the GM available without turning every action into chat, preserve rich observer-scoped campaign history, and let combat begin where initiative actually happens.

@@ -3,7 +3,7 @@ title: RPG Deployment Architecture
 status: accepted
 document_type: architecture
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-08
+last_updated: 2026-08-09
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
@@ -12,7 +12,7 @@ applies_to:
   - Discord entry and invitations
   - trusted private staging deployment
 shared_document_id: rpg-cloudflare-deployment-architecture-v1
-shared_document_version: 5
+shared_document_version: 6
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-cloudflare-deployment-architecture.md
 mirrors:
@@ -30,216 +30,192 @@ related:
 
 ## Decision
 
-The current production-shaped RPG topology remains a **hybrid Cloudflare + private VM profile**.
+The current production-shaped topology is **Cloudflare public boundary + private VM GameFrame RPG authority + private RPG GM Runtime**.
 
-GameFrame remains the public player-facing authority. Its Cloudflare Worker serves the public application boundary, Discord/session routes, static assets, ordinary GameFrame routes, and ordinary Durable Object-backed matches. RPG campaign/exploration and `rpg:*` tactical traffic is authenticated at that edge and HMAC-proxied through Cloudflare Tunnel to the durable RPG GameFrame authority on the private VM.
+GameFrame is the only public player-facing application authority. RPG GM Runtime remains loopback/private and never receives direct browser traffic.
 
-RPG GM Runtime remains a separate loopback-only service on the same VM. It owns hidden campaign truth and model orchestration and is never directly routed from Cloudflare or the browser.
+The VM reaches Cloudflare through outbound Tunnel connectivity. No application port is forwarded on the home router and ordinary players require no Tailscale/WARP/VPN access.
 
-The VM initiates Cloudflare Tunnel outbound. No application port is forwarded on the home router, no VM application port is advertised in public DNS, and ordinary players require no Tailscale/WARP/VPN/tailnet membership or direct origin access.
+## Current mutation/realtime invariant
 
-Embodied exploration extends the existing WebSocket path but does not change campaign authority:
+**HTTP owns every GameFrame RPG command/mutation. WebSockets are projection/notification-only.**
 
-- durable semantic commands/recovery remain authoritative service/HTTP operations;
-- bounded realtime movement/session traffic may use WebSocket;
-- frame-by-frame avatar transforms are not RPG campaign truth;
-- SQLite/runtime state and GameFrame materialization state remain recoverable without the live socket.
+This includes exploration movement.
+
+Current movement path:
+
+```text
+browser WASD / mobile D-pad
+→ authenticated same-origin HTTP
+POST /api/rpg/campaigns/:campaignId/exploration/move
+→ Cloudflare Worker/HMAC proxy
+→ private VM GameFrame RPG service
+→ collision + physical position revision + SQLite commit
+→ exploration_position response
+→ browser Pixi reconciliation/camera follow
+```
+
+Runtime receives no per-step movement traffic.
+
+WebSockets may notify clients that durable state changed and may carry reconnectable projection/session notifications where supported, but a WebSocket frame cannot mutate campaign, movement, object, inventory, travel, or tactical truth.
 
 ## Current topology
 
 ```text
-Discord Activity / browser
+browser / Discord-authenticated player
           |
           v
 Cloudflare GameFrame Worker + static assets
           |
-          +--> ordinary GameFrame traffic
-          |       |
-          |       v
-          |   Durable Objects / Worker authority
+          +--> ordinary GameFrame Worker/DO traffic
           |
-          +--> RPG campaign / exploration / tactical traffic
-                  |
-                  | authenticated HTTP semantic commands/recovery
-                  | authenticated WebSocket realtime/session traffic
-                  | gameframe-hmac-v1 upstream signature
-                  v
-        stable HTTPS RPG origin hostname
-                  |
-          Cloudflare Tunnel
-        outbound from the VM
-                  |
-                  v
-+---------------- private staging/production VM ----------------+
-|                                                               |
-| cloudflared                                                   |
-|    |                                                          |
-|    v                                                          |
-| GameFrame durable RPG service                                 |
-| loopback only; default 127.0.0.1:8790                         |
-| SQLite campaign/encounter/materialization authority           |
-| semantic HTTP + realtime exploration/tactical WebSockets      |
-|    |                                                          |
-|    | authenticated service protocol                           |
-|    v                                                          |
-| RPG GM Runtime                                                |
-| loopback only                                                 |
-| package/world/journal/knowledge/DM provider orchestration      |
-|                                                               |
-+---------------------------------------------------------------+
+          +--> authenticated RPG HTTP commands/recovery
+          |        |
+          |        | gameframe-hmac-v1
+          |        v
+          |   Cloudflare Tunnel
+          |        |
+          |        v
+          |   VM GameFrame RPG service
+          |   loopback 127.0.0.1:8790
+          |   SQLite physical/campaign-side state
+          |        |
+          |        | private service bearer
+          |        v
+          |   RPG GM Runtime
+          |   loopback 127.0.0.1:8791
+          |   package/journal/semantic/DM state
+          |
+          +--> authenticated RPG WebSocket upgrades
+                   projection/notification only
 ```
 
-Stopping `cloudflared` removes public reachability to the VM RPG origin. It must not expose a fallback LAN/public application listener.
+Staging also uses a loopback private reset/control listener; it is not a public admin service.
 
 ## Cloudflare GameFrame boundary
 
-The Worker owns/fronts:
+The Worker fronts:
 
 - Discord OAuth/Activity authentication;
 - signed GameFrame sessions;
-- browser/static assets and public application routes;
-- invitations/seats/player command custody;
-- ordinary GameFrame Durable Object-backed matches;
-- authenticated RPG semantic command/recovery routes;
-- authenticated RPG exploration/tactical WebSocket upgrades;
-- HMAC construction for requests forwarded to the private VM origin.
+- static/browser routes;
+- ordinary GameFrame routes;
+- authenticated RPG HTTP commands/recovery;
+- authenticated RPG projection WebSocket upgrades;
+- HMAC signing/proxying to the private VM RPG origin.
 
-The Worker requires a distinct HTTPS RPG origin and shared HMAC secret. The HMAC secret exists only in Worker secret storage and private GameFrame RPG service configuration.
+The browser never receives the HMAC secret or Runtime service credential.
 
-A proxied WebSocket does not make the Worker another RPG authority. Browser messages never receive the HMAC secret.
+A proxied WebSocket is not a second RPG command authority.
 
-## VM GameFrame durable RPG authority
+## VM GameFrame RPG authority
 
-The VM GameFrame RPG service owns current durable GameFrame-side RPG state, including:
+The VM GameFrame RPG service owns current GameFrame-side RPG state including:
 
-- campaign coordination/membership/presentation positions;
-- accepted exploration materialization identity/state required for stable revisit/recovery;
-- semantic anchor/transition bindings that belong to GameFrame materialization;
-- encounter binding/configured Monster Master RPG matches;
-- legal tactical actions/terminal outcomes;
+- campaign coordination/presentation positions where applicable;
+- accepted exploration materialization identity/state;
+- GameFrame semantic-anchor/interaction bindings;
+- player x/y/facing and physical position revision;
+- collision/interaction-range outcomes;
+- encounter/tactical binding while legacy substrate remains;
+- deterministic tactical state/outcomes as promoted;
 - delivery to RPG GM Runtime.
 
-Current process constraints remain deliberate:
+Process constraints:
 
-- default listen address `127.0.0.1`;
-- default port `8790`;
-- non-loopback binds rejected;
-- Cloudflare-facing HTTP/WebSocket uses HMAC proxy authentication;
-- GameFrame→GM uses separate service credential;
+- loopback bind only;
+- no public application listener;
+- Cloudflare-facing requests use HMAC proxy authentication;
+- GameFrame→Runtime uses a separate bearer/service credential;
 - SQLite lives outside immutable release directories;
-- realtime connection registries are process-local/disposable rather than durable authority.
-
-## RPG realtime transport
-
-Realtime transport now has two related purposes.
-
-### 1. Durable semantic change notification
-
-The existing campaign/tactical realtime paths continue to notify browsers after durable commits so clients can refresh/recover authoritative projections.
-
-### 2. Embodied exploration session traffic
-
-The exploration client may use an authenticated scene-scoped WebSocket for bounded high-frequency state such as:
-
-- movement input/vector;
-- facing;
-- avatar transform projection;
-- nearby-player transforms;
-- local transient animation state;
-- scene-session heartbeat/reconnect metadata;
-- post-commit scene/materialization notifications.
-
-### Realtime invariants
-
-- player identity/resource/scene scope is fixed at handshake;
-- the VM reauthorizes exact player/campaign/scene scope even though the Worker authenticated the browser;
-- bounded frame sizes/message rates/connections apply;
-- clients cannot switch semantic scene or identity by sending a socket message;
-- a socket never owns campaign truth;
-- missed/duplicate/reordered realtime frames cannot create semantic world changes;
-- semantic scene transfer, inventory changes, checks, freeform adjudication, Ask-GM, encounter lifecycle, and other durable mutations remain versioned authoritative operations;
-- reconnect recovers semantic scene/materialization state rather than trusting stale client coordinates;
-- no runtime narrative revision is created for every movement frame;
-- healthy hosted sessions should not require aggressive HTTP polling.
-
-## Durable semantic command posture
-
-HTTP/service commands remain appropriate for:
-
-- campaign create/join/attach/resume;
-- Ask-GM;
-- Do Something Else/freeform intent;
-- targeted interactions that create durable semantic consequences;
-- inventory/equipment/resource mutations;
-- scene transfers/route commitment;
-- checks/mechanics;
-- encounter launch/return coordination;
-- materialization acceptance/version operations where GameFrame persistence is involved;
-- recovery/snapshots.
-
-A browser may move into an exit zone over WebSocket, but the meaningful transfer to another semantic scene is not authorized merely by the client reporting coordinates.
-
-## Exploration materialization persistence
-
-GameFrame may persist or reproducibly derive materialization data required for stable revisit/reconnect. This is separate from RPG GM Runtime semantic truth.
-
-Examples include:
-
-- materialization ID/version;
-- deterministic recipe/seed identity;
-- geometry profile;
-- semantic anchor bindings;
-- transition-zone identities;
-- accepted asset-pack references;
-- GameFrame-owned gameplay geometry/state.
-
-RPG GM Runtime may store/reference only the stable semantic/materialization identifiers required by its contract. Neither service reads the other's private database.
+- realtime connection registries are disposable process state, not authority.
 
 ## RPG GM Runtime boundary
 
-RPG GM Runtime remains private/loopback-only and owns:
+Runtime owns:
 
-- committed CampaignPackage truth/provenance;
-- semantic WorldGraph/location truth;
-- narrative journal/revision;
-- Entity/Scene/Observer-Knowledge state;
-- Dungeon Master referee/entity-performance/GM-intervention context and decisions;
-- model/provider selection/retries;
-- application of GameFrame-authoritative mechanic/tactical results to campaign truth.
+- committed CampaignPackage/WorldGraph truth;
+- semantic campaign journal/revision;
+- Entity Registry;
+- semantic Scene Registry;
+- Observer Knowledge;
+- Dungeon Master context/orchestration;
+- semantic scene transfer/world consequences;
+- semantic Tactical Activation requirements/reconciliation;
+- model/provider interaction.
 
-It accepts only authenticated service traffic from the VM GameFrame RPG service. It receives no browser cookie, Discord secret, GameFrame session-signing secret, or Cloudflare HMAC edge secret.
+It accepts authenticated private GameFrame service traffic only. The browser never connects directly to Runtime.
 
-The browser WebSocket never connects directly to RPG GM Runtime.
+Runtime does not receive x/y/facing movement commands or per-frame transforms.
+
+## HTTP command families
+
+Authenticated HTTP is appropriate for:
+
+- campaign create/join/attach/resume;
+- exploration movement;
+- targeted interactions that require semantic/mechanical consequences;
+- Do Something Else/freeform intent;
+- Ask Game Master;
+- inventory/equipment/resource mutations;
+- deploy/recall and other ruleset mechanics;
+- scene travel/transfer;
+- checks/mechanics;
+- Tactical Activation/actions/outcomes;
+- materialization acceptance/version operations where required;
+- recovery/snapshots/admin reset where authorized.
+
+Physical arrival at an exit may make a travel command eligible. Coordinates alone do not authorize semantic transfer.
+
+## WebSocket posture
+
+WebSockets are optional low-latency delivery for reconstructable state changes, such as:
+
+- campaign projection-change notifications;
+- match/tactical projection notifications;
+- scene/materialization invalidation notifications;
+- nearby-player presentation in later multiplayer if that state can be safely reconstructed from GameFrame authority.
+
+Invariants:
+
+- identity/resource scope is fixed at authenticated handshake;
+- no client identity/scene switching by frame payload;
+- no semantic or physical mutation by frame payload;
+- missed/duplicate/reordered frames cannot create world changes;
+- reconnect falls back to authoritative HTTP attach/recovery;
+- correctness never requires a permanently connected socket.
 
 ## Network posture
 
-The home-hosted VM uses deny-by-default application exposure:
+The home-hosted VM remains deny-by-default:
 
-- no router forwarding for HTTP/HTTPS/GameFrame/RPG GM/databases/staging ports;
+- no router HTTP/HTTPS/RPG/DB port forwarding;
 - no router DMZ;
-- no UPnP-created application forwarding;
-- GameFrame RPG and GM services bind loopback only;
-- databases are never network-bound;
-- `cloudflared` creates outbound connections to Cloudflare;
-- administrative SSH/Tailscale is a separate operator path, not player connectivity.
+- no UPnP application forwarding;
+- GameFrame RPG/Runtime/admin listeners bind loopback;
+- databases are not network services;
+- `cloudflared` creates outbound Cloudflare connectivity;
+- operator SSH/Tailscale is separate from player connectivity.
 
 A host firewall remains recommended before broader production use.
 
 ## Service/data isolation
 
-Same-machine deployment does not collapse authority boundaries.
+Same-machine deployment does not collapse boundaries.
 
-GameFrame RPG and RPG GM Runtime retain:
+GameFrame RPG and RPG GM Runtime retain separate:
 
-- separate systemd services/process identities;
-- independently versioned immutable release directories;
-- separate persistent writable state directories;
-- separate environment/secret files;
-- independent health checks/restart policies;
-- explicit authenticated service protocol;
-- no direct access to each other's private database internals.
+- systemd services/process identities;
+- immutable release directories;
+- persistent writable state directories;
+- environment/secret files;
+- health/restart policies;
+- authenticated service protocol;
+- databases.
 
-Recommended layout remains:
+Neither service reads the other's private database directly.
+
+Recommended staging layout:
 
 ```text
 /opt/rpg-staging/gameframe-rpg/releases/<gameframe-sha>/
@@ -249,131 +225,60 @@ Recommended layout remains:
 
 /var/lib/rpg-staging/gameframe-rpg/
 /var/lib/rpg-staging/rpg-gm/
-
 /etc/rpg-staging/
 ```
 
-## Trusted deployment runner boundary
+## Trusted runner boundary
 
-The public `scribbles-gameframe` repository must not gain general execution authority on the private/home VM.
+Public `scribbles-gameframe` source must not gain general execution authority on the private/home VM.
 
-Accepted staging shape:
+Accepted deployment shape:
 
 ```text
 public scribbles-gameframe
-  -> ordinary public-repository CI elsewhere
+  -> public-repository CI elsewhere
 
-private rpg-gm-runtime deployment workflow
+private rpg-gm-runtime deploy workflow
   -> trusted self-hosted VM runner
   -> resolve exact approved GameFrame SHA
   -> fetch/build public source as deployment input
-  -> deploy paired staging release
+  -> activate paired staging release
 ```
 
-Public pull requests/forks/arbitrary public workflow code must never execute on the trusted runner with private source, provider keys, deployment credentials, or home-network authority.
+Public PR/fork/arbitrary workflow code must never run on the trusted VM runner with private source, deployment secrets, provider keys, or home-network authority.
 
 ## Release/rollback
 
-Each deployment records exact GameFrame/runtime revisions.
+Deployments resolve and record exact Runtime + GameFrame SHAs. Activation should validate/build immutable releases, preserve separate durable state, atomically activate paired revisions, restart/health-check Runtime/GameFrame/Tunnel, deploy the exact GameFrame Worker revision, and run public/private health canaries.
 
-Activation should continue to:
+Release rollback and durable-data rollback are different operations.
 
-1. resolve exact SHAs;
-2. run focused validation;
-3. build without root;
-4. install immutable release directories;
-5. verify configuration/secrets without printing them;
-6. take consistent durable backups during bounded activation;
-7. atomically update release links;
-8. start/health-check GM Runtime;
-9. start/health-check GameFrame RPG;
-10. ensure cloudflared healthy;
-11. verify Worker→Tunnel→VM HTTP and WebSocket routing;
-12. verify GameFrame→GM delivery;
-13. run external staging canary including exploration reconnect and tactical return;
-14. record rollback targets.
+## Staging reset
 
-Release rollback and authority-data rollback remain different operations.
+The authenticated staging Admin reset is intentionally destructive test tooling. It must:
 
-## Persistence, backup, recovery
+- bind to the currently configured/attached staging campaign identity;
+- require an explicit confirmation bound to that same campaign;
+- fail closed on legacy/wrong campaign identity;
+- clear disposable GameFrame + Runtime staging state;
+- restart/reseed the current canonical staging campaign;
+- never become a generic production reset surface.
 
-Backups cover at least:
+## Persistence/recovery
 
-- GameFrame RPG SQLite state, including materialization records that are required for stable revisit/recovery;
-- RPG GM Runtime SQLite/state/journal/narrative-link state;
-- deployment metadata identifying paired SHAs;
-- non-secret reconstruction configuration.
+Durable recovery must be possible without any live WebSocket:
 
-Realtime socket registries are never backup material.
+1. Runtime recovers semantic package/journal/entity/scene/knowledge state.
+2. GameFrame recovers accepted materialization and physical x/y/facing/tactical state.
+3. browser reattaches over authenticated HTTP.
+4. optional WebSocket notification delivery resumes afterward.
 
-Restore testing must prove campaign resume without duplicate scene presence, materialization replacement, command application, encounter aftermath, or cross-service revision confusion.
+## Scaling posture
 
-## Failure behavior
+Do not introduce Durable Object or other Cloudflare semantic authorities merely because embodied play exists. Current VM/local SQLite authority remains acceptable while it meets availability/performance goals.
 
-| Failure | Required behavior |
-| --- | --- |
-| Exploration WebSocket disconnect | Stop/degrade local realtime control safely; preserve campaign truth; reconnect and recover semantic/materialized scene state. |
-| Missed/duplicate movement frame | Never create semantic campaign mutations. |
-| Missed durable notification | Recover through authoritative projection/snapshot. |
-| Tunnel interruption | Keep local state intact; VM application ports stay private. |
-| GameFrame Worker failure | Do not create direct-origin bypass. |
-| GameFrame RPG restart | Close sockets, recover GameFrame-owned RPG/materialization state, allow resynchronization. |
-| RPG GM Runtime restart | Recover package/journal/world state without duplicating accepted commands. |
-| Provider timeout | Preserve semantic command identity and retry/fail without duplicate world events. |
-| Lost response after commit | Recover existing durable receipt/result. |
-| Deployment failure | Restore previous release links and compatible services. |
-| VM outage | Restore from durable backups; never reconstruct authority from browser state. |
-
-## Future migration profile
-
-Cloudflare-native migration may continue incrementally, but the hybrid profile is intentional.
-
-Do not add a Durable Object merely to relay VM-owned exploration WebSockets. If RPG authority later moves to Cloudflare-native state, move the relevant authority coherently rather than create competing state owners.
-
-No migration may require campaign reset or direct cross-service database sharing.
-
-## Split-party / multi-map operational posture
-
-The network topology can support multiple simultaneous active scene sockets without changing the public boundary, but product complexity increases substantially.
-
-Later multi-scene operation requires:
-
-- player-specific scene-scoped WebSocket subscriptions;
-- independent materialization/session recovery;
-- scene-local event/entity projection;
-- bounded concurrency/fan-out controls;
-- explicit cross-scene communication channels;
-- observability keyed by campaign + scene + player;
-- correct behavior when one subgroup enters Arena while another remains exploratory.
-
-The first multiplayer product should therefore use one shared exploration scene and one party transition at a time while retaining zero-or-more-scene architecture in runtime.
-
-## Environments
-
-Maintain local/test/staging/production configuration.
-
-- local: synthetic identity/disposable stores permitted explicitly;
-- automated tests: deterministic providers/isolated state;
-- VM staging: hybrid Worker/Tunnel/loopback topology with restricted Discord access and VM-backed exploration/tactical WebSockets;
-- production: same authority split with stronger operational controls/budgets/backups/retention.
-
-No environment silently falls back from authenticated staging/production behavior to development identity.
-
-## Staging acceptance gates
-
-Deployment-level acceptance for embodied RPG requires:
-
-1. Worker/assets reachable through stable staging hostname;
-2. no router forwarding/direct public VM app listener;
-3. HMAC-authenticated Worker→Tunnel→GameFrame RPG HTTP;
-4. HMAC-authenticated exploration/tactical WebSocket upgrades with player/resource/scene authorization;
-5. ordinary movement/realtime projection without per-frame runtime narrative writes;
-6. semantic scene transfer/recovery survives reconnect;
-7. GameFrame→RPG GM authenticated service traffic remains private;
-8. Arena transition/authoritative return updates embodied scene before control resumes;
-9. stopping tunnel removes public reachability;
-10. restart/backup/restore canaries remain green.
+Use evidence before migrating state architecture.
 
 ## Governing rule
 
-> Cloudflare exposes GameFrame, not the private campaign brain; WebSockets may make the world move smoothly, but only durable semantic authorities decide what actually happened in the campaign.
+> Cloudflare is the authenticated public transport boundary; the VM GameFrame service is the physical/deterministic RPG authority; RPG GM Runtime is the private semantic campaign authority; HTTP owns mutations; WebSockets only accelerate reconstructable presentation/notification.

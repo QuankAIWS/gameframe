@@ -3,16 +3,15 @@ title: RPG Cross-Repository and Agent-System Testing
 status: accepted
 document_type: architecture
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-08
+last_updated: 2026-08-09
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
   - GitHub Actions
   - campaign agent validation
   - VM staging validation
-  - later Cloudflare and media validation
 shared_document_id: rpg-cross-repository-integration-testing-v1
-shared_document_version: 8
+shared_document_version: 9
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-cross-repository-integration-testing.md
 mirrors:
@@ -24,7 +23,6 @@ related:
   - rpg-scene-entity-and-knowledge-contract.md
   - rpg-embodied-exploration-and-character-performance-contract.md
   - rpg-platform-roadmap.md
-  - rpg-campaign-architect-contract.md
   - rpg-monster-master-reference-campaign.md
   - rpg-cloudflare-deployment-architecture.md
 ---
@@ -33,346 +31,220 @@ related:
 
 ## Decision
 
-The RPG platform uses separate evidence layers for package/ruleset structure, durable semantic world state, GameFrame materialization/realtime behavior, Dungeon Master perspective custody, deterministic mechanics/tactical mode, complete campaigns, browser UX, deployment, Campaign Architect behavior, and optional media/cloud migration.
+Evidence layers must claim only what they execute. A transport round trip does not prove a campaign; a transcript does not prove embodied world continuity; standalone Arena Battles does not prove same-map campaign Tactical Activation; a screenshot does not prove state correctness.
 
-Each layer claims only what it actually executes.
+Campaign Architect generation remains deferred until two materially different handcrafted Game Families prove the common engine/runtime/ruleset architecture.
 
-A transport round trip does not prove a campaign. A text transcript does not prove embodied world continuity. A standalone Monster Master duel does not prove campaign Tactical Activation. A browser navigation back from a separate battle does not prove the mature same-map model because the mature model has no such navigation.
+## Current authority invariant
 
-Campaign Architect generation remains deferred until two materially different handcrafted campaigns prove the common GameFrame RPG Engine/runtime/ruleset abstractions.
+- GameFrame owns physical materialization, movement, interaction range, deterministic mechanics/control/tactical state.
+- Runtime owns semantic campaign/entity/scene/Observer Knowledge truth and Dungeon Master context/semantic consequences.
+- **HTTP owns all RPG commands/mutations, including exploration movement.**
+- **WebSockets are projection/notification-only.**
+- freeform/model prose is not authoritative state.
 
-## Ownership
-
-### RPG GM Runtime owns testing for
-
-- CampaignPackage validation/persistence;
-- Entity Registry/Character Factory;
-- semantic Scene Registry/Observer Knowledge;
-- WorldGraph/semantic scene transitions;
-- Dungeon Master context modes/machine-play;
-- perspective-custody/secret-leak tests;
-- semantic Tactical Activation coordination;
-- mock GameFrame ports;
-- runtime-owned cross-repository integration jobs;
-- shared-document drift verification.
-
-### GameFrame owns testing for
-
-- GameFrame RPG Engine materialization/geometry;
-- realtime movement/session behavior;
-- viewer-safe player UI;
-- direct interaction/GM surfaces;
-- RPG Ruleset capability validation;
-- authenticated control authority;
-- deterministic mechanics/tactical mode;
-- Monster Master tactical rules/Battle Arena;
-- browser/visual/Worker/VM-facing GameFrame behavior;
-- shared fixture validation.
-
-## Evidence ladder
-
-### Layer 1 — CampaignPackage and ruleset capability schema
-
-Prove:
-
-- package bounds/reference integrity;
-- player-safe/runtime-only separation;
-- hash/provenance/commitment/reload/migration;
-- WorldGraph/location semantics;
-- initial entity/scene/observer-knowledge bootstrap;
-- explicit ruleset/profile/version requirements;
-- materialization intents/fallbacks;
-- exact retry/restart.
-
-### Layer 2 — Entity, Scene, Character Factory, and Observer Knowledge
-
-Prove deterministically:
-
-- package entities normalize to stable IDs;
-- incidental request creates exactly one stable entity;
-- immediate creation + scene admission + initial awareness is atomic/idempotent;
-- current semantic scene membership survives restart;
-- absent entities cannot physically act without explicit remote semantics;
-- two observers can know different facts about one entity;
-- descriptor→role→proper-name progression updates the same entity;
-- unknown existence/hidden canonical names remain omitted;
-- semantic knowledge preserves provenance/correction.
-
-### Layer 3 — GameFrame materialization
-
-Prove:
-
-- semantic scene/location materializes into valid playable geometry;
-- materialization has stable identity/version/hash/provenance;
-- collision/navigation/anchors/transition zones validate;
-- required semantic landmarks/objects are represented;
-- generated pixels do not own hit geometry;
-- leaving/reloading/revisiting produces the same accepted location subject to committed changes;
-- unsupported ruleset/materialization requirements fail before play.
-
-### Layer 4 — Realtime embodied session
-
-Prove:
-
-- authenticated player joins exact scene session;
-- bounded movement/facing/nearby transforms work;
-- high-frequency transforms do not create RPG semantic journal traffic;
-- missed/reordered realtime packets cannot mutate semantic authority;
-- reconnect restores semantic scene + accepted materialization + valid GameFrame position/state;
-- duplicate presence is rejected/recovered.
-
-### Layer 5 — Dungeon Master context custody / machine-play
-
-Use deterministic/mock providers and scripted players.
-
-Required behaviors include expected, chaotic, avoidant, deceptive, early-correct-guess, missed clue, Ask-GM, direct entity interaction, Do Something Else, incidental NPC creation/revisit, and alternate-route exploration.
-
-Prove:
-
-- package truth never silently changes;
-- referee context may access required hidden truth;
-- Pell/entity-performance context excludes unrelated hidden truth;
-- Ask-GM sees only player-authorized knowledge;
-- direct NPC/entity identity/memory persists;
-- eligible events/checks/consequences remain coherent;
-- exact retry does not call decision provider twice or duplicate semantic effects;
-- restart/resume preserves continuity.
-
-### Layer 6 — Shared contract fixtures
-
-Both repos consume versioned fixtures for jointly implemented seams.
-
-Add fixtures progressively for:
-
-- semantic scene/materialization linkage;
-- viewer-safe current scene;
-- People descriptor→role→name;
-- Observer Knowledge divergence;
-- Interact/Talk;
-- Do Something Else;
-- Ask-GM;
-- presentation origin/audience;
-- ruleset/profile/version capability declaration;
-- principal/player-character/controlled-entity authorization;
-- Tactical Activation request/snapshot linkage;
-- structured tactical consequences;
-- same-scene tactical→exploration resume.
-
-Public fixtures must not contain private package secrets.
-
-### Layer 7 — Actual GameFrame Node integration
-
-A runtime-owned job checks out the exact intended GameFrame SHA and exercises real routes/services.
-
-Prove actual serialization/validation for:
-
-- semantic scene projections;
-- materialization linkage;
-- direct interaction/Ask-GM/freeform commands;
-- ruleset capability validation;
-- control authorization;
-- tactical activation and terminal consequences;
-- exact revision/idempotency behavior.
-
-This layer must not fabricate tactical completion events.
-
-### Layer 8 — Durable local two-service integration
-
-Run both services with production-shaped separate persistence.
-
-Cover:
-
-- separate DBs/migrations;
-- authenticated private service calls;
-- package/journal/scene/materialization-link persistence;
-- restart/lost-response recovery;
-- no cross-service DB access;
-- Tactical Activation coordination;
-- deterministic tactical consequence consumption exactly once;
-- same-scene resumable state after terminal tactical mode.
-
-### Layer 9 — Complete single-player embodied Monster Master proof
-
-Required journey:
+## Current player-journey evidence
 
 ```text
-validated handcrafted Monster Master CampaignPackage
-→ semantic world/entity/scene/observer initialization
-→ accepted Crooked Checkpoint GameFrame materialization
-→ avatar movement/direct interaction
-→ Pell perspective-bounded conversation
-→ Ask-GM query
-→ Do Something Else freeform action
-→ People/knowledge progression
-→ world object interaction
-→ second connected scene / alternate route
-→ event/check consequence
-→ Tactical Activation on current materialized map
-→ current positions retained as starting positions
-→ Master + ruleset-authorized monster actions
-→ deterministic tactical result including alternate terminal state where implemented
-→ semantic consequences reconcile
-→ same materialized scene returns to exploration mode
-→ bounded campaign resolution
-→ both services restart
-→ player resumes without duplication, leakage, rematerialization drift, or tactical reset
+SEE      ✅ deployed proof
+MOVE     ✅ deployed proof
+MOBILE   ✅ deployed proof
+TALK     ← active next proof
+CHANGE
+TRAVEL
+FIGHT
+PROVE
 ```
 
-No replacement campaign battlefield or campaign Return-to-Campaign navigation is permitted in the mature proof.
+## Layer 1 — CampaignPackage / ruleset / WorldGraph
 
-### Layer 10 — Browser campaign acceptance
+Prove schema bounds/reference integrity, player-safe/runtime-only separation, hash/provenance/commit/reload/migration, WorldGraph semantics, initial entity/scene/Observer Knowledge bootstrap, explicit ruleset/profile requirements, materialization intents, and exact retry/restart.
 
-Use real browser journeys for:
+## Layer 2 — Entity / Scene / Observer Knowledge
 
-- campaign attach/resume;
-- scene materialization/loading;
-- movement/interaction;
-- People/knowledge;
-- NPC conversation;
-- Ask-GM/GM log;
+Prove stable IDs, Character Factory idempotency, scene membership/transfer reconstruction, observer divergence, descriptor→role→name progression, hidden-name omission, knowledge provenance/correction, and no physical action by absent entities without explicit remote semantics.
+
+## Layer 3 — GameFrame materialization
+
+Prove stable materialization identity/version/hash, deterministic playable geometry, collision/navigation/semantic anchors, required landmarks/objects/routes, generated-pixels-not-authority, and stable revisit/recovery.
+
+Crooked Checkpoint SEE is complete bounded evidence.
+
+## Layer 4 — GameFrame physical movement
+
+Prove:
+
+- authenticated HTTP `/exploration/move` is the sole movement mutation path;
+- walls/bounds/visible entity/object occupancy block movement correctly;
+- stale physical position revisions fail closed;
+- x/y/facing persist in GameFrame authority;
+- exact-materialization restart/reconnect recovers valid position;
+- camera-relative desktop/mobile controls reconcile accepted state;
+- WebSocket movement mutation frames are rejected;
+- no per-step Runtime journal/provider traffic occurs.
+
+MOVE + mobile are complete bounded evidence.
+
+## Layer 5 — TALK / Dungeon Master context custody
+
+Use deterministic/mock providers and real semantic state.
+
+Prove:
+
+- GameFrame physical target/range and Runtime semantic target/presence agree;
+- referee context may contain hidden fact X;
+- Pell entity-performance context excludes X until Pell legitimately learns it;
+- Pell output cannot use unauthorized hidden truth;
+- Observer Knowledge promotion makes later authorized knowledge available;
+- Ask-GM receives player-authorized context and remains out-of-fiction;
+- Talk, Ask-GM, and Do Something Else are distinct triggers/origins.
+
+## Layer 6 — Speech audience / audibility / history
+
+Prove independently:
+
+- normal speech reaches only observers authorized/hearing it;
+- whisper/private speech can restrict audience;
+- Ask-GM is player-private by default and creates no NPC knowledge;
+- one semantic dialogue event can render in-world and in campaign history without duplicate semantic truth/effects;
+- canonical names never appear in narration/dialogue/history before that observer's identity knowledge authorizes them;
+- two observers can legitimately receive different chronicle content.
+
+## Layer 7 — CHANGE / freeform parity
+
+Prove a common world operation through both direct control and freeform intent.
+
+Reference acceptance:
+
+```text
+Cinder recalled
+→ player uses deploy control OR writes "I release Cinder"
+→ same ownership/rules/current-state validation
+→ accepted semantic + physical deployment
+→ Cinder appears
+→ campaign chronicle presents accepted result
+→ restart preserves deployed state
+```
+
+Also prove declarative text cannot bypass locks, inventory, collision, control authority, identity, or deterministic outcomes.
+
+## Layer 8 — TRAVEL / connected scenes
+
+Prove Crooked Checkpoint → West Woods → Crooked Checkpoint:
+
+- physical route/transition eligibility;
+- matching current available semantic exit;
+- authoritative scene transfer;
+- destination materialization/arrival;
+- stable return/revisit;
+- object/entity/Observer Knowledge continuity;
+- stale/unauthorized transfer rejection.
+
+## Layer 9 — Shared fixtures
+
+Add versioned public fixtures only when a joint seam exists. Useful fixtures include:
+
+- semantic scene/materialization linkage;
+- observer-safe descriptor→role→name;
+- Talk/Interact;
+- speech audience/audibility;
 - Do Something Else;
-- GM intervention/pause;
-- scene transitions;
-- same-map Tactical Activation;
-- tactical overlays/legal controls;
-- tactical→exploration transition on same route/map;
-- reconnect/mobile/desktop/fallback behavior.
+- Ask-GM;
+- world-operation results;
+- scene transfer;
+- ruleset/control relationships;
+- Tactical Activation snapshot/outcome;
+- same-scene tactical→exploration resume.
 
-A screenshot supports visual evidence but does not replace state assertions.
+Public fixtures never contain private package secrets.
 
-### Layer 11 — Two-human one-scene acceptance
+## Layer 10 — Actual GameFrame Node integration
 
-After single-player proof:
+Runtime-owned integration checks out the exact intended GameFrame revision and exercises real serialization/validation at the seam. Do not fabricate later-stage results merely to make integration green.
 
-- two authenticated principals/avatars;
-- one shared active semantic/materialized scene;
-- realtime movement;
-- viewer-divergent knowledge;
-- direct interaction custody;
-- public/party/private GM presentation;
-- party-cohesion scene transfers;
-- ruleset-defined cooperative control;
-- same-map Tactical Activation for both players;
-- reconnect/restart.
+## Layer 11 — Durable two-service recovery
 
-This does not prove split-party multi-scene behavior.
+Use separate production-shaped persistence and prove authenticated private service calls, separate DBs, restart/lost-response recovery, no cross-service DB access, exactly-once semantic consequence handling, and correct state reconstruction.
 
-### Layer 12 — Second handcrafted campaign generality proof
+## Layer 12 — FIGHT / same-map tactical proof
 
-A materially different handcrafted package must use the same:
+Prove:
 
-- GameFrame RPG Engine;
-- package validator;
-- Entity/Scene/Observer Knowledge architecture;
-- Dungeon Master context modes;
-- materialization framework;
-- RPG Ruleset interface;
-- Tactical Activation framework where relevant.
+- current semantic scene/materialization/positions/control state validate Tactical Activation;
+- current positions/geometry become tactical starting state;
+- deterministic legal actions run on the same map;
+- alternate terminal outcomes work where supported;
+- GameFrame commits tactical result exactly once;
+- Runtime reconciles required semantic consequences;
+- same scene resumes exploration;
+- reconnect/restart preserves the result.
 
-Campaign-specific engine/DM branches fail this gate.
+No replacement campaign battlefield or Return-to-Campaign navigation is allowed.
 
-### Layer 13 — Monster Master Battle Arena equivalence
+## Layer 13 — Complete single-player Monster Master
 
-The standalone Battle Arena has its own setup/UX evidence, but equivalent Monster Master Ruleset versions/profiles should be tested for equivalent:
+```text
+package/world initialization
+→ Crooked Checkpoint SEE/MOVE
+→ Pell TALK
+→ Ask-GM / Do Something Else
+→ observer-safe knowledge/history
+→ persistent CHANGE
+→ West Woods TRAVEL/revisit
+→ event/check consequence
+→ same-map FIGHT
+→ exploration resume
+→ bounded campaign resolution
+→ both services/browser restart
+→ same persistent world
+```
 
-- character/control semantics;
-- initiative/action economy;
-- legal movement/actions;
-- conditions/resources;
-- objective/terminal states;
-- deterministic outcomes.
+Proof order: human play → deterministic/machine-play → live provider → deployed staging.
 
-Standalone setup may differ; combat rules must not silently fork from the RPG.
+## Layer 14 — Browser acceptance
 
-### Layer 14 — Campaign Architect behavior
+Browser journeys should prove direct player behavior, including desktop/mobile controls, interaction targeting, NPC conversation, Ask-GM/freeform separation, history/audience rendering, world changes, scene transfer, tactical transition, and reconnect.
 
-Only after the two handcrafted campaign proofs:
+Screenshots support visual claims only.
 
-- brief normalization;
-- assumptions/repair;
-- originality transformation;
-- WorldGraph/package completeness;
-- ruleset/capability compatibility;
-- materialization intent completeness;
-- reproducibility/provenance;
-- owner-refinable draft lifecycle;
-- generated package full journey through the same engine/runtime.
+## Layer 15 — Two-human one-scene
 
-### Layer 15 — VM/Cloudflare/Discord canary
+After single-player proof, test separate principals/avatars, shared scene movement, viewer-divergent Observer Knowledge, normal speech/whispers/private GM communication, party-cohesion transitions, cooperative tactical control, and reconnect.
 
-Prove deployed topology:
+This does not prove split-party multi-scene play.
 
-- public GameFrame through stable Cloudflare hostname;
-- no player VPN/router forwarding;
-- private runtime origin;
-- authenticated HTTP semantic commands;
-- authenticated scene-scoped realtime WebSocket path;
-- reconnect after tunnel/service restart;
-- one embodied world scene + direct interaction;
-- same-map tactical transition;
-- backup/restore;
-- stopping tunnel removes public VM reachability.
+## Layer 16 — Second handcrafted Game Family
 
-### Layer 16 — Media/generation canaries
+A materially different campaign/family must use the same GameFrame RPG Engine, package/entity/scene/Observer architecture, context modes, materialization framework, ruleset interface, and Tactical Activation where relevant. Campaign-specific engine/DM branches fail this gate.
 
-Separately prove:
+## Layer 17 — Battle Simulator equivalence
 
-- catalog reuse;
-- deterministic world-kit composition;
-- queued/async generation;
-- provenance/moderation/budgets;
-- stable recurring identity;
-- materialization fallback;
-- semantic cinematic scripts;
-- optional generated standalone Battle Arena maps.
+Monster Master Arena Battles has its own standalone setup/UX evidence. Matching Monster Master Ruleset versions/profiles should produce equivalent tactical semantics without sharing campaign lifecycle.
 
-## Coordinated branch policy
+## Layer 18 — Campaign Architect
 
-During cross-repository work:
+Only after handcrafted generality, test brief normalization, originality/repair, package completeness, WorldGraph, ruleset compatibility, reproducibility/provenance, owner refinement, and full generated-campaign journey through the same engine/runtime.
+
+## Layer 19 — VM/Cloudflare staging
+
+Prove exact paired GameFrame/Runtime revisions, public GameFrame/private origins, authenticated HTTP mutation routes, projection WebSocket behavior, tunnel/service restart recovery, reset/reseed, embodied world attach/movement, and later TALK/TRAVEL/FIGHT canaries as those features land.
+
+No player journey requires Tailscale/router forwarding.
+
+## Coordinated shared-document order
 
 1. update canonical GameFrame shared docs/fixtures;
-2. run focused GameFrame validation;
-3. test runtime branch against intended GameFrame branch;
-4. merge canonical GameFrame changes;
-5. synchronize byte-identical runtime mirrors;
-6. rerun runtime checks against GameFrame `main`;
-7. merge runtime changes.
+2. validate/merge GameFrame canonical change;
+3. synchronize exact Runtime mirrors;
+4. run Runtime shared drift/hygiene and relevant integration;
+5. merge Runtime mirrors/local status.
 
-Private runtime workflows must never execute untrusted fork/public PR code alongside private source/secrets.
+Private Runtime workflows must never execute untrusted public fork/PR code with private source/secrets.
 
 ## Diagnostics
 
-Preserve bounded evidence including:
-
-- exact GameFrame/runtime SHAs;
-- package/schema/ruleset versions;
-- package hash/provenance;
-- semantic scene/materialization IDs/versions;
-- observer/player/scripted-turn context at failure;
-- tactical activation/tactical revision IDs;
-- retry/restart receipts;
-- browser traces only for browser journeys.
-
-Do not place runtime-only package truth or credentials in ordinary artifacts.
-
-## Acceptance criteria
-
-The testing system is established when:
-
-1. Monster Master and a materially different second handcrafted package pass the same durable engine/runtime substrate;
-2. perspective custody proves NPCs do not inherit referee omniscience;
-3. embodied exploration/materialization/revisit survives restart;
-4. Ask-GM and Do Something Else remain distinct;
-5. both repositories validate the same shared fixtures;
-6. actual GameFrame integration exercises real materialization/control/tactical behavior;
-7. one-human Monster Master proves same-map Tactical Activation and exploration resume;
-8. two-human one-scene acceptance is proven separately;
-9. Battle Arena equivalence prevents Monster Master combat-rule drift;
-10. Campaign Architect is tested only after handcrafted generality;
-11. VM canaries prove public routing/private-origin/realtime recovery;
-12. split-party multi-scene is not claimed until separately tested;
-13. no player journey requires Tailscale/router forwarding.
+Preserve bounded evidence: exact SHAs, package/ruleset versions, materialization/scene/entity IDs, observer context at failure, command/revision/idempotency receipts, and browser traces only where useful. Never place runtime-only campaign secrets or credentials into ordinary artifacts.
 
 ## Governing rule
 
-> Prove the thing the player will actually experience: one durable materialized world, perspective-correct characters and GM, ruleset-driven deterministic mechanics, and combat that turns on where the party is already standing rather than replacing the campaign with another battlefield.
+> Prove what the player actually experiences and what authority actually commits: one durable materialized world, perspective-correct characters, observer-scoped communication/history, deterministic rules, and same-map tactical play—without letting transport, prose, or screenshots stand in for state correctness.
