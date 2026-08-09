@@ -194,6 +194,105 @@ function setWorldStatus(message) {
   if (status) status.textContent = message;
 }
 
+function touchControls() {
+  return document.querySelector("#mm-rpg-touch-controls");
+}
+
+function syncTouchControls() {
+  const controls = touchControls();
+  if (controls) controls.hidden = !state.payload || !currentCampaignId();
+}
+
+function screenDirection(code) {
+  const base = KEY_DIRECTION_INDEX[code];
+  if (!Number.isInteger(base)) return null;
+  const quarter = ((Math.round(window.gameFrameMonsterPixi?.getCamera?.()?.quarter ?? 0) % 4) + 4) % 4;
+  return SCREEN_DIRECTIONS[(base - quarter + 4) % 4];
+}
+
+function rotateView(direction) {
+  const renderer = window.gameFrameMonsterPixi;
+  if (!renderer) return false;
+  const rotated = direction === "left"
+    ? renderer.rotateLeft?.()
+    : renderer.rotateRight?.();
+  if (rotated === undefined && !renderer.getCamera) return false;
+  scheduleAnchors();
+  return true;
+}
+
+function makeTouchButton({ label, text, control, onPress }) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "mm-rpg-touch-button";
+  button.dataset.rpgTouch = control;
+  button.setAttribute("aria-label", label);
+  button.textContent = text;
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    onPress();
+  });
+  return button;
+}
+
+function ensureTouchControls() {
+  if (touchControls()) return touchControls();
+  const stage = document.querySelector("#mm-rpg-world .mm-rpg-world-stage");
+  if (!stage) return null;
+
+  const controls = document.createElement("div");
+  controls.id = "mm-rpg-touch-controls";
+  controls.className = "mm-rpg-touch-controls";
+  controls.setAttribute("aria-label", "Exploration touch controls");
+  controls.hidden = true;
+
+  const dpad = document.createElement("div");
+  dpad.className = "mm-rpg-touch-dpad";
+  dpad.setAttribute("aria-label", "Move");
+  const directionalControls = [
+    { label: "Move up", text: "▲", control: "move-up", code: "KeyW", className: "is-up" },
+    { label: "Move left", text: "◀", control: "move-left", code: "KeyA", className: "is-left" },
+    { label: "Move right", text: "▶", control: "move-right", code: "KeyD", className: "is-right" },
+    { label: "Move down", text: "▼", control: "move-down", code: "KeyS", className: "is-down" },
+  ];
+  for (const entry of directionalControls) {
+    const button = makeTouchButton({
+      label: entry.label,
+      text: entry.text,
+      control: entry.control,
+      onPress: () => {
+        const direction = screenDirection(entry.code);
+        if (direction) queueMove(direction);
+      },
+    });
+    button.classList.add(entry.className);
+    dpad.append(button);
+  }
+
+  const camera = document.createElement("div");
+  camera.className = "mm-rpg-touch-camera";
+  camera.setAttribute("aria-label", "Rotate view");
+  camera.append(
+    makeTouchButton({
+      label: "Rotate view left",
+      text: "↶",
+      control: "rotate-left",
+      onPress: () => rotateView("left"),
+    }),
+    makeTouchButton({
+      label: "Rotate view right",
+      text: "↷",
+      control: "rotate-right",
+      onPress: () => rotateView("right"),
+    }),
+  );
+
+  controls.append(dpad, camera);
+  stage.append(controls);
+  syncTouchControls();
+  return controls;
+}
+
 function present(value) {
   const payload = requireMaterializedPayload(value);
   const playerPosition = playerPositionFromPayload(payload);
@@ -208,6 +307,8 @@ function present(value) {
   updateWorldHeader(payload);
   window.dispatchEvent(new CustomEvent(VIEW_EVENT, { detail: { view: state.view } }));
   scheduleAnchors();
+  ensureTouchControls();
+  syncTouchControls();
   return state.view;
 }
 
@@ -221,6 +322,7 @@ function clear() {
   state.moveInFlight = false;
   state.queuedDirection = null;
   anchorLayer()?.replaceChildren();
+  syncTouchControls();
   setWorldStatus("No scene attached");
 }
 
@@ -399,13 +501,6 @@ function acceptPosition(position) {
   return true;
 }
 
-function screenDirection(code) {
-  const base = KEY_DIRECTION_INDEX[code];
-  if (!Number.isInteger(base)) return null;
-  const quarter = ((Math.round(window.gameFrameMonsterPixi?.getCamera?.()?.quarter ?? 0) % 4) + 4) % 4;
-  return SCREEN_DIRECTIONS[(base - quarter + 4) % 4];
-}
-
 function isEditableTarget(target) {
   if (!(target instanceof Element)) return false;
   return Boolean(target.closest("input, textarea, select, [contenteditable='true'], [contenteditable='']"));
@@ -428,11 +523,7 @@ function handleKeydown(event) {
     return;
   }
   if ((event.code === "KeyQ" || event.code === "KeyE") && !event.repeat) {
-    const renderer = window.gameFrameMonsterPixi;
-    const rotated = event.code === "KeyQ"
-      ? renderer?.rotateLeft?.()
-      : renderer?.rotateRight?.();
-    if (rotated !== undefined || renderer) event.preventDefault();
+    if (rotateView(event.code === "KeyQ" ? "left" : "right")) event.preventDefault();
   }
 }
 
@@ -470,4 +561,5 @@ document.querySelector("#mm-rpg-refresh")?.addEventListener("click", () => {
 document.querySelector("#mm-rpg-switch")?.addEventListener("click", clear);
 window.addEventListener("keydown", handleKeydown);
 window.addEventListener("resize", scheduleAnchors);
+ensureTouchControls();
 requestAnimationFrame(watchCamera);
