@@ -172,7 +172,8 @@ test("Monster Master RPG materializes Crooked Checkpoint through the existing Pi
   await expect(page.locator("#mm-rpg-world-location")).toHaveText("The Crooked Checkpoint");
   await expect(page.locator("#mm-rpg-world-status")).toContainText("Materialized");
   await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
-  await expect(page.locator('[data-semantic-id="npc.warden-pell"]')).toContainText("veteran field warden");
+  const pell = page.locator('[data-semantic-id="npc.warden-pell"]');
+  await expect(pell).toContainText("veteran field warden");
   await expect(page.locator('[data-semantic-id="object.checkpoint-cart"]')).toContainText("covered confiscation cart");
   await expect(page.locator('[data-semantic-id="route.crooked-checkpoint-west-woods"]')).toContainText("West Woods Route");
   await expect(page.locator("#mm-rpg-world-materialization")).toContainText(materializationId);
@@ -188,6 +189,11 @@ test("Monster Master RPG materializes Crooked Checkpoint through the existing Pi
   expect(stats.groundObjects).toBe(1);
   expect(stats.wallCount).toBeGreaterThan(0);
   expect(stats.unitObjects).toBe(2);
+
+  const pellPosition = await pell.evaluate((node) => `${node.style.left}|${node.style.top}`);
+  await page.evaluate(() => window.gameFrameMonsterPixi?.panScreen?.(144, 0));
+  await expect.poll(async () => pell.evaluate((node) => `${node.style.left}|${node.style.top}`))
+    .not.toBe(pellPosition);
 
   await page.locator("#mm-rpg-refresh").click();
   await expect.poll(() => explorationAttachCount).toBe(2);
