@@ -38,10 +38,10 @@ function lateSpec(levelNumber) {
 
   if (levelNumber <= 40) {
     return {
-      target: 7000 + (offset * 390) + (hard ? 350 : 0),
+      target: 6800 + (offset * 360) + (hard ? 300 : 0),
       moves: 18,
       hard,
-      objective: objective({ ice: { count: 9 + offset, layers: 1, pattern } }),
+      objective: objective({ ice: { count: 8 + Math.floor(offset * 0.75), layers: 1, pattern } }),
     };
   }
 
@@ -58,12 +58,12 @@ function lateSpec(levelNumber) {
 
   if (levelNumber <= 60) {
     return {
-      target: 7600 + (offset * 400) + (hard ? 450 : 0),
-      moves: 17,
+      target: 7300 + (offset * 380) + (hard ? 350 : 0),
+      moves: 18,
       hard,
       objective: objective({
-        collect: [{ kind: (levelNumber + 2) % TILE_KINDS, count: 18 + Math.floor(offset * 0.75) }],
-        ice: { count: 8 + Math.floor(offset * 0.75), layers: 1, pattern },
+        collect: [{ kind: (levelNumber + 2) % TILE_KINDS, count: 16 + Math.floor(offset * 0.6) }],
+        ice: { count: 6 + Math.floor(offset * 0.6), layers: 1, pattern },
       }),
     };
   }
@@ -86,10 +86,10 @@ function lateSpec(levelNumber) {
 
   if (levelNumber <= 80) {
     return {
-      target: 9000 + (offset * 500) + (hard ? 550 : 0),
-      moves: hard ? 17 : 18,
+      target: 8600 + (offset * 450) + (hard ? 450 : 0),
+      moves: hard ? 18 : 19,
       hard,
-      objective: objective({ ice: { count: 7 + Math.floor(offset * 0.75), layers: 2, pattern } }),
+      objective: objective({ ice: { count: 5 + Math.floor(offset * 0.55), layers: 2, pattern } }),
     };
   }
 
@@ -97,15 +97,15 @@ function lateSpec(levelNumber) {
     const firstKind = (levelNumber + 2) % TILE_KINDS;
     const secondKind = (firstKind + 2) % TILE_KINDS;
     return {
-      target: 9800 + (offset * 500) + (hard ? 500 : 0),
-      moves: hard ? 17 : 18,
+      target: 9200 + (offset * 450) + (hard ? 400 : 0),
+      moves: hard ? 18 : 19,
       hard,
       objective: objective({
         collect: [
-          { kind: firstKind, count: 14 + Math.floor(offset * 0.65) },
-          { kind: secondKind, count: 14 + Math.floor(offset * 0.65) },
+          { kind: firstKind, count: 12 + Math.floor(offset * 0.5) },
+          { kind: secondKind, count: 12 + Math.floor(offset * 0.5) },
         ],
-        ice: { count: 6 + Math.floor(offset * 0.65), layers: 2, pattern },
+        ice: { count: 4 + Math.floor(offset * 0.5), layers: 2, pattern },
       }),
     };
   }
@@ -113,15 +113,15 @@ function lateSpec(levelNumber) {
   const firstKind = (levelNumber + 3) % TILE_KINDS;
   const secondKind = (firstKind + 2) % TILE_KINDS;
   return {
-    target: 10800 + (offset * 550) + (hard ? 650 : 0),
-    moves: hard ? 16 : 17,
+    target: 10000 + (offset * 500) + (hard ? 500 : 0),
+    moves: hard ? 17 : 18,
     hard,
     objective: objective({
       collect: [
-        { kind: firstKind, count: 16 + Math.floor(offset * 0.7) },
-        { kind: secondKind, count: 16 + Math.floor(offset * 0.7) },
+        { kind: firstKind, count: 14 + Math.floor(offset * 0.55) },
+        { kind: secondKind, count: 14 + Math.floor(offset * 0.55) },
       ],
-      ice: { count: 7 + Math.floor(offset * 0.75), layers: 2, pattern },
+      ice: { count: 5 + Math.floor(offset * 0.55), layers: 2, pattern },
     }),
   };
 }
