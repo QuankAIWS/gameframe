@@ -61,7 +61,9 @@ export class RpgExplorationInteractionError extends Error {
  *
  * The request deliberately contains no targetEntityId field. Browsers may select
  * only an interactionTargetId that already exists in the authenticated viewer's
- * current accepted materialization.
+ * current accepted materialization. The first TALK slice is intentionally
+ * limited to actor targets because Runtime entity-performance does not yet
+ * support player-roster monsters or other entity classes.
  */
 export function authorizeRpgExplorationTalk(input: {
   request: unknown;
@@ -96,6 +98,7 @@ export function authorizeRpgExplorationTalk(input: {
   if (
     !target
     || target.kind !== "entity"
+    || target.entityClass !== "actor"
     || typeof target.semanticId !== "string"
     || target.semanticId === position.playerEntityId
   ) {
