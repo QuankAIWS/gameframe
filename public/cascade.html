@@ -7,6 +7,7 @@
   <title>Cascade · Scribbles GameFrame</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/cascade.css">
+  <link rel="stylesheet" href="/cascade-family.css">
 </head>
 <body class="cascade-route">
   <main class="cascade-shell">
@@ -15,10 +16,10 @@
         <p class="cascade-kicker">CASUAL / MATCH-3</p>
         <h1>Cascade</h1>
       </div>
-      <div class="cascade-ledger" aria-label="Fake IOU ledger">
-        <small>FAKE FAMILY TAB</small>
-        <strong id="iou-total">$0</strong>
-        <button id="open-ledger" type="button">Ledger</button>
+      <div class="cascade-ledger" aria-label="Family IOU ledger">
+        <small>FAMILY TAB</small>
+        <strong id="iou-total">IOU$ 0</strong>
+        <button id="open-ledger" type="button">Open tab</button>
       </div>
     </header>
 
@@ -56,9 +57,10 @@
           <button id="booster-hammer" type="button">Hammer <b id="hammer-count">2</b></button>
           <span>Remove one tile without spending a move.</span>
         </div>
-        <div class="cascade-card cascade-research-note">
-          <small>RESEARCH BUILD</small>
-          <span>All “IOUs” are fictional, local-only, capped, and never create a real debt or charge.</span>
+        <div class="cascade-card cascade-tab-card">
+          <small>FAMILY TAB</small>
+          <strong>Put it on the tab.</strong>
+          <span>Moves, lives, boosters. The tab keeps score.</span>
         </div>
       </aside>
     </section>
@@ -75,13 +77,13 @@
 
   <dialog id="ledger-dialog" class="cascade-dialog cascade-ledger-dialog">
     <form method="dialog">
-      <small>FAKE FAMILY TAB</small>
+      <small>FAMILY TAB</small>
       <h2>IOU ledger</h2>
-      <p>Research-only continuation choices. No payment method exists and the total has no real-world value.</p>
+      <p>Every rescue, refill, and booster you put on the tab ends up here.</p>
       <ul id="ledger-list"></ul>
       <div class="cascade-dialog-actions">
         <button value="close" class="primary">Close</button>
-        <button id="reset-ledger" type="button">Reset fake tab</button>
+        <button id="reset-ledger" type="button">Wipe the tab</button>
       </div>
     </form>
   </dialog>
