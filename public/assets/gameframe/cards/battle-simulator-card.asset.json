@@ -1,0 +1,17 @@
+{
+  "assetId": "gameframe.card.battle-simulator.v1",
+  "role": "gameframe-destination-card-art",
+  "destinationId": "battle-simulator",
+  "runtimePath": "/assets/gameframe/cards/battle-simulator-card.svg",
+  "aspectRatio": "16:9",
+  "runtimeViewport": {
+    "width": 384,
+    "height": 216
+  },
+  "master": {
+    "width": 2048,
+    "height": 1152,
+    "format": "png",
+    "externalArchive": "private-external-archive"
+  }
+}
