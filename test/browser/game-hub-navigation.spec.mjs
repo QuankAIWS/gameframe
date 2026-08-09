@@ -164,7 +164,7 @@ test("the Games cards open Role-Playing Games, Battle Simulator, Casual Games, a
   await expect(page).toHaveURL(/\/cascade\.html$/);
   await expect(page.getByRole("heading", { name: "Cascade" })).toBeVisible();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
-  await expect(page.locator("#iou-total")).toHaveText("$0");
+  await expect(page.locator("#iou-total")).toHaveText("IOU$ 0");
 
   await page.goto("/?player=hub-navigation-test");
   await expect(page.locator("#game-card-tic-tac-toe")).toContainText("CPU Opponent");
