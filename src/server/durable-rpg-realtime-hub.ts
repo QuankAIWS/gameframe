@@ -34,11 +34,6 @@ export type DurableRpgRealtimeHubOptions = {
     playerId: string,
   ): Promise<RpgCampaignPosition>;
   matchView(matchId: string, playerId: string): Promise<JsonRecord>;
-  explorationMove?(
-    campaignId: string,
-    playerId: string,
-    message: unknown,
-  ): unknown | Promise<unknown>;
 };
 
 type CampaignAttachment = {
@@ -69,18 +64,16 @@ type ParsedRoute =
   | { kind: "match"; resourceId: string };
 
 /**
- * Realtime transport for the VM-owned RPG authority.
+ * Realtime projection transport for the VM-owned RPG authority.
  *
- * WebSockets never mutate RPG semantic/campaign truth. Campaign sockets may
- * carry GameFrame-owned exploration movement frames, whose physical x/y/facing
- * state is independently reconstructable from GameFrame SQLite after reconnect.
- * Narrative commands and tactical actions remain on their HTTP authorities.
+ * WebSockets never become an alternate mutation path. HTTP/SQLite remain
+ * authoritative; a socket is only an authenticated, player-scoped projection
+ * channel and can always be reconstructed from durable state after reconnect.
  */
 export class DurableRpgRealtimeHub {
   readonly #authenticator: RequestAuthenticator;
   readonly #campaignPosition: DurableRpgRealtimeHubOptions["campaignPosition"];
   readonly #matchView: DurableRpgRealtimeHubOptions["matchView"];
-  readonly #explorationMove?: DurableRpgRealtimeHubOptions["explorationMove"];
   readonly #server = new WebSocketServer({
     noServer: true,
     clientTracking: false,
@@ -97,7 +90,6 @@ export class DurableRpgRealtimeHub {
     this.#authenticator = options.authenticator;
     this.#campaignPosition = options.campaignPosition;
     this.#matchView = options.matchView;
-    this.#explorationMove = options.explorationMove;
     this.#heartbeat = setInterval(() => this.#heartbeatSockets(), HEARTBEAT_INTERVAL_MS);
     this.#heartbeat.unref?.();
   }
@@ -157,7 +149,7 @@ export class DurableRpgRealtimeHub {
         });
         webSocket.once("close", () => this.#attachments.delete(webSocket));
         webSocket.once("error", () => {
-          // close/terminate owns cleanup; transport errors never mutate RPG semantic state.
+          // close/terminate owns cleanup; transport errors never mutate RPG state.
         });
         if (route.kind === "campaign") {
           sendJson(webSocket, campaignPositionMessage(initial as RpgCampaignPosition, "initial"));
@@ -334,8 +326,7 @@ export class DurableRpgRealtimeHub {
         message: "RPG realtime messages must be valid JSON.",
       });
     }
-    const type = (parsed as { type?: unknown } | null)?.type;
-    if (type === "refresh") {
+    if ((parsed as { type?: unknown } | null)?.type === "refresh") {
       const now = Date.now();
       if (now - attachment.lastClientRefreshAt < MIN_CLIENT_REFRESH_INTERVAL_MS) {
         return sendJson(socket, {
@@ -348,27 +339,10 @@ export class DurableRpgRealtimeHub {
       this.#queueRefresh(socket, "refresh");
       return;
     }
-    if (type === "exploration_move" && attachment.kind === "campaign" && this.#explorationMove) {
-      try {
-        const result = await this.#explorationMove(
-          attachment.resourceId,
-          attachment.playerId,
-          parsed,
-        );
-        sendJson(socket, result);
-      } catch (error) {
-        sendJson(socket, {
-          type: "protocol_error",
-          code: errorCode(error),
-          message: "Exploration movement was rejected. Refresh the physical scene and retry.",
-        });
-      }
-      return;
-    }
     sendJson(socket, {
       type: "protocol_error",
       code: "unsupported_message",
-      message: "Only refresh and GameFrame exploration movement are accepted on campaign realtime.",
+      message: "Only refresh is accepted. RPG commands use the HTTP authority boundary.",
     });
   }
 
