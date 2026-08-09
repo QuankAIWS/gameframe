@@ -30,7 +30,9 @@ test("Cascade resolves a legal move through the animated presentation layer", as
 
 test("Cascade late chapters expose ice, collection, cross-blast, and layered ice", async ({ page }) => {
   await page.addInitScript(() => {
-    window.localStorage.setItem("scribbles-gameframe.cascade-state:v1", JSON.stringify({
+    const key = "scribbles-gameframe.cascade-state:v1";
+    if (window.localStorage.getItem(key)) return;
+    window.localStorage.setItem(key, JSON.stringify({
       level: 31,
       lives: 5,
       lastLifeAt: Date.now(),
@@ -149,7 +151,7 @@ test("Cascade admin console uses the authenticated admin identity to jump throug
   await expect(page.locator("#cascade-admin-open")).toBeVisible();
   await page.locator("#cascade-admin-open").click();
   await expect(page.locator("#cascade-admin-dialog")).toBeVisible();
-  await expect(page.locator("[data-level=\"100\"]")).toBeVisible();
+  await expect(page.locator("#cascade-admin-dialog [data-level=\"100\"]")).toBeVisible();
 
   const reset = page.getByRole("button", { name: "Reset IOU ledger" });
   await reset.click();
