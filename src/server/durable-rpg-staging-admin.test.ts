@@ -86,7 +86,7 @@ describe("durable RPG staging administrator reset", () => {
     expect(requestReset).toHaveBeenCalledTimes(1);
   });
 
-  it("binds the browser reset request and reload to the currently attached campaign", async () => {
+  it("binds the browser reset request, confirmation, and reload to the active campaign", async () => {
     const source = await readFile(
       new URL("../../public/monster-master-rpg-admin.js", import.meta.url),
       "utf8",
@@ -94,8 +94,11 @@ describe("durable RPG staging administrator reset", () => {
 
     expect(source).toContain('document.querySelector("#mm-rpg-campaign-code")');
     expect(source).toContain('new URLSearchParams(window.location.search).get("campaign")');
-    expect(source).toContain("body: JSON.stringify({\n          campaignId,");
-    expect(source).toContain("url.searchParams.set(\"campaign\", campaignId)");
+    expect(source).toContain("let armedCampaignId = null");
+    expect(source).toContain("armedCampaignId !== campaignId");
+    expect(source).toContain("const confirmedCampaignId = armedCampaignId");
+    expect(source).toContain("campaignId: confirmedCampaignId");
+    expect(source).toContain("url.searchParams.set(\"campaign\", confirmedCampaignId)");
     expect(source).not.toContain('campaignId: "monster-master-staging"');
     expect(source).not.toContain('profile.v1:monster-master-staging"');
   });
