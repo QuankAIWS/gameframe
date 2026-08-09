@@ -7,12 +7,13 @@ last_updated: 2026-08-08
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
-  - GameFrame RPG
+  - Role-Playing Games
+  - Battle Simulator
   - Monster Master RPG
-  - Monster Master Battle Arena
+  - Monster Master Arena Battles
   - future bespoke campaigns
 shared_document_id: rpg-embodied-exploration-and-character-performance-v1
-shared_document_version: 2
+shared_document_version: 3
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-embodied-exploration-and-character-performance-contract.md
 mirrors:
@@ -47,7 +48,7 @@ The existing text-first campaign surface remains useful as fallback, accessibili
 
 ## Product and engine hierarchy
 
-The platform distinguishes reusable engine capability, rulesets, campaign content, and standalone games.
+The platform distinguishes reusable engine capability, rulesets, game-family content, campaign content, and standalone simulator content.
 
 ### GameFrame RPG Engine
 
@@ -66,7 +67,7 @@ The platform distinguishes reusable engine capability, rulesets, campaign conten
 - realtime player/session transport;
 - player-facing RPG UI primitives.
 
-GameFrame RPG Engine is architecture/platform terminology. The player-facing library destination may simply be called **GameFrame RPG**.
+GameFrame RPG Engine is architecture/platform terminology. The player-facing campaign destination is **Role-Playing Games** under the top-level **Games** surface.
 
 ### RPG Ruleset
 
@@ -84,9 +85,13 @@ An **RPG Ruleset** supplies the campaign-agnostic engine with game-specific dete
 
 A ruleset must not depend on one specific CampaignPackage.
 
-### Monster Master Ruleset
+### Game Family
 
-The **Monster Master Ruleset** is the first major rules/content family. It eventually defines one shared source of truth for Monster Master character and combat mechanics used by both Monster Master RPG and Monster Master Battle Arena.
+A **Game Family** binds reusable rules/content/assets shared by related campaign and simulator experiences. A family may have one or more CampaignPackages and zero or more simulator-safe Battle Packs.
+
+### Monster Master Ruleset / Game Family
+
+The **Monster Master Ruleset** is the first major rules/content family. It eventually defines one shared source of truth for Monster Master character and combat mechanics used by both Monster Master RPG and Monster Master Arena Battles.
 
 ### Monster Master RPG
 
@@ -94,38 +99,41 @@ The **Monster Master Ruleset** is the first major rules/content family. It event
 
 ```text
 GameFrame RPG Engine
-+ Monster Master Ruleset
++ Monster Master Ruleset / game-family content
 + handcrafted/generated CampaignPackage
-+ Monster Master theme/content/assets
 ```
 
 Monster Master is the first proving family, not the generic engine.
 
-### Monster Master Battle Arena
+### Battle Simulator / Monster Master Arena Battles
 
-**Monster Master Battle Arena** is the standalone battle-simulator product:
+**Battle Simulator** is the standalone tactical sandbox under Games. **Monster Master Arena Battles** is the Monster Master entry inside it.
+
+Conceptually:
 
 ```text
-GameFrame RPG tactical/world subset
-+ Monster Master Ruleset
-+ standalone BattleScenario
+Battle Simulator
++ Monster Master Ruleset / game-family content
++ Monster Master Battle Pack
++ BattleScenario
 ```
 
-It may let players build characters/loadouts, choose or generate a map, create teams/objectives, fight bots or humans, rematch, and inspect/replay battles.
+Battle Simulator may let players build characters/loadouts, choose or generate a map, create teams/objectives, fight bots or humans, rematch, and inspect/replay battles.
 
-It is deliberately separate from campaign play, but it should converge on the same Monster Master tactical rules and rendering/control semantics as Monster Master RPG.
+It is deliberately separate from campaign play, but matching ruleset versions should converge on the same tactical rules and rendering/control semantics as Monster Master RPG.
 
-### GameFrame RPG player surface
+### Role-Playing Games player surface
 
-**GameFrame RPG** is the future generic player-facing campaign destination for:
+**Role-Playing Games** is the generic player-facing campaign destination for:
 
-- Create Campaign;
+- available bespoke/generated RPGs;
+- Create RPG;
 - My Campaigns;
 - Import CampaignPackage;
 - future Campaign Architect intake/refinement;
 - generic campaign resume/management.
 
-Monster Master RPG may remain a bespoke library title while using this engine underneath.
+Monster Master RPG appears inside this surface while using GameFrame RPG Engine underneath.
 
 ## Two-agent architecture remains
 
@@ -133,10 +141,10 @@ This contract does not create a third campaign agent.
 
 The two specialized campaign agents remain:
 
-1. **Campaign Architect** — constructs validated CampaignPackages before ordinary play.
+1. **Campaign Architect** — constructs validated CampaignPackages before ordinary play and may later coordinate reusable game-family/Battle-Pack authoring after generality is proven.
 2. **Dungeon Master** — conducts live play from committed package truth and durable campaign state.
 
-Entity Registry, Character Factory, Scene Registry, semantic observer knowledge, world/location services, GameFrame scene materialization, rulesets, tactical activation, deterministic mechanics, and rendering remain substrate rather than additional campaign agents.
+Entity Registry, Character Factory, Scene Registry, semantic observer knowledge, world/location services, GameFrame scene materialization, rulesets, game-family/Battle-Pack contracts, tactical activation, deterministic mechanics, and rendering remain substrate rather than additional campaign agents.
 
 The Dungeon Master may execute in several **context modes** without becoming several agents:
 
@@ -324,6 +332,8 @@ A newly required scene may be materialized on demand when campaign truth establi
 
 This is bounded on-demand world realization, not unrestricted infinite world generation.
 
+Battle Simulator may reuse the same world-kit/materialization machinery under Battle Pack constraints to create standalone tactical maps. Those maps do not become campaign semantic history merely because they use the same renderer/assets.
+
 ## Three levels of spatial state
 
 Keep three concepts separate.
@@ -438,6 +448,8 @@ The system remains sparse. Do not eagerly create every possible observer × fact
 
 Player-facing People/knowledge projections remain viewer-safe read models over this broader semantic model.
 
+Battle Pack exposure is a separate simulator visibility policy. A fact or entity existing in hidden CampaignPackage/runtime truth does not make it selectable in Battle Simulator.
+
 ## NPC conversation persistence
 
 Conversation transcript is not the sole authority for what an NPC remembers.
@@ -500,7 +512,7 @@ GameFrame validates/executes supported presentation commands. The script may ref
 
 ### Same-world rule
 
-Campaign combat does not spin up Monster Master Battle Arena or a separate tactical map.
+Campaign combat does not spin up Battle Simulator or a separate tactical map.
 
 A **Tactical Activation** changes the rules of control over the current GameFrame scene.
 
@@ -549,22 +561,24 @@ For Monster Master, one human principal may control:
 
 The generic engine should be able to represent a principal, player-character entity, and controlled/commandable entity set without assuming Monster Master-specific counts.
 
-## Standalone BattleScenario
+## Standalone BattleScenario / Battle Pack
 
-Monster Master Battle Arena should use a standalone scenario contract rather than CampaignPackage authority.
+Battle Simulator should use a standalone scenario contract rather than CampaignPackage authority.
 
-A future `BattleScenario` may describe:
+A future `BattlePack` supplies simulator-safe reusable tactical content/configuration for a Game Family. A future `BattleScenario` selects from that pack and may describe:
 
 - map/materialization selection or generation request;
 - ruleset/profile/version;
-- players/trainers/monsters/loadouts;
+- players/characters/companions/creatures/loadouts;
 - teams/controllers;
 - deployment/starting-position rules;
 - objectives;
 - bot profiles;
 - environment options.
 
-After setup, the Battle Arena should use the same Monster Master tactical rules and GameFrame tactical-mode implementation as the RPG wherever capabilities match.
+Battle Packs reference the same rules/content/assets as the related RPG where appropriate and have explicit visibility/unlock policy to prevent campaign-secret leakage.
+
+After setup, Battle Simulator should use the same tactical rules and GameFrame tactical-mode implementation as the corresponding RPG wherever capabilities match.
 
 ## Realtime transport posture
 
@@ -685,7 +699,10 @@ Therefore architect for multiple scenes now but productize one shared party scen
 - making every decorative object a durable campaign entity;
 - treating visual map geometry as hidden campaign truth;
 - forcing every plausible freeform action into a permanent bespoke mechanic;
-- separate campaign battlefields merely because tactical rules activate.
+- separate campaign battlefields merely because tactical rules activate;
+- using Battle Simulator as campaign combat;
+- copying RPG combat rules into Battle Packs;
+- automatically exposing campaign secrets in Battle Simulator.
 
 ## Governing rules
 
@@ -693,6 +710,6 @@ Therefore architect for multiple scenes now but productize one shared party scen
 
 > The Dungeon Master remains the referee and narrative authority, but a character portrayed by the Dungeon Master receives character-scoped knowledge rather than omniscient hidden truth.
 
-> Tactical activation changes the rules of control, not the place. Standalone Monster Master Battle Arena is a separate product that begins from battle setup but should share the same Monster Master tactical rules.
+> Tactical activation changes the rules of control, not the place. Battle Simulator is a separate standalone consumer of the same reusable game-family rules/content through simulator-safe Battle Packs.
 
 > Architect for multiple active scenes; prove one shared party scene first; split the party only after scene-scoped realtime, knowledge, event, mechanic, and recovery semantics are trustworthy.
