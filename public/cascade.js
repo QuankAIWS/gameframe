@@ -1,6 +1,13 @@
-const BOARD_SIZE = 8;
-const TILE_KINDS = 6;
-const LEVEL_COUNT = 20;
+import {
+  CASCADE_LEVELS as levels,
+  LEVEL_COUNT,
+  adjacent,
+  applyHammer,
+  applySwap,
+  createBoard,
+  createRng,
+} from "./cascade-engine.js";
+
 const LIFE_MAX = 5;
 const LIFE_REGEN_MS = 10 * 60 * 1000;
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
@@ -26,17 +33,6 @@ const ledgerDialog = $("#ledger-dialog");
 const ledgerList = $("#ledger-list");
 const iouTotalElement = $("#iou-total");
 const boosterButton = $("#booster-hammer");
-
-const levels = Array.from({ length: LEVEL_COUNT }, (_, index) => {
-  const level = index + 1;
-  const hard = level % 5 === 0;
-  return {
-    level,
-    target: 900 + (level * 185) + (hard ? 550 : 0),
-    moves: Math.max(14, 20 - Math.floor(level / 4)) + (hard ? 1 : 0),
-    hard,
-  };
-});
 
 function defaultState() {
   return {
@@ -69,6 +65,7 @@ function loadState() {
 
 let state = loadState();
 let board = [];
+let boardRng = createRng(1);
 let score = 0;
 let movesRemaining = 0;
 let selectedIndex = null;
@@ -154,122 +151,6 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function seededRandomFactory(seed) {
-  let value = (seed >>> 0) || 1;
-  return () => {
-    value ^= value << 13;
-    value ^= value >>> 17;
-    value ^= value << 5;
-    return (value >>> 0) / 4294967296;
-  };
-}
-
-let random = Math.random;
-
-function randomKind() {
-  return Math.floor(random() * TILE_KINDS);
-}
-
-function wouldCreateImmediateMatch(candidate, index, currentBoard) {
-  const row = Math.floor(index / BOARD_SIZE);
-  const col = index % BOARD_SIZE;
-  if (col >= 2 && currentBoard[index - 1] === candidate && currentBoard[index - 2] === candidate) return true;
-  if (row >= 2 && currentBoard[index - BOARD_SIZE] === candidate && currentBoard[index - BOARD_SIZE * 2] === candidate) return true;
-  return false;
-}
-
-function createBoard() {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    const next = [];
-    for (let index = 0; index < BOARD_SIZE * BOARD_SIZE; index += 1) {
-      let candidate = randomKind();
-      let guard = 0;
-      while (wouldCreateImmediateMatch(candidate, index, next) && guard < 20) {
-        candidate = randomKind();
-        guard += 1;
-      }
-      next.push(candidate);
-    }
-    if (hasLegalMove(next)) return next;
-  }
-  return Array.from({ length: BOARD_SIZE * BOARD_SIZE }, () => randomKind());
-}
-
-function adjacent(a, b) {
-  const ar = Math.floor(a / BOARD_SIZE);
-  const ac = a % BOARD_SIZE;
-  const br = Math.floor(b / BOARD_SIZE);
-  const bc = b % BOARD_SIZE;
-  return Math.abs(ar - br) + Math.abs(ac - bc) === 1;
-}
-
-function swap(array, a, b) {
-  [array[a], array[b]] = [array[b], array[a]];
-}
-
-function findMatches(currentBoard = board) {
-  const matched = new Set();
-
-  for (let row = 0; row < BOARD_SIZE; row += 1) {
-    let start = 0;
-    for (let col = 1; col <= BOARD_SIZE; col += 1) {
-      const index = row * BOARD_SIZE + col;
-      const startIndex = row * BOARD_SIZE + start;
-      const same = col < BOARD_SIZE && currentBoard[index] === currentBoard[startIndex] && currentBoard[index] !== null;
-      if (same) continue;
-      if (col - start >= 3) {
-        for (let fill = start; fill < col; fill += 1) matched.add(row * BOARD_SIZE + fill);
-      }
-      start = col;
-    }
-  }
-
-  for (let col = 0; col < BOARD_SIZE; col += 1) {
-    let start = 0;
-    for (let row = 1; row <= BOARD_SIZE; row += 1) {
-      const index = row * BOARD_SIZE + col;
-      const startIndex = start * BOARD_SIZE + col;
-      const same = row < BOARD_SIZE && currentBoard[index] === currentBoard[startIndex] && currentBoard[index] !== null;
-      if (same) continue;
-      if (row - start >= 3) {
-        for (let fill = start; fill < row; fill += 1) matched.add(fill * BOARD_SIZE + col);
-      }
-      start = row;
-    }
-  }
-
-  return matched;
-}
-
-function hasLegalMove(currentBoard) {
-  for (let index = 0; index < currentBoard.length; index += 1) {
-    const right = index % BOARD_SIZE < BOARD_SIZE - 1 ? index + 1 : -1;
-    const down = index + BOARD_SIZE < currentBoard.length ? index + BOARD_SIZE : -1;
-    for (const neighbor of [right, down]) {
-      if (neighbor < 0) continue;
-      swap(currentBoard, index, neighbor);
-      const legal = findMatches(currentBoard).size > 0;
-      swap(currentBoard, index, neighbor);
-      if (legal) return true;
-    }
-  }
-  return false;
-}
-
-function collapseBoard() {
-  for (let col = 0; col < BOARD_SIZE; col += 1) {
-    const kept = [];
-    for (let row = BOARD_SIZE - 1; row >= 0; row -= 1) {
-      const value = board[row * BOARD_SIZE + col];
-      if (value !== null) kept.push(value);
-    }
-    for (let row = BOARD_SIZE - 1; row >= 0; row -= 1) {
-      const offset = BOARD_SIZE - 1 - row;
-      board[row * BOARD_SIZE + col] = kept[offset] ?? randomKind();
-    }
-  }
-}
-
 function renderBoard() {
   boardElement.replaceChildren();
   board.forEach((kind, index) => {
@@ -319,33 +200,39 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function resolveMatches() {
-  let cascade = 1;
-  let matches = findMatches();
-  while (matches.size) {
-    comboLabelElement.textContent = cascade > 1 ? `CASCADE ×${cascade}` : "";
-    const tiles = [...matches].map((index) => boardElement.querySelector(`[data-index="${index}"]`)).filter(Boolean);
+async function presentResolvedResult(result) {
+  for (const transition of result.transitions) {
+    board = transition.before.slice();
+    renderBoard();
+    comboLabelElement.textContent = transition.cascade > 1 ? `CASCADE ×${transition.cascade}` : "";
+    const tiles = transition.matched
+      .map((index) => boardElement.querySelector(`[data-index="${index}"]`))
+      .filter(Boolean);
     tiles.forEach((tile) => tile.classList.add("is-clearing"));
-    await sleep(135);
-    for (const index of matches) board[index] = null;
-    const gained = matches.size * 80 * cascade;
-    score += gained;
-    track("clear", { matched: matches.size, cascade, gained });
-    collapseBoard();
+    await sleep(190);
+
+    score += transition.gained;
+    track("clear", {
+      matched: transition.matched.length,
+      cascade: transition.cascade,
+      gained: transition.gained,
+      falls: transition.falls.length,
+      spawns: transition.spawns.length,
+    });
+    board = transition.after.slice();
     renderBoard();
     renderStatus();
-    await sleep(95);
-    cascade += 1;
-    matches = findMatches();
+    await sleep(145);
   }
   comboLabelElement.textContent = "";
 
-  if (!hasLegalMove(board)) {
+  if (result.shuffled) {
     track("board_shuffle");
-    random = seededRandomFactory((activeLevel.level * 100003) + Date.now());
-    board = createBoard();
-    renderBoard();
+    await sleep(110);
   }
+  board = result.board.slice();
+  renderBoard();
+  renderStatus();
 }
 
 async function onTileClick(index) {
@@ -354,13 +241,17 @@ async function onTileClick(index) {
   if (hammerMode) {
     hammerMode = false;
     state.hammers -= 1;
-    board[index] = null;
+    const result = applyHammer(board, index, boardRng);
     track("booster_used", { booster: "hammer" });
-    collapseBoard();
+    locked = true;
+    board = result.hammer.cleared.slice();
+    renderBoard();
+    await sleep(120);
+    board = result.hammer.after.slice();
     renderBoard();
     renderStatus();
-    locked = true;
-    await resolveMatches();
+    await sleep(120);
+    await presentResolvedResult(result);
     locked = false;
     await checkLevelEnd();
     return;
@@ -388,13 +279,14 @@ async function onTileClick(index) {
   }
 
   locked = true;
-  swap(board, first, index);
-  renderBoard();
-  const matches = findMatches();
-
-  if (!matches.size) {
-    await sleep(105);
-    swap(board, first, index);
+  const result = applySwap(board, first, index, boardRng);
+  if (!result.legal) {
+    if (result.swapped) {
+      board = result.swapped.slice();
+      renderBoard();
+      await sleep(105);
+    }
+    board = result.board.slice();
     renderBoard();
     track("invalid_swap");
     locked = false;
@@ -403,8 +295,11 @@ async function onTileClick(index) {
 
   movesRemaining -= 1;
   track("move", { from: first, to: index });
+  board = result.swapped.slice();
+  renderBoard();
   renderStatus();
-  await resolveMatches();
+  await sleep(80);
+  await presentResolvedResult(result);
   locked = false;
   await checkLevelEnd();
 }
@@ -560,8 +455,8 @@ function startLevel(levelNumber = state.level) {
   selectedIndex = null;
   hammerMode = false;
   locked = false;
-  random = seededRandomFactory((activeLevel.level * 0x9e3779b1) ^ Date.now());
-  board = createBoard();
+  boardRng = createRng(((activeLevel.level * 0x9e3779b1) ^ Date.now()) >>> 0);
+  board = createBoard({ rng: boardRng });
   saveState();
   renderBoard();
   renderStatus();
