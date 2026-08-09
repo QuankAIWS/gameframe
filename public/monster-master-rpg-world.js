@@ -1,7 +1,6 @@
 import { gameFrameFetch } from "./gameframe-auth.js";
 
 const VIEW_EVENT = "gameframe:monster-master-pixi-view";
-const CAMERA_EVENT = "gameframe:monster-master-pixi-camera";
 const identity = window.gameFrameIdentity;
 
 const state = {
@@ -9,6 +8,7 @@ const state = {
   view: null,
   campaignId: null,
   attachPromise: null,
+  cameraSignature: "",
 };
 
 function requireMaterializedPayload(value) {
@@ -111,6 +111,19 @@ function scheduleAnchors() {
   requestAnimationFrame(() => requestAnimationFrame(renderAnchors));
 }
 
+function watchCamera() {
+  const renderer = window.gameFrameMonsterPixi;
+  const camera = renderer?.getCamera?.();
+  if (camera && state.payload) {
+    const signature = `${camera.x}:${camera.y}:${camera.zoom}:${camera.quarter}`;
+    if (signature !== state.cameraSignature) {
+      state.cameraSignature = signature;
+      scheduleAnchors();
+    }
+  }
+  requestAnimationFrame(watchCamera);
+}
+
 function updateWorldHeader(payload) {
   const location = document.querySelector("#mm-rpg-world-location");
   const status = document.querySelector("#mm-rpg-world-status");
@@ -131,6 +144,7 @@ function present(value) {
   const payload = requireMaterializedPayload(value);
   state.payload = payload;
   state.campaignId = payload.projection.campaignId;
+  state.cameraSignature = "";
   state.view = toRendererView(payload);
   updateWorldHeader(payload);
   window.dispatchEvent(new CustomEvent(VIEW_EVENT, { detail: { view: state.view } }));
@@ -142,6 +156,7 @@ function clear() {
   state.payload = null;
   state.view = null;
   state.campaignId = null;
+  state.cameraSignature = "";
   anchorLayer()?.replaceChildren();
   setWorldStatus("No scene attached");
 }
@@ -229,5 +244,5 @@ document.querySelector("#mm-rpg-refresh")?.addEventListener("click", () => {
   window.setTimeout(() => void attachCurrentCampaign({ quiet: true }).catch(() => undefined), 0);
 });
 document.querySelector("#mm-rpg-switch")?.addEventListener("click", clear);
-window.addEventListener(CAMERA_EVENT, scheduleAnchors);
 window.addEventListener("resize", scheduleAnchors);
+requestAnimationFrame(watchCamera);
