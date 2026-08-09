@@ -94,6 +94,18 @@ function attachBody() {
   };
 }
 
+function moveBody(materializationRef: any, expectedPositionRevision: number, direction: string) {
+  return {
+    type: "exploration_move",
+    protocolVersion: 1,
+    campaignId: semantic.campaignId,
+    sceneId: semantic.scene.sceneId,
+    materializationRef,
+    expectedPositionRevision,
+    direction,
+  };
+}
+
 function nextJson(socket: WebSocket): Promise<any> {
   return new Promise((resolve, reject) => {
     const cleanup = () => {
@@ -130,7 +142,7 @@ async function closeServer(server: ReturnType<typeof createDurableRpgHttpServer>
   );
 }
 
-test("campaign WebSocket moves stay in GameFrame and recover after service restart", async () => {
+test("HTTP movement stays in GameFrame, WebSockets stay projection-only, and restart recovers position", async () => {
   const filePath = databasePath();
   const firstAttachCounter = { value: 0 };
   const first = await start(filePath, firstAttachCounter);
@@ -155,29 +167,39 @@ test("campaign WebSocket moves stay in GameFrame and recover after service resta
     assert.equal(initial.type, "campaign_position");
     assert.equal(initial.gameframeCoordinationRevision, 3);
 
-    const movement = {
-      type: "exploration_move",
-      protocolVersion: 1,
-      campaignId: semantic.campaignId,
-      sceneId: semantic.scene.sceneId,
-      materializationRef: firstMaterialized.materialization.materializationRef,
-      expectedPositionRevision: 0,
-      direction: "west",
-    };
-    const movedPromise = nextJson(socket);
-    socket.send(JSON.stringify(movement));
-    const moved = await movedPromise;
+    const forbiddenSocketMove = nextJson(socket);
+    socket.send(JSON.stringify(moveBody(
+      firstMaterialized.materialization.materializationRef,
+      0,
+      "west",
+    )));
+    const rejected = await forbiddenSocketMove;
+    assert.equal(rejected.type, "protocol_error");
+    assert.equal(rejected.code, "unsupported_message");
+
+    const movement = moveBody(
+      firstMaterialized.materialization.materializationRef,
+      0,
+      "west",
+    );
+    const movedResponse = await fetch(
+      `${first.baseUrl}/api/rpg/campaigns/${encodeURIComponent(semantic.campaignId)}/exploration/move`,
+      post(movement),
+    );
+    assert.equal(movedResponse.status, 200);
+    const moved = await movedResponse.json() as any;
     assert.equal(moved.type, "exploration_position");
     assert.equal(moved.moved, true);
     assert.deepEqual(moved.transform, { x: 13, y: 7, facing: "west" });
     assert.equal(moved.positionRevision, 1);
     assert.equal(firstAttachCounter.value, 1, "movement must not re-enter Runtime exploration projection");
 
-    const stalePromise = nextJson(socket);
-    socket.send(JSON.stringify({ ...movement, direction: "north" }));
-    const stale = await stalePromise;
-    assert.equal(stale.type, "protocol_error");
-    assert.equal(stale.code, "position-revision-conflict");
+    const staleResponse = await fetch(
+      `${first.baseUrl}/api/rpg/campaigns/${encodeURIComponent(semantic.campaignId)}/exploration/move`,
+      post({ ...movement, direction: "north" }),
+    );
+    assert.equal(staleResponse.status, 409);
+    assert.equal((await staleResponse.json() as any).error, "position-revision-conflict");
 
     const campaign = await fetch(
       `${first.baseUrl}/api/rpg/campaigns/${encodeURIComponent(semantic.campaignId)}/attach`,
@@ -209,22 +231,14 @@ test("campaign WebSocket moves stay in GameFrame and recover after service resta
       firstMaterialized.materialization.materializationRef,
     );
 
-    const fallbackMove = await fetch(
+    const secondMove = await fetch(
       `${second.baseUrl}/api/rpg/campaigns/${encodeURIComponent(semantic.campaignId)}/exploration/move`,
-      post({
-        type: "exploration_move",
-        protocolVersion: 1,
-        campaignId: semantic.campaignId,
-        sceneId: semantic.scene.sceneId,
-        materializationRef: recovered.materialization.materializationRef,
-        expectedPositionRevision: 1,
-        direction: "north",
-      }),
+      post(moveBody(recovered.materialization.materializationRef, 1, "north")),
     );
-    assert.equal(fallbackMove.status, 200);
-    const moved = await fallbackMove.json() as any;
+    assert.equal(secondMove.status, 200);
+    const moved = await secondMove.json() as any;
     assert.deepEqual(moved.transform, { x: 13, y: 6, facing: "north" });
-    assert.equal(secondAttachCounter.value, 1, "HTTP recovery movement must also stay inside GameFrame");
+    assert.equal(secondAttachCounter.value, 1, "HTTP movement must stay inside GameFrame");
   } finally {
     await closeServer(second.server);
   }
