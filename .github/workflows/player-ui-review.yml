@@ -10,6 +10,7 @@ on:
       - "planning/monster-master/assets/**"
       - "scripts/build-monster-master-pixi.mjs"
       - "scripts/monster-master-terrain-assets.mjs"
+      - "scripts/cascade-profile.mjs"
       - "src/browser/monster-master-pixi-entry.js"
       - "src/browser/monster-master-ground-asset-contract.test.mjs"
       - "src/browser/monster-master-wall-top-asset-contract.test.mjs"
@@ -20,6 +21,7 @@ on:
       - "src/browser/monster-master-art-contract.test.ts"
       - "src/browser/monster-master-option-layer-contract.test.mjs"
       - "src/browser/othello-runtime-contract.test.ts"
+      - "src/games/cascade/**"
       - "src/games/monster-master/index.ts"
       - "src/games/monster-master/index.test.ts"
       - "src/games/monster-master/repository-contract.test.ts"
@@ -78,6 +80,11 @@ jobs:
 
       - name: Player navigation, renderer geometry, asset, game, and Monster Master rule contracts
         run: node --experimental-strip-types --test src/browser/monster-master-ground-asset-contract.test.mjs src/browser/monster-master-wall-top-asset-contract.test.mjs src/browser/monster-master-cliff-face-asset-contract.test.mjs src/browser/monster-master-terrain-geometry.test.mjs src/browser/player-navigation-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/monster-master-option-layer-contract.test.mjs src/browser/othello-runtime-contract.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/delivery-contract.test.ts src/games/monster-master/checkpoint-contract.test.ts
+
+      - name: Cascade 100-level engine and bot profile
+        run: |
+          npm run cascade:test
+          npm run cascade:profile -- --runs=6
 
       - name: Required active-product browser smoke
         run: npm run test:browser:required
