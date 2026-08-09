@@ -33,6 +33,7 @@ related:
 - **Battle Simulator** is the standalone tactical sandbox; Monster Master Arena Battles is its first Monster Master entry.
 - GameFrame owns physical materialization, realtime transforms, collision/pathing/camera, direct interaction UI, deterministic RPG Ruleset execution, control authorization, and tactical state.
 - `rpg-gm-runtime` owns CampaignPackages, semantic world truth, Dungeon Master orchestration, hidden campaign truth, journaled entity/scene/observer-knowledge state, and semantic consequences.
+- HTTP owns GameFrame RPG commands/mutations; WebSockets remain projection-only and reconnectable from durable state.
 - Campaign combat uses **Tactical Activation** on the current materialized map; it never launches Battle Simulator or a replacement campaign battlefield.
 - MM-0001 remains standalone/regression substrate and the seed for Monster Master Arena Battles.
 
@@ -109,13 +110,14 @@ Focused Node and browser acceptance prove the materializer, Runtime transport, a
 
 ## GF-RPG-03 — MOVE: embodied realtime session — bounded implementation complete
 
-The movement authority is GameFrame-local:
+The movement authority is GameFrame-local and command traffic stays on HTTP:
 
 ```text
 semantic/materialized scene attach
 → GameFrame exploration movement session
-→ authenticated campaign WebSocket movement frame
+→ authenticated HTTP movement command
 → collision + position revision + SQLite checkpoint
+→ exploration_position response
 → Pixi transform + camera follow
 ```
 
@@ -127,15 +129,16 @@ Implemented bounded evidence:
 - camera-quarter-relative key mapping keeps WASD screen-oriented after rotation;
 - map bounds, wall terrain, visible actors, and visible objects block movement;
 - blocked x/y is never committed, while a facing-only change may be checkpointed;
-- accepted movement uses the existing campaign WebSocket in hosted Discord play;
-- Cloudflare authenticates/signs the upgrade and then passes WebSocket frames through without owning movement state;
-- authenticated HTTP movement remains a development/degraded fallback through the existing HMAC Worker proxy;
+- accepted movement uses authenticated `POST /api/rpg/campaigns/:id/exploration/move` in local and hosted play;
+- the existing campaign WebSocket remains projection-only and rejects movement commands;
+- Cloudflare exposes the HTTP movement route through the same-origin authenticated HMAC edge proxy;
 - accepted x/y/facing is checkpointed in GameFrame SQLite with optimistic position revisions;
 - GameFrame restart and exploration reattach recover a valid exact-materialization position;
+- if a saved tile becomes newly occupied, reattach durably resets the player to a traversable spawn with a new accepted position revision;
 - stale client revisions/materializations fail closed;
 - movement does not call Runtime exploration projection and does not advance campaign semantic/coordination/presentation revisions;
 - the existing Pixi player unit is updated in place and the exploration camera follows accepted movement;
-- browser backpressure allows one move in flight and retains at most the newest queued direction.
+- browser backpressure allows one move command in flight and retains at most the newest queued direction.
 
 ### MOVE evidence boundary
 
