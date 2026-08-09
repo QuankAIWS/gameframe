@@ -36,11 +36,11 @@ export interface RpgEdgeProxyDependencies {
 
 export type RpgEdgeRoute = {
   campaignId: string;
-  operation: "attach" | "commands";
+  operation: "attach" | "commands" | "exploration/attach";
 };
 
 export function publicRpgEdgeRoute(pathname: string): RpgEdgeRoute | null {
-  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/(attach|commands)$/.exec(pathname);
+  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/(attach|commands|exploration\/attach)$/.exec(pathname);
   if (!match) return null;
   return {
     campaignId: decodeURIComponent(match[1]!),
