@@ -72,7 +72,7 @@ test("the player Games hub exposes Role-Playing Games, Battle Simulator, and sta
 
   assert.match(rolePlayingGames, /ROLE-PLAYING GAMES/);
   assert.match(rolePlayingGames, /Monster Master RPG/);
-  assert.match(rolePlayingGames, /href="\/monster-master-rpg\.html\?campaign=monster-master-staging"/);
+  assert.match(rolePlayingGames, /href="\/monster-master-rpg\.html\?campaign=monster-master-staging-v5"/);
   assert.match(rolePlayingGames, /Create RPG/);
   assert.match(rolePlayingGames, /My Campaigns/);
   assert.match(rolePlayingGames, /Import Campaign/);
