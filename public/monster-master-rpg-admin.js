@@ -86,11 +86,31 @@ function installAdminControls() {
   const reset = overlay.querySelector("[data-admin-reset]");
   const status = overlay.querySelector("[data-admin-status]");
   let confirmationExpiresAt = 0;
+  let armedCampaignId = null;
+
+  function clearConfirmation({ resetStatus = true } = {}) {
+    confirmationExpiresAt = 0;
+    armedCampaignId = null;
+    reset.textContent = "Reset staging campaign";
+    if (resetStatus) status.textContent = "No administrator action is running.";
+  }
+
+  function armConfirmation(campaignId) {
+    const expiresAt = Date.now() + 10_000;
+    confirmationExpiresAt = expiresAt;
+    armedCampaignId = campaignId;
+    reset.textContent = "Confirm reset — click again";
+    status.textContent = `Confirmation armed for 10 seconds. This will erase all progress in ${campaignId}.`;
+    window.setTimeout(() => {
+      if (confirmationExpiresAt !== expiresAt || armedCampaignId !== campaignId) return;
+      clearConfirmation();
+    }, 10_100);
+  }
 
   open.addEventListener("click", () => {
+    clearConfirmation();
     try {
       campaignFact.textContent = activeCampaignId();
-      status.textContent = "No administrator action is running.";
     } catch (error) {
       campaignFact.textContent = "Unavailable";
       status.textContent = error instanceof Error ? error.message : "Campaign identity is unavailable.";
@@ -99,17 +119,20 @@ function installAdminControls() {
     reset.focus();
   });
   close.addEventListener("click", () => {
+    clearConfirmation();
     overlay.hidden = true;
     open.focus();
   });
   overlay.addEventListener("click", (event) => {
     if (event.target === overlay) {
+      clearConfirmation();
       overlay.hidden = true;
       open.focus();
     }
   });
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !overlay.hidden) {
+      clearConfirmation();
       overlay.hidden = true;
       open.focus();
     }
@@ -120,27 +143,26 @@ function installAdminControls() {
     try {
       campaignId = activeCampaignId();
     } catch (error) {
+      clearConfirmation({ resetStatus: false });
       status.textContent = error instanceof Error ? error.message : "Campaign identity is unavailable.";
       return;
     }
 
     const now = Date.now();
-    if (now > confirmationExpiresAt) {
-      confirmationExpiresAt = now + 10_000;
-      reset.textContent = "Confirm reset — click again";
-      status.textContent = `Confirmation armed for 10 seconds. This will erase all progress in ${campaignId}.`;
-      window.setTimeout(() => {
-        if (Date.now() <= confirmationExpiresAt) return;
-        reset.textContent = "Reset staging campaign";
-        status.textContent = "No administrator action is running.";
-      }, 10_100);
+    if (
+      now > confirmationExpiresAt
+      || !armedCampaignId
+      || armedCampaignId !== campaignId
+    ) {
+      armConfirmation(campaignId);
       return;
     }
 
-    confirmationExpiresAt = 0;
+    const confirmedCampaignId = armedCampaignId;
+    clearConfirmation({ resetStatus: false });
     reset.disabled = true;
     reset.textContent = "Resetting…";
-    status.textContent = "Reset accepted. GameFrame and the RPG GM will restart and reseed staging.";
+    status.textContent = `Reset accepted for ${confirmedCampaignId}. GameFrame and the RPG GM will restart and reseed staging.`;
     try {
       const response = await gameFrameFetch("/api/rpg/admin/reset-staging", {
         method: "POST",
@@ -149,7 +171,7 @@ function installAdminControls() {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          campaignId,
+          campaignId: confirmedCampaignId,
           confirmation: "RESET MONSTER MASTER STAGING",
         }),
       }, identity);
@@ -159,16 +181,16 @@ function installAdminControls() {
       }
 
       window.localStorage.removeItem(
-        `scribbles-gameframe.monster-master-rpg.profile.v1:${campaignId}`,
+        `scribbles-gameframe.monster-master-rpg.profile.v1:${confirmedCampaignId}`,
       );
       window.localStorage.setItem(
         "scribbles-gameframe.monster-master-rpg.campaign",
-        campaignId,
+        confirmedCampaignId,
       );
       status.textContent = "Services are restarting. Reloading the fresh campaign shortly…";
       window.setTimeout(() => {
         const url = new URL("/monster-master-rpg", window.location.origin);
-        url.searchParams.set("campaign", campaignId);
+        url.searchParams.set("campaign", confirmedCampaignId);
         window.location.assign(url);
       }, 5_000);
     } catch (error) {
