@@ -50,10 +50,18 @@ body.gameframe-rpg-preview-route {
   line-height: .98;
 }
 
+.rpg-preview-tagline {
+  margin: 10px 0 0;
+  color: #c5ccd5;
+  font-size: clamp(.95rem, 2vw, 1.16rem);
+  font-weight: 760;
+  letter-spacing: .01em;
+}
+
 .rpg-preview-header > p:last-child {
-  margin: 12px 0 0;
-  color: #a9b4c0;
-  font-size: clamp(.9rem, 1.8vw, 1.02rem);
+  margin: 8px 0 0;
+  color: #8f9ba7;
+  font-size: clamp(.84rem, 1.7vw, .96rem);
 }
 
 .rpg-launch-grid {
@@ -222,24 +230,49 @@ body.gameframe-rpg-preview-route {
 .rpg-preview-future {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 18px;
   margin-top: 16px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   border: 1px solid rgba(157, 171, 190, .12);
   border-radius: 12px;
   background: rgba(12, 15, 21, .54);
   color: #778390;
 }
 
-.rpg-preview-future strong {
+.rpg-preview-future-copy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.rpg-preview-future-copy > strong {
   flex: 0 0 auto;
   color: #919ca7;
-  font-size: .65rem;
+  font-size: .64rem;
   letter-spacing: .14em;
 }
 
-.rpg-preview-future span {
-  font-size: .78rem;
+.rpg-preview-future-copy > span {
+  font-size: .76rem;
+}
+
+.rpg-preview-future-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.rpg-preview-future-actions button {
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid rgba(157, 171, 190, .12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .025);
+  color: #697480;
+  font: 760 .61rem/1 ui-monospace, "SFMono-Regular", Consolas, monospace;
+  letter-spacing: .03em;
 }
 
 @media (max-width: 760px) {
@@ -295,9 +328,22 @@ body.gameframe-rpg-preview-route {
     padding-top: 24px;
   }
 
-  .rpg-preview-future {
+  .rpg-preview-future,
+  .rpg-preview-future-copy {
     align-items: flex-start;
     flex-direction: column;
-    gap: 5px;
+  }
+
+  .rpg-preview-future {
+    gap: 10px;
+  }
+
+  .rpg-preview-future-copy {
+    gap: 4px;
+  }
+
+  .rpg-preview-future-actions {
+    width: 100%;
+    flex-wrap: wrap;
   }
 }
