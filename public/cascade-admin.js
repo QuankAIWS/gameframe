@@ -3,20 +3,6 @@ import { LEVEL_COUNT } from "./cascade-engine.js";
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const LIFE_MAX = 5;
 
-function syncExpandedRunCopy() {
-  const kicker = document.querySelector("#result-kicker");
-  const title = document.querySelector("#result-title");
-  if (kicker?.textContent !== "RUN COMPLETE") return;
-  if (title?.textContent === "Twenty down.") title.textContent = `${LEVEL_COUNT} down.`;
-  const action = document.querySelector("#result-actions button");
-  if (action?.textContent === "Replay level 20") action.textContent = `Replay level ${LEVEL_COUNT}`;
-}
-
-const resultDialog = document.querySelector("#result-dialog");
-if (resultDialog) {
-  new MutationObserver(syncExpandedRunCopy).observe(resultDialog, { childList: true, subtree: true, characterData: true });
-}
-
 function parseLevelCommand(value) {
   const text = String(value || "").trim();
   const match = text.match(/^(?:go\s+to\s+)?(?:level\s+)?(\d+)$/i)
@@ -89,18 +75,23 @@ function installConsole(identity) {
 
       <section class="cascade-admin-section">
         <small>LEVEL JUMP</small>
-        <p>Jump straight to a level for playtesting.</p>
+        <p>Jump to mechanic milestones or any level from 1 to ${LEVEL_COUNT}.</p>
         <label for="cascade-admin-command">Command</label>
         <div class="cascade-admin-command-row">
-          <input id="cascade-admin-command" autocomplete="off" spellcheck="false" placeholder="go to level 20">
+          <input id="cascade-admin-command" autocomplete="off" spellcheck="false" placeholder="go to level 61">
           <button type="button" data-admin-run>Run</button>
         </div>
         <div class="cascade-admin-jumps" aria-label="Quick level jumps">
           <button type="button" data-level="1">1</button>
           <button type="button" data-level="8">8</button>
           <button type="button" data-level="13">13</button>
-          <button type="button" data-level="21">21</button>
-          <button type="button" data-level="30">30</button>
+          <button type="button" data-level="31">31</button>
+          <button type="button" data-level="41">41</button>
+          <button type="button" data-level="61">61</button>
+          <button type="button" data-level="71">71</button>
+          <button type="button" data-level="81">81</button>
+          <button type="button" data-level="91">91</button>
+          <button type="button" data-level="100">100</button>
         </div>
       </section>
 
@@ -173,7 +164,7 @@ function installConsole(identity) {
   function runCommand() {
     const level = parseLevelCommand(command.value);
     if (!level) {
-      status.textContent = `Use a level from 1 to ${LEVEL_COUNT}, like “go to level 20”.`;
+      status.textContent = `Use a level from 1 to ${LEVEL_COUNT}, like “go to level 61”.`;
       command.select();
       return;
     }
