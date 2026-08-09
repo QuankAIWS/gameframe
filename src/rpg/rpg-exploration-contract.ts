@@ -108,18 +108,15 @@ export class RpgExplorationContractError extends Error {
   }
 }
 
-/**
- * Validates the semantic projection supplied by RPG GM Runtime.
- *
- * This intentionally rejects unknown fields. The projection is a viewer-safe
- * semantic read model, not an extension bag for hidden campaign truth or
- * GameFrame-owned geometry/session state.
- */
 export function normalizeRpgExplorationProjection(
   value: unknown,
 ): RpgExplorationProjectionV1 {
   const root = record(value, "exploration projection");
-  knownKeys(root, ["protocolVersion", "kind", "campaignId", "campaignRevision", "package", "viewer", "scene"], "exploration projection");
+  knownKeys(
+    root,
+    ["protocolVersion", "kind", "campaignId", "campaignRevision", "package", "viewer", "scene"],
+    "exploration projection",
+  );
   if (root.protocolVersion !== RPG_EXPLORATION_PROTOCOL_VERSION) {
     throw invalid("exploration protocol version is not supported");
   }
@@ -241,13 +238,25 @@ export function normalizeRpgExplorationProjection(
   )) {
     throw invalid("viewer player-character must appear in scene.entities as identityStage self");
   }
+  const acceptedRef = normalized.scene.materialization.acceptedRef;
+  if (acceptedRef) {
+    const expectedId = materializationIdFor(normalized);
+    if (acceptedRef.materializationId !== expectedId) {
+      throw invalid(
+        `scene.materialization.acceptedRef.materializationId must equal ${expectedId}`,
+      );
+    }
+    if (acceptedRef.version !== "1") {
+      throw invalid("scene.materialization.acceptedRef.version must equal 1");
+    }
+  }
   return normalized;
 }
 
 /**
- * Produces the stable GameFrame materialization identity for the semantic scene.
- * Dynamic viewer/entity/object state is deliberately excluded: a conversation,
- * name reveal, or incidental presence change must not rematerialize the map.
+ * Produces the shared GameFrame materialization identity for one semantic scene.
+ * Viewer-specific routes, landmarks, identities, and object presence are
+ * deliberately excluded so knowledge changes cannot split physical map identity.
  */
 export function deriveRpgExplorationMaterializationRef(
   projectionValue: unknown,
@@ -269,21 +278,17 @@ export function deriveRpgExplorationMaterializationRef(
     worldNodeId: projection.scene.worldNodeId,
     locationId: projection.scene.location.locationId,
     materializationIntent: projection.scene.materialization.intent,
-    landmarks: projection.scene.landmarks.map((entry) => entry.locationId).toSorted(),
-    routes: projection.scene.routes.map((entry) => ({
-      routeId: entry.routeId,
-      destinationNodeId: entry.destinationNodeId,
-      destinationSceneId: entry.destinationSceneId,
-      destinationLocationId: entry.destinationLocationId,
-      traversalKind: entry.traversalKind,
-    })).toSorted((left, right) => left.routeId.localeCompare(right.routeId)),
   };
   const hash = createHash("sha256").update(stableJson(identity), "utf8").digest("base64url");
   return {
-    materializationId: `rpg-scene:${projection.campaignId}:${projection.scene.sceneId}`,
+    materializationId: materializationIdFor(projection),
     version: "1",
     hash,
   };
+}
+
+function materializationIdFor(projection: RpgExplorationProjectionV1): string {
+  return `rpg-scene:${projection.campaignId}:${projection.scene.sceneId}`;
 }
 
 function normalizeIntent(value: unknown): RpgExplorationMaterializationIntentV1 {
@@ -358,7 +363,15 @@ function normalizeEntity(value: unknown, label: string): RpgExplorationEntityV1 
   const root = record(value, label);
   knownKeys(
     root,
-    ["entityId", "entityClass", "displayLabel", "identityStage", "interactionTargetId", "knownRole", "rulesProfileId"],
+    [
+      "entityId",
+      "entityClass",
+      "displayLabel",
+      "identityStage",
+      "interactionTargetId",
+      "knownRole",
+      "rulesProfileId",
+    ],
     label,
   );
   const entityClass = enumValue(
@@ -400,7 +413,15 @@ function normalizeRoute(value: unknown, label: string): RpgExplorationRouteV1 {
   const root = record(value, label);
   knownKeys(
     root,
-    ["routeId", "destinationNodeId", "destinationSceneId", "destinationLocationId", "destinationLabel", "traversalKind", "publicDescription"],
+    [
+      "routeId",
+      "destinationNodeId",
+      "destinationSceneId",
+      "destinationLocationId",
+      "destinationLabel",
+      "traversalKind",
+      "publicDescription",
+    ],
     label,
   );
   if (root.traversalKind !== "walk") throw invalid(`${label}.traversalKind must equal walk`);
@@ -492,7 +513,7 @@ function enumValue<const T extends readonly string[]>(
   values: T,
   label: string,
 ): T[number] {
-  if (typeof value !== "string" || !values.includes(value)) {
+  if (typeof value !== "string" || !(values as readonly string[]).includes(value)) {
     throw invalid(`${label} is not supported`);
   }
   return value as T[number];
