@@ -102,6 +102,8 @@ jobs:
           && node --experimental-strip-types --check src/server/durable-rpg-realtime-hub.ts
           && node --experimental-strip-types --check src/rpg/rpg-exploration-contract.ts
           && node --experimental-strip-types --check src/rpg/rpg-exploration-materializer.ts
+          && node --experimental-strip-types --check src/rpg/rpg-exploration-movement-service.ts
+          && node --experimental-strip-types --check src/rpg/sqlite-rpg-exploration-position-store.ts
           && node --experimental-strip-types --check src/rpg/runtime-exploration-transport.ts
           && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
           && node --experimental-strip-types --check src/rpg/monster-master-rpg-encounter-materializer.ts
@@ -130,6 +132,7 @@ jobs:
           src/rpg/monster-master-rpg-encounter-materializer.test.ts
           src/rpg/rpg-exploration-contract.test.ts
           src/rpg/rpg-exploration-materializer.test.ts
+          src/rpg/rpg-exploration-movement-service.test.ts
           src/rpg/runtime-exploration-transport.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
           src/rpg/rpg-dual-revision-contract.test.ts
@@ -145,6 +148,7 @@ jobs:
           src/rpg/structured-choice-flow.test.ts
           src/server/durable-rpg-http-server.test.ts
           src/server/durable-rpg-exploration-http.test.ts
+          src/server/durable-rpg-exploration-realtime.test.ts
           src/server/durable-rpg-realtime.test.ts
           src/server/durable-rpg-realtime-hmac.test.ts
           src/server/durable-rpg-encounter-match-http.test.ts
