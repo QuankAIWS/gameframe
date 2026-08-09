@@ -8,36 +8,21 @@
   }
 }
 
-#game-card-monster-master-rpg .game-card-visual-monster {
-  background:
-    radial-gradient(circle at 67% 32%, rgba(199, 245, 112, .34), transparent 24%),
-    radial-gradient(circle at 26% 84%, rgba(38, 108, 74, .7), transparent 42%),
-    linear-gradient(145deg, #152c20, #07100b 68%);
-}
-
-#game-card-monster-master-rpg .game-card-monster-creature {
-  transform: scale(1.12) translate(7%, 3%);
-}
-
-#game-card-monster-master .game-card-visual-mark {
-  font-size: clamp(.78rem, 1.2vw, 1rem);
-  letter-spacing: .14em;
-}
-
-.game-hub-rpg.is-coming-soon {
-  border-style: dashed;
+.game-card-visual-rpg,
+.game-card-visual-simulator {
+  position: relative;
+  overflow: hidden;
 }
 
 .game-card-visual-rpg {
-  position: relative;
-  overflow: hidden;
   background:
     radial-gradient(circle at 72% 24%, rgba(94, 213, 255, .26), transparent 24%),
     radial-gradient(circle at 27% 78%, rgba(182, 92, 255, .25), transparent 30%),
     linear-gradient(145deg, #12182a, #070912 70%);
 }
 
-.game-card-rpg-grid {
+.game-card-rpg-grid,
+.game-card-simulator-grid {
   position: absolute;
   inset: 0;
   opacity: .32;
@@ -45,6 +30,9 @@
     linear-gradient(rgba(126, 202, 255, .18) 1px, transparent 1px),
     linear-gradient(90deg, rgba(126, 202, 255, .18) 1px, transparent 1px);
   background-size: 28px 28px;
+}
+
+.game-card-rpg-grid {
   transform: perspective(260px) rotateX(56deg) scale(1.4) translateY(16%);
   transform-origin: center bottom;
 }
@@ -90,12 +78,61 @@
   transform: rotate(48deg);
 }
 
-#game-card-gameframe-rpg .game-card-visual-mark {
+#game-card-role-playing-games .game-card-visual-mark {
   right: 8%;
   bottom: 8%;
 }
 
-#game-card-gameframe-rpg .game-card-play {
-  text-transform: uppercase;
-  letter-spacing: .08em;
+.game-card-visual-simulator {
+  background:
+    radial-gradient(circle at 26% 38%, rgba(255, 95, 95, .24), transparent 26%),
+    radial-gradient(circle at 78% 68%, rgba(255, 194, 88, .18), transparent 28%),
+    linear-gradient(145deg, #2a1519, #0d090b 72%);
+}
+
+.game-card-simulator-grid {
+  opacity: .38;
+  background-image:
+    linear-gradient(rgba(255, 156, 125, .16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 156, 125, .16) 1px, transparent 1px);
+  background-size: 24px 24px;
+  transform: perspective(260px) rotateX(60deg) scale(1.5) translateY(16%);
+  transform-origin: center bottom;
+}
+
+.game-card-simulator-zone,
+.game-card-simulator-unit {
+  position: absolute;
+  display: block;
+  z-index: 2;
+}
+
+.game-card-simulator-zone {
+  width: 64px;
+  height: 64px;
+  border: 1px solid rgba(255, 184, 142, .5);
+  transform: rotate(45deg);
+  background: rgba(115, 42, 35, .18);
+}
+
+.simulator-zone-a { left: 18%; top: 43%; }
+.simulator-zone-b { right: 18%; top: 28%; }
+
+.game-card-simulator-unit {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 239, 221, .92);
+  border-radius: 4px;
+  background: rgba(112, 28, 31, .92);
+  box-shadow: 0 0 18px rgba(255, 105, 84, .5);
+}
+
+.simulator-unit-a { left: 31%; top: 57%; }
+.simulator-unit-b { right: 29%; top: 39%; }
+
+#game-card-battle-simulator .game-card-visual-mark {
+  right: 8%;
+  bottom: 8%;
+  font-size: clamp(.78rem, 1.2vw, 1rem);
+  letter-spacing: .14em;
 }
