@@ -82,9 +82,9 @@ export type DurableRpgHttpServer = Server & {
 /**
  * Production-shaped RPG boundary over the durable SQLite services.
  *
- * HTTP remains the semantic mutation/recovery authority. Campaign WebSockets
- * also carry GameFrame-owned physical exploration movement, which is persisted
- * separately from RPG campaign truth and can be discarded/rebuilt on attach.
+ * HTTP remains the command/mutation/recovery authority. Campaign WebSockets
+ * remain projection-only and can always be reconstructed from durable state.
+ * Exploration x/y/facing is GameFrame physical state, not RPG campaign truth.
  */
 export function createDurableRpgHttpServer(
   options: DurableRpgHttpServerOptions,
@@ -131,11 +131,6 @@ export function createDurableRpgHttpServer(
       };
     },
     matchView: (matchId, playerId) => encounterMatches.viewMatchForPlayer(matchId, playerId),
-    explorationMove: (campaignId, playerId, message) => {
-      const normalized = normalizeMoveRequest(message);
-      requireBodyIdentity(normalized.campaignId, campaignId, "campaignId");
-      return explorationMovement.move(playerId, normalized);
-    },
   });
 
   const server = createServer(async (request, response) => {
