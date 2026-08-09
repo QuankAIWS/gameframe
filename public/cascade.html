@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/cascade-vfx.css">
   <link rel="stylesheet" href="/cascade-family.css">
   <link rel="stylesheet" href="/cascade-life-ui.css">
+  <link rel="stylesheet" href="/cascade-mechanics.css">
   <link rel="stylesheet" href="/cascade-admin.css">
 </head>
 <body class="cascade-route">
@@ -46,7 +47,7 @@
           <b id="combo-label" aria-live="polite"></b>
         </div>
         <div id="board" class="cascade-board" role="grid" aria-label="Cascade board"></div>
-        <p class="cascade-help">Match 4 to blast a full line. Match 5+ to sweep that color off the board.</p>
+        <p class="cascade-help">Make matches and build cascades before the moves run out.</p>
         <div id="life-lock" class="cascade-life-lock" hidden>
           <div class="cascade-life-lock-card">
             <small>OUT OF LIVES</small>
@@ -117,7 +118,7 @@
   <button id="reset-ledger" type="button" hidden aria-hidden="true" tabindex="-1"></button>
 
   <script type="module" src="/gameframe-nav.js"></script>
-  <script type="module" src="/cascade.js"></script>
+  <script type="module" src="/cascade-runtime.js"></script>
   <script type="module" src="/cascade-life-ui.js"></script>
   <script type="module" src="/cascade-admin.js"></script>
 </body>
