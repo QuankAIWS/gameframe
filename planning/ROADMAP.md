@@ -39,48 +39,49 @@ related:
 ## Current development mode
 
 ```text
-SEE      ✅
-MOVE     ✅
-MOBILE   ✅
-TALK     ← ACTIVE
-CHANGE / TRAVEL
+SEE      ✅ COMPLETE
+MOVE     ✅ COMPLETE
+MOBILE   ✅ COMPLETE
+TALK     ✅ COMPLETE
+CHANGE   ← ACTIVE
+TRAVEL
 FIGHT
 PROVE
 ```
 
-The active product goal is no longer a transcript-first RPG shell. The game world is the primary interaction surface. Text/history remains important, but feed UX polish is deliberately secondary until ordinary play can be performed through the world.
+The world is the primary player surface. Text remains important for narration, dialogue, arbitrary intent, Ask Game Master, accessibility, and the eventual Campaign Chronicle, but transcript/feed polish is secondary to making ordinary play executable through the world.
 
-Every substantive RPG PR should advance the bounded Crooked Checkpoint journey or remove a demonstrated correctness blocker to it.
+Every substantive RPG PR should advance the bounded Crooked Checkpoint journey or remove a demonstrated correctness/deployment blocker to it.
 
-## Current deployed proof
+## Current executable proof
 
-The staging path now proves:
+The merged product path now proves:
 
-- authenticated Monster Master RPG launch through `gameframe.cc` staging;
-- CampaignPackage v5 staging bootstrap;
-- viewer-safe Crooked Checkpoint semantic scene bootstrap;
-- deterministic Pixi materialization;
-- desktop WASD movement and camera rotation;
-- mobile D-pad/rotation controls using the same authenticated HTTP movement command path;
-- GameFrame-owned durable x/y/facing recovery;
-- collision with bounds, terrain, visible actors, and visible objects;
+- authenticated Monster Master RPG launch and CampaignPackage v5 staging bootstrap;
+- viewer-safe Crooked Checkpoint semantic scene bootstrap and deterministic Pixi materialization;
+- desktop + mobile movement over the same authenticated HTTP movement authority;
+- GameFrame-owned durable x/y/facing recovery and collision;
 - refresh/restart recovery to the same materialization/valid position;
-- player-safe initial identity disclosure: Pell is known; the checkpoint official is not named before the player learns that name.
+- observer-safe initial identity disclosure;
+- physically authorized nearby **Talk** for supported actor entities;
+- viewer-safe target handles in the browser and canonical semantic target resolution only on the GameFrame server;
+- explicit chooser when more than one supported actor is adjacent;
+- Runtime entity-performance context for Pell with hidden referee truth structurally absent;
+- durable, idempotent Talk retry that survives an uncertain/lost response without reauthorizing against a changed world;
+- first-slice Talk publication scoped to the initiating player rather than falsely treating all nearby speech as globally public.
 
-The West Woods marker currently proves an authorized route/exit projection and physical route mouth only. It is **not yet a functioning scene transfer**.
+The West Woods marker still proves an authorized route/exit projection and physical route mouth only. It is **not yet a functioning scene transfer**.
 
-## Immediate correctness/content cleanup before and during TALK
+## Bounded correctness/content cleanup
 
-Keep this bounded; do not turn it into a feed redesign project.
+Keep this subordinate to the active player action rather than turning it into a feed redesign project.
 
-1. **Opening pacing:** establish Crooked Checkpoint as a place, provide enough narration to orient the player, then hand control back. Avoid repeatedly ending narration with forced binary/multiple-choice funnels merely to propel text.
-2. **Capture-cube scale:** ordinary capture cubes are handheld devices. They cannot plausibly make a confiscation cart jump or shake by themselves. If the cart needs physical disturbance, author a different cause: a contained creature in specialist equipment, a person/object inside, a shifting load, impact from outside, or another explicit physical source.
-3. **Identity custody:** narration, dialogue, labels, history, and GM output must use the observer-authorized identity stage. Canonical package names are not presentation defaults.
-4. **Feed correctness before feed polish:** keep audience/origin/state semantics correct now; defer elaborate journal UI until the game itself supports the intended actions.
+1. **Opening pacing:** establish Crooked Checkpoint as a place, orient the player, then return control instead of repeatedly funneling play through forced choices.
+2. **Capture-cube scale:** ordinary handheld capture cubes cannot plausibly make a confiscation cart jump or shake by themselves. Any physical disturbance needs an explicit credible source.
+3. **Identity custody:** narration, dialogue, labels, history, and GM output use observer-authorized identity stages. Canonical package names are not presentation defaults.
+4. **Feed correctness before feed polish:** preserve origin/audience/state semantics now; defer elaborate Chronicle UI until the game supports the intended world actions.
 
 ## Interaction and history model
-
-The intended mature relationship is:
 
 ```text
 WORLD = primary play surface
@@ -91,27 +92,15 @@ WORLD = primary play surface
 CAMPAIGN HISTORY = durable observer-authorized chronicle of what actually happened
 ```
 
-One authoritative semantic event may have multiple presentations. For example, a spoken line may appear temporarily above an NPC for nearby observers and later appear in each authorized observer's campaign history. A whisper may be visible only to the intended/hearing audience. Ask-GM is player-private by default and is not fictional speech.
+One authoritative event may later have multiple authorized presentations. A spoken line may appear as in-world speech and later in Campaign Chronicle history. Audibility, audience, Observer Knowledge, and presentation are separate concerns.
 
-The campaign history should eventually contain meaningful narration, discoveries, dialogue, consequential actions, mechanical outcomes, and scene transitions. It must not degrade into a tiny combat log, but it also must not remain the primary control surface once world interaction is mature.
+The first TALK slice intentionally fails closed to **initiating-player-private** presentation until real local audibility/whisper fan-out exists. Do not reinterpret that temporary privacy posture as the final multiplayer speech model.
 
-## Completed foundation — SEE
+## Completed — SEE
 
-The physical Crooked Checkpoint path is production-shaped:
+Authenticated Runtime exploration attach produces a viewer-safe semantic projection, deterministic Crooked Checkpoint materialization, stable `rpg-scene:<campaignId>:scene.crooked-checkpoint` identity, viewer-safe entities/objects/routes, and exact refresh/reconnect recovery through the existing Pixi renderer.
 
-```text
-authenticated GameFrame player
-→ POST /api/rpg/campaigns/:campaignId/exploration/attach
-→ private bearer Runtime S6 projection
-→ strict GameFrame normalization/materialization
-→ existing Monster Master Pixi world renderer
-```
-
-Bounded evidence includes stable `rpg-scene:<campaignId>:scene.crooked-checkpoint` materialization identity, deterministic semantic anchors, viewer-safe entities/objects/routes, no browser viewer override, and exact refresh/reconnect identity.
-
-## Completed foundation — MOVE + mobile
-
-The movement path is:
+## Completed — MOVE + mobile
 
 ```text
 WASD / touch D-pad
@@ -124,39 +113,61 @@ POST /api/rpg/campaigns/:campaignId/exploration/move
 
 WebSocket mutation attempts remain unsupported. Runtime receives no per-step movement traffic.
 
-## GF-RPG-04 — TALK: generic interaction + Pell context custody — ACTIVE
+## Completed — TALK
 
-### GameFrame work
+Merged Runtime #112 and GameFrame #200 establish the first production-shaped physical interaction → entity-performance seam.
 
-- generic nearby/targetable interaction selection rather than a Pell-only special case;
-- deterministic interaction range from GameFrame physical state;
-- desktop and mobile Interact affordance;
-- Talk targeted at one present viewer-authorized entity;
-- clear separation of Talk, Do Something Else, and Ask Game Master;
-- presentation hooks that can later support speech bubbles/subtitles/history without making UI presentation the authority.
+### GameFrame proof
 
-### Runtime work pulled by TALK
+- only a current viewer-safe `interactionTargetId` is accepted from the browser;
+- the player must be adjacent in the current materialization;
+- first-slice Talk is offered only for actor targets Runtime can perform;
+- multiple adjacent actors require explicit target choice;
+- GameFrame maps the authorized physical anchor to canonical `targetEntityId` server-side;
+- generic `/commands` cannot manufacture typed Talk metadata;
+- exact retry identity includes command ID, issued timestamp, words, target handle, and source coordination revision;
+- a committed retry resolves from durable ingress custody before another physical reauthorization;
+- mobile controls and the shared composer participate in the same path.
 
-- typed Dungeon Master context modes: referee/world, entity-performance, GM communication, aftermath/intervention;
-- Pell entity-performance context composed from Pell-authorized identity/goals/beliefs/memories/relationships/Observer Knowledge/current observations;
-- hidden referee facts structurally absent from Pell context until Pell legitimately learns them;
-- semantic origin and audience attached to dialogue/narration/intervention output.
+### Runtime proof
 
-### TALK acceptance
+- typed Talk becomes an `entity-interaction` GM trigger;
+- Pell is performed by the Dungeon Master in **entity-performance** mode, not by a new NPC agent;
+- Pell context contains Pell's authored interior state, explicit recent Observer Knowledge, public current-location material, and viewer-safe known people;
+- global hidden plot truth, unrelated actors' secrets, hidden location facts, and arbitrary referee-only history are absent;
+- a hidden referee sentinel remains visible to referee context but absent from Pell context;
+- entity-performance is dialogue-only in this slice: no mechanic, state mutation, transition, or Tactical Activation may be authored by the response;
+- explicit non-TALK triggers continue through the normal referee/aftermath planner path;
+- bounded context prefers the most recently revised Observer Knowledge.
 
-The player can walk to Pell, target/interact with him, speak naturally, and receive Pell-performed dialogue that cannot use hidden facts Pell does not know. Ask Game Master remains a separate player-to-referee path. Normal speech has an explicit hearing/audience scope rather than being globally visible by default.
+### Deliberately deferred from TALK
 
-## GF-RPG-05 — CHANGE: world actions from controls and freeform intent
+- true nearby audibility/overhearing fan-out;
+- whispers and explicit speech-range rules;
+- split-party speech propagation;
+- talking to player-roster monsters or other non-actor entity classes;
+- polished speech bubbles/subtitles/Chronicle presentation.
 
-Promote only the concrete world operations the chapter needs.
+These are future expansions of observer/audience semantics, not reasons to hold the current player journey at TALK.
 
-Key acceptance case:
+## GF-RPG-05 — CHANGE: persistent world actions from controls and freeform intent — ACTIVE
 
-> With Cinder recalled, the player can use a dedicated control **or** type a natural-language intent such as “I pull out Cinder's cube and release her beside me.” The Dungeon Master interprets intent, deterministic rules validate ownership/deployment legality, semantic/physical state commits, Cinder appears in the current world, and refresh/restart preserves the deployed state.
+This milestone proves that the graphics do not restrict tabletop agency and that prose does not bypass authority.
 
-Other early operations may include inspect/use/take/open/change important objects, knowledge reveal/correction, deterministic checks, objective/event consequences, and relationship/memory consequences.
+### Primary acceptance
 
-**Prose is not the commit.** The world changes first through accepted authority; narration/history presents the accepted result.
+> With Cinder recalled, the player can use a dedicated **Deploy** control or type a natural-language intent such as “I pull out Cinder's cube and release her beside me.” Both paths converge on the same authoritative deploy operation. Deterministic ownership/deployment rules validate it, semantic and GameFrame physical state commit, Cinder appears in the current scene, narration/history describes the accepted result, and refresh/restart preserves deployment.
+
+Required properties:
+
+- direct UI and **Do Something Else** converge on the same semantic/mechanical authority;
+- natural language represents an attempted action, never a direct state assignment;
+- failed/illegal deployment does not become true because the model narrated it;
+- committed deployment/recall is reconstructable and materializes consistently;
+- current player control relationships come from ruleset/profile authority, not generic engine assumptions;
+- GameFrame chooses a valid physical placement after semantic deployment is accepted.
+
+Promote only concrete operations the chapter needs. After deploy/recall, likely candidates are inspect/use/open/take/change important objects, knowledge reveal/correction, checks, objectives/events, and relationship/memory consequences.
 
 ## GF-RPG-06 — TRAVEL: Crooked Checkpoint ↔ West Woods
 
@@ -170,22 +181,11 @@ Turn the existing route projection/route mouth into an actual player journey:
 - return to the same Crooked Checkpoint materialization;
 - preserve meaningful object/entity/world continuity.
 
-### Exit
-
-West Woods is no longer decorative. The player can travel there and back through ordinary play without world/materialization drift.
+**Exit:** West Woods is a real persistent place the player can visit and revisit without world/materialization drift.
 
 ## GF-RPG-07 — FIGHT foundation: Monster Master rules/control authority
 
-Promote only what same-map campaign combat requires:
-
-- Monster Master Ruleset/profile/version;
-- principal → Master/player-character → controlled/deployed entity set;
-- class/archetype/profile deployment limits;
-- Master tactical participation;
-- initiative/action economy;
-- movement/range/targeting/actions;
-- conditions/resources/objectives/outcomes;
-- escape/withdrawal/surrender/recall/incapacitation where supported.
+Promote only what same-map campaign combat requires: Monster Master Ruleset/profile/version, principal → Master/player-character → controlled/deployed entity set, class/profile deployment limits, Master tactical participation, initiative/action economy, movement/range/targeting/actions, conditions/resources/objectives/outcomes, and non-elimination exits where supported.
 
 Do not hardcode one player = one unit or exactly one monster into the generic engine.
 
@@ -204,29 +204,13 @@ exploration
 
 No Arena handoff, substitute campaign battlefield, or Return-to-Campaign step.
 
-## GF-RPG-09 — PROVE: complete single-player Monster Master
+## GF-RPG-09 — PROVE
 
-```text
-Role-Playing Games
-→ Monster Master RPG
-→ Crooked Checkpoint
-→ SEE / MOVE
-→ TALK
-→ Ask-GM / Do Something Else
-→ persistent CHANGE
-→ West Woods TRAVEL + revisit
-→ event/check consequence
-→ same-map FIGHT
-→ exploration resume
-→ restart/reconnect
-→ same persistent world
-```
-
-Validation order: human playthrough → deterministic/machine-play → live provider → deployed staging.
+Complete the bounded single-player journey and then validate human play → restart/reconnect → deterministic/machine play → live provider → deployed staging before broadening architecture.
 
 ## Later
 
-1. two-human one-scene campaign with explicit audibility/audience/observer divergence;
+1. true local speech audibility/whispers and two-human one-scene observer divergence;
 2. second materially different handcrafted Game Family;
 3. Campaign Architect + dynamic Role-Playing Games + Battle Pack authoring;
 4. dynamic Battle Simulator convergence;
@@ -235,4 +219,4 @@ Validation order: human playthrough → deterministic/machine-play → live prov
 
 ## Governing rule
 
-> The graphics visualize the imagination; they do not define its boundaries. Build the world as the primary game, keep arbitrary intent legal through validated freeform adjudication, preserve observer-scoped truth/history, and let real play determine which abstractions deserve to exist.
+> The graphics visualize the imagination; they do not define its boundaries. Build the world as the primary game, keep arbitrary intent legal through validated adjudication, preserve observer-scoped truth/history, and let real play determine which abstractions deserve to exist.
