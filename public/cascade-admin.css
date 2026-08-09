@@ -17,7 +17,8 @@
 }
 
 .cascade-admin-dialog {
-  width: min(470px, calc(100% - 28px));
+  width: min(560px, calc(100% - 28px));
+  max-height: min(86vh, 820px);
   padding: 0;
   border: 1px solid rgba(255, 216, 77, .28);
   border-radius: 18px;
@@ -34,7 +35,9 @@
 .cascade-admin-panel {
   display: grid;
   gap: 12px;
+  max-height: min(86vh, 820px);
   padding: 18px;
+  overflow: auto;
 }
 
 .cascade-admin-panel header {
@@ -75,6 +78,15 @@
   font-size: .76rem;
 }
 
+.cascade-admin-state {
+  padding: 9px 11px;
+  border: 1px solid rgba(89, 225, 239, .16);
+  border-radius: 10px;
+  background: rgba(89, 225, 239, .04);
+  color: #bdeff4 !important;
+  font-weight: 800;
+}
+
 .cascade-admin-section {
   display: grid;
   gap: 9px;
@@ -108,7 +120,8 @@
 }
 
 .cascade-admin-command-row button,
-.cascade-admin-jumps button {
+.cascade-admin-jumps button,
+.cascade-admin-control-grid button {
   min-height: 42px;
   border: 1px solid rgba(255, 216, 77, .3);
   border-radius: 10px;
@@ -128,26 +141,32 @@
   gap: 6px;
 }
 
-.cascade-admin-jumps button {
+.cascade-admin-jumps button,
+.cascade-admin-control-grid button {
   padding: 7px;
+}
+
+.cascade-admin-control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.cascade-admin-control-grid-four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .cascade-admin-reset-section {
   border-color: rgba(255, 92, 168, .2);
 }
 
-.cascade-admin-reset {
-  min-height: 42px;
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 92, 168, .35);
-  border-radius: 10px;
+.cascade-admin-control-grid .cascade-admin-reset {
+  border-color: rgba(255, 92, 168, .35);
   background: rgba(255, 92, 168, .08);
   color: #ff8ec0;
-  font-weight: 900;
-  cursor: pointer;
 }
 
-.cascade-admin-reset:hover {
+.cascade-admin-control-grid .cascade-admin-reset:hover {
   background: rgba(255, 92, 168, .14);
 }
 
@@ -155,5 +174,9 @@
   .cascade-admin-open {
     right: 10px;
     bottom: 10px;
+  }
+
+  .cascade-admin-control-grid-four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
