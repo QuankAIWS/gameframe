@@ -1,6 +1,7 @@
 import { gameFrameFetch } from "./gameframe-auth.js";
 
 const VIEW_EVENT = "gameframe:monster-master-pixi-view";
+const CAMERA_EVENT = "gameframe:monster-master-pixi-camera";
 const identity = window.gameFrameIdentity;
 
 const state = {
@@ -228,4 +229,5 @@ document.querySelector("#mm-rpg-refresh")?.addEventListener("click", () => {
   window.setTimeout(() => void attachCurrentCampaign({ quiet: true }).catch(() => undefined), 0);
 });
 document.querySelector("#mm-rpg-switch")?.addEventListener("click", clear);
+window.addEventListener(CAMERA_EVENT, scheduleAnchors);
 window.addEventListener("resize", scheduleAnchors);
