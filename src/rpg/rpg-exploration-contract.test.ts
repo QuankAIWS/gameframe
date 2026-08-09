@@ -82,6 +82,14 @@ test("canonical Crooked Checkpoint projection is viewer-safe and materialization
     "knowledge/display changes must not rematerialize the scene",
   );
 
+  const routesChanged = clone(projection);
+  routesChanged.scene.routes = [];
+  assert.deepEqual(
+    deriveRpgExplorationMaterializationRef(routesChanged),
+    firstRef,
+    "viewer-authorized route changes must not split shared materialization identity",
+  );
+
   const reconnected = clone(projection);
   reconnected.campaignRevision += 9;
   reconnected.scene.semanticRevision += 2;
@@ -121,18 +129,44 @@ test("exploration projection rejects geometry and hidden extension fields", () =
   );
 });
 
-test("accepted materialization reference must be bounded and validated", () => {
+test("accepted materialization reference must be bounded and scene-bound", () => {
   const root = fixture();
-  const projection = clone(record(root.projection, "projection"));
-  record(record(projection.scene, "scene").materialization, "materialization").acceptedRef = {
-    materializationId: "materialization:checkpoint",
+  const invalidHash = clone(record(root.projection, "projection"));
+  record(record(invalidHash.scene, "scene").materialization, "materialization").acceptedRef = {
+    materializationId: "rpg-scene:campaign-monster-master-reference:scene.crooked-checkpoint",
     version: "1",
     hash: "not a valid hash with spaces",
   };
   assert.throws(
-    () => normalizeRpgExplorationProjection(projection),
+    () => normalizeRpgExplorationProjection(invalidHash),
     (error: unknown) =>
       error instanceof RpgExplorationContractError
       && error.message.includes("acceptedRef.hash is invalid"),
+  );
+
+  const wrongScene = clone(record(root.projection, "projection"));
+  record(record(wrongScene.scene, "scene").materialization, "materialization").acceptedRef = {
+    materializationId: "rpg-scene:campaign-monster-master-reference:scene.west-woods",
+    version: "1",
+    hash: "A".repeat(43),
+  };
+  assert.throws(
+    () => normalizeRpgExplorationProjection(wrongScene),
+    (error: unknown) =>
+      error instanceof RpgExplorationContractError
+      && error.message.includes("acceptedRef.materializationId must equal"),
+  );
+
+  const wrongVersion = clone(record(root.projection, "projection"));
+  record(record(wrongVersion.scene, "scene").materialization, "materialization").acceptedRef = {
+    materializationId: "rpg-scene:campaign-monster-master-reference:scene.crooked-checkpoint",
+    version: "2",
+    hash: "B".repeat(43),
+  };
+  assert.throws(
+    () => normalizeRpgExplorationProjection(wrongVersion),
+    (error: unknown) =>
+      error instanceof RpgExplorationContractError
+      && error.message.includes("acceptedRef.version must equal 1"),
   );
 });
