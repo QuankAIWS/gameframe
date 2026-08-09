@@ -42,6 +42,8 @@ related:
 SEE → MOVE → TALK → CHANGE / TRAVEL → FIGHT → PROVE
 ```
 
+**TALK is the active next player slice.** SEE and MOVE are bounded complete.
+
 Every substantive RPG PR should advance that bounded Monster Master journey or remove a demonstrated blocker to it.
 
 Reuse the existing Pixi world/tactical renderer and terrain foundations. Do not block the first playable scene on final art or generalized procedural generation.
@@ -62,7 +64,9 @@ Preserve the useful current GameFrame substrate:
 - Role-Playing Games / Battle Simulator player navigation;
 - strict `campaign.exploration_projection` contract;
 - viewer-independent materialization identity and scene-bound accepted-ref validation;
-- canonical Crooked Checkpoint exploration fixture aligned to CampaignPackage v5.
+- canonical Crooked Checkpoint exploration fixture aligned to CampaignPackage v5;
+- GameFrame-owned exploration x/y/facing persistence and scene-scoped movement revision;
+- WASD/collision/camera-follow exploration over the existing Pixi world.
 
 Runtime foundations consumed by GameFrame include Entity Registry, Scene Registry, Observer Knowledge / People, WorldGraph/materialization intent, and the viewer-safe exploration projection.
 
@@ -103,41 +107,41 @@ Implemented bounded evidence:
 
 Focused Node and browser acceptance prove the materializer, Runtime transport, authenticated GameFrame route, terrain/world rendering, safe Pell/cart/route overlays, and stable refresh identity.
 
-### SEE evidence boundary
+## GF-RPG-03 — MOVE: embodied realtime session — bounded implementation complete
 
-This does **not** yet prove:
+The movement authority is GameFrame-local:
 
-- WASD movement/facing;
-- collision authority during movement;
-- camera-follow behavior as an exploration control surface;
-- durable/reconnect-safe x/y position;
-- Runtime Scene Registry persistence of a newly accepted GameFrame materialization ref;
-- Pell interaction/context custody;
-- West Woods transfer;
-- same-map Tactical Activation;
-- final production art.
+```text
+semantic/materialized scene attach
+→ GameFrame exploration movement session
+→ authenticated campaign WebSocket movement frame
+→ collision + position revision + SQLite checkpoint
+→ Pixi transform + camera follow
+```
 
-The physical scene currently proves deterministic materialization and rendering, not the full revisit/travel milestone.
+Implemented bounded evidence:
 
-## GF-RPG-03 — MOVE: embodied realtime session — ACTIVE NEXT
+- physical player x/y/facing is stored outside Runtime semantic truth;
+- the exact materialization ID/version/hash scopes persisted position recovery;
+- WASD performs cardinal movement and Q/E reuses existing Pixi camera rotation;
+- camera-quarter-relative key mapping keeps WASD screen-oriented after rotation;
+- map bounds, wall terrain, visible actors, and visible objects block movement;
+- blocked x/y is never committed, while a facing-only change may be checkpointed;
+- accepted movement uses the existing campaign WebSocket in hosted Discord play;
+- Cloudflare authenticates/signs the upgrade and then passes WebSocket frames through without owning movement state;
+- authenticated HTTP movement remains a development/degraded fallback through the existing HMAC Worker proxy;
+- accepted x/y/facing is checkpointed in GameFrame SQLite with optimistic position revisions;
+- GameFrame restart and exploration reattach recover a valid exact-materialization position;
+- stale client revisions/materializations fail closed;
+- movement does not call Runtime exploration projection and does not advance campaign semantic/coordination/presentation revisions;
+- the existing Pixi player unit is updated in place and the exploration camera follows accepted movement;
+- browser backpressure allows one move in flight and retains at most the newest queued direction.
 
-Add GameFrame-owned:
+### MOVE evidence boundary
 
-- WASD/player movement;
-- facing;
-- camera follow/pan rules appropriate to exploration;
-- collision/navigation behavior over the existing Crooked Checkpoint geometry;
-- valid local position persistence/recovery;
-- scene-scoped realtime projection;
-- bounded reconnect/backpressure.
+MOVE does **not** yet prove direct interaction range/selection, Pell perspective-correct speech, Ask Game Master, semantic world mutation, West Woods transfer, same-map Tactical Activation, multiplayer avatar occupancy, or analog/sub-tile locomotion.
 
-No movement frame becomes RPG Runtime journal traffic.
-
-### Exit
-
-The player can move around Crooked Checkpoint responsively and reconnect into a valid position on the same materialization without duplicate semantic presence.
-
-## GF-RPG-04 — TALK: Pell interaction + GM surfaces
+## GF-RPG-04 — TALK: Pell interaction + GM surfaces — ACTIVE NEXT
 
 Drive Runtime context-mode work through the physical scene.
 
@@ -277,41 +281,3 @@ After the shared rules/game-family boundary is proven:
 ## GF-RPG-13 — Split-party multi-scene
 
 Only after one-scene multiplayer is trustworthy, add independent live scene subscriptions, scene-local knowledge/audibility, cross-scene communication, independent recovery/materialization, and explicit cross-scene tactical/global-clock rules.
-
-## Explicitly deferred until GF-RPG-08
-
-Do not prioritize Campaign Architect implementation, generated RPG systems, dynamic Battle Pack generation, Battle Simulator expansion beyond blocker fixes, unrestricted procedural world generation, giant final-art production, generalized RPG DSLs, elaborate autonomous NPC systems, split-party work, deeper separate-match campaign features, or unrelated hub polish.
-
-## Development discipline
-
-For RPG work before GF-RPG-08:
-
-1. start from the next incomplete player-journey step;
-2. write the narrow acceptance test/fixture for that step;
-3. implement only the authority necessary to make it work;
-4. reuse existing Pixi/tactical/realtime infrastructure first;
-5. run focused GameFrame checks while iterating;
-6. run current Runtime integration when the seam changes;
-7. update local docs in the implementation PR when evidence changes;
-8. reserve separate docs-only PRs for major architectural reconciliations, not every completed slice.
-
-If a proposed PR cannot be located in SEE → MOVE → TALK → CHANGE/TRAVEL → FIGHT → PROVE, its priority is suspect.
-
-## Immediate execution order
-
-1. **GF-RPG-03 MOVE — movement/collision/camera/reconnect.**
-2. **GF-RPG-04 TALK — Pell context custody + interaction + Ask-GM + Do Something Else.**
-3. **GF-RPG-05 CHANGE/TRAVEL — concrete world operations + West Woods persistent transfer/revisit.**
-4. **GF-RPG-06/07 FIGHT — rules/control authority + same-map Tactical Activation.**
-5. **GF-RPG-08 PROVE — one complete single-player engineering campaign, live provider, staging.**
-6. two-human one-scene campaign.
-7. second handcrafted Game Family.
-8. Campaign Architect + dynamic Role-Playing Games + Battle Pack authoring.
-9. dynamic Battle Simulator convergence.
-10. split-party multi-scene.
-
-The static Games / Role-Playing Games / Battle Simulator navigation is intentionally ahead of dynamic productization and should not pull development away from the playable Monster Master loop.
-
-## Governing rule
-
-> Reuse the existing GameFrame Pixi/tactical world, make Crooked Checkpoint playable end to end, and derive new abstraction only from requirements that the real player journey exposes.
