@@ -1,12 +1,43 @@
 html.gameframe-internal-home-return body.gameframe-booting:not(:has(#gameframe-boot.is-failed)) {
-  overflow: auto;
-  background: #0b1020;
+  overflow: hidden;
+  background: #040408;
 }
 
 html.gameframe-internal-home-return body.gameframe-booting:not(:has(#gameframe-boot.is-failed)) > .shell {
   visibility: visible;
+  opacity: 0;
+  pointer-events: none;
 }
 
 html.gameframe-internal-home-return body.gameframe-booting:not(:has(#gameframe-boot.is-failed)) > #gameframe-boot {
   display: none !important;
+}
+
+/*
+ * The cold-start wordmark uses a large condensed font, text shadows, and a
+ * transient glitch copy. Keep every painted pixel inside the brand row so
+ * font overhang cannot intrude into the live terminal/status grid below it.
+ */
+.gameframe-boot-ident {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  max-width: 100%;
+  margin: 4px 0 30px;
+  padding: 2px 0 10px;
+  overflow: hidden;
+  contain: paint;
+}
+
+.gameframe-boot-ident strong {
+  display: block;
+  max-width: 100%;
+  padding: .05em .08em .12em 0;
+  font-size: clamp(2.35rem, 6vw, 4.9rem);
+  line-height: 1;
+}
+
+.gameframe-boot-layout {
+  position: relative;
+  z-index: 1;
 }
