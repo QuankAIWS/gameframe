@@ -290,3 +290,71 @@ test("Monster Master RPG walks Crooked Checkpoint through the existing Pixi worl
     facing: "west",
   });
 });
+
+test("Monster Master RPG touch controls use the same HTTP movement authority", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const movementRequests = [];
+  const position = { x: 9, y: 6, facing: "west", positionRevision: 4 };
+
+  await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(campaignProjection()),
+    });
+  });
+  await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/attach`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(materializedExploration(position)),
+    });
+  });
+  await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/move`, async (route) => {
+    const request = route.request().postDataJSON();
+    movementRequests.push(request);
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(moveResult(position, request)),
+    });
+  });
+
+  await page.goto(`/monster-master-rpg.html?player=${playerId}&campaign=${campaignId}`);
+  await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
+  await expect(page.locator("#mm-rpg-touch-controls")).toBeVisible();
+
+  for (const label of [
+    "Move up",
+    "Move left",
+    "Move right",
+    "Move down",
+    "Rotate view left",
+    "Rotate view right",
+  ]) {
+    await expect(page.getByRole("button", { name: label })).toBeVisible();
+  }
+
+  const moveRightBox = await page.getByRole("button", { name: "Move right" }).boundingBox();
+  expect(moveRightBox.width).toBeGreaterThanOrEqual(48);
+  expect(moveRightBox.height).toBeGreaterThanOrEqual(48);
+
+  await page.getByRole("button", { name: "Move right" }).click();
+  await expect.poll(() => movementRequests.length).toBe(1);
+  expect(movementRequests[0].direction).toBe("east");
+  await expect(page.locator("#mm-rpg-world-status")).toContainText("Exploring · 10,6");
+
+  await page.getByRole("button", { name: "Rotate view right" }).click();
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi?.getCamera?.()?.quarter)).toBe(1);
+
+  await page.getByRole("button", { name: "Move up" }).click();
+  await expect.poll(() => movementRequests.length).toBe(2);
+  expect(movementRequests[1].direction).toBe("west");
+  await expect(page.locator("#mm-rpg-world-status")).toContainText("Exploring · 9,6");
+
+  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({
+    x: 9,
+    y: 6,
+    facing: "west",
+  });
+});
