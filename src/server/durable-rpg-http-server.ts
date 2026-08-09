@@ -22,6 +22,14 @@ import {
   MonsterMasterRpgEncounterConfigurationError,
 } from "../rpg/monster-master-rpg-encounter-materializer.ts";
 import {
+  materializeRpgExplorationProjection,
+  RpgExplorationMaterializationError,
+} from "../rpg/rpg-exploration-materializer.ts";
+import {
+  RuntimeExplorationTransportError,
+  type RuntimeExplorationHttpTransport,
+} from "../rpg/runtime-exploration-transport.ts";
+import {
   SqliteRpgEncounterMatchCoordinator,
 } from "../rpg/sqlite-rpg-encounter-match-coordinator.ts";
 import type { DurableCampaignBootstrap } from "../rpg/sqlite-rpg-campaign-store.ts";
@@ -52,6 +60,7 @@ export type DurableRpgHttpServerOptions = {
   authenticator?: RequestAuthenticator;
   clock?: () => string;
   bootstrapCampaigns?: DurableCampaignBootstrap[];
+  explorationTransport?: Pick<RuntimeExplorationHttpTransport, "attach">;
   stagingAdminReset?: {
     campaignId: string;
     requestReset: () => void | Promise<void>;
@@ -126,6 +135,7 @@ export function createDurableRpgHttpServer(
             "durable-encounters",
             "terminal-outcomes",
             "websocket-realtime",
+            ...(options.explorationTransport ? ["rpg-exploration-materialization"] : []),
           ],
         });
       }
@@ -171,6 +181,40 @@ export function createDurableRpgHttpServer(
         return sendJson(response, 202, {
           status: "resetting",
           campaignId: options.stagingAdminReset.campaignId,
+        });
+      }
+
+      const explorationRoute = matchExplorationRoute(url.pathname);
+      if (explorationRoute) {
+        if (request.method !== "POST") {
+          response.setHeader("allow", "POST");
+          return sendJson(response, 405, {
+            error: "method-not-allowed",
+            message: "Exploration attachment accepts POST only.",
+            retryable: false,
+          });
+        }
+        if (!options.explorationTransport) {
+          return sendJson(response, 503, {
+            error: "runtime-exploration-unavailable",
+            message: "Runtime exploration projection is not configured.",
+            retryable: true,
+          });
+        }
+        const bodyBytes = await readRequestBody(request);
+        const principal = await authenticate(authenticator, request, url, bodyBytes);
+        requirePlayerPrincipal(principal);
+        const body = parseJsonBody(bodyBytes);
+        normalizeBrowserExplorationAttach(body, explorationRoute.campaignId);
+        const projection = await options.explorationTransport.attach({
+          campaignId: explorationRoute.campaignId,
+          authenticatedPlayerId: principal.playerId,
+        });
+        return sendJson(response, 200, {
+          protocolVersion: 1,
+          kind: "campaign.exploration_materialized",
+          projection,
+          materialization: materializeRpgExplorationProjection(projection),
         });
       }
 
@@ -302,6 +346,12 @@ export function createDurableRpgHttpServer(
   return server;
 }
 
+function matchExplorationRoute(pathname: string): { campaignId: string } | undefined {
+  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/exploration\/attach$/.exec(pathname);
+  if (!match) return undefined;
+  return { campaignId: decodeURIComponent(match[1]!) };
+}
+
 function matchCampaignRoute(
   pathname: string,
 ): { campaignId: string; operation: "attach" | "commands" | "events" } | undefined {
@@ -337,6 +387,29 @@ function matchRpgMatchRoute(pathname: string):
     matchId,
     operation: match[2] ? "actions" : "view",
   };
+}
+
+function normalizeBrowserExplorationAttach(
+  body: Record<string, unknown>,
+  campaignId: string,
+): void {
+  const allowed = new Set(["protocolVersion", "kind", "campaignId"]);
+  const unknown = Object.keys(body).filter((key) => !allowed.has(key));
+  if (unknown.length > 0) {
+    throw new HttpBoundaryError(
+      400,
+      "invalid-exploration-request",
+      `Exploration request contains unsupported fields: ${unknown.sort().join(", ")}`,
+    );
+  }
+  if (body.protocolVersion !== 1 || body.kind !== "campaign.exploration.attach") {
+    throw new HttpBoundaryError(
+      400,
+      "invalid-exploration-request",
+      "Exploration request protocol or kind is not supported.",
+    );
+  }
+  requireBodyIdentity(body.campaignId, campaignId, "campaignId");
 }
 
 async function authenticate(
@@ -440,6 +513,17 @@ function normalizeError(error: unknown): {
       error.message,
       false,
     );
+  }
+  if (error instanceof RuntimeExplorationTransportError) {
+    return failure(
+      error.status && error.status >= 400 && error.status < 500 ? 502 : 503,
+      error.code,
+      error.message,
+      error.retryable,
+    );
+  }
+  if (error instanceof RpgExplorationMaterializationError) {
+    return failure(422, "unsupported-materialization", error.message, false);
   }
   if (error instanceof DurableRpgCampaignServiceError) {
     return failure(

@@ -8,6 +8,7 @@ import {
   RuntimeCommandDeliveryWorker,
   type RuntimeCommandDeliveryWorkerResult,
 } from "../rpg/runtime-command-delivery-worker.ts";
+import { RuntimeExplorationHttpTransport } from "../rpg/runtime-exploration-transport.ts";
 import { SqliteRuntimeCommandOutbox } from "../rpg/runtime-command-outbox.ts";
 import type { DurableCampaignBootstrap } from "../rpg/sqlite-rpg-campaign-store.ts";
 import { createDurableRpgHttpServer } from "./durable-rpg-http-server.ts";
@@ -172,9 +173,6 @@ export class DurableRpgServiceLifecycle {
   async #closeIngress(): Promise<void> {
     if (this.#serverClose) return await this.#serverClose;
     this.#serverClose = (async () => {
-      // Close upgraded sockets first. The HTTP server's close event releases the
-      // SQLite services; allowing that event to win the race could invalidate an
-      // in-flight projection while the realtime hub is still retiring it.
       await this.#server.closeRealtime?.();
       if (!this.#server.listening) return;
       await new Promise<void>((resolve, reject) => {
@@ -206,8 +204,16 @@ export function createConfiguredDurableRpgService(input: {
   deliveryTimeoutMs?: number;
 }): DurableRpgServiceLifecycle {
   const clock = input.clock ?? (() => new Date().toISOString());
+  const explorationTransport = new RuntimeExplorationHttpTransport({
+    baseUrl: input.gmBaseUrl,
+    serviceToken: input.gmServiceToken,
+    ...(input.deliveryTimeoutMs === undefined
+      ? {}
+      : { timeoutMs: input.deliveryTimeoutMs }),
+  });
   const server = createDurableRpgHttpServer({
     filePath: input.filePath,
+    explorationTransport,
     ...(input.authenticator ? { authenticator: input.authenticator } : {}),
     ...(input.bootstrapCampaigns ? { bootstrapCampaigns: input.bootstrapCampaigns } : {}),
     ...(input.stagingAdminReset ? { stagingAdminReset: input.stagingAdminReset } : {}),

@@ -30,8 +30,6 @@ related:
 
 `shared/rpg-platform-roadmap.md` controls milestone order. This file defines how GameFrame should deliver that roadmap with the least process and architectural waste.
 
-The product layering remains:
-
 ```text
 CampaignPackage + RPG Ruleset + reusable game-family content
                          ↓
@@ -40,7 +38,7 @@ CampaignPackage + RPG Ruleset + reusable game-family content
               persistent embodied campaign
 ```
 
-The player-facing hierarchy remains:
+Player-facing hierarchy:
 
 ```text
 Games
@@ -55,22 +53,9 @@ Games
 
 Campaign combat never launches Battle Simulator.
 
-## Delivery posture change
+## Delivery posture
 
-The semantic architecture is now strong enough to stop treating each lower-level subsystem as the main unit of progress.
-
-Current completed foundations include:
-
-- committed CampaignPackage v5 + WorldGraph/materialization intent;
-- Entity Registry / Character Factory;
-- Semantic Scene Registry;
-- Observer Knowledge / People;
-- viewer-authorized exploration projection;
-- stable GameFrame materialization identity/reconnect contract;
-- existing Pixi world/tactical renderer and terrain foundations;
-- existing authenticated realtime and tactical primitives.
-
-The active delivery objective is therefore one bounded player journey:
+The active delivery objective is one bounded player journey:
 
 ```text
 SEE → MOVE → TALK → CHANGE/TRAVEL → FIGHT → PROVE
@@ -79,8 +64,6 @@ SEE → MOVE → TALK → CHANGE/TRAVEL → FIGHT → PROVE
 Every implementation slice should make a visible or behaviorally testable advance in that journey, or remove a demonstrated blocker to it.
 
 ## Reuse-first rule
-
-Before creating a new engine/service/abstraction, inspect whether the existing GameFrame foundation already provides the required mechanism.
 
 For the current RPG path:
 
@@ -93,50 +76,82 @@ For the current RPG path:
 
 A new abstraction is justified when the vertical slice proves a missing capability, not merely because future campaigns may someday need one.
 
-## Slice A — SEE: physical Crooked Checkpoint
+## Slice A — SEE: physical Crooked Checkpoint — bounded implementation complete
 
-Consume `campaign.exploration_projection` and materialize `scene.crooked-checkpoint`.
+The real path now is:
 
-Minimum physical scene:
+```text
+authenticated browser player
+→ GameFrame /api/rpg/campaigns/:id/exploration/attach
+→ GameFrame private bearer Runtime transport
+→ Runtime S6 campaign.exploration_projection
+→ GameFrame strict projection normalization
+→ deterministic Crooked Checkpoint semantic-layout materializer
+→ existing Monster Master Pixi terrain/world renderer
+```
 
-- road;
-- checkpoint barrier;
-- inspection shelter;
-- maintenance shed;
-- confiscation cart;
-- drainage edge;
-- westbound route anchor;
-- player/Pell/object anchors;
-- collision/picking/navigation sufficient for the scene;
-- deterministic placeholder assets where needed.
+### Implemented
 
-Use the current semantic materialization intent and stable GameFrame materialization identity.
+- the browser never supplies `authenticatedPlayerId` or an entity/viewer override;
+- GameFrame derives the Runtime viewer from its authenticated principal;
+- the private Runtime transport validates returned campaign/viewer identity;
+- the materializer supports the current package-v5 `scene.crooked-checkpoint` + `mm.materialization.crooked-checkpoint.v1` intent only;
+- the physical scene is a deterministic 18×14 layout with road, barrier, inspection edge, maintenance-shed mass, drainage edge, and westbound route mouth;
+- safe player/Pell/object/route anchors are placed over the physical scene using stable semantic/interaction IDs;
+- materialization identity uses the existing viewer-independent `rpg-scene:<campaignId>:<sceneId>` contract;
+- safe label/knowledge/route changes do not change physical geometry identity;
+- the existing Monster Master Pixi renderer/terrain assets draw the exploration world without a new renderer;
+- exploration publishes no tactical legal actions;
+- the narrative campaign console remains available beneath the world;
+- refresh reattaches and derives the same physical materialization identity.
 
-Do not solve unrestricted procedural generation here.
+### SEE acceptance evidence
 
-### Acceptance
+Focused tests prove:
 
-The real Monster Master RPG route opens the materialized scene and refresh/reconnect returns the same accepted place.
+- canonical S6 fixture → deterministic materialization;
+- accepted-ref reuse behavior;
+- private Runtime transport authentication and identity substitution rejection;
+- authenticated browser-facing GameFrame attach with no client viewer override;
+- existing Pixi terrain/world renders the Crooked Checkpoint map;
+- safe Pell/cart/West Woods route overlays are present;
+- refresh performs a second semantic attach while retaining the same materialization ID.
 
-## Slice B — MOVE: realtime exploration
+### Deliberately not claimed
+
+SEE does not prove:
+
+- WASD/facing;
+- collision while moving;
+- exploration camera-follow semantics;
+- reconnect-safe x/y position;
+- a newly derived GameFrame materialization ref has been journal-linked back into Runtime Scene Registry;
+- direct interaction/Pell context custody;
+- West Woods transfer;
+- Tactical Activation;
+- final art.
+
+## Slice B — MOVE: realtime exploration — ACTIVE NEXT
 
 Add only the physical/session state necessary for ordinary walking:
 
 - player x/y/facing;
-- camera;
-- collision/navigation;
-- scene-scoped realtime updates;
-- position recovery/reconnect.
+- WASD/keyboard movement;
+- camera-follow/pan behavior appropriate to exploration;
+- collision/navigation against the existing Crooked Checkpoint geometry;
+- scene-scoped realtime state;
+- valid position persistence/recovery;
+- reconnect without duplicate semantic presence.
 
 Frame-by-frame state stays in GameFrame. Runtime receives no movement stream.
 
-### Acceptance
+### MOVE acceptance
 
-A browser player walks around Crooked Checkpoint, refreshes/reconnects, and resumes safely without semantic duplicate presence.
+A browser player walks around Crooked Checkpoint, cannot walk through blocked geometry, refreshes/reconnects, and resumes a valid position on the same physical materialization without creating semantic duplicate presence.
 
 ## Slice C — TALK: context custody through real interaction
 
-Once the player can stand next to Pell, implement the Runtime Dungeon Master context modes against that actual interaction.
+Once the player can stand next to Pell:
 
 GameFrame provides:
 
@@ -148,7 +163,7 @@ GameFrame provides:
 
 Runtime provides perspective-correct context/decisions.
 
-### Acceptance
+### TALK acceptance
 
 Pell cannot use a hidden referee fact until Observer Knowledge legitimately grants it; Ask-GM remains a separate referee surface.
 
@@ -191,7 +206,7 @@ No replacement battlefield is loaded. Combat begins and ends on the current camp
 
 Stop adding architecture and complete the bounded chapter.
 
-Required proof order:
+Proof order:
 
 1. human playthroughs with multiple plausible choices;
 2. restart/reconnect testing;
@@ -203,112 +218,53 @@ Only after this proof do two-human play, the second handcrafted Game Family, Cam
 
 ## Development workflow
 
-### 1. Start from a player acceptance statement
+### Player acceptance first
 
-Each RPG PR begins with a concrete statement such as:
+Each RPG PR begins with a concrete behavior statement. Avoid “add framework X” unless X is a proven blocker.
 
-> Opening Monster Master RPG materializes Crooked Checkpoint from the authenticated S6 projection and reconnect reuses the same materialization.
+### Inspect before designing
 
-Avoid opening a slice whose primary statement is only "add framework X" unless X is a proven blocker.
+Search current GameFrame/Runtime renderer, terrain, realtime, tactical, authority, and fixture mechanisms before adding a subsystem. SEE validated this rule by reusing the existing Monster Master Pixi world rather than forking an exploration renderer.
 
-### 2. Inspect existing implementation before designing
+### Narrow proof first
 
-Search the current GameFrame and Runtime implementations for reusable renderer, terrain, realtime, tactical, authority, and fixture mechanisms before adding a new subsystem.
+Prefer one deterministic contract test + one focused integration seam + one browser journey over speculative matrices.
 
-### 3. Add the narrowest proof first
+### Vertical but bounded PRs
 
-Prefer:
+A PR may cross files/layers if required to complete one player-visible step. Do not split one coherent player feature into artificial layers unless authority/merge ordering requires it.
 
-- one fixture;
-- one deterministic contract test;
-- one browser journey assertion;
-- one focused integration seam;
+### Cross-repository ordering
 
-over broad speculative test matrices.
+Coordinate both repos only when a real seam is missing or changes. SEE required a small Runtime companion because the S6 projection existed only in-process and was not reachable by the production-shaped GameFrame service. The projection schema itself did not change.
 
-### 4. Keep PRs vertical but bounded
+When a shared canonical contract changes, preserve canonical GameFrame-first / exact Runtime mirror ordering.
 
-A good PR may cross several files/layers if they are all required to complete one player-visible step.
+### Documentation
 
-Do not split one coherent player feature into artificial repository-layer PRs unless authority/merge ordering requires it.
+Update local status/roadmap text in the implementation PR whenever the evidence boundary changes. Use separate docs-only PRs only for material architecture reconciliation, accumulated drift, or audits.
 
-### 5. Cross-repository ordering
+### CI by claim
 
-When a shared contract must change:
+During iteration run the smallest trustworthy lane. Before merge select broader gates by claim:
 
-```text
-GameFrame canonical contract/fixture branch
-→ focused GameFrame validation
-→ Runtime branch tested against intended GameFrame branch
-→ merge GameFrame canonical change
-→ exact Runtime mirror sync
-→ Runtime tests against GameFrame main
-→ merge Runtime
-```
+- GameFrame behavior → focused Node/browser gate and active-product/browser acceptance;
+- Runtime behavior → Fast Check;
+- shared contract change → shared drift;
+- Runtime↔GameFrame seam → current integration;
+- persistence/recovery semantics → durable two-service recovery.
 
-When no shared contract changes, do not create coordinated cross-repo PRs merely for ceremony.
+Known unrelated broad-suite failures must be classified rather than silently treated as feature evidence or pulled into the slice.
 
-### 6. Documentation policy
+### PR completion
 
-Update local status/roadmap text in the implementation PR whenever the evidence boundary changes.
+A PR is complete when its acceptance statement is proven, authority boundaries remain explicit, focused tests are green, required integration gates are green, review findings are resolved, and affected local docs match the evidence.
 
-Use a separate docs-only reconciliation PR only when:
-
-- canonical/shared architecture changes materially;
-- several implementation slices have accumulated meaningful roadmap drift;
-- an audit requires a deliberate documentation correction.
-
-Do not automatically create a second docs PR after every implementation PR.
-
-### 7. CI policy
-
-During iteration, run the smallest trustworthy lane first:
-
-- affected deterministic/unit/contract tests;
-- browser syntax or focused Playwright journey when UI changes;
-- materialization/geometry tests when physical scene logic changes;
-- context custody tests when Runtime model context changes;
-- tactical deterministic tests when combat rules change.
-
-Before merge, run only the broader gates justified by the claim:
-
-- GameFrame core/active-product gate for GameFrame behavior;
-- Runtime Fast Check for Runtime behavior;
-- shared fixture/document drift when shared contracts changed;
-- current GameFrame integration when the Runtime↔GameFrame seam changed;
-- durable two-service recovery when persistence/recovery semantics changed.
-
-Do not spend CI on unrelated broad matrices for documentation-only or narrowly isolated changes.
-
-### 8. PR completion rule
-
-A PR is complete when:
-
-- its player acceptance statement is proven;
-- authority boundaries remain explicit;
-- focused tests are green;
-- required integration gates are green;
-- review findings are resolved;
-- affected local docs reflect the actual evidence.
-
-Merge it. Do not add adjacent "while we're here" architecture unless it is required by the same acceptance statement.
+Do not add adjacent “while we are here” architecture.
 
 ## Deferred while the first playable loop is incomplete
 
-Do not prioritize:
-
-- Campaign Architect;
-- dynamic generated RPG discovery;
-- dynamic Battle Pack generation;
-- Battle Simulator expansion beyond blocker/regression work;
-- generalized procedural-world generation;
-- generalized RPG DSLs;
-- giant final-art production;
-- elaborate NPC autonomy/memory beyond chapter needs;
-- split-party concurrency;
-- Cloudflare-native semantic-state migration;
-- Theo integration;
-- deeper legacy separate-match campaign UX.
+Do not prioritize Campaign Architect, dynamic generated RPG discovery, dynamic Battle Pack generation, Battle Simulator expansion beyond blockers/regressions, generalized procedural-world generation, generalized RPG DSLs, giant final-art production, elaborate NPC autonomy beyond chapter needs, split-party concurrency, Cloudflare-native semantic-state migration, Theo integration, or deeper legacy separate-match campaign UX.
 
 ## Validation posture
 
@@ -326,17 +282,16 @@ A screenshot is supporting visual evidence, not state correctness.
 
 ## Immediate GameFrame execution order
 
-1. SEE — Crooked Checkpoint materialization.
-2. MOVE — walking/collision/camera/reconnect.
-3. TALK — Pell interaction + Runtime context custody + Ask-GM + Do Something Else.
-4. CHANGE/TRAVEL — concrete world operations + West Woods round trip.
-5. FIGHT — Monster Master control/rules boundary + same-map Tactical Activation.
-6. PROVE — complete single-player chapter, restart/resume, live provider, staging.
-7. two-human one-scene.
-8. second handcrafted Game Family.
-9. Campaign Architect + dynamic Role-Playing Games + Battle Pack authoring.
-10. dynamic Battle Simulator convergence.
-11. split-party later.
+1. **MOVE — walking/collision/camera/reconnect.**
+2. **TALK — Pell interaction + Runtime context custody + Ask-GM + Do Something Else.**
+3. **CHANGE/TRAVEL — concrete world operations + West Woods round trip.**
+4. **FIGHT — Monster Master control/rules boundary + same-map Tactical Activation.**
+5. **PROVE — complete single-player chapter, restart/resume, live provider, staging.**
+6. two-human one-scene.
+7. second handcrafted Game Family.
+8. Campaign Architect + dynamic Role-Playing Games + Battle Pack authoring.
+9. dynamic Battle Simulator convergence.
+10. split-party later.
 
 ## Governing rule
 

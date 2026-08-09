@@ -164,7 +164,7 @@ test("edge proxy rejects cross-origin and non-Discord mutation attempts before o
   assert.equal(fetchCount, 0);
 });
 
-test("public route grammar exposes only attach and command submission", () => {
+test("public route grammar exposes campaign attach, commands, and authenticated exploration attach only", () => {
   assert.deepEqual(publicRpgEdgeRoute("/api/rpg/campaigns/campaign%3Aedge/attach"), {
     campaignId: "campaign:edge",
     operation: "attach",
@@ -173,14 +173,18 @@ test("public route grammar exposes only attach and command submission", () => {
     campaignId: "campaign",
     operation: "commands",
   });
+  assert.deepEqual(publicRpgEdgeRoute("/api/rpg/campaigns/campaign/exploration/attach"), {
+    campaignId: "campaign",
+    operation: "exploration/attach",
+  });
   assert.equal(publicRpgEdgeRoute("/api/rpg/campaigns/campaign/events"), null);
   assert.equal(publicRpgEdgeRoute("/api/rpg/encounters/encounter"), null);
   assert.equal(publicRpgEdgeRoute("/api/rpg/encounters/encounter/complete"), null);
 });
 
-test("worker wrapper authenticates allowed RPG routes and blocks private runtime routes", async () => {
+test("worker wrapper authenticates allowed RPG routes including exploration and blocks private runtime routes", async () => {
   let authenticated = 0;
-  let forwarded = 0;
+  const forwardedPaths: string[] = [];
   const authenticator: RequestAuthenticator = {
     async authenticate() {
       authenticated += 1;
@@ -192,8 +196,8 @@ test("worker wrapper authenticates allowed RPG routes and blocks private runtime
     proxyDependencies: {
       now: () => issuedAt,
       randomBytes: () => new Uint8Array(24).fill(3),
-      fetcher: async () => {
-        forwarded += 1;
+      fetcher: async (input) => {
+        forwardedPaths.push(new URL(input instanceof Request ? input.url : String(input)).pathname);
         return new Response(JSON.stringify({ ok: true }), {
           status: 200,
           headers: { "content-type": "application/json" },
@@ -211,16 +215,33 @@ test("worker wrapper authenticates allowed RPG routes and blocks private runtime
     },
   ), env);
   assert.equal(allowed.status, 200);
-  assert.equal(authenticated, 1);
-  assert.equal(forwarded, 1);
+
+  const exploration = await worker.fetch(new Request(
+    "https://game.example.test/api/rpg/campaigns/campaign/exploration/attach",
+    {
+      method: "POST",
+      headers: { origin: "https://game.example.test", "content-type": "application/json" },
+      body: JSON.stringify({
+        protocolVersion: 1,
+        kind: "campaign.exploration.attach",
+        campaignId: "campaign",
+      }),
+    },
+  ), env);
+  assert.equal(exploration.status, 200);
+  assert.equal(authenticated, 2);
+  assert.deepEqual(forwardedPaths, [
+    "/api/rpg/campaigns/campaign/attach",
+    "/api/rpg/campaigns/campaign/exploration/attach",
+  ]);
 
   const privateRoute = await worker.fetch(new Request(
     "https://game.example.test/api/rpg/campaigns/campaign/events",
     { method: "POST" },
   ), env);
   assert.equal(privateRoute.status, 404);
-  assert.equal(authenticated, 1);
-  assert.equal(forwarded, 1);
+  assert.equal(authenticated, 2);
+  assert.equal(forwardedPaths.length, 2);
 
   const health = await worker.fetch(new Request(
     "https://game.example.test/api/rpg/edge/health",

@@ -269,11 +269,25 @@ async function launch() {
       }
     }
     await import("./monster-master-results.js");
+  } else if (entry === "/monster-master-rpg-app.js") {
+    window.gameFrameMonsterRendererMode = "pixi";
+    await import("./monster-master-pixi-bridge.js");
+    await import("./monster-master-rpg-world.js");
+    await import(entry);
+    await import("./monster-master-rpg-admin.js");
+    await import("./monster-master-pixi-bundle.js");
+    const pixiReady = await window.gameFrameMonsterPixi?.ready;
+    if (pixiReady) {
+      window.gameFrameMonsterRpgWorld?.refreshAnchors?.();
+    } else {
+      const errorBanner = document.querySelector("#mm-rpg-error");
+      if (errorBanner) {
+        errorBanner.hidden = false;
+        errorBanner.textContent = "The physical campaign scene could not start WebGL. Narrative campaign controls remain available.";
+      }
+    }
   } else {
     await import(entry);
-    if (entry === "/monster-master-rpg-app.js") {
-      await import("./monster-master-rpg-admin.js");
-    }
   }
 
   installAuthenticatedInvitationFlow({ identity, entry });
