@@ -146,12 +146,18 @@ test("idle RPG campaign no longer uses the former 2.5-second polling loop", asyn
   expect(attachCount).toBe(1);
 });
 
-test("lists Monster Master RPG as the seeded staging campaign destination", async ({ page }) => {
+test("lists Monster Master RPG under Role-Playing Games", async ({ page }) => {
   await page.goto("/?player=rpg-library-player");
-  const card = page.locator("#game-card-monster-master-rpg");
-  await expect(card).toBeVisible();
-  await expect(card).toHaveAttribute("href", "/monster-master-rpg.html?campaign=monster-master-staging");
-  await expect(card).toContainText("Monster Master RPG");
+
+  const rpgCard = page.locator("#game-card-role-playing-games");
+  await expect(rpgCard).toBeVisible();
+  await expect(rpgCard).toHaveAttribute("href", "/gameframe-rpg.html");
+  await rpgCard.click();
+
+  await expect(page).toHaveURL(/\/gameframe-rpg\.html$/);
+  await expect(page.getByRole("heading", { name: "Monster Master RPG" })).toBeVisible();
+  const monsterMasterRpg = page.getByRole("link", { name: "Open Monster Master RPG" });
+  await expect(monsterMasterRpg).toHaveAttribute("href", "/monster-master-rpg.html?campaign=monster-master-staging");
 });
 
 test("staging campaign onboards a Master before exposing the long-form campaign console", async ({ page }) => {
