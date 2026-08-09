@@ -56,8 +56,8 @@ test("canonical Crooked Checkpoint projection is viewer-safe and materialization
     entity.entityId === projection.viewer.playerCharacterEntityId
     && entity.identityStage === "self"
   ));
-  assert.ok(projection.scene.entities.some((entity) => entity.entityId === "actor.warden-pell"));
-  assert.ok(!projection.scene.entities.some((entity) => entity.entityId === "actor.counterfeit-inspector"));
+  assert.ok(projection.scene.entities.some((entity) => entity.entityId === "npc.warden-pell"));
+  assert.ok(!projection.scene.entities.some((entity) => entity.entityId === "npc.mara-venn"));
 
   const serialized = JSON.stringify(projection);
   const expected = record(root.expected, "expected");
@@ -72,7 +72,7 @@ test("canonical Crooked Checkpoint projection is viewer-safe and materialization
   assert.match(firstRef.hash ?? "", /^[A-Za-z0-9_-]{43}$/);
 
   const renamed = clone(projection);
-  const pell = renamed.scene.entities.find((entity) => entity.entityId === "actor.warden-pell");
+  const pell = renamed.scene.entities.find((entity) => entity.entityId === "npc.warden-pell");
   assert.ok(pell);
   pell.displayLabel = "Pell";
   pell.identityStage = "name";

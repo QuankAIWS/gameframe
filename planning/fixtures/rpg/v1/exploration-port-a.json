@@ -25,7 +25,7 @@
     },
     "viewer": {
       "playerId": "player:ada",
-      "playerCharacterEntityId": "player-character:player:ada",
+      "playerCharacterEntityId": "trainer:_RmGMYy8smZq7uqHUwdOgs",
       "rulesProfileId": "mm.trainer.vanguard.v1"
     },
     "scene": {
@@ -36,58 +36,58 @@
       "worldNodeId": "world.node.crooked-checkpoint",
       "location": {
         "locationId": "location.settled-road-checkpoint",
-        "label": "Crooked Checkpoint",
-        "description": "A timber checkpoint blocks the settled road beside a maintenance shed and a covered confiscation cart."
+        "label": "The Crooked Checkpoint",
+        "description": "A timber barrier, canvas inspection shelter, stacked citation crates, and freshly painted warden signs constrict an otherwise ordinary settled road."
       },
       "materialization": {
         "intent": {
-          "intentId": "materialization.crooked-checkpoint.v1",
-          "materializationProfileId": "mm.materialization.settled-road-checkpoint.v1",
-          "themeId": "monster-master-field-road",
+          "intentId": "mm.materialization.crooked-checkpoint.v1",
+          "materializationProfileId": "gameframe.rpg.semantic-scene.v1",
+          "themeId": "monster-master-starter",
           "seedPolicy": "stable-location",
           "revisitPolicy": "reuse-accepted-materialization",
           "requiredAssetRoleIds": [
-            "scene:mm-crooked-checkpoint-v1"
+            "scene.crooked-checkpoint.background"
           ],
           "fallbackMode": "semantic-layout",
-          "fallbackLabel": "Crooked Checkpoint semantic field layout"
+          "fallbackLabel": "Settled road, timber checkpoint barrier, inspection shelter, maintenance shed, confiscation cart, drainage edge, and westbound route exit"
         }
       },
       "landmarks": [
         {
           "locationId": "location.maintenance-shed",
-          "label": "Maintenance Shed",
-          "description": "A weathered roadside maintenance shed stands inside the checkpoint area."
+          "label": "Road Maintenance Shed",
+          "description": "A low locked shed sits beyond the checkpoint beside gravel piles, drainage tools, and a disused route marker."
         },
         {
           "locationId": "location.confiscation-cart",
           "label": "Confiscation Cart",
-          "description": "A covered cart sits under checkpoint custody."
+          "description": "A covered utility cart holds tagged cube cases, travel bags, and an increasingly loud metallic knocking."
         }
       ],
       "entities": [
         {
-          "entityId": "player-character:player:ada",
+          "entityId": "trainer:_RmGMYy8smZq7uqHUwdOgs",
           "entityClass": "player-character",
           "displayLabel": "Ada",
           "identityStage": "self",
-          "interactionTargetId": "entity:player-character:player:ada",
+          "interactionTargetId": "entity:trainer:_RmGMYy8smZq7uqHUwdOgs",
           "rulesProfileId": "mm.trainer.vanguard.v1"
         },
         {
-          "entityId": "actor.warden-pell",
+          "entityId": "npc.warden-pell",
           "entityClass": "actor",
           "displayLabel": "veteran field warden",
           "identityStage": "role",
-          "interactionTargetId": "entity:actor.warden-pell",
+          "interactionTargetId": "entity:npc.warden-pell",
           "knownRole": "Warden"
         }
       ],
       "objects": [
         {
-          "entityId": "object.confiscation-cart",
+          "entityId": "object.checkpoint-cart",
           "displayLabel": "covered confiscation cart",
-          "interactionTargetId": "entity:object.confiscation-cart"
+          "interactionTargetId": "entity:object.checkpoint-cart"
         }
       ],
       "routes": [
@@ -96,16 +96,16 @@
           "destinationNodeId": "world.node.west-woods",
           "destinationSceneId": "scene.west-woods",
           "destinationLocationId": "location.west-woods",
-          "destinationLabel": "West Woods",
+          "destinationLabel": "West Woods Route",
           "traversalKind": "walk",
-          "publicDescription": "The settled road continues toward the West Woods."
+          "publicDescription": "A lightly used woodland path leaves the settled road west of the checkpoint and reconnects with the certification circuit through the West Woods."
         }
       ]
     }
   },
   "expected": {
     "hiddenEntityIdsAbsent": [
-      "actor.counterfeit-inspector"
+      "npc.mara-venn"
     ],
     "forbiddenProjectionFields": [
       "privateFacts",
