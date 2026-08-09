@@ -38,6 +38,16 @@ test("Crooked Checkpoint materializes deterministically from the canonical S6 pr
   assert.ok(semanticIds.has("location.confiscation-cart"));
   assert.ok(semanticIds.has("route.crooked-checkpoint-west-woods"));
   assert.ok(!semanticIds.has("npc.mara-venn"));
+
+  const cartObject = materialization.anchors.find((anchor) => anchor.semanticId === "object.checkpoint-cart");
+  const cartLandmark = materialization.anchors.find((anchor) => anchor.semanticId === "location.confiscation-cart");
+  assert.ok(cartObject);
+  assert.ok(cartLandmark);
+  assert.notDeepEqual(
+    { x: cartObject.x, y: cartObject.y },
+    { x: cartLandmark.x, y: cartLandmark.y },
+    "the cart object and location landmark must not paint labels directly on top of each other",
+  );
 });
 
 test("viewer knowledge/display changes do not rematerialize Crooked Checkpoint geometry", () => {
