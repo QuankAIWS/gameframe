@@ -37,6 +37,7 @@ const CLIFF_FACE_TEXTURE = "/assets/monster-master/terrain/cliff-face/cliff-face
 const CREATURE_CELL = 96;
 const CAMERA_STORAGE_KEY = "gameframe:monster-master:pixi-camera";
 const VIEW_EVENT = "gameframe:monster-master-pixi-view";
+const CAMERA_EVENT = "gameframe:monster-master-pixi-camera";
 const GEOMETRY_DEBUG_PARAMETER = "geometryDebug";
 const CLIFF_FACE_TEXTURE_MATRIX = new Matrix().scale(0.72, 0.24);
 
@@ -104,6 +105,9 @@ function commitCamera() {
   saveCamera();
   applyCamera();
   scheduleRender();
+  window.dispatchEvent(new CustomEvent(CAMERA_EVENT, {
+    detail: { camera: { ...state.camera } },
+  }));
 }
 
 function isMonsterView(candidate) {
@@ -263,79 +267,59 @@ function drawGroundPlane(sourceMap) {
   });
   material.anchor.set(0.5);
   material.rotation = Math.PI / 4;
-  material.tileScale.set(1.35);
-  material.tilePosition.set(state.camera.quarter * 19, state.camera.quarter * -13);
-  material.eventMode = "none";
+  material.tileScale.set(0.76);
+  material.tilePosition.set(18, 22);
   materialLayer.addChild(material);
   ground.addChild(materialLayer);
-
-  const finish = new Graphics();
-  finish.poly(flatten(playable))
-    .fill({ color: 0x30482f, alpha: 0.08 })
-    .stroke({ color: 0xb0b17f, alpha: 0.2, width: 1.5 });
-  ground.addChild(finish);
+  const playableMask = new Graphics().poly(flatten(playable)).fill(0xffffff);
+  ground.addChild(playableMask);
+  materialLayer.mask = playableMask;
+  state.terrainStats.groundObjects = 1;
 }
 
-function drawTerrainTop(graphics, entry) {
-  const polygon = terrainTopPolygon(entry.coordinate, entry.cell, map(), state.camera.quarter);
-  if (entry.cell?.terrain === "wall") {
-    graphics.poly(flatten(polygon))
-      .fill({
-        texture: state.textures.raisedBarrierCap,
-        textureSpace: "global",
-        color: 0xd8cfb8,
-        alpha: 1,
-      })
-      .stroke({ color: 0xd2c59d, alpha: 0.7, width: 1.1 });
-    return;
-  }
+function drawTerrainObjects(sourceMap) {
+  removeWorldObjects("terrain");
+  const faces = exposedTerrainFaces(sourceMap, state.camera.quarter);
+  const renderedFaceKeys = new Set();
+  let wallCount = 0;
+  let renderedFaces = 0;
+  for (let y = 0; y < sourceMap.height; y += 1) {
+    for (let x = 0; x < sourceMap.width; x += 1) {
+      const coordinate = { x, y };
+      const cell = cellAt(coordinate);
+      if (!cell) continue;
+      const visualHeight = terrainVisualHeight(cell);
+      if (visualHeight <= 0) continue;
+      if (cell.terrain === "wall") wallCount += 1;
 
-  if (entry.cell?.terrain === "difficult") {
-    graphics.poly(flatten(polygon))
-      .fill({ color: 0x4b503c, alpha: 0.76 })
-      .stroke({ color: 0xaaa274, alpha: 0.24, width: 1 });
-    const center = terrainTopCenter(entry.coordinate, entry.cell, map(), state.camera.quarter);
-    graphics.circle(center.x - 12, center.y + 2, 3).fill({ color: 0xb2aa79, alpha: 0.4 });
-    graphics.circle(center.x + 9, center.y - 3, 2.5).fill({ color: 0x30372f, alpha: 0.5 });
-    return;
-  }
+      const top = new Graphics();
+      top.gameFrameKind = "terrain";
+      top.poly(flatten(terrainTopPolygon(coordinate, cell, sourceMap, state.camera.quarter)))
+        .texture({ texture: state.textures.raisedBarrierCap, alpha: 1 })
+        .stroke({ color: 0xcedbbb, alpha: 0.25, width: 1 });
+      top.zIndex = depthIndex(coordinate, sourceMap, state.camera.quarter, 0);
+      state.layers.worldObjects.addChild(top);
 
-  if (entry.cell?.terrain === "objective") {
-    graphics.poly(flatten(polygon))
-      .fill({ color: 0x314c49, alpha: 0.82 })
-      .stroke({ color: 0x6de0f1, alpha: 0.76, width: 1.5 });
-    const center = terrainTopCenter(entry.coordinate, entry.cell, map(), state.camera.quarter);
-    graphics.circle(center.x, center.y, 7)
-      .fill({ color: 0x5ed6e9, alpha: 0.14 })
-      .stroke({ color: 0xa2f7ff, alpha: 0.72, width: 1.2 });
-  }
-}
-
-function makeTerrainDisplay(entry) {
-  const display = new Graphics();
-  display.gameFrameKind = "terrain";
-  display.eventMode = "none";
-  const base = project(entry.coordinate);
-  display.zIndex = depthIndex(base, -100);
-
-  if (entry.cell?.terrain === "wall") {
-    const { faces } = exposedTerrainFaces(entry.coordinate, entry.cell, map(), state.camera.quarter);
-    for (const face of faces) {
-      const tint = face.side === "left" ? 0xd8cfba : 0xb7ad9a;
-      display.poly(flatten(face.points))
-        .fill({
-          texture: state.textures.cliffFace,
-          textureSpace: "global",
-          matrix: CLIFF_FACE_TEXTURE_MATRIX,
-          color: tint,
-          alpha: 1,
-        })
-        .stroke({ color: 0xbdb08e, alpha: 0.42, width: 0.9 });
+      for (const face of faces.filter((candidate) => candidate.coordinate.x === x && candidate.coordinate.y === y)) {
+        const faceKey = `${face.coordinate.x}:${face.coordinate.y}:${face.edge}`;
+        if (renderedFaceKeys.has(faceKey)) continue;
+        renderedFaceKeys.add(faceKey);
+        const graphics = new Graphics();
+        graphics.gameFrameKind = "terrain";
+        const faceAlpha = face.edge === "south" ? 0.95 : 0.78;
+        graphics.poly(flatten(face.polygon))
+          .texture({ texture: state.textures.cliffFace, matrix: CLIFF_FACE_TEXTURE_MATRIX, alpha: faceAlpha })
+          .stroke({ color: 0x4c503e, alpha: 0.32, width: 1 });
+        graphics.zIndex = depthIndex(coordinate, sourceMap, state.camera.quarter, face.depthOffset);
+        state.layers.worldObjects.addChild(graphics);
+        renderedFaces += 1;
+      }
     }
   }
-
-  drawTerrainTop(display, entry);
-  return display;
+  state.terrainStats.wallCount = wallCount;
+  state.terrainStats.renderedFaces = renderedFaces;
+  state.terrainStats.culledFaces = Math.max(0, faces.totalCandidates - renderedFaces);
+  state.terrainStats.terrainObjects = state.layers.worldObjects.children.filter((child) => child.gameFrameKind === "terrain").length;
 }
 
 function rebuildTerrain() {
@@ -343,183 +327,92 @@ function rebuildTerrain() {
   if (!sourceMap || !state.layers || !state.textures) return;
   const signature = terrainSignature();
   if (signature === state.terrainSignature) return;
-  state.terrainSignature = signature;
-  removeWorldObjects("terrain");
   drawGroundPlane(sourceMap);
-
-  const ordered = [];
-  for (let y = 0; y < sourceMap.height; y += 1) {
-    for (let x = 0; x < sourceMap.width; x += 1) {
-      const coordinate = { x, y };
-      const cell = cellAt(coordinate);
-      if (!cell || cell.terrain === "floor") continue;
-      const base = project(coordinate);
-      ordered.push({ coordinate, cell, depth: depthIndex(base) });
-    }
-  }
-  ordered.sort((left, right) => left.depth - right.depth);
-
-  let wallCount = 0;
-  let renderedFaces = 0;
-  let culledFaces = 0;
-  for (const entry of ordered) {
-    if (entry.cell.terrain === "wall") {
-      wallCount += 1;
-      const faceGeometry = exposedTerrainFaces(entry.coordinate, entry.cell, sourceMap, state.camera.quarter);
-      renderedFaces += faceGeometry.faces.length;
-      culledFaces += faceGeometry.culledFaces;
-    }
-    state.layers.worldObjects.addChild(makeTerrainDisplay(entry));
-  }
-  state.layers.worldObjects.sortChildren();
-  state.terrainStats = {
-    ...state.terrainStats,
-    groundObjects: 1,
-    wallCount,
-    renderedFaces,
-    culledFaces,
-    terrainObjects: ordered.length,
-    worldObjectCount: state.layers.worldObjects.children.length,
-  };
+  drawTerrainObjects(sourceMap);
+  state.terrainSignature = signature;
 }
 
-function actionDestination(action) {
-  if (action.type === "deploy-unit") return action.position;
-  if (action.type === "move") return action.path?.at(-1) ?? null;
-  if (action.type === "attack" || action.type === "use-ability") return action.target;
-  return null;
-}
-
-function legalHighlights() {
-  const mode = state.diagnostics.actionMode;
-  if (!mode || !state.view) return [];
-  return state.view.observation.legalActions
-    .filter((action) => action.type === mode)
-    .filter((action) => action.type !== "deploy-unit" || action.unitId === state.diagnostics.selectedUnitId)
-    .map((action) => ({ action, coordinate: actionDestination(action) }))
-    .filter((entry) => entry.coordinate);
-}
-
-function drawDiamond(graphics, point, width, height, fill, stroke, alpha = 1) {
-  graphics.poly(flatten(diamondPoints(point, width, height)))
-    .fill({ color: fill, alpha })
-    .stroke({ color: stroke, alpha: Math.min(1, alpha + 0.25), width: 1.5 });
+function actionCoordinates() {
+  const legalActions = state.view?.observation?.legalActions ?? [];
+  return legalActions
+    .map((action) => action.coordinate)
+    .filter((coordinate) => Number.isInteger(coordinate?.x) && Number.isInteger(coordinate?.y));
 }
 
 function rebuildHighlights() {
   if (!state.layers) return;
   const graphics = state.layers.highlights;
   graphics.clear();
-  for (const { action, coordinate } of legalHighlights()) {
-    const point = terrainTopCenter(coordinate, cellAt(coordinate), map(), state.camera.quarter);
-    const color = action.type === "deploy-unit"
-      ? 0xffcf6e
-      : action.type === "move"
-        ? 0x58cfff
-        : action.type === "use-ability"
-          ? 0x63e8a5
-          : 0xff5a8b;
-    drawDiamond(graphics, point, TILE_WIDTH * 0.9, TILE_HEIGHT * 0.9, color, 0xf0fbff, 0.28);
+  for (const coordinate of actionCoordinates()) {
+    graphics.poly(flatten(diamondPoints(coordinate, map(), state.camera.quarter)))
+      .fill({ color: 0x7fffb3, alpha: 0.14 })
+      .stroke({ color: 0x92ffc0, alpha: 0.46, width: 1.4 });
   }
 }
 
 function unitSignature() {
-  if (!state.view) return "";
   return units().map((unit) => [
     unit.id,
-    unit.position.x,
-    unit.position.y,
-    unit.health,
-    unit.maxHealth,
     unit.role,
     unit.ownerId,
-  ].join(":" )).join("|") + `:${state.view.observation.activeUnitId}:${state.camera.quarter}`;
+    unit.position?.x,
+    unit.position?.y,
+    unit.health,
+    unit.maxHealth,
+  ].join(":")) .join("|") + `:${state.camera.quarter}`;
 }
 
 function rebuildUnits() {
-  if (!state.layers || !state.textures || !state.view) return;
+  if (!state.layers || !state.textures) return;
   const signature = unitSignature();
   if (signature === state.unitsSignature) return;
-  state.unitsSignature = signature;
   removeWorldObjects("unit");
-  const firstPlayer = state.view.playerIds[0];
-  const ordered = [...units()].sort((left, right) => {
-    const leftPoint = project(left.position);
-    const rightPoint = project(right.position);
-    return leftPoint.y - rightPoint.y || leftPoint.x - rightPoint.x;
-  });
-
-  for (const unit of ordered) {
-    const group = new Container();
-    const base = project(unit.position);
-    group.x = base.x;
-    group.y = base.y - TILE_HEIGHT * 0.65;
-    group.zIndex = depthIndex(base, 100);
-    group.gameFrameKind = "unit";
-    group.eventMode = "none";
-
-    const shadow = new Graphics().ellipse(0, TILE_HEIGHT * 0.75, TILE_WIDTH * 0.28, TILE_HEIGHT * 0.24).fill({ color: 0x02060d, alpha: 0.45 });
-    const ringColor = unit.ownerId === firstPlayer ? 0x4badff : 0xff5b8f;
-    const ring = new Graphics().ellipse(0, TILE_HEIGHT * 0.65, TILE_WIDTH * 0.32, TILE_HEIGHT * 0.27)
-      .stroke({ color: ringColor, width: unit.id === state.view.observation.activeUnitId ? 4 : 2, alpha: 0.88 });
-    const sprite = new Sprite(textureFromFrame(state.textures.creatureBase, creatureFrame(unit)));
-    sprite.anchor.set(0.5, 0.86);
-    const size = unit.role === "bulwark" ? 104 : unit.role === "master" ? 94 : 82;
-    sprite.width = size;
-    sprite.height = size;
-    if (unit.ownerId === firstPlayer) sprite.scale.x *= -1;
-
-    const healthBack = new Graphics().roundRect(-34, 8, 68, 6, 3).fill({ color: 0x050910, alpha: 0.9 });
-    const healthWidth = 68 * clamp(unit.health / Math.max(1, unit.maxHealth), 0, 1);
-    const health = new Graphics().roundRect(-34, 8, healthWidth, 6, 3)
-      .fill({ color: unit.health / unit.maxHealth > 0.45 ? 0x6ee0a5 : 0xff9a75, alpha: 1 });
-
-    group.addChild(shadow, ring, sprite, healthBack, health);
-    state.layers.worldObjects.addChild(group);
+  for (const unit of units()) {
+    if (!unit.position) continue;
+    const frame = creatureFrame(unit);
+    const sprite = new Sprite(textureFromFrame(state.textures.creatureBase, frame));
+    sprite.gameFrameKind = "unit";
+    sprite.anchor.set(0.5, 0.82);
+    sprite.width = CREATURE_CELL * 0.62;
+    sprite.height = CREATURE_CELL * 0.62;
+    const center = terrainTopCenter(unit.position, cellAt(unit.position), map(), state.camera.quarter);
+    sprite.position.set(center.x, center.y);
+    sprite.zIndex = depthIndex(unit.position, map(), state.camera.quarter, 20);
+    if (unit.id === state.view?.observation?.activeUnitId) {
+      sprite.tint = 0xcaffdc;
+    }
+    state.layers.worldObjects.addChild(sprite);
   }
-  state.layers.worldObjects.sortChildren();
-  state.terrainStats = {
-    ...state.terrainStats,
-    unitObjects: ordered.length,
-    worldObjectCount: state.layers.worldObjects.children.length,
-  };
+  state.unitsSignature = signature;
+  state.terrainStats.unitObjects = state.layers.worldObjects.children.filter((child) => child.gameFrameKind === "unit").length;
+  state.terrainStats.worldObjectCount = state.layers.worldObjects.children.length;
 }
 
 function rebuildHover() {
   if (!state.layers) return;
-  state.layers.hover.clear();
+  const graphics = state.layers.hover;
+  graphics.clear();
   if (!state.hover || !cellAt(state.hover)) return;
-  const point = terrainTopCenter(state.hover, cellAt(state.hover), map(), state.camera.quarter);
-  drawDiamond(state.layers.hover, point, TILE_WIDTH, TILE_HEIGHT, 0xffffff, 0xffffff, 0.08);
+  graphics.poly(flatten(diamondPoints(state.hover, map(), state.camera.quarter)))
+    .stroke({ color: 0xf2fff5, alpha: 0.62, width: 1.2 });
 }
 
 function rebuildGeometryDebug() {
   if (!state.layers) return;
   const graphics = state.layers.debug;
   graphics.clear();
-  if (!state.geometryDebug || !map()) return;
-
+  if (!state.geometryDebug) return;
   const sourceMap = map();
+  if (!sourceMap) return;
+  const outline = mapSurfacePolygon(sourceMap, state.camera.quarter, 0);
+  graphics.poly(flatten(outline)).stroke({ color: 0xff4dc4, alpha: 0.7, width: 2 });
   for (let y = 0; y < sourceMap.height; y += 1) {
     for (let x = 0; x < sourceMap.width; x += 1) {
-      const coordinate = { x, y };
-      const snapshot = geometrySnapshot(coordinate, sourceMap, state.camera.quarter);
-      graphics.poly(flatten(snapshot.topPolygon)).stroke({
-        color: snapshot.terrain === "wall" ? 0xffd75c : 0x55e6ff,
-        alpha: snapshot.terrain === "wall" ? 0.78 : 0.2,
-        width: snapshot.terrain === "wall" ? 1.4 : 0.7,
-      });
-      for (const face of snapshot.faces) {
-        graphics.poly(flatten(face.points)).stroke({ color: 0xff6bd6, alpha: 0.72, width: 1 });
-      }
+      const point = terrainTopCenter({ x, y }, cellAt({ x, y }), sourceMap, state.camera.quarter);
+      graphics.moveTo(point.x - 5, point.y).lineTo(point.x + 5, point.y)
+        .moveTo(point.x, point.y - 5).lineTo(point.x, point.y + 5)
+        .stroke({ color: 0xffffff, alpha: 0.9, width: 1.2 });
     }
-  }
-
-  for (const unit of units()) {
-    const point = project(unit.position);
-    graphics.moveTo(point.x - 5, point.y).lineTo(point.x + 5, point.y)
-      .moveTo(point.x, point.y - 5).lineTo(point.x, point.y + 5)
-      .stroke({ color: 0xffffff, alpha: 0.9, width: 1.2 });
   }
 }
 
