@@ -16,10 +16,10 @@
         <p class="cascade-kicker">CASUAL / MATCH-3</p>
         <h1>Cascade</h1>
       </div>
-      <div class="cascade-ledger" aria-label="Family IOU ledger">
-        <small>FAMILY TAB</small>
+      <div class="cascade-ledger" aria-label="IOU balance">
+        <small>YOU OWE</small>
         <strong id="iou-total">IOU$ 0</strong>
-        <button id="open-ledger" type="button">Open tab</button>
+        <button id="open-ledger" type="button">See IOUs</button>
       </div>
     </header>
 
@@ -58,9 +58,9 @@
           <span>Remove one tile without spending a move.</span>
         </div>
         <div class="cascade-card cascade-tab-card">
-          <small>FAMILY TAB</small>
-          <strong>Put it on the tab.</strong>
-          <span>Moves, lives, boosters. The tab keeps score.</span>
+          <small>IOU$</small>
+          <strong>Need it? Owe me.</strong>
+          <span>Moves, lives, boosters. Every IOU$ stacks up.</span>
         </div>
       </aside>
     </section>
@@ -77,13 +77,13 @@
 
   <dialog id="ledger-dialog" class="cascade-dialog cascade-ledger-dialog">
     <form method="dialog">
-      <small>FAMILY TAB</small>
-      <h2>IOU ledger</h2>
-      <p>Every rescue, refill, and booster you put on the tab ends up here.</p>
+      <small>IOU LEDGER</small>
+      <h2>What you owe me</h2>
+      <p>Every move, life, and booster you bought with IOU$ ends up here.</p>
       <ul id="ledger-list"></ul>
       <div class="cascade-dialog-actions">
         <button value="close" class="primary">Close</button>
-        <button id="reset-ledger" type="button">Wipe the tab</button>
+        <button id="reset-ledger" type="button">Erase IOUs</button>
       </div>
     </form>
   </dialog>
