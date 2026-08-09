@@ -8,6 +8,15 @@
   padding-top: 26px;
 }
 
+.gameframe-game-hub-lobby #lobby.panel {
+  overflow: visible;
+}
+
+.gameframe-game-hub-lobby #lobby::before,
+.gameframe-game-hub-lobby #lobby > .section-heading {
+  display: none;
+}
+
 .gameframe-game-hub-lobby .game-grid[hidden],
 .gameframe-game-hub-lobby .mode-grid[hidden] {
   display: none !important;
@@ -28,6 +37,17 @@
   outline-offset: 4px;
 }
 
+.gameframe-game-hub-lobby .game-card-footer {
+  justify-content: flex-start;
+  gap: 9px;
+  min-height: 38px;
+  margin: auto 14px 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
 .game-card-play {
   display: inline-flex;
   align-items: center;
@@ -35,7 +55,7 @@
   align-self: stretch;
   min-width: 112px;
   min-height: 38px;
-  margin: -1px 0 -1px -1px;
+  margin: 0;
   padding: 0 15px;
   border: 1px solid color-mix(in srgb, var(--hub-accent) 40%, rgba(158, 183, 192, .16));
   border-radius: 10px;
@@ -55,12 +75,13 @@
   outline: none;
 }
 
+.gameframe-game-hub-lobby .game-card-arrow {
+  opacity: .72;
+}
+
 .gameframe-game-menu #lobby.panel {
   max-width: 1100px;
   margin: 0 auto;
-}
-.gameframe-game-menu .section-heading {
-  margin-bottom: 14px;
 }
 .game-menu-hero {
   display: grid;
