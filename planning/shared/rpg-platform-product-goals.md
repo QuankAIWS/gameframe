@@ -7,12 +7,13 @@ last_updated: 2026-08-08
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
-  - GameFrame RPG
+  - Role-Playing Games
+  - Battle Simulator
   - Monster Master RPG
-  - Monster Master Battle Arena
+  - Monster Master Arena Battles
   - scribbles-runtime-theo-connector
 shared_document_id: rpg-platform-product-goals-v1
-shared_document_version: 6
+shared_document_version: 7
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-platform-product-goals.md
 mirrors:
@@ -35,15 +36,40 @@ related:
 
 The RPG platform is a persistent, publicly accessible **embodied generative role-playing system** played through GameFrame.
 
-A specialized Campaign Architect creates validated CampaignPackages. RPG GM Runtime owns durable semantic campaign truth, entity identity, scene membership, observer knowledge, events, consequences, and Dungeon Master intelligence. GameFrame materializes that truth into persistent playable 2D worlds and owns deterministic game mechanics, realtime player interaction, tactical authority, and presentation.
+A specialized Campaign Architect creates validated CampaignPackages and, later, the reusable game-family material required to make generated combat-capable RPGs available through both campaign play and standalone Battle Simulator play. RPG GM Runtime owns durable semantic campaign truth, entity identity, scene membership, observer knowledge, events, consequences, and Dungeon Master intelligence. GameFrame materializes that truth into persistent playable 2D worlds and owns deterministic game mechanics, realtime player interaction, tactical authority, and presentation.
 
 Ordinary supported actions happen directly in the world. The Dungeon Master remains a distinct real Game Master for rulings, player knowledge questions, dramatic narration/intervention, unusual freeform actions, character performance, and consequences that fixed controls cannot express.
 
 > The graphics visualize and operationalize the imagination; they do not define the limits of the imagination.
 
+## Player-facing Games hierarchy
+
+The top-level GameFrame destination is **Games**.
+
+It may contain broad play surfaces as well as direct standalone games. The initial hierarchy is:
+
+```text
+Games
+├── Role-Playing Games
+│   ├── Monster Master RPG
+│   ├── future handcrafted/generated RPGs
+│   └── Create RPG / My Campaigns / Import Campaign
+├── Battle Simulator
+│   ├── Monster Master Arena Battles
+│   ├── future handcrafted/generated Battle Packs
+│   └── Custom Battle / map generation / import
+├── Clockwork Checkers
+├── Othello
+└── Tic-Tac-Toe
+```
+
+**GameFrame RPG Engine** is internal architecture terminology, not a player-facing top-level game card. The player-facing campaign surface is **Role-Playing Games**.
+
+**Battle Simulator** is the player-facing standalone tactical sandbox. A game family such as Monster Master appears *inside* Battle Simulator rather than occupying a second top-level card beside its RPG.
+
 ## Product hierarchy
 
-The platform distinguishes **engine**, **ruleset**, **campaign content**, and **standalone products**.
+The platform distinguishes **engine**, **ruleset**, **game family/content**, **campaign content**, and **standalone battle content**.
 
 ### GameFrame RPG Engine
 
@@ -64,8 +90,6 @@ It provides reusable capability for:
 - realtime transport/recovery;
 - player-facing RPG UI primitives.
 
-The player-facing generic library destination is **GameFrame RPG**.
-
 ### RPG Ruleset
 
 An **RPG Ruleset** defines game-specific deterministic mechanics independent of one CampaignPackage, including as applicable:
@@ -81,9 +105,29 @@ An **RPG Ruleset** defines game-specific deterministic mechanics independent of 
 - progression/inventory/equipment;
 - ruleset-specific world interactions.
 
-### Monster Master Ruleset
+The generic engine must not assume that every future generated RPG uses Monster Master rules. Long-term Campaign Architect work may select an existing ruleset, parameterize a validated ruleset profile, or produce a new bounded ruleset definition only after the reusable ruleset schema/capability system is itself proven.
 
-**Monster Master Ruleset** is the first major rules/content family and should eventually be the shared deterministic source for Monster Master character and combat rules across campaign and standalone battle products.
+### Game family
+
+A **Game Family** is the reusable rules/content identity shared by related campaign and simulator experiences.
+
+Conceptually it may bind:
+
+- one compatible RPG Ruleset/version/profile family;
+- character/archetype/creature definitions;
+- equipment/abilities/conditions;
+- factions/opponent families;
+- world/materialization themes and kits;
+- reusable asset catalog entries;
+- tactical objectives and environment semantics;
+- compatible CampaignPackages;
+- one or more Battle Packs.
+
+A Game Family is not required to expose every surface. A narrative-only RPG may have no Battle Pack. A tactical-only family may exist only in Battle Simulator.
+
+### Monster Master Ruleset / Game Family
+
+**Monster Master** is the first major rules/content family. The **Monster Master Ruleset** should eventually be the shared deterministic source for Monster Master character and combat rules across campaign and standalone battle products.
 
 ### Monster Master RPG
 
@@ -91,38 +135,71 @@ An **RPG Ruleset** defines game-specific deterministic mechanics independent of 
 
 ```text
 GameFrame RPG Engine
-+ Monster Master Ruleset
-+ Monster Master theme/content
++ Monster Master Ruleset / game-family content
 + committed Monster Master CampaignPackage
 ```
 
 The handcrafted reference campaign proves the engine and package architecture without making Monster Master itself the generic platform.
 
-### Monster Master Battle Arena
+### Battle Simulator
 
-**Monster Master Battle Arena** is the standalone battle simulator:
+**Battle Simulator** is the standalone tactical product surface.
+
+It can host multiple game families without creating separate tactical engines for each one.
+
+A standalone battle conceptually uses:
 
 ```text
-GameFrame tactical/world subset
-+ Monster Master Ruleset
-+ standalone BattleScenario
+GameFrame tactical/world systems
++ selected RPG Ruleset / game-family content
++ selected Battle Pack
++ BattleScenario
 ```
 
 Its setup may eventually include character/loadout construction, map selection/generation, teams, deployment, objectives, humans/bots, replay, and rematch.
 
-Campaign combat never launches this product. The Battle Arena and Monster Master RPG converge on shared Monster Master tactical rules and GameFrame tactical implementation, but their setup/lifecycle is different.
+Campaign combat never launches Battle Simulator. Campaign tactical play and standalone Battle Simulator play converge on shared ruleset/tactical implementation, but their setup and lifecycle are different.
 
-### GameFrame RPG
+### Monster Master Arena Battles
 
-**GameFrame RPG** is the future generic campaign home for:
+**Monster Master Arena Battles** is the Monster Master entry inside Battle Simulator.
 
-- Create Campaign from an idea;
+It evolves from the existing standalone Monster Master tactical game and should converge on the same Monster Master Ruleset, control semantics, terrain semantics, legal actions, objectives, and terminal outcomes used by Monster Master RPG.
+
+### Battle Pack
+
+A **Battle Pack** is the simulator-safe reusable tactical content surface for one game family/ruleset profile. It is not a second ruleset and must not fork combat behavior from the corresponding RPG.
+
+A Battle Pack may expose/reference:
+
+- playable character/archetype templates;
+- creatures/opponents/factions;
+- equipment/loadouts/abilities available to standalone setup;
+- map themes, world kits, terrain/hazard families, and map-generation constraints;
+- deployment options;
+- objective presets;
+- bot behavior profiles;
+- scenario presets/examples;
+- compatible asset bundles;
+- ruleset/profile/version requirements;
+- visibility/unlock policy.
+
+A Battle Pack deliberately excludes or masks campaign-only hidden truth unless an explicit exposure/unlock rule allows it.
+
+For example, a secret campaign villain or unrevealed monster form must not automatically appear in Battle Simulator merely because the underlying campaign package knows it exists.
+
+### Role-Playing Games
+
+**Role-Playing Games** is the generic player-facing campaign destination for:
+
+- available bespoke/generated RPGs;
+- Create RPG from an idea;
 - My Campaigns;
 - Import CampaignPackage;
 - Campaign Architect intake/refinement;
 - campaign preview/commit/resume/management.
 
-A bespoke title such as Monster Master RPG may remain directly visible in the GameFrame library while using GameFrame RPG Engine underneath.
+Monster Master RPG appears inside this surface while using GameFrame RPG Engine underneath.
 
 ## Two specialized agents
 
@@ -131,6 +208,8 @@ The platform retains exactly two campaign-agent responsibilities.
 ### Campaign Architect
 
 Campaign Architect converts a concise concept, detailed specification, structured sheet, prepared campaign family, or imported source into one validated CampaignPackage draft before ordinary play.
+
+Long-term, when a concept requires a new game family rather than only a new campaign under an existing family, Campaign Architect may also coordinate generation/selection of validated reusable ruleset-profile/content definitions and a simulator-safe Battle Pack. That broader generation capability remains deferred until the generic engine and ruleset interfaces survive multiple handcrafted families.
 
 It owns campaign construction, not live turns. Drafts may be owner-refined before explicit commitment.
 
@@ -176,11 +255,15 @@ A package should be able to declare:
 
 Generated pixels, client coordinates, and Pixi implementation details are not CampaignPackage truth.
 
+CampaignPackage and Battle Pack are distinct artifacts with different visibility/lifecycle requirements. They may reference the same game-family rules/content/assets without duplicating them.
+
 ## One complete GameFrame experience
 
 GameFrame is the primary authenticated player application for:
 
-- campaign selection/creation/preview/join/resume;
+- Games navigation;
+- Role-Playing Games selection/creation/preview/join/resume;
+- Battle Simulator family/scenario selection;
 - persistent materialized maps and exploration;
 - direct NPC/entity/object interaction;
 - character/party/controlled-entity views;
@@ -192,6 +275,7 @@ GameFrame is the primary authenticated player application for:
 - objectives/clues/factions/locations/handouts;
 - deterministic checks/mechanics;
 - same-map tactical mode;
+- standalone tactical simulation through shared ruleset primitives;
 - history/recap/reconnect/recovery;
 - accepted art/animation/sound/music/narration.
 
@@ -252,7 +336,7 @@ For Monster Master, a human principal may control:
 - one or more deployed monsters according to class/ruleset limits;
 - other entities only when explicit rules grant authority.
 
-This control model must support future classes with different deployment counts and action/control patterns without changing the generic engine contract.
+This control model must support future classes and future game families with different deployment counts and action/control patterns without changing the generic engine contract.
 
 ## World/materialization goal
 
@@ -266,7 +350,17 @@ CampaignPackage semantic WorldGraph/location intent is materialized by GameFrame
 
 Once accepted for a campaign instance, a scene materialization retains stable identity and meaningful state so revisiting returns to the same place.
 
-The product does not require unrestricted infinite procedural generation. It does require bounded on-demand realization of plausible semantic locations/approaches.
+Battle Simulator may use the same materialization/world-kit systems to create standalone battlefields from Battle Pack constraints without creating campaign semantic history.
+
+The product does not require unrestricted infinite procedural generation. It does require bounded on-demand realization of plausible semantic locations/approaches and bounded standalone battlefield generation.
+
+## Shared asset/content reuse goal
+
+If a campaign/game family already has usable character art, creature art, terrain, props, effects, map kits, abilities, equipment, and tactical definitions, Battle Simulator should reuse them rather than require a second asset pipeline.
+
+The same principle applies in reverse: simulator-proven generic tactical primitives may become reusable GameFrame RPG Engine or ruleset capability when deliberately promoted.
+
+Reuse does not override visibility. Campaign-only spoilers remain hidden unless the Battle Pack exposure policy permits them.
 
 ## Media goal
 
@@ -312,7 +406,7 @@ The first multiplayer proof should use two humans in one shared active scene bef
 
 ## Generality proof before Campaign Architect
 
-A materially different second handcrafted CampaignPackage must use the same:
+A materially different second handcrafted CampaignPackage/game family must use the same:
 
 - GameFrame RPG Engine;
 - package validator;
@@ -332,14 +426,18 @@ Only after handcrafted generality is proven:
 ```text
 player idea
 → Campaign Architect draft
+→ select/create compatible ruleset profile + reusable game-family content as needed
+→ CampaignPackage
+→ Battle Pack when combat-capable and appropriate
 → optional owner refinement
 → validation/repair
 → player-safe preview
 → explicit commitment
-→ materialized playable campaign through the same engine
+→ materialized playable campaign through Role-Playing Games
+→ standalone simulator content available through Battle Simulator under exposure policy
 ```
 
-Generated campaigns must not require a special Dungeon Master or bespoke GameFrame engine branch.
+Generated campaigns must not require a special Dungeon Master or bespoke GameFrame engine branch. Generated Battle Packs must not create a second combat-rules implementation.
 
 ## Multi-scene posture
 
@@ -358,7 +456,9 @@ The product direction does not require:
 - unrestricted infinite open-world generation;
 - per-frame movement journaling in RPG GM Runtime;
 - separate campaign battle maps;
-- using Monster Master Battle Arena as the campaign combat lifecycle;
+- using Battle Simulator as the campaign combat lifecycle;
+- duplicating an RPG's combat rules inside its Battle Pack;
+- automatically exposing campaign secrets in Battle Simulator;
 - every improvised object becoming a permanent mechanic;
 - split-party multiplayer in the first embodied slice;
 - Tailscale/router forwarding for players;
@@ -367,4 +467,4 @@ The product direction does not require:
 
 ## Governing rule
 
-> Build one campaign-agnostic GameFrame RPG Engine and plug rulesets and campaign content into it. Monster Master RPG proves the full campaign experience; Monster Master Battle Arena proves standalone tactical simulation; both converge on one Monster Master ruleset, while generated future campaigns use the same durable world and Dungeon Master architecture.
+> Build one campaign-agnostic GameFrame RPG Engine and reusable rules/content families underneath the player-facing Games surfaces. Role-Playing Games hosts persistent campaigns; Battle Simulator hosts standalone scenarios through Battle Packs; when the same game family appears in both, it shares one ruleset and one reusable content/asset foundation rather than two drifting combat systems.
