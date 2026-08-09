@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/cascade.css">
   <link rel="stylesheet" href="/cascade-vfx.css">
   <link rel="stylesheet" href="/cascade-family.css">
+  <link rel="stylesheet" href="/cascade-admin.css">
 </head>
 <body class="cascade-route">
   <main class="cascade-shell">
@@ -44,7 +45,7 @@
           <b id="combo-label" aria-live="polite"></b>
         </div>
         <div id="board" class="cascade-board" role="grid" aria-label="Cascade board"></div>
-        <p class="cascade-help">Tap one tile, then an adjacent tile. Swaps that do not make a match are rejected.</p>
+        <p class="cascade-help">Match 4 to blast a full line. Match 5+ to sweep that color off the board.</p>
       </div>
 
       <aside class="cascade-side">
@@ -91,5 +92,6 @@
 
   <script type="module" src="/gameframe-nav.js"></script>
   <script type="module" src="/cascade.js"></script>
+  <script type="module" src="/cascade-admin.js"></script>
 </body>
 </html>
