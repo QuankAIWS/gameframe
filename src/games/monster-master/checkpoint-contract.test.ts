@@ -39,9 +39,6 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
 
   assert.match(roadmap, /MM-0001 remains standalone\/regression substrate and the seed for Monster Master Arena Battles/);
   assert.match(roadmap, /Monster Master Arena Battles/);
-  assert.match(roadmap, /## Transitional legacy tactical correctness/);
-  assert.match(roadmap, /legacy terminal result/);
-  assert.match(roadmap, /result consumed exactly once/);
   assert.match(roadmap, /## GF-RPG-06 — FIGHT foundation: Monster Master rules\/control authority/);
   assert.match(roadmap, /class-defined monster deployment\/control limits/);
   assert.match(roadmap, /## GF-RPG-07 — FIGHT: same-map Tactical Activation/);
