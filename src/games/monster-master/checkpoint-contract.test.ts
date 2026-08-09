@@ -35,15 +35,15 @@ test("MM-0001 repository checkpoint remains complete and evidence-aligned", asyn
   assert.match(readme, /\/monster-master\.html/);
   assert.match(readme, /src\/games\//);
 
-  assert.match(roadmap, /MM-0001 remains standalone\/regression substrate and the seed for Monster Master Arena Battles/);
-  assert.match(roadmap, /Monster Master Arena Battles/);
-  assert.match(roadmap, /## GF-RPG-06 — FIGHT foundation: Monster Master rules\/control authority/);
-  assert.match(roadmap, /class-defined monster deployment\/control limits/);
-  assert.match(roadmap, /## GF-RPG-07 — FIGHT: same-map Tactical Activation/);
+  assert.match(roadmap, /Battle Simulator.*standalone tactical sandbox.*Monster Master Arena Battles/s);
+  assert.match(roadmap, /Campaign combat uses \*\*Tactical Activation on the current materialized map\*\*/);
+  assert.match(roadmap, /## GF-RPG-07 — FIGHT foundation: Monster Master rules\/control authority/);
+  assert.match(roadmap, /class\/archetype\/profile deployment limits/);
+  assert.match(roadmap, /## GF-RPG-08 — FIGHT: same-map Tactical Activation/);
   assert.match(roadmap, /current positions become tactical starting positions/);
-  assert.match(roadmap, /No replacement campaign battlefield and no Return-to-Campaign navigation/);
-  assert.match(roadmap, /## GF-RPG-12 — Dynamic Battle Simulator/);
-  assert.match(roadmap, /ruleset equivalence with campaign Tactical Mode/);
+  assert.match(roadmap, /No Arena handoff, substitute campaign battlefield, or Return-to-Campaign step/);
+  assert.match(roadmap, /## GF-RPG-09 — PROVE: complete single-player Monster Master/);
+  assert.match(roadmap, /same-map FIGHT/);
 
   assert.match(agents, /GameFrameBot.*stable player ID `gameframe-bot`/s);
   assert.match(agents, /Monster Master BattleBot/);
