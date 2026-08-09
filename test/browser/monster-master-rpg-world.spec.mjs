@@ -2,7 +2,13 @@ import { expect, test } from "@playwright/test";
 
 const campaignId = "campaign-ui-world";
 const playerId = "rpg-world-player";
+const playerEntityId = "trainer:rpg-world-player";
 const materializationId = `rpg-scene:${campaignId}:scene.crooked-checkpoint`;
+const materializationRef = {
+  materializationId,
+  version: "1",
+  hash: "A".repeat(43),
+};
 
 function campaignProjection() {
   return {
@@ -33,7 +39,26 @@ function physicalMap() {
   return { width, height, cells };
 }
 
-function materializedExploration() {
+function positionMessage(position, { moved = false, blockedBy } = {}) {
+  return {
+    type: "exploration_position",
+    protocolVersion: 1,
+    campaignId,
+    sceneId: "scene.crooked-checkpoint",
+    playerEntityId,
+    materializationRef,
+    positionRevision: position.positionRevision,
+    transform: {
+      x: position.x,
+      y: position.y,
+      facing: position.facing,
+    },
+    moved,
+    ...(blockedBy ? { blockedBy } : {}),
+  };
+}
+
+function materializedExploration(position) {
   return {
     protocolVersion: 1,
     kind: "campaign.exploration_materialized",
@@ -54,7 +79,7 @@ function materializedExploration() {
       },
       viewer: {
         playerId,
-        playerCharacterEntityId: "trainer:rpg-world-player",
+        playerCharacterEntityId: playerEntityId,
         rulesProfileId: "mm.trainer.vanguard.v1",
       },
       scene: {
@@ -92,20 +117,16 @@ function materializedExploration() {
       campaignId,
       sceneId: "scene.crooked-checkpoint",
       semanticRevision: 3,
-      materializationRef: {
-        materializationId,
-        version: "1",
-        hash: "A".repeat(43),
-      },
+      materializationRef,
       profileId: "gameframe.rpg.semantic-scene.v1",
       themeId: "monster-master-starter",
       map: physicalMap(),
       anchors: [
         {
-          anchorId: "entity:trainer:rpg-world-player",
+          anchorId: `entity:${playerEntityId}`,
           kind: "player",
-          semanticId: "trainer:rpg-world-player",
-          interactionTargetId: "entity:trainer:rpg-world-player",
+          semanticId: playerEntityId,
+          interactionTargetId: `entity:${playerEntityId}`,
           label: "You",
           x: 14,
           y: 7,
@@ -142,12 +163,40 @@ function materializedExploration() {
         },
       ],
     },
+    playerPosition: positionMessage(position),
   };
 }
 
-test("Monster Master RPG materializes Crooked Checkpoint through the existing Pixi world", async ({ page }) => {
+function moveResult(position, request) {
+  const deltas = {
+    north: { x: 0, y: -1 },
+    east: { x: 1, y: 0 },
+    south: { x: 0, y: 1 },
+    west: { x: -1, y: 0 },
+  };
+  expect(request.expectedPositionRevision).toBe(position.positionRevision);
+  expect(request.materializationRef).toEqual(materializationRef);
+  const delta = deltas[request.direction];
+  const target = { x: position.x + delta.x, y: position.y + delta.y };
+  const map = physicalMap();
+  const cell = map.cells[target.y * map.width + target.x];
+  const occupied = (target.x === 9 && target.y === 7) || (target.x === 10 && target.y === 8);
+  const blockedBy = !cell ? "bounds" : cell.terrain === "wall" ? "terrain" : occupied ? "occupied" : null;
+  const changedFacing = position.facing !== request.direction;
+  if (!blockedBy) {
+    position.x = target.x;
+    position.y = target.y;
+  }
+  position.facing = request.direction;
+  if (!blockedBy || changedFacing) position.positionRevision += 1;
+  return positionMessage(position, { moved: !blockedBy, ...(blockedBy ? { blockedBy } : {}) });
+}
+
+test("Monster Master RPG walks Crooked Checkpoint through the existing Pixi world", async ({ page }) => {
   let explorationAttachCount = 0;
   let explorationRequest = null;
+  const movementRequests = [];
+  const position = { x: 9, y: 6, facing: "west", positionRevision: 4 };
 
   await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, async (route) => {
     await route.fulfill({
@@ -162,7 +211,16 @@ test("Monster Master RPG materializes Crooked Checkpoint through the existing Pi
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify(materializedExploration()),
+      body: JSON.stringify(materializedExploration(position)),
+    });
+  });
+  await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/move`, async (route) => {
+    const request = route.request().postDataJSON();
+    movementRequests.push(request);
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(moveResult(position, request)),
     });
   });
 
@@ -170,7 +228,7 @@ test("Monster Master RPG materializes Crooked Checkpoint through the existing Pi
 
   await expect(page.locator("#mm-rpg-campaign")).toBeVisible();
   await expect(page.locator("#mm-rpg-world-location")).toHaveText("The Crooked Checkpoint");
-  await expect(page.locator("#mm-rpg-world-status")).toContainText("Materialized");
+  await expect(page.locator("#mm-rpg-world-status")).toContainText("Exploring · 9,6");
   await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
   const pell = page.locator('[data-semantic-id="npc.warden-pell"]');
   await expect(pell).toContainText("veteran field warden");
@@ -195,7 +253,40 @@ test("Monster Master RPG materializes Crooked Checkpoint through the existing Pi
   await expect.poll(async () => pell.evaluate((node) => `${node.style.left}|${node.style.top}`))
     .not.toBe(pellPosition);
 
+  await page.locator("#monster-master-pixi-canvas").click();
+  await page.keyboard.press("KeyA");
+  await expect.poll(() => movementRequests.length).toBe(1);
+  expect(movementRequests[0].direction).toBe("west");
+  await expect(page.locator("#mm-rpg-world-status")).toContainText("Blocked · terrain");
+  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({
+    x: 9,
+    y: 6,
+    facing: "west",
+  });
+
+  await page.keyboard.press("KeyD");
+  await expect.poll(() => movementRequests.length).toBe(2);
+  expect(movementRequests[1].direction).toBe("east");
+  await expect(page.locator("#mm-rpg-world-status")).toContainText("Exploring · 10,6");
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi?.getCamera?.()))
+    .toMatchObject({ x: 10, y: 6 });
+
+  await page.keyboard.press("KeyE");
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi?.getCamera?.()?.quarter)).toBe(1);
+  await page.keyboard.press("KeyW");
+  await expect.poll(() => movementRequests.length).toBe(3);
+  expect(movementRequests[2].direction).toBe("west");
+  await expect(page.locator("#mm-rpg-world-status")).toContainText("Exploring · 9,6");
+
+  const revisionBeforeRefresh = position.positionRevision;
   await page.locator("#mm-rpg-refresh").click();
   await expect.poll(() => explorationAttachCount).toBe(2);
   await expect(page.locator("#mm-rpg-world-materialization")).toContainText(materializationId);
+  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().positionRevision))
+    .toBe(revisionBeforeRefresh);
+  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({
+    x: 9,
+    y: 6,
+    facing: "west",
+  });
 });
