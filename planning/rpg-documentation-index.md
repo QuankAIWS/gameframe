@@ -18,6 +18,7 @@ related:
   - monster-master-rpg-canonical-baseline.md
   - monster-master-rpg-current-creative-direction.md
   - monster-master-rpg-lore-and-story.md
+  - monster-master-rules.md
   - monster-master-rpg-encounter-rules.md
   - rpg-gm-runtime-boundary.md
   - rpg-gameframe-interface-contract.md
@@ -39,7 +40,9 @@ related:
 7. `monster-master-rpg-canonical-baseline.md` — Monster Master-specific accepted baseline.
 8. `monster-master-rpg-current-creative-direction.md` — current opening/pacing/interaction/content direction.
 9. `monster-master-rpg-lore-and-story.md` — detailed accepted lore such as capture-cube form factor.
-10. Read the specific interface/deployment/testing/asset contract needed by the active slice.
+10. `monster-master-rules.md` — fixed standalone MM-0001 regression rules; do not treat them as the mature campaign ruleset.
+11. `monster-master-rpg-encounter-rules.md` — evolving same-map Monster Master campaign Tactical Activation rules.
+12. Read the specific interface/deployment/testing/asset contract needed by the active slice.
 
 Do not reconstruct current architecture from chat history, stale fixtures, old work orders, or legacy Arena behavior.
 
