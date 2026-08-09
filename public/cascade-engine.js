@@ -38,32 +38,32 @@ function lateSpec(levelNumber) {
 
   if (levelNumber <= 40) {
     return {
-      target: 7200 + (offset * 430) + (hard ? 450 : 0),
-      moves: hard ? 17 : 18,
+      target: 7000 + (offset * 390) + (hard ? 350 : 0),
+      moves: 18,
       hard,
-      objective: objective({ ice: { count: 10 + offset * 2, layers: 1, pattern } }),
+      objective: objective({ ice: { count: 9 + offset, layers: 1, pattern } }),
     };
   }
 
   if (levelNumber <= 50) {
     return {
-      target: 7000 + (offset * 420) + (hard ? 500 : 0),
+      target: 6900 + (offset * 380) + (hard ? 400 : 0),
       moves: hard ? 16 : 17,
       hard,
       objective: objective({
-        collect: [{ kind: (levelNumber + 1) % TILE_KINDS, count: 24 + offset * 2 }],
+        collect: [{ kind: (levelNumber + 1) % TILE_KINDS, count: 22 + offset }],
       }),
     };
   }
 
   if (levelNumber <= 60) {
     return {
-      target: 7900 + (offset * 470) + (hard ? 550 : 0),
-      moves: hard ? 16 : 17,
+      target: 7600 + (offset * 400) + (hard ? 450 : 0),
+      moves: 17,
       hard,
       objective: objective({
-        collect: [{ kind: (levelNumber + 2) % TILE_KINDS, count: 20 + offset }],
-        ice: { count: 10 + offset, layers: 1, pattern },
+        collect: [{ kind: (levelNumber + 2) % TILE_KINDS, count: 18 + Math.floor(offset * 0.75) }],
+        ice: { count: 8 + Math.floor(offset * 0.75), layers: 1, pattern },
       }),
     };
   }
@@ -86,10 +86,10 @@ function lateSpec(levelNumber) {
 
   if (levelNumber <= 80) {
     return {
-      target: 9200 + (offset * 540) + (hard ? 650 : 0),
-      moves: hard ? 16 : 17,
+      target: 9000 + (offset * 500) + (hard ? 550 : 0),
+      moves: hard ? 17 : 18,
       hard,
-      objective: objective({ ice: { count: 10 + offset, layers: 2, pattern } }),
+      objective: objective({ ice: { count: 7 + Math.floor(offset * 0.75), layers: 2, pattern } }),
     };
   }
 
@@ -97,15 +97,15 @@ function lateSpec(levelNumber) {
     const firstKind = (levelNumber + 2) % TILE_KINDS;
     const secondKind = (firstKind + 2) % TILE_KINDS;
     return {
-      target: 10100 + (offset * 590) + (hard ? 700 : 0),
-      moves: hard ? 16 : 17,
+      target: 9800 + (offset * 500) + (hard ? 500 : 0),
+      moves: hard ? 17 : 18,
       hard,
       objective: objective({
         collect: [
-          { kind: firstKind, count: 16 + offset },
-          { kind: secondKind, count: 16 + offset },
+          { kind: firstKind, count: 14 + Math.floor(offset * 0.65) },
+          { kind: secondKind, count: 14 + Math.floor(offset * 0.65) },
         ],
-        ice: { count: 9 + offset, layers: 2, pattern },
+        ice: { count: 6 + Math.floor(offset * 0.65), layers: 2, pattern },
       }),
     };
   }
@@ -113,15 +113,15 @@ function lateSpec(levelNumber) {
   const firstKind = (levelNumber + 3) % TILE_KINDS;
   const secondKind = (firstKind + 2) % TILE_KINDS;
   return {
-    target: 11200 + (offset * 670) + (hard ? 850 : 0),
-    moves: hard ? 15 : 16,
+    target: 10800 + (offset * 550) + (hard ? 650 : 0),
+    moves: hard ? 16 : 17,
     hard,
     objective: objective({
       collect: [
-        { kind: firstKind, count: 19 + offset },
-        { kind: secondKind, count: 19 + offset },
+        { kind: firstKind, count: 16 + Math.floor(offset * 0.7) },
+        { kind: secondKind, count: 16 + Math.floor(offset * 0.7) },
       ],
-      ice: { count: 12 + offset, layers: 2, pattern },
+      ice: { count: 7 + Math.floor(offset * 0.75), layers: 2, pattern },
     }),
   };
 }
@@ -403,7 +403,7 @@ function patternScore(pattern, row, col) {
   const edge = Math.min(row, col, BOARD_SIZE - 1 - row, BOARD_SIZE - 1 - col);
   const centerDistance = Math.abs(row - 3.5) + Math.abs(col - 3.5);
   if (pattern === "center") return centerDistance;
-  if (pattern === "edges") return -edge;
+  if (pattern === "edges") return edge;
   if (pattern === "diagonal") return Math.min(Math.abs(row - col), Math.abs(row + col - (BOARD_SIZE - 1)));
   if (pattern === "cross") return Math.min(Math.abs(row - 3.5), Math.abs(col - 3.5));
   if (pattern === "columns") return Math.abs(col - 3.5) + ((row % 2) * 0.1);
