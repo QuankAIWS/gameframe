@@ -94,7 +94,8 @@ body.gameframe-rpg-preview-route {
 }
 
 .rpg-preview-actions,
-.rpg-preview-engine {
+.rpg-preview-engine,
+.rpg-preview-powered {
   margin-top: 42px;
 }
 
@@ -166,7 +167,6 @@ body.gameframe-rpg-preview-route {
 }
 
 .rpg-preview-powered {
-  margin-top: 42px;
   padding: 28px 32px;
 }
 
