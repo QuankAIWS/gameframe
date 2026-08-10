@@ -40,6 +40,8 @@ function gameLabel() {
   if (menuTheme === "tic") return "TIC-TAC-TOE";
   if (menuTheme === "checkers") return "CLOCKWORK CHECKERS";
   const pathname = window.location.pathname;
+  if (pathname === "/matches.html") return "MATCHES";
+  if (pathname === "/profile.html") return "PROFILE";
   if (pathname.includes("monster-master-rpg")) return "MONSTER MASTER RPG";
   if (pathname.includes("monster-master")) return "MONSTER MASTER";
   if (pathname.includes("othello")) return "OTHELLO";
@@ -69,39 +71,39 @@ function installDestinationBar() {
       </a>
       <nav class="gameframe-destination-links" aria-label="GameFrame destinations">
         <a data-gameframe-home href="/">Home</a>
-        <button type="button" disabled aria-disabled="true">
-          <span>Achievements</span>
-          <small>Coming soon</small>
-        </button>
+        <a data-gameframe-games href="/?catalog=1">Games</a>
+        <a data-gameframe-matches href="/matches.html">Matches</a>
+        <a data-gameframe-profile href="/profile.html">Profile</a>
       </nav>
       <span class="gameframe-destination-session-space" aria-hidden="true"></span>
     `;
     document.body.prepend(bar);
   }
 
-  const homeLinks = [
+  const destinationLinks = [
     bar.querySelector(".gameframe-destination-brand"),
-    bar.querySelector("[data-gameframe-home]"),
+    ...bar.querySelectorAll(".gameframe-destination-links a"),
   ].filter(Boolean);
-  for (const home of homeLinks) {
-    home.addEventListener("click", (event) => {
+  for (const destination of destinationLinks) {
+    destination.addEventListener("click", (event) => {
+      const href = destination.getAttribute("href") || "/";
       const navigation = new CustomEvent("gameframe:before-home", {
         bubbles: true,
         cancelable: true,
-        detail: { destination: "/" },
+        detail: { destination: href },
       });
       if (!document.dispatchEvent(navigation)) {
         event.preventDefault();
         return;
       }
       if (sharedMatchRunning()) {
-        if (!window.confirm("Leave this match and return to GameFrame?")) {
+        if (!window.confirm("Leave this match? It stays saved in Matches.")) {
           event.preventDefault();
           return;
         }
         window.localStorage.removeItem(sharedRecentMatchStorageKey);
       }
-      markInternalHomeReturn();
+      if (href === "/") markInternalHomeReturn();
     });
   }
 
@@ -116,9 +118,10 @@ function syncDestinationBar() {
   updatePending = false;
 
   const pathname = window.location.pathname;
+  const params = new URLSearchParams(window.location.search);
   const sharedMatchPanel = document.querySelector("#match-panel");
-  const sharedMatchRunning = Boolean(sharedMatchPanel && !sharedMatchPanel.hidden);
-  document.body.classList.toggle("gameframe-shared-match-running", sharedMatchRunning);
+  const runningSharedMatch = Boolean(sharedMatchPanel && !sharedMatchPanel.hidden);
+  document.body.classList.toggle("gameframe-shared-match-running", runningSharedMatch);
   document.body.classList.toggle("gameframe-monster-route", pathname.includes("monster-master"));
   document.body.classList.toggle("gameframe-monster-rpg-route", pathname.includes("monster-master-rpg"));
   document.body.classList.toggle("gameframe-othello-route", pathname.includes("othello"));
@@ -128,10 +131,17 @@ function syncDestinationBar() {
   const title = bar.querySelector("[data-gameframe-destination-title]");
   const nextTitle = gameLabel();
   if (title && title.textContent !== nextTitle) title.textContent = nextTitle;
-  const atHome = pathname === "/" && !document.body.classList.contains("tic-tac-toe-noir-running")
-    && (document.querySelector("#lobby") && !document.querySelector("#lobby")?.hidden)
+
+  const rootLobbyVisible = pathname === "/"
+    && !document.body.classList.contains("tic-tac-toe-noir-running")
+    && Boolean(document.querySelector("#lobby") && !document.querySelector("#lobby")?.hidden)
     && !document.body.classList.contains("gameframe-game-menu");
-  bar.querySelector("[data-gameframe-home]")?.classList.toggle("is-active", Boolean(atHome));
+  const atGames = rootLobbyVisible && params.get("catalog") === "1";
+  const atHome = rootLobbyVisible && !atGames;
+  bar.querySelector("[data-gameframe-home]")?.classList.toggle("is-active", atHome);
+  bar.querySelector("[data-gameframe-games]")?.classList.toggle("is-active", atGames);
+  bar.querySelector("[data-gameframe-matches]")?.classList.toggle("is-active", pathname === "/matches.html");
+  bar.querySelector("[data-gameframe-profile]")?.classList.toggle("is-active", pathname === "/profile.html");
 }
 function scheduleDestinationSync() {
   if (updatePending) return;
