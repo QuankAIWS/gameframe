@@ -87,7 +87,8 @@
         {
           "entityId": "object.checkpoint-cart",
           "displayLabel": "covered confiscation cart",
-          "interactionTargetId": "entity:object.checkpoint-cart"
+          "interactionTargetId": "entity:object.checkpoint-cart",
+          "state": "covered"
         }
       ],
       "routes": [

@@ -22,6 +22,7 @@ function extraObject(index: number) {
     entityId: `object.extra-${index}`,
     displayLabel: `visible object ${index}`,
     interactionTargetId: `entity:object.extra-${index}`,
+    state: "idle",
   };
 }
 
@@ -56,6 +57,35 @@ test("Crooked Checkpoint materializes deterministically from the canonical S6 pr
   );
   assert.equal(cartAnchors.length, 1, "the physical scene must contain one authoritative checkpoint cart");
   assert.equal(cartAnchors[0]?.kind, "object");
+  assert.equal(cartAnchors[0]?.objectState, "covered");
+  assert.match(cartAnchors[0]?.label ?? "", /covered/);
+});
+
+test("checkpoint cart state changes presentation without changing physical map identity", () => {
+  const root = fixture();
+  const coveredProjection = structuredClone(root.projection) as any;
+  const uncoveredProjection = structuredClone(root.projection) as any;
+  const cart = uncoveredProjection.scene.objects.find(
+    (object: any) => object.entityId === "object.checkpoint-cart",
+  );
+  cart.state = "uncovered";
+  uncoveredProjection.campaignRevision += 1;
+  uncoveredProjection.scene.semanticRevision += 1;
+
+  const covered = materializeRpgExplorationProjection(coveredProjection);
+  const uncovered = materializeRpgExplorationProjection(uncoveredProjection);
+  const coveredCart = covered.anchors.find((anchor) => anchor.semanticId === "object.checkpoint-cart");
+  const uncoveredCart = uncovered.anchors.find((anchor) => anchor.semanticId === "object.checkpoint-cart");
+
+  assert.deepEqual(uncovered.materializationRef, covered.materializationRef);
+  assert.deepEqual(uncovered.map, covered.map);
+  assert.deepEqual(
+    { x: uncoveredCart?.x, y: uncoveredCart?.y },
+    { x: coveredCart?.x, y: coveredCart?.y },
+  );
+  assert.equal(coveredCart?.objectState, "covered");
+  assert.equal(uncoveredCart?.objectState, "uncovered");
+  assert.notEqual(uncoveredCart?.label, coveredCart?.label);
 });
 
 test("additional visible entities never reuse Pell or other occupied physical anchors", () => {
