@@ -69,8 +69,13 @@ function ensureDock() {
   place.dataset.mmRpgDockPlace = "";
   heading.append(eyebrow, title, place);
   const connection = document.querySelector("#mm-rpg-connection");
-  if (connection) header.append(heading, connection);
-  else header.append(heading);
+  const refresh = document.querySelector("#mm-rpg-refresh");
+  header.append(heading);
+  if (connection) header.append(connection);
+  if (refresh) {
+    refresh.classList.add("mm-rpg-dock-refresh");
+    header.append(refresh);
+  }
 
   const tabbar = document.createElement("nav");
   tabbar.className = "mm-rpg-dock-tabs";
@@ -181,8 +186,6 @@ function activate(id) {
     button?.classList.toggle("is-active", active);
   }
 
-  // These panels keep their original listeners and histories. The unified dock
-  // owns visibility, while the old top toolbar is deliberately retired.
   const askPanel = document.querySelector("#mm-rpg-ask-gm-panel");
   if (askPanel) askPanel.hidden = id !== "gm";
   const talkPanel = document.querySelector("#mm-rpg-talk-panel");
