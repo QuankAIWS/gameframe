@@ -45,6 +45,9 @@ import {
   type RuntimeExplorationHttpTransport,
 } from "../rpg/runtime-exploration-transport.ts";
 import {
+  SqliteRpgCampaignIndex,
+} from "../rpg/sqlite-rpg-campaign-index.ts";
+import {
   SqliteRpgEncounterMatchCoordinator,
 } from "../rpg/sqlite-rpg-encounter-match-coordinator.ts";
 import type { DurableCampaignBootstrap } from "../rpg/sqlite-rpg-campaign-store.ts";
@@ -108,6 +111,7 @@ export function createDurableRpgHttpServer(
     filePath: options.filePath,
     clock,
   });
+  const campaignIndex = new SqliteRpgCampaignIndex({ filePath: options.filePath });
   const encounters = new SqliteRpgEncounterStore({ filePath: options.filePath });
   const encounterMatches = new SqliteRpgEncounterMatchCoordinator({
     filePath: options.filePath,
@@ -155,6 +159,7 @@ export function createDurableRpgHttpServer(
           realtime: "websocket-origin",
           capabilities: [
             "durable-campaigns",
+            "rpg-campaign-index",
             "durable-command-outbox",
             "runtime-narrative-linkage",
             "durable-encounters",
@@ -171,6 +176,18 @@ export function createDurableRpgHttpServer(
               : []),
           ],
         });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/rpg/campaigns") {
+        const principal = await authenticate(
+          authenticator,
+          request,
+          url,
+          Buffer.alloc(0),
+        );
+        requirePlayerPrincipal(principal);
+        rejectIdentityClaim(principal, url.searchParams.get("playerId"));
+        return sendJson(response, 200, campaignIndex.listForPlayer(principal.playerId));
       }
 
       if (url.pathname === STAGING_ADMIN_RESET_PATH) {
@@ -546,6 +563,7 @@ export function createDurableRpgHttpServer(
     explorationPositions.close();
     encounterMatches.close();
     encounters.close();
+    campaignIndex.close();
     campaigns.close();
   });
   return server;
