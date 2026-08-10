@@ -163,7 +163,7 @@ function explorationPayload(coordinationRevision = 3) {
   };
 }
 
-test("RPG play shell separates private Ask GM, in-world Action, and character Talk", async ({ page }) => {
+test("RPG play shell keeps world chat, Talk, Ask GM, and campaign tools in one right HUD", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   let gmReplied = false;
   let coordinationRevision = 3;
@@ -207,12 +207,20 @@ test("RPG play shell separates private Ask GM, in-world Action, and character Ta
   await page.goto(`/monster-master-rpg.html?player=${playerId}&campaign=${campaignId}`);
 
   await expect(page.locator("body")).toHaveClass(/mm-rpg-play-shell/);
+  const dock = page.locator("#mm-rpg-unified-dock");
+  await expect(dock).toBeVisible();
+  await expect(dock.locator('[data-mm-rpg-dock-tab="world"]')).toHaveAttribute("aria-selected", "true");
+  await expect(dock.locator(".mm-rpg-dock-world-feed")).toContainText("An unscheduled checkpoint blocks the settled road.");
+  await expect(page.locator("#mm-rpg-action-form")).toBeVisible();
+
   const worldBox = await page.locator("#mm-rpg-world .mm-rpg-world-stage").boundingBox();
+  const dockBox = await dock.boundingBox();
   expect(worldBox.height).toBeGreaterThan(650);
+  expect(worldBox.x + worldBox.width).toBeLessThanOrEqual(dockBox.x + 1);
   const scrollHeight = await page.evaluate(() => document.documentElement.scrollHeight);
   expect(scrollHeight).toBeLessThanOrEqual(810);
 
-  await page.getByRole("button", { name: "Open private Game Master chat" }).click();
+  await dock.locator('[data-mm-rpg-dock-tab="gm"]').click();
   await expect(page.locator("#mm-rpg-ask-gm-panel")).toBeVisible();
   await expect(page.locator("#mm-rpg-ask-gm-status")).toContainText("will not become dialogue");
   await page.locator("#mm-rpg-ask-gm-input").fill("They look suspicious. What do I actually know?");
@@ -233,11 +241,10 @@ test("RPG play shell separates private Ask GM, in-world Action, and character Ta
     "Your suspicion is not proof of who these people are.",
   );
 
-  await page.getByRole("button", { name: "Describe an in-world action" }).click();
+  await dock.locator('[data-mm-rpg-dock-tab="world"]').click();
   await expect(page.locator("#mm-rpg-action-form")).toBeVisible();
   await expect(page.locator('label[for="mm-rpg-action"]')).toHaveText("What do you do?");
   await expect(page.locator("#mm-rpg-send")).toHaveText("Do it");
-  await expect(page.locator("#mm-rpg-action")).toHaveAttribute("placeholder", /in-world action/i);
   await page.locator("#mm-rpg-action").fill("I walk toward the checkpoint and inspect the barrier.");
   await page.locator("#mm-rpg-action-form").evaluate((form) => form.requestSubmit());
 
@@ -249,7 +256,14 @@ test("RPG play shell separates private Ask GM, in-world Action, and character Ta
   });
 
   await page.getByRole("button", { name: "Talk to Warden Pell" }).click();
+  await expect(dock.locator('[data-mm-rpg-dock-tab="talk"]')).toHaveAttribute("aria-selected", "true");
   await expect(page.locator("#mm-rpg-talk-panel")).toBeVisible();
   await expect(page.locator("#mm-rpg-talk-status")).toContainText("spoken in the world");
   await expect(page.locator("#mm-rpg-action-form")).toBeHidden();
+
+  await dock.locator('[data-mm-rpg-dock-tab="whispers"]').click();
+  await expect(dock.locator('[data-mm-rpg-dock-pane="whispers"]')).toContainText("not wired yet");
+
+  await dock.locator('[data-mm-rpg-dock-tab="campaign"]').click();
+  await expect(page.locator("#mm-rpg-switch")).toBeVisible();
 });
