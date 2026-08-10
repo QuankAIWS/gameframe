@@ -173,5 +173,9 @@ test("a realtime update arriving during an attach queues one follow-up recovery 
   releaseStaleAttach();
   await expect.poll(() => attachCount).toBe(3);
   await expect(page.locator("#mm-rpg-coordination")).toHaveText("5");
-  await expect(page.locator('[data-event-id="event:caught-up"]')).toBeVisible();
+  await expect(page.locator('[data-event-id="event:caught-up"]')).toHaveCount(1);
+
+  await page.getByRole("button", { name: "Open campaign chronicle" }).click();
+  await expect(page.locator("#mm-rpg-chronicle-panel")).toBeVisible();
+  await expect(page.locator("#mm-rpg-chronicle-list")).toContainText("Projection caught-up");
 });
