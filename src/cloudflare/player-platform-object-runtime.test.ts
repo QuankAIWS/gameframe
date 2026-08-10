@@ -23,6 +23,19 @@ function request(path: string, method = "GET", value?: unknown) {
   });
 }
 
+function completedMatch(matchId: string, winnerPlayerId: string | null, draw = false) {
+  return {
+    matchId,
+    gameId: "othello",
+    playerIds: ["discord:1", "discord:2"],
+    revision: 60,
+    activePlayerId: null,
+    status: { lifecycle: "completed", winnerPlayerId, draw },
+    updatedAt: matchId === "match-1" ? 1000 : 2000,
+    resumePath: `/othello.html?match=${matchId}`,
+  };
+}
+
 test("player directory lists other Discord players but not the viewer", async () => {
   const runtime = new PlayerPlatformObjectRuntime(new MemoryStorage());
   await runtime.fetch(request("/directory/upsert", "POST", {
@@ -63,6 +76,7 @@ test("player feed keeps the newest authoritative match summary", async () => {
   assert.equal(feed.matches.length, 1);
   assert.equal(feed.matches[0].revision, 1);
   assert.equal(feed.matches[0].activePlayerId, "discord:2");
+  assert.deepEqual(feed.favoriteGameIds, []);
 });
 
 test("target challenge token survives later status projections that omit it", async () => {
@@ -83,4 +97,49 @@ test("target challenge token survives later status projections that omit it", as
   await runtime.fetch(request("/player/invitation", "POST", { ...invitation, updatedAt: 2000 }));
   const feed = await body(await runtime.fetch(request("/player/feed")));
   assert.equal(feed.invitations[0].claimToken, "signed-token");
+});
+
+test("favorite games persist and older feed records migrate with an empty favorite list", async () => {
+  const storage = new MemoryStorage();
+  storage.values.set("gameframe:player-feed:v1", {
+    version: 1,
+    matches: [],
+    invitations: [],
+  });
+  const runtime = new PlayerPlatformObjectRuntime(storage);
+  let feed = await body(await runtime.fetch(request("/player/feed")));
+  assert.deepEqual(feed.favoriteGameIds, []);
+
+  const saved = await body(await runtime.fetch(request("/player/preferences", "POST", {
+    favoriteGameIds: ["othello", "cascade", "othello"],
+  })));
+  assert.deepEqual(saved.favoriteGameIds, ["othello", "cascade"]);
+  feed = await body(await runtime.fetch(request("/player/feed")));
+  assert.deepEqual(feed.favoriteGameIds, ["othello", "cascade"]);
+});
+
+test("leaderboard counts each completed authoritative match once and ranks by points", async () => {
+  const runtime = new PlayerPlatformObjectRuntime(new MemoryStorage());
+  await runtime.fetch(request("/directory/upsert", "POST", {
+    playerId: "discord:1", displayName: "Alice", source: "discord", lastSeenAt: 1000,
+  }));
+  await runtime.fetch(request("/directory/upsert", "POST", {
+    playerId: "discord:2", displayName: "Mom", source: "discord", lastSeenAt: 2000,
+  }));
+
+  await runtime.fetch(request("/directory/match", "POST", completedMatch("match-1", "discord:2")));
+  await runtime.fetch(request("/directory/match", "POST", completedMatch("match-1", "discord:2")));
+  await runtime.fetch(request("/directory/match", "POST", completedMatch("match-2", null, true)));
+
+  const leaderboard = await body(await runtime.fetch(request("/directory/leaderboard")));
+  assert.equal(leaderboard.games.length, 1);
+  assert.equal(leaderboard.games[0].gameId, "othello");
+  assert.deepEqual(leaderboard.games[0].entries.map((entry: any) => ({
+    playerId: entry.playerId,
+    played: entry.played,
+    points: entry.points,
+  })), [
+    { playerId: "discord:2", played: 2, points: 4 },
+    { playerId: "discord:1", played: 2, points: 1 },
+  ]);
 });
