@@ -3,6 +3,7 @@ import { AuthenticationError } from "./request-authenticator.ts";
 export type InvitationGameId =
   | "tic-tac-toe"
   | "american-checkers"
+  | "othello"
   | "tactical-movement-canary"
   | "tactical-combat-canary"
   | "monster-master-duel";
@@ -75,6 +76,7 @@ function validPlayerId(value: unknown): value is string {
 export function isInvitationGameId(value: unknown): value is InvitationGameId {
   return value === "tic-tac-toe"
     || value === "american-checkers"
+    || value === "othello"
     || value === "tactical-movement-canary"
     || value === "tactical-combat-canary"
     || value === "monster-master-duel";
@@ -82,6 +84,7 @@ export function isInvitationGameId(value: unknown): value is InvitationGameId {
 
 export function resumePathForGame(gameId: InvitationGameId, matchId: string): string {
   const encodedMatchId = encodeURIComponent(matchId);
+  if (gameId === "othello") return `/othello.html?match=${encodedMatchId}`;
   if (gameId === "tactical-movement-canary") return `/tactical.html?match=${encodedMatchId}`;
   if (gameId === "tactical-combat-canary") return `/combat.html?match=${encodedMatchId}`;
   if (gameId === "monster-master-duel") return `/monster-master.html?match=${encodedMatchId}`;
