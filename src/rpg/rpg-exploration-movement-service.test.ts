@@ -44,11 +44,7 @@ function moveRequest(
     protocolVersion: 1,
     campaignId: semantic.campaignId,
     sceneId: semantic.scene.sceneId,
-    materializationRef: {
-      materializationId: `rpg-scene:${semantic.campaignId}:${semantic.scene.sceneId}`,
-      version: "1",
-      hash: "PqiWVXyRuvk0jBq9Elj-IiSwsi2yu1RAEYo_loaQFlg",
-    },
+    materializationRef: materializeRpgExplorationProjection(semantic).materializationRef,
     expectedPositionRevision,
     direction,
   };
