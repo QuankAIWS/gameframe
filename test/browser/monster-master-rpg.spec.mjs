@@ -106,9 +106,9 @@ test("opens the RPG destination, resumes a campaign, and submits an action", asy
   await expect(page.locator("#mm-rpg-coordination")).toHaveText("3");
   await expect(page.locator("#mm-rpg-events .mm-rpg-event")).toHaveCount(2);
   await expect(page.locator('[data-event-id="event:private"]')).toContainText("Private");
+  await expect(page.locator("#mm-rpg-unified-dock")).toBeVisible();
+  await expect(page.locator("#mm-rpg-action-form")).toBeVisible();
 
-  await page.getByRole("button", { name: "Describe an in-world action" }).click();
-  await expect(page.locator("#mm-rpg-action-form")).toHaveClass(/is-open/);
   await page.locator("#mm-rpg-action").fill("Inspect the gate and compare the forged crest with my field guide.");
   await page.locator("#mm-rpg-send").click();
 
@@ -194,6 +194,7 @@ test("staging campaign onboards a Master before exposing the long-form campaign 
   await expect(page.locator("#mm-rpg-starter-name")).toHaveText("Cinder");
   await expect(page.locator("#mm-rpg-current-objective")).toContainText("Crooked Checkpoint route");
   await expect(page.locator("#mm-rpg-current-situation")).toContainText("Pell waits beside the Crooked Checkpoint marker");
+  await page.locator('[data-mm-rpg-dock-tab="campaign"]').click();
   await expect(page.locator("#mm-rpg-edit-staging-profile")).toBeVisible();
 
   const persisted = await page.evaluate((expectedCampaignId) => JSON.parse(
