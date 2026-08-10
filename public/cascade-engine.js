@@ -153,6 +153,23 @@ function lateSpec(levelNumber) {
     };
   }
 
+  if (levelNumber === 100) {
+    const firstKind = (levelNumber + 3) % TILE_KINDS;
+    const secondKind = (firstKind + 2) % TILE_KINDS;
+    return {
+      target: 15000,
+      moves: 22,
+      hard: true,
+      objective: objective({
+        collect: [
+          { kind: firstKind, count: 16 },
+          { kind: secondKind, count: 16 },
+        ],
+        ice: { count: 7, layers: 2, pattern },
+      }),
+    };
+  }
+
   const firstKind = (levelNumber + 3) % TILE_KINDS;
   const secondKind = (firstKind + 2) % TILE_KINDS;
   return {
