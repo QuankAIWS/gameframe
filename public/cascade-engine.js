@@ -141,7 +141,7 @@ function lateSpec(levelNumber) {
     const secondKind = (firstKind + 2) % TILE_KINDS;
     return {
       target: 12000,
-      moves: 18,
+      moves: 20,
       hard: true,
       objective: objective({
         collect: [
