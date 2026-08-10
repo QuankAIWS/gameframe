@@ -460,6 +460,17 @@ export class DurableRpgCampaignService {
     if (!visibility) {
       throw invalid("command.visibility is not supported");
     }
+    const communication = input.command.communication === undefined
+      ? undefined
+      : input.command.communication === "ask-gm"
+        ? "ask-gm" as const
+        : undefined;
+    if (input.command.communication !== undefined && !communication) {
+      throw invalid("command.communication is not supported");
+    }
+    if (communication === "ask-gm" && visibility !== "private-to-runtime") {
+      throw invalid("Ask GM commands must use private-to-runtime visibility");
+    }
     const text = boundedText(input.command.text, "command.text", MAX_ACTION_TEXT_LENGTH);
     const presentationEvents = visibility === "public"
       ? [
@@ -486,6 +497,7 @@ export class DurableRpgCampaignService {
           kind: "campaign.submit_action",
           visibility,
           text,
+          ...(communication ? { communication } : {}),
         },
         presentationEvents,
       });
