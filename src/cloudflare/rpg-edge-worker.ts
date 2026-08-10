@@ -10,8 +10,12 @@ import {
   SignedCookieSessionAuthenticator,
   SignedSessionCodec,
 } from "../auth/signed-session.ts";
-import { errorResponse, json } from "./http-utils.ts";
-import { upsertPlayerDirectory } from "./player-platform-coordinator.ts";
+import { errorResponse, json, readJson } from "./http-utils.ts";
+import {
+  readLeaderboard,
+  updatePlayerPreferences,
+  upsertPlayerDirectory,
+} from "./player-platform-coordinator.ts";
 import {
   isPublicRpgAdminRoute,
   proxyPublicRpgAdminRequest,
@@ -102,6 +106,19 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
             avatarUrl: principal.avatarUrl ?? null,
             admin: isStagingAdminPrincipal(env, principal),
           });
+        }
+
+        if (request.method === "POST" && url.pathname === "/api/me/preferences") {
+          const principal = await authenticatorFor(env).authenticate(request);
+          await upsertPlayerDirectory(env, principal);
+          const body = await readJson(request);
+          return json(200, await updatePlayerPreferences(env, principal.playerId, body.favoriteGameIds));
+        }
+
+        if (request.method === "GET" && url.pathname === "/api/leaderboard") {
+          const principal = await authenticatorFor(env).authenticate(request);
+          await upsertPlayerDirectory(env, principal);
+          return json(200, await readLeaderboard(env));
         }
 
         if (
