@@ -125,9 +125,8 @@ function ensureDock() {
   const campaignActions = document.createElement("div");
   campaignActions.className = "mm-rpg-dock-campaign-actions";
   const switchCampaign = document.querySelector("#mm-rpg-switch");
-  const admin = document.querySelector("#mm-rpg-admin-open");
   const editProfile = document.querySelector("#mm-rpg-edit-staging-profile");
-  for (const control of [switchCampaign, admin, editProfile]) {
+  for (const control of [switchCampaign, editProfile]) {
     if (control) campaignActions.append(control);
   }
   if (objective) campaignPane.append(objective);
@@ -149,6 +148,19 @@ function ensureDock() {
   return true;
 }
 
+function ensureAdminProxy() {
+  const actions = panes.get("campaign")?.querySelector(".mm-rpg-dock-campaign-actions");
+  const realAdmin = document.querySelector("#mm-rpg-admin-open");
+  if (!actions || !realAdmin || actions.querySelector("#mm-rpg-dock-admin")) return;
+  const proxy = document.createElement("button");
+  proxy.id = "mm-rpg-dock-admin";
+  proxy.type = "button";
+  proxy.className = "mm-rpg-secondary mm-rpg-admin-button";
+  proxy.textContent = "Admin";
+  proxy.addEventListener("click", () => realAdmin.click());
+  actions.append(proxy);
+}
+
 function adoptDynamicSurfaces() {
   if (!dock) return;
   const talkPane = panes.get("talk");
@@ -161,25 +173,22 @@ function adoptDynamicSurfaces() {
     if (talkPanel.dataset.mmRpgDockObserved !== "true") {
       talkPanel.dataset.mmRpgDockObserved = "true";
       new MutationObserver(() => {
-        // Talk v2 owns semantic conversation selection. When it opens a target,
-        // make that same real panel the visible dock tab rather than leaving it
-        // underneath World after reparenting.
         if (!talkPanel.hidden) activate("talk");
       }).observe(talkPanel, { attributes: true, attributeFilter: ["hidden"] });
     }
     if (!talkPanel.hidden) activate("talk");
   }
 
+  // Campaign lobby deliberately owns the real Campaigns/Admin controls and
+  // continuously keeps them in the legacy toolbar. Move that host itself into
+  // the unified header instead of fighting the lobby's observer over children.
   const header = dock.querySelector(".mm-rpg-dock-header");
-  const campaigns = document.querySelector("#mm-rpg-campaigns-open");
-  if (campaigns && header && campaigns.parentElement !== header) {
-    campaigns.classList.add("mm-rpg-dock-campaigns");
-    header.append(campaigns);
+  const toolbar = document.querySelector(".mm-rpg-play-toolbar");
+  if (header && toolbar && toolbar.parentElement !== header) {
+    toolbar.classList.add("mm-rpg-dock-toolbar");
+    header.append(toolbar);
   }
-
-  const admin = document.querySelector("#mm-rpg-admin-open");
-  const actions = panes.get("campaign")?.querySelector(".mm-rpg-dock-campaign-actions");
-  if (admin && actions && admin.parentElement !== actions) actions.append(admin);
+  ensureAdminProxy();
 }
 
 function synchronizeLegacyShell(id) {
