@@ -25,6 +25,7 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
 
+  await expect(page).toHaveTitle(/Cascade Crush/);
   await expect(page.getByRole("heading", { name: "Cascade Crush" })).toBeVisible();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   await expect(page.locator("#cascade-sound-toggle")).toBeVisible();
