@@ -361,3 +361,53 @@ test("an unconfirmed Talk survives campaign refresh and retries the exact same s
   expect(requests[0].commandId).toMatch(/^command:/);
   expect(Date.parse(requests[0].issuedAt)).not.toBeNaN();
 });
+
+test("stale Talk releases Sending immediately even when exploration recovery hangs", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  let explorationAttachCount = 0;
+  let interactionCount = 0;
+
+  await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(campaignProjection()),
+    });
+  });
+  await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/attach`, async (route) => {
+    explorationAttachCount += 1;
+    if (explorationAttachCount === 1) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(materializedExploration()),
+      });
+      return;
+    }
+    await new Promise(() => {});
+  });
+  await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/interact`, async (route) => {
+    interactionCount += 1;
+    await route.fulfill({
+      status: 409,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: "position-revision-conflict",
+        message: "The physical position changed before Talk was accepted.",
+        retryable: true,
+      }),
+    });
+  });
+
+  await page.goto(`/monster-master-rpg.html?player=${playerId}&campaign=${campaignId}`);
+  await page.getByRole("button", { name: "Talk to veteran field warden" }).click();
+  await page.locator("#mm-rpg-talk-input").fill("Who are you watching?");
+  await page.locator(".mm-rpg-talk-form").evaluate((form) => form.requestSubmit());
+
+  await expect.poll(() => interactionCount).toBe(1);
+  await expect.poll(() => explorationAttachCount).toBeGreaterThan(1);
+  await expect(page.locator("#mm-rpg-talk-send")).not.toHaveText("Sending…", { timeout: 1_500 });
+  await expect(page.locator("#mm-rpg-talk-panel")).toBeHidden();
+  await expect(page.getByRole("button", { name: "Talk to veteran field warden" })).toBeVisible();
+  await expect(page.locator("#mm-rpg-error")).toContainText("physical position changed");
+});
