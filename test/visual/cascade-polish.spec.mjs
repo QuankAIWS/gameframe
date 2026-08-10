@@ -50,6 +50,8 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   const board = await page.locator("#board").boundingBox();
   expect(board).toBeTruthy();
   expect(board.width).toBeLessThanOrEqual(390);
+  const levelMapFits = await page.locator("#level-map").evaluate((map) => map.scrollWidth <= map.clientWidth + 1);
+  expect(levelMapFits).toBe(true);
   await page.screenshot({ path: `${output}/cascade-crush-bright-mobile.png`, fullPage: true });
 });
 
