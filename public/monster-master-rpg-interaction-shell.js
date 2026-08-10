@@ -5,6 +5,7 @@ if (!identity?.playerId) {
   throw new Error("Monster Master RPG interaction shell requires an authenticated GameFrame identity.");
 }
 
+const STATE_EVENT = "gameframe:monster-master-rpg-state";
 const MAX_TEXT_LENGTH = 2_000;
 const MAX_REQUEST_TIMEOUT_MS = 12_000;
 
@@ -51,18 +52,25 @@ function installStylesheet() {
   document.head.append(link);
 }
 
+function structuredEvents() {
+  return window.gameFrameMonsterRpgApp?.getEvents?.() ?? [];
+}
+
 function currentWorldPayload() {
   return window.gameFrameMonsterRpgWorld?.getPayload?.() ?? null;
 }
 
 function currentCampaignId() {
-  const value = currentWorldPayload()?.projection?.campaignId;
+  const value = currentWorldPayload()?.projection?.campaignId
+    ?? window.gameFrameMonsterRpgApp?.getCampaignId?.();
   return typeof value === "string" && value ? value : null;
 }
 
 function currentCoordinationRevision() {
   const payloadRevision = currentWorldPayload()?.projection?.gameframeCoordinationRevision;
   if (Number.isSafeInteger(payloadRevision) && payloadRevision >= 0) return payloadRevision;
+  const projectionRevision = window.gameFrameMonsterRpgApp?.getProjection?.()?.gameframeCoordinationRevision;
+  if (Number.isSafeInteger(projectionRevision) && projectionRevision >= 0) return projectionRevision;
   const value = Number(elements.coordination?.textContent ?? "");
   if (Number.isSafeInteger(value) && value >= 0) return value;
   throw new Error("Campaign coordination state is unavailable. Refresh and try again.");
@@ -232,7 +240,7 @@ function buildAskGmPanel() {
     void submitAskGm(textarea, send, status);
   });
   textarea.addEventListener("keydown", (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       form.requestSubmit();
     }
@@ -330,6 +338,7 @@ function cloneChronicleEvent(item) {
   for (const node of nodes) {
     node.removeAttribute("id");
     node.removeAttribute("data-event-id");
+    node.removeAttribute("data-event-kind");
     node.removeAttribute("data-choice-id");
     node.removeAttribute("data-option-id");
     node.removeAttribute("data-encounter-id");
@@ -346,27 +355,37 @@ function cloneChronicleEvent(item) {
   return clone;
 }
 
+function askGmTranscript() {
+  const entries = [];
+  const durableCommandIds = new Set();
+  for (const event of structuredEvents()) {
+    const payload = event?.payload;
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) continue;
+    if (event.kind !== "scene.presented" || payload.presentationMode !== "ask-gm-private") continue;
+    if (typeof payload.sourceCommandId === "string") durableCommandIds.add(payload.sourceCommandId);
+    if (typeof payload.playerMessage === "string" && payload.playerMessage.trim()) {
+      entries.push({ speaker: "player", text: payload.playerMessage.trim() });
+    }
+    if (typeof payload.narration === "string" && payload.narration.trim()) {
+      entries.push({ speaker: "gm", text: payload.narration.trim() });
+    }
+  }
+  if (askGmPending?.text && !durableCommandIds.has(askGmPending.commandId)) {
+    entries.push({ speaker: "player", text: askGmPending.text });
+  }
+  return entries;
+}
+
 function synchronizePrivateHistory() {
   const history = askPanel?.querySelector("#mm-rpg-ask-gm-history");
-  if (!history || !elements.events) return;
-  const bubbles = [];
-  for (const item of elements.events.children) {
-    if (!item.classList.contains("mm-rpg-private-gm-event")) continue;
-    const body = item.querySelector("p")?.textContent?.trim();
-    if (!body) continue;
+  if (!history) return;
+  const bubbles = askGmTranscript().map((entry) => {
     const bubble = document.createElement("div");
     bubble.className = "mm-rpg-ask-bubble";
-    bubble.dataset.speaker = "gm";
-    bubble.textContent = body;
-    bubbles.push(bubble);
-  }
-  if (askGmPending?.text) {
-    const bubble = document.createElement("div");
-    bubble.className = "mm-rpg-ask-bubble";
-    bubble.dataset.speaker = "player";
-    bubble.textContent = askGmPending.text;
-    bubbles.push(bubble);
-  }
+    bubble.dataset.speaker = entry.speaker;
+    bubble.textContent = entry.text;
+    return bubble;
+  });
   history.replaceChildren(...bubbles);
   history.scrollTop = history.scrollHeight;
 }
@@ -488,25 +507,26 @@ function showError(message) {
 
 function markPrivateEvents() {
   if (!elements.events) return;
+  const privateEventIds = new Set(
+    structuredEvents()
+      .filter((event) => event?.payload?.presentationMode === "ask-gm-private")
+      .map((event) => event.eventId),
+  );
   for (const item of elements.events.children) {
-    const eventId = item.dataset.eventId;
-    if (!eventId) continue;
-    const projectionEvents = window.gameFrameMonsterRpgApp?.getEvents?.() ?? [];
-    const event = projectionEvents.find((candidate) => candidate?.eventId === eventId);
-    if (event?.payload?.presentationMode === "ask-gm-private") {
-      item.classList.add("mm-rpg-private-gm-event");
-    }
+    item.classList.toggle("mm-rpg-private-gm-event", privateEventIds.has(item.dataset.eventId));
   }
 }
 
-const observer = new MutationObserver(() => {
+function refreshStructuredUi() {
   if (!installed) ensureInstalled();
   synchronizeCampaignVisibility();
   synchronizeHud();
   markPrivateEvents();
   if (chronicleOpen) synchronizeChronicle();
   if (askGmOpen) synchronizePrivateHistory();
-});
+}
+
+const observer = new MutationObserver(refreshStructuredUi);
 
 if (elements.campaign) {
   observer.observe(elements.campaign, {
@@ -525,6 +545,7 @@ window.addEventListener("gameframe:monster-master-pixi-view", () => {
   ensureInstalled();
   synchronizeHud();
 });
+window.addEventListener(STATE_EVENT, () => queueMicrotask(refreshStructuredUi));
 
 window.gameFrameMonsterRpgInteractionShell = Object.freeze({
   openAction: () => {
