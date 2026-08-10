@@ -15,11 +15,16 @@ const elements = {
   switchCampaign: document.querySelector("#mm-rpg-switch"),
 };
 
+const requestedDeepLinkCampaignId = normalizeCampaignId(
+  new URLSearchParams(window.location.search).get("campaign"),
+);
+let deepLinkPending = Boolean(requestedDeepLinkCampaignId);
 let lobby = null;
 let list = null;
 let lobbyActions = null;
 let campaignsButton = null;
 let renderedSignature = "";
+let rememberedProjectionSignature = "";
 
 function installStylesheet() {
   if (document.querySelector('link[href="/monster-master-rpg-campaign-lobby.css"]')) return;
@@ -81,6 +86,14 @@ function readRecentCampaigns() {
       lastOpenedAt: null,
     });
   }
+
+  normalized.sort((left, right) => {
+    if (left.campaignId === lastCampaign && right.campaignId !== lastCampaign) return -1;
+    if (right.campaignId === lastCampaign && left.campaignId !== lastCampaign) return 1;
+    const leftTime = Date.parse(left.lastOpenedAt || "") || 0;
+    const rightTime = Date.parse(right.lastOpenedAt || "") || 0;
+    return rightTime - leftTime || left.title.localeCompare(right.title);
+  });
   return normalized.slice(0, MAX_RECENT_CAMPAIGNS);
 }
 
@@ -99,6 +112,13 @@ function rememberCurrentCampaign() {
   const projection = window.gameFrameMonsterRpgApp?.getProjection?.();
   const campaignId = normalizeCampaignId(projection?.campaignId);
   if (!campaignId) return;
+  const signature = JSON.stringify({
+    campaignId,
+    title: projection.title,
+    status: projection.status,
+  });
+  if (signature === rememberedProjectionSignature) return;
+  rememberedProjectionSignature = signature;
 
   const next = readRecentCampaigns().filter((record) => record.campaignId !== campaignId);
   next.unshift({
@@ -122,9 +142,11 @@ function ensureLobby() {
 
   const title = elements.joinCopy?.querySelector("h2");
   const description = elements.joinCopy?.querySelector("p:last-child");
-  if (title) title.textContent = "Campaign lobby";
+  if (title) title.textContent = deepLinkPending ? "Resuming campaign…" : "Campaign lobby";
   if (description) {
-    description.textContent = "Resume a recent campaign, open the staging adventure, or join another campaign by code.";
+    description.textContent = deepLinkPending
+      ? `Opening ${requestedDeepLinkCampaignId}. If it is unavailable, the campaign lobby will return.`
+      : "Resume a recent campaign, open the staging adventure, or join another campaign by code.";
   }
 
   lobby = document.createElement("section");
@@ -157,7 +179,38 @@ function ensureLobby() {
   const label = elements.joinForm.querySelector('label[for="mm-rpg-campaign-id"]');
   if (label) label.textContent = "Campaign code";
   renderedSignature = "";
+  synchronizeDeepLinkPresentation();
   return lobby;
+}
+
+function synchronizeDeepLinkPresentation() {
+  if (!elements.joinForm || !elements.joinCopy) return;
+  const title = elements.joinCopy.querySelector("h2");
+  const description = elements.joinCopy.querySelector("p:last-child");
+  if (deepLinkPending) {
+    if (title) title.textContent = "Resuming campaign…";
+    if (description) description.textContent = `Opening ${requestedDeepLinkCampaignId}. If it is unavailable, the campaign lobby will return.`;
+    if (lobby) lobby.hidden = true;
+    elements.joinForm.hidden = true;
+    return;
+  }
+  if (title) title.textContent = "Campaign lobby";
+  if (description) description.textContent = "Resume a recent campaign, open the staging adventure, or join another campaign by code.";
+  if (lobby) lobby.hidden = false;
+  elements.joinForm.hidden = false;
+}
+
+function settleDeepLinkState() {
+  if (!deepLinkPending) return;
+  const app = window.gameFrameMonsterRpgApp;
+  if (campaignActive()) {
+    deepLinkPending = false;
+    return;
+  }
+  if (app && !app.getCampaignId?.()) {
+    deepLinkPending = false;
+    synchronizeDeepLinkPresentation();
+  }
 }
 
 function formatOpenedAt(value) {
@@ -254,15 +307,20 @@ function relocateAdminButton() {
 
 function synchronize() {
   ensureLobby();
+  settleDeepLinkState();
   ensureCampaignsButton();
   relocateAdminButton();
-  if (!campaignActive()) renderCampaignCards();
+  if (campaignActive()) rememberCurrentCampaign();
+  else if (!deepLinkPending) renderCampaignCards();
 }
 
 if (elements.switchCampaign) {
   elements.switchCampaign.addEventListener("click", () => {
     queueMicrotask(() => {
+      deepLinkPending = false;
+      rememberedProjectionSignature = "";
       clearCampaignDeepLink();
+      synchronizeDeepLinkPresentation();
       renderedSignature = "";
       renderCampaignCards();
       relocateAdminButton();
@@ -270,13 +328,14 @@ if (elements.switchCampaign) {
   });
 }
 
-window.addEventListener(STATE_EVENT, () => {
-  queueMicrotask(() => {
-    if (campaignActive()) rememberCurrentCampaign();
-    synchronize();
-  });
-});
+window.addEventListener(STATE_EVENT, () => queueMicrotask(synchronize));
 
+if (elements.campaign) {
+  new MutationObserver(() => queueMicrotask(synchronize)).observe(elements.campaign, {
+    attributes: true,
+    attributeFilter: ["hidden"],
+  });
+}
 new MutationObserver(() => queueMicrotask(synchronize)).observe(document.body, {
   childList: true,
   subtree: true,
