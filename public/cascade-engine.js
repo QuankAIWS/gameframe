@@ -1,37 +1,208 @@
 export const BOARD_SIZE = 8;
 export const TILE_KINDS = 6;
-export const LEVEL_COUNT = 30;
+export const LEVEL_COUNT = 100;
+export const TILE_LABELS = Object.freeze(["pink", "cyan", "yellow", "green", "purple", "orange"]);
 
 function targetFor(level, hard = false) {
   return 900 + (level * 185) + (hard ? 550 : 0);
 }
 
-function level(level, { target, moves, hard = false, mechanics = [] } = {}) {
+function mechanicsForLevel(levelNumber) {
+  const mechanics = [];
+  if (levelNumber >= 8) mechanics.push("power-match");
+  if (levelNumber >= 13) mechanics.push("color-sweep");
+  if (levelNumber >= 31) mechanics.push("ice-blockers");
+  if (levelNumber >= 41) mechanics.push("collection");
+  if (levelNumber >= 61) mechanics.push("cross-blast");
+  if (levelNumber >= 71) mechanics.push("layered-ice");
+  return mechanics;
+}
+
+const ICE_PATTERNS = Object.freeze(["checker", "center", "edges", "diagonal", "cross", "columns"]);
+
+function collectGoal(kind, count) {
+  return Object.freeze({ kind, count });
+}
+
+function objective({ collect = [], ice = null } = {}) {
   return Object.freeze({
-    level,
-    target: target ?? targetFor(level, hard),
-    moves: moves ?? (Math.max(14, 20 - Math.floor(level / 4)) + (hard ? 1 : 0)),
-    hard,
-    mechanics: Object.freeze(mechanics.slice()),
+    collect: Object.freeze(collect.map((item) => collectGoal(item.kind, item.count))),
+    ice: ice ? Object.freeze({ ...ice }) : null,
   });
 }
 
-export const CASCADE_LEVELS = Object.freeze([
+function lateSpec(levelNumber) {
+  const offset = (levelNumber - 31) % 10;
+  const hard = levelNumber % 5 === 0;
+  const pattern = ICE_PATTERNS[(levelNumber + Math.floor(levelNumber / 10)) % ICE_PATTERNS.length];
+
+  if (levelNumber <= 40) {
+    return {
+      target: 6800 + (offset * 360) + (hard ? 300 : 0),
+      moves: 18,
+      hard,
+      objective: objective({ ice: { count: 8 + Math.floor(offset * 0.75), layers: 1, pattern } }),
+    };
+  }
+
+  if (levelNumber <= 50) {
+    return {
+      target: 6900 + (offset * 380) + (hard ? 400 : 0),
+      moves: hard ? 16 : 17,
+      hard,
+      objective: objective({
+        collect: [{ kind: (levelNumber + 1) % TILE_KINDS, count: 22 + offset }],
+      }),
+    };
+  }
+
+  if (levelNumber <= 60) {
+    return {
+      target: 7300 + (offset * 380) + (hard ? 350 : 0),
+      moves: 18,
+      hard,
+      objective: objective({
+        collect: [{ kind: (levelNumber + 2) % TILE_KINDS, count: 16 + Math.floor(offset * 0.6) }],
+        ice: { count: 6 + Math.floor(offset * 0.6), layers: 1, pattern },
+      }),
+    };
+  }
+
+  if (levelNumber <= 70) {
+    const firstKind = (levelNumber + 1) % TILE_KINDS;
+    const secondKind = (firstKind + 3) % TILE_KINDS;
+    return {
+      target: 8600 + (offset * 510) + (hard ? 600 : 0),
+      moves: hard ? 15 : 16,
+      hard,
+      objective: objective({
+        collect: [
+          { kind: firstKind, count: 15 + offset },
+          { kind: secondKind, count: 15 + offset },
+        ],
+      }),
+    };
+  }
+
+  if (levelNumber === 79) {
+    return {
+      target: 11800,
+      moves: 20,
+      hard: false,
+      objective: objective({ ice: { count: 8, layers: 2, pattern } }),
+    };
+  }
+
+  if (levelNumber <= 80) {
+    return {
+      target: 8600 + (offset * 450) + (hard ? 450 : 0),
+      moves: hard ? 18 : 19,
+      hard,
+      objective: objective({ ice: { count: 5 + Math.floor(offset * 0.55), layers: 2, pattern } }),
+    };
+  }
+
+  if (levelNumber === 90) {
+    const firstKind = (levelNumber + 2) % TILE_KINDS;
+    const secondKind = (firstKind + 2) % TILE_KINDS;
+    return {
+      target: 12800,
+      moves: 20,
+      hard: true,
+      objective: objective({
+        collect: [
+          { kind: firstKind, count: 15 },
+          { kind: secondKind, count: 15 },
+        ],
+        ice: { count: 6, layers: 2, pattern },
+      }),
+    };
+  }
+
+  if (levelNumber <= 90) {
+    const firstKind = (levelNumber + 2) % TILE_KINDS;
+    const secondKind = (firstKind + 2) % TILE_KINDS;
+    return {
+      target: 9200 + (offset * 450) + (hard ? 400 : 0),
+      moves: hard ? 18 : 19,
+      hard,
+      objective: objective({
+        collect: [
+          { kind: firstKind, count: 12 + Math.floor(offset * 0.5) },
+          { kind: secondKind, count: 12 + Math.floor(offset * 0.5) },
+        ],
+        ice: { count: 4 + Math.floor(offset * 0.5), layers: 2, pattern },
+      }),
+    };
+  }
+
+  if (levelNumber === 95) {
+    const firstKind = (levelNumber + 3) % TILE_KINDS;
+    const secondKind = (firstKind + 2) % TILE_KINDS;
+    return {
+      target: 12000,
+      moves: 18,
+      hard: true,
+      objective: objective({
+        collect: [
+          { kind: firstKind, count: 15 },
+          { kind: secondKind, count: 15 },
+        ],
+        ice: { count: 6, layers: 2, pattern },
+      }),
+    };
+  }
+
+  const firstKind = (levelNumber + 3) % TILE_KINDS;
+  const secondKind = (firstKind + 2) % TILE_KINDS;
+  return {
+    target: 10000 + (offset * 500) + (hard ? 500 : 0),
+    moves: hard ? 17 : 18,
+    hard,
+    objective: objective({
+      collect: [
+        { kind: firstKind, count: 14 + Math.floor(offset * 0.55) },
+        { kind: secondKind, count: 14 + Math.floor(offset * 0.55) },
+      ],
+      ice: { count: 5 + Math.floor(offset * 0.55), layers: 2, pattern },
+    }),
+  };
+}
+
+function level(levelNumber, { target, moves, hard = false, mechanics, objective: levelObjective } = {}) {
+  return Object.freeze({
+    level: levelNumber,
+    target: target ?? targetFor(levelNumber, hard),
+    moves: moves ?? (Math.max(14, 20 - Math.floor(levelNumber / 4)) + (hard ? 1 : 0)),
+    hard,
+    mechanics: Object.freeze((mechanics ?? mechanicsForLevel(levelNumber)).slice()),
+    objective: levelObjective ?? objective(),
+  });
+}
+
+const openingLevels = [
   level(1), level(2), level(3), level(4), level(5, { hard: true }),
-  level(6), level(7), level(8, { mechanics: ["power-match"] }), level(9, { mechanics: ["power-match"] }), level(10, { hard: true, mechanics: ["power-match"] }),
-  level(11, { mechanics: ["power-match"] }), level(12, { mechanics: ["power-match"] }),
-  level(13, { mechanics: ["power-match", "color-sweep"] }), level(14, { mechanics: ["power-match", "color-sweep"] }), level(15, { hard: true, mechanics: ["power-match", "color-sweep"] }),
-  level(16, { mechanics: ["power-match", "color-sweep"] }), level(17, { mechanics: ["power-match", "color-sweep"] }), level(18, { mechanics: ["power-match", "color-sweep"] }), level(19, { mechanics: ["power-match", "color-sweep"] }), level(20, { hard: true, mechanics: ["power-match", "color-sweep"] }),
-  level(21, { target: 7600, moves: 15, mechanics: ["power-match", "color-sweep"] }),
-  level(22, { target: 8200, moves: 15, mechanics: ["power-match", "color-sweep"] }),
-  level(23, { target: 8800, moves: 15, mechanics: ["power-match", "color-sweep"] }),
-  level(24, { target: 9400, moves: 15, mechanics: ["power-match", "color-sweep"] }),
-  level(25, { target: 10200, moves: 15, hard: true, mechanics: ["power-match", "color-sweep"] }),
-  level(26, { target: 10800, moves: 14, mechanics: ["power-match", "color-sweep"] }),
-  level(27, { target: 11400, moves: 14, mechanics: ["power-match", "color-sweep"] }),
-  level(28, { target: 12100, moves: 14, mechanics: ["power-match", "color-sweep"] }),
-  level(29, { target: 12800, moves: 14, mechanics: ["power-match", "color-sweep"] }),
-  level(30, { target: 13600, moves: 14, hard: true, mechanics: ["power-match", "color-sweep"] }),
+  level(6), level(7), level(8), level(9), level(10, { hard: true }),
+  level(11), level(12), level(13), level(14), level(15, { hard: true }),
+  level(16), level(17), level(18), level(19), level(20, { hard: true }),
+  level(21, { target: 7600, moves: 15 }),
+  level(22, { target: 8200, moves: 15 }),
+  level(23, { target: 8800, moves: 15 }),
+  level(24, { target: 9400, moves: 15 }),
+  level(25, { target: 10200, moves: 15, hard: true }),
+  level(26, { target: 10800, moves: 14 }),
+  level(27, { target: 11400, moves: 14 }),
+  level(28, { target: 12100, moves: 14 }),
+  level(29, { target: 12800, moves: 14 }),
+  level(30, { target: 13600, moves: 14, hard: true }),
+];
+
+export const CASCADE_LEVELS = Object.freeze([
+  ...openingLevels,
+  ...Array.from({ length: LEVEL_COUNT - openingLevels.length }, (_, index) => {
+    const levelNumber = openingLevels.length + index + 1;
+    return level(levelNumber, lateSpec(levelNumber));
+  }),
 ]);
 
 export function createRng(seed) {
@@ -198,15 +369,32 @@ export function collapseBoard(board, rng) {
   return { board: next, falls, spawns };
 }
 
-function expandPowerMatches(board, groups) {
+function hasMechanic(mechanics, mechanic) {
+  return mechanics.includes(mechanic);
+}
+
+function areaAround(index, radius = 1) {
+  const centerRow = Math.floor(index / BOARD_SIZE);
+  const centerCol = index % BOARD_SIZE;
+  const area = [];
+  for (let row = Math.max(0, centerRow - radius); row <= Math.min(BOARD_SIZE - 1, centerRow + radius); row += 1) {
+    for (let col = Math.max(0, centerCol - radius); col <= Math.min(BOARD_SIZE - 1, centerCol + radius); col += 1) {
+      area.push(row * BOARD_SIZE + col);
+    }
+  }
+  return area;
+}
+
+function expandPowerMatches(board, groups, mechanics = []) {
   const clearSet = new Set();
   const powerClears = [];
   const colorSweeps = [];
+  const crossBlasts = [];
 
   for (const group of groups) {
     for (const index of group.indices) clearSet.add(index);
 
-    if (group.indices.length >= 5) {
+    if (group.indices.length >= 5 && hasMechanic(mechanics, "color-sweep")) {
       const swept = [];
       for (let index = 0; index < board.length; index += 1) {
         if (board[index] === group.kind) {
@@ -218,7 +406,7 @@ function expandPowerMatches(board, groups) {
       continue;
     }
 
-    if (group.indices.length === 4) {
+    if (group.indices.length === 4 && hasMechanic(mechanics, "power-match")) {
       const anchor = group.indices[Math.floor(group.indices.length / 2)];
       const row = Math.floor(anchor / BOARD_SIZE);
       const col = anchor % BOARD_SIZE;
@@ -230,16 +418,95 @@ function expandPowerMatches(board, groups) {
     }
   }
 
-  return { clearSet, powerClears, colorSweeps };
+  if (hasMechanic(mechanics, "cross-blast")) {
+    const rows = groups.filter((group) => group.orientation === "row");
+    const columns = groups.filter((group) => group.orientation === "column");
+    const seen = new Set();
+    for (const rowGroup of rows) {
+      for (const columnGroup of columns) {
+        const intersection = rowGroup.indices.find((index) => columnGroup.indices.includes(index));
+        if (intersection === undefined || seen.has(intersection)) continue;
+        seen.add(intersection);
+        const blast = areaAround(intersection, 1);
+        blast.forEach((index) => clearSet.add(index));
+        crossBlasts.push({ source: intersection, cleared: blast });
+      }
+    }
+  }
+
+  return { clearSet, powerClears, colorSweeps, crossBlasts };
 }
 
-export function resolveCascades(board, rng, { startingCascade = 1 } = {}) {
+function normalizeIce(ice) {
+  if (!Array.isArray(ice)) return Array(BOARD_SIZE * BOARD_SIZE).fill(0);
+  return Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => Math.max(0, Math.floor(Number(ice[index]) || 0)));
+}
+
+function patternScore(pattern, row, col) {
+  const edge = Math.min(row, col, BOARD_SIZE - 1 - row, BOARD_SIZE - 1 - col);
+  const centerDistance = Math.abs(row - 3.5) + Math.abs(col - 3.5);
+  if (pattern === "center") return centerDistance;
+  if (pattern === "edges") return edge;
+  if (pattern === "diagonal") return Math.min(Math.abs(row - col), Math.abs(row + col - (BOARD_SIZE - 1)));
+  if (pattern === "cross") return Math.min(Math.abs(row - 3.5), Math.abs(col - 3.5));
+  if (pattern === "columns") return Math.abs(col - 3.5) + ((row % 2) * 0.1);
+  return ((row + col) % 2) + (centerDistance * 0.01);
+}
+
+export function createIceBoard(levelDefinition) {
+  const spec = levelDefinition?.objective?.ice;
+  const ice = Array(BOARD_SIZE * BOARD_SIZE).fill(0);
+  if (!spec?.count) return ice;
+  const count = Math.min(BOARD_SIZE * BOARD_SIZE, Math.max(0, Math.floor(spec.count)));
+  const layers = Math.max(1, Math.floor(spec.layers || 1));
+  const cells = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
+    const row = Math.floor(index / BOARD_SIZE);
+    const col = index % BOARD_SIZE;
+    return { index, score: patternScore(spec.pattern, row, col) };
+  });
+  cells.sort((a, b) => a.score - b.score || ((a.index * 17 + levelDefinition.level * 13) % 67) - ((b.index * 17 + levelDefinition.level * 13) % 67));
+  for (const cell of cells.slice(0, count)) ice[cell.index] = layers;
+  return ice;
+}
+
+function chipIce(ice, indices) {
+  const before = normalizeIce(ice);
+  const after = before.slice();
+  const hits = [];
+  for (const index of indices) {
+    if (after[index] <= 0) continue;
+    const previous = after[index];
+    after[index] = Math.max(0, previous - 1);
+    hits.push({ index, before: previous, after: after[index] });
+  }
+  return { before, after, hits };
+}
+
+function kindCounts(board, indices) {
+  const counts = Array(TILE_KINDS).fill(0);
+  for (const index of indices) {
+    const kind = board[index];
+    if (Number.isInteger(kind) && kind >= 0 && kind < TILE_KINDS) counts[kind] += 1;
+  }
+  return counts;
+}
+
+function addKindCounts(target, source) {
+  for (let kind = 0; kind < TILE_KINDS; kind += 1) target[kind] += Number(source?.[kind] || 0);
+  return target;
+}
+
+export function resolveCascades(board, rng, { startingCascade = 1, mechanics = [], ice = [] } = {}) {
   let current = board.slice();
+  let currentIce = normalizeIce(ice);
   let cascade = startingCascade;
   let scoreGained = 0;
   const transitions = [];
   let powerClearCount = 0;
   let colorSweepCount = 0;
+  let crossBlastCount = 0;
+  let iceHitCount = 0;
+  const clearedKindCounts = Array(TILE_KINDS).fill(0);
 
   while (true) {
     const groups = findMatchGroups(current);
@@ -249,16 +516,22 @@ export function resolveCascades(board, rng, { startingCascade = 1 } = {}) {
     for (const group of groups) {
       for (const index of group.indices) originalMatched.add(index);
     }
-    const expanded = expandPowerMatches(current, groups);
+    const expanded = expandPowerMatches(current, groups, mechanics);
     const matched = [...expanded.clearSet].sort((a, b) => a - b);
     const before = current.slice();
     const cleared = current.slice();
+    const transitionKindCounts = kindCounts(before, matched);
+    addKindCounts(clearedKindCounts, transitionKindCounts);
+    const chipped = chipIce(currentIce, matched);
+    currentIce = chipped.after;
     for (const index of matched) cleared[index] = null;
 
     const gained = matched.length * 80 * cascade;
     scoreGained += gained;
     powerClearCount += expanded.powerClears.length;
     colorSweepCount += expanded.colorSweeps.length;
+    crossBlastCount += expanded.crossBlasts.length;
+    iceHitCount += chipped.hits.length;
     const collapsed = collapseBoard(cleared, rng);
 
     transitions.push({
@@ -274,6 +547,11 @@ export function resolveCascades(board, rng, { startingCascade = 1 } = {}) {
       spawns: collapsed.spawns,
       powerClears: expanded.powerClears,
       colorSweeps: expanded.colorSweeps,
+      crossBlasts: expanded.crossBlasts,
+      clearedKindCounts: transitionKindCounts,
+      iceBefore: chipped.before,
+      iceAfter: chipped.after,
+      iceHits: chipped.hits,
     });
 
     current = collapsed.board;
@@ -291,19 +569,23 @@ export function resolveCascades(board, rng, { startingCascade = 1 } = {}) {
 
   return {
     board: current,
+    ice: currentIce,
     scoreGained,
     transitions,
     powerClearCount,
     colorSweepCount,
+    crossBlastCount,
+    iceHitCount,
+    clearedKindCounts,
     shuffled,
     shuffle,
     maxCascade: transitions.length ? transitions.at(-1).cascade : 0,
   };
 }
 
-export function applySwap(board, from, to, rng) {
+export function applySwap(board, from, to, rng, options = {}) {
   if (!adjacent(from, to)) {
-    return { legal: false, reason: "not_adjacent", board: board.slice(), scoreGained: 0, transitions: [] };
+    return { legal: false, reason: "not_adjacent", board: board.slice(), ice: normalizeIce(options.ice), scoreGained: 0, transitions: [] };
   }
 
   const swapped = board.slice();
@@ -313,13 +595,14 @@ export function applySwap(board, from, to, rng) {
       legal: false,
       reason: "no_match",
       board: board.slice(),
+      ice: normalizeIce(options.ice),
       swapped,
       scoreGained: 0,
       transitions: [],
     };
   }
 
-  const resolved = resolveCascades(swapped, rng);
+  const resolved = resolveCascades(swapped, rng, options);
   return {
     legal: true,
     from,
@@ -329,14 +612,18 @@ export function applySwap(board, from, to, rng) {
   };
 }
 
-export function applyHammer(board, index, rng) {
+export function applyHammer(board, index, rng, options = {}) {
   if (index < 0 || index >= board.length) {
-    return { legal: false, reason: "invalid_index", board: board.slice(), scoreGained: 0, transitions: [] };
+    return { legal: false, reason: "invalid_index", board: board.slice(), ice: normalizeIce(options.ice), scoreGained: 0, transitions: [] };
   }
   const cleared = board.slice();
+  const directKindCounts = kindCounts(board, [index]);
+  const chipped = chipIce(options.ice, [index]);
   cleared[index] = null;
   const collapsed = collapseBoard(cleared, rng);
-  const resolved = resolveCascades(collapsed.board, rng);
+  const resolved = resolveCascades(collapsed.board, rng, { ...options, ice: chipped.after });
+  const totalKindCounts = directKindCounts.slice();
+  addKindCounts(totalKindCounts, resolved.clearedKindCounts);
   return {
     legal: true,
     index,
@@ -348,7 +635,66 @@ export function applyHammer(board, index, rng) {
       after: collapsed.board.slice(),
       falls: collapsed.falls,
       spawns: collapsed.spawns,
+      clearedKindCounts: directKindCounts,
+      iceBefore: chipped.before,
+      iceAfter: chipped.after,
+      iceHits: chipped.hits,
     },
     ...resolved,
+    iceHitCount: resolved.iceHitCount + chipped.hits.length,
+    clearedKindCounts: totalKindCounts,
   };
+}
+
+export function createLevelProgress(levelDefinition) {
+  return {
+    collected: Array(TILE_KINDS).fill(0),
+    ice: createIceBoard(levelDefinition),
+  };
+}
+
+export function applyLevelProgress(levelDefinition, progress, result) {
+  const next = {
+    collected: Array.from({ length: TILE_KINDS }, (_, kind) => Math.max(0, Number(progress?.collected?.[kind]) || 0)),
+    ice: normalizeIce(result?.iceAfter ?? result?.ice ?? progress?.ice),
+  };
+  addKindCounts(next.collected, result?.clearedKindCounts);
+  return next;
+}
+
+export function objectiveComplete(levelDefinition, progress, score) {
+  if (Number(score) < Number(levelDefinition.target || 0)) return false;
+  for (const goal of levelDefinition.objective?.collect || []) {
+    if ((progress?.collected?.[goal.kind] || 0) < goal.count) return false;
+  }
+  if (levelDefinition.objective?.ice && (progress?.ice || []).some((layers) => layers > 0)) return false;
+  return true;
+}
+
+export function objectiveRemaining(levelDefinition, progress, score) {
+  const remaining = [];
+  const scoreLeft = Math.max(0, Number(levelDefinition.target || 0) - Number(score || 0));
+  if (scoreLeft > 0) remaining.push({ type: "score", count: scoreLeft });
+  for (const goal of levelDefinition.objective?.collect || []) {
+    const count = Math.max(0, goal.count - Number(progress?.collected?.[goal.kind] || 0));
+    if (count > 0) remaining.push({ type: "collect", kind: goal.kind, count });
+  }
+  if (levelDefinition.objective?.ice) {
+    const count = (progress?.ice || []).reduce((sum, layers) => sum + Math.max(0, Number(layers) || 0), 0);
+    if (count > 0) remaining.push({ type: "ice", count });
+  }
+  return remaining;
+}
+
+export function describeLevelObjective(levelDefinition, progress, score = 0) {
+  const parts = [`${Math.min(Number(score) || 0, levelDefinition.target).toLocaleString()}/${levelDefinition.target.toLocaleString()} pts`];
+  for (const goal of levelDefinition.objective?.collect || []) {
+    const current = Math.min(goal.count, Number(progress?.collected?.[goal.kind] || 0));
+    parts.push(`${TILE_LABELS[goal.kind]} ${current}/${goal.count}`);
+  }
+  if (levelDefinition.objective?.ice) {
+    const remaining = (progress?.ice || []).reduce((sum, layers) => sum + Math.max(0, Number(layers) || 0), 0);
+    parts.push(`ice ${remaining} left`);
+  }
+  return parts.join(" · ");
 }
