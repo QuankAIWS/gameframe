@@ -159,10 +159,11 @@ test("the Games cards open Role-Playing Games, Battle Simulator, Casual Games, a
   await casualCard.click();
   await expect(page).toHaveURL(/\/casual-games\.html$/);
   await expect(page.getByRole("heading", { name: "Short games. Dangerous “one more round” energy." })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Open Cascade" })).toHaveAttribute("href", "/cascade.html");
-  await page.getByRole("link", { name: "Open Cascade" }).click();
+  await expect(page.getByRole("link", { name: "Open Cascade Crush", exact: true })).toHaveAttribute("href", "/cascade.html");
+  await page.getByRole("link", { name: "Open Cascade Crush", exact: true }).click();
   await expect(page).toHaveURL(/\/cascade\.html$/);
-  await expect(page.getByRole("heading", { name: "Cascade" })).toBeVisible();
+  await expect(page).toHaveTitle(/Cascade Crush/);
+  await expect(page.getByRole("heading", { name: "Cascade Crush", exact: true })).toBeVisible();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   await expect(page.locator("#iou-total")).toHaveText("IOU$ 0");
 
