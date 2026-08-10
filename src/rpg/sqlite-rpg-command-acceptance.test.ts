@@ -120,6 +120,81 @@ test("atomically commits state, events, receipt, and outbox for an active player
   outbox.close();
 });
 
+test("preserves strict monster-control metadata in durable command and outbox custody", () => {
+  const filePath = databasePath();
+  const repository = initialized(filePath);
+  const monsterControl = input({
+    commandId: "command:recall-cinder",
+    command: {
+      kind: "campaign.submit_action",
+      visibility: "private-to-runtime",
+      text: "Recall selected roster monster.",
+      interaction: {
+        kind: "monster-control",
+        operation: "recall",
+        targetEntityId: "monster:cinder",
+      },
+    },
+    presentationEvents: [
+      {
+        eventId: "event:recall-cinder",
+        kind: "campaign.action_submitted",
+        audience: { kind: "player", playerId: "discord:1234" },
+        payload: {
+          interaction: "monster-control",
+          operation: "recall",
+          controlTargetId: "roster:monster:cinder",
+        },
+      },
+    ],
+  });
+
+  const receipt = repository.acceptCommand(monsterControl);
+  const committed = repository.committedCommand("campaign-one", "command:recall-cinder");
+  assert.equal(committed?.receipt.deliveryId, receipt.deliveryId);
+  assert.deepEqual(committed?.delivery.command, monsterControl.command);
+
+  assert.throws(() => repository.acceptCommand(input({
+    commandId: "command:invalid-control-operation",
+    expectedGameframeCoordinationRevision: 6,
+    command: {
+      kind: "campaign.submit_action",
+      visibility: "private-to-runtime",
+      text: "Attempt an invalid control.",
+      interaction: {
+        kind: "monster-control",
+        operation: "teleport",
+        targetEntityId: "monster:cinder",
+      },
+    },
+    presentationEvents: [],
+  })), (error: unknown) =>
+    error instanceof SqliteRpgCommandAcceptanceError
+    && error.code === "invalid-input"
+    && /operation must be deploy or recall/.test(error.message));
+
+  assert.throws(() => repository.acceptCommand(input({
+    commandId: "command:invalid-control-field",
+    expectedGameframeCoordinationRevision: 6,
+    command: {
+      kind: "campaign.submit_action",
+      visibility: "private-to-runtime",
+      text: "Attempt a forged control.",
+      interaction: {
+        kind: "monster-control",
+        operation: "deploy",
+        targetEntityId: "monster:cinder",
+        targetSceneId: "scene:forged",
+      },
+    },
+    presentationEvents: [],
+  })), (error: unknown) =>
+    error instanceof SqliteRpgCommandAcceptanceError
+    && error.code === "invalid-input"
+    && /unsupported fields/.test(error.message));
+  repository.close();
+});
+
 test("survives restart and returns exact retry without duplicates", () => {
   const filePath = databasePath();
   let repository = initialized(filePath);
