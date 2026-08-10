@@ -272,7 +272,7 @@ function setActionOpen(open) {
 
 function setAskGmOpen(open) {
   askGmOpen = Boolean(open);
-  if (askPanel) askPanel.hidden = !askGmOpen;
+  if (askPanel && askPanel.hidden !== !askGmOpen) askPanel.hidden = !askGmOpen;
   askButton?.setAttribute("aria-pressed", String(askGmOpen));
   if (askGmOpen) {
     synchronizePrivateHistory();
@@ -282,7 +282,9 @@ function setAskGmOpen(open) {
 
 function setChronicleOpen(open) {
   chronicleOpen = Boolean(open);
-  if (chroniclePanel) chroniclePanel.hidden = !chronicleOpen;
+  if (chroniclePanel && chroniclePanel.hidden !== !chronicleOpen) {
+    chroniclePanel.hidden = !chronicleOpen;
+  }
   chronicleButton?.setAttribute("aria-pressed", String(chronicleOpen));
   if (chronicleOpen) synchronizeChronicle();
 }
@@ -476,11 +478,19 @@ const observer = new MutationObserver(() => {
 });
 
 if (elements.campaign) {
+  // Campaign activation is the only hidden-state transition this observer owns.
+  // Do not observe descendant hidden attributes: the shell's own Ask-GM and
+  // Chronicle panels toggle hidden and would recursively retrigger this callback
+  // before auth-launcher can finish importing the RPG application.
   observer.observe(elements.campaign, {
-    subtree: true,
-    childList: true,
     attributes: true,
     attributeFilter: ["hidden"],
+  });
+}
+if (elements.events) {
+  observer.observe(elements.events, {
+    subtree: true,
+    childList: true,
   });
 }
 
