@@ -1,4 +1,5 @@
 // Compatibility entrypoint retained for the existing authenticated RPG launcher.
-// The v2 module owns a dedicated in-world conversation panel instead of
-// hijacking the generic freeform action composer.
+// The current modules separate private Ask-GM presentation from in-world Talk,
+// and Talk owns a dedicated conversation panel rather than the generic action box.
+await import("./monster-master-rpg-private-markers.js");
 await import("./monster-master-rpg-talk-v2.js");
