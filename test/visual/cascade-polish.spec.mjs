@@ -20,12 +20,12 @@ async function prepare(page, level = 1) {
   }, { stateKey, soundKey, level });
 }
 
-test("Cascade bright casual polish is readable on desktop and mobile", async ({ page }) => {
+test("Cascade Crush bright casual polish is readable on desktop and mobile", async ({ page }) => {
   await prepare(page, 1);
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
 
-  await expect(page.getByRole("heading", { name: "Cascade" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cascade Crush" })).toBeVisible();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   await expect(page.locator("#cascade-sound-toggle")).toBeVisible();
   await expect(page.locator('link[href="/cascade-polish.css"]')).toHaveCount(1);
@@ -38,7 +38,7 @@ test("Cascade bright casual polish is readable on desktop and mobile", async ({ 
     return [...byKind.values()];
   });
   expect(new Set(shapes).size).toBeGreaterThanOrEqual(4);
-  await page.screenshot({ path: `${output}/cascade-bright-desktop.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/cascade-crush-bright-desktop.png`, fullPage: true });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
@@ -46,10 +46,10 @@ test("Cascade bright casual polish is readable on desktop and mobile", async ({ 
   const board = await page.locator("#board").boundingBox();
   expect(board).toBeTruthy();
   expect(board.width).toBeLessThanOrEqual(390);
-  await page.screenshot({ path: `${output}/cascade-bright-mobile.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/cascade-crush-bright-mobile.png`, fullPage: true });
 });
 
-test("Cascade layered objective styling remains obvious in the polished theme", async ({ page }) => {
+test("Cascade Crush layered objective styling remains obvious in the polished theme", async ({ page }) => {
   await prepare(page, 81);
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
@@ -57,5 +57,5 @@ test("Cascade layered objective styling remains obvious in the polished theme", 
   await expect(page.locator("#level-number")).toHaveText("81");
   await expect(page.locator(".cascade-tile[data-ice=\"2\"]")).not.toHaveCount(0);
   await expect(page.locator("#objective-label")).toContainText(/ice|pink|cyan|yellow|green|purple|orange/i);
-  await page.screenshot({ path: `${output}/cascade-layered-objective-desktop.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/cascade-crush-layered-objective-desktop.png`, fullPage: true });
 });
