@@ -7,6 +7,8 @@ import type {
 
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
 const MAX_TALK_TEXT_LENGTH = 2_000;
+const CHECKPOINT_CART_ENTITY_ID = "object.checkpoint-cart";
+const CHECKPOINT_CART_UNCOVER_ACTION = "Uncover the checkpoint cart.";
 
 export type RpgExplorationTalkRequestV1 = {
   type: "exploration_interact";
@@ -61,9 +63,10 @@ export class RpgExplorationInteractionError extends Error {
  *
  * The request deliberately contains no targetEntityId field. Browsers may select
  * only an interactionTargetId that already exists in the authenticated viewer's
- * current accepted materialization. The first TALK slice is intentionally
- * limited to actor targets because Runtime entity-performance does not yet
- * support player-roster monsters or other entity classes.
+ * current accepted materialization. Actor Talk remains the normal path. The
+ * checkpoint-cart uncover canary temporarily reuses this physically-authorized
+ * transport until a second object operation justifies a general interaction
+ * contract; Runtime intercepts that exact cart action before entity performance.
  */
 export function authorizeRpgExplorationTalk(input: {
   request: unknown;
@@ -95,16 +98,24 @@ export function authorizeRpgExplorationTalk(input: {
   const target = materialization.anchors.find((anchor) =>
     anchor.interactionTargetId === request.interactionTargetId
   );
-  if (
-    !target
-    || target.kind !== "entity"
-    || target.entityClass !== "actor"
-    || typeof target.semanticId !== "string"
-    || target.semanticId === position.playerEntityId
-  ) {
+  const talkActor = Boolean(
+    target
+    && target.kind === "entity"
+    && target.entityClass === "actor"
+    && typeof target.semanticId === "string"
+    && target.semanticId !== position.playerEntityId
+  );
+  const checkpointCartUncover = Boolean(
+    target
+    && target.kind === "object"
+    && target.semanticId === CHECKPOINT_CART_ENTITY_ID
+    && target.objectState === "covered"
+    && request.text === CHECKPOINT_CART_UNCOVER_ACTION
+  );
+  if (!target || (!talkActor && !checkpointCartUncover)) {
     throw new RpgExplorationInteractionError(
       "interaction-target-unavailable",
-      "The selected Talk target is not available in the current viewer-safe scene.",
+      "The selected interaction target is not available in the current viewer-safe scene.",
     );
   }
   const distance = Math.abs(target.x - position.transform.x)
@@ -112,7 +123,9 @@ export function authorizeRpgExplorationTalk(input: {
   if (distance !== 1) {
     throw new RpgExplorationInteractionError(
       "interaction-out-of-range",
-      "Move next to the character before talking.",
+      talkActor
+        ? "Move next to the character before talking."
+        : "Move next to the checkpoint cart before uncovering it.",
     );
   }
 
