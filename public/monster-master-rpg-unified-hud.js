@@ -170,14 +170,36 @@ function adoptDynamicSurfaces() {
     if (!talkPanel.hidden) activate("talk");
   }
 
+  const header = dock.querySelector(".mm-rpg-dock-header");
+  const campaigns = document.querySelector("#mm-rpg-campaigns-open");
+  if (campaigns && header && campaigns.parentElement !== header) {
+    campaigns.classList.add("mm-rpg-dock-campaigns");
+    header.append(campaigns);
+  }
+
   const admin = document.querySelector("#mm-rpg-admin-open");
   const actions = panes.get("campaign")?.querySelector(".mm-rpg-dock-campaign-actions");
   if (admin && actions && admin.parentElement !== actions) actions.append(admin);
 }
 
+function synchronizeLegacyShell(id) {
+  const shell = window.gameFrameMonsterRpgInteractionShell;
+  if (!shell) return;
+  if (id === "world") {
+    shell.openAction?.();
+    return;
+  }
+  if (id === "gm") {
+    shell.openAskGm?.();
+    return;
+  }
+  shell.closeOverlays?.();
+}
+
 function activate(id) {
   if (!panes.has(id)) return;
   activeTab = id;
+  synchronizeLegacyShell(id);
   for (const [tabId, pane] of panes) {
     const active = tabId === id;
     pane.hidden = !active;
