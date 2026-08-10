@@ -39,6 +39,7 @@ export interface PlayerInvitationSummary {
   issuedAt: number;
   expiresAt: number;
   matchId: string | null;
+  claimToken: string | null;
   updatedAt: number;
 }
 
@@ -133,6 +134,7 @@ function invitationSummary(value: Record<string, unknown>): PlayerInvitationSumm
     issuedAt: timestamp(value.issuedAt),
     expiresAt: timestamp(value.expiresAt),
     matchId: nullableText(value.matchId, 160),
+    claimToken: nullableText(value.claimToken, 4096),
     updatedAt: timestamp(value.updatedAt),
   };
 }
@@ -183,10 +185,7 @@ export class PlayerPlatformObjectRuntime {
     const merged: GameFramePlayerProfile = existing
       ? { ...existing, ...incoming, firstSeenAt: existing.firstSeenAt }
       : incoming;
-    const players = [
-      merged,
-      ...record.players.filter((profile) => profile.playerId !== merged.playerId),
-    ]
+    const players = [merged, ...record.players.filter((profile) => profile.playerId !== merged.playerId)]
       .sort((left, right) => right.lastSeenAt - left.lastSeenAt)
       .slice(0, MAX_DIRECTORY_PLAYERS);
     await this.#storage.put(DIRECTORY_KEY, { version: 1, players });
@@ -214,12 +213,13 @@ export class PlayerPlatformObjectRuntime {
   }
 
   async #upsertInvitation(body: Record<string, unknown>) {
-    const summary = invitationSummary(body);
+    const incoming = invitationSummary(body);
     const record = await this.#storage.get<PlayerFeedRecord>(FEED_KEY) ?? { version: 1, matches: [], invitations: [] };
-    const invitations = [
-      summary,
-      ...record.invitations.filter((invitation) => invitation.invitationId !== summary.invitationId),
-    ]
+    const existing = record.invitations.find((invitation) => invitation.invitationId === incoming.invitationId);
+    const summary = existing && !incoming.claimToken
+      ? { ...incoming, claimToken: existing.claimToken }
+      : incoming;
+    const invitations = [summary, ...record.invitations.filter((invitation) => invitation.invitationId !== summary.invitationId)]
       .sort((left, right) => right.updatedAt - left.updatedAt)
       .slice(0, MAX_INVITATION_HISTORY);
     await this.#storage.put(FEED_KEY, { ...record, invitations });
