@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/cascade-admin.css">
   <link rel="stylesheet" href="/cascade-polish.css">
   <link rel="stylesheet" href="/cascade-polish-responsive.css">
+  <link rel="stylesheet" href="/cascade-performance.css">
 </head>
 <body class="cascade-route">
   <main class="cascade-shell">
@@ -23,7 +24,7 @@
         <h1>Cascade Crush</h1>
       </div>
       <div class="cascade-ledger" aria-label="IOU dollars owed">
-        <small>IOU DOLLARS OWED</small>
+        <small>FAMILY IOU LEDGER</small>
         <strong id="iou-total">IOU$ 0</strong>
         <button id="open-ledger" type="button">View IOUs</button>
       </div>
@@ -54,8 +55,7 @@
           <div class="cascade-life-lock-card">
             <small>OUT OF LIVES</small>
             <strong>Next life in <span id="life-lock-timer">10:00</span></strong>
-            <span>The board unlocks automatically when a life comes back.</span>
-            <button id="life-lock-boost" type="button">Need a boost?</button>
+            <span>Lives recharge automatically while you're away.</span>
           </div>
         </div>
       </div>
@@ -67,15 +67,15 @@
           <span>Levels cleared without a loss.</span>
         </div>
         <div class="cascade-card">
-          <small>BOOSTERS</small>
+          <small>BOOSTER</small>
           <button id="booster-hammer" type="button">Hammer <b id="hammer-count">2</b></button>
-          <span>Remove one tile without spending a move.</span>
+          <span>Remove one tile without spending a move. Earn another hammer every 10 new best stars.</span>
         </div>
-        <div class="cascade-card cascade-tab-card">
-          <small>IOU$</small>
-          <strong>Need a boost?</strong>
-          <span>See what is available now and when the other offers appear.</span>
-          <button id="open-boost-info" type="button">Open boosts</button>
+        <div class="cascade-card cascade-performance-card">
+          <small>PERFORMANCE</small>
+          <strong id="level-stars" aria-label="0 of 3 best stars on this level">☆☆☆</strong>
+          <span id="star-progress">0 total stars · next hammer at 10</span>
+          <b id="quick-bonus" hidden>QUICK BONUS</b>
         </div>
       </aside>
     </section>
@@ -90,26 +90,11 @@
     </form>
   </dialog>
 
-  <dialog id="boost-info-dialog" class="cascade-dialog">
-    <form method="dialog">
-      <small>BOOSTS</small>
-      <h2>Need a boost?</h2>
-      <p>Extra moves are offered when you hit 0 moves. Hammer bundles appear when you are out of hammers. If you are out of lives, you can refill them here.</p>
-      <p id="boost-state" class="cascade-boost-state"></p>
-      <div class="cascade-boost-actions">
-        <button id="boost-refill-lives" type="button" class="iou">REFILL 5 LIVES · 5 IOU$</button>
-        <button id="boost-hammers" type="button">Open hammer offer</button>
-        <button id="boost-view-ious" type="button">View IOUs</button>
-        <button value="close" class="primary">Close</button>
-      </div>
-    </form>
-  </dialog>
-
   <dialog id="ledger-dialog" class="cascade-dialog cascade-ledger-dialog">
     <form method="dialog">
       <small>IOU LEDGER</small>
-      <h2>IOU Dollars Owed</h2>
-      <p>Moves, lives, and boosters bought with IOU$ are listed here.</p>
+      <h2>Family IOU Dollars</h2>
+      <p>Old joke purchases stay here for posterity. Gameplay boosts are earned now, not bought with IOU$.</p>
       <ul id="ledger-list"></ul>
       <div class="cascade-dialog-actions">
         <button value="close" class="primary">Close</button>
@@ -123,6 +108,7 @@
   <script type="module" src="/cascade-runtime.js"></script>
   <script type="module" src="/cascade-life-ui.js"></script>
   <script type="module" src="/cascade-admin.js"></script>
+  <script type="module" src="/cascade-performance.js"></script>
   <script type="module" src="/cascade-polish.js"></script>
 </body>
 </html>

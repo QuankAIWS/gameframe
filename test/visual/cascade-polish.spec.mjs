@@ -3,11 +3,12 @@ import { mkdir } from "node:fs/promises";
 
 const output = "visual-results/player-ui-review";
 const stateKey = "scribbles-gameframe.cascade-state:v1";
+const performanceKey = "scribbles-gameframe.cascade-performance:v1";
 const soundKey = "scribbles-gameframe.cascade-sound:v1";
 
-async function prepare(page, level = 1) {
+async function prepare(page, level = 1, performance = null) {
   await mkdir(output, { recursive: true });
-  await page.addInitScript(({ stateKey: key, soundKey: audioKey, level: targetLevel }) => {
+  await page.addInitScript(({ stateKey: key, performanceKey: perfKey, soundKey: audioKey, level: targetLevel, performance: perf }) => {
     localStorage.setItem(audioKey, "off");
     localStorage.setItem(key, JSON.stringify({
       level: targetLevel,
@@ -17,7 +18,8 @@ async function prepare(page, level = 1) {
       hammers: 2,
       ledger: [],
     }));
-  }, { stateKey, soundKey, level });
+    if (perf) localStorage.setItem(perfKey, JSON.stringify(perf));
+  }, { stateKey, performanceKey, soundKey, level, performance });
 }
 
 test("Cascade Crush bright casual polish is readable on desktop and mobile", async ({ page }) => {
@@ -29,7 +31,9 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   await expect(page.getByRole("heading", { name: "Cascade Crush", exact: true })).toBeVisible();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   await expect(page.locator("#cascade-sound-toggle")).toBeVisible();
+  await expect(page.locator("#level-stars")).toBeVisible();
   await expect(page.locator('link[href="/cascade-polish.css"]')).toHaveCount(1);
+  await expect(page.locator('link[href="/cascade-performance.css"]')).toHaveCount(1);
 
   const shapes = await page.locator(".cascade-tile").evaluateAll((tiles) => {
     const byKind = new Map();
@@ -48,6 +52,23 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   expect(board).toBeTruthy();
   expect(board.width).toBeLessThanOrEqual(390);
   await page.screenshot({ path: `${output}/cascade-crush-bright-mobile.png`, fullPage: true });
+});
+
+test("Cascade Crush performance card makes stars and quick bonus legible", async ({ page }) => {
+  await prepare(page, 6, {
+    starsByLevel: { "1": 3, "2": 3, "3": 2, "6": 2 },
+    quickWins: {},
+    pendingHammerRewards: 0,
+  });
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto("/cascade.html");
+
+  await expect(page.locator("#level-stars")).toHaveText("★★☆");
+  await expect(page.locator("#star-progress")).toContainText("10 total stars");
+  await expect(page.locator("#quick-bonus")).toBeVisible();
+  await expect(page.locator("#quick-bonus")).toContainText("QUICK BONUS");
+  await expect(page.locator('#level-map > li[data-level="6"] .cascade-map-stars')).toHaveText("★★☆");
+  await page.screenshot({ path: `${output}/cascade-crush-performance-desktop.png`, fullPage: true });
 });
 
 test("Cascade Crush layered objective styling remains obvious in the polished theme", async ({ page }) => {
