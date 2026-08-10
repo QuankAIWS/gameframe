@@ -142,6 +142,13 @@ function installSoundControl() {
   side.append(card);
 }
 
+function installBranding() {
+  const adminLabel = document.querySelector("#cascade-admin-dialog small");
+  if (adminLabel?.textContent?.trim() === "CASCADE ADMIN") {
+    adminLabel.textContent = "CASCADE CRUSH ADMIN";
+  }
+}
+
 function handleBoardMutation(mutations) {
   let sawHammer = false;
   let sawClear = false;
@@ -184,6 +191,8 @@ function handleResultDialog() {
 }
 
 installSoundControl();
+installBranding();
+new MutationObserver(installBranding).observe(document.body, { childList: true, subtree: true });
 
 const board = document.querySelector("#board");
 if (board) {
