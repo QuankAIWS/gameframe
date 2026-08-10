@@ -1,6 +1,9 @@
 import { establishGameFrameIdentity, gameFrameFetch } from "./gameframe-auth.js";
 
-const identity = await establishGameFrameIdentity();
+const query = new URLSearchParams(window.location.search);
+const identity = await establishGameFrameIdentity({
+  preferredDevelopmentPlayerId: query.get("player"),
+});
 window.gameFrameIdentity = identity;
 await import("./gameframe-nav.js");
 
