@@ -10,7 +10,6 @@ import {
   createRng,
   describeLevelObjective,
   findMatchGroups,
-  hasLegalMove,
   objectiveComplete,
 } from "./cascade-engine.js";
 
@@ -172,6 +171,11 @@ function preferredAnchor(indices, from, to, specials) {
   return pool[Math.floor(pool.length / 2)];
 }
 
+export function findSpecialMatchGroups(board, specials = []) {
+  const matchable = board.map((kind, index) => specials[index] === SPECIAL.COLOR ? null : kind);
+  return findMatchGroups(matchable);
+}
+
 function detectCreations(groups, from, to, specials, rules) {
   const creations = [];
   const consumed = new Set();
@@ -215,12 +219,26 @@ function detectCreations(groups, from, to, specials, rules) {
   return [...byIndex.values()];
 }
 
+function dominantKind(board) {
+  const counts = Array(TILE_KINDS).fill(0);
+  for (const kind of board) {
+    if (Number.isInteger(kind) && kind >= 0 && kind < TILE_KINDS) counts[kind] += 1;
+  }
+  let best = 0;
+  for (let kind = 1; kind < TILE_KINDS; kind += 1) {
+    if (counts[kind] > counts[best]) best = kind;
+  }
+  return best;
+}
+
 function specialBlast(index, special, board, colorTarget = null) {
   if (special === SPECIAL.STRIPE_H) return rowIndices(rowOf(index));
   if (special === SPECIAL.STRIPE_V) return colIndices(colOf(index));
   if (special === SPECIAL.BOMB) return areaAround(index, 1);
   if (special === SPECIAL.COLOR) {
-    const target = Number.isInteger(colorTarget) ? colorTarget : board[index];
+    const target = Number.isInteger(colorTarget) && colorTarget >= 0 && colorTarget < TILE_KINDS
+      ? colorTarget
+      : dominantKind(board);
     return board.flatMap((kind, boardIndex) => kind === target ? [boardIndex] : []);
   }
   return [];
@@ -253,8 +271,22 @@ function expandTriggeredSpecials({ board, specials, seedIndices, protectedIndice
   return { clear, triggered };
 }
 
+function hasOrdinaryLegalMove(board, specials) {
+  for (let index = 0; index < board.length; index += 1) {
+    const right = colOf(index) < BOARD_SIZE - 1 ? index + 1 : -1;
+    const down = index + BOARD_SIZE < board.length ? index + BOARD_SIZE : -1;
+    for (const neighbor of [right, down]) {
+      if (neighbor < 0) continue;
+      const swappedBoard = swapPair(board, index, neighbor);
+      const swappedSpecials = swapPair(specials, index, neighbor);
+      if (findSpecialMatchGroups(swappedBoard, swappedSpecials).length) return true;
+    }
+  }
+  return false;
+}
+
 function hasPlayableMove(board, specials) {
-  if (hasLegalMove(board)) return true;
+  if (hasOrdinaryLegalMove(board, specials)) return true;
   for (let index = 0; index < board.length; index += 1) {
     if (specials[index] === SPECIAL.COLOR) return true;
     const right = colOf(index) < BOARD_SIZE - 1 ? index + 1 : -1;
@@ -344,7 +376,7 @@ export function resolveSpecialCascades(board, specials, rng, {
   let forcedStep = forced;
 
   while (true) {
-    const groups = forcedStep ? [] : findMatchGroups(currentBoard);
+    const groups = forcedStep ? [] : findSpecialMatchGroups(currentBoard, currentSpecials);
     if (!forcedStep && !groups.length) break;
 
     const before = currentBoard.slice();
@@ -362,9 +394,10 @@ export function resolveSpecialCascades(board, specials, rng, {
       colorTarget: forcedStep?.colorTarget ?? null,
     });
     const matched = [...expanded.clear].sort((a, b) => a - b);
-    const transitionCounts = kindCounts(before, matched);
+    const matchedForProgress = [...new Set([...matched, ...creationIndices])].sort((a, b) => a - b);
+    const transitionCounts = kindCounts(before, matchedForProgress);
     addKindCounts(clearedKindCounts, transitionCounts);
-    const chipped = chipIce(currentIce, matched);
+    const chipped = chipIce(currentIce, matchedForProgress);
     currentIce = chipped.after;
     iceHitCount += chipped.hits.length;
 
@@ -380,7 +413,7 @@ export function resolveSpecialCascades(board, specials, rng, {
       clearedSpecials[creation.index] = creation.special;
     }
 
-    const gained = matched.length * 80 * cascade + creations.length * 220 + expanded.triggered.length * 140;
+    const gained = matchedForProgress.length * 80 * cascade + creations.length * 220 + expanded.triggered.length * 140;
     scoreGained += gained;
     specialCreatedCount += creations.length;
     specialTriggeredCount += expanded.triggered.length;
@@ -392,6 +425,7 @@ export function resolveSpecialCascades(board, specials, rng, {
       cascade,
       groups,
       matched,
+      matchedForProgress,
       gained,
       before,
       specialsBefore,
@@ -465,7 +499,7 @@ export function applySpecialSwap(board, specials, from, to, rng, options = {}) {
     };
   }
 
-  if (!findMatchGroups(swappedBoard).length) {
+  if (!findSpecialMatchGroups(swappedBoard, swappedSpecials).length) {
     return {
       legal: false,
       reason: "no_match",
