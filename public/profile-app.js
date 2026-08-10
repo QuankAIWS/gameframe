@@ -8,7 +8,7 @@ window.gameFrameIdentity = identity;
 await import("./gameframe-nav.js");
 
 const FAVORITE_GAMES = [
-  { id: "cascade", name: "Cascade", detail: "Match-3 puzzle", href: "/cascade.html" },
+  { id: "cascade", name: "Cascade Crush", detail: "Match-3 puzzle", href: "/cascade.html" },
   { id: "othello", name: "Othello", detail: "Strategy board game", href: "/othello.html" },
   { id: "american-checkers", name: "Clockwork Checkers", detail: "Strategy board game", href: "/?game=american-checkers&menu=1" },
   { id: "tic-tac-toe", name: "Tic-Tac-Toe", detail: "Quick board game", href: "/?game=tic-tac-toe&menu=1" },

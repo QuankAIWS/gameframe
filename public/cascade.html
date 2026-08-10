@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#16131e">
-  <title>Cascade · Scribbles GameFrame</title>
+  <meta name="theme-color" content="#f7ecff">
+  <title>Cascade Crush · Scribbles GameFrame</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/cascade.css">
   <link rel="stylesheet" href="/cascade-vfx.css">
@@ -12,13 +12,15 @@
   <link rel="stylesheet" href="/cascade-life-ui.css">
   <link rel="stylesheet" href="/cascade-mechanics.css">
   <link rel="stylesheet" href="/cascade-admin.css">
+  <link rel="stylesheet" href="/cascade-polish.css">
+  <link rel="stylesheet" href="/cascade-polish-responsive.css">
 </head>
 <body class="cascade-route">
   <main class="cascade-shell">
     <header class="cascade-header">
       <div>
-        <p class="cascade-kicker">CASUAL / MATCH-3</p>
-        <h1>Cascade</h1>
+        <p class="cascade-kicker">MATCH. POP. CASCADE.</p>
+        <h1>Cascade Crush</h1>
       </div>
       <div class="cascade-ledger" aria-label="IOU dollars owed">
         <small>IOU DOLLARS OWED</small>
@@ -46,7 +48,7 @@
           <span id="objective-label">Hit the target before moves run out.</span>
           <b id="combo-label" aria-live="polite"></b>
         </div>
-        <div id="board" class="cascade-board" role="grid" aria-label="Cascade board"></div>
+        <div id="board" class="cascade-board" role="grid" aria-label="Cascade Crush board"></div>
         <p class="cascade-help">Make matches and build cascades before the moves run out.</p>
         <div id="life-lock" class="cascade-life-lock" hidden>
           <div class="cascade-life-lock-card">
@@ -121,5 +123,6 @@
   <script type="module" src="/cascade-runtime.js"></script>
   <script type="module" src="/cascade-life-ui.js"></script>
   <script type="module" src="/cascade-admin.js"></script>
+  <script type="module" src="/cascade-polish.js"></script>
 </body>
 </html>

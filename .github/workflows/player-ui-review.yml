@@ -39,6 +39,7 @@ on:
       - "test/browser/monster-master-controls.spec.mjs"
       - "test/browser/monster-master-option-hit-testing.spec.mjs"
       - "test/browser/motion-polish.spec.mjs"
+      - "test/visual/cascade-polish.spec.mjs"
       - "test/visual/player-platform.spec.mjs"
       - "test/visual/player-ui-review.spec.mjs"
       - "test/visual/player-ui-regressions.spec.mjs"
@@ -99,7 +100,7 @@ jobs:
         run: npm run test:browser:required
 
       - name: Capture player UI screenshots and cross-game regressions
-        run: npx playwright test test/visual/player-platform.spec.mjs test/visual/player-ui-review.spec.mjs test/visual/player-ui-regressions.spec.mjs test/visual/monster-master-pixi.spec.mjs test/visual/monster-master-cardinal-camera.spec.mjs test/visual/monster-master-results-and-depth.spec.mjs test/visual/monster-master-trainer-shell.spec.mjs --config playwright.visual.config.mjs
+        run: npx playwright test test/visual/cascade-polish.spec.mjs test/visual/player-platform.spec.mjs test/visual/player-ui-review.spec.mjs test/visual/player-ui-regressions.spec.mjs test/visual/monster-master-pixi.spec.mjs test/visual/monster-master-cardinal-camera.spec.mjs test/visual/monster-master-results-and-depth.spec.mjs test/visual/monster-master-trainer-shell.spec.mjs --config playwright.visual.config.mjs
 
       - name: Upload player UI screenshots
         if: always()
