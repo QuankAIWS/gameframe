@@ -1,5 +1,21 @@
 import { expect, test } from "@playwright/test";
 
+const CASCADE_STATE_KEY = "scribbles-gameframe.cascade-state:v1";
+
+async function installLevelFixture(page, fallbackLevel) {
+  await page.addInitScript(({ stateKey, fallback }) => {
+    const requested = Number(new URL(window.location.href).searchParams.get("cascadeTestLevel"));
+    const level = Number.isInteger(requested) && requested > 0 ? requested : fallback;
+    window.localStorage.setItem(stateKey, JSON.stringify({
+      level,
+      lives: 5,
+      lastLifeAt: Date.now(),
+      streak: 0,
+      hammers: 2,
+    }));
+  }, { stateKey: CASCADE_STATE_KEY, fallback: fallbackLevel });
+}
+
 test("Cascade Crush resolves a legal move through the animated presentation layer", async ({ page }) => {
   await page.goto("/cascade.html");
 
@@ -29,74 +45,37 @@ test("Cascade Crush resolves a legal move through the animated presentation laye
 });
 
 test("Cascade teaches persistent specials in the opening five levels", async ({ page }) => {
-  await page.addInitScript(() => {
-    window.localStorage.setItem("scribbles-gameframe.cascade-state:v1", JSON.stringify({
-      level: 2,
-      lives: 5,
-      lastLifeAt: Date.now(),
-      streak: 0,
-      hammers: 2,
-    }));
-  });
+  await installLevelFixture(page, 2);
 
-  await page.goto("/cascade.html");
+  await page.goto("/cascade.html?cascadeTestLevel=2");
   await expect(page.locator("#level-number")).toHaveText("2");
   await expect(page.locator(".cascade-help")).toContainText("Match four to make a striped piece");
   await expect(page.locator('#level-map > li[data-level="2"]')).toContainText("Stripes");
 
-  await page.evaluate(() => {
-    const key = "scribbles-gameframe.cascade-state:v1";
-    const state = JSON.parse(window.localStorage.getItem(key));
-    state.level = 3;
-    window.localStorage.setItem(key, JSON.stringify(state));
-  });
-  await page.reload();
+  await page.goto("/cascade.html?cascadeTestLevel=3");
+  await expect(page.locator("#level-number")).toHaveText("3");
   await expect(page.locator(".cascade-help")).toContainText("T or L match");
   await expect(page.locator(".cascade-help")).toContainText("bomb");
 
-  await page.evaluate(() => {
-    const key = "scribbles-gameframe.cascade-state:v1";
-    const state = JSON.parse(window.localStorage.getItem(key));
-    state.level = 5;
-    window.localStorage.setItem(key, JSON.stringify(state));
-  });
-  await page.reload();
+  await page.goto("/cascade.html?cascadeTestLevel=5");
+  await expect(page.locator("#level-number")).toHaveText("5");
   await expect(page.locator(".cascade-help")).toContainText("Match five to make a color clearer");
 });
 
 test("Cascade late chapters still expose ice, collection, and layered ice", async ({ page }) => {
-  await page.addInitScript(() => {
-    window.localStorage.setItem("scribbles-gameframe.cascade-state:v1", JSON.stringify({
-      level: 31,
-      lives: 5,
-      lastLifeAt: Date.now(),
-      streak: 0,
-      hammers: 2,
-    }));
-  });
+  await installLevelFixture(page, 31);
 
-  await page.goto("/cascade.html");
+  await page.goto("/cascade.html?cascadeTestLevel=31");
   await expect(page.locator("#level-number")).toHaveText("31");
   await expect(page.locator(".cascade-tile[data-ice]")).not.toHaveCount(0);
   await expect(page.locator("#objective-label")).toContainText("ice");
 
-  await page.evaluate(() => {
-    const key = "scribbles-gameframe.cascade-state:v1";
-    const state = JSON.parse(window.localStorage.getItem(key));
-    state.level = 41;
-    window.localStorage.setItem(key, JSON.stringify(state));
-  });
-  await page.reload();
+  await page.goto("/cascade.html?cascadeTestLevel=41");
   await expect(page.locator("#level-number")).toHaveText("41");
   await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().level.objective.collect.length)).toBe(1);
 
-  await page.evaluate(() => {
-    const key = "scribbles-gameframe.cascade-state:v1";
-    const state = JSON.parse(window.localStorage.getItem(key));
-    state.level = 71;
-    window.localStorage.setItem(key, JSON.stringify(state));
-  });
-  await page.reload();
+  await page.goto("/cascade.html?cascadeTestLevel=71");
+  await expect(page.locator("#level-number")).toHaveText("71");
   await expect(page.locator('.cascade-tile[data-ice="2"]')).not.toHaveCount(0);
 });
 
