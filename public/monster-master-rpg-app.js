@@ -16,6 +16,8 @@ import {
 const identity = window.gameFrameIdentity;
 if (!identity?.playerId) throw new Error("Monster Master RPG requires an authenticated GameFrame identity.");
 
+const STATE_EVENT = "gameframe:monster-master-rpg-state";
+
 const elements = {
   error: document.querySelector("#mm-rpg-error"),
   join: document.querySelector("#mm-rpg-join"),
@@ -223,6 +225,7 @@ async function openCampaign(campaignIdValue) {
   state.pendingRealtimeRefresh = false;
   state.pendingCommand = null;
   updateComposer();
+  publishState();
   setJoinBusy(true);
   showError("");
   setConnection("Connecting", "connecting");
@@ -238,6 +241,7 @@ async function openCampaign(campaignIdValue) {
     startRealtime();
   } catch (error) {
     if (state.campaignId === campaignId) state.campaignId = null;
+    publishState();
     showError(error.message || "Unable to open that campaign.");
   } finally {
     setJoinBusy(false);
@@ -255,6 +259,17 @@ function renderCampaign() {
   elements.empty.hidden = state.events.length > 0;
   elements.events.replaceChildren(...state.events.map(renderEvent));
   updateComposer();
+  publishState();
+}
+
+function publishState() {
+  window.dispatchEvent(new CustomEvent(STATE_EVENT, {
+    detail: {
+      campaignId: state.campaignId,
+      eventCount: state.events.length,
+      gameframeCoordinationRevision: state.projection?.gameframeCoordinationRevision ?? null,
+    },
+  }));
 }
 
 function renderEvent(event) {
@@ -272,6 +287,7 @@ function eventShell(presentation) {
   const item = document.createElement("li");
   item.className = "mm-rpg-event";
   item.dataset.eventId = presentation.eventId;
+  item.dataset.eventKind = presentation.kind;
   item.dataset.tone = presentation.tone;
 
   const header = document.createElement("div");
@@ -566,6 +582,13 @@ async function handleCommandFailure(error) {
   showError(error.message || "The action could not be delivered.");
 }
 
+window.gameFrameMonsterRpgApp = Object.freeze({
+  getCampaignId: () => state.campaignId,
+  getProjection: () => state.projection ? structuredClone(state.projection) : null,
+  getEvents: () => state.events.map((event) => structuredClone(event)),
+  refresh: () => attachCampaign({ quiet: true }),
+});
+
 elements.joinForm.addEventListener("submit", (event) => {
   event.preventDefault();
   void openCampaign(elements.campaignInput.value).catch((error) => showError(error.message));
@@ -584,6 +607,7 @@ elements.switchCampaign.addEventListener("click", () => {
   state.pendingRealtimeRefresh = false;
   state.pendingCommand = null;
   updateComposer();
+  publishState();
   elements.campaign.hidden = true;
   elements.join.hidden = false;
   elements.campaignInput.focus();
@@ -623,6 +647,8 @@ document.addEventListener("visibilitychange", () => {
 
 document.addEventListener("gameframe:before-home", () => stopRealtime(), { once: true });
 window.addEventListener("pagehide", stopRealtime, { once: true });
+
+publishState();
 
 if (parameters.has("campaign")) {
   void openCampaign(elements.campaignInput.value).catch((error) => showError(error.message));

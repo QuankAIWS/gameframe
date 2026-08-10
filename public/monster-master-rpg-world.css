@@ -173,6 +173,7 @@ body.monster-master-pixi-ready .mm-rpg-world-stage .monster-master-pixi-canvas {
 
 .mm-rpg-world-interact:hover,
 .mm-rpg-world-interact:focus-visible {
+  transform: translateX(-50%) translateY(-1px);
   background: rgba(21, 62, 42, .95);
   border-color: rgba(165, 255, 205, .82);
 }
