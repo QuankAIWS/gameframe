@@ -1,0 +1,140 @@
+.mm-rpg-campaign-lobby {
+  display: grid;
+  gap: 14px;
+  margin: 18px 0 22px;
+}
+
+.mm-rpg-campaign-lobby-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.mm-rpg-campaign-lobby-heading h3 {
+  margin: 2px 0 0;
+  color: #e8f7ec;
+  font-size: 1.05rem;
+}
+
+.mm-rpg-lobby-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.mm-rpg-campaign-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
+}
+
+.mm-rpg-campaign-card {
+  display: grid;
+  gap: 8px;
+  min-height: 132px;
+  padding: 15px;
+  border: 1px solid rgba(144, 214, 177, .22);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(12, 31, 24, .94), rgba(5, 17, 14, .96));
+  color: #e9f8ed;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .14s ease, background .14s ease, transform .14s ease, box-shadow .14s ease;
+}
+
+.mm-rpg-campaign-card:hover,
+.mm-rpg-campaign-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(159, 243, 196, .62);
+  background: linear-gradient(145deg, rgba(18, 45, 34, .98), rgba(7, 23, 18, .98));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .26);
+}
+
+.mm-rpg-campaign-card[data-last="true"] {
+  border-color: rgba(167, 244, 61, .5);
+  box-shadow: inset 0 0 0 1px rgba(167, 244, 61, .08);
+}
+
+.mm-rpg-campaign-card small,
+.mm-rpg-campaign-card span {
+  color: #8fac9a;
+  font-size: .7rem;
+}
+
+.mm-rpg-campaign-card strong {
+  font-size: .95rem;
+  line-height: 1.25;
+}
+
+.mm-rpg-campaign-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  color: #a7f43d !important;
+  font: 850 .65rem/1 ui-monospace, "SFMono-Regular", Consolas, monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.mm-rpg-lobby-empty {
+  padding: 14px;
+  border: 1px dashed rgba(144, 214, 177, .22);
+  border-radius: 14px;
+  color: #8fac9a;
+  font-size: .8rem;
+}
+
+.mm-rpg-join-form[data-lobby-join] {
+  margin-top: 4px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(144, 214, 177, .16);
+}
+
+.mm-rpg-join-form[data-lobby-join] > label::after {
+  content: " · join by code";
+  color: #718b7b;
+  font-weight: 600;
+}
+
+/* Keep centered world interaction buttons centered through hover/focus/active.
+   Some shared button polish replaces transform; these rules preserve the centering
+   transform explicitly so Travel/Talk/Roster never jump sideways under the cursor. */
+.mm-rpg-world-interact:not(.mm-rpg-world-object-control) {
+  transform: translateX(-50%) !important;
+}
+
+.mm-rpg-world-interact:not(.mm-rpg-world-object-control):hover,
+.mm-rpg-world-interact:not(.mm-rpg-world-object-control):focus-visible {
+  transform: translateX(-50%) translateY(-1px) !important;
+}
+
+.mm-rpg-world-interact:not(.mm-rpg-world-object-control):active {
+  transform: translateX(-50%) translateY(1px) scale(.98) !important;
+}
+
+body.mm-rpg-click-move-ready .monster-master-pixi-canvas {
+  cursor: pointer;
+}
+
+body.mm-rpg-click-moving .monster-master-pixi-canvas {
+  cursor: progress;
+}
+
+@media (max-width: 760px) {
+  .mm-rpg-campaign-lobby-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mm-rpg-lobby-actions {
+    justify-content: flex-start;
+  }
+
+  .mm-rpg-campaign-list {
+    grid-template-columns: 1fr;
+  }
+}
