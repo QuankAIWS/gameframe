@@ -253,7 +253,7 @@ test("Monster Master RPG uses click for the Master and WASD for the camera", asy
   await page.locator("#monster-master-pixi-canvas").click({ position: { x: target.x, y: target.y } });
   await expect.poll(() => movementRequests.length).toBe(1);
   expect(movementRequests[0].direction).toBe("east");
-  await expect(page.locator("#mm-rpg-world-status")).toContainText("Exploring · 10,6");
+  await expect(page.locator("#mm-rpg-world-status")).toContainText("Arrived · 10,6");
 
   const cameraBeforeWasd = await page.evaluate(() => window.gameFrameMonsterPixi?.getCamera?.());
   await page.keyboard.press("KeyA");
