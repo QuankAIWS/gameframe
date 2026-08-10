@@ -3,3 +3,4 @@
 // and Talk owns a dedicated conversation panel rather than the generic action box.
 await import("./monster-master-rpg-private-markers.js");
 await import("./monster-master-rpg-talk-v2.js");
+await import("./monster-master-rpg-shell-bridge.js");
