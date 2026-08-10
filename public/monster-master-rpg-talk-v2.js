@@ -249,8 +249,6 @@ function selectTalkTarget(target) {
 }
 
 function ownsComposer() {
-  // Compatibility hook for older app code. Talk no longer owns the generic
-  // action composer; it owns its dedicated in-world conversation panel.
   return false;
 }
 
@@ -334,7 +332,6 @@ function buildPendingRequest() {
       text,
     }),
     issuedAt: new Date().toISOString(),
-    text,
   };
   return pendingRequest;
 }
@@ -343,7 +340,6 @@ async function requestTalk(request) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), MAX_REQUEST_TIMEOUT_MS);
   try {
-    const { text: _uiText, ...body } = request;
     const response = await gameFrameFetch(
       `/api/rpg/campaigns/${encodeURIComponent(request.campaignId)}/exploration/interact`,
       {
@@ -352,7 +348,7 @@ async function requestTalk(request) {
           accept: "application/json",
           "content-type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(request),
         signal: controller.signal,
       },
       identity,
