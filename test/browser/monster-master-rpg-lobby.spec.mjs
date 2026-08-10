@@ -71,6 +71,56 @@ test("campaign lobby renders recent campaigns with the last campaign first", asy
   await expect(page.locator(`[data-campaign-id="${stagingCampaignId}"]`)).toContainText("STAGING");
 });
 
+test("campaign lobby loads durable My Campaigns memberships across browser history", async ({ page }) => {
+  await page.route("**/api/rpg/campaigns", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        protocolVersion: 1,
+        kind: "campaign.index",
+        playerId: "durable-lobby-player",
+        campaigns: [
+          {
+            campaignId: "campaign:durable-player",
+            title: "Durable Player Campaign",
+            status: "active",
+            role: "player",
+            partyId: "party:main",
+            gameframeCoordinationRevision: 8,
+            presentationSequence: 12,
+            linkedNarrativeRevision: 7,
+            updatedAt: "2026-08-10T18:20:00.000Z",
+          },
+          {
+            campaignId: "campaign:durable-observer",
+            title: "Durable Observer Campaign",
+            status: "paused",
+            role: "observer",
+            gameframeCoordinationRevision: 2,
+            presentationSequence: 5,
+            linkedNarrativeRevision: 2,
+            updatedAt: "2026-08-10T18:10:00.000Z",
+          },
+        ],
+      }),
+    });
+  });
+
+  await page.goto("/monster-master-rpg.html?player=durable-lobby-player");
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterRpgCampaignLobby?.getIndexState?.())).toBe("ready");
+
+  const player = page.locator('[data-campaign-id="campaign:durable-player"]');
+  const observer = page.locator('[data-campaign-id="campaign:durable-observer"]');
+  await expect(player).toBeVisible();
+  await expect(player).toHaveAttribute("data-source", "durable");
+  await expect(player).toContainText("Durable Player Campaign");
+  await expect(player).toContainText("ACTIVE · PLAYER");
+  await expect(observer).toBeVisible();
+  await expect(observer).toContainText("PAUSED · OBSERVER");
+  await expect(page.locator(`[data-campaign-id="${stagingCampaignId}"]`)).toBeVisible();
+});
+
 test("deep links present an intentional resume state while the campaign attaches", async ({ page }) => {
   const campaignId = "campaign-deep-link";
   let releaseAttach;

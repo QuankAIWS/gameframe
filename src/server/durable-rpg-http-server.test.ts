@@ -141,6 +141,7 @@ test("serves durable campaign command and runtime-result flow over authenticated
       realtime: "websocket-origin",
       capabilities: [
         "durable-campaigns",
+        "rpg-campaign-index",
         "durable-command-outbox",
         "runtime-narrative-linkage",
         "durable-encounters",
@@ -148,6 +149,66 @@ test("serves durable campaign command and runtime-result flow over authenticated
         "websocket-realtime",
       ],
     });
+
+    const unauthorizedIndex = await fetch(`${baseUrl}/api/rpg/campaigns`);
+    assert.equal(unauthorizedIndex.status, 401);
+
+    const indexed = await fetch(`${baseUrl}/api/rpg/campaigns`, {
+      headers: playerHeaders(),
+    });
+    assert.equal(indexed.status, 200);
+    const playerIndex = await indexed.json() as Record<string, unknown>;
+    assert.deepEqual(playerIndex, {
+      protocolVersion: 1,
+      kind: "campaign.index",
+      playerId: "player:ada",
+      campaigns: [{
+        campaignId: "campaign-one",
+        title: "Reference campaign",
+        status: "active",
+        role: "player",
+        partyId: "party:keepers",
+        gameframeCoordinationRevision: 3,
+        presentationSequence: 3,
+        linkedNarrativeRevision: 0,
+        updatedAt: "2026-08-04T22:40:00.000Z",
+      }],
+    });
+    assert.doesNotMatch(JSON.stringify(playerIndex), /Ada recognizes|seal was placed deliberately|events/);
+
+    const observerIndex = await fetch(`${baseUrl}/api/rpg/campaigns`, {
+      headers: playerHeaders("player:observer"),
+    }).then((response) => response.json()) as Record<string, unknown>;
+    assert.deepEqual(observerIndex, {
+      protocolVersion: 1,
+      kind: "campaign.index",
+      playerId: "player:observer",
+      campaigns: [{
+        campaignId: "campaign-one",
+        title: "Reference campaign",
+        status: "active",
+        role: "observer",
+        gameframeCoordinationRevision: 3,
+        presentationSequence: 3,
+        linkedNarrativeRevision: 0,
+        updatedAt: "2026-08-04T22:40:00.000Z",
+      }],
+    });
+
+    const emptyIndex = await fetch(`${baseUrl}/api/rpg/campaigns`, {
+      headers: playerHeaders("player:nobody"),
+    }).then((response) => response.json()) as Record<string, unknown>;
+    assert.deepEqual(emptyIndex, {
+      protocolVersion: 1,
+      kind: "campaign.index",
+      playerId: "player:nobody",
+      campaigns: [],
+    });
+
+    const forgedIndex = await fetch(`${baseUrl}/api/rpg/campaigns?playerId=player:bryn`, {
+      headers: playerHeaders(),
+    });
+    assert.equal(forgedIndex.status, 403);
 
     const unauthorized = await fetch(
       `${baseUrl}/api/rpg/campaigns/campaign-one/attach`,
