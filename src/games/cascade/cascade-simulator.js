@@ -8,9 +8,10 @@ import {
   createLevelProgress,
   createRng,
   emptySpecials,
+  findSpecialMatchGroups,
   objectiveComplete,
 } from "../../../public/cascade-special-engine.js";
-import { findMatchGroups, objectiveRemaining } from "../../../public/cascade-engine.js";
+import { objectiveRemaining } from "../../../public/cascade-engine.js";
 
 const STRATEGIES = new Set(["random", "greedy", "lookahead"]);
 
@@ -40,7 +41,7 @@ function listPlayableMoves(board, specials) {
         continue;
       }
       swap(board, index, neighbor);
-      const groups = findMatchGroups(board);
+      const groups = findSpecialMatchGroups(board, specials);
       swap(board, index, neighbor);
       if (groups.length) {
         moves.push({
