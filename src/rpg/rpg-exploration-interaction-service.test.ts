@@ -157,13 +157,13 @@ test("checkpoint cart uncover resolves only after GameFrame proves current cover
         && error.code === "interaction-out-of-range",
     );
 
-    for (const direction of ["west", "west", "west"] as const) {
+    for (const direction of ["west", "west", "west", "south"] as const) {
       position = movement.move(
         semantic.viewer.playerId,
         moveRequest(semantic, position.positionRevision, direction),
       );
     }
-    assert.deepEqual(position.transform, { x: 11, y: 7, facing: "west" });
+    assert.deepEqual(position.transform, { x: 11, y: 8, facing: "south" });
 
     const authorized = authorizeRpgExplorationTalk({
       request: talkRequest(semantic, position.positionRevision, CART_TARGET, CART_ACTION),
