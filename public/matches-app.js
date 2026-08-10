@@ -1,10 +1,12 @@
 import { establishGameFrameIdentity, gameFrameFetch } from "./gameframe-auth.js";
 
-const identity = await establishGameFrameIdentity();
+const query = new URLSearchParams(window.location.search);
+const identity = await establishGameFrameIdentity({
+  preferredDevelopmentPlayerId: query.get("player"),
+});
 window.gameFrameIdentity = identity;
 await import("./gameframe-nav.js");
 
-const query = new URLSearchParams(window.location.search);
 const gameFilter = query.get("game");
 const filterLabel = document.querySelector("#matches-filter");
 const errorBox = document.querySelector("#matches-error");
@@ -38,8 +40,7 @@ function relativeTime(value) {
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
 function playerName(playerId) {
@@ -187,7 +188,7 @@ async function refresh() {
   }
 }
 
-if (gameFilter) filterLabel.textContent = `Showing ${gameName(gameFilter)} only · Clear filter from the Games or Matches destination.`;
+if (gameFilter) filterLabel.textContent = `Showing ${gameName(gameFilter)} only.`;
 await refresh();
 window.addEventListener("focus", () => void refresh());
 document.addEventListener("visibilitychange", () => {
