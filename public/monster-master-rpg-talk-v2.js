@@ -334,6 +334,8 @@ function synchronizeTalkHistory() {
 }
 
 function currentCoordinationRevision() {
+  const bridged = window.gameFrameMonsterRpgCoordination?.getRevision?.();
+  if (Number.isSafeInteger(bridged) && bridged >= 0) return bridged;
   const payloadRevision = worldState().payload?.projection?.gameframeCoordinationRevision;
   if (Number.isSafeInteger(payloadRevision) && payloadRevision >= 0) return payloadRevision;
   const value = Number(elements.coordination?.textContent ?? "");
@@ -454,7 +456,10 @@ async function submitTalk() {
     if (physicalConflict || coordinationConflict) {
       pendingRequest = null;
       if (physicalConflict) {
-        await window.gameFrameMonsterRpgWorld?.attachCurrentCampaign?.({ quiet: true })
+        // Never hold the Talk UI hostage to a recovery fetch. A stale physical
+        // command is already known to be invalid; release the composer now and
+        // let exploration recovery happen independently.
+        void window.gameFrameMonsterRpgWorld?.attachCurrentCampaign?.({ quiet: true })
           ?.catch?.(() => undefined);
       }
       elements.refresh?.click();

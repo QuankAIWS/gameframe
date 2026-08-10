@@ -201,7 +201,7 @@ async function walkTo(requested) {
       if (result.cancelled || token !== movementToken) return;
       if (result.changedScene) return;
       if (result.timeout) {
-        setStatus("Movement paused · refresh and try again");
+        setStatus("Movement paused · click again or refresh the scene");
         return;
       }
       if (result.position?.blockedBy) {
@@ -229,6 +229,13 @@ function cancelClickMove() {
 window.addEventListener(COORDINATE_EVENT, (event) => {
   const coordinate = event.detail?.coordinate;
   if (!Number.isSafeInteger(coordinate?.x) || !Number.isSafeInteger(coordinate?.y)) return;
+  const current = worldState();
+  if (!current.payload?.materialization?.map || !current.position) return;
+
+  // Claim this shared Pixi coordinate so the legacy tactical controller cannot
+  // swallow an exploration click. Drag-to-pan is filtered by the Pixi bridge
+  // before a coordinate event is emitted, so a clean click means movement.
+  event.preventDefault();
   void walkTo({ x: coordinate.x, y: coordinate.y });
 });
 

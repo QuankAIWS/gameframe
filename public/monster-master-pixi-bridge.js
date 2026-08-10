@@ -21,12 +21,24 @@ function worldToScreen(coordinate, elevationPixels = 0) {
 function dispatchCoordinate(coordinate) {
   if (!coordinate || !Number.isFinite(coordinate.x) || !Number.isFinite(coordinate.y)) return false;
   const normalized = { x: Math.round(coordinate.x), y: Math.round(coordinate.y) };
+
+  // RPG exploration and tactical Monster Master deliberately share this Pixi
+  // renderer. Give the active surface first right of refusal over a physical
+  // tile click instead of unconditionally routing every click through the duel
+  // controller. Exploration claims the cancelable event; unclaimed coordinates
+  // continue to the tactical controller exactly as before.
+  const coordinateClaim = new CustomEvent(coordinateEvent, {
+    detail: { coordinate: normalized },
+    cancelable: true,
+  });
+  window.dispatchEvent(coordinateClaim);
+  if (coordinateClaim.defaultPrevented) return true;
+
   const controller = window.gameFrameMonsterController;
   if (controller?.handleCoordinate) {
     controller.handleCoordinate(normalized);
     return true;
   }
-  window.dispatchEvent(new CustomEvent(coordinateEvent, { detail: { coordinate: normalized } }));
   return true;
 }
 

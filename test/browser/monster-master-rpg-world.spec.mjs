@@ -192,7 +192,7 @@ function moveResult(position, request) {
   return positionMessage(position, { moved: !blockedBy, ...(blockedBy ? { blockedBy } : {}) });
 }
 
-test("Monster Master RPG walks Crooked Checkpoint through the existing Pixi world", async ({ page }) => {
+test("Monster Master RPG uses click for the Master and WASD for the camera", async ({ page }) => {
   let explorationAttachCount = 0;
   let explorationRequest = null;
   const movementRequests = [];
@@ -248,35 +248,30 @@ test("Monster Master RPG walks Crooked Checkpoint through the existing Pixi worl
   expect(stats.wallCount).toBeGreaterThan(0);
   expect(stats.unitObjects).toBe(2);
 
-  const pellPosition = await pell.evaluate((node) => `${node.style.left}|${node.style.top}`);
-  await page.evaluate(() => window.gameFrameMonsterPixi?.panScreen?.(144, 0));
-  await expect.poll(async () => pell.evaluate((node) => `${node.style.left}|${node.style.top}`))
-    .not.toBe(pellPosition);
-
-  await page.locator("#monster-master-pixi-canvas").click();
-  await page.keyboard.press("KeyA");
+  const target = await page.evaluate(() => window.gameFrameMonsterPixi?.worldToScreen?.({ x: 10, y: 6 }));
+  expect(target).toBeTruthy();
+  await page.locator("#monster-master-pixi-canvas").click({ position: { x: target.x, y: target.y } });
   await expect.poll(() => movementRequests.length).toBe(1);
-  expect(movementRequests[0].direction).toBe("west");
-  await expect(page.locator("#mm-rpg-world-status")).toContainText("Blocked · terrain");
-  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({
-    x: 9,
-    y: 6,
-    facing: "west",
-  });
+  expect(movementRequests[0].direction).toBe("east");
+  await expect(page.locator("#mm-rpg-world-status")).toContainText("Arrived · 10,6");
 
-  await page.keyboard.press("KeyD");
-  await expect.poll(() => movementRequests.length).toBe(2);
-  expect(movementRequests[1].direction).toBe("east");
-  await expect(page.locator("#mm-rpg-world-status")).toContainText("Exploring · 10,6");
+  const cameraBeforeWasd = await page.evaluate(() => window.gameFrameMonsterPixi?.getCamera?.());
+  await page.keyboard.press("KeyA");
+  await page.waitForTimeout(150);
+  expect(movementRequests).toHaveLength(1);
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi?.getCamera?.()))
-    .toMatchObject({ x: 10, y: 6 });
+    .not.toEqual(cameraBeforeWasd);
+  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({
+    x: 10,
+    y: 6,
+    facing: "east",
+  });
 
   await page.keyboard.press("KeyE");
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi?.getCamera?.()?.quarter)).toBe(1);
   await page.keyboard.press("KeyW");
-  await expect.poll(() => movementRequests.length).toBe(3);
-  expect(movementRequests[2].direction).toBe("west");
-  await expect(page.locator("#mm-rpg-world-status")).toContainText("Exploring · 9,6");
+  await page.waitForTimeout(150);
+  expect(movementRequests).toHaveLength(1);
 
   const revisionBeforeRefresh = position.positionRevision;
   await page.locator("#mm-rpg-refresh").click();
@@ -285,9 +280,9 @@ test("Monster Master RPG walks Crooked Checkpoint through the existing Pixi worl
   expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().positionRevision))
     .toBe(revisionBeforeRefresh);
   expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({
-    x: 9,
+    x: 10,
     y: 6,
-    facing: "west",
+    facing: "east",
   });
 });
 
