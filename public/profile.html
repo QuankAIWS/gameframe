@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070a0d">
+  <title>Profile · Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/player-platform.css">
+</head>
+<body class="gameframe-platform-page">
+  <main class="platform-shell">
+    <header class="platform-heading">
+      <small>GAMEFRAME PLAYER</small>
+      <h1>Profile</h1>
+      <p>Your GameFrame identity and durable board-game record.</p>
+    </header>
+    <div id="profile-error" class="platform-error" hidden></div>
+    <div class="platform-grid">
+      <section class="platform-section profile-card" aria-labelledby="profile-name">
+        <img id="profile-avatar" class="profile-avatar" alt="" hidden>
+        <div id="profile-avatar-fallback" class="profile-avatar" aria-hidden="true"></div>
+        <div class="profile-copy">
+          <small id="profile-source">PLAYER</small>
+          <h2 id="profile-name">Loading…</h2>
+          <p id="profile-id"></p>
+        </div>
+      </section>
+      <section class="platform-section" aria-labelledby="profile-record-title">
+        <header class="platform-section-header"><h2 id="profile-record-title">Board-game record</h2><span id="profile-record-count" class="platform-count">—</span></header>
+        <div id="profile-stats" class="profile-stats"><p class="platform-empty">Loading record…</p></div>
+      </section>
+      <section class="platform-section" aria-labelledby="profile-active-title">
+        <header class="platform-section-header"><h2 id="profile-active-title">Open matches</h2><span id="profile-active-count" class="platform-count">—</span></header>
+        <div id="profile-active" class="platform-list"><p class="platform-empty">Loading open matches…</p></div>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="/profile-app.js"></script>
+</body>
+</html>
