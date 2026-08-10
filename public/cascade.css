@@ -55,34 +55,6 @@ button { font: inherit; }
   letter-spacing: -.05em;
 }
 
-.cascade-ledger {
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 2px 12px;
-  align-items: center;
-  padding: 10px 12px;
-  border: 1px solid var(--c-border);
-  border-radius: 14px;
-  background: rgba(9,10,15,.82);
-}
-
-.cascade-ledger small {
-  grid-column: 1 / -1;
-  color: var(--c-muted);
-  font-size: .54rem;
-  font-weight: 800;
-  letter-spacing: .14em;
-}
-
-.cascade-ledger strong { font-size: 1.25rem; }
-
-.cascade-ledger button {
-  border: 0;
-  background: transparent;
-  color: var(--c-cyan);
-  cursor: pointer;
-}
-
 .cascade-status {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -364,34 +336,9 @@ button { font: inherit; }
   color: #fff6c8;
 }
 
-.cascade-dialog-actions button.iou {
-  border-color: rgba(255,92,168,.4);
-  background: rgba(255,92,168,.1);
-}
-
 .cascade-dialog-actions button:disabled {
   opacity: .42;
   cursor: not-allowed;
-}
-
-.cascade-ledger-dialog ul {
-  display: grid;
-  gap: 6px;
-  max-height: 260px;
-  margin: 0;
-  padding: 0;
-  overflow: auto;
-  list-style: none;
-}
-
-.cascade-ledger-dialog li {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255,255,255,.07);
-  color: var(--c-muted);
-  font-size: .76rem;
 }
 
 @media (max-width: 980px) {
