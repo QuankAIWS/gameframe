@@ -1,0 +1,14 @@
+@media (max-width: 650px) {
+  .cascade-board-wrap {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .cascade-board {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 3px;
+    padding: 5px;
+  }
+}
