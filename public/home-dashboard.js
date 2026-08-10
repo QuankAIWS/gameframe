@@ -16,7 +16,7 @@ if (!document.head.querySelector('link[href="/home-dashboard.css"]')) {
 }
 
 const FAVORITE_GAMES = new Map([
-  ["cascade", { name: "Cascade", detail: "Match-3 puzzle", href: "/cascade.html" }],
+  ["cascade", { name: "Cascade Crush", detail: "Match-3 puzzle", href: "/cascade.html" }],
   ["othello", { name: "Othello", detail: "Strategy", href: "/othello.html" }],
   ["american-checkers", { name: "Clockwork Checkers", detail: "Strategy", href: "/?game=american-checkers&menu=1" }],
   ["tic-tac-toe", { name: "Tic-Tac-Toe", detail: "Quick game", href: "/?game=tic-tac-toe&menu=1" }],
