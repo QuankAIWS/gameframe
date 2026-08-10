@@ -137,7 +137,7 @@ test("the Games cards open Role-Playing Games, Battle Simulator, Casual Games, a
   await expect(page).toHaveURL(/\/gameframe-rpg\.html$/);
   await expect(page.getByRole("heading", { name: "Persistent worlds. Real campaigns." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Monster Master RPG" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Open Monster Master RPG" })).toHaveAttribute("href", "/monster-master-rpg.html?campaign=monster-master-staging-v5");
+  await expect(page.getByRole("link", { name: "Open Monster Master RPG" })).toHaveAttribute("href", "/monster-master-rpg.html?campaign=monster-master-staging-v6");
   await expect(page.getByRole("button", { name: /Create RPG/ })).toBeDisabled();
 
   await page.goto("/?player=hub-navigation-test");
