@@ -92,7 +92,8 @@ test("the player shell separates Home activity from Games and exposes Matches an
 
   assert.match(rolePlayingGames, /ROLE-PLAYING GAMES/);
   assert.match(rolePlayingGames, /Monster Master RPG/);
-  assert.match(rolePlayingGames, /href="\/monster-master-rpg\.html\?campaign=monster-master-staging-v6"/);
+  assert.match(rolePlayingGames, /href="\/monster-master-rpg\.html"/);
+  assert.doesNotMatch(rolePlayingGames, /monster-master-rpg\.html\?campaign=/);
   assert.match(rolePlayingGames, /Create RPG/);
   assert.match(rolePlayingGames, /My Campaigns/);
   assert.match(rolePlayingGames, /Import Campaign/);
