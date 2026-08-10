@@ -355,6 +355,7 @@ function buildAskGmCommand(text) {
       kind: "campaign.submit_action",
       expectedGameframeCoordinationRevision: currentCoordinationRevision(),
       visibility: "private-to-runtime",
+      communication: "ask-gm",
       text: action,
     },
     text: action,
@@ -430,6 +431,7 @@ async function requestJson(path, body) {
       const error = new Error(value?.message || `GameFrame request failed (${response.status}).`);
       error.status = response.status;
       error.code = value?.error || "request_failed";
+      error.value = value;
       throw error;
     }
     return value;
