@@ -25,6 +25,7 @@ const MAX_ACTION_TEXT_LENGTH = 2_000;
 const MAX_CHOICE_OPTIONS = 16;
 const MAX_CHOICE_ALLOWED_PLAYERS = 32;
 const MAX_CHOICE_LABEL_LENGTH = 240;
+const EXPLORATION_TRAVEL_ACTION = "Travel the selected route.";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -49,6 +50,19 @@ export type ExplorationTalkRetryCommand = {
 export type AuthorizedExplorationTalkCommand = ExplorationTalkRetryCommand & {
   targetEntityId: string;
   targetDisplayLabel: string;
+};
+
+export type ExplorationTravelRetryCommand = {
+  campaignId: string;
+  commandId: string;
+  expectedGameframeCoordinationRevision: number;
+  issuedAt: string;
+  interactionTargetId: string;
+};
+
+export type AuthorizedExplorationTravelCommand = ExplorationTravelRetryCommand & {
+  routeId: string;
+  routeDisplayLabel: string;
 };
 
 export type ExplorationMonsterControlRetryCommand = {
@@ -313,6 +327,125 @@ export class DurableRpgCampaignService {
               interaction: "talk",
               interactionTargetId,
               targetDisplayLabel,
+            },
+          },
+        ],
+      });
+    } catch (error) {
+      throw mapCommandError(error, this.#commands.state(campaignId));
+    }
+  }
+
+  /**
+   * Travel retries resolve from durable command custody before the now-changed
+   * physical scene is consulted. This prevents a successful westbound command
+   * whose HTTP response was lost from being reinterpreted as an eastbound trip.
+   */
+  findCommittedExplorationTravel(
+    inputValue: ExplorationTravelRetryCommand,
+    principalValue: DurableRpgPrincipal,
+  ): DurableGameFrameCommandReceipt | undefined {
+    const principal = playerPrincipal(principalValue);
+    const input = requestRecord(inputValue, "exploration Travel retry");
+    const campaignId = identifier(input.campaignId, "campaignId");
+    const commandId = identifier(input.commandId, "commandId");
+    const expected = nonNegativeInteger(
+      input.expectedGameframeCoordinationRevision,
+      "expectedGameframeCoordinationRevision",
+    );
+    const issuedAt = timestamp(input.issuedAt, "issuedAt");
+    const interactionTargetId = identifier(input.interactionTargetId, "interactionTargetId");
+
+    let committed;
+    try {
+      committed = this.#commands.committedCommand(campaignId, commandId);
+    } catch (error) {
+      throw mapCommandError(error, this.#commands.state(campaignId));
+    }
+    if (!committed) return undefined;
+
+    const command = committed.delivery.command;
+    const presentation = committed.presentationEvents.find((event) =>
+      event.kind === "campaign.action_submitted"
+    );
+    const payload = presentation?.payload;
+    const exact = committed.delivery.authenticatedPlayerId === principal.playerId
+      && committed.delivery.sourceGameframeCoordinationRevision === expected
+      && committed.delivery.issuedAt === issuedAt
+      && command.kind === "campaign.submit_action"
+      && command.visibility === "private-to-runtime"
+      && command.text === EXPLORATION_TRAVEL_ACTION
+      && command.interaction?.kind === "travel"
+      && presentation?.audience.kind === "player"
+      && presentation.audience.playerId === principal.playerId
+      && payload?.actorId === principal.playerId
+      && payload?.text === EXPLORATION_TRAVEL_ACTION
+      && payload?.interaction === "travel"
+      && payload?.interactionTargetId === interactionTargetId;
+    if (!exact) {
+      throw new DurableRpgCampaignServiceError({
+        code: "command-conflict",
+        message: `Command ${campaignId}/${commandId} was reused with different Travel content.`,
+        status: 409,
+      });
+    }
+    return committed.receipt;
+  }
+
+  /**
+   * Commits the canonical route identity only after GameFrame has authorized an
+   * adjacent route anchor. Destination scene/location remain Runtime-owned
+   * WorldGraph consequences and are intentionally absent from this command.
+   */
+  handleAuthorizedExplorationTravel(
+    inputValue: AuthorizedExplorationTravelCommand,
+    principalValue: DurableRpgPrincipal,
+  ): DurableGameFrameCommandReceipt {
+    const principal = playerPrincipal(principalValue);
+    const input = requestRecord(inputValue, "authorized exploration Travel");
+    const campaignId = identifier(input.campaignId, "campaignId");
+    const commandId = identifier(input.commandId, "commandId");
+    const expected = nonNegativeInteger(
+      input.expectedGameframeCoordinationRevision,
+      "expectedGameframeCoordinationRevision",
+    );
+    const issuedAt = timestamp(input.issuedAt, "issuedAt");
+    const interactionTargetId = identifier(input.interactionTargetId, "interactionTargetId");
+    const routeId = identifier(input.routeId, "routeId");
+    const routeDisplayLabel = boundedText(
+      input.routeDisplayLabel,
+      "routeDisplayLabel",
+      MAX_CHOICE_LABEL_LENGTH,
+    );
+
+    try {
+      return this.#commands.acceptCommand({
+        campaignId,
+        commandId,
+        authenticatedPlayerId: principal.playerId,
+        expectedGameframeCoordinationRevision: expected,
+        issuedAt,
+        command: {
+          kind: "campaign.submit_action",
+          visibility: "private-to-runtime",
+          text: EXPLORATION_TRAVEL_ACTION,
+          interaction: {
+            kind: "travel",
+            routeId,
+          },
+        },
+        presentationEvents: [
+          {
+            eventId: actionEventId(campaignId, commandId),
+            kind: "campaign.action_submitted",
+            audience: { kind: "player", playerId: principal.playerId },
+            payload: {
+              commandId,
+              actorId: principal.playerId,
+              text: EXPLORATION_TRAVEL_ACTION,
+              interaction: "travel",
+              interactionTargetId,
+              routeDisplayLabel,
             },
           },
         ],
