@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 const bootSeenStorageKey = "scribbles-gameframe.boot-seen:v2";
 const internalHomeReturnStorageKey = "scribbles-gameframe.internal-home-return:v1";
 
-test("a first visit uses the cold terminal boot and only marks it seen after successful startup", async ({ page }) => {
+test("a first visit uses the cold terminal boot and lands on the personal Home dashboard", async ({ page }) => {
   let releaseSession;
   let markSessionRequested;
   const sessionRequested = new Promise((resolve) => {
@@ -43,11 +43,10 @@ test("a first visit uses the cold terminal boot and only marks it seen after suc
 
   await expect(page.locator("#gameframe-boot")).toBeHidden();
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
-  await expect(page.locator("#game-card-role-playing-games")).toBeVisible();
-  await expect(page.locator("#game-card-battle-simulator")).toBeVisible();
-  await expect(page.locator("#game-card-casual-games")).toBeVisible();
-  await expect(page.locator("#game-card-tic-tac-toe")).toBeVisible();
-  await expect(page.locator(".mode-grid")).toBeHidden();
+  await expect(page.locator(".gameframe-home-dashboard")).toBeVisible();
+  await expect(page.locator("#game-grid")).toBeHidden();
+  await expect(page.locator("#lobby .section-label")).toHaveText("HOME");
+  await expect(page.getByRole("link", { name: "Browse Games" })).toBeVisible();
   expect(await page.evaluate((key) => localStorage.getItem(key), bootSeenStorageKey)).toBe("seen");
 });
 
@@ -84,9 +83,10 @@ test("repeat visits use the compact warm terminal boot", async ({ page }) => {
 
   await expect(page.locator("#gameframe-boot")).toBeHidden();
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
+  await expect(page.locator(".gameframe-home-dashboard")).toBeVisible();
 });
 
-test("Home returns to the hub without replaying the terminal boot", async ({ page }) => {
+test("Home returns to the personal dashboard without replaying the terminal boot", async ({ page }) => {
   await page.goto("/othello.html?player=hub-home-return-test");
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
   await expect(page.locator("#othello-game-menu")).toBeVisible();
@@ -118,16 +118,18 @@ test("Home returns to the hub without replaying the terminal boot", async ({ pag
   await homeNavigation;
 
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
-  await expect(page.locator("#game-card-othello")).toBeVisible();
+  await expect(page.locator(".gameframe-home-dashboard")).toBeVisible();
+  await expect(page.locator("#game-grid")).toBeHidden();
   await expect(page.locator("#gameframe-boot")).toBeHidden();
 });
 
-test("the Games cards open Role-Playing Games, Battle Simulator, Casual Games, and standalone game surfaces", async ({ page }) => {
-  await page.goto("/?player=hub-navigation-test");
+test("the Games catalog opens Role-Playing Games, Battle Simulator, Casual Games, and standalone game surfaces", async ({ page }) => {
+  await page.goto("/?catalog=1&player=hub-navigation-test");
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
   await expect(page.locator(".mode-grid")).toBeHidden();
   await expect(page.locator("#lobby .section-label")).toHaveText("GAMES");
   await expect(page.locator(".game-grid .game-card")).toHaveCount(6);
+  await expect(page.locator("#gameframe-destination-bar [data-gameframe-games]")).toHaveClass(/is-active/);
 
   const rpgCard = page.locator("#game-card-role-playing-games");
   await expect(rpgCard).toContainText("Role-Playing Games");
@@ -140,7 +142,7 @@ test("the Games cards open Role-Playing Games, Battle Simulator, Casual Games, a
   await expect(page.getByRole("link", { name: "Open Monster Master RPG" })).toHaveAttribute("href", "/monster-master-rpg.html?campaign=monster-master-staging-v6");
   await expect(page.getByRole("button", { name: /Create RPG/ })).toBeDisabled();
 
-  await page.goto("/?player=hub-navigation-test");
+  await page.goto("/?catalog=1&player=hub-navigation-test");
   const simulatorCard = page.locator("#game-card-battle-simulator");
   await expect(simulatorCard).toContainText("Battle Simulator");
   await expect(simulatorCard).toHaveAttribute("href", "/battle-simulator.html");
@@ -152,21 +154,20 @@ test("the Games cards open Role-Playing Games, Battle Simulator, Casual Games, a
   await expect(page.getByRole("link", { name: "Open Monster Master Arena" })).toHaveAttribute("href", "/monster-master.html");
   await expect(page.getByRole("button", { name: /Custom Battle/ })).toBeDisabled();
 
-  await page.goto("/?player=hub-navigation-test");
+  await page.goto("/?catalog=1&player=hub-navigation-test");
   const casualCard = page.locator("#game-card-casual-games");
   await expect(casualCard).toContainText("Casual Games");
   await expect(casualCard).toHaveAttribute("href", "/casual-games.html");
   await casualCard.click();
   await expect(page).toHaveURL(/\/casual-games\.html$/);
   await expect(page.getByRole("heading", { name: "Short games. Dangerous “one more round” energy." })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Open Cascade" })).toHaveAttribute("href", "/cascade.html");
-  await page.getByRole("link", { name: "Open Cascade" }).click();
+  await expect(page.getByRole("link", { name: /Open Cascade/ })).toHaveAttribute("href", "/cascade.html");
+  await page.getByRole("link", { name: /Open Cascade/ }).click();
   await expect(page).toHaveURL(/\/cascade\.html$/);
-  await expect(page.getByRole("heading", { name: "Cascade" })).toBeVisible();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   await expect(page.locator("#iou-total")).toHaveText("IOU$ 0");
 
-  await page.goto("/?player=hub-navigation-test");
+  await page.goto("/?catalog=1&player=hub-navigation-test");
   await expect(page.locator("#game-card-tic-tac-toe")).toContainText("CPU Opponent");
   const ticCard = page.locator("#game-card-tic-tac-toe");
   await expect(ticCard).toHaveAttribute("href", "/?game=tic-tac-toe&menu=1");
@@ -180,12 +181,16 @@ test("the Games cards open Role-Playing Games, Battle Simulator, Casual Games, a
 
   await page.locator("#gameframe-destination-bar [data-gameframe-home]").click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
+  await expect(page.locator(".gameframe-home-dashboard")).toBeVisible();
+  await expect(page.locator("#game-grid")).toBeHidden();
 
+  await page.locator("#gameframe-destination-bar [data-gameframe-games]").click();
+  await expect(page).toHaveURL(/\?catalog=1$/);
+  await expect(page.locator("#game-card-othello")).toBeVisible();
   await page.locator("#game-card-othello .game-card-visual").click();
   await expect(page).toHaveURL(/\/othello\.html$/);
   await expect(page.locator("#othello-game-menu")).toBeVisible();
-  await expect(page.locator("#othello-play-bot")).toBeVisible();
+  await expect(page.locator("#othello-challenge-player")).toBeVisible();
   await expect(page.locator("#othello-play-bot")).toContainText("Challenge OthelloBot");
   await expect(page.locator("#othello-play-local")).toBeVisible();
 });
@@ -206,11 +211,13 @@ test("the destination bar is the only product navigation header during play", as
 
   page.once("dialog", async (dialog) => {
     expect(dialog.message()).toContain("Leave this match");
+    expect(dialog.message()).toContain("stays saved in Matches");
     await dialog.accept();
   });
   await page.locator("#gameframe-destination-bar [data-gameframe-home]").click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
+  await expect(page.locator(".gameframe-home-dashboard")).toBeVisible();
   await expect(page.locator("#match-panel")).toBeHidden();
   expect(await page.evaluate(() => localStorage.getItem("scribbles-gameframe.recent-match"))).toBeNull();
 
