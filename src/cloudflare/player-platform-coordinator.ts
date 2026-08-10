@@ -52,17 +52,22 @@ export async function upsertPlayerDirectory(
   env: GameFrameWorkerEnv,
   principal: AuthenticatedPrincipal,
 ): Promise<void> {
-  await internalJson(await directoryStub(env).fetch(new Request("https://player.internal/directory/upsert", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      playerId: principal.playerId,
-      displayName: principal.displayName ?? null,
-      avatarUrl: principal.avatarUrl ?? null,
-      source: principal.source,
-      lastSeenAt: Date.now(),
-    }),
-  })));
+  try {
+    await internalJson(await directoryStub(env).fetch(new Request("https://player.internal/directory/upsert", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        playerId: principal.playerId,
+        displayName: principal.displayName ?? null,
+        avatarUrl: principal.avatarUrl ?? null,
+        source: principal.source,
+        lastSeenAt: Date.now(),
+      }),
+    })));
+  } catch {
+    // Directory presence is a reconstructable convenience index. Authentication
+    // must not fail because this read model is temporarily unavailable.
+  }
 }
 
 export async function listKnownPlayers(env: GameFrameWorkerEnv, viewerPlayerId: string) {
@@ -95,7 +100,7 @@ export async function indexMatchView(env: GameFrameWorkerEnv, view: IndexedMatch
     updatedAt: Date.now(),
     resumePath: resumePathForGame(gameId, view.matchId),
   };
-  await Promise.all(view.playerIds.map((playerId) => internalJson(
+  await Promise.allSettled(view.playerIds.map((playerId) => internalJson(
     playerStub(env, playerId).fetch(new Request("https://player.internal/player/match", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -111,7 +116,7 @@ export async function indexInvitation(
   options: InvitationIndexOptions = {},
 ): Promise<void> {
   const uniquePlayers = [...new Set(playerIds.filter(Boolean))];
-  await Promise.all(uniquePlayers.map((playerId) => {
+  await Promise.allSettled(uniquePlayers.map((playerId) => {
     const summary = {
       ...invitation,
       claimToken: options.claimTokenPlayerId === playerId ? options.claimToken ?? null : null,
