@@ -25,6 +25,11 @@ export interface IndexedMatchView {
   };
 }
 
+export interface InvitationIndexOptions {
+  claimToken?: string | null;
+  claimTokenPlayerId?: string | null;
+}
+
 async function internalJson<T>(response: Response): Promise<T> {
   const body = await response.json().catch(() => ({})) as InternalErrorBody;
   if (!response.ok) {
@@ -103,14 +108,21 @@ export async function indexInvitation(
   env: GameFrameWorkerEnv,
   invitation: PublicMatchInvitation,
   playerIds: readonly string[],
+  options: InvitationIndexOptions = {},
 ): Promise<void> {
-  const summary = { ...invitation, updatedAt: Date.now() };
   const uniquePlayers = [...new Set(playerIds.filter(Boolean))];
-  await Promise.all(uniquePlayers.map((playerId) => internalJson(
-    playerStub(env, playerId).fetch(new Request("https://player.internal/player/invitation", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(summary),
-    })),
-  )));
+  await Promise.all(uniquePlayers.map((playerId) => {
+    const summary = {
+      ...invitation,
+      claimToken: options.claimTokenPlayerId === playerId ? options.claimToken ?? null : null,
+      updatedAt: Date.now(),
+    };
+    return internalJson(
+      playerStub(env, playerId).fetch(new Request("https://player.internal/player/invitation", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(summary),
+      })),
+    );
+  }));
 }
