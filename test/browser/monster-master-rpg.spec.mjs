@@ -107,6 +107,8 @@ test("opens the RPG destination, resumes a campaign, and submits an action", asy
   await expect(page.locator("#mm-rpg-events .mm-rpg-event")).toHaveCount(2);
   await expect(page.locator('[data-event-id="event:private"]')).toContainText("Private");
 
+  await page.getByRole("button", { name: "Describe an in-world action" }).click();
+  await expect(page.locator("#mm-rpg-action-form")).toHaveClass(/is-open/);
   await page.locator("#mm-rpg-action").fill("Inspect the gate and compare the forged crest with my field guide.");
   await page.locator("#mm-rpg-send").click();
 
