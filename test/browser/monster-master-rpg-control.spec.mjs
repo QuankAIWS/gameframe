@@ -11,13 +11,13 @@ const materializationRef = {
   hash: "C".repeat(43),
 };
 
-function campaignProjection() {
+function campaignProjection(gameframeCoordinationRevision = 5) {
   return {
     protocolVersion: 2,
     campaignId,
     title: "Monster Master: Crooked Checkpoint",
     status: "active",
-    gameframeCoordinationRevision: 5,
+    gameframeCoordinationRevision,
     presentationSequence: 2,
     linkedNarrativeRevision: 1,
     events: [{
@@ -254,4 +254,78 @@ test("direct Recall and Deploy use viewer-owned roster handles and reconcile the
   expect(controlRequests[1].targetEntityId).toBeUndefined();
   expect(genericCommands).toBe(0);
   await expect(page.getByRole("button", { name: "Recall Cinder" })).toBeVisible();
+});
+
+test("coordination conflicts clear the stale retry and prepare a fresh control command", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  let coordinationRevision = 5;
+  const controlRequests = [];
+
+  await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(campaignProjection(coordinationRevision)),
+    });
+  });
+  await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/attach`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(worldPayload(true)),
+    });
+  });
+  await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/control`, async (route) => {
+    const request = route.request().postDataJSON();
+    controlRequests.push(request);
+    if (controlRequests.length === 1) {
+      coordinationRevision = 6;
+      await route.fulfill({
+        status: 409,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: "coordination-revision-conflict",
+          message: "Expected GameFrame coordination revision 5, actual 6.",
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        protocolVersion: 1,
+        kind: "campaign.exploration_monster_control_committed",
+        operation: request.operation,
+        controlTargetId: request.controlTargetId,
+        command: {
+          kind: "gameframe.command_committed",
+          campaignId,
+          commandId: request.commandId,
+          deliveryId: "delivery:fresh-recall-cinder",
+          gameframeCoordinationRevision: 7,
+          presentationSequence: 3,
+          linkedNarrativeRevision: 1,
+          eventIds: ["event:fresh-recall-cinder"],
+        },
+        replayed: false,
+      }),
+    });
+  });
+
+  await page.goto(`/monster-master-rpg.html?player=${playerId}&campaign=${campaignId}`);
+  const recall = page.getByRole("button", { name: "Recall Cinder" });
+  await expect(recall).toBeVisible();
+  await recall.click();
+  await expect.poll(() => controlRequests.length).toBe(1);
+  const staleCommandId = controlRequests[0].commandId;
+  expect(controlRequests[0].expectedGameframeCoordinationRevision).toBe(5);
+
+  await expect.poll(async () => page.locator("#mm-rpg-coordination").textContent()).toBe("6");
+  await expect(recall).toBeVisible();
+  await expect(recall).not.toHaveText(/Retry/);
+  await recall.click();
+  await expect.poll(() => controlRequests.length).toBe(2);
+  expect(controlRequests[1].expectedGameframeCoordinationRevision).toBe(6);
+  expect(controlRequests[1].commandId).not.toBe(staleCommandId);
 });
