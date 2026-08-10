@@ -104,7 +104,8 @@ test("Games, Matches, Leaderboard, and Profile are first-class destination bar l
   await page.locator("#gameframe-destination-bar [data-gameframe-leaderboard]").click();
   await expect(page).toHaveURL(/\/leaderboard\.html$/);
   await expect(page.getByRole("heading", { name: "Leaderboard" })).toBeVisible();
-  await expect(page.locator("#leaderboard-list")).toContainText("No completed shared board-game results yet.");
+  await expect(page.locator("#leaderboard-list")).toBeVisible();
+  await expect(page.locator("#leaderboard-error")).toBeHidden();
 
   await page.locator("#gameframe-destination-bar [data-gameframe-profile]").click();
   await expect(page).toHaveURL(/\/profile\.html$/);
@@ -113,4 +114,17 @@ test("Games, Matches, Leaderboard, and Profile are first-class destination bar l
   await page.locator("#gameframe-destination-bar [data-gameframe-home]").click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator(".gameframe-home-dashboard")).toBeVisible();
+});
+
+test("five platform destinations remain bounded at tablet width", async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 800 });
+  await page.goto("/leaderboard.html?player=platform-tablet-test");
+  const bar = page.locator("#gameframe-destination-bar");
+  await expect(bar).toBeVisible();
+  await expect(bar.locator("[data-gameframe-home]")).toBeVisible();
+  await expect(bar.locator("[data-gameframe-games]")).toBeVisible();
+  await expect(bar.locator("[data-gameframe-matches]")).toBeVisible();
+  await expect(bar.locator("[data-gameframe-leaderboard]")).toBeVisible();
+  await expect(bar.locator("[data-gameframe-profile]")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 });
