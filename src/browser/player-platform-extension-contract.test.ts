@@ -7,6 +7,7 @@ const read = (path: string) => readFile(new URL(`../../${path}`, import.meta.url
 test("GameFrame exposes Leaderboard, server-backed favorites, and Home news", async () => {
   const navigation = await read("public/gameframe-nav.js");
   const navigationStyles = await read("public/gameframe-nav.css");
+  const finalPolishStyles = await read("public/gameframe-final-polish.css");
   const home = await read("public/home-dashboard.js");
   const profile = await read("public/profile-app.js");
   const leaderboard = await read("public/leaderboard-app.js");
@@ -21,6 +22,8 @@ test("GameFrame exposes Leaderboard, server-backed favorites, and Home news", as
   assert.match(navigation, /gameframe-nav-label-compact/);
   assert.match(navigationStyles, /gameframe-nav-label-compact/);
   assert.match(navigationStyles, /font-size: \.48rem/);
+  assert.match(finalPolishStyles, /@media \(max-width: 720px\)[\s\S]*?\.gameframe-destination-links a,[\s\S]*?min-width: 0;/);
+  assert.match(finalPolishStyles, /@media \(max-width: 720px\)[\s\S]*?\.gameframe-session-badge[\s\S]*?min-width: 0;/);
 
   assert.match(home, /WHAT'S NEW/);
   assert.match(home, /home-favorites-section/);
