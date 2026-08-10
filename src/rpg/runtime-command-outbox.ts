@@ -17,6 +17,7 @@ export type RuntimePlayerCommandV1 =
       kind: "campaign.submit_action";
       visibility: "public" | "private-to-runtime";
       text: string;
+      communication?: "ask-gm";
       interaction?:
         | {
             kind: "talk";
@@ -624,10 +625,18 @@ function normalizeCommand(value: unknown): RuntimePlayerCommandV1 {
       throw invalid("command.visibility is not supported");
     }
     const interaction = normalizeInteraction(command.interaction);
+    const communication = normalizeCommunication(command.communication);
+    if (communication === "ask-gm" && command.visibility !== "private-to-runtime") {
+      throw invalid("Ask GM commands must use private-to-runtime visibility");
+    }
+    if (communication === "ask-gm" && interaction !== undefined) {
+      throw invalid("Ask GM commands cannot also declare an in-world interaction");
+    }
     return {
       kind: "campaign.submit_action",
       visibility: command.visibility,
       text: normalizeText(command.text, "command.text", MAX_RUNTIME_COMMAND_TEXT_LENGTH),
+      ...(communication ? { communication } : {}),
       ...(interaction ? { interaction } : {}),
     };
   }
@@ -639,6 +648,12 @@ function normalizeCommand(value: unknown): RuntimePlayerCommandV1 {
     };
   }
   throw invalid("command.kind is not supported");
+}
+
+function normalizeCommunication(value: unknown): "ask-gm" | undefined {
+  if (value === undefined) return undefined;
+  if (value === "ask-gm") return value;
+  throw invalid("command.communication is not supported");
 }
 
 function normalizeInteraction(

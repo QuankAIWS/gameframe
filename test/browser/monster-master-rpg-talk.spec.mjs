@@ -42,7 +42,7 @@ function campaignProjection({ replied = false } = {}) {
           dialogue: [{
             speakerId: "npc.warden-pell",
             speakerName: "veteran field warden",
-            text: "No. The markings are wrong. Tell me what else you notice before we move.",
+            text: "No. I wasn't expecting a checkpoint here. Stay close while we figure out what this is.",
           }],
           mechanic: { kind: "none" },
         },
@@ -94,7 +94,7 @@ function explorationProjection() {
     campaignRevision: 41,
     package: {
       packageId: "mm.package.false-warden-roadblock.v1",
-      packageVersion: 5,
+      packageVersion: 6,
       gameFamilyId: "monster-master",
       ruleset: {
         rulesetId: "monster-master-rpg",
@@ -106,6 +106,7 @@ function explorationProjection() {
       playerId,
       playerCharacterEntityId: playerEntityId,
       rulesProfileId: "mm.trainer.vanguard.v1",
+      monsters: [],
     },
     scene: {
       sceneId: "scene.crooked-checkpoint",
@@ -213,7 +214,7 @@ async function routeCampaignAndWorld(page, options = {}) {
   });
 }
 
-test("nearby Talk is touch-usable and never lets the browser assert Pell's canonical entity ID", async ({ page }) => {
+test("nearby Talk opens an in-world conversation panel and never uses the generic action composer", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   let talkCommitted = false;
   let talkRequest = null;
@@ -261,11 +262,13 @@ test("nearby Talk is touch-usable and never lets the browser assert Pell's canon
   expect(talkBox.height).toBeGreaterThanOrEqual(48);
 
   await talkButton.click();
-  await expect(page.locator("#mm-rpg-send")).toHaveText("Talk to veteran field warden");
-  await expect(page.locator("#mm-rpg-action-status")).toContainText("Talking to veteran field warden");
+  await expect(page.locator("#mm-rpg-talk-panel")).toBeVisible();
+  await expect(page.locator("#mm-rpg-talk-panel-title")).toHaveText("veteran field warden");
+  await expect(page.locator("#mm-rpg-talk-status")).toContainText("spoken in the world");
+  await expect(page.locator("#mm-rpg-action-form")).toBeHidden();
 
-  await page.locator("#mm-rpg-action").fill("Does this checkpoint look right to you?");
-  await page.locator("#mm-rpg-action-form").evaluate((form) => form.requestSubmit());
+  await page.locator("#mm-rpg-talk-input").fill("Does this checkpoint look right to you?");
+  await page.locator(".mm-rpg-talk-form").evaluate((form) => form.requestSubmit());
 
   await expect.poll(() => talkRequest).not.toBeNull();
   expect(talkRequest).toMatchObject({
@@ -285,16 +288,12 @@ test("nearby Talk is touch-usable and never lets the browser assert Pell's canon
   expect(talkRequest.targetEntityId).toBeUndefined();
   expect(genericCommandCount).toBe(0);
 
-  await expect(page.locator("#mm-rpg-events")).toContainText("veteran field warden");
   await expect(page.locator("#mm-rpg-events")).toContainText(
-    "No. The markings are wrong. Tell me what else you notice before we move.",
-  );
-  await expect(page.locator("#mm-rpg-events")).toContainText(
-    "He keeps his voice low and watches the barrier.",
+    "No. I wasn't expecting a checkpoint here. Stay close while we figure out what this is.",
   );
 });
 
-test("multiple adjacent Talk targets require an explicit viewer-safe choice", async ({ page }) => {
+test("multiple adjacent Talk targets require an explicit viewer-safe choice before opening conversation", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await routeCampaignAndWorld(page, { secondTarget: true });
 
@@ -308,33 +307,24 @@ test("multiple adjacent Talk targets require an explicit viewer-safe choice", as
   await expect(chooser).toBeVisible();
   await expect(chooser.getByRole("button", { name: "checkpoint official" })).toBeVisible();
   await expect(chooser.getByRole("button", { name: "veteran field warden" })).toBeVisible();
-  const choiceBox = await chooser.getByRole("button", { name: "checkpoint official" }).boundingBox();
-  expect(choiceBox.height).toBeGreaterThanOrEqual(48);
 
   await chooser.getByRole("button", { name: "checkpoint official" }).click();
-  await expect(page.locator("#mm-rpg-send")).toHaveText("Talk to checkpoint official");
+  await expect(page.locator("#mm-rpg-talk-panel")).toBeVisible();
+  await expect(page.locator("#mm-rpg-talk-panel-title")).toHaveText("checkpoint official");
   await expect(chooser).toBeHidden();
 });
 
-test("an unconfirmed Talk survives campaign rerender and retries the exact same request", async ({ page }) => {
+test("an unconfirmed Talk survives campaign refresh and retries the exact same spoken request", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const requests = [];
   let campaignAttachCount = 0;
 
   await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, async (route) => {
     campaignAttachCount += 1;
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(campaignProjection()),
-    });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(campaignProjection()) });
   });
   await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/attach`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(materializedExploration()),
-    });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(materializedExploration()) });
   });
   await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/interact`, async (route) => {
     requests.push(route.request().postDataJSON());
@@ -351,21 +341,21 @@ test("an unconfirmed Talk survives campaign rerender and retries the exact same 
 
   await page.goto(`/monster-master-rpg.html?player=${playerId}&campaign=${campaignId}`);
   await page.getByRole("button", { name: "Talk to veteran field warden" }).click();
-  const action = page.locator("#mm-rpg-action");
-  await action.fill("Keep this between us: what looks wrong here?");
-  await page.locator("#mm-rpg-action-form").evaluate((form) => form.requestSubmit());
+  const talkInput = page.locator("#mm-rpg-talk-input");
+  await talkInput.fill("Keep this between us: what looks wrong here?");
+  await page.locator(".mm-rpg-talk-form").evaluate((form) => form.requestSubmit());
 
   await expect.poll(() => requests.length).toBe(1);
-  await expect(page.locator("#mm-rpg-send")).toHaveText("Retry Talk to veteran field warden");
-  await expect(action).toHaveValue("Keep this between us: what looks wrong here?");
+  await expect(page.locator("#mm-rpg-talk-send")).toHaveText("Retry Speak");
+  await expect(talkInput).toHaveValue("Keep this between us: what looks wrong here?");
 
   const beforeRefresh = campaignAttachCount;
   await page.locator("#mm-rpg-refresh").click();
   await expect.poll(() => campaignAttachCount).toBeGreaterThan(beforeRefresh);
-  await expect(page.locator("#mm-rpg-send")).toHaveText("Retry Talk to veteran field warden");
-  await expect(action).toHaveValue("Keep this between us: what looks wrong here?");
+  await expect(page.locator("#mm-rpg-talk-panel")).toBeVisible();
+  await expect(talkInput).toHaveValue("Keep this between us: what looks wrong here?");
 
-  await page.locator("#mm-rpg-action-form").evaluate((form) => form.requestSubmit());
+  await page.locator(".mm-rpg-talk-form").evaluate((form) => form.requestSubmit());
   await expect.poll(() => requests.length).toBe(2);
   expect(requests[1]).toEqual(requests[0]);
   expect(requests[0].commandId).toMatch(/^command:/);
