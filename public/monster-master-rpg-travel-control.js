@@ -67,6 +67,14 @@ function synchronize() {
         : "Travel";
 }
 
+function currentCoordinationRevision() {
+  const revision = window.gameFrameMonsterRpgCoordination?.getRevision?.();
+  if (!Number.isSafeInteger(revision) || revision < 0) {
+    throw new Error("Campaign coordination state is unavailable. Refresh and try again.");
+  }
+  return revision;
+}
+
 function buildPendingRequest() {
   if (pendingRequest) return pendingRequest;
   const route = currentRouteAnchor();
@@ -76,9 +84,6 @@ function buildPendingRequest() {
   if (!route || !projection || !materialization || !position) {
     throw new Error("Move to the route edge before traveling.");
   }
-  if (!Number.isSafeInteger(projection.gameframeCoordinationRevision)) {
-    throw new Error("Campaign coordination state is unavailable. Refresh and try again.");
-  }
   pendingRequest = {
     type: "exploration_interact",
     protocolVersion: 1,
@@ -86,13 +91,21 @@ function buildPendingRequest() {
     sceneId: projection.scene.sceneId,
     materializationRef: materialization.materializationRef,
     expectedPositionRevision: position.positionRevision,
-    expectedGameframeCoordinationRevision: projection.gameframeCoordinationRevision,
+    expectedGameframeCoordinationRevision: currentCoordinationRevision(),
     commandId: `command:${crypto.randomUUID()}`,
     issuedAt: new Date().toISOString(),
     interaction: "travel",
     interactionTargetId: route.interactionTargetId,
   };
   return pendingRequest;
+}
+
+function isRuntimeVersionSkew(error) {
+  return error?.status >= 400
+    && error?.status < 500
+    && /command\.interaction contains unsupported fields[^\n]*routeId/i.test(
+      `${error?.message || ""}`,
+    );
 }
 
 async function travel() {
@@ -121,6 +134,16 @@ async function travel() {
       ? "Travel complete."
       : "Travel was accepted. The map will update when Runtime finishes the scene transfer.");
   } catch (error) {
+    if (isRuntimeVersionSkew(error)) {
+      // Current Runtime accepts { kind: "travel", routeId }. Do not preserve an
+      // exact retry against an older deployed Runtime that cannot understand it;
+      // the release pair must be brought back into sync instead.
+      pendingRequest = null;
+      showStatus("Travel is blocked by a GameFrame / RPG Runtime deployment mismatch.");
+      showError("Travel cannot be retried against this deployed RPG Runtime because it is older than the current GameFrame travel contract. Deploy the matched Runtime and GameFrame staging pair, then refresh.");
+      return;
+    }
+
     const physicalConflict = error?.status === 409 && [
       "position-revision-conflict",
       "stale-materialization",
@@ -131,8 +154,8 @@ async function travel() {
       && /revision|coordination|stale/i.test(`${error?.code || ""} ${error?.message || ""}`);
     if (physicalConflict || coordinationConflict) {
       pendingRequest = null;
-      await refreshWorld().catch(() => undefined);
-      showStatus("Exploration state changed. Refreshed the current scene.");
+      void refreshWorld().catch(() => undefined);
+      showStatus("Exploration state changed. Refreshing the current scene.");
     } else {
       showStatus("Travel delivery was not confirmed. Retry sends the exact same command.");
     }
