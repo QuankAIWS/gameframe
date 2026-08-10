@@ -1,168 +1,217 @@
-# Casual Games / Cascade Foundation
+# Casual Games / Cascade Crush Foundation
 
-Status: first playable research slice  
-Scope: GameFrame casual-games lane and the first match-3 title, **Cascade**
+Status: active family-playtest build  
+Scope: GameFrame casual-games lane and the first match-3 title, **Cascade Crush**
 
 ## Product thesis
 
-The first casual GameFrame title should prove one narrow thing before the platform grows: can a simple, highly polished match-3 loop make an ordinary adult player voluntarily choose "one more level" and, in the family build, choose continuation priced in **IOU Dollars (IOU$)**?
+Cascade Crush should be a bright, friction-light match-3 game that is fun enough to play on its own merits, without purchases, fake purchases, or a monetization simulator. The family build should support friendly competition, short repeatable sessions, earned rewards, and occasional bonus modes that change the kind of attention and memory the player uses.
 
-The game must be original in presentation, content, level design, art, names, progression, and implementation. Match-3 swapping, limited moves, score/objective levels, boosters, lives, and cascades are genre mechanics; Candy Crush, Royal Match, and other products are references for product research rather than assets or level templates.
+The cognitive goal is modest and practical: mix ordinary match-3 planning with short bursts of speed, recall, divided attention, and visuospatial memory. The game is not presented as a treatment or medical intervention.
 
-## Research conclusions that matter to the build
+The game must remain original in presentation, content, level design, art, names, progression, and implementation. Familiar genre mechanics are useful because players can understand them immediately without learning a new hobby before the interesting parts begin.
 
-### 1. The strongest repeat-play mechanism is a good challenge/skill fit
+## Core principles
 
-Controlled Candy-Crush research found that flow and arousal jointly increased urge to continue playing, and that levels around a player's skill produced strong flow. Older-adult game research similarly found higher engagement when difficulty was incremental and adjustable.
+### 1. Fun first
 
-**Implementation:** early levels teach one idea at a time, the first five levels should be highly passable, difficulty climbs by target/move pressure, and every fifth level is visibly harder. Long-term tuning should be data-driven rather than based on designer intuition alone.
+The main loop has to work as a game before any cognitive variation matters. Levels should be readable quickly, inputs should feel immediate, cascades should be satisfying, and the next useful action should rarely require menu work.
 
-### 2. Short, frictionless sessions matter more than constant pressure
+### 2. Normal levels are mostly untimed
 
-Reporting from King's development organization describes Candy Crush as an extensively measured live product with continual level tuning and a focus on minimizing friction that makes players leave. The core loop remains readable in seconds: swap, match, cascade, resolve, continue.
+Normal Cascade Crush uses moves as the resource. Players can think as long as they want. Time pressure is reserved for explicit bonus events so it feels different instead of becoming background stress.
 
-**Implementation:** Cascade is immediately playable, one interaction model is used everywhere, invalid swaps are rejected, feedback is fast, and the next level is one tap away.
+### 3. Difficulty should come from decisions, not artificial frustration
 
-### 3. Goals and visible progress increase persistence
+The game should create pressure through board state, objectives, move budgets, special-piece planning, and later objective combinations. It should not rely on purchase prompts, impossible gates, or intentionally miserable opening levels.
 
-Consumer research on endowed progress and goal pursuit shows that visible advancement toward a goal can increase persistence.
+### 4. Rewards are earned through play
 
-**Implementation:** every level shows score, target, moves, run position, and streak. The first slice uses a 20-level run so the player always knows where the next concrete milestone is.
+The player earns 1–3 best stars on ordinary levels and bonus events. Every ten newly earned best stars awards another hammer, subject to the inventory cap. Replaying something only helps if the player improves the stored best result.
 
-### 4. Successful match-3 economies sell relief at friction points
+Lives remain a pacing mechanic with automatic regeneration. There is no paid, fake-paid, or IOU bypass.
 
-Official Candy Crush documentation describes five-life gating, timed life regeneration, extra moves after failure, pre-game/in-game/end-game boosters, and Gold Bars as a currency used for continuation/help. Royal Match documentation similarly describes coins that can buy extra lives, extra moves, and boosters.
+## Core board
 
-**Implementation in the family build:** the same decision locations exist, but the currency is **IOU$**. The player sees the current IOU$ owed and can inspect the full IOU ledger. The point is to observe which continuation choices players value enough to owe IOU$ for.
-
-### 5. Randomized paid rewards and deceptive purchase flows are a different risk class
-
-Systematic reviews consistently associate loot-box engagement/spending with problem gambling/problem gaming, while experimental work finds rare randomized rewards unusually arousing and urge-inducing. The FTC has also taken enforcement action over dark patterns that caused unintended in-game purchases.
-
-**Implementation boundary:** no loot boxes, no paid randomness, no hidden prices, no default purchase, no false countdowns, and no impossible-to-dismiss modal. IOU choices remain explicit button presses with visible IOU$ prices.
-
-## First playable: Cascade
-
-### Board
-
-- 8 × 8
-- 6 tile types
-- adjacent swaps only
-- swaps must create a match
+- 8 × 8 board
+- 6 visually distinct tile types
+- adjacent swaps
 - horizontal/vertical matches of 3+
 - gravity and refill
 - automatic cascades
 - cascade multiplier scoring
-- board regeneration if no legal move remains
+- board regeneration when no playable move remains
+- persistent special pieces
 
-### Twenty-level opening run
+## Persistent special pieces
 
-The vertical slice uses twenty generated score-target levels:
+Specials are pieces the player creates and can deliberately save, move, activate, or combine. Creating one does not automatically consume its full effect.
 
-- Level 1 starts with generous moves and a low target.
-- Difficulty rises through target pressure and gradually tighter move budgets.
-- Every fifth level receives an additional target increase and is marked as hard.
-- Unused moves convert to bonus score after a win.
-- The run tracks consecutive clears as a streak.
+### Striped piece
 
-This is deliberately a calibration scaffold, not the final authored campaign. The next serious level-design pass should use automated playtesting plus real traces from the family test.
+A four-tile match creates a striped piece.
 
-### Booster
+- horizontal match → horizontal line clearer
+- vertical match → vertical line clearer
+- activating it clears its line
 
-The first booster is a hammer:
+### Burst bomb
+
+A T or L intersection creates a bomb. Activating it clears a 3 × 3 area.
+
+### Color clearer
+
+A five-or-more straight match creates a color clearer. Swapping it with a normal tile clears that tile's color from the board.
+
+### Combinations
+
+Adjacent specials can be swapped together for stronger effects. Initial supported combinations include:
+
+- stripe + stripe
+- stripe + bomb
+- bomb + bomb
+- color clearer + another special
+- color clearer + color clearer
+
+Specials hit by another special can trigger recursively.
+
+## Opening teaching sequence
+
+The first five levels introduce the permanent rules rather than treating them as late-game gimmicks.
+
+1. **Level 1 — Match 3:** ordinary matching and cascades.
+2. **Level 2 — Stripes:** make four and keep the resulting striped piece.
+3. **Level 3 — Bombs:** create a T/L bomb.
+4. **Level 4 — Combos:** place two specials beside each other and combine them.
+5. **Level 5 — Color:** create and use the color clearer.
+
+After level 5, all three special families are part of normal play.
+
+## Progression and objectives
+
+The current run contains 100 levels. Later chapters add objective pressure without changing the basic controls:
+
+- score targets;
+- ice/blocker clearing;
+- color collection;
+- mixed objectives;
+- layered ice;
+- tighter move budgets and harder combinations.
+
+The existing automated player remains useful for solvability and curve calibration, but special-piece strategy should eventually be included in the profiler so late-game tuning reflects the real player rules.
+
+## Lives
+
+- maximum 5 lives;
+- one life regenerates every 10 minutes;
+- failing a normal level consumes one life;
+- reaching zero blocks ordinary play until a life returns;
+- progress is retained;
+- no refill purchase or fake-purchase path exists.
+
+Bonus events do not consume lives.
+
+## Hammer booster
 
 - two are granted initially;
-- a hammer removes one selected tile without consuming a move;
-- zero inventory exposes an IOU$ booster checkpoint.
+- a hammer removes one selected tile without spending a move;
+- every ten newly earned best stars awards another hammer;
+- hammer inventory is capped and overflow rewards can remain banked until there is room;
+- zero inventory points the player back toward earning stars rather than a store.
 
-Future boosters should be mechanically distinct, not merely larger numbers: row clear, column clear, color clear, free swap, pre-level special placement, and objective-specific tools.
+## Bonus-mode system
 
-## IOU$ experiment
+Bonus modes are short interruptions between ordinary levels. They are optional, non-failing, and use the same visual language as the base game.
 
-IOU$ is a running game ledger. It does **not** have a cap: if a player keeps choosing continuation, the amount owed keeps accumulating.
+### Blitz
 
-The first build has three explicit checkpoints:
+The first implemented bonus mode is **Blitz**.
 
-1. **Out of moves:** +5 moves for 2 IOU$.
-2. **Out of lives:** refill five lives for 5 IOU$.
-3. **Out of hammers:** three hammers for 3 IOU$.
+- 30 seconds
+- no move limit
+- no life at risk
+- hammer disabled
+- faster presentation pacing
+- score as much as possible
+- result records score, match groups, specials created, and best rating
+- replay is allowed, but only a new best star result advances the reward total
 
-Product rules:
+Initial Blitz slots occur after selected progression milestones instead of attaching a small timer to ordinary levels.
 
-- no IOU$ cap;
-- no ledger-history cap;
-- player-facing copy uses direct, neutral IOU language rather than vague labels or an implied narrator;
-- do not use first-person speaker copy such as "me," "owe me," or "what you owe me";
-- the persistent summary reads **IOU DOLLARS OWED** followed by the IOU$ total;
-- the detailed history is the **IOU LEDGER**;
-- offers use short, game-like copy rather than disclaimer language;
-- the IOU$ action is the large, colorful primary continuation button;
-- the ledger can be inspected and reset;
-- state stays in browser localStorage;
-- analytics stay in browser localStorage;
-- no external telemetry is sent;
-- one life regenerates every ten minutes.
+### Quick Recall — planned
 
-This gives us a behavioral signal at familiar monetization decision points while keeping the joke legible: the player chose something now and the IOU$ total grew.
+A short visual-memory intermission using the game's existing tile vocabulary. Example structure:
 
-## Local research events
+1. briefly show a small sequence or set of tiles;
+2. hide them;
+3. present distractors;
+4. ask the player to reproduce the set, order, or positions;
+5. award an optional bonus result;
+6. allow Skip with no penalty.
 
-`window.cascadeResearch.exportEvents()` exposes the local event stream for inspection.
+### Memory Fog — planned
 
-Events include:
+A future match-3 bonus mode in which selected tile identities are visible for a short interval, hidden while the player continues to manipulate the board, then periodically revealed again. Difficulty should be tuned carefully so board motion remains trackable rather than arbitrary.
+
+## Competition and leaderboard direction
+
+Cascade Crush should use scored-game leaderboard semantics rather than pretending a solo score run is a win/loss board-game match.
+
+Useful ranking surfaces:
+
+- Weekly Blitz best score
+- total best stars
+- deepest level / run completion
+
+The preferred competitive Blitz format uses a shared deterministic seed for the same event so family members receive the same starting board and refill sequence. That makes the comparison more meaningful than unrelated random boards.
+
+## Local play telemetry
+
+`window.cascadeResearch.exportEvents()` exposes the bounded local event stream for debugging and playtest analysis.
+
+Useful events include:
 
 - level start;
 - valid move;
 - invalid swap;
 - match clear and cascade depth;
+- special created;
+- special triggered;
+- special combination;
 - board shuffle;
 - level win/failure;
 - booster armed/used;
-- offer shown;
-- offer declined;
-- IOU accepted;
-- ledger reset.
+- Blitz offered/started/completed.
 
-The event store is bounded to the most recent 500 events. The **IOU ledger itself is not bounded**.
+Local telemetry must never interfere with gameplay.
 
-## Metrics for the first family test
+## Family-playtest metrics
 
-The first question is whether the core game is strong enough that continuation is voluntarily valuable.
-
-Track:
+Track enough to tune the game, not to manufacture pressure:
 
 - levels attempted and completed;
 - failure rate by level;
 - moves remaining on wins;
-- distance from target on losses;
-- retry rate after a failure;
+- distance from objective on losses;
+- retry rate;
 - session return rate;
 - maximum level reached;
 - streak length;
-- booster use rate;
-- IOU$ offer impressions;
-- IOU$ acceptance rate by offer type;
-- cumulative IOU$ total per player profile.
+- special creation/use rate;
+- special-combination rate;
+- hammer use rate;
+- best stars by level;
+- Blitz attempts, scores, and improvement rate;
+- optional-memory-mode participation and performance once those modes exist.
 
-A useful early signal is an IOU$ acceptance occurring after several genuinely enjoyable levels rather than immediately because the opening levels are artificially frustrating.
+## Current development order
 
-## Next development slices
-
-1. Add special pieces created by 4- and 5-tile matches.
-2. Add two objective families: clear blockers and collect specified colors.
-3. Author the first 20 levels instead of relying on generated score targets.
-4. Add an automated match-3 playtester to estimate solvability, expected remaining moves, and difficulty variance.
-5. Add sound, haptics, better clear/cascade animation, and distinctive original art.
-6. Add a lightweight level map and reward cadence.
-7. Add a family-facing summary screen showing play/IOU$ metrics.
-8. Only after real traces exist, tune difficulty and offer placement from evidence.
-
-## Sources used for the initial design
-
-- Dixon et al., *The relationship between the skill-challenge balance, game expertise, flow and the urge to keep playing complex mobile games*.
-- Nunes & Drèze, *The Endowed Progress Effect: How Artificial Advancement Increases Effort*.
-- King / Candy Crush Help Center: lives, boosters, controls, and game modes.
-- Dream Games / Royal Match Help Center: coin acquisition and uses.
-- Zendle and related systematic-review literature on loot boxes, microtransactions, problem gaming, and gambling.
-- U.S. Federal Trade Commission: dark-pattern reports and Epic Games enforcement materials.
-- Reporting on King's level-development and behavioral-science process used as secondary product-development context.
+1. Persistent special-piece engine and combinations.
+2. Teach permanent special rules in levels 1–5.
+3. Remove the IOU/fake-economy code path completely.
+4. Standalone 30-second Blitz bonus mode.
+5. Rerun automated and browser/visual acceptance and retune difficulty where special pieces change the curve.
+6. Quick Recall bonus mode.
+7. Scored-game leaderboard contract, with Weekly Blitz as the first Cascade leaderboard.
+8. Memory Fog and other memory/attention variations after real playtest feedback.
+9. Continue polishing effects, sound, authored level beats, and accessibility without making the UI busier than the board needs.
