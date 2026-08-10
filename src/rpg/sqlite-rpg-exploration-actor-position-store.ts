@@ -57,8 +57,22 @@ export class SqliteRpgExplorationActorPositionStore {
         y INTEGER NOT NULL,
         facing TEXT NOT NULL CHECK(facing IN ('north','south','east','west')),
         operation_id TEXT NOT NULL,
-        PRIMARY KEY (campaign_id, scene_id, actor_entity_id),
-        UNIQUE (campaign_id, operation_id)
+        PRIMARY KEY (campaign_id, scene_id, actor_entity_id)
+      );
+      CREATE TABLE IF NOT EXISTS rpg_exploration_actor_operations_v1 (
+        campaign_id TEXT NOT NULL,
+        operation_id TEXT NOT NULL,
+        scene_id TEXT NOT NULL,
+        actor_entity_id TEXT NOT NULL,
+        target_entity_id TEXT NOT NULL,
+        materialization_id TEXT NOT NULL,
+        materialization_version TEXT NOT NULL,
+        materialization_hash TEXT NOT NULL,
+        position_revision INTEGER NOT NULL CHECK(position_revision >= 0),
+        x INTEGER NOT NULL,
+        y INTEGER NOT NULL,
+        facing TEXT NOT NULL CHECK(facing IN ('north','south','east','west')),
+        PRIMARY KEY (campaign_id, operation_id)
       )
     `);
   }
@@ -89,7 +103,7 @@ export class SqliteRpgExplorationActorPositionStore {
     const campaignId = identifier(campaignIdValue, "campaignId");
     const operationId = identifier(operationIdValue, "operationId");
     const row = this.#database.prepare(`
-      SELECT * FROM rpg_exploration_actor_positions_v1
+      SELECT * FROM rpg_exploration_actor_operations_v1
       WHERE campaign_id = ? AND operation_id = ?
     `).get(campaignId, operationId) as ActorPositionRow | undefined;
     return row ? fromRow(row) : undefined;
@@ -111,14 +125,13 @@ export class SqliteRpgExplorationActorPositionStore {
     const operationId = identifier(input.operationId, "operationId");
     const repeated = this.readOperation(campaignId, operationId);
     if (repeated) {
-      if (
-        repeated.sceneId !== sceneId
-        || repeated.actorEntityId !== actorEntityId
-        || repeated.targetEntityId !== targetEntityId
-        || !sameRef(repeated.materializationRef, input.materializationRef)
-      ) {
-        throw new Error(`Actor operation ${operationId} was reused with different physical custody.`);
-      }
+      assertSameCustody(repeated, {
+        sceneId,
+        actorEntityId,
+        targetEntityId,
+        materializationRef: input.materializationRef,
+        operationId,
+      });
       return repeated;
     }
 
@@ -126,37 +139,93 @@ export class SqliteRpgExplorationActorPositionStore {
     const sameMaterialization = existing
       && sameRef(existing.materializationRef, input.materializationRef);
     const revision = sameMaterialization ? existing.positionRevision + 1 : 0;
-    this.#database.prepare(`
-      INSERT INTO rpg_exploration_actor_positions_v1 (
-        campaign_id, scene_id, actor_entity_id, target_entity_id,
-        materialization_id, materialization_version, materialization_hash,
-        position_revision, x, y, facing, operation_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(campaign_id, scene_id, actor_entity_id) DO UPDATE SET
-        target_entity_id=excluded.target_entity_id,
-        materialization_id=excluded.materialization_id,
-        materialization_version=excluded.materialization_version,
-        materialization_hash=excluded.materialization_hash,
-        position_revision=excluded.position_revision,
-        x=excluded.x,
-        y=excluded.y,
-        facing=excluded.facing,
-        operation_id=excluded.operation_id
-    `).run(
-      campaignId,
-      sceneId,
-      actorEntityId,
-      targetEntityId,
-      input.materializationRef.materializationId,
-      input.materializationRef.version,
-      input.materializationRef.hash,
-      revision,
-      integer(input.transform.x, "transform.x"),
-      integer(input.transform.y, "transform.y"),
-      facing(input.transform.facing),
-      operationId,
-    );
-    return this.read(campaignId, sceneId, actorEntityId)!;
+    const x = integer(input.transform.x, "transform.x");
+    const y = integer(input.transform.y, "transform.y");
+    const direction = facing(input.transform.facing);
+
+    this.#database.exec("BEGIN IMMEDIATE");
+    try {
+      this.#database.prepare(`
+        INSERT INTO rpg_exploration_actor_positions_v1 (
+          campaign_id, scene_id, actor_entity_id, target_entity_id,
+          materialization_id, materialization_version, materialization_hash,
+          position_revision, x, y, facing, operation_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(campaign_id, scene_id, actor_entity_id) DO UPDATE SET
+          target_entity_id=excluded.target_entity_id,
+          materialization_id=excluded.materialization_id,
+          materialization_version=excluded.materialization_version,
+          materialization_hash=excluded.materialization_hash,
+          position_revision=excluded.position_revision,
+          x=excluded.x,
+          y=excluded.y,
+          facing=excluded.facing,
+          operation_id=excluded.operation_id
+      `).run(
+        campaignId,
+        sceneId,
+        actorEntityId,
+        targetEntityId,
+        input.materializationRef.materializationId,
+        input.materializationRef.version,
+        input.materializationRef.hash,
+        revision,
+        x,
+        y,
+        direction,
+        operationId,
+      );
+      this.#database.prepare(`
+        INSERT INTO rpg_exploration_actor_operations_v1 (
+          campaign_id, operation_id, scene_id, actor_entity_id, target_entity_id,
+          materialization_id, materialization_version, materialization_hash,
+          position_revision, x, y, facing
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        campaignId,
+        operationId,
+        sceneId,
+        actorEntityId,
+        targetEntityId,
+        input.materializationRef.materializationId,
+        input.materializationRef.version,
+        input.materializationRef.hash,
+        revision,
+        x,
+        y,
+        direction,
+      );
+      this.#database.exec("COMMIT");
+    } catch (error) {
+      this.#database.exec("ROLLBACK");
+      const raced = this.readOperation(campaignId, operationId);
+      if (raced) {
+        assertSameCustody(raced, {
+          sceneId,
+          actorEntityId,
+          targetEntityId,
+          materializationRef: input.materializationRef,
+          operationId,
+        });
+        return raced;
+      }
+      throw error;
+    }
+    return this.readOperation(campaignId, operationId)!;
+  }
+}
+
+function assertSameCustody(
+  existing: RpgExplorationActorTransformV1,
+  input: Pick<RpgExplorationActorTransformV1, "sceneId" | "actorEntityId" | "targetEntityId" | "materializationRef" | "operationId">,
+): void {
+  if (
+    existing.sceneId !== input.sceneId
+    || existing.actorEntityId !== input.actorEntityId
+    || existing.targetEntityId !== input.targetEntityId
+    || !sameRef(existing.materializationRef, input.materializationRef)
+  ) {
+    throw new Error(`Actor operation ${input.operationId} was reused with different physical custody.`);
   }
 }
 
