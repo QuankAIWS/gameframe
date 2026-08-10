@@ -19,6 +19,7 @@ const elements = {
   story: document.querySelector(".mm-rpg-story"),
   events: document.querySelector("#mm-rpg-events"),
   refresh: document.querySelector("#mm-rpg-refresh"),
+  editProfile: document.querySelector("#mm-rpg-edit-staging-profile"),
   objective: document.querySelector("#mm-rpg-current-objective"),
   actionForm: document.querySelector("#mm-rpg-action-form"),
   action: document.querySelector("#mm-rpg-action"),
@@ -162,6 +163,14 @@ function buildHud() {
     setChronicleOpen(!chronicleOpen);
   });
   toolbar.append(actionButton, askButton, chronicleButton);
+  if (elements.refresh) {
+    elements.refresh.classList.add("mm-rpg-hud-refresh");
+    toolbar.append(elements.refresh);
+  }
+  if (elements.editProfile) {
+    elements.editProfile.classList.add("mm-rpg-hud-profile");
+    toolbar.append(elements.editProfile);
+  }
   right.append(objective, toolbar);
   root.append(title, right);
   return root;
@@ -311,8 +320,30 @@ function synchronizeHud() {
 function synchronizeChronicle() {
   const list = chroniclePanel?.querySelector("#mm-rpg-chronicle-list");
   if (!list || !elements.events) return;
-  list.replaceChildren(...[...elements.events.children].map((item) => item.cloneNode(true)));
+  list.replaceChildren(...[...elements.events.children].map(cloneChronicleEvent));
   list.scrollTop = list.scrollHeight;
+}
+
+function cloneChronicleEvent(item) {
+  const clone = item.cloneNode(true);
+  const nodes = [clone, ...clone.querySelectorAll("*")];
+  for (const node of nodes) {
+    node.removeAttribute("id");
+    node.removeAttribute("data-event-id");
+    node.removeAttribute("data-choice-id");
+    node.removeAttribute("data-option-id");
+    node.removeAttribute("data-encounter-id");
+    node.removeAttribute("data-interaction-target-id");
+  }
+  for (const button of clone.querySelectorAll("button")) {
+    button.disabled = true;
+    button.removeAttribute("aria-pressed");
+  }
+  for (const link of clone.querySelectorAll("a")) {
+    link.removeAttribute("href");
+    link.removeAttribute("target");
+  }
+  return clone;
 }
 
 function synchronizePrivateHistory() {
@@ -478,10 +509,6 @@ const observer = new MutationObserver(() => {
 });
 
 if (elements.campaign) {
-  // Campaign activation is the only hidden-state transition this observer owns.
-  // Do not observe descendant hidden attributes: the shell's own Ask-GM and
-  // Chronicle panels toggle hidden and would recursively retrigger this callback
-  // before auth-launcher can finish importing the RPG application.
   observer.observe(elements.campaign, {
     attributes: true,
     attributeFilter: ["hidden"],
