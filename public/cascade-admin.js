@@ -65,7 +65,7 @@ function installConsole(identity) {
     <form method="dialog" class="cascade-admin-panel">
       <header>
         <div>
-          <small>CASCADE ADMIN</small>
+          <small>CASCADE CRUSH ADMIN</small>
           <h2>Playtest controls</h2>
         </div>
         <button type="submit" value="close" aria-label="Close admin console">×</button>
