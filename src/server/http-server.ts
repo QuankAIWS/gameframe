@@ -213,6 +213,19 @@ export function createGameFrameServer(
         return json(response, 200, players.feedFor(principal.playerId));
       }
 
+      if (request.method === "POST" && url.pathname === "/api/me/preferences") {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        players.register(principal);
+        const body = await readJson(request);
+        return json(response, 200, players.updateFavorites(principal.playerId, body.favoriteGameIds));
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/leaderboard") {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        players.register(principal);
+        return json(response, 200, players.leaderboard());
+      }
+
       if (request.method === "POST" && url.pathname === "/auth/logout") {
         return json(response, 200, { authenticated: false });
       }
