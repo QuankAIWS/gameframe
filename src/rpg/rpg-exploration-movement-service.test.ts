@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { normalizeRpgExplorationProjectionV1 } from "./rpg-exploration-contract.ts";
+import { normalizeRpgExplorationProjection } from "./rpg-exploration-contract.ts";
 import {
   materializeRpgExplorationProjection,
 } from "./rpg-exploration-materializer.ts";
@@ -31,7 +31,7 @@ function databasePath(): string {
 }
 
 function projection() {
-  return normalizeRpgExplorationProjectionV1(explorationFixture);
+  return normalizeRpgExplorationProjection(explorationFixture);
 }
 
 function moveRequest(
