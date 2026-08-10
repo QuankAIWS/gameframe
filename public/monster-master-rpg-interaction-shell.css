@@ -15,9 +15,69 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 .mm-rpg-play-shell .mm-rpg-campaign-header,
 .mm-rpg-play-shell .mm-rpg-world-header,
 .mm-rpg-play-shell .mm-rpg-world-footer,
-.mm-rpg-play-shell .mm-rpg-sidebar,
-.mm-rpg-play-shell .mm-rpg-layout {
+.mm-rpg-play-shell .mm-rpg-sidebar {
   display: none;
+}
+
+.mm-rpg-play-shell .mm-rpg-layout {
+  display: contents;
+}
+
+.mm-rpg-play-shell .mm-rpg-story {
+  display: none;
+}
+
+.mm-rpg-play-shell .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 30;
+  display: block;
+  width: min(500px, calc(100vw - 28px));
+  max-height: min(440px, calc(100% - 150px));
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid rgba(181, 215, 179, .2);
+  border-radius: 16px;
+  background: rgba(4, 11, 8, .92);
+  box-shadow: 0 16px 46px rgba(0, 0, 0, .42);
+  backdrop-filter: blur(12px);
+}
+
+.mm-rpg-play-shell .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) .mm-rpg-section-heading,
+.mm-rpg-play-shell .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) #mm-rpg-empty,
+.mm-rpg-play-shell .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) #mm-rpg-events > .mm-rpg-event {
+  display: none;
+}
+
+.mm-rpg-play-shell .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) #mm-rpg-events > .mm-rpg-choice-event:has(button:not(:disabled)),
+.mm-rpg-play-shell .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) #mm-rpg-events > .mm-rpg-encounter-event:has(.mm-rpg-encounter-enter[href]) {
+  display: grid;
+}
+
+.mm-rpg-play-shell .mm-rpg-campaign:has(.mm-rpg-action-dock.is-open) .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) {
+  bottom: 190px;
 }
 
 .mm-rpg-play-shell #mm-rpg-error {
@@ -66,7 +126,7 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 .mm-rpg-play-hud {
   position: absolute;
   inset: 14px 14px auto;
-  z-index: 20;
+  z-index: 40;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -169,7 +229,7 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
   position: absolute;
   left: 50%;
   bottom: 14px;
-  z-index: 22;
+  z-index: 32;
   display: none;
   width: min(760px, calc(100vw - 30px));
   transform: translateX(-50%);
@@ -365,6 +425,14 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
   bottom: 174px;
 }
 
+.mm-rpg-play-shell .mm-rpg-world-stage:has(.mm-rpg-action-dock.is-open) .mm-rpg-world-interact {
+  bottom: 194px;
+}
+
+.mm-rpg-play-shell .mm-rpg-world-stage:has(.mm-rpg-action-dock.is-open) .mm-rpg-world-interact-chooser {
+  bottom: 246px;
+}
+
 @media (max-width: 760px) {
   .mm-rpg-play-shell .mm-rpg-shell {
     height: calc(100dvh - var(--gameframe-destination-height));
@@ -393,6 +461,17 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
     font-size: .64rem;
   }
 
+  .mm-rpg-play-shell .mm-rpg-story:has(
+    .mm-rpg-choice-event button:not(:disabled),
+    .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+  ) {
+    left: 8px;
+    right: 8px;
+    bottom: 166px;
+    width: auto;
+    max-height: 42%;
+  }
+
   .mm-rpg-play-shell .mm-rpg-world-interact {
     bottom: 166px;
   }
@@ -407,6 +486,14 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 
   .mm-rpg-play-shell .mm-rpg-world-monster-control-chooser {
     bottom: 274px;
+  }
+
+  .mm-rpg-play-shell .mm-rpg-world-stage:has(.mm-rpg-action-dock.is-open) .mm-rpg-world-interact {
+    bottom: 286px;
+  }
+
+  .mm-rpg-play-shell .mm-rpg-world-stage:has(.mm-rpg-action-dock.is-open) .mm-rpg-world-interact-chooser {
+    bottom: 340px;
   }
 
   .mm-rpg-overlay-panel {
