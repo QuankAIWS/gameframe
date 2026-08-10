@@ -3,6 +3,8 @@ import { gameFrameFetch } from "./gameframe-auth.js";
 const VIEW_EVENT = "gameframe:monster-master-pixi-view";
 const STATE_EVENT = "gameframe:monster-master-rpg-state";
 const MAX_REQUEST_TIMEOUT_MS = 12_000;
+const RECONCILE_ATTEMPTS = 24;
+const RECONCILE_DELAY_MS = 500;
 
 const identity = window.gameFrameIdentity;
 if (!identity?.playerId) {
@@ -106,13 +108,18 @@ async function travel() {
   submitting = true;
   synchronize();
   showError("");
+  showStatus("Travel command is being accepted…");
   try {
     await requestJson(
       `/api/rpg/campaigns/${encodeURIComponent(request.campaignId)}/exploration/interact`,
       request,
     );
     pendingRequest = null;
-    await refreshWorld();
+    showStatus("Travel accepted. Synchronizing the destination scene…");
+    const reconciled = await reconcileSceneChange(request.sceneId);
+    showStatus(reconciled
+      ? "Travel complete."
+      : "Travel was accepted. The map will update when Runtime finishes the scene transfer.");
   } catch (error) {
     const physicalConflict = error?.status === 409 && [
       "position-revision-conflict",
@@ -125,12 +132,25 @@ async function travel() {
     if (physicalConflict || coordinationConflict) {
       pendingRequest = null;
       await refreshWorld().catch(() => undefined);
+      showStatus("Exploration state changed. Refreshed the current scene.");
+    } else {
+      showStatus("Travel delivery was not confirmed. Retry sends the exact same command.");
     }
     showError(error?.message || "Travel could not be completed.");
   } finally {
     submitting = false;
     synchronize();
   }
+}
+
+async function reconcileSceneChange(sourceSceneId) {
+  for (let attempt = 0; attempt < RECONCILE_ATTEMPTS; attempt += 1) {
+    await refreshWorld().catch(() => undefined);
+    const sceneId = worldState().payload?.projection?.scene?.sceneId;
+    if (typeof sceneId === "string" && sceneId && sceneId !== sourceSceneId) return true;
+    await new Promise((resolve) => window.setTimeout(resolve, RECONCILE_DELAY_MS));
+  }
+  return false;
 }
 
 async function refreshWorld() {
@@ -177,6 +197,11 @@ function showError(message) {
   if (!error) return;
   error.textContent = message || "";
   error.hidden = !message;
+}
+
+function showStatus(message) {
+  const status = document.querySelector("#mm-rpg-action-status");
+  if (status) status.textContent = message || "";
 }
 
 window.gameFrameMonsterRpgTravelControl = Object.freeze({
