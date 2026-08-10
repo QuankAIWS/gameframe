@@ -301,6 +301,7 @@ async function submitControl(target) {
     }
   } catch (error) {
     const stale = error?.status === 409 && [
+      "coordination-revision-conflict",
       "position-revision-conflict",
       "stale-materialization",
       "control-target-unavailable",
