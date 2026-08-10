@@ -1,13 +1,14 @@
 body.monster-master-rpg-route.mm-rpg-play-shell {
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
 .mm-rpg-play-shell .mm-rpg-shell {
   width: 100%;
-  height: 100vh;
-  padding: 64px 0 0;
+  height: calc(100dvh - var(--gameframe-destination-height));
+  padding: 0;
   margin: 0;
+  overflow: hidden;
 }
 
 .mm-rpg-play-shell .mm-rpg-hero,
@@ -21,7 +22,7 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 
 .mm-rpg-play-shell #mm-rpg-error {
   position: fixed;
-  top: 72px;
+  top: calc(var(--gameframe-destination-height) + 8px);
   left: 50%;
   z-index: 80;
   width: min(720px, calc(100vw - 32px));
@@ -32,7 +33,7 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 
 .mm-rpg-play-shell .mm-rpg-campaign {
   position: relative;
-  height: calc(100vh - 64px);
+  height: 100%;
   margin: 0;
 }
 
@@ -133,6 +134,8 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 
 .mm-rpg-play-toolbar {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
   padding: 6px;
   border-radius: 12px;
@@ -155,6 +158,11 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
   border-color: rgba(167, 244, 61, .62);
   background: rgba(93, 145, 39, .22);
   color: #eaffcf;
+}
+
+.mm-rpg-play-toolbar #mm-rpg-refresh {
+  min-width: 36px;
+  padding: 0 9px;
 }
 
 .mm-rpg-play-shell .mm-rpg-composer.mm-rpg-action-dock {
@@ -218,7 +226,7 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
   right: 14px;
   bottom: 14px;
   width: min(460px, calc(100vw - 28px));
-  max-height: min(620px, calc(100vh - 100px));
+  max-height: min(620px, calc(100dvh - var(--gameframe-destination-height) - 28px));
 }
 
 .mm-rpg-overlay-panel > header,
@@ -264,7 +272,7 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 }
 
 .mm-rpg-chronicle-list {
-  max-height: min(540px, calc(100vh - 160px));
+  max-height: min(540px, calc(100dvh - var(--gameframe-destination-height) - 88px));
   margin: 0;
   list-style: none;
 }
@@ -359,11 +367,12 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 
 @media (max-width: 760px) {
   .mm-rpg-play-shell .mm-rpg-shell {
-    padding-top: 58px;
+    height: calc(100dvh - var(--gameframe-destination-height));
+    padding: 0;
   }
 
   .mm-rpg-play-shell .mm-rpg-campaign {
-    height: calc(100vh - 58px);
+    height: 100%;
   }
 
   .mm-rpg-play-hud {
@@ -381,11 +390,7 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
   .mm-rpg-play-toolbar button {
     min-width: 42px;
     padding: 0 9px;
-    font-size: 0;
-  }
-
-  .mm-rpg-play-toolbar button::first-letter {
-    font-size: .82rem;
+    font-size: .64rem;
   }
 
   .mm-rpg-play-shell .mm-rpg-world-interact {
