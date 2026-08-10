@@ -1,0 +1,417 @@
+body.monster-master-rpg-route.mm-rpg-play-shell {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.mm-rpg-play-shell .mm-rpg-shell {
+  width: 100%;
+  height: 100vh;
+  padding: 64px 0 0;
+  margin: 0;
+}
+
+.mm-rpg-play-shell .mm-rpg-hero,
+.mm-rpg-play-shell .mm-rpg-campaign-header,
+.mm-rpg-play-shell .mm-rpg-world-header,
+.mm-rpg-play-shell .mm-rpg-world-footer,
+.mm-rpg-play-shell .mm-rpg-sidebar,
+.mm-rpg-play-shell .mm-rpg-layout {
+  display: none;
+}
+
+.mm-rpg-play-shell #mm-rpg-error {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  z-index: 80;
+  width: min(720px, calc(100vw - 32px));
+  margin: 0;
+  transform: translateX(-50%);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .46);
+}
+
+.mm-rpg-play-shell .mm-rpg-campaign {
+  position: relative;
+  height: calc(100vh - 64px);
+  margin: 0;
+}
+
+.mm-rpg-play-shell .mm-rpg-world {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.mm-rpg-play-shell .mm-rpg-world-stage {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.mm-rpg-play-shell .mm-rpg-world-stage .combat-canvas-frame {
+  inset: 0;
+}
+
+.mm-rpg-play-shell .mm-rpg-world-stage #monster-master-canvas,
+.mm-rpg-play-shell .mm-rpg-world-stage .monster-master-pixi-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.mm-rpg-play-hud {
+  position: absolute;
+  inset: 14px 14px auto;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.mm-rpg-play-title,
+.mm-rpg-objective-hud,
+.mm-rpg-play-toolbar,
+.mm-rpg-action-dock,
+.mm-rpg-overlay-panel,
+.mm-rpg-talk-panel {
+  border: 1px solid rgba(181, 215, 179, .2);
+  background: rgba(4, 11, 8, .88);
+  box-shadow: 0 16px 46px rgba(0, 0, 0, .38);
+  backdrop-filter: blur(12px);
+}
+
+.mm-rpg-play-title {
+  display: grid;
+  gap: 2px;
+  max-width: min(440px, 46vw);
+  padding: 10px 13px;
+  border-radius: 12px;
+  pointer-events: auto;
+}
+
+.mm-rpg-play-title small,
+.mm-rpg-objective-hud small,
+.mm-rpg-overlay-panel > header small,
+.mm-rpg-talk-panel > header small {
+  color: var(--mm-rpg-green);
+  font: 900 .58rem/1 ui-monospace, "SFMono-Regular", Consolas, monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.mm-rpg-play-title strong {
+  overflow: hidden;
+  font-size: .9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mm-rpg-hud-right {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.mm-rpg-objective-hud {
+  width: min(360px, 42vw);
+  padding: 10px 13px;
+  border-radius: 12px;
+  pointer-events: auto;
+}
+
+.mm-rpg-objective-hud strong {
+  display: block;
+  margin-top: 4px;
+  font-size: .78rem;
+  line-height: 1.35;
+}
+
+.mm-rpg-play-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 12px;
+  pointer-events: auto;
+}
+
+.mm-rpg-play-toolbar button,
+.mm-rpg-overlay-close,
+.mm-rpg-action-mode-button {
+  min-height: 36px;
+  padding: 0 11px;
+  border-color: rgba(190, 219, 184, .18);
+  background: rgba(6, 15, 10, .9);
+  color: var(--mm-rpg-ink);
+  font-size: .72rem;
+}
+
+.mm-rpg-play-toolbar button[aria-pressed="true"],
+.mm-rpg-action-mode-button[aria-pressed="true"] {
+  border-color: rgba(167, 244, 61, .62);
+  background: rgba(93, 145, 39, .22);
+  color: #eaffcf;
+}
+
+.mm-rpg-play-shell .mm-rpg-composer.mm-rpg-action-dock {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  z-index: 22;
+  display: none;
+  width: min(760px, calc(100vw - 30px));
+  transform: translateX(-50%);
+  padding: 12px;
+  border-radius: 16px;
+  pointer-events: auto;
+}
+
+.mm-rpg-play-shell .mm-rpg-composer.mm-rpg-action-dock.is-open {
+  display: grid;
+}
+
+.mm-rpg-action-dock .mm-rpg-composer-heading {
+  align-items: center;
+}
+
+.mm-rpg-action-dock .mm-rpg-composer-heading small {
+  max-width: 620px;
+  font-size: .72rem;
+}
+
+.mm-rpg-action-dock textarea {
+  min-height: 70px;
+  max-height: 180px;
+  resize: none;
+}
+
+.mm-rpg-action-dock .mm-rpg-composer-actions {
+  align-items: center;
+}
+
+.mm-rpg-action-dock-dismiss {
+  border-color: rgba(190, 219, 184, .18);
+  background: transparent;
+  color: var(--mm-rpg-muted);
+}
+
+.mm-rpg-overlay-panel,
+.mm-rpg-talk-panel {
+  position: absolute;
+  z-index: 28;
+  display: grid;
+  overflow: hidden;
+  border-radius: 16px;
+  pointer-events: auto;
+}
+
+.mm-rpg-overlay-panel[hidden],
+.mm-rpg-talk-panel[hidden] {
+  display: none;
+}
+
+.mm-rpg-overlay-panel {
+  right: 14px;
+  bottom: 14px;
+  width: min(460px, calc(100vw - 28px));
+  max-height: min(620px, calc(100vh - 100px));
+}
+
+.mm-rpg-overlay-panel > header,
+.mm-rpg-talk-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(181, 215, 179, .13);
+}
+
+.mm-rpg-overlay-panel > header div,
+.mm-rpg-talk-panel > header div {
+  display: grid;
+  gap: 4px;
+}
+
+.mm-rpg-overlay-panel > header strong,
+.mm-rpg-talk-panel > header strong {
+  font-size: .96rem;
+}
+
+.mm-rpg-overlay-close {
+  width: 36px;
+  min-width: 36px;
+  padding: 0;
+  font-size: 1rem;
+}
+
+.mm-rpg-ask-gm-history,
+.mm-rpg-chronicle-list,
+.mm-rpg-talk-history {
+  display: grid;
+  gap: 9px;
+  overflow-y: auto;
+  min-height: 80px;
+  padding: 12px;
+}
+
+.mm-rpg-ask-gm-history {
+  max-height: 320px;
+}
+
+.mm-rpg-chronicle-list {
+  max-height: min(540px, calc(100vh - 160px));
+  margin: 0;
+  list-style: none;
+}
+
+.mm-rpg-ask-bubble,
+.mm-rpg-talk-bubble {
+  width: fit-content;
+  max-width: 90%;
+  padding: 9px 11px;
+  border: 1px solid rgba(181, 215, 179, .14);
+  border-radius: 12px;
+  background: rgba(2, 7, 4, .72);
+  color: #dce7dc;
+  font-size: .8rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.mm-rpg-ask-bubble[data-speaker="player"],
+.mm-rpg-talk-bubble[data-speaker="player"] {
+  justify-self: end;
+  background: rgba(79, 124, 43, .18);
+}
+
+.mm-rpg-ask-bubble[data-speaker="gm"] {
+  border-color: rgba(103, 193, 243, .32);
+  background: rgba(25, 76, 104, .2);
+}
+
+.mm-rpg-ask-gm-form,
+.mm-rpg-talk-form {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  border-top: 1px solid rgba(181, 215, 179, .13);
+}
+
+.mm-rpg-ask-gm-form textarea,
+.mm-rpg-talk-form textarea {
+  width: 100%;
+  min-height: 76px;
+  max-height: 170px;
+  resize: none;
+  padding: 11px 12px;
+  border: 1px solid rgba(190, 219, 184, .22);
+  border-radius: 11px;
+  outline: 0;
+  background: rgba(2, 7, 4, .88);
+  color: var(--mm-rpg-ink);
+  font: inherit;
+  line-height: 1.45;
+}
+
+.mm-rpg-ask-gm-form footer,
+.mm-rpg-talk-form footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mm-rpg-ask-gm-form footer small,
+.mm-rpg-talk-form footer small {
+  color: var(--mm-rpg-muted);
+  font-size: .68rem;
+}
+
+.mm-rpg-private-gm-event {
+  border-color: rgba(103, 193, 243, .28) !important;
+  background: rgba(15, 53, 75, .2) !important;
+}
+
+.mm-rpg-private-gm-event::before {
+  background: #72c9ee !important;
+}
+
+.mm-rpg-play-shell .mm-rpg-world-interact {
+  bottom: 70px;
+}
+
+.mm-rpg-play-shell .mm-rpg-world-interact-chooser {
+  bottom: 122px;
+}
+
+.mm-rpg-play-shell .mm-rpg-world-monster-control {
+  bottom: 122px;
+}
+
+.mm-rpg-play-shell .mm-rpg-world-monster-control-chooser {
+  bottom: 174px;
+}
+
+@media (max-width: 760px) {
+  .mm-rpg-play-shell .mm-rpg-shell {
+    padding-top: 58px;
+  }
+
+  .mm-rpg-play-shell .mm-rpg-campaign {
+    height: calc(100vh - 58px);
+  }
+
+  .mm-rpg-play-hud {
+    inset: 8px 8px auto;
+  }
+
+  .mm-rpg-play-title {
+    max-width: 58vw;
+  }
+
+  .mm-rpg-objective-hud {
+    display: none;
+  }
+
+  .mm-rpg-play-toolbar button {
+    min-width: 42px;
+    padding: 0 9px;
+    font-size: 0;
+  }
+
+  .mm-rpg-play-toolbar button::first-letter {
+    font-size: .82rem;
+  }
+
+  .mm-rpg-play-shell .mm-rpg-world-interact {
+    bottom: 166px;
+  }
+
+  .mm-rpg-play-shell .mm-rpg-world-interact-chooser {
+    bottom: 220px;
+  }
+
+  .mm-rpg-play-shell .mm-rpg-world-monster-control {
+    bottom: 220px;
+  }
+
+  .mm-rpg-play-shell .mm-rpg-world-monster-control-chooser {
+    bottom: 274px;
+  }
+
+  .mm-rpg-overlay-panel {
+    inset: 8px;
+    width: auto;
+    max-height: none;
+  }
+
+  .mm-rpg-play-shell .mm-rpg-composer.mm-rpg-action-dock {
+    bottom: 8px;
+    width: calc(100vw - 16px);
+  }
+}
