@@ -9,7 +9,7 @@ import {
   materializeRpgExplorationProjection,
 } from "./rpg-exploration-materializer.ts";
 import {
-  normalizeRpgExplorationMoveRequest,
+  normalizeMoveRequest,
   RpgExplorationMovementError,
   RpgExplorationMovementService,
 } from "./rpg-exploration-movement-service.ts";
@@ -56,10 +56,10 @@ function moveRequest(
 
 test("normalizes strict movement requests", () => {
   const semantic = projection();
-  assert.equal(normalizeRpgExplorationMoveRequest(
+  assert.equal(normalizeMoveRequest(
     moveRequest(semantic, 0, "west"),
   ).direction, "west");
-  assert.throws(() => normalizeRpgExplorationMoveRequest({
+  assert.throws(() => normalizeMoveRequest({
     ...moveRequest(semantic, 0, "west"),
     x: 99,
   }), /unsupported fields/);
