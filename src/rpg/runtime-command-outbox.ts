@@ -17,10 +17,16 @@ export type RuntimePlayerCommandV1 =
       kind: "campaign.submit_action";
       visibility: "public" | "private-to-runtime";
       text: string;
-      interaction?: {
-        kind: "talk";
-        targetEntityId: string;
-      };
+      interaction?:
+        | {
+            kind: "talk";
+            targetEntityId: string;
+          }
+        | {
+            kind: "monster-control";
+            operation: "deploy" | "recall";
+            targetEntityId: string;
+          };
     }
   | {
       kind: "campaign.submit_choice";
@@ -637,25 +643,35 @@ function normalizeCommand(value: unknown): RuntimePlayerCommandV1 {
 
 function normalizeInteraction(
   value: unknown,
-): { kind: "talk"; targetEntityId: string } | undefined {
+):
+  | { kind: "talk"; targetEntityId: string }
+  | { kind: "monster-control"; operation: "deploy" | "recall"; targetEntityId: string }
+  | undefined {
   if (value === undefined) return undefined;
   const interaction = record(value, "command.interaction");
-  const unknown = Object.keys(interaction).filter(
-    (key) => key !== "kind" && key !== "targetEntityId",
-  );
+  const allowed = interaction.kind === "monster-control"
+    ? new Set(["kind", "operation", "targetEntityId"])
+    : new Set(["kind", "targetEntityId"]);
+  const unknown = Object.keys(interaction).filter((key) => !allowed.has(key));
   if (unknown.length > 0) {
     throw invalid(`command.interaction contains unsupported fields: ${unknown.sort().join(", ")}`);
   }
-  if (interaction.kind !== "talk") {
-    throw invalid("command.interaction.kind is not supported");
+  const targetEntityId = normalizeIdentifier(
+    interaction.targetEntityId,
+    "command.interaction.targetEntityId",
+  );
+  if (interaction.kind === "talk") return { kind: "talk", targetEntityId };
+  if (interaction.kind === "monster-control") {
+    if (interaction.operation !== "deploy" && interaction.operation !== "recall") {
+      throw invalid("command.interaction.operation must be deploy or recall");
+    }
+    return {
+      kind: "monster-control",
+      operation: interaction.operation,
+      targetEntityId,
+    };
   }
-  return {
-    kind: "talk",
-    targetEntityId: normalizeIdentifier(
-      interaction.targetEntityId,
-      "command.interaction.targetEntityId",
-    ),
-  };
+  throw invalid("command.interaction.kind is not supported");
 }
 
 function normalizeLeaseDuration(value: unknown): number {

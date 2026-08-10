@@ -27,6 +27,11 @@ import {
   MonsterMasterRpgEncounterConfigurationError,
 } from "../rpg/monster-master-rpg-encounter-materializer.ts";
 import {
+  authorizeRpgExplorationMonsterControl,
+  normalizeRpgExplorationMonsterControlRequest,
+  RpgExplorationMonsterControlError,
+} from "../rpg/rpg-exploration-monster-control-service.ts";
+import {
   materializeRpgExplorationProjection,
   RpgExplorationMaterializationError,
 } from "../rpg/rpg-exploration-materializer.ts";
@@ -160,6 +165,7 @@ export function createDurableRpgHttpServer(
                   "rpg-exploration-materialization",
                   "rpg-exploration-movement",
                   "rpg-exploration-talk",
+                  "rpg-exploration-monster-control",
                 ]
               : []),
           ],
@@ -229,6 +235,75 @@ export function createDurableRpgHttpServer(
           const normalized = normalizeMoveRequest(body);
           requireBodyIdentity(normalized.campaignId, explorationRoute.campaignId, "campaignId");
           return sendJson(response, 200, explorationMovement.move(principal.playerId, normalized));
+        }
+
+        if (explorationRoute.operation === "control") {
+          const normalized = normalizeRpgExplorationMonsterControlRequest(body);
+          requireBodyIdentity(normalized.campaignId, explorationRoute.campaignId, "campaignId");
+          const committedRetry = campaigns.findCommittedExplorationMonsterControl({
+            campaignId: normalized.campaignId,
+            commandId: normalized.commandId,
+            expectedGameframeCoordinationRevision:
+              normalized.expectedGameframeCoordinationRevision,
+            issuedAt: normalized.issuedAt,
+            operation: normalized.operation,
+            controlTargetId: normalized.controlTargetId,
+          }, { kind: "player", playerId: principal.playerId });
+          if (committedRetry) {
+            return sendJson(response, 200, {
+              protocolVersion: 1,
+              kind: "campaign.exploration_monster_control_committed",
+              operation: normalized.operation,
+              controlTargetId: normalized.controlTargetId,
+              command: committedRetry,
+              replayed: true,
+            });
+          }
+
+          if (!options.explorationTransport) {
+            return sendJson(response, 503, {
+              error: "runtime-exploration-unavailable",
+              message: "Runtime exploration projection is not configured.",
+              retryable: true,
+            });
+          }
+          const projection = await options.explorationTransport.attach({
+            campaignId: explorationRoute.campaignId,
+            authenticatedPlayerId: principal.playerId,
+          });
+          const materialization = materializeRpgExplorationProjection(projection);
+          const playerPosition = explorationMovement.attach({
+            playerId: principal.playerId,
+            projection,
+            materialization,
+          });
+          const authorized = authorizeRpgExplorationMonsterControl({
+            request: normalized,
+            projection,
+            materialization,
+            position: playerPosition,
+          });
+          const committed = campaigns.handleAuthorizedExplorationMonsterControl({
+            campaignId: authorized.campaignId,
+            commandId: authorized.commandId,
+            expectedGameframeCoordinationRevision:
+              authorized.expectedGameframeCoordinationRevision,
+            issuedAt: authorized.issuedAt,
+            operation: authorized.operation,
+            controlTargetId: authorized.controlTargetId,
+            targetEntityId: authorized.targetEntityId,
+            targetDisplayLabel: authorized.targetDisplayLabel,
+          }, { kind: "player", playerId: principal.playerId });
+          realtime.notifyCampaign(explorationRoute.campaignId);
+          return sendJson(response, 200, {
+            protocolVersion: 1,
+            kind: "campaign.exploration_monster_control_committed",
+            operation: authorized.operation,
+            controlTargetId: authorized.controlTargetId,
+            command: committed,
+            playerPosition,
+            replayed: false,
+          });
         }
 
         if (explorationRoute.operation === "interact") {
@@ -457,12 +532,12 @@ export function createDurableRpgHttpServer(
 
 function matchExplorationRoute(
   pathname: string,
-): { campaignId: string; operation: "attach" | "move" | "interact" } | undefined {
-  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/exploration\/(attach|move|interact)$/.exec(pathname);
+): { campaignId: string; operation: "attach" | "move" | "interact" | "control" } | undefined {
+  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/exploration\/(attach|move|interact|control)$/.exec(pathname);
   if (!match) return undefined;
   return {
     campaignId: decodeURIComponent(match[1]!),
-    operation: match[2] as "attach" | "move" | "interact",
+    operation: match[2] as "attach" | "move" | "interact" | "control",
   };
 }
 
@@ -648,6 +723,14 @@ function normalizeError(error: unknown): {
     );
   }
   if (error instanceof RpgExplorationInteractionError) {
+    return failure(
+      error.code === "invalid-input" ? 400 : 409,
+      error.code,
+      error.message,
+      false,
+    );
+  }
+  if (error instanceof RpgExplorationMonsterControlError) {
     return failure(
       error.code === "invalid-input" ? 400 : 409,
       error.code,

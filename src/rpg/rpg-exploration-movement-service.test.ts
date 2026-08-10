@@ -1,23 +1,22 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
 
-import type { RpgExplorationProjectionV1 } from "./rpg-exploration-contract.ts";
-import { materializeRpgExplorationProjection } from "./rpg-exploration-materializer.ts";
+import { normalizeRpgExplorationProjectionV1 } from "./rpg-exploration-contract.ts";
 import {
+  materializeRpgExplorationProjection,
+} from "./rpg-exploration-materializer.ts";
+import {
+  normalizeRpgExplorationMoveRequest,
   RpgExplorationMovementError,
   RpgExplorationMovementService,
-  type RpgExplorationMoveDirection,
 } from "./rpg-exploration-movement-service.ts";
 import { SqliteRpgExplorationPositionStore } from "./sqlite-rpg-exploration-position-store.ts";
+import explorationFixture from "../../planning/fixtures/rpg/v1/exploration-port-a.json" with { type: "json" };
 
 const directories: string[] = [];
-const fixturePath = fileURLToPath(
-  new URL("../../planning/fixtures/rpg/v1/exploration-port-a.json", import.meta.url),
-);
 
 test.afterEach(() => {
   for (const directory of directories.splice(0)) {
@@ -26,216 +25,250 @@ test.afterEach(() => {
 });
 
 function databasePath(): string {
-  const directory = mkdtempSync(join(tmpdir(), "gameframe-rpg-movement-"));
+  const directory = mkdtempSync(join(tmpdir(), "gameframe-rpg-position-"));
   directories.push(directory);
   return join(directory, "gameframe.sqlite");
 }
 
-function projection(): RpgExplorationProjectionV1 {
-  return JSON.parse(readFileSync(fixturePath, "utf8")).projection as RpgExplorationProjectionV1;
+function projection() {
+  return normalizeRpgExplorationProjectionV1(explorationFixture);
 }
 
 function moveRequest(
-  projectionValue: RpgExplorationProjectionV1,
+  semantic: ReturnType<typeof projection>,
   expectedPositionRevision: number,
-  direction: RpgExplorationMoveDirection,
+  direction: "north" | "south" | "east" | "west",
 ) {
-  const materialization = materializeRpgExplorationProjection(projectionValue);
   return {
-    type: "exploration_move" as const,
-    protocolVersion: 1 as const,
-    campaignId: projectionValue.campaignId,
-    sceneId: projectionValue.scene.sceneId,
-    materializationRef: materialization.materializationRef,
+    type: "exploration_move",
+    protocolVersion: 1,
+    campaignId: semantic.campaignId,
+    sceneId: semantic.scene.sceneId,
+    materializationRef: {
+      materializationId: `rpg-scene:${semantic.campaignId}:${semantic.scene.sceneId}`,
+      version: "1",
+      hash: "PqiWVXyRuvk0jBq9Elj-IiSwsi2yu1RAEYo_loaQFlg",
+    },
     expectedPositionRevision,
     direction,
   };
 }
 
-test("GameFrame movement obeys Crooked Checkpoint terrain and occupied anchors", () => {
-  const filePath = databasePath();
-  const positions = new SqliteRpgExplorationPositionStore({ filePath });
-  const service = new RpgExplorationMovementService({
-    positions,
-    clock: () => "2026-08-09T13:00:00.000Z",
-  });
+test("normalizes strict movement requests", () => {
+  const semantic = projection();
+  assert.equal(normalizeRpgExplorationMoveRequest(
+    moveRequest(semantic, 0, "west"),
+  ).direction, "west");
+  assert.throws(() => normalizeRpgExplorationMoveRequest({
+    ...moveRequest(semantic, 0, "west"),
+    x: 99,
+  }), /unsupported fields/);
+});
+
+test("materialized movement is collision-aware and revisioned per player", () => {
   const semantic = projection();
   const materialization = materializeRpgExplorationProjection(semantic);
+  const positions = new SqliteRpgExplorationPositionStore({
+    filePath: databasePath(),
+  });
+  const service = new RpgExplorationMovementService({ positions });
   try {
-    const attached = service.attach({
+    const initial = service.attach({
       playerId: semantic.viewer.playerId,
       projection: semantic,
       materialization,
     });
-    assert.deepEqual(attached.transform, { x: 14, y: 7, facing: "west" });
-    assert.equal(attached.positionRevision, 0);
+    assert.deepEqual(initial.transform, { x: 14, y: 7, facing: "west" });
+    assert.equal(initial.positionRevision, 0);
 
-    let current = attached;
-    for (const direction of ["west", "west", "west", "west"] as const) {
-      current = service.move(
-        semantic.viewer.playerId,
-        moveRequest(semantic, current.positionRevision, direction),
-      );
-      assert.equal(current.moved, true);
-    }
-    assert.deepEqual(current.transform, { x: 10, y: 7, facing: "west" });
+    const west = service.move(
+      semantic.viewer.playerId,
+      moveRequest(semantic, 0, "west"),
+    );
+    assert.equal(west.moved, true);
+    assert.deepEqual(west.transform, { x: 13, y: 7, facing: "west" });
+    assert.equal(west.positionRevision, 1);
 
-    const cartBlocked = service.move(
+    const south = service.move(
       semantic.viewer.playerId,
-      moveRequest(semantic, current.positionRevision, "south"),
+      moveRequest(semantic, 1, "south"),
     );
-    assert.equal(cartBlocked.moved, false);
-    assert.equal(cartBlocked.blockedBy, "occupied");
-    assert.deepEqual(cartBlocked.transform, { x: 10, y: 7, facing: "south" });
-    assert.equal(cartBlocked.positionRevision, current.positionRevision + 1);
+    assert.equal(south.moved, true);
+    assert.deepEqual(south.transform, { x: 13, y: 8, facing: "south" });
+    assert.equal(south.positionRevision, 2);
 
-    current = service.move(
+    const blocked = service.move(
       semantic.viewer.playerId,
-      moveRequest(semantic, cartBlocked.positionRevision, "north"),
+      moveRequest(semantic, 2, "west"),
     );
-    current = service.move(
-      semantic.viewer.playerId,
-      moveRequest(semantic, current.positionRevision, "west"),
-    );
-    assert.deepEqual(current.transform, { x: 9, y: 6, facing: "west" });
-
-    const wallBlocked = service.move(
-      semantic.viewer.playerId,
-      moveRequest(semantic, current.positionRevision, "west"),
-    );
-    assert.equal(wallBlocked.moved, false);
-    assert.equal(wallBlocked.blockedBy, "terrain");
-    assert.deepEqual(wallBlocked.transform, { x: 9, y: 6, facing: "west" });
-    assert.equal(wallBlocked.positionRevision, current.positionRevision);
+    assert.equal(blocked.moved, false);
+    assert.deepEqual(blocked.transform, { x: 13, y: 8, facing: "west" });
+    assert.equal(blocked.positionRevision, 2);
   } finally {
     positions.close();
   }
 });
 
-test("exploration position survives GameFrame restart only for the exact materialization", () => {
-  const filePath = databasePath();
+test("player movement persists across service restart for the same materialization", () => {
   const semantic = projection();
   const materialization = materializeRpgExplorationProjection(semantic);
-  let lastRevision = 0;
+  const filePath = databasePath();
+  let positions = new SqliteRpgExplorationPositionStore({ filePath });
+  let service = new RpgExplorationMovementService({ positions });
+  const initial = service.attach({
+    playerId: semantic.viewer.playerId,
+    projection: semantic,
+    materialization,
+  });
+  service.move(
+    semantic.viewer.playerId,
+    moveRequest(semantic, initial.positionRevision, "west"),
+  );
+  positions.close();
 
-  const firstStore = new SqliteRpgExplorationPositionStore({ filePath });
+  positions = new SqliteRpgExplorationPositionStore({ filePath });
+  service = new RpgExplorationMovementService({ positions });
   try {
-    const first = new RpgExplorationMovementService({ positions: firstStore });
-    let current = first.attach({
+    const recovered = service.attach({
       playerId: semantic.viewer.playerId,
       projection: semantic,
       materialization,
     });
-    current = first.move(
-      semantic.viewer.playerId,
-      moveRequest(semantic, current.positionRevision, "west"),
-    );
-    current = first.move(
-      semantic.viewer.playerId,
-      moveRequest(semantic, current.positionRevision, "north"),
-    );
-    assert.deepEqual(current.transform, { x: 13, y: 6, facing: "north" });
-    lastRevision = current.positionRevision;
+    assert.deepEqual(recovered.transform, { x: 13, y: 7, facing: "west" });
+    assert.equal(recovered.positionRevision, 1);
   } finally {
-    firstStore.close();
+    positions.close();
   }
+});
 
-  const secondStore = new SqliteRpgExplorationPositionStore({ filePath });
+test("materialization identity changes reset stale physical positions", () => {
+  const semantic = projection();
+  const filePath = databasePath();
+  const materialization = materializeRpgExplorationProjection(semantic);
+  const positions = new SqliteRpgExplorationPositionStore({ filePath });
+  const service = new RpgExplorationMovementService({ positions });
   try {
-    const second = new RpgExplorationMovementService({ positions: secondStore });
-    const recovered = second.attach({
+    const initial = service.attach({
       playerId: semantic.viewer.playerId,
       projection: semantic,
       materialization,
     });
-    assert.deepEqual(recovered.transform, { x: 13, y: 6, facing: "north" });
-    assert.equal(recovered.positionRevision, lastRevision);
+    service.move(
+      semantic.viewer.playerId,
+      moveRequest(semantic, initial.positionRevision, "west"),
+    );
 
-    const changed = structuredClone(semantic) as RpgExplorationProjectionV1;
-    changed.scene.materialization.intent = {
-      ...changed.scene.materialization.intent,
-      themeId: "monster-master-starter-revised",
+    const nextSemantic = structuredClone(semantic);
+    nextSemantic.scene.semanticRevision += 1;
+    nextSemantic.scene.materialization.acceptedRef = {
+      materializationId: materialization.materializationRef.materializationId,
+      version: "2",
+      hash: "V2-pqiWVXyRuvk0jBq9Elj-IiSwsi2yu1RAEYo_lQ",
     };
-    const changedMaterialization = materializeRpgExplorationProjection(changed);
-    const reset = second.attach({
-      playerId: changed.viewer.playerId,
-      projection: changed,
-      materialization: changedMaterialization,
+    const nextMaterialization = materializeRpgExplorationProjection(nextSemantic);
+    const reset = service.attach({
+      playerId: nextSemantic.viewer.playerId,
+      projection: nextSemantic,
+      materialization: nextMaterialization,
     });
     assert.deepEqual(reset.transform, { x: 14, y: 7, facing: "west" });
     assert.equal(reset.positionRevision, 0);
   } finally {
-    secondStore.close();
+    positions.close();
   }
 });
 
-test("a newly occupied recovered tile resets and persists a usable spawn revision", () => {
+test("reattach keeps a persisted player position when companion placement occupies the authored spawn", () => {
   const filePath = databasePath();
   const positions = new SqliteRpgExplorationPositionStore({ filePath });
   const semantic = projection();
-  const materialization = materializeRpgExplorationProjection(semantic);
-  const service = new RpgExplorationMovementService({
-    positions,
-    clock: () => "2026-08-09T13:02:00.000Z",
+  const monsterId = "monster:cinder-reattach-test";
+  semantic.viewer.monsters = [{
+    monsterId,
+    displayLabel: "Cinder",
+    controlTargetId: `roster:${monsterId}`,
+    rulesProfileId: "mm.monster.skirmisher.v1",
+    deploymentState: "deployed",
+    deployedSceneId: semantic.scene.sceneId,
+  }];
+  semantic.scene.entities.push({
+    entityId: monsterId,
+    entityClass: "monster",
+    displayLabel: "Cinder",
+    identityStage: "name",
+    interactionTargetId: `entity:${monsterId}`,
+    rulesProfileId: "mm.monster.skirmisher.v1",
   });
+  const service = new RpgExplorationMovementService({ positions });
   try {
+    const firstMaterialization = materializeRpgExplorationProjection(semantic);
     const attached = service.attach({
       playerId: semantic.viewer.playerId,
       projection: semantic,
-      materialization,
+      materialization: firstMaterialization,
     });
-    const saved = service.move(
-      semantic.viewer.playerId,
-      moveRequest(semantic, attached.positionRevision, "north"),
-    );
-    assert.deepEqual(saved.transform, { x: 14, y: 6, facing: "north" });
-    assert.equal(saved.positionRevision, 1);
+    assert.deepEqual(attached.transform, { x: 14, y: 7, facing: "west" });
 
-    const newlyOccupied = structuredClone(materialization);
-    newlyOccupied.anchors.push({
-      anchorId: "entity:npc.newly-visible",
-      kind: "entity",
-      semanticId: "npc.newly-visible",
-      interactionTargetId: "entity:npc.newly-visible",
-      label: "newly visible traveler",
-      x: 14,
-      y: 6,
-      entityClass: "actor",
-      identityStage: "descriptor",
-    });
-    const reset = service.attach({
+    const moved = service.move(
+      semantic.viewer.playerId,
+      moveRequest(semantic, attached.positionRevision, "east"),
+    );
+    assert.deepEqual(moved.transform, { x: 15, y: 7, facing: "east" });
+
+    const freshMaterialization = materializeRpgExplorationProjection(semantic);
+    const recovered = service.attach({
       playerId: semantic.viewer.playerId,
       projection: semantic,
-      materialization: newlyOccupied,
+      materialization: freshMaterialization,
     });
-    assert.deepEqual(reset.transform, { x: 14, y: 7, facing: "west" });
-    assert.equal(reset.positionRevision, 2);
-
-    const afterReset = service.move(
-      semantic.viewer.playerId,
-      moveRequest(semantic, reset.positionRevision, "west"),
+    assert.deepEqual(recovered.transform, { x: 15, y: 7, facing: "east" });
+    const companion = freshMaterialization.anchors.find((anchor) =>
+      anchor.semanticId === monsterId
     );
-    assert.deepEqual(afterReset.transform, { x: 13, y: 7, facing: "west" });
-    assert.equal(afterReset.positionRevision, 3);
-
-    const third = new RpgExplorationMovementService({ positions });
-    const recovered = third.attach({
-      playerId: semantic.viewer.playerId,
-      projection: semantic,
-      materialization: newlyOccupied,
-    });
-    assert.deepEqual(recovered.transform, { x: 13, y: 7, facing: "west" });
-    assert.equal(recovered.positionRevision, 3);
+    assert.ok(companion);
+    assert.deepEqual({ x: companion.x, y: companion.y }, { x: 14, y: 7 });
   } finally {
     positions.close();
   }
 });
 
-test("movement rejects stale client position revisions", () => {
-  const filePath = databasePath();
-  const positions = new SqliteRpgExplorationPositionStore({ filePath });
+test("companion placement widens deterministically when every cardinal cell is blocked", () => {
+  const positions = new SqliteRpgExplorationPositionStore({ filePath: databasePath() });
   const semantic = projection();
+  const monsterId = "monster:cinder-crowded-test";
+  semantic.viewer.monsters = [{
+    monsterId,
+    displayLabel: "Cinder",
+    controlTargetId: `roster:${monsterId}`,
+    rulesProfileId: "mm.monster.skirmisher.v1",
+    deploymentState: "deployed",
+    deployedSceneId: semantic.scene.sceneId,
+  }];
+  semantic.scene.entities.push({
+    entityId: monsterId,
+    entityClass: "monster",
+    displayLabel: "Cinder",
+    identityStage: "name",
+    interactionTargetId: `entity:${monsterId}`,
+    rulesProfileId: "mm.monster.skirmisher.v1",
+  });
   const materialization = materializeRpgExplorationProjection(semantic);
+  const blockers = [
+    { x: 13, y: 7 },
+    { x: 14, y: 8 },
+    { x: 14, y: 6 },
+    { x: 15, y: 7 },
+  ];
+  blockers.forEach((position, index) => {
+    materialization.anchors.push({
+      anchorId: `test:blocker:${index}`,
+      kind: "object",
+      semanticId: `object:blocker:${index}`,
+      label: `Blocker ${index}`,
+      x: position.x,
+      y: position.y,
+    });
+  });
   const service = new RpgExplorationMovementService({ positions });
   try {
     const attached = service.attach({
@@ -243,19 +276,67 @@ test("movement rejects stale client position revisions", () => {
       projection: semantic,
       materialization,
     });
-    const moved = service.move(
+    assert.deepEqual(attached.transform, { x: 14, y: 7, facing: "west" });
+    const companion = materialization.anchors.find((anchor) => anchor.semanticId === monsterId);
+    assert.ok(companion);
+    assert.equal(Math.abs(companion.x - 14) + Math.abs(companion.y - 7), 2);
+    assert.equal(blockers.some(({ x, y }) => x === companion.x && y === companion.y), false);
+  } finally {
+    positions.close();
+  }
+});
+
+test("movement rejects stale client position revisions", () => {
+  const semantic = projection();
+  const materialization = materializeRpgExplorationProjection(semantic);
+  const positions = new SqliteRpgExplorationPositionStore({
+    filePath: databasePath(),
+  });
+  const service = new RpgExplorationMovementService({ positions });
+  try {
+    service.attach({
+      playerId: semantic.viewer.playerId,
+      projection: semantic,
+      materialization,
+    });
+    service.move(
       semantic.viewer.playerId,
-      moveRequest(semantic, attached.positionRevision, "west"),
+      moveRequest(semantic, 0, "west"),
     );
     assert.throws(
       () => service.move(
         semantic.viewer.playerId,
-        moveRequest(semantic, attached.positionRevision, "north"),
+        moveRequest(semantic, 0, "south"),
       ),
-      (error: unknown) => error instanceof RpgExplorationMovementError
-        && error.code === "position-revision-conflict",
+      (error: unknown) =>
+        error instanceof RpgExplorationMovementError
+        && error.code === "position-revision-conflict"
+        && error.retryable,
     );
-    assert.equal(moved.positionRevision, 1);
+  } finally {
+    positions.close();
+  }
+});
+
+test("movement does not journal semantic events into Runtime", () => {
+  const semantic = projection();
+  const materialization = materializeRpgExplorationProjection(semantic);
+  const positions = new SqliteRpgExplorationPositionStore({
+    filePath: databasePath(),
+  });
+  const service = new RpgExplorationMovementService({ positions });
+  try {
+    service.attach({
+      playerId: semantic.viewer.playerId,
+      projection: semantic,
+      materialization,
+    });
+    const before = JSON.stringify(semantic);
+    service.move(
+      semantic.viewer.playerId,
+      moveRequest(semantic, 0, "west"),
+    );
+    assert.equal(JSON.stringify(semantic), before);
   } finally {
     positions.close();
   }

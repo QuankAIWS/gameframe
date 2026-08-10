@@ -273,6 +273,7 @@ async function launch() {
     window.gameFrameMonsterRendererMode = "pixi";
     await import("./monster-master-pixi-bridge.js");
     await import("./monster-master-rpg-world.js");
+    await import("./monster-master-rpg-control.js");
     await import("./monster-master-rpg-talk.js");
     await import(entry);
     await import("./monster-master-rpg-admin.js");
@@ -280,6 +281,7 @@ async function launch() {
     const pixiReady = await window.gameFrameMonsterPixi?.ready;
     if (pixiReady) {
       window.gameFrameMonsterRpgWorld?.refreshAnchors?.();
+      window.gameFrameMonsterRpgControl?.refresh?.();
       window.gameFrameMonsterRpgTalk?.refresh?.();
     } else {
       const errorBanner = document.querySelector("#mm-rpg-error");

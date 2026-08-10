@@ -41,11 +41,12 @@ export type RpgEdgeRoute = {
     | "commands"
     | "exploration/attach"
     | "exploration/move"
-    | "exploration/interact";
+    | "exploration/interact"
+    | "exploration/control";
 };
 
 export function publicRpgEdgeRoute(pathname: string): RpgEdgeRoute | null {
-  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/(attach|commands|exploration\/(?:attach|move|interact))$/.exec(pathname);
+  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/(attach|commands|exploration\/(?:attach|move|interact|control))$/.exec(pathname);
   if (!match) return null;
   return {
     campaignId: decodeURIComponent(match[1]!),

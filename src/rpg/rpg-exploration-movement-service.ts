@@ -120,32 +120,57 @@ export class RpgExplorationMovementService {
     if (!playerAnchor) throw invalid("Exploration materialization is missing the authenticated player anchor.");
 
     const identity = materializationIdentity(playerId, materialization);
-    const blocked = blockedCells(materialization, playerEntityId);
-    if (!isTraversable(materialization, blocked, playerAnchor.x, playerAnchor.y)) {
-      throw invalid("Exploration player spawn is not traversable.");
-    }
-
     const stored = this.#positions.load(identity);
+    const ownedDeployedMonsterIds = new Set(
+      (projection.viewer.monsters ?? [])
+        .filter((monster) =>
+          monster.deploymentState === "deployed"
+          && monster.deployedSceneId === projection.scene.sceneId
+        )
+        .map((monster) => monster.monsterId),
+    );
+    const prePlacementBlocked = blockedCells(
+      materialization,
+      playerEntityId,
+      ownedDeployedMonsterIds,
+    );
+    const preferredPlayerPosition = stored
+      && isTraversable(materialization, prePlacementBlocked, stored.x, stored.y)
+      ? { x: stored.x, y: stored.y }
+      : { x: playerAnchor.x, y: playerAnchor.y };
+    placeOwnedDeployedMonstersBesidePlayer(
+      materialization,
+      ownedDeployedMonsterIds,
+      preferredPlayerPosition,
+      playerEntityId,
+    );
+    const blocked = blockedCells(materialization, playerEntityId);
+
     let position: Session["position"];
     if (stored && isTraversable(materialization, blocked, stored.x, stored.y)) {
       position = positionFromSnapshot(stored);
-    } else if (stored) {
-      const reset = this.#positions.commit({
-        ...identity,
-        expectedPositionRevision: stored.positionRevision,
-        x: playerAnchor.x,
-        y: playerAnchor.y,
-        facing: "west",
-        updatedAt: this.#clock(),
-      });
-      position = positionFromSnapshot(reset);
     } else {
-      position = {
-        x: playerAnchor.x,
-        y: playerAnchor.y,
-        facing: "west",
-        positionRevision: 0,
-      };
+      if (!isTraversable(materialization, blocked, playerAnchor.x, playerAnchor.y)) {
+        throw invalid("Exploration player spawn is not traversable.");
+      }
+      if (stored) {
+        const reset = this.#positions.commit({
+          ...identity,
+          expectedPositionRevision: stored.positionRevision,
+          x: playerAnchor.x,
+          y: playerAnchor.y,
+          facing: "west",
+          updatedAt: this.#clock(),
+        });
+        position = positionFromSnapshot(reset);
+      } else {
+        position = {
+          x: playerAnchor.x,
+          y: playerAnchor.y,
+          facing: "west",
+          positionRevision: 0,
+        };
+      }
     }
 
     const session: Session = {
@@ -292,11 +317,50 @@ function materializationIdentity(
 function blockedCells(
   materialization: RpgExplorationPhysicalMaterializationV1,
   playerEntityId: string,
+  ignoredEntityIds: ReadonlySet<string> = new Set(),
 ): Set<string> {
   return new Set(materialization.anchors
     .filter((anchor) => anchor.semanticId !== playerEntityId)
+    .filter((anchor) => !ignoredEntityIds.has(anchor.semanticId))
     .filter((anchor) => anchor.kind === "entity" || anchor.kind === "object")
     .map((anchor) => coordinateKey(anchor.x, anchor.y)));
+}
+
+function placeOwnedDeployedMonstersBesidePlayer(
+  materialization: RpgExplorationPhysicalMaterializationV1,
+  monsterIds: ReadonlySet<string>,
+  player: { x: number; y: number },
+  playerEntityId: string,
+): void {
+  if (monsterIds.size === 0) return;
+  const companions = materialization.anchors
+    .filter((anchor) =>
+      anchor.kind === "entity"
+      && anchor.entityClass === "monster"
+      && monsterIds.has(anchor.semanticId)
+    )
+    .sort((left, right) => left.semanticId.localeCompare(right.semanticId));
+  const occupied = blockedCells(materialization, playerEntityId, monsterIds);
+  occupied.add(coordinateKey(player.x, player.y));
+  const offsets = [
+    { x: -1, y: 0 },
+    { x: 0, y: 1 },
+    { x: 0, y: -1 },
+    { x: 1, y: 0 },
+  ] as const;
+  for (const companion of companions) {
+    const position = offsets
+      .map((offset) => ({ x: player.x + offset.x, y: player.y + offset.y }))
+      .find((candidate) =>
+        isTraversable(materialization, occupied, candidate.x, candidate.y)
+      );
+    if (!position) {
+      throw invalid(`No legal adjacent deployment cell is available for ${companion.label}.`);
+    }
+    companion.x = position.x;
+    companion.y = position.y;
+    occupied.add(coordinateKey(position.x, position.y));
+  }
 }
 
 function collision(
