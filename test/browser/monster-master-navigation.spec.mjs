@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
 
 test("opens Monster Master through Battle Simulator", async ({ page }) => {
-  await page.goto("/?player=monster-navigation");
+  await page.goto("/?catalog=1&player=monster-navigation");
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
 
   const simulatorCard = page.locator("#game-card-battle-simulator");
+  await expect(simulatorCard).toBeVisible();
   await expect(simulatorCard).toHaveAttribute("href", "/battle-simulator.html");
   await simulatorCard.locator(".game-card-body").click();
 
@@ -28,7 +29,9 @@ test("returns from Monster Master through the universal destination bar", async 
   await page.locator("#gameframe-destination-bar [data-gameframe-home]").click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
-  await expect(page.locator("#game-card-battle-simulator")).toBeVisible();
+  await expect(page.locator(".gameframe-home-dashboard")).toBeVisible();
+  await expect(page.locator("#game-grid")).toBeHidden();
+  await expect(page.locator("#gameframe-destination-bar [data-gameframe-home]")).toHaveClass(/is-active/);
 });
 
 test("opens and closes Monster Master diagnostics", async ({ page }) => {
