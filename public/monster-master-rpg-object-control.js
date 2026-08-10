@@ -1,5 +1,5 @@
 import { gameFrameFetch } from "./gameframe-auth.js";
-import { buildActionCommand } from "./monster-master-rpg-model.js";
+import { buildExplorationTalkRequest } from "./monster-master-rpg-model.js";
 
 const VIEW_EVENT = "gameframe:monster-master-pixi-view";
 const STATE_EVENT = "gameframe:monster-master-rpg-state";
@@ -14,6 +14,7 @@ if (!identity?.playerId) {
 
 let button = null;
 let submitting = false;
+let pendingRequest = null;
 
 function worldState() {
   const world = window.gameFrameMonsterRpgWorld;
@@ -30,6 +31,8 @@ function currentCartAnchor() {
     anchor?.kind === "object"
     && anchor.semanticId === CHECKPOINT_CART_ID
     && anchor.objectState === "covered"
+    && typeof anchor.interactionTargetId === "string"
+    && anchor.interactionTargetId
     && Number.isSafeInteger(anchor.x)
     && Number.isSafeInteger(anchor.y)
     && Math.abs(anchor.x - position.transform.x) + Math.abs(anchor.y - position.transform.y) === 1
@@ -54,49 +57,87 @@ function ensureButton() {
 function synchronize() {
   const control = ensureButton();
   if (!control) return;
-  control.hidden = submitting || !currentCartAnchor();
+  const available = Boolean(currentCartAnchor()) || Boolean(pendingRequest);
+  control.hidden = !available;
   control.disabled = submitting;
-  control.textContent = submitting ? "Uncovering…" : "Uncover cart";
+  control.textContent = submitting
+    ? "Uncovering…"
+    : pendingRequest
+      ? "Retry uncover"
+      : "Uncover cart";
+}
+
+function buildPendingRequest() {
+  if (pendingRequest) return pendingRequest;
+  const cart = currentCartAnchor();
+  const { payload, position } = worldState();
+  const projection = payload?.projection;
+  const materialization = payload?.materialization;
+  if (!cart || !projection || !materialization || !position) {
+    throw new Error("Move next to the covered checkpoint cart before uncovering it.");
+  }
+  if (!Number.isSafeInteger(projection.gameframeCoordinationRevision)) {
+    throw new Error("Campaign coordination state is unavailable. Refresh and try again.");
+  }
+  pendingRequest = {
+    ...buildExplorationTalkRequest({
+      campaignId: projection.campaignId,
+      commandId: `command:${crypto.randomUUID()}`,
+      expectedGameframeCoordinationRevision: projection.gameframeCoordinationRevision,
+      sceneId: projection.scene.sceneId,
+      materializationRef: materialization.materializationRef,
+      expectedPositionRevision: position.positionRevision,
+      interactionTargetId: cart.interactionTargetId,
+      text: UNCOVER_ACTION,
+    }),
+    issuedAt: new Date().toISOString(),
+  };
+  return pendingRequest;
 }
 
 async function uncoverCart() {
-  if (submitting || !currentCartAnchor()) return;
-  const { payload } = worldState();
-  const projection = payload?.projection;
-  if (!projection?.campaignId || !Number.isSafeInteger(projection.gameframeCoordinationRevision)) {
-    showError("Campaign coordination state is unavailable. Refresh and try again.");
+  if (submitting) return;
+  let request;
+  try {
+    request = buildPendingRequest();
+  } catch (error) {
+    showError(error instanceof Error ? error.message : "The checkpoint cart cannot be uncovered now.");
     return;
   }
-  const request = buildActionCommand({
-    campaignId: projection.campaignId,
-    commandId: `command:${crypto.randomUUID()}`,
-    issuedAt: new Date().toISOString(),
-    expectedGameframeCoordinationRevision: projection.gameframeCoordinationRevision,
-    text: UNCOVER_ACTION,
-  });
 
   submitting = true;
   synchronize();
   showError("");
   try {
     await requestJson(
-      `/api/rpg/campaigns/${encodeURIComponent(projection.campaignId)}/commands`,
+      `/api/rpg/campaigns/${encodeURIComponent(request.campaignId)}/exploration/interact`,
       request,
     );
-    await window.gameFrameMonsterRpgApp?.refresh?.();
-    await window.gameFrameMonsterRpgWorld?.attachCurrentCampaign?.({ quiet: true });
+    pendingRequest = null;
+    await refreshWorld();
   } catch (error) {
-    const stale = error?.status === 409
+    const physicalConflict = error?.status === 409 && [
+      "position-revision-conflict",
+      "stale-materialization",
+      "interaction-target-unavailable",
+      "interaction-out-of-range",
+    ].includes(error?.code);
+    const coordinationConflict = error?.status === 409
       && /revision|coordination|stale/i.test(`${error?.code || ""} ${error?.message || ""}`);
-    if (stale) {
-      await window.gameFrameMonsterRpgApp?.refresh?.().catch?.(() => undefined);
-      await window.gameFrameMonsterRpgWorld?.attachCurrentCampaign?.({ quiet: true })?.catch?.(() => undefined);
+    if (physicalConflict || coordinationConflict) {
+      pendingRequest = null;
+      await refreshWorld().catch(() => undefined);
     }
     showError(error?.message || "The checkpoint cart could not be changed.");
   } finally {
     submitting = false;
     synchronize();
   }
+}
+
+async function refreshWorld() {
+  await window.gameFrameMonsterRpgApp?.refresh?.();
+  await window.gameFrameMonsterRpgWorld?.attachCurrentCampaign?.({ quiet: true });
 }
 
 async function requestJson(path, body) {
@@ -141,6 +182,7 @@ function showError(message) {
 }
 
 window.gameFrameMonsterRpgObjectControl = Object.freeze({
+  getPendingRequest: () => pendingRequest ? structuredClone(pendingRequest) : null,
   refresh: synchronize,
 });
 
@@ -148,6 +190,7 @@ window.addEventListener(VIEW_EVENT, () => queueMicrotask(synchronize));
 window.addEventListener(STATE_EVENT, () => queueMicrotask(synchronize));
 window.addEventListener("gameframe:before-home", () => {
   submitting = false;
+  pendingRequest = null;
   if (button) button.hidden = true;
 });
 window.addEventListener("resize", synchronize);
