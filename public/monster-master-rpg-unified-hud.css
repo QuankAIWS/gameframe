@@ -257,13 +257,6 @@
   min-height: 40px;
 }
 
-.mm-rpg-play-shell .mm-rpg-world-interact,
-.mm-rpg-play-shell .mm-rpg-world-interact-chooser,
-.mm-rpg-play-shell .mm-rpg-world-monster-control,
-.mm-rpg-play-shell .mm-rpg-world-monster-control-chooser {
-  right: calc(var(--mm-rpg-dock-width) + 14px);
-}
-
 .mm-rpg-desktop-click-controls #mm-rpg-world-status::after {
   content: " · click to move · WASD pans";
 }
@@ -305,7 +298,6 @@
   .mm-rpg-play-shell .mm-rpg-world-interact-chooser,
   .mm-rpg-play-shell .mm-rpg-world-monster-control,
   .mm-rpg-play-shell .mm-rpg-world-monster-control-chooser {
-    right: 10px;
     bottom: calc(min(48dvh, 470px) + 12px);
   }
 }
