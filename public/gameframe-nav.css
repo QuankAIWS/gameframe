@@ -160,6 +160,40 @@ body.tic-tac-toe-noir-running #match-panel.panel {
 }
 body.tic-tac-toe-noir-running .shell { padding-top: 8px; }
 
+@media (min-width: 721px) and (max-width: 1100px) {
+  .gameframe-destination-bar {
+    grid-template-columns: minmax(190px, 22vw) minmax(0, 1fr) minmax(180px, 22vw);
+  }
+  .gameframe-destination-brand {
+    min-width: 0;
+    padding-inline: 12px;
+  }
+  .gameframe-destination-brand strong {
+    font-size: .86rem;
+    letter-spacing: .07em;
+  }
+  .gameframe-destination-links a,
+  .gameframe-destination-links button {
+    min-width: 0;
+    flex: 1;
+    padding-inline: 7px;
+    font-size: .62rem;
+    letter-spacing: .04em;
+  }
+  .gameframe-destination-session-space { min-width: 0; }
+  .gameframe-has-destination-bar > .gameframe-session-badge {
+    max-width: calc(22vw - 16px);
+    padding: .48rem .55rem;
+    gap: .48rem;
+  }
+  .gameframe-has-destination-bar > .gameframe-session-badge small { display: none; }
+  .gameframe-has-destination-bar > .gameframe-session-badge strong { font-size: .72rem; }
+  .gameframe-has-destination-bar > .gameframe-session-badge button {
+    padding: .38rem .5rem;
+    font-size: .7rem;
+  }
+}
+
 @media (max-width: 720px) {
   body.tic-tac-toe-noir-running .shell { height: auto; min-height: calc(100dvh - var(--gameframe-destination-height)); }
   body.tic-tac-toe-noir-running #match-panel.panel { grid-template-rows: auto 44px; }
