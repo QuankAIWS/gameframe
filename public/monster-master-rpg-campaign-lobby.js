@@ -1,9 +1,12 @@
+import { gameFrameFetch } from "./gameframe-auth.js";
+
 const STATE_EVENT = "gameframe:monster-master-rpg-state";
 const CURRENT_CAMPAIGN_KEY = "scribbles-gameframe.monster-master-rpg.campaign";
 const RECENT_CAMPAIGNS_KEY = "scribbles-gameframe.monster-master-rpg.recent-campaigns.v1";
 const STAGING_CAMPAIGN_ID = "monster-master-staging-v6";
 const MAX_RECENT_CAMPAIGNS = 12;
 
+const identity = window.gameFrameIdentity;
 installStylesheet();
 
 const elements = {
@@ -25,6 +28,9 @@ let lobbyActions = null;
 let campaignsButton = null;
 let renderedSignature = "";
 let rememberedProjectionSignature = "";
+let durableCampaigns = [];
+let campaignIndexState = "idle";
+let campaignIndexPromise = null;
 
 function installStylesheet() {
   if (document.querySelector('link[href="/monster-master-rpg-campaign-lobby.css"]')) return;
@@ -43,7 +49,11 @@ function normalizeCampaignId(value) {
   return /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/.test(id) ? id : null;
 }
 
-function readRecentCampaigns() {
+function normalizeStatus(value) {
+  return value === "paused" || value === "completed" ? value : "active";
+}
+
+function localCampaigns() {
   let records = [];
   try {
     const parsed = JSON.parse(window.localStorage.getItem(RECENT_CAMPAIGNS_KEY) || "[]");
@@ -61,8 +71,9 @@ function readRecentCampaigns() {
       title: typeof record?.title === "string" && record.title.trim()
         ? record.title.trim().slice(0, 200)
         : campaignId,
-      status: record?.status === "paused" || record?.status === "completed" ? record.status : "active",
+      status: normalizeStatus(record?.status),
       lastOpenedAt: typeof record?.lastOpenedAt === "string" ? record.lastOpenedAt : null,
+      source: "recent",
     });
   }
 
@@ -75,6 +86,7 @@ function readRecentCampaigns() {
         : lastCampaign,
       status: "active",
       lastOpenedAt: null,
+      source: "recent",
     });
   }
 
@@ -84,17 +96,34 @@ function readRecentCampaigns() {
       title: "Monster Master: The Crooked Checkpoint",
       status: "active",
       lastOpenedAt: null,
+      source: "staging",
+    });
+  }
+  return normalized;
+}
+
+function mergedCampaigns() {
+  const merged = new Map(localCampaigns().map((record) => [record.campaignId, record]));
+  for (const durable of durableCampaigns) {
+    const local = merged.get(durable.campaignId);
+    merged.set(durable.campaignId, {
+      ...local,
+      ...durable,
+      lastOpenedAt: local?.lastOpenedAt ?? null,
+      source: "durable",
     });
   }
 
-  normalized.sort((left, right) => {
-    if (left.campaignId === lastCampaign && right.campaignId !== lastCampaign) return -1;
-    if (right.campaignId === lastCampaign && left.campaignId !== lastCampaign) return 1;
-    const leftTime = Date.parse(left.lastOpenedAt || "") || 0;
-    const rightTime = Date.parse(right.lastOpenedAt || "") || 0;
-    return rightTime - leftTime || left.title.localeCompare(right.title);
-  });
-  return normalized.slice(0, MAX_RECENT_CAMPAIGNS);
+  const lastCampaign = normalizeCampaignId(window.localStorage.getItem(CURRENT_CAMPAIGN_KEY));
+  return [...merged.values()]
+    .sort((left, right) => {
+      if (left.campaignId === lastCampaign && right.campaignId !== lastCampaign) return -1;
+      if (right.campaignId === lastCampaign && left.campaignId !== lastCampaign) return 1;
+      const leftTime = Date.parse(left.lastOpenedAt || left.updatedAt || "") || 0;
+      const rightTime = Date.parse(right.lastOpenedAt || right.updatedAt || "") || 0;
+      return rightTime - leftTime || left.title.localeCompare(right.title);
+    })
+    .slice(0, MAX_RECENT_CAMPAIGNS);
 }
 
 function writeRecentCampaigns(records) {
@@ -104,8 +133,71 @@ function writeRecentCampaigns(records) {
       JSON.stringify(records.slice(0, MAX_RECENT_CAMPAIGNS)),
     );
   } catch {
-    // Campaign history is a convenience index; durable campaign state is server-owned.
+    // Campaign history is a convenience fallback; durable membership is server-owned.
   }
+}
+
+function normalizeDurableIndex(value) {
+  if (
+    !value
+    || value.protocolVersion !== 1
+    || value.kind !== "campaign.index"
+    || value.playerId !== identity?.playerId
+    || !Array.isArray(value.campaigns)
+  ) throw new Error("The campaign index response is invalid.");
+
+  const seen = new Set();
+  return value.campaigns.map((record) => {
+    const campaignId = normalizeCampaignId(record?.campaignId);
+    if (!campaignId || seen.has(campaignId)) throw new Error("The campaign index contains an invalid campaign identity.");
+    seen.add(campaignId);
+    const title = typeof record?.title === "string" ? record.title.trim() : "";
+    const updatedAt = typeof record?.updatedAt === "string" && !Number.isNaN(Date.parse(record.updatedAt))
+      ? record.updatedAt
+      : null;
+    if (!title || title.length > 240 || !updatedAt) throw new Error("The campaign index contains invalid presentation metadata.");
+    if (record.role !== "player" && record.role !== "observer") throw new Error("The campaign index contains an invalid role.");
+    return {
+      campaignId,
+      title,
+      status: normalizeStatus(record.status),
+      role: record.role,
+      partyId: normalizeCampaignId(record.partyId) || null,
+      updatedAt,
+      source: "durable",
+    };
+  });
+}
+
+async function refreshCampaignIndex() {
+  if (!identity?.playerId) return [];
+  if (campaignIndexPromise) return campaignIndexPromise;
+  campaignIndexState = "loading";
+  renderCampaignCards();
+
+  let promise;
+  promise = gameFrameFetch("/api/rpg/campaigns", {
+    method: "GET",
+    headers: { accept: "application/json" },
+  }, identity).then(async (response) => {
+    const text = await response.text();
+    const value = text ? JSON.parse(text) : null;
+    if (!response.ok) throw new Error(value?.message || `Campaign list failed (${response.status}).`);
+    durableCampaigns = normalizeDurableIndex(value);
+    campaignIndexState = "ready";
+    renderedSignature = "";
+    renderCampaignCards();
+    return durableCampaigns;
+  }).catch(() => {
+    campaignIndexState = "fallback";
+    renderedSignature = "";
+    renderCampaignCards();
+    return durableCampaigns;
+  }).finally(() => {
+    if (campaignIndexPromise === promise) campaignIndexPromise = null;
+  });
+  campaignIndexPromise = promise;
+  return promise;
 }
 
 function rememberCurrentCampaign() {
@@ -120,15 +212,13 @@ function rememberCurrentCampaign() {
   if (signature === rememberedProjectionSignature) return;
   rememberedProjectionSignature = signature;
 
-  const next = readRecentCampaigns().filter((record) => record.campaignId !== campaignId);
+  const next = localCampaigns().filter((record) => record.campaignId !== campaignId);
   next.unshift({
     campaignId,
     title: typeof projection.title === "string" && projection.title.trim()
       ? projection.title.trim().slice(0, 200)
       : campaignId,
-    status: projection.status === "paused" || projection.status === "completed"
-      ? projection.status
-      : "active",
+    status: normalizeStatus(projection.status),
     lastOpenedAt: new Date().toISOString(),
   });
   writeRecentCampaigns(next);
@@ -146,7 +236,7 @@ function ensureLobby() {
   if (description) {
     description.textContent = deepLinkPending
       ? `Opening ${requestedDeepLinkCampaignId}. If it is unavailable, the campaign lobby will return.`
-      : "Resume a recent campaign, open the staging adventure, or join another campaign by code.";
+      : "Resume one of your campaigns, open staging, or join another campaign by code.";
   }
 
   lobby = document.createElement("section");
@@ -159,7 +249,7 @@ function ensureLobby() {
   const copy = document.createElement("div");
   const eyebrow = document.createElement("p");
   eyebrow.className = "mm-rpg-label";
-  eyebrow.textContent = "YOUR MONSTER MASTER CAMPAIGNS";
+  eyebrow.textContent = "MY CAMPAIGNS";
   const headingTitle = document.createElement("h3");
   headingTitle.id = "mm-rpg-campaign-lobby-title";
   headingTitle.textContent = "Continue playing";
@@ -195,7 +285,7 @@ function synchronizeDeepLinkPresentation() {
     return;
   }
   if (title) title.textContent = "Campaign lobby";
-  if (description) description.textContent = "Resume a recent campaign, open the staging adventure, or join another campaign by code.";
+  if (description) description.textContent = "Resume one of your campaigns, open staging, or join another campaign by code.";
   if (lobby) lobby.hidden = false;
   elements.joinForm.hidden = false;
 }
@@ -213,11 +303,13 @@ function settleDeepLinkState() {
   }
 }
 
-function formatOpenedAt(value) {
-  if (!value) return "Available campaign";
+function formatActivity(record) {
+  const value = record.lastOpenedAt || record.updatedAt;
+  if (!value) return campaignIndexState === "loading" ? "Loading memberships…" : "Available campaign";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Recent campaign";
-  return `Last opened ${new Intl.DateTimeFormat(undefined, {
+  if (Number.isNaN(date.getTime())) return "Available campaign";
+  const prefix = record.lastOpenedAt ? "Last opened" : "Updated";
+  return `${prefix} ${new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -236,8 +328,8 @@ function renderCampaignCards() {
   ensureLobby();
   if (!list) return;
   const lastCampaign = normalizeCampaignId(window.localStorage.getItem(CURRENT_CAMPAIGN_KEY));
-  const records = readRecentCampaigns();
-  const signature = JSON.stringify({ lastCampaign, records });
+  const records = mergedCampaigns();
+  const signature = JSON.stringify({ lastCampaign, campaignIndexState, records });
   if (signature === renderedSignature && list.childElementCount === records.length) return;
   renderedSignature = signature;
 
@@ -247,12 +339,15 @@ function renderCampaignCards() {
     card.className = "mm-rpg-campaign-card";
     card.dataset.campaignId = record.campaignId;
     card.dataset.last = String(record.campaignId === lastCampaign);
+    card.dataset.source = record.source;
     card.setAttribute("aria-label", `${record.campaignId === lastCampaign ? "Resume" : "Open"} ${record.title}`);
 
     const state = document.createElement("small");
     state.textContent = record.campaignId === STAGING_CAMPAIGN_ID
       ? "STAGING · TEST CAMPAIGN"
-      : record.status.toUpperCase();
+      : record.role
+        ? `${record.status.toUpperCase()} · ${record.role.toUpperCase()}`
+        : record.status.toUpperCase();
     const title = document.createElement("strong");
     title.textContent = record.title;
     const code = document.createElement("span");
@@ -260,7 +355,7 @@ function renderCampaignCards() {
     const footer = document.createElement("span");
     footer.className = "mm-rpg-campaign-card-footer";
     const opened = document.createElement("span");
-    opened.textContent = formatOpenedAt(record.lastOpenedAt);
+    opened.textContent = formatActivity(record);
     const action = document.createElement("span");
     action.textContent = record.campaignId === lastCampaign ? "Resume ›" : "Open ›";
     footer.append(opened, action);
@@ -324,6 +419,7 @@ if (elements.switchCampaign) {
       renderedSignature = "";
       renderCampaignCards();
       relocateAdminButton();
+      void refreshCampaignIndex();
     });
   });
 }
@@ -346,10 +442,14 @@ new MutationObserver(() => queueMicrotask(synchronize)).observe(document.body, {
 window.gameFrameMonsterRpgCampaignLobby = Object.freeze({
   open: () => elements.switchCampaign?.click(),
   openCampaign,
-  refresh: () => {
+  refresh: async () => {
     renderedSignature = "";
     renderCampaignCards();
+    return refreshCampaignIndex();
   },
+  getDurableCampaigns: () => durableCampaigns.map((record) => structuredClone(record)),
+  getIndexState: () => campaignIndexState,
 });
 
 synchronize();
+void refreshCampaignIndex();
