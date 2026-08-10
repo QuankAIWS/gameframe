@@ -19,6 +19,7 @@ let lobby = null;
 let list = null;
 let lobbyActions = null;
 let campaignsButton = null;
+let renderedSignature = "";
 
 function installStylesheet() {
   if (document.querySelector('link[href="/monster-master-rpg-campaign-lobby.css"]')) return;
@@ -111,6 +112,7 @@ function rememberCurrentCampaign() {
     lastOpenedAt: new Date().toISOString(),
   });
   writeRecentCampaigns(next);
+  renderedSignature = "";
   renderCampaignCards();
 }
 
@@ -154,6 +156,7 @@ function ensureLobby() {
   elements.joinForm.dataset.lobbyJoin = "";
   const label = elements.joinForm.querySelector('label[for="mm-rpg-campaign-id"]');
   if (label) label.textContent = "Campaign code";
+  renderedSignature = "";
   return lobby;
 }
 
@@ -181,6 +184,10 @@ function renderCampaignCards() {
   if (!list) return;
   const lastCampaign = normalizeCampaignId(window.localStorage.getItem(CURRENT_CAMPAIGN_KEY));
   const records = readRecentCampaigns();
+  const signature = JSON.stringify({ lastCampaign, records });
+  if (signature === renderedSignature && list.childElementCount === records.length) return;
+  renderedSignature = signature;
+
   const cards = records.map((record) => {
     const card = document.createElement("button");
     card.type = "button";
@@ -256,6 +263,7 @@ if (elements.switchCampaign) {
   elements.switchCampaign.addEventListener("click", () => {
     queueMicrotask(() => {
       clearCampaignDeepLink();
+      renderedSignature = "";
       renderCampaignCards();
       relocateAdminButton();
     });
@@ -279,7 +287,10 @@ new MutationObserver(() => queueMicrotask(synchronize)).observe(document.body, {
 window.gameFrameMonsterRpgCampaignLobby = Object.freeze({
   open: () => elements.switchCampaign?.click(),
   openCampaign,
-  refresh: renderCampaignCards,
+  refresh: () => {
+    renderedSignature = "";
+    renderCampaignCards();
+  },
 });
 
 synchronize();
