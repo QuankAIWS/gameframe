@@ -139,7 +139,7 @@ test("the Games catalog opens Role-Playing Games, Battle Simulator, Casual Games
   await expect(page).toHaveURL(/\/gameframe-rpg\.html$/);
   await expect(page.getByRole("heading", { name: "Persistent worlds. Real campaigns." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Monster Master RPG" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Open Monster Master RPG" })).toHaveAttribute("href", "/monster-master-rpg.html?campaign=monster-master-staging-v6");
+  await expect(page.getByRole("link", { name: "Open Monster Master RPG" })).toHaveAttribute("href", "/monster-master-rpg.html");
   await expect(page.getByRole("button", { name: /Create RPG/ })).toBeDisabled();
 
   await page.goto("/?catalog=1&player=hub-navigation-test");

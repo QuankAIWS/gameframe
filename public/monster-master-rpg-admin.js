@@ -1,5 +1,6 @@
 import { gameFrameFetch } from "./gameframe-auth.js";
 
+const STAGING_CAMPAIGN_ID = "monster-master-staging-v6";
 const identity = window.gameFrameIdentity;
 if (!identity?.admin) {
   // The Worker independently enforces every privileged route. Hiding controls
@@ -15,16 +16,6 @@ function installStylesheet() {
   link.rel = "stylesheet";
   link.href = "/monster-master-rpg-admin.css";
   document.head.append(link);
-}
-
-function activeCampaignId() {
-  const displayed = document.querySelector("#mm-rpg-campaign-code")?.textContent?.trim() || "";
-  const requested = new URLSearchParams(window.location.search).get("campaign")?.trim() || "";
-  const campaignId = displayed || requested;
-  if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/.test(campaignId)) {
-    throw new Error("The active staging campaign identity is unavailable.");
-  }
-  return campaignId;
 }
 
 function installAdminControls() {
@@ -55,14 +46,14 @@ function installAdminControls() {
 
       <dl class="mm-rpg-admin-facts">
         <div><dt>Principal</dt><dd data-admin-principal></dd></div>
-        <div><dt>Campaign</dt><dd data-admin-campaign></dd></div>
+        <div><dt>Staging campaign</dt><dd data-admin-campaign></dd></div>
         <div><dt>Authority</dt><dd>Discord staging administrator</dd></div>
       </dl>
 
       <section class="mm-rpg-admin-danger">
         <p class="mm-rpg-label">DESTRUCTIVE TEST CONTROL</p>
         <h3>Reset Monster Master staging</h3>
-        <p>This clears the durable GameFrame RPG database and the RPG GM staging state, then both services restart and reseed the canonical test campaign. Your local staging character profile is also cleared so onboarding runs again.</p>
+        <p>This clears the durable GameFrame RPG database and the RPG GM staging state, then both services restart and reseed the canonical test campaign. Other campaign selections are not the target of this control.</p>
         <button type="button" data-admin-reset>Reset staging campaign</button>
         <p data-admin-status role="status">No administrator action is running.</p>
       </section>
@@ -81,40 +72,31 @@ function installAdminControls() {
   document.body.append(overlay);
 
   overlay.querySelector("[data-admin-principal]").textContent = identity.playerId;
-  const campaignFact = overlay.querySelector("[data-admin-campaign]");
+  overlay.querySelector("[data-admin-campaign]").textContent = STAGING_CAMPAIGN_ID;
   const close = overlay.querySelector(".mm-rpg-admin-close");
   const reset = overlay.querySelector("[data-admin-reset]");
   const status = overlay.querySelector("[data-admin-status]");
   let confirmationExpiresAt = 0;
-  let armedCampaignId = null;
 
   function clearConfirmation({ resetStatus = true } = {}) {
     confirmationExpiresAt = 0;
-    armedCampaignId = null;
     reset.textContent = "Reset staging campaign";
     if (resetStatus) status.textContent = "No administrator action is running.";
   }
 
-  function armConfirmation(campaignId) {
+  function armConfirmation() {
     const expiresAt = Date.now() + 10_000;
     confirmationExpiresAt = expiresAt;
-    armedCampaignId = campaignId;
     reset.textContent = "Confirm reset — click again";
-    status.textContent = `Confirmation armed for 10 seconds. This will erase all progress in ${campaignId}.`;
+    status.textContent = `Confirmation armed for 10 seconds. This will erase all progress in ${STAGING_CAMPAIGN_ID}.`;
     window.setTimeout(() => {
-      if (confirmationExpiresAt !== expiresAt || armedCampaignId !== campaignId) return;
+      if (confirmationExpiresAt !== expiresAt) return;
       clearConfirmation();
     }, 10_100);
   }
 
   open.addEventListener("click", () => {
     clearConfirmation();
-    try {
-      campaignFact.textContent = activeCampaignId();
-    } catch (error) {
-      campaignFact.textContent = "Unavailable";
-      status.textContent = error instanceof Error ? error.message : "Campaign identity is unavailable.";
-    }
     overlay.hidden = false;
     reset.focus();
   });
@@ -139,30 +121,16 @@ function installAdminControls() {
   });
 
   reset.addEventListener("click", async () => {
-    let campaignId;
-    try {
-      campaignId = activeCampaignId();
-    } catch (error) {
-      clearConfirmation({ resetStatus: false });
-      status.textContent = error instanceof Error ? error.message : "Campaign identity is unavailable.";
-      return;
-    }
-
     const now = Date.now();
-    if (
-      now > confirmationExpiresAt
-      || !armedCampaignId
-      || armedCampaignId !== campaignId
-    ) {
-      armConfirmation(campaignId);
+    if (now > confirmationExpiresAt) {
+      armConfirmation();
       return;
     }
 
-    const confirmedCampaignId = armedCampaignId;
     clearConfirmation({ resetStatus: false });
     reset.disabled = true;
     reset.textContent = "Resetting…";
-    status.textContent = `Reset accepted for ${confirmedCampaignId}. GameFrame and the RPG GM will restart and reseed staging.`;
+    status.textContent = `Reset accepted for ${STAGING_CAMPAIGN_ID}. GameFrame and the RPG GM will restart and reseed staging.`;
     try {
       const response = await gameFrameFetch("/api/rpg/admin/reset-staging", {
         method: "POST",
@@ -171,7 +139,7 @@ function installAdminControls() {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          campaignId: confirmedCampaignId,
+          campaignId: STAGING_CAMPAIGN_ID,
           confirmation: "RESET MONSTER MASTER STAGING",
         }),
       }, identity);
@@ -181,16 +149,16 @@ function installAdminControls() {
       }
 
       window.localStorage.removeItem(
-        `scribbles-gameframe.monster-master-rpg.profile.v1:${confirmedCampaignId}`,
+        `scribbles-gameframe.monster-master-rpg.profile.v1:${STAGING_CAMPAIGN_ID}`,
       );
       window.localStorage.setItem(
         "scribbles-gameframe.monster-master-rpg.campaign",
-        confirmedCampaignId,
+        STAGING_CAMPAIGN_ID,
       );
-      status.textContent = "Services are restarting. Reloading the fresh campaign shortly…";
+      status.textContent = "Services are restarting. Reloading the fresh staging campaign shortly…";
       window.setTimeout(() => {
         const url = new URL("/monster-master-rpg", window.location.origin);
-        url.searchParams.set("campaign", confirmedCampaignId);
+        url.searchParams.set("campaign", STAGING_CAMPAIGN_ID);
         window.location.assign(url);
       }, 5_000);
     } catch (error) {
@@ -198,5 +166,11 @@ function installAdminControls() {
       reset.textContent = "Reset staging campaign";
       status.textContent = error instanceof Error ? error.message : "Staging reset failed.";
     }
+  });
+
+  window.gameFrameMonsterRpgAdmin = Object.freeze({
+    open: () => open.click(),
+    close: () => close.click(),
+    stagingCampaignId: STAGING_CAMPAIGN_ID,
   });
 }

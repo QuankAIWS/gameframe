@@ -156,7 +156,7 @@ test("lists Monster Master RPG under Role-Playing Games", async ({ page }) => {
   await expect(page).toHaveURL(/\/gameframe-rpg\.html$/);
   await expect(page.getByRole("heading", { name: "Monster Master RPG" })).toBeVisible();
   const monsterMasterRpg = page.getByRole("link", { name: "Open Monster Master RPG" });
-  await expect(monsterMasterRpg).toHaveAttribute("href", `/monster-master-rpg.html?campaign=${stagingCampaignId}`);
+  await expect(monsterMasterRpg).toHaveAttribute("href", "/monster-master-rpg.html");
 });
 
 test("staging campaign onboards a Master before exposing the long-form campaign console", async ({ page }) => {
