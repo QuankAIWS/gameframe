@@ -148,9 +148,20 @@ function adoptDynamicSurfaces() {
   if (!dock) return;
   const talkPane = panes.get("talk");
   const talkPanel = document.querySelector("#mm-rpg-talk-panel");
-  if (talkPane && talkPanel && talkPanel.parentElement !== talkPane) {
-    talkPane.querySelector("[data-mm-rpg-talk-empty]")?.remove();
-    talkPane.append(talkPanel);
+  if (talkPane && talkPanel) {
+    if (talkPanel.parentElement !== talkPane) {
+      talkPane.querySelector("[data-mm-rpg-talk-empty]")?.remove();
+      talkPane.append(talkPanel);
+    }
+    if (talkPanel.dataset.mmRpgDockObserved !== "true") {
+      talkPanel.dataset.mmRpgDockObserved = "true";
+      new MutationObserver(() => {
+        // Talk v2 owns semantic conversation selection. When it opens a target,
+        // make that same real panel the visible dock tab rather than leaving it
+        // underneath World after reparenting.
+        if (!talkPanel.hidden) activate("talk");
+      }).observe(talkPanel, { attributes: true, attributeFilter: ["hidden"] });
+    }
     if (!talkPanel.hidden) activate("talk");
   }
 
