@@ -7,6 +7,7 @@ import {
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
 
 type Point = { x: number; y: number };
+type Anchor = RpgExplorationPhysicalMaterializationV1["anchors"][number];
 
 export type RpgExplorationActorInspectRequestV1 = {
   protocolVersion: 1;
@@ -136,12 +137,7 @@ export class RpgExplorationActorActionService {
 
     const current = { x: actor.x, y: actor.y };
     const targetPoint = { x: target.x, y: target.y };
-    const path = shortestApproachPath(
-      materialization,
-      current,
-      targetPoint,
-      actor.semanticId,
-    );
+    const path = shortestApproachPath(materialization, current, targetPoint, actor.semanticId);
     if (!path) {
       throw new RpgExplorationActorActionError(
         "path-unavailable",
@@ -222,19 +218,19 @@ function actorAnchor(
   materialization: RpgExplorationPhysicalMaterializationV1,
   entityId: string,
   label: string,
-): Extract<RpgExplorationPhysicalMaterializationV1["anchors"][number], { kind: "entity" }> {
+): Anchor {
   const anchor = materialization.anchors.find((candidate) =>
     candidate.semanticId === entityId
     && candidate.kind === "entity"
     && candidate.entityClass === "actor"
   );
-  if (!anchor || anchor.kind !== "entity") {
+  if (!anchor) {
     throw new RpgExplorationActorActionError(
       `${label}-unavailable`,
       `${label === "actor" ? "Actor" : "Target"} ${entityId} is not physically present.`,
     );
   }
-  return anchor as Extract<RpgExplorationPhysicalMaterializationV1["anchors"][number], { kind: "entity" }>;
+  return anchor;
 }
 
 function shortestApproachPath(
@@ -282,7 +278,7 @@ function passable(
   );
 }
 
-function occupiesPhysicalCell(kind: RpgExplorationPhysicalMaterializationV1["anchors"][number]["kind"]): boolean {
+function occupiesPhysicalCell(kind: Anchor["kind"]): boolean {
   return kind === "player" || kind === "entity" || kind === "object";
 }
 
