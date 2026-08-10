@@ -167,6 +167,19 @@ body.monster-master-pixi-ready .mm-rpg-world-stage .monster-master-pixi-canvas {
     0 0 24px rgba(91, 190, 246, .14);
 }
 
+.mm-rpg-world-object-control {
+  left: auto;
+  right: 18px;
+  bottom: 70px;
+  max-width: min(42%, 220px);
+  transform: none;
+  border-color: rgba(229, 196, 115, .58);
+  background: rgba(38, 29, 10, .92);
+  box-shadow:
+    0 12px 34px rgba(0, 0, 0, .42),
+    0 0 24px rgba(229, 196, 115, .13);
+}
+
 .mm-rpg-world-monster-control-chooser {
   bottom: 122px;
 }
@@ -180,6 +193,17 @@ body.monster-master-pixi-ready .mm-rpg-world-stage .monster-master-pixi-canvas {
 
 .mm-rpg-world-interact:active {
   transform: translateX(-50%) translateY(1px) scale(.98);
+}
+
+.mm-rpg-world-object-control:hover,
+.mm-rpg-world-object-control:focus-visible {
+  transform: translateY(-1px);
+  background: rgba(68, 51, 17, .96);
+  border-color: rgba(244, 214, 137, .82);
+}
+
+.mm-rpg-world-object-control:active {
+  transform: translateY(1px) scale(.98);
 }
 
 .mm-rpg-world-interact-chooser {
@@ -318,6 +342,12 @@ body.monster-master-pixi-ready .mm-rpg-world-stage .monster-master-pixi-canvas {
     max-width: calc(100% - 24px);
     padding-inline: 14px;
     font-size: .72rem;
+  }
+
+  .mm-rpg-world-object-control {
+    right: 8px;
+    bottom: 226px;
+    max-width: min(46%, 210px);
   }
 
   .mm-rpg-world-interact-chooser {
