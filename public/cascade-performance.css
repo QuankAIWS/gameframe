@@ -1,0 +1,76 @@
+.cascade-performance-card {
+  gap: 7px;
+}
+
+#level-stars {
+  color: #f2a52f;
+  font-size: 1.42rem;
+  letter-spacing: .08em;
+  text-shadow: 0 2px 0 rgba(255,255,255,.8);
+}
+
+#star-progress {
+  color: #6e6284;
+  font-size: .76rem;
+  font-weight: 780;
+  line-height: 1.35;
+}
+
+#quick-bonus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  margin-top: 3px;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 165, 52, .35);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 230, 113, .72), rgba(255, 177, 116, .62));
+  color: #9b541b;
+  font-size: .65rem;
+  font-weight: 950;
+  letter-spacing: .055em;
+  text-align: center;
+}
+
+#quick-bonus[hidden] {
+  display: none;
+}
+
+#quick-bonus.is-expired {
+  border-color: rgba(109, 93, 130, .16);
+  background: rgba(255,255,255,.66);
+  color: #847792;
+}
+
+.cascade-map-stars {
+  display: block;
+  margin-top: 2px;
+  color: #e5a335;
+  font-size: .57rem;
+  letter-spacing: -.02em;
+  line-height: 1;
+}
+
+.cascade-map-stars[hidden] {
+  display: none;
+}
+
+.cascade-dialog-actions .iou {
+  display: none !important;
+}
+
+.cascade-card #booster-hammer + span {
+  line-height: 1.35;
+}
+
+@media (max-width: 650px) {
+  #level-stars {
+    font-size: 1.22rem;
+  }
+
+  #quick-bonus {
+    font-size: .58rem;
+    padding-inline: 6px;
+  }
+}

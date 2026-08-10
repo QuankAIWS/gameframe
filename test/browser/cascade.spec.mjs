@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 
-test("Cascade resolves a legal move through the animated presentation layer", async ({ page }) => {
+test("Cascade Crush resolves a legal move through the animated presentation layer", async ({ page }) => {
   await page.goto("/cascade.html");
 
-  await expect(page.getByRole("heading", { name: "Cascade" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cascade Crush", exact: true })).toBeVisible();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   await expect(page.locator("#level-map > li")).toHaveCount(100);
 
@@ -76,15 +76,18 @@ test("Cascade late chapters expose ice, collection, cross-blast, and layered ice
   await expect(page.locator(".cascade-tile[data-ice=\"2\"]")).not.toHaveCount(0);
 });
 
-test("Cascade IOU ledger has no player-facing reset control", async ({ page }) => {
+test("Cascade IOU ledger stays a joke ledger with no player-facing gameplay purchases", async ({ page }) => {
   await page.goto("/cascade.html");
+  await expect(page.getByRole("button", { name: /IOU\$/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Open boosts" })).toHaveCount(0);
   await page.getByRole("button", { name: "View IOUs" }).click();
   await expect(page.locator("#ledger-dialog")).toBeVisible();
+  await expect(page.locator("#ledger-dialog")).toContainText("Gameplay boosts are earned now");
   await expect(page.getByRole("button", { name: "Clear IOUs" })).toHaveCount(0);
   await expect(page.locator("#reset-ledger")).toBeHidden();
 });
 
-test("Cascade shows a live refill countdown and blocks play at zero lives", async ({ page }) => {
+test("Cascade shows a live refill countdown and blocks play at zero lives without a refill purchase", async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("scribbles-gameframe.cascade-state:v1", JSON.stringify({
       level: 4,
@@ -101,21 +104,75 @@ test("Cascade shows a live refill countdown and blocks play at zero lives", asyn
   await expect(page.locator("#life-timer")).toContainText("+1 IN");
   await expect(page.locator("#life-lock")).toBeVisible();
   await expect(page.locator("#life-lock-timer")).toHaveText(/09:5\d|10:00/);
+  await expect(page.locator("#life-lock")).toContainText("Lives recharge automatically");
   await expect(page.locator(".cascade-tile").first()).toBeDisabled();
-
-  await page.getByRole("button", { name: "Need a boost?" }).click();
-  await expect(page.locator("#boost-info-dialog")).toBeVisible();
-  await expect(page.getByRole("button", { name: "REFILL 5 LIVES · 5 IOU$" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /REFILL.*LIVES/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Need a boost?" })).toHaveCount(0);
 });
 
-test("Cascade Need a boost opens useful offer guidance during ordinary play", async ({ page }) => {
+test("Cascade performance awards best stars, quick bonuses, and hammer milestones", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("scribbles-gameframe.cascade-state:v1", JSON.stringify({
+      level: 6,
+      lives: 5,
+      lastLifeAt: Date.now(),
+      streak: 0,
+      hammers: 2,
+      ledger: [],
+    }));
+    window.localStorage.setItem("scribbles-gameframe.cascade-performance:v1", JSON.stringify({
+      starsByLevel: { "6": 2 },
+      quickWins: {},
+      pendingHammerRewards: 0,
+    }));
+  });
+
   await page.goto("/cascade.html");
-  await page.getByRole("button", { name: "Open boosts" }).click();
-  await expect(page.locator("#boost-info-dialog")).toBeVisible();
-  await expect(page.locator("#boost-state")).toContainText("5/5 lives");
-  await expect(page.getByRole("button", { name: "REFILL 5 LIVES · 5 IOU$" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Open hammer offer" })).toBeDisabled();
-  await expect(page.getByText("Extra moves are offered when you hit 0 moves.")).toBeVisible();
+  await expect(page.locator("#level-stars")).toHaveText("★★☆");
+  await expect(page.locator("#star-progress")).toContainText("2 total stars");
+  await expect(page.locator("#quick-bonus")).toBeVisible();
+  await expect(page.locator("#quick-bonus")).toContainText("QUICK BONUS");
+  await expect(page.locator('#level-map > li[data-level="6"] .cascade-map-stars')).toHaveText("★★☆");
+
+  const model = await page.evaluate(() => ({
+    slow: window.cascadePerformance.calculateStars({ moves: 20, movesRemaining: 1, quickBonus: false }),
+    efficient: window.cascadePerformance.calculateStars({ moves: 20, movesRemaining: 6, quickBonus: false }),
+    quick: window.cascadePerformance.calculateStars({ moves: 20, movesRemaining: 3, quickBonus: true }),
+    quickWindow: window.cascadePerformance.quickBonusSeconds(6),
+    milestone: window.cascadePerformance.performanceReward({
+      starsByLevel: { "1": 3, "2": 3, "3": 3 },
+      level: 4,
+      stars: 1,
+    }),
+  }));
+
+  expect(model.slow).toBe(1);
+  expect(model.efficient).toBe(3);
+  expect(model.quick).toBe(3);
+  expect(model.quickWindow).toBe(75);
+  expect(model.milestone.nextTotal).toBe(10);
+  expect(model.milestone.hammerRewards).toBe(1);
+});
+
+test("Cascade zero-hammer state explains earned boosters instead of selling a bundle", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("scribbles-gameframe.cascade-state:v1", JSON.stringify({
+      level: 8,
+      lives: 5,
+      lastLifeAt: Date.now(),
+      streak: 0,
+      hammers: 0,
+      ledger: [],
+    }));
+  });
+
+  await page.goto("/cascade.html");
+  await page.locator("#booster-hammer").click();
+  await expect(page.locator("#result-dialog")).toBeVisible();
+  await expect(page.locator("#result-kicker")).toHaveText("NO HAMMERS");
+  await expect(page.locator("#result-copy")).toContainText("earned through stars");
+  await expect(page.getByRole("button", { name: /GET 3 HAMMERS/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Got it" })).toBeVisible();
 });
 
 test("Cascade admin console uses the authenticated admin identity to jump through 100 levels and reset IOUs", async ({ page }) => {
