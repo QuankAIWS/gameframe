@@ -18,7 +18,8 @@ function normalizeDockToolbar() {
 
   for (const control of toolbar.querySelectorAll("button")) {
     const campaigns = control.id === "mm-rpg-campaigns-open";
-    control.hidden = !campaigns;
+    const shouldHide = !campaigns;
+    if (control.hidden !== shouldHide) control.hidden = shouldHide;
     if (campaigns) {
       control.classList.add("mm-rpg-dock-campaigns");
       control.removeAttribute("aria-pressed");
