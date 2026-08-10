@@ -21,6 +21,7 @@ export type RpgExplorationAnchorV1 = {
   y: number;
   entityClass?: "actor" | "player-character" | "monster";
   identityStage?: "self" | "descriptor" | "role" | "name";
+  objectState?: string;
 };
 
 export type RpgExplorationPhysicalMaterializationV1 = {
@@ -88,8 +89,9 @@ const OBJECT_SLOTS = Object.freeze([
 /**
  * Materializes the first accepted semantic-layout profile into GameFrame-owned
  * physical geometry. The materialization identity is derived only from the
- * viewer-independent S6 contract. Viewer-specific entities, labels, objects,
- * and route disclosure are placements over that geometry and do not change it.
+ * viewer-independent S6 contract. Viewer-specific entities, labels, object
+ * state, and route disclosure are placements/presentation over that geometry
+ * and do not change it.
  */
 export function materializeRpgExplorationProjection(
   projectionValue: unknown,
@@ -207,7 +209,8 @@ function projectAnchors(projection: RpgExplorationProjectionV1): RpgExplorationA
       kind: "object",
       semanticId: object.entityId,
       interactionTargetId: object.interactionTargetId,
-      label: object.displayLabel,
+      label: objectLabel(object.displayLabel, object.state),
+      objectState: object.state,
       ...position,
     });
   }
@@ -225,6 +228,12 @@ function projectAnchors(projection: RpgExplorationProjectionV1): RpgExplorationA
   }
 
   return anchors.sort((left, right) => left.anchorId.localeCompare(right.anchorId));
+}
+
+function objectLabel(displayLabel: string, state: string): string {
+  if (state === "covered") return `${displayLabel} · covered`;
+  if (state === "uncovered") return `${displayLabel} · uncovered`;
+  return displayLabel;
 }
 
 function reservedAnchorPositions(projection: RpgExplorationProjectionV1): Set<string> {
