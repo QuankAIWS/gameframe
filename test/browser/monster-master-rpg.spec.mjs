@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const campaignId = "campaign-ui-test";
-const stagingCampaignId = "monster-master-staging-v5";
+const stagingCampaignId = "monster-master-staging-v6";
 
 function projection({ coordination = 3, presentation = 2, narrative = 1, includeResult = false } = {}) {
   const events = [
@@ -107,6 +107,8 @@ test("opens the RPG destination, resumes a campaign, and submits an action", asy
   await expect(page.locator("#mm-rpg-events .mm-rpg-event")).toHaveCount(2);
   await expect(page.locator('[data-event-id="event:private"]')).toContainText("Private");
 
+  await page.getByRole("button", { name: "Describe an in-world action" }).click();
+  await expect(page.locator("#mm-rpg-action-form")).toHaveClass(/is-open/);
   await page.locator("#mm-rpg-action").fill("Inspect the gate and compare the forged crest with my field guide.");
   await page.locator("#mm-rpg-send").click();
 
@@ -139,9 +141,6 @@ test("idle RPG campaign no longer uses the former 2.5-second polling loop", asyn
   await expect(page.locator("#mm-rpg-campaign")).toBeVisible();
   await expect.poll(() => attachCount).toBe(1);
 
-  // This is deliberately longer than the retired 2.5 second loop. Local
-  // development cannot attach its synthetic identity to browser WebSocket
-  // headers, so it uses the new 15 second degraded recovery interval instead.
   await page.waitForTimeout(3_200);
   expect(attachCount).toBe(1);
 });

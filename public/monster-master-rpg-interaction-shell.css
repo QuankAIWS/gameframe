@@ -1,27 +1,88 @@
 body.monster-master-rpg-route.mm-rpg-play-shell {
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
 .mm-rpg-play-shell .mm-rpg-shell {
   width: 100%;
-  height: 100vh;
-  padding: 64px 0 0;
+  height: calc(100dvh - var(--gameframe-destination-height));
+  padding: 0;
   margin: 0;
+  overflow: hidden;
 }
 
 .mm-rpg-play-shell .mm-rpg-hero,
 .mm-rpg-play-shell .mm-rpg-campaign-header,
 .mm-rpg-play-shell .mm-rpg-world-header,
 .mm-rpg-play-shell .mm-rpg-world-footer,
-.mm-rpg-play-shell .mm-rpg-sidebar,
-.mm-rpg-play-shell .mm-rpg-layout {
+.mm-rpg-play-shell .mm-rpg-sidebar {
   display: none;
+}
+
+.mm-rpg-play-shell .mm-rpg-layout {
+  display: contents;
+}
+
+.mm-rpg-play-shell .mm-rpg-story {
+  display: none;
+}
+
+.mm-rpg-play-shell .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 30;
+  display: block;
+  width: min(500px, calc(100vw - 28px));
+  max-height: min(440px, calc(100% - 150px));
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid rgba(181, 215, 179, .2);
+  border-radius: 16px;
+  background: rgba(4, 11, 8, .92);
+  box-shadow: 0 16px 46px rgba(0, 0, 0, .42);
+  backdrop-filter: blur(12px);
+}
+
+.mm-rpg-play-shell .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) .mm-rpg-section-heading,
+.mm-rpg-play-shell .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) #mm-rpg-empty,
+.mm-rpg-play-shell .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) #mm-rpg-events > .mm-rpg-event {
+  display: none;
+}
+
+.mm-rpg-play-shell .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) #mm-rpg-events > .mm-rpg-choice-event:has(button:not(:disabled)),
+.mm-rpg-play-shell .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) #mm-rpg-events > .mm-rpg-encounter-event:has(.mm-rpg-encounter-enter[href]) {
+  display: grid;
+}
+
+.mm-rpg-play-shell .mm-rpg-campaign:has(.mm-rpg-action-dock.is-open) .mm-rpg-story:has(
+  .mm-rpg-choice-event button:not(:disabled),
+  .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+) {
+  bottom: 190px;
 }
 
 .mm-rpg-play-shell #mm-rpg-error {
   position: fixed;
-  top: 72px;
+  top: calc(var(--gameframe-destination-height) + 8px);
   left: 50%;
   z-index: 80;
   width: min(720px, calc(100vw - 32px));
@@ -32,7 +93,7 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 
 .mm-rpg-play-shell .mm-rpg-campaign {
   position: relative;
-  height: calc(100vh - 64px);
+  height: 100%;
   margin: 0;
 }
 
@@ -65,7 +126,7 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 .mm-rpg-play-hud {
   position: absolute;
   inset: 14px 14px auto;
-  z-index: 20;
+  z-index: 40;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -133,6 +194,8 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 
 .mm-rpg-play-toolbar {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
   padding: 6px;
   border-radius: 12px;
@@ -157,11 +220,16 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
   color: #eaffcf;
 }
 
+.mm-rpg-play-toolbar #mm-rpg-refresh {
+  min-width: 36px;
+  padding: 0 9px;
+}
+
 .mm-rpg-play-shell .mm-rpg-composer.mm-rpg-action-dock {
   position: absolute;
   left: 50%;
   bottom: 14px;
-  z-index: 22;
+  z-index: 32;
   display: none;
   width: min(760px, calc(100vw - 30px));
   transform: translateX(-50%);
@@ -218,7 +286,7 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
   right: 14px;
   bottom: 14px;
   width: min(460px, calc(100vw - 28px));
-  max-height: min(620px, calc(100vh - 100px));
+  max-height: min(620px, calc(100dvh - var(--gameframe-destination-height) - 28px));
 }
 
 .mm-rpg-overlay-panel > header,
@@ -264,7 +332,7 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 }
 
 .mm-rpg-chronicle-list {
-  max-height: min(540px, calc(100vh - 160px));
+  max-height: min(540px, calc(100dvh - var(--gameframe-destination-height) - 88px));
   margin: 0;
   list-style: none;
 }
@@ -357,13 +425,22 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
   bottom: 174px;
 }
 
+.mm-rpg-play-shell .mm-rpg-world-stage:has(.mm-rpg-action-dock.is-open) .mm-rpg-world-interact {
+  bottom: 194px;
+}
+
+.mm-rpg-play-shell .mm-rpg-world-stage:has(.mm-rpg-action-dock.is-open) .mm-rpg-world-interact-chooser {
+  bottom: 246px;
+}
+
 @media (max-width: 760px) {
   .mm-rpg-play-shell .mm-rpg-shell {
-    padding-top: 58px;
+    height: calc(100dvh - var(--gameframe-destination-height));
+    padding: 0;
   }
 
   .mm-rpg-play-shell .mm-rpg-campaign {
-    height: calc(100vh - 58px);
+    height: 100%;
   }
 
   .mm-rpg-play-hud {
@@ -381,11 +458,18 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
   .mm-rpg-play-toolbar button {
     min-width: 42px;
     padding: 0 9px;
-    font-size: 0;
+    font-size: .64rem;
   }
 
-  .mm-rpg-play-toolbar button::first-letter {
-    font-size: .82rem;
+  .mm-rpg-play-shell .mm-rpg-story:has(
+    .mm-rpg-choice-event button:not(:disabled),
+    .mm-rpg-encounter-event .mm-rpg-encounter-enter[href]
+  ) {
+    left: 8px;
+    right: 8px;
+    bottom: 166px;
+    width: auto;
+    max-height: 42%;
   }
 
   .mm-rpg-play-shell .mm-rpg-world-interact {
@@ -402,6 +486,14 @@ body.monster-master-rpg-route.mm-rpg-play-shell {
 
   .mm-rpg-play-shell .mm-rpg-world-monster-control-chooser {
     bottom: 274px;
+  }
+
+  .mm-rpg-play-shell .mm-rpg-world-stage:has(.mm-rpg-action-dock.is-open) .mm-rpg-world-interact {
+    bottom: 286px;
+  }
+
+  .mm-rpg-play-shell .mm-rpg-world-stage:has(.mm-rpg-action-dock.is-open) .mm-rpg-world-interact-chooser {
+    bottom: 340px;
   }
 
   .mm-rpg-overlay-panel {

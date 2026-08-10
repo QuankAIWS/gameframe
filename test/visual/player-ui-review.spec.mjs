@@ -259,6 +259,8 @@ async function openMonsterMasterRpg(page, viewport) {
   await expectDestinationBar(page, "monster");
   await expect(page.locator("#mm-rpg-campaign")).toBeVisible();
   await expect(page.locator("#mm-rpg-events .mm-rpg-event")).toHaveCount(2);
+  await page.getByRole("button", { name: "Describe an in-world action" }).click();
+  await expect(page.locator("#mm-rpg-action-form")).toHaveClass(/is-open/);
   await expect(page.locator("#mm-rpg-action")).toBeVisible();
 }
 
