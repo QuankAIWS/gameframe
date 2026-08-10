@@ -84,12 +84,38 @@ function lateSpec(levelNumber) {
     };
   }
 
+  if (levelNumber === 79) {
+    return {
+      target: 11800,
+      moves: 20,
+      hard: false,
+      objective: objective({ ice: { count: 8, layers: 2, pattern } }),
+    };
+  }
+
   if (levelNumber <= 80) {
     return {
       target: 8600 + (offset * 450) + (hard ? 450 : 0),
       moves: hard ? 18 : 19,
       hard,
       objective: objective({ ice: { count: 5 + Math.floor(offset * 0.55), layers: 2, pattern } }),
+    };
+  }
+
+  if (levelNumber === 90) {
+    const firstKind = (levelNumber + 2) % TILE_KINDS;
+    const secondKind = (firstKind + 2) % TILE_KINDS;
+    return {
+      target: 12800,
+      moves: 20,
+      hard: true,
+      objective: objective({
+        collect: [
+          { kind: firstKind, count: 15 },
+          { kind: secondKind, count: 15 },
+        ],
+        ice: { count: 6, layers: 2, pattern },
+      }),
     };
   }
 
@@ -106,6 +132,23 @@ function lateSpec(levelNumber) {
           { kind: secondKind, count: 12 + Math.floor(offset * 0.5) },
         ],
         ice: { count: 4 + Math.floor(offset * 0.5), layers: 2, pattern },
+      }),
+    };
+  }
+
+  if (levelNumber === 95) {
+    const firstKind = (levelNumber + 3) % TILE_KINDS;
+    const secondKind = (firstKind + 2) % TILE_KINDS;
+    return {
+      target: 12000,
+      moves: 18,
+      hard: true,
+      objective: objective({
+        collect: [
+          { kind: firstKind, count: 15 },
+          { kind: secondKind, count: 15 },
+        ],
+        ice: { count: 6, layers: 2, pattern },
       }),
     };
   }
