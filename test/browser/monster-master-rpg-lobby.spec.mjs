@@ -43,7 +43,7 @@ test("Role-Playing Games opens Monster Master at a campaign lobby instead of aut
   expect(stagingAttachCount).toBe(0);
 });
 
-test("campaign lobby renders recent campaigns and keeps the most recent campaign first", async ({ page }) => {
+test("campaign lobby renders recent campaigns with the last campaign first", async ({ page }) => {
   await page.addInitScript(({ recentKey: key, currentKey: activeKey }) => {
     localStorage.setItem(activeKey, "campaign-second");
     localStorage.setItem(key, JSON.stringify([
@@ -65,10 +65,32 @@ test("campaign lobby renders recent campaigns and keeps the most recent campaign
   await page.goto("/monster-master-rpg.html?player=lobby-recents-player");
   const cards = page.locator("#mm-rpg-campaign-list .mm-rpg-campaign-card");
   await expect(cards).toHaveCount(3);
-  await expect(cards.first()).toHaveAttribute("data-campaign-id", "campaign-first");
+  await expect(cards.first()).toHaveAttribute("data-campaign-id", "campaign-second");
   await expect(page.locator('[data-campaign-id="campaign-second"]')).toHaveAttribute("data-last", "true");
   await expect(page.locator('[data-campaign-id="campaign-second"]')).toContainText("Resume");
   await expect(page.locator(`[data-campaign-id="${stagingCampaignId}"]`)).toContainText("STAGING");
+});
+
+test("deep links present an intentional resume state while the campaign attaches", async ({ page }) => {
+  const campaignId = "campaign-deep-link";
+  let releaseAttach;
+  await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, async (route) => {
+    await new Promise((resolve) => {
+      releaseAttach = resolve;
+    });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(campaignProjection(campaignId)) });
+  });
+  await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/attach`, async (route) => {
+    await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ message: "fixture" }) });
+  });
+
+  const navigation = page.goto(`/monster-master-rpg.html?player=deep-link-player&campaign=${campaignId}`);
+  await expect(page.getByRole("heading", { name: "Resuming campaign…" })).toBeVisible();
+  await expect(page.locator("#mm-rpg-campaign-lobby")).toBeHidden();
+  await expect(page.locator("#mm-rpg-join-form")).toBeHidden();
+  releaseAttach();
+  await navigation;
+  await expect(page.locator("#mm-rpg-campaign")).toBeVisible();
 });
 
 test("active campaign shell exposes Campaigns and returns to the lobby without retaining the deep link", async ({ page }) => {
@@ -146,6 +168,7 @@ test("centered world interaction buttons do not jump sideways on hover", async (
 
 test("coordination bridge recovers a temporarily missing exploration coordination revision", async ({ page }) => {
   await page.goto("/monster-master-rpg.html?player=coordination-bridge-player");
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterRpgCoordination))).toBe(true);
   const revision = await page.evaluate(() => {
     const payload = { projection: {} };
     window.gameFrameMonsterRpgWorld = {
@@ -163,6 +186,7 @@ test("coordination bridge recovers a temporarily missing exploration coordinatio
 
 test("click movement walks adjacent to an interaction target instead of onto it", async ({ page }) => {
   await page.goto("/monster-master-rpg.html?player=click-move-player");
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterRpgClickMove))).toBe(true);
   const result = await page.evaluate(async () => {
     let position = {
       sceneId: "scene.test",
