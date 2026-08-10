@@ -318,10 +318,17 @@
     bottom: calc(var(--mm-rpg-mobile-dock-height) + 8px);
   }
 
-  .mm-rpg-play-shell .mm-rpg-world-interact,
+  .mm-rpg-play-shell .mm-rpg-world-interact {
+    bottom: calc(var(--mm-rpg-mobile-dock-height) + 170px);
+  }
+
+  .mm-rpg-play-shell .mm-rpg-world-object-control,
   .mm-rpg-play-shell .mm-rpg-world-interact-chooser,
-  .mm-rpg-play-shell .mm-rpg-world-monster-control,
+  .mm-rpg-play-shell .mm-rpg-world-monster-control {
+    bottom: calc(var(--mm-rpg-mobile-dock-height) + 226px);
+  }
+
   .mm-rpg-play-shell .mm-rpg-world-monster-control-chooser {
-    bottom: calc(var(--mm-rpg-mobile-dock-height) + 12px);
+    bottom: calc(var(--mm-rpg-mobile-dock-height) + 282px);
   }
 }
