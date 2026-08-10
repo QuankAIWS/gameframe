@@ -342,25 +342,44 @@ function placeOwnedDeployedMonstersBesidePlayer(
     .sort((left, right) => left.semanticId.localeCompare(right.semanticId));
   const occupied = blockedCells(materialization, playerEntityId, monsterIds);
   occupied.add(coordinateKey(player.x, player.y));
-  const offsets = [
-    { x: -1, y: 0 },
-    { x: 0, y: 1 },
-    { x: 0, y: -1 },
-    { x: 1, y: 0 },
-  ] as const;
+  const candidates = deterministicPlacementCandidates(materialization, player);
   for (const companion of companions) {
-    const position = offsets
-      .map((offset) => ({ x: player.x + offset.x, y: player.y + offset.y }))
-      .find((candidate) =>
-        isTraversable(materialization, occupied, candidate.x, candidate.y)
-      );
+    const position = candidates.find((candidate) =>
+      isTraversable(materialization, occupied, candidate.x, candidate.y)
+    );
     if (!position) {
-      throw invalid(`No legal adjacent deployment cell is available for ${companion.label}.`);
+      throw invalid(`No legal deployment cell is available for ${companion.label}.`);
     }
     companion.x = position.x;
     companion.y = position.y;
     occupied.add(coordinateKey(position.x, position.y));
   }
+}
+
+/**
+ * Produces stable Manhattan rings around the player's persisted position. The
+ * first ring preserves the original west/south/north/east preference; wider
+ * rings prevent a valid semantic scene from becoming unloadable merely because
+ * all four adjacent cells are occupied.
+ */
+function deterministicPlacementCandidates(
+  materialization: RpgExplorationPhysicalMaterializationV1,
+  player: { x: number; y: number },
+): Array<{ x: number; y: number }> {
+  const candidates: Array<{ x: number; y: number }> = [];
+  const maximumDistance = materialization.map.width + materialization.map.height;
+  for (let distance = 1; distance <= maximumDistance; distance += 1) {
+    for (let xOffset = -distance; xOffset <= distance; xOffset += 1) {
+      const yMagnitude = distance - Math.abs(xOffset);
+      if (yMagnitude === 0) {
+        candidates.push({ x: player.x + xOffset, y: player.y });
+        continue;
+      }
+      candidates.push({ x: player.x + xOffset, y: player.y + yMagnitude });
+      candidates.push({ x: player.x + xOffset, y: player.y - yMagnitude });
+    }
+  }
+  return candidates;
 }
 
 function collision(
