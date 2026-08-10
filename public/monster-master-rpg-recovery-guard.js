@@ -1,4 +1,4 @@
-const RECOVERY_TIMEOUT_MS = 6_000;
+const RECOVERY_TIMEOUT_MS = 2_500;
 const INSTALL_INTERVAL_MS = 50;
 
 function timeoutPromise(label) {
