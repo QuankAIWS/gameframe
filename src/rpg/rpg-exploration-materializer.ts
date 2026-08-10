@@ -57,7 +57,6 @@ const PELL_ANCHOR = Object.freeze({ x: 9, y: 7 });
 
 const STATIC_ANCHORS: Readonly<Record<string, { x: number; y: number }>> = Object.freeze({
   "location.maintenance-shed": { x: 12, y: 3 },
-  "location.confiscation-cart": { x: 11, y: 8 },
   "object.checkpoint-cart": { x: 10, y: 8 },
   "route.crooked-checkpoint-west-woods": { x: 1, y: 7 },
 });
