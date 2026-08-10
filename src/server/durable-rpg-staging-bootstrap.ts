@@ -8,7 +8,7 @@ const DEFAULT_TITLE = "Monster Master: The Crooked Checkpoint";
 const DEFAULT_PARTY_ID = "party:main";
 const METADATA_TABLE = "rpg_campaign_metadata_v1";
 const LEGACY_STAGING_CAMPAIGN_ID = "monster-master-staging";
-export const CURRENT_STAGING_CAMPAIGN_ID = "monster-master-staging-v5";
+export const CURRENT_STAGING_CAMPAIGN_ID = "monster-master-staging-v6";
 
 export type DurableRpgStagingBootstrapConfig = {
   campaignId: string;
