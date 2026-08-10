@@ -24,10 +24,6 @@ function coordinateKey(x, y) {
   return `${x},${y}`;
 }
 
-function sameCoordinate(left, right) {
-  return Boolean(left && right && left.x === right.x && left.y === right.y);
-}
-
 function inBounds(map, x, y) {
   return x >= 0 && y >= 0 && x < map.width && y < map.height;
 }
@@ -56,40 +52,36 @@ function interactionAnchorAt(payload, coordinate) {
   ) ?? null;
 }
 
-function reachableGoals(payload, start, requested) {
+function movementTarget(payload, start, requested) {
   const map = payload?.materialization?.map;
-  if (!map) return [];
+  if (!map) return null;
   const blocked = blockedCells(payload);
   const anchor = interactionAnchorAt(payload, requested);
   if (!anchor) {
-    return traversable(map, blocked, requested.x, requested.y) ? [requested] : [];
+    return traversable(map, blocked, requested.x, requested.y)
+      ? { goals: [requested], extraBlocked: new Set() }
+      : null;
   }
 
-  // Clicking a person, object, or route means "walk up to it", not "stand on it".
-  // This leaves the player in the exact range expected by Talk/Uncover/Travel.
-  blocked.add(coordinateKey(anchor.x, anchor.y));
-  return DIRECTIONS
+  // Clicking an interactive person, object, or route means "walk up to it",
+  // leaving the player in the exact Manhattan-distance-1 range used by the
+  // authoritative Talk/Uncover/Travel operations.
+  const extraBlocked = new Set([coordinateKey(anchor.x, anchor.y)]);
+  const goals = DIRECTIONS
     .map(([, dx, dy]) => ({ x: anchor.x + dx, y: anchor.y + dy }))
-    .filter((candidate) => traversable(map, blocked, candidate.x, candidate.y))
+    .filter((candidate) => traversable(map, new Set([...blocked, ...extraBlocked]), candidate.x, candidate.y))
     .sort((left, right) =>
       (Math.abs(left.x - start.x) + Math.abs(left.y - start.y))
       - (Math.abs(right.x - start.x) + Math.abs(right.y - start.y))
     );
+  return goals.length > 0 ? { goals, extraBlocked } : null;
 }
 
-function shortestPath(payload, start, goals) {
+function shortestPath(payload, start, target) {
   const map = payload?.materialization?.map;
-  if (!map || goals.length === 0) return null;
-  const blocked = blockedCells(payload);
-  const selectedAnchor = goals.length > 1
-    ? interactionAnchorAt(payload, {
-        x: Math.round(goals.reduce((sum, goal) => sum + goal.x, 0) / goals.length),
-        y: Math.round(goals.reduce((sum, goal) => sum + goal.y, 0) / goals.length),
-      })
-    : null;
-  if (selectedAnchor) blocked.add(coordinateKey(selectedAnchor.x, selectedAnchor.y));
-
-  const goalKeys = new Set(goals.map((goal) => coordinateKey(goal.x, goal.y)));
+  if (!map || !target?.goals?.length) return null;
+  const blocked = new Set([...blockedCells(payload), ...(target.extraBlocked ?? [])]);
+  const goalKeys = new Set(target.goals.map((goal) => coordinateKey(goal.x, goal.y)));
   const startKey = coordinateKey(start.x, start.y);
   if (goalKeys.has(startKey)) return [];
 
@@ -134,10 +126,12 @@ function waitForStep(before, token) {
   return new Promise((resolve) => {
     const started = performance.now();
     let settled = false;
+    let timer = null;
 
     function finish(value) {
       if (settled) return;
       settled = true;
+      if (timer) window.clearInterval(timer);
       window.removeEventListener(VIEW_EVENT, onView);
       resolve(value);
     }
@@ -166,17 +160,13 @@ function waitForStep(before, token) {
     }
 
     window.addEventListener(VIEW_EVENT, onView);
-    const timer = window.setInterval(() => {
+    timer = window.setInterval(() => {
       const result = currentResult();
       if (result) {
-        window.clearInterval(timer);
         finish(result);
         return;
       }
-      if (performance.now() - started >= STEP_TIMEOUT_MS) {
-        window.clearInterval(timer);
-        finish({ timeout: true });
-      }
+      if (performance.now() - started >= STEP_TIMEOUT_MS) finish({ timeout: true });
     }, 50);
   });
 }
@@ -187,8 +177,8 @@ async function walkTo(requested) {
   const start = initial.position?.transform;
   if (!initial.world || !initial.payload?.materialization?.map || !start) return;
 
-  const goals = reachableGoals(initial.payload, start, requested);
-  const path = shortestPath(initial.payload, start, goals);
+  const target = movementTarget(initial.payload, start, requested);
+  const path = target ? shortestPath(initial.payload, start, target) : null;
   if (path === null) {
     setStatus("No walkable route to that spot");
     return;
@@ -247,7 +237,7 @@ window.addEventListener("keydown", (event) => {
 }, { capture: true });
 
 window.addEventListener("gameframe:before-home", cancelClickMove);
-window.addEventListener( VIEW_EVENT, () => {
+window.addEventListener(VIEW_EVENT, () => {
   document.body.classList.toggle(
     "mm-rpg-click-move-ready",
     Boolean(worldState().payload && worldState().position),
