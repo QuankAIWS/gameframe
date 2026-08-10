@@ -5,6 +5,7 @@ import {
   applySpecialSwap,
   createRng,
   emptySpecials,
+  findSpecialMatchGroups,
   resolveSpecialCascades,
 } from "../../../public/cascade-special-engine.js";
 
@@ -28,6 +29,23 @@ test("match four creates a persistent striped piece instead of detonating immedi
   assert.equal(result.transitions[0].createdSpecials.length, 1);
   assert.equal(result.transitions[0].createdSpecials[0].special, SPECIAL.STRIPE_H);
   assert.ok(result.specials.includes(SPECIAL.STRIPE_H));
+});
+
+test("the tile transformed into a special still counts for collection and chips its ice", () => {
+  const board = stableBoard();
+  board.splice(0, 8, 0, 0, 0, 0, 1, 2, 3, 4);
+  const ice = Array(64).fill(0);
+  ice[1] = 1;
+  const result = resolveSpecialCascades(board, emptySpecials(), createRng(111), {
+    from: 0,
+    to: 1,
+    ice,
+    rules: { stripe: true, bomb: true, color: true },
+  });
+
+  assert.equal(result.transitions[0].createdSpecials[0].index, 1);
+  assert.equal(result.transitions[0].iceAfter[1], 0);
+  assert.equal(result.transitions[0].clearedKindCounts[0], 4);
 });
 
 test("T or L intersections create a persistent bomb", () => {
@@ -58,6 +76,17 @@ test("match five creates a persistent color clearer", () => {
 
   assert.equal(result.transitions[0].createdSpecials[0].special, SPECIAL.COLOR);
   assert.ok(result.specials.includes(SPECIAL.COLOR));
+});
+
+test("a saved color clearer never participates in an ordinary color match", () => {
+  const board = stableBoard();
+  const specials = emptySpecials();
+  board[0] = 2;
+  board[1] = 2;
+  board[2] = 2;
+  specials[1] = SPECIAL.COLOR;
+
+  assert.equal(findSpecialMatchGroups(board, specials).length, 0);
 });
 
 test("special creation can be disabled for the opening teaching level", () => {
