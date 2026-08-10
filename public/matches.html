@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070a0d">
+  <title>Matches · Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/player-platform.css">
+</head>
+<body class="gameframe-platform-page">
+  <main class="platform-shell">
+    <header class="platform-heading">
+      <small>GAMEFRAME PLAYER NETWORK</small>
+      <h1>Matches</h1>
+      <p>Pick up persistent board games whenever you are ready. Your move is stored by GameFrame even when every browser is closed.</p>
+      <span id="matches-filter" class="platform-filter"></span>
+    </header>
+    <div id="matches-error" class="platform-error" hidden></div>
+    <div class="platform-grid">
+      <section class="platform-section" aria-labelledby="your-turn-title">
+        <header class="platform-section-header"><h2 id="your-turn-title">Your turn</h2><span id="your-turn-count" class="platform-count">—</span></header>
+        <div id="your-turn-list" class="platform-list"><p class="platform-empty">Loading matches…</p></div>
+      </section>
+      <section class="platform-section" aria-labelledby="challenges-title">
+        <header class="platform-section-header"><h2 id="challenges-title">Challenges</h2><span id="challenges-count" class="platform-count">—</span></header>
+        <div id="challenges-list" class="platform-list"><p class="platform-empty">Loading challenges…</p></div>
+      </section>
+      <section class="platform-section" aria-labelledby="waiting-title">
+        <header class="platform-section-header"><h2 id="waiting-title">Waiting</h2><span id="waiting-count" class="platform-count">—</span></header>
+        <div id="waiting-list" class="platform-list"><p class="platform-empty">Loading matches…</p></div>
+      </section>
+      <section class="platform-section" aria-labelledby="completed-title">
+        <header class="platform-section-header"><h2 id="completed-title">Completed</h2><span id="completed-count" class="platform-count">—</span></header>
+        <div id="completed-list" class="platform-list"><p class="platform-empty">Loading history…</p></div>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="/matches-app.js"></script>
+</body>
+</html>
