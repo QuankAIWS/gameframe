@@ -10,3 +10,4 @@ await import("./monster-master-rpg-click-move.js");
 await import("./monster-master-rpg-recovery-guard.js");
 await import("./monster-master-rpg-desktop-controls.js");
 await import("./monster-master-rpg-unified-hud.js");
+await import("./monster-master-rpg-shell-guards.js");
