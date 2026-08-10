@@ -21,6 +21,8 @@ const directories: string[] = [];
 const fixturePath = fileURLToPath(
   new URL("../../planning/fixtures/rpg/v1/exploration-port-a.json", import.meta.url),
 );
+const CART_ACTION = "Uncover the checkpoint cart.";
+const CART_TARGET = "entity:object.checkpoint-cart";
 
 test.afterEach(() => {
   for (const directory of directories.splice(0)) {
@@ -59,6 +61,7 @@ function talkRequest(
   semantic: RpgExplorationProjectionV1,
   positionRevision: number,
   interactionTargetId = "entity:npc.warden-pell",
+  text = "Pell, does this checkpoint look right to you?",
 ) {
   const materialization = materializeRpgExplorationProjection(semantic);
   return {
@@ -73,7 +76,7 @@ function talkRequest(
     issuedAt: "2026-08-09T18:01:00.000Z",
     interaction: "talk" as const,
     interactionTargetId,
-    text: "Pell, does this checkpoint look right to you?",
+    text,
   };
 }
 
@@ -123,6 +126,93 @@ test("Talk resolves Pell only after GameFrame proves adjacency", () => {
       targetDisplayLabel: "veteran field warden",
       text: "Pell, does this checkpoint look right to you?",
     });
+  } finally {
+    positions.close();
+  }
+});
+
+test("checkpoint cart uncover resolves only after GameFrame proves current covered adjacency", () => {
+  const semantic = projection();
+  const materialization = materializeRpgExplorationProjection(semantic);
+  const cart = materialization.anchors.find((anchor) => anchor.semanticId === "object.checkpoint-cart");
+  assert.deepEqual(
+    { x: cart?.x, y: cart?.y, state: cart?.objectState },
+    { x: 10, y: 8, state: "covered" },
+  );
+  const positions = new SqliteRpgExplorationPositionStore({ filePath: databasePath() });
+  const movement = new RpgExplorationMovementService({ positions });
+  try {
+    let position = movement.attach({
+      playerId: semantic.viewer.playerId,
+      projection: semantic,
+      materialization,
+    });
+    assert.throws(
+      () => authorizeRpgExplorationTalk({
+        request: talkRequest(semantic, position.positionRevision, CART_TARGET, CART_ACTION),
+        materialization,
+        position,
+      }),
+      (error: unknown) => error instanceof RpgExplorationInteractionError
+        && error.code === "interaction-out-of-range",
+    );
+
+    for (const direction of ["west", "west", "west"] as const) {
+      position = movement.move(
+        semantic.viewer.playerId,
+        moveRequest(semantic, position.positionRevision, direction),
+      );
+    }
+    assert.deepEqual(position.transform, { x: 11, y: 7, facing: "west" });
+
+    const authorized = authorizeRpgExplorationTalk({
+      request: talkRequest(semantic, position.positionRevision, CART_TARGET, CART_ACTION),
+      materialization,
+      position,
+    });
+    assert.deepEqual(authorized, {
+      campaignId: semantic.campaignId,
+      sceneId: semantic.scene.sceneId,
+      commandId: "talk-command-one",
+      issuedAt: "2026-08-09T18:01:00.000Z",
+      expectedGameframeCoordinationRevision: 12,
+      interaction: "talk",
+      interactionTargetId: CART_TARGET,
+      targetEntityId: "object.checkpoint-cart",
+      targetDisplayLabel: "covered confiscation cart · covered",
+      text: CART_ACTION,
+    });
+
+    assert.throws(
+      () => authorizeRpgExplorationTalk({
+        request: talkRequest(
+          semantic,
+          position.positionRevision,
+          CART_TARGET,
+          "Tell me what is in the cart.",
+        ),
+        materialization,
+        position,
+      }),
+      (error: unknown) => error instanceof RpgExplorationInteractionError
+        && error.code === "interaction-target-unavailable",
+    );
+
+    const uncoveredMaterialization = structuredClone(materialization);
+    const uncoveredCart = uncoveredMaterialization.anchors.find((anchor) =>
+      anchor.semanticId === "object.checkpoint-cart"
+    );
+    if (!uncoveredCart) throw new Error("fixture cart is missing");
+    uncoveredCart.objectState = "uncovered";
+    assert.throws(
+      () => authorizeRpgExplorationTalk({
+        request: talkRequest(semantic, position.positionRevision, CART_TARGET, CART_ACTION),
+        materialization: uncoveredMaterialization,
+        position,
+      }),
+      (error: unknown) => error instanceof RpgExplorationInteractionError
+        && error.code === "interaction-target-unavailable",
+    );
   } finally {
     positions.close();
   }
