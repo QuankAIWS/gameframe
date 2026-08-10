@@ -15,6 +15,7 @@ import {
   createWebsiteOAuthStateCookie,
   safeReturnTo,
 } from "../auth/discord-oauth.ts";
+import { discordTargetPlayerId } from "../auth/match-invitation.ts";
 import {
   SignedCookieSessionAuthenticator,
   SignedSessionCodec,
@@ -25,6 +26,14 @@ import {
 } from "../auth/signed-session.ts";
 import { InvitationCoordinator } from "./invitation-coordinator.ts";
 import { errorResponse, json, readJson } from "./http-utils.ts";
+import {
+  indexInvitation,
+  indexMatchView,
+  listKnownPlayers,
+  readPlayerFeed,
+  upsertPlayerDirectory,
+  type IndexedMatchView,
+} from "./player-platform-coordinator.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
 interface WorkerRouterOptions {
@@ -92,6 +101,25 @@ function requireDirectMatchCreationPolicy(
   }
 }
 
+async function internalMatchView(response: Response): Promise<IndexedMatchView> {
+  const body = await response.json().catch(() => ({})) as IndexedMatchView & { error?: string; message?: string };
+  if (!response.ok) {
+    throw Object.assign(new Error(body.message ?? `Internal match request failed with ${response.status}.`), {
+      code: body.error ?? "match_internal_error",
+    });
+  }
+  return body;
+}
+
+async function loadMatchForIndex(env: GameFrameWorkerEnv, matchId: string, playerId: string) {
+  const internal = new URL("https://match.internal/view");
+  internal.searchParams.set("matchId", matchId);
+  internal.searchParams.set("playerId", playerId);
+  const view = await internalMatchView(await stubFor(env, matchId).fetch(new Request(internal)));
+  await indexMatchView(env, view);
+  return view;
+}
+
 export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
   const idGenerator = options.idGenerator ?? (() => crypto.randomUUID());
   let cachedSessionAuthenticator: { secret: string; authenticator: RequestAuthenticator } | null = null;
@@ -141,9 +169,11 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
             authentication: "discord-oauth-session",
             discordActivity: true,
             authenticatedInvitations: true,
+            playerPlatform: true,
             games: [
               "tic-tac-toe",
               "american-checkers",
+              "othello",
               "tactical-movement-canary",
               "tactical-combat-canary",
               "monster-master-duel",
@@ -222,7 +252,21 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
         }
 
         if (request.method === "GET" && url.pathname === "/api/session") {
-          return json(200, sessionResponse(await authenticator.authenticate(request)));
+          const principal = await authenticator.authenticate(request);
+          await upsertPlayerDirectory(env, principal);
+          return json(200, sessionResponse(principal));
+        }
+
+        if (request.method === "GET" && url.pathname === "/api/players") {
+          const principal = await authenticator.authenticate(request);
+          await upsertPlayerDirectory(env, principal);
+          return json(200, await listKnownPlayers(env, principal.playerId));
+        }
+
+        if (request.method === "GET" && url.pathname === "/api/me/feed") {
+          const principal = await authenticator.authenticate(request);
+          await upsertPlayerDirectory(env, principal);
+          return json(200, await readPlayerFeed(env, principal.playerId));
         }
 
         if (request.method === "POST" && url.pathname === "/auth/logout") {
@@ -235,41 +279,57 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
 
         if (request.method === "POST" && url.pathname === "/api/invitations") {
           const principal = await authenticator.authenticate(request);
-          return json(201, await invitationsFor(env).create(
-            url.origin,
-            principal,
-            await readJson(request),
-          ));
+          await upsertPlayerDirectory(env, principal);
+          const body = await readJson(request);
+          const created = await invitationsFor(env).create(url.origin, principal, body);
+          const targetPlayerId = discordTargetPlayerId(body.targetDiscordUserId);
+          await indexInvitation(env, created.invitation, [principal.playerId, targetPlayerId ?? ""]);
+          return json(201, created);
         }
 
         if (request.method === "POST" && url.pathname === "/api/invitations/claim") {
           const principal = await authenticator.authenticate(request);
+          await upsertPlayerDirectory(env, principal);
           const body = await readJson(request);
-          return json(200, await invitationsFor(env).claim(
-            principal,
-            String(body.token ?? ""),
-          ));
+          const claimed = await invitationsFor(env).claim(principal, String(body.token ?? ""));
+          const invitation = claimed.invitation;
+          await indexInvitation(env, invitation, [invitation.inviter.playerId, principal.playerId]);
+          if (invitation.matchId) {
+            await loadMatchForIndex(env, invitation.matchId, invitation.inviter.playerId);
+          }
+          return json(200, claimed);
         }
 
         const inviteRoute = invitationRoute(url.pathname);
         if (inviteRoute && request.method === "GET" && !inviteRoute.cancel) {
           const principal = await authenticator.authenticate(request);
-          return json(200, await invitationsFor(env).view(inviteRoute.invitationId, principal));
+          const viewed = await invitationsFor(env).view(inviteRoute.invitationId, principal);
+          await indexInvitation(env, viewed.invitation, [
+            viewed.invitation.inviter.playerId,
+            viewed.invitation.claimant?.playerId ?? principal.playerId,
+          ]);
+          if (viewed.invitation.matchId && viewed.invitation.status === "claimed") {
+            await loadMatchForIndex(env, viewed.invitation.matchId, principal.playerId);
+          }
+          return json(200, viewed);
         }
         if (inviteRoute && request.method === "POST" && inviteRoute.cancel) {
           const principal = await authenticator.authenticate(request);
-          return json(200, await invitationsFor(env).cancel(inviteRoute.invitationId, principal));
+          const cancelled = await invitationsFor(env).cancel(inviteRoute.invitationId, principal);
+          await indexInvitation(env, cancelled.invitation, [principal.playerId]);
+          return json(200, cancelled);
         }
 
         if (request.method === "POST" && url.pathname === "/api/matches") {
           const principal = await authenticator.authenticate(request);
+          await upsertPlayerDirectory(env, principal);
           const body = await readJson(request);
           const playerIds = Array.isArray(body.playerIds)
             ? body.playerIds.map((playerId) => String(playerId))
             : [];
           requireDirectMatchCreationPolicy(principal, playerIds);
           const matchId = idGenerator();
-          return stubFor(env, matchId).fetch(new Request("https://match.internal/initialize", {
+          const view = await internalMatchView(await stubFor(env, matchId).fetch(new Request("https://match.internal/initialize", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
@@ -277,7 +337,9 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
               playerIds,
               gameId: String(body.gameId ?? "tic-tac-toe"),
             }),
-          }));
+          })));
+          await indexMatchView(env, view);
+          return json(201, view);
         }
 
         const route = publicMatchRoute(url.pathname);
@@ -287,18 +349,22 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
           const internal = new URL("https://match.internal/view");
           internal.searchParams.set("matchId", route.matchId);
           internal.searchParams.set("playerId", principal.playerId);
-          return stubFor(env, route.matchId).fetch(new Request(internal));
+          const view = await internalMatchView(await stubFor(env, route.matchId).fetch(new Request(internal)));
+          await indexMatchView(env, view);
+          return json(200, view);
         }
 
         if (route && request.method === "POST" && route.operation === "actions") {
           const principal = await authenticator.authenticate(request);
           const body = await readJson(request);
           rejectIdentityClaim(principal, body.playerId);
-          return stubFor(env, route.matchId).fetch(new Request("https://match.internal/actions", {
+          const view = await internalMatchView(await stubFor(env, route.matchId).fetch(new Request("https://match.internal/actions", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ ...body, matchId: route.matchId, playerId: principal.playerId }),
-          }));
+          })));
+          await indexMatchView(env, view);
+          return json(200, view);
         }
 
         if (route && request.method === "GET" && route.operation === "events") {
