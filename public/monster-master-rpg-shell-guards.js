@@ -1,4 +1,5 @@
 const DOCK_ID = "mm-rpg-unified-dock";
+const STALE_TALK_MESSAGE = "The physical position changed before Talk was accepted. Move next to the character and start Talk again.";
 
 function normalizeDockToolbar() {
   const dock = document.querySelector(`#${DOCK_ID}`);
@@ -30,13 +31,36 @@ function normalizeDockToolbar() {
 function normalizeReleasedTalkComposer() {
   const panel = document.querySelector("#mm-rpg-talk-panel");
   const send = panel?.querySelector("#mm-rpg-talk-send");
-  if (!panel || !send || !panel.hidden) return;
+  const error = document.querySelector("#mm-rpg-error");
+  if (!panel || !send) return;
+
+  if (!panel.hidden) {
+    if (panel.dataset.mmRpgReleasedStale === "true") {
+      delete panel.dataset.mmRpgReleasedStale;
+      if (error?.textContent?.trim() === STALE_TALK_MESSAGE) {
+        error.textContent = "";
+        error.hidden = true;
+      }
+    }
+    return;
+  }
 
   // A stale physical/coordination Talk is already invalid once the panel has
   // been dismissed. Never let a prior transient label survive into the next
   // conversation even if asynchronous recovery is still in flight.
-  if (send.textContent === "Sending…") send.textContent = "Speak";
+  if (send.textContent === "Sending…") {
+    send.textContent = "Speak";
+    panel.dataset.mmRpgReleasedStale = "true";
+  }
   if (send.disabled) send.disabled = false;
+
+  // Campaign Refresh legitimately clears the global error banner when its own
+  // attach succeeds. Keep the physical Talk cancellation visible until the
+  // player intentionally opens the next conversation.
+  if (panel.dataset.mmRpgReleasedStale === "true" && error && !error.textContent.trim()) {
+    error.textContent = STALE_TALK_MESSAGE;
+    error.hidden = false;
+  }
 }
 
 function normalizeShell() {
