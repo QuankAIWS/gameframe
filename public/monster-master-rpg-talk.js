@@ -5,3 +5,6 @@ await import("./monster-master-rpg-private-markers.js");
 await import("./monster-master-rpg-talk-v2.js");
 await import("./monster-master-rpg-object-control.js");
 await import("./monster-master-rpg-shell-bridge.js");
+await import("./monster-master-rpg-coordination-bridge.js");
+await import("./monster-master-rpg-campaign-lobby.js");
+await import("./monster-master-rpg-click-move.js");
