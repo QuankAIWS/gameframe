@@ -143,7 +143,8 @@ function installSoundControl() {
 }
 
 function installBranding() {
-  const adminLabel = document.querySelector("#cascade-admin-dialog small");
+  const adminDialog = document.querySelector("#cascade-admin-dialog");
+  const adminLabel = adminDialog?.querySelector("header small");
   if (adminLabel?.textContent?.trim() === "CASCADE ADMIN") {
     adminLabel.textContent = "CASCADE CRUSH ADMIN";
   }
