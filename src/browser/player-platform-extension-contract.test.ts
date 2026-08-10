@@ -11,6 +11,9 @@ test("GameFrame exposes Leaderboard, server-backed favorites, and Home news", as
   const profile = await read("public/profile-app.js");
   const leaderboard = await read("public/leaderboard-app.js");
   const leaderboardHtml = await read("public/leaderboard.html");
+  const edgeWorker = await read("src/cloudflare/rpg-edge-worker.ts");
+  const playerCoordinator = await read("src/cloudflare/player-platform-coordinator.ts");
+  const nodeServer = await read("src/server/http-server.ts");
   const packageJson = JSON.parse(await read("package.json"));
 
   assert.match(navigation, /data-gameframe-leaderboard/);
@@ -25,10 +28,20 @@ test("GameFrame exposes Leaderboard, server-backed favorites, and Home news", as
   assert.match(home, /\/leaderboard\.html/);
 
   assert.match(profile, /\/api\/me\/preferences/);
-  assert.match(profile, /data\.favoriteGameId/);
+  assert.match(profile, /dataset\.favoriteGameId/);
   assert.match(profile, /aria-pressed/);
   assert.match(leaderboard, /\/api\/leaderboard/);
   assert.match(leaderboard, /entry\.points/);
   assert.match(leaderboardHtml, /<h1>Leaderboard<\/h1>/);
+
+  for (const runtime of [edgeWorker, nodeServer]) {
+    assert.match(runtime, /\/api\/me\/preferences/);
+    assert.match(runtime, /\/api\/leaderboard/);
+  }
+  assert.match(playerCoordinator, /updatePlayerPreferences/);
+  assert.match(playerCoordinator, /readLeaderboard/);
+  assert.match(playerCoordinator, /summary\.status\.lifecycle === "completed"/);
+  assert.match(playerCoordinator, /Promise\.allSettled/);
+
   assert.match(packageJson.scripts["check:browser"], /public\/leaderboard-app\.js/);
 });
