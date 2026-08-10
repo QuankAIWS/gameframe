@@ -16,7 +16,6 @@ async function prepare(page, level = 1, performance = null) {
       lastLifeAt: Date.now(),
       streak: targetLevel > 1 ? 7 : 0,
       hammers: 2,
-      ledger: [],
     }));
     if (perf) localStorage.setItem(perfKey, JSON.stringify(perf));
   }, { stateKey, performanceKey, soundKey, level, performance });
@@ -33,7 +32,7 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   await expect(page.locator("#cascade-sound-toggle")).toBeVisible();
   await expect(page.locator("#level-stars")).toBeVisible();
   await expect(page.locator('link[href="/cascade-polish.css"]')).toHaveCount(1);
-  await expect(page.locator('link[href="/cascade-performance.css"]')).toHaveCount(1);
+  await expect(page.locator('link[href="/cascade-evolution.css"]')).toHaveCount(1);
 
   const shapes = await page.locator(".cascade-tile").evaluateAll((tiles) => {
     const byKind = new Map();
@@ -54,10 +53,12 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   await page.screenshot({ path: `${output}/cascade-crush-bright-mobile.png`, fullPage: true });
 });
 
-test("Cascade Crush performance card makes stars and quick bonus legible", async ({ page }) => {
+test("Cascade Crush performance card shows earned stars and the next Blitz slot", async ({ page }) => {
   await prepare(page, 6, {
     starsByLevel: { "1": 3, "2": 3, "3": 2, "6": 2 },
-    quickWins: {},
+    blitzBest: {},
+    blitzStars: {},
+    blitzSeen: { "after-5": true },
     pendingHammerRewards: 0,
   });
   await page.setViewportSize({ width: 1440, height: 960 });
@@ -65,10 +66,53 @@ test("Cascade Crush performance card makes stars and quick bonus legible", async
 
   await expect(page.locator("#level-stars")).toHaveText("★★☆");
   await expect(page.locator("#star-progress")).toContainText("10 total stars");
-  await expect(page.locator("#quick-bonus")).toBeVisible();
-  await expect(page.locator("#quick-bonus")).toContainText("QUICK BONUS");
+  await expect(page.locator("#bonus-status")).toContainText("NEXT BLITZ AFTER LEVEL 12");
   await expect(page.locator('#level-map > li[data-level="6"] .cascade-map-stars')).toHaveText("★★☆");
   await page.screenshot({ path: `${output}/cascade-crush-performance-desktop.png`, fullPage: true });
+});
+
+test("Cascade Crush persistent specials remain visually distinct", async ({ page }) => {
+  await prepare(page, 5);
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto("/cascade.html");
+
+  const tiles = page.locator(".cascade-tile");
+  for (const [index, special] of [[0, "stripe-h"], [1, "stripe-v"], [2, "bomb"], [3, "color"]]) {
+    await tiles.nth(index).evaluate((tile, value) => {
+      tile.dataset.special = value;
+      tile.classList.add("has-special");
+      const mark = document.createElement("span");
+      mark.className = "cascade-special-mark";
+      mark.setAttribute("aria-hidden", "true");
+      tile.append(mark);
+    }, special);
+  }
+
+  await expect(page.locator('.cascade-tile[data-special="stripe-h"]')).toBeVisible();
+  await expect(page.locator('.cascade-tile[data-special="bomb"]')).toBeVisible();
+  await expect(page.locator('.cascade-tile[data-special="color"]')).toBeVisible();
+  await page.screenshot({ path: `${output}/cascade-crush-specials-desktop.png`, fullPage: true });
+});
+
+test("Cascade Crush Blitz takes over the board without replacing the core visual language", async ({ page }) => {
+  await prepare(page, 6, {
+    starsByLevel: { "1": 3, "2": 3, "3": 2, "6": 2 },
+    blitzBest: {},
+    blitzStars: {},
+    blitzSeen: {},
+    pendingHammerRewards: 0,
+  });
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto("/cascade.html");
+  await page.evaluate(() => window.cascadeResearch.startBlitz(5));
+
+  await expect(page.locator("body")).toHaveClass(/cascade-blitz-mode/);
+  await expect(page.locator("#blitz-overlay")).toBeVisible();
+  await expect(page.locator("#level-number")).toHaveText("B");
+  await expect(page.locator("#target")).toHaveText("∞");
+  await expect(page.locator("#moves")).toHaveText("∞");
+  await expect(page.locator("#blitz-callout")).toHaveText("BLITZ", { timeout: 4_000 });
+  await page.screenshot({ path: `${output}/cascade-crush-blitz-desktop.png`, fullPage: true });
 });
 
 test("Cascade Crush layered objective styling remains obvious in the polished theme", async ({ page }) => {
@@ -77,7 +121,7 @@ test("Cascade Crush layered objective styling remains obvious in the polished th
   await page.goto("/cascade.html");
 
   await expect(page.locator("#level-number")).toHaveText("81");
-  await expect(page.locator(".cascade-tile[data-ice=\"2\"]")).not.toHaveCount(0);
+  await expect(page.locator('.cascade-tile[data-ice="2"]')).not.toHaveCount(0);
   await expect(page.locator("#objective-label")).toContainText(/ice|pink|cyan|yellow|green|purple|orange/i);
   await page.screenshot({ path: `${output}/cascade-crush-layered-objective-desktop.png`, fullPage: true });
 });
