@@ -146,7 +146,7 @@ test("idle RPG campaign no longer uses the former 2.5-second polling loop", asyn
 });
 
 test("lists Monster Master RPG under Role-Playing Games", async ({ page }) => {
-  await page.goto("/?player=rpg-library-player");
+  await page.goto("/?catalog=1&player=rpg-library-player");
 
   const rpgCard = page.locator("#game-card-role-playing-games");
   await expect(rpgCard).toBeVisible();

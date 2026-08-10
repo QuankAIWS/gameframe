@@ -14,9 +14,9 @@ async function expectDestinationBar(page, theme = null) {
   const bar = page.locator("#gameframe-destination-bar");
   await expect(bar).toBeVisible();
   await expect(bar.locator('[data-gameframe-home][href="/"]')).toHaveCount(1);
-  await expect(bar.getByRole("button", { name: /Achievements/i })).toBeDisabled();
-  await expect(bar.getByText("Coming soon", { exact: true })).toBeVisible();
-  await expect(bar.getByText("Games", { exact: true })).toHaveCount(0);
+  await expect(bar.locator('[data-gameframe-games][href="/?catalog=1"]')).toHaveCount(1);
+  await expect(bar.locator('[data-gameframe-matches][href="/matches.html"]')).toHaveCount(1);
+  await expect(bar.locator('[data-gameframe-profile][href="/profile.html"]')).toHaveCount(1);
   await expect(page.locator("#gameframe-session-badge")).toBeVisible();
   if (theme) await expect(bar).toHaveAttribute("data-theme", theme);
 }
@@ -68,7 +68,7 @@ async function captureBootSurface(page, viewport, mode, filename) {
 
 async function openPlayerHub(page, viewport) {
   await page.setViewportSize(viewport);
-  await page.goto("/?player=visual-review-player");
+  await page.goto("/?catalog=1&player=visual-review-player");
   await expect(page.locator("body.gameframe-game-hub-lobby")).toBeVisible();
   await expect(page.locator("#gameframe-boot")).toBeHidden({ timeout: 5_000 });
   await expectDestinationBar(page, "hub");

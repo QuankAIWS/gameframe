@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const read = (path: string) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 
-test("the player Games hub exposes Role-Playing Games, Battle Simulator, and standalone games", async () => {
+test("the player shell separates Home activity from Games and exposes Matches and Profile", async () => {
   const launcher = await read("public/auth-launcher.js");
   const navigation = await read("public/gameframe-nav.js");
   const navigationStyles = await read("public/gameframe-nav.css");
@@ -12,6 +12,9 @@ test("the player Games hub exposes Role-Playing Games, Battle Simulator, and sta
   const finalPolish = await read("public/gameframe-final-polish.css");
   const sessionOverride = await read("public/gameframe-session-override.css");
   const hub = await read("public/game-hub.js");
+  const homeDashboard = await read("public/home-dashboard.js");
+  const matches = await read("public/matches-app.js");
+  const profile = await read("public/profile-app.js");
   const hubStyles = await read("public/game-hub.css");
   const hubShellStyles = await read("public/game-hub-shell.css");
   const hubCardStyles = await read("public/game-hub-cards.css");
@@ -24,13 +27,18 @@ test("the player Games hub exposes Role-Playing Games, Battle Simulator, and sta
   assert.ok(launcher.indexOf("gameframe-nav.js") < launcher.indexOf("game-hub.js"));
   assert.ok(launcher.indexOf("game-hub.js") < launcher.indexOf("await import(entry)"));
   assert.match(navigation, /data-gameframe-home/);
-  assert.match(navigation, /Achievements/);
-  assert.match(navigation, /Coming soon/);
-  assert.doesNotMatch(navigation, />Games</);
+  assert.match(navigation, /data-gameframe-games/);
+  assert.match(navigation, /data-gameframe-matches/);
+  assert.match(navigation, /data-gameframe-profile/);
+  assert.match(navigation, /href="\/\?catalog=1"/);
+  assert.match(navigation, /href="\/matches\.html"/);
+  assert.match(navigation, /href="\/profile\.html"/);
+  assert.doesNotMatch(navigation, /Achievements/);
   assert.match(navigation, /gameframe-nav-integrations\.css/);
   assert.match(navigation, /gameframe-final-polish\.css/);
   assert.match(navigation, /gameframe-session-override\.css/);
   assert.match(navigation, /gameframe-shared-match-running/);
+  assert.match(navigation, /stays saved in Matches/);
   assert.doesNotMatch(navigation, /stylesheet !== document\.head\.lastElementChild/);
   assert.match(navigationStyles, /position: sticky/);
   assert.match(navigationStyles, /gameframe-destination-session-space/);
@@ -43,6 +51,19 @@ test("the player Games hub exposes Role-Playing Games, Battle Simulator, and sta
   assert.match(finalPolish, /gameframe-session-badge/);
   assert.match(sessionOverride, /gameframe-has-destination-bar\.monster-master-match-active/);
   assert.match(sessionOverride, /display: grid !important/);
+
+  assert.match(hub, /const catalogMode = parameters\.get\("catalog"\) === "1"/);
+  assert.match(hub, /import\("\.\/home-dashboard\.js"\)/);
+  assert.match(hub, /sectionLabel\.textContent = catalogMode \? "GAMES" : "HOME"/);
+  assert.match(homeDashboard, /\/api\/me\/feed/);
+  assert.match(homeDashboard, /Your turn/);
+  assert.match(homeDashboard, /Waiting/);
+  assert.match(homeDashboard, /Browse Games/);
+  assert.match(matches, /\/api\/me\/feed/);
+  assert.match(matches, /\/api\/players/);
+  assert.match(matches, /acceptChallenge/);
+  assert.match(profile, /\/api\/me\/feed/);
+  assert.match(profile, /recordByGame/);
 
   assert.match(hub, /id: "role-playing-games"/);
   assert.match(hub, /href: "\/gameframe-rpg\.html"/);
@@ -64,7 +85,6 @@ test("the player Games hub exposes Role-Playing Games, Battle Simulator, and sta
   assert.match(hub, /modeGrid\.hidden = true/);
   assert.match(hub, /game-menu-hero/);
   assert.match(hub, /Choose how to play/);
-  assert.match(hub, /sectionLabel\.textContent = "GAMES"/);
   assert.match(hub, /tacticalLink\?\.remove\(\)/);
   assert.match(hub, /hero\?\.querySelector\("\.game-hub-topbar"\)\?\.remove\(\)/);
   assert.doesNotMatch(hub, /href: "\/tactical\.html"/);
@@ -96,6 +116,9 @@ test("the player Games hub exposes Role-Playing Games, Battle Simulator, and sta
   assert.match(hubRpgStyles, /game-card-visual-simulator/);
   assert.match(packageJson.scripts["check:browser"], /public\/gameframe-nav\.js/);
   assert.match(packageJson.scripts["check:browser"], /public\/game-hub\.js/);
+  assert.match(packageJson.scripts["check:browser"], /public\/home-dashboard\.js/);
+  assert.match(packageJson.scripts["check:browser"], /public\/matches-app\.js/);
+  assert.match(packageJson.scripts["check:browser"], /public\/profile-app\.js/);
 });
 
 test("Tic-Tac-Toe uses the universal destination bar and restores the shared DOM when inactive", async () => {

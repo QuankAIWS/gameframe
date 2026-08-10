@@ -3,3 +3,12 @@
     display: grid !important;
   }
 }
+
+@media (max-width: 480px) {
+  body.gameframe-has-destination-bar.gameframe-monster-route
+    #gameframe-destination-bar .monster-master-nav-setup {
+    flex: 0 0 54px;
+    min-width: 54px;
+    padding-inline: 4px;
+  }
+}

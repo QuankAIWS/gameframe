@@ -5,8 +5,13 @@
   const demoMove = document.querySelector("#demo-move");
   const darkName = document.querySelector(".score-rail-dark > span");
   const lightName = document.querySelector(".score-rail-light > span");
+  const parameters = new URLSearchParams(window.location.search);
+  const remoteMatchId = parameters.get("match");
   let mode = null;
   let botTimer = null;
+  let remoteTimer = null;
+  let remoteView = null;
+  let remoteBusy = false;
 
   function validBoard(board) {
     return Array.isArray(board)
@@ -34,7 +39,7 @@
   }
 
   function persist() {
-    if (!mode || snapshotMode) return false;
+    if (!mode || mode === "remote" || snapshotMode) return false;
     try {
       localStorage.setItem(storageKey, JSON.stringify({
         version: 1,
@@ -59,7 +64,9 @@
   }
 
   function restore(saved) {
+    stopRemoteRefresh();
     mode = saved.mode;
+    remoteView = null;
     state = {
       board: saved.state.board.map((row) => [...row]),
       player: saved.state.player === LIGHT ? LIGHT : DARK,
@@ -79,10 +86,29 @@
     scheduleBotTurn();
   }
 
+  function currentIdentity() {
+    return window.gameFrameIdentity || null;
+  }
+
+  function remoteOpponentName() {
+    const identity = currentIdentity();
+    const opponentId = remoteView?.playerIds?.find((playerId) => playerId !== identity?.playerId);
+    if (!opponentId) return "Opponent";
+    const directory = window.gameFrameKnownPlayers || [];
+    return directory.find((player) => player.playerId === opponentId)?.displayName || "Opponent";
+  }
+
   function updateModeLabels() {
     document.body.dataset.othelloMode = mode || "menu";
-    if (darkName) darkName.textContent = mode === "bot" ? "You" : "Dark";
-    if (lightName) lightName.textContent = mode === "bot" ? "OthelloBot" : "Light";
+    if (mode === "remote" && remoteView) {
+      const yourDisc = remoteView.observation?.yourDisc;
+      const opponent = remoteOpponentName();
+      if (darkName) darkName.textContent = yourDisc === DARK ? "You" : opponent;
+      if (lightName) lightName.textContent = yourDisc === LIGHT ? "You" : opponent;
+    } else {
+      if (darkName) darkName.textContent = mode === "bot" ? "You" : "Dark";
+      if (lightName) lightName.textContent = mode === "bot" ? "OthelloBot" : "Light";
+    }
     window.gameFrameDestinationBar?.sync?.();
   }
 
@@ -102,11 +128,14 @@
       resumeButton.querySelector("small").textContent = `Continue ${savedMode} from move ${saved.state.move}.`;
     }
     updateModeLabels();
+    void renderOpenGames();
   }
 
   function startNew(nextMode) {
+    stopRemoteRefresh();
     clearTimeout(botTimer);
     mode = nextMode;
+    remoteView = null;
     state = createState();
     flipAnimation = null;
     hover = null;
@@ -130,8 +159,192 @@
     }, delay);
   }
 
+  async function responseJson(response, context) {
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.message || `${context} failed with HTTP ${response.status}.`);
+    return body;
+  }
+
+  function hydrateRemote(view) {
+    if (!view?.observation || !validBoard(view.observation.board)) throw new Error("Othello match returned an invalid board.");
+    remoteView = view;
+    mode = "remote";
+    state = {
+      board: view.observation.board.map((row) => [...row]),
+      player: view.observation.nextDisc === LIGHT ? LIGHT : DARK,
+      move: Number.isInteger(view.observation.move) ? view.observation.move : 0,
+      complete: view.observation.status?.lifecycle === "completed",
+      lastMove: Array.isArray(view.observation.lastMove) ? [...view.observation.lastMove] : null,
+    };
+    flipAnimation = null;
+    hover = null;
+    updateUi();
+    closeMenu();
+    updateModeLabels();
+    document.body.dataset.gameframeRemoteMatch = view.matchId;
+    scheduleRemoteRefresh();
+  }
+
+  async function loadRemoteMatch() {
+    if (!remoteMatchId || remoteBusy) return;
+    remoteBusy = true;
+    try {
+      const view = await responseJson(
+        await fetch(`/api/matches/${encodeURIComponent(remoteMatchId)}`, { credentials: "same-origin" }),
+        "Othello match",
+      );
+      hydrateRemote(view);
+      await loadKnownPlayers();
+      updateModeLabels();
+    } catch (error) {
+      showMenu();
+      const status = menu.querySelector("[data-othello-online-status]");
+      if (status) status.textContent = error instanceof Error ? error.message : "The online match could not be loaded.";
+    } finally {
+      remoteBusy = false;
+    }
+  }
+
+  async function submitRemoteMove(move) {
+    if (!remoteView || remoteBusy) return;
+    const legal = remoteView.observation.legalActions?.some((action) => action.row === move.row && action.column === move.column);
+    if (!legal) return;
+    remoteBusy = true;
+    try {
+      const view = await responseJson(
+        await fetch(`/api/matches/${encodeURIComponent(remoteView.matchId)}/actions`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            actionId: crypto.randomUUID(),
+            expectedRevision: remoteView.revision,
+            action: { type: "place", row: move.row, column: move.column },
+          }),
+        }),
+        "Othello move",
+      );
+      hydrateRemote(view);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "The move could not be submitted.";
+      announcement.textContent = message;
+      announcement.hidden = false;
+      await loadRemoteMatch();
+    } finally {
+      remoteBusy = false;
+    }
+  }
+
+  function stopRemoteRefresh() {
+    if (remoteTimer !== null) window.clearTimeout(remoteTimer);
+    remoteTimer = null;
+  }
+
+  function scheduleRemoteRefresh() {
+    stopRemoteRefresh();
+    if (mode !== "remote" || state.complete) return;
+    remoteTimer = window.setTimeout(async () => {
+      await loadRemoteMatch();
+      scheduleRemoteRefresh();
+    }, 12000);
+  }
+
+  async function loadKnownPlayers() {
+    try {
+      const body = await responseJson(await fetch("/api/players", { credentials: "same-origin" }), "Player directory");
+      window.gameFrameKnownPlayers = Array.isArray(body.players) ? body.players : [];
+      return window.gameFrameKnownPlayers;
+    } catch {
+      window.gameFrameKnownPlayers = [];
+      return [];
+    }
+  }
+
+  function playerDiscordId(playerId) {
+    const match = /^discord:(\d+)$/.exec(playerId || "");
+    return match?.[1] || null;
+  }
+
+  async function sendChallenge(player) {
+    const status = menu.querySelector("[data-othello-online-status]");
+    const discordId = playerDiscordId(player.playerId);
+    if (!discordId) return;
+    if (status) status.textContent = `Sending Othello challenge to ${player.displayName || "player"}…`;
+    try {
+      await responseJson(await fetch("/api/invitations", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ gameId: "othello", targetDiscordUserId: discordId }),
+      }), "Othello challenge");
+      if (status) status.textContent = `Challenge sent to ${player.displayName || "player"}. It will appear in their Matches screen.`;
+      await renderOpenGames();
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "The challenge could not be sent.";
+    }
+  }
+
+  async function openPlayerPicker() {
+    const picker = menu.querySelector("[data-othello-player-picker]");
+    const players = await loadKnownPlayers();
+    picker.replaceChildren();
+    if (!players.length) {
+      const empty = document.createElement("p");
+      empty.textContent = "No other signed-in GameFrame players are known yet. Once they sign in, they will appear here.";
+      picker.append(empty);
+      picker.hidden = false;
+      return;
+    }
+    for (const player of players) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "othello-player-choice";
+      button.innerHTML = `<strong>${player.displayName || "GameFrame player"}</strong><small>Challenge to Othello</small>`;
+      button.addEventListener("click", () => void sendChallenge(player));
+      picker.append(button);
+    }
+    picker.hidden = false;
+  }
+
+  function gameTitle(gameId) {
+    if (gameId === "othello") return "Othello";
+    if (gameId === "american-checkers") return "Clockwork Checkers";
+    if (gameId === "tic-tac-toe") return "Tic-Tac-Toe";
+    return gameId;
+  }
+
+  async function renderOpenGames() {
+    const container = menu.querySelector("[data-othello-open-games]");
+    if (!container) return;
+    try {
+      const feed = await responseJson(await fetch("/api/me/feed", { credentials: "same-origin" }), "Open games");
+      const identity = currentIdentity();
+      const games = (feed.matches || []).filter((match) => match.gameId === "othello" && match.lifecycle === "active");
+      container.replaceChildren();
+      if (!games.length) {
+        const empty = document.createElement("p");
+        empty.textContent = "No open Othello games.";
+        container.append(empty);
+        return;
+      }
+      for (const match of games) {
+        const link = document.createElement("a");
+        link.href = match.resumePath;
+        const turn = match.activePlayerId === identity?.playerId ? "YOUR TURN" : "WAITING";
+        link.innerHTML = `<strong>${turn}</strong><span>${gameTitle(match.gameId)} · Revision ${match.revision}</span>`;
+        container.append(link);
+      }
+    } catch {
+      container.textContent = "Open games unavailable.";
+    }
+  }
+
   const baseApplyMove = applyMove;
   applyMove = function applyOthelloMove(move, animate = true) {
+    if (mode === "remote") {
+      void submitRemoteMove(move);
+      return false;
+    }
     const changed = baseApplyMove(move, animate);
     if (changed) {
       persist();
@@ -149,8 +362,18 @@
     <div class="othello-game-menu-card">
       <p class="othello-menu-kicker">OTHELLO</p>
       <h2 id="othello-game-menu-title">Choose how to play</h2>
-      <p>Begin from the standard opening position. Local matches are saved automatically when browser storage is available.</p>
+      <p>Start an online challenge, play OthelloBot, share the board locally, or resume one of your open games.</p>
+      <div class="othello-open-games-block">
+        <strong>Open games</strong>
+        <div class="othello-open-games" data-othello-open-games><p>Loading open games…</p></div>
+        <a class="othello-all-matches" href="/matches.html?game=othello">View all matches</a>
+      </div>
       <div class="othello-menu-actions">
+        <button id="othello-challenge-player" type="button">
+          <strong>Challenge a player</strong>
+          <small>Start a persistent game and take turns whenever you are available.</small>
+        </button>
+        <div class="othello-player-picker" data-othello-player-picker hidden></div>
         <button id="othello-play-bot" type="button">
           <strong>Challenge OthelloBot</strong>
           <small>Play Dark against a deterministic local opponent.</small>
@@ -160,16 +383,18 @@
           <small>Two players share this board and alternate turns.</small>
         </button>
         <button id="othello-resume" type="button">
-          <strong>Resume saved match</strong>
+          <strong>Resume saved local match</strong>
           <small>Continue the last local game.</small>
         </button>
       </div>
-      <a href="/">Back to game library</a>
+      <p class="othello-online-status" data-othello-online-status role="status" aria-live="polite"></p>
+      <a href="/?catalog=1">Back to Games</a>
     </div>
   `;
   app?.prepend(menu);
 
   const resumeButton = menu.querySelector("#othello-resume");
+  menu.querySelector("#othello-challenge-player")?.addEventListener("click", () => void openPlayerPicker());
   menu.querySelector("#othello-play-bot")?.addEventListener("click", () => startNew("bot"));
   menu.querySelector("#othello-play-local")?.addEventListener("click", () => startNew("local"));
   resumeButton?.addEventListener("click", () => {
@@ -189,25 +414,42 @@
   }
 
   canvas.addEventListener("pointerdown", (event) => {
-    if (document.body.classList.contains("othello-menu-open") || (mode === "bot" && state.player === LIGHT)) {
+    const remoteWaiting = mode === "remote" && (!remoteView?.observation?.legalActions?.length || remoteBusy);
+    if (document.body.classList.contains("othello-menu-open") || (mode === "bot" && state.player === LIGHT) || remoteWaiting) {
       event.preventDefault();
       event.stopImmediatePropagation();
     }
   }, true);
 
-  document.querySelector("#new-game")?.addEventListener("click", () => {
+  document.querySelector("#new-game")?.addEventListener("click", (event) => {
+    if (mode === "remote") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      showMenu();
+      return;
+    }
     clearTimeout(botTimer);
     persist();
     updateModeLabels();
-  });
+  }, true);
   document.querySelectorAll(".theme-button").forEach((button) => button.addEventListener("click", persist));
   hintButton.addEventListener("click", persist);
   document.addEventListener("gameframe:before-home", persist);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && mode === "remote") void loadRemoteMatch();
+  });
 
   if (snapshotMode) {
     menu.remove();
     mode = "local";
     updateModeLabels();
+  } else if (remoteMatchId) {
+    state = createState();
+    flipAnimation = null;
+    updateUi();
+    mode = "remote";
+    closeMenu();
+    void loadRemoteMatch();
   } else {
     state = createState();
     flipAnimation = null;
@@ -219,6 +461,7 @@
     showMenu,
     startBot: () => startNew("bot"),
     startLocal: () => startNew("local"),
+    loadRemote: loadRemoteMatch,
     resume: () => {
       const saved = readSave();
       if (saved) restore(saved);

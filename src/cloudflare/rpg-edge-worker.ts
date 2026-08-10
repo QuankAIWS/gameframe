@@ -11,6 +11,7 @@ import {
   SignedSessionCodec,
 } from "../auth/signed-session.ts";
 import { errorResponse, json } from "./http-utils.ts";
+import { upsertPlayerDirectory } from "./player-platform-coordinator.ts";
 import {
   isPublicRpgAdminRoute,
   proxyPublicRpgAdminRequest,
@@ -90,11 +91,9 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           });
         }
 
-        // Surface the server-derived admin capability in the normal session
-        // payload. The browser uses this only to decide whether to render admin
-        // controls; every privileged route independently rechecks authority.
         if (request.method === "GET" && url.pathname === "/api/session") {
           const principal = await authenticatorFor(env).authenticate(request);
+          await upsertPlayerDirectory(env, principal);
           return json(200, {
             authenticated: true,
             playerId: principal.playerId,
@@ -105,10 +104,6 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           });
         }
 
-        // monster-master-app.js currently treats this field as a boolean
-        // capability token. Preserve that accepted token while reporting the
-        // actual RPG transport separately: RPG matches use an origin WebSocket
-        // through the Worker/Tunnel and remain authoritative in VM SQLite.
         if (
           request.method === "GET"
           && url.pathname === "/api/health"
@@ -131,9 +126,6 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           return await proxyPublicRpgAdminRequest(request, env, admin);
         }
 
-        // This must run before both RPG HTTP routing and the generic GameFrame
-        // match router. Otherwise an rpg:* /events request can accidentally bind
-        // to the ordinary Durable Object authority and split tactical custody.
         if (publicRpgRealtimeEdgeRoute(url.pathname)) {
           const principal = await authenticatorFor(env).authenticate(request);
           return await proxyPublicRpgRealtimeRequest(

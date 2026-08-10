@@ -18,6 +18,7 @@ const sectionLabel = document.querySelector("#lobby .section-label");
 const lobbyTitle = document.querySelector("#lobby-title");
 const tacticalLink = document.querySelector("#open-tactical-canary");
 const parameters = new URLSearchParams(window.location.search);
+const catalogMode = parameters.get("catalog") === "1";
 const requestedGame = parameters.get("game");
 const requestedMenuGame = requestedGame || "tic-tac-toe";
 const menuGame = parameters.get("menu") === "1"
@@ -214,7 +215,7 @@ function installGameMenu() {
     menu = document.createElement("section");
     menu.className = `game-menu-hero game-menu-${selected.accent}`;
     menu.innerHTML = `
-      <a class="game-menu-back" href="/">← Back to games</a>
+      <a class="game-menu-back" href="/?catalog=1">← Back to games</a>
       <div class="game-menu-art">${artwork(selected)}</div>
       <div class="game-menu-copy">
         <small>${selected.kicker}</small>
@@ -236,14 +237,17 @@ function installGames() {
   gameGrid.replaceChildren(...games.map(createLibraryCard));
   gameGrid.hidden = false;
   if (modeGrid) modeGrid.hidden = true;
-  if (sectionLabel) sectionLabel.textContent = "GAMES";
-  if (lobbyTitle) lobbyTitle.textContent = "Choose how to play";
-  if (lobbyMessage) lobbyMessage.textContent = "Open a role-playing world, the battle simulator, casual games, or a standalone game.";
+  if (sectionLabel) sectionLabel.textContent = catalogMode ? "GAMES" : "HOME";
+  if (lobbyTitle) lobbyTitle.textContent = catalogMode ? "Choose how to play" : "Ready when you are";
+  if (lobbyMessage) lobbyMessage.textContent = catalogMode
+    ? "Open a role-playing world, the battle simulator, casual games, or a standalone game."
+    : "Loading your GameFrame activity…";
 }
 
 hero?.querySelector(".game-hub-topbar")?.remove();
 if (menuGame) installGameMenu();
 else installGames();
+if (!menuGame && !catalogMode) void import("./home-dashboard.js");
 
 let syncPending = false;
 function syncHubState() {
@@ -255,13 +259,17 @@ function syncHubState() {
   else delete document.body.dataset.gameframeMenuGame;
   if (lobbyVisible) {
     const selected = games.find((game) => game.id === menuGame);
-    const expectedMessage = menuGame
-      ? gameMenuMessage(selected)
-      : "Open a role-playing world, the battle simulator, casual games, or a standalone game.";
-    if (lobbyMessage && lobbyMessage.textContent !== expectedMessage) lobbyMessage.textContent = expectedMessage;
-    document.title = menuGame
-      ? `${selected?.title || "Game"} · Scribbles GameFrame`
-      : "Scribbles GameFrame";
+    if (menuGame) {
+      const expectedMessage = gameMenuMessage(selected);
+      if (lobbyMessage && lobbyMessage.textContent !== expectedMessage) lobbyMessage.textContent = expectedMessage;
+      document.title = `${selected?.title || "Game"} · Scribbles GameFrame`;
+    } else if (catalogMode) {
+      const expectedMessage = "Open a role-playing world, the battle simulator, casual games, or a standalone game.";
+      if (lobbyMessage && lobbyMessage.textContent !== expectedMessage) lobbyMessage.textContent = expectedMessage;
+      document.title = "Games · Scribbles GameFrame";
+    } else {
+      document.title = "Home · Scribbles GameFrame";
+    }
   }
   window.gameFrameDestinationBar?.sync?.();
 }

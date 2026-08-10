@@ -1,5 +1,6 @@
 import type { CheckersAction, CheckersState } from "../games/checkers/index.ts";
 import type { MonsterMasterAction, MonsterMasterState } from "../games/monster-master/index.ts";
+import type { OthelloAction, OthelloState } from "../games/othello/index.ts";
 import type {
   TacticalCombatAction,
   TacticalCombatState,
@@ -11,6 +12,7 @@ import type {
 import type { TicTacToeAction, TicTacToeState } from "../games/tic-tac-toe/index.ts";
 import { CheckersMatchService } from "../server/checkers-match-service.ts";
 import { MonsterMasterMatchService } from "../server/monster-master-match-service.ts";
+import { OthelloMatchService } from "../server/othello-match-service.ts";
 import { TacticalCombatMatchService } from "../server/tactical-combat-match-service.ts";
 import { TacticalMovementMatchService } from "../server/tactical-movement-match-service.ts";
 import { TicTacToeMatchService } from "../server/tic-tac-toe-match-service.ts";
@@ -24,6 +26,7 @@ import type { DurableStorageLike } from "./runtime-contracts.ts";
 export type DurableGameId =
   | "tic-tac-toe"
   | "american-checkers"
+  | "othello"
   | "tactical-movement-canary"
   | "tactical-combat-canary"
   | "monster-master-duel";
@@ -41,6 +44,7 @@ export class GameFrameMatchObjectRuntime {
   readonly #storage: DurableStorageLike;
   readonly #ticTacToe: TicTacToeMatchService;
   readonly #checkers: CheckersMatchService;
+  readonly #othello: OthelloMatchService;
   readonly #tactical: TacticalMovementMatchService;
   readonly #combat: TacticalCombatMatchService;
   readonly #monsterMaster: MonsterMasterMatchService;
@@ -59,6 +63,10 @@ export class GameFrameMatchObjectRuntime {
     });
     this.#checkers = new CheckersMatchService({
       store: new DurableObjectMatchStore<CheckersState, CheckersAction>(storage),
+      idGenerator,
+    });
+    this.#othello = new OthelloMatchService({
+      store: new DurableObjectMatchStore<OthelloState, OthelloAction>(storage),
       idGenerator,
     });
     this.#tactical = new TacticalMovementMatchService({
@@ -89,11 +97,13 @@ export class GameFrameMatchObjectRuntime {
       ? await this.#ticTacToe.view(matchId, playerId)
       : gameId === "american-checkers"
         ? await this.#checkers.view(matchId, playerId)
-        : gameId === "tactical-movement-canary"
-          ? await this.#tactical.view(matchId, playerId)
-          : gameId === "tactical-combat-canary"
-            ? await this.#combat.view(matchId, playerId)
-            : await this.#monsterMaster.view(matchId, playerId);
+        : gameId === "othello"
+          ? await this.#othello.view(matchId, playerId)
+          : gameId === "tactical-movement-canary"
+            ? await this.#tactical.view(matchId, playerId)
+            : gameId === "tactical-combat-canary"
+              ? await this.#combat.view(matchId, playerId)
+              : await this.#monsterMaster.view(matchId, playerId);
     return { gameId, ...view };
   }
 
@@ -112,11 +122,13 @@ export class GameFrameMatchObjectRuntime {
           ? await this.#ticTacToe.createMatch(playerIds, matchId)
           : gameId === "american-checkers"
             ? await this.#checkers.createMatch(playerIds, matchId)
-            : gameId === "tactical-movement-canary"
-              ? await this.#tactical.createMatch(playerIds, matchId)
-              : gameId === "tactical-combat-canary"
-                ? await this.#combat.createMatch(playerIds, matchId)
-                : await this.#monsterMaster.createMatch(playerIds, matchId);
+            : gameId === "othello"
+              ? await this.#othello.createMatch(playerIds, matchId)
+              : gameId === "tactical-movement-canary"
+                ? await this.#tactical.createMatch(playerIds, matchId)
+                : gameId === "tactical-combat-canary"
+                  ? await this.#combat.createMatch(playerIds, matchId)
+                  : await this.#monsterMaster.createMatch(playerIds, matchId);
         await this.#notify(matchId);
         return json(201, { gameId, ...view });
       }
@@ -148,20 +160,25 @@ export class GameFrameMatchObjectRuntime {
                 ...common,
                 action: parseCheckersAction(body.action),
               })
-            : gameId === "tactical-movement-canary"
-              ? await this.#tactical.submitAction({
+            : gameId === "othello"
+              ? await this.#othello.submitAction({
                   ...common,
-                  action: parseTacticalMovementAction(body.action),
+                  action: parseOthelloAction(body.action),
                 })
-              : gameId === "tactical-combat-canary"
-                ? await this.#combat.submitAction({
+              : gameId === "tactical-movement-canary"
+                ? await this.#tactical.submitAction({
                     ...common,
-                    action: parseTacticalCombatAction(body.action),
+                    action: parseTacticalMovementAction(body.action),
                   })
-                : await this.#monsterMaster.submitAction({
-                    ...common,
-                    action: parseMonsterMasterAction(body.action),
-                  });
+                : gameId === "tactical-combat-canary"
+                  ? await this.#combat.submitAction({
+                      ...common,
+                      action: parseTacticalCombatAction(body.action),
+                    })
+                  : await this.#monsterMaster.submitAction({
+                      ...common,
+                      action: parseMonsterMasterAction(body.action),
+                    });
         await this.#notify(matchId);
         return json(200, { gameId, ...view });
       }
@@ -186,6 +203,7 @@ export class GameFrameMatchObjectRuntime {
     if (
       gameId === "tic-tac-toe"
       || gameId === "american-checkers"
+      || gameId === "othello"
       || gameId === "tactical-movement-canary"
       || gameId === "tactical-combat-canary"
       || gameId === "monster-master-duel"
@@ -232,6 +250,15 @@ function parseCheckersAction(value: unknown): CheckersAction {
     capturedPieceIds: Array.isArray(action.capturedPieceIds)
       ? action.capturedPieceIds.map((pieceId) => String(pieceId))
       : [],
+  };
+}
+
+function parseOthelloAction(value: unknown): OthelloAction {
+  const action = record(value);
+  return {
+    type: "place",
+    row: Number(action.row),
+    column: Number(action.column),
   };
 }
 

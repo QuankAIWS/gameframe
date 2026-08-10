@@ -141,7 +141,8 @@ if (!document.head.querySelector('link[href="/othello-game-menu.css"]')) {
   menuStyles.href = "/othello-game-menu.css";
   document.head.append(menuStyles);
 }
-const gameMenuScript = document.createElement("script");
-gameMenuScript.src = "/othello-game-menu.js";
-document.body.append(gameMenuScript);
-void import("./othello-launcher.js");
+void import("./othello-launcher.js").then(() => {
+  const gameMenuScript = document.createElement("script");
+  gameMenuScript.src = "/othello-game-menu.js";
+  document.body.append(gameMenuScript);
+});

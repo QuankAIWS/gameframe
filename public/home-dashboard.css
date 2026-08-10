@@ -1,0 +1,61 @@
+.gameframe-home-dashboard {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  margin: 0 auto;
+}
+.gameframe-home-dashboard .home-section {
+  border: 1px solid rgba(103, 222, 235, .16);
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(8, 14, 18, .72);
+  box-shadow: 0 20px 55px rgba(0, 0, 0, .2);
+}
+.home-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 17px;
+  border-bottom: 1px solid rgba(255,255,255,.055);
+}
+.home-section-heading strong { font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; }
+.home-section-heading span { color: #7f9199; font-size: .72rem; }
+.home-match-list { display: grid; }
+.home-match-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 15px 17px;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.home-match-row:last-child { border-bottom: 0; }
+.home-match-copy { display: grid; gap: 4px; }
+.home-match-copy small { color: #b9ed6c; font-size: .65rem; font-weight: 900; letter-spacing: .12em; }
+.home-match-row.waiting .home-match-copy small { color: #77dce7; }
+.home-match-row.challenge .home-match-copy small { color: #ee6bc4; }
+.home-match-copy strong { color: #eef5f5; }
+.home-match-copy span { color: #829198; font-size: .78rem; }
+.home-match-row a,
+.home-dashboard-action {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid rgba(185, 237, 108, .3);
+  border-radius: 10px;
+  background: rgba(185, 237, 108, .1);
+  color: #e8ffc6;
+  font-size: .75rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+.home-dashboard-empty { margin: 0; padding: 20px 17px; color: #809097; line-height: 1.5; }
+.home-dashboard-footer { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 2px; }
+.home-dashboard-footer .home-dashboard-action.secondary { border-color: rgba(103,222,235,.24); background: rgba(103,222,235,.08); color: #d9f9fc; }
+@media (max-width: 620px) {
+  .home-match-row { grid-template-columns: 1fr; }
+  .home-match-row a { justify-self: start; }
+}

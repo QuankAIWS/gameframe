@@ -85,20 +85,22 @@ test("the actual Othello engine starts legally, flips pieces, alternates turns, 
   assert.ok(safety > 20);
 });
 
-test("the player flow uses universal navigation, game-specific menus, and storage-independent Othello turns", async () => {
+test("the Othello player flow keeps local modes and adds persistent human matches", async () => {
   const launcher = await read("public/auth-launcher.js");
   const navigation = await read("public/gameframe-nav.js");
   const hub = await read("public/game-hub.js");
   const app4 = await read("public/othello-fidelity-app-4.js");
+  const othelloLauncher = await read("public/othello-launcher.js");
   const othelloMenu = await read("public/othello-game-menu.js");
   const browserRegression = await read("test/browser/othello-gameplay.spec.mjs");
+  const playerPlatformRegression = await read("test/browser/player-platform.spec.mjs");
   const packageJson = JSON.parse(await read("package.json"));
 
   assert.ok(launcher.indexOf("gameframe-nav.js") < launcher.indexOf("await import(entry)"));
   assert.match(navigation, />Home</);
-  assert.match(navigation, /Achievements/);
-  assert.match(navigation, /Coming soon/);
-  assert.doesNotMatch(navigation, />Games</);
+  assert.match(navigation, />Games</);
+  assert.match(navigation, />Matches</);
+  assert.match(navigation, />Profile</);
   assert.match(navigation, /gameframe:before-home/);
 
   assert.match(hub, /document\.createElement\("a"\)/);
@@ -109,14 +111,24 @@ test("the player flow uses universal navigation, game-specific menus, and storag
   assert.match(hub, /\?game=american-checkers&menu=1/);
   assert.match(hub, /modeGrid\.hidden = true/);
   assert.match(hub, /Choose how to play/);
-  assert.match(hub, /game-hub-topbar/);
+  assert.match(hub, /catalogMode/);
+  assert.match(hub, /home-dashboard\.js/);
 
   assert.match(app4, /query\.get\("state"\) \|\| "start"/);
   assert.match(app4, /othello-game-menu\.js/);
   assert.match(app4, /othello-launcher\.js/);
+  assert.match(othelloLauncher, /establishGameFrameIdentity/);
+  assert.match(othelloLauncher, /x-gameframe-player-id/);
+  assert.match(othelloMenu, /Challenge a player/);
   assert.match(othelloMenu, /Challenge OthelloBot/);
   assert.match(othelloMenu, /id="othello-play-bot"/);
   assert.match(othelloMenu, /Pass &amp; play/);
+  assert.match(othelloMenu, /\/api\/players/);
+  assert.match(othelloMenu, /\/api\/invitations/);
+  assert.match(othelloMenu, /gameId: "othello"/);
+  assert.match(othelloMenu, /\/api\/me\/feed/);
+  assert.match(othelloMenu, /\/api\/matches\/\$\{encodeURIComponent\(remoteMatchId\)\}/);
+  assert.match(othelloMenu, /expectedRevision: remoteView\.revision/);
   assert.match(othelloMenu, /function markStorageUnavailable/);
   assert.match(othelloMenu, /try \{\n      localStorage\.setItem/);
   assert.match(othelloMenu, /catch \{\n      markStorageUnavailable\(\)/);
@@ -131,6 +143,9 @@ test("the player flow uses universal navigation, game-specific menus, and storag
   assert.match(browserRegression, /persistence is unavailable/);
   assert.match(browserRegression, /Storage\.prototype\.setItem/);
   assert.match(browserRegression, /"2 \/ 60"/);
+  assert.match(playerPlatformRegression, /survives browser closure/);
+  assert.match(playerPlatformRegression, /YOUR TURN/);
+  assert.match(playerPlatformRegression, /\/matches\.html\?player=player-mom/);
 
   for (const file of [
     "public/gameframe-nav.js",
@@ -138,7 +153,10 @@ test("the player flow uses universal navigation, game-specific menus, and storag
     "public/othello-launcher.js",
     "public/othello-game-menu.js",
     "public/othello-fidelity-app-4.js",
+    "public/matches-app.js",
+    "public/profile-app.js",
   ]) {
     assert.match(packageJson.scripts["check:browser"], new RegExp(file.replaceAll("/", "\\/")));
   }
+  assert.match(packageJson.scripts["test:browser:required"], /test\/browser\/player-platform\.spec\.mjs/);
 });

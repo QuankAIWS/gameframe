@@ -1,51 +1,22 @@
 import type { AgentPlayer } from "../agents/agent-player.ts";
-import type {
-  CheckersAction,
-  CheckersObservation,
-  CheckersState,
-} from "../games/checkers/index.ts";
-import type {
-  MonsterMasterAction,
-  MonsterMasterObservation,
-  MonsterMasterState,
-} from "../games/monster-master/index.ts";
-import type {
-  TacticalCombatAction,
-  TacticalCombatObservation,
-  TacticalCombatState,
-} from "../games/tactical-combat/index.ts";
-import type {
-  TacticalMovementAction,
-  TacticalMovementObservation,
-  TacticalMovementState,
-} from "../games/tactical-core/index.ts";
-import type {
-  TicTacToeAction,
-  TicTacToeObservation,
-  TicTacToeState,
-} from "../games/tic-tac-toe/index.ts";
+import type { CheckersAction, CheckersObservation, CheckersState } from "../games/checkers/index.ts";
+import type { MonsterMasterAction, MonsterMasterObservation, MonsterMasterState } from "../games/monster-master/index.ts";
+import type { OthelloAction, OthelloState } from "../games/othello/index.ts";
+import type { TacticalCombatAction, TacticalCombatObservation, TacticalCombatState } from "../games/tactical-combat/index.ts";
+import type { TacticalMovementAction, TacticalMovementObservation, TacticalMovementState } from "../games/tactical-core/index.ts";
+import type { TicTacToeAction, TicTacToeObservation, TicTacToeState } from "../games/tic-tac-toe/index.ts";
 import { InMemoryMatchSnapshotStore } from "../platform/match-store.ts";
-import {
-  CheckersMatchService,
-  type PublicCheckersMatchView,
-} from "./checkers-match-service.ts";
-import {
-  MonsterMasterMatchService,
-  type PublicMonsterMasterMatchView,
-} from "./monster-master-match-service.ts";
-import {
-  TacticalCombatMatchService,
-  type PublicTacticalCombatMatchView,
-} from "./tactical-combat-match-service.ts";
-import {
-  TacticalMovementMatchService,
-  type PublicTacticalMovementMatchView,
-} from "./tactical-movement-match-service.ts";
+import { CheckersMatchService, type PublicCheckersMatchView } from "./checkers-match-service.ts";
+import { MonsterMasterMatchService, type PublicMonsterMasterMatchView } from "./monster-master-match-service.ts";
+import { OthelloMatchService, type OthelloPublicMatchView } from "./othello-match-service.ts";
+import { TacticalCombatMatchService, type PublicTacticalCombatMatchView } from "./tactical-combat-match-service.ts";
+import { TacticalMovementMatchService, type PublicTacticalMovementMatchView } from "./tactical-movement-match-service.ts";
 import { TicTacToeMatchService, type PublicMatchView } from "./tic-tac-toe-match-service.ts";
 
 export type SupportedGameId =
   | "tic-tac-toe"
   | "american-checkers"
+  | "othello"
   | "tactical-movement-canary"
   | "tactical-combat-canary"
   | "monster-master-duel";
@@ -53,6 +24,7 @@ export type SupportedGameId =
 export type PublicGameMatchView =
   | ({ gameId: "tic-tac-toe" } & PublicMatchView)
   | ({ gameId: "american-checkers" } & PublicCheckersMatchView)
+  | ({ gameId: "othello" } & OthelloPublicMatchView)
   | ({ gameId: "tactical-movement-canary" } & PublicTacticalMovementMatchView)
   | ({ gameId: "tactical-combat-canary" } & PublicTacticalCombatMatchView)
   | ({ gameId: "monster-master-duel" } & PublicMonsterMasterMatchView);
@@ -69,6 +41,7 @@ export interface InMemoryGameFrameServiceOptions {
 export type {
   PublicMatchView,
   PublicCheckersMatchView,
+  OthelloPublicMatchView,
   PublicTacticalMovementMatchView,
   PublicTacticalCombatMatchView,
   PublicMonsterMasterMatchView,
@@ -76,46 +49,37 @@ export type {
 
 export class InMemoryTicTacToeService extends TicTacToeMatchService {
   constructor(bot?: AgentPlayer<TicTacToeAction, TicTacToeObservation>) {
-    super({
-      store: new InMemoryMatchSnapshotStore<TicTacToeState, TicTacToeAction>(),
-      ...(bot ? { bot } : {}),
-    });
+    super({ store: new InMemoryMatchSnapshotStore<TicTacToeState, TicTacToeAction>(), ...(bot ? { bot } : {}) });
   }
 }
 
 export class InMemoryCheckersService extends CheckersMatchService {
   constructor(bot?: AgentPlayer<CheckersAction, CheckersObservation>) {
-    super({
-      store: new InMemoryMatchSnapshotStore<CheckersState, CheckersAction>(),
-      ...(bot ? { bot } : {}),
-    });
+    super({ store: new InMemoryMatchSnapshotStore<CheckersState, CheckersAction>(), ...(bot ? { bot } : {}) });
+  }
+}
+
+export class InMemoryOthelloService extends OthelloMatchService {
+  constructor() {
+    super({ store: new InMemoryMatchSnapshotStore<OthelloState, OthelloAction>() });
   }
 }
 
 export class InMemoryTacticalMovementService extends TacticalMovementMatchService {
   constructor(bot?: AgentPlayer<TacticalMovementAction, TacticalMovementObservation>) {
-    super({
-      store: new InMemoryMatchSnapshotStore<TacticalMovementState, TacticalMovementAction>(),
-      ...(bot ? { bot } : {}),
-    });
+    super({ store: new InMemoryMatchSnapshotStore<TacticalMovementState, TacticalMovementAction>(), ...(bot ? { bot } : {}) });
   }
 }
 
 export class InMemoryTacticalCombatService extends TacticalCombatMatchService {
   constructor(bot?: AgentPlayer<TacticalCombatAction, TacticalCombatObservation>) {
-    super({
-      store: new InMemoryMatchSnapshotStore<TacticalCombatState, TacticalCombatAction>(),
-      ...(bot ? { bot } : {}),
-    });
+    super({ store: new InMemoryMatchSnapshotStore<TacticalCombatState, TacticalCombatAction>(), ...(bot ? { bot } : {}) });
   }
 }
 
 export class InMemoryMonsterMasterService extends MonsterMasterMatchService {
   constructor(bot?: AgentPlayer<MonsterMasterAction, MonsterMasterObservation>) {
-    super({
-      store: new InMemoryMatchSnapshotStore<MonsterMasterState, MonsterMasterAction>(),
-      ...(bot ? { bot } : {}),
-    });
+    super({ store: new InMemoryMatchSnapshotStore<MonsterMasterState, MonsterMasterAction>(), ...(bot ? { bot } : {}) });
   }
 }
 
@@ -123,6 +87,7 @@ export class InMemoryGameFrameService {
   readonly #idGenerator: () => string;
   readonly #ticTacToe: TicTacToeMatchService;
   readonly #checkers: CheckersMatchService;
+  readonly #othello: OthelloMatchService;
   readonly #tactical: TacticalMovementMatchService;
   readonly #combat: TacticalCombatMatchService;
   readonly #monsterMaster: MonsterMasterMatchService;
@@ -138,6 +103,9 @@ export class InMemoryGameFrameService {
       store: new InMemoryMatchSnapshotStore<CheckersState, CheckersAction>(),
       ...(options.checkersBot ? { bot: options.checkersBot } : {}),
     });
+    this.#othello = new OthelloMatchService({
+      store: new InMemoryMatchSnapshotStore<OthelloState, OthelloAction>(),
+    });
     this.#tactical = new TacticalMovementMatchService({
       store: new InMemoryMatchSnapshotStore<TacticalMovementState, TacticalMovementAction>(),
       ...(options.tacticalBot ? { bot: options.tacticalBot } : {}),
@@ -152,11 +120,7 @@ export class InMemoryGameFrameService {
     });
   }
 
-  async createMatch(
-    gameId: string,
-    playerIds: readonly string[],
-    requestedMatchId?: string,
-  ): Promise<PublicGameMatchView> {
+  async createMatch(gameId: string, playerIds: readonly string[], requestedMatchId?: string): Promise<PublicGameMatchView> {
     const normalizedGameId = this.#normalizeGameId(gameId);
     const matchId = requestedMatchId ?? this.#idGenerator();
     if (this.#matchGames.has(matchId)) {
@@ -169,11 +133,13 @@ export class InMemoryGameFrameService {
       ? await this.#ticTacToe.createMatch(playerIds, matchId)
       : normalizedGameId === "american-checkers"
         ? await this.#checkers.createMatch(playerIds, matchId)
-        : normalizedGameId === "tactical-movement-canary"
-          ? await this.#tactical.createMatch(playerIds, matchId)
-          : normalizedGameId === "tactical-combat-canary"
-            ? await this.#combat.createMatch(playerIds, matchId)
-            : await this.#monsterMaster.createMatch(playerIds, matchId);
+        : normalizedGameId === "othello"
+          ? await this.#othello.createMatch(playerIds, matchId)
+          : normalizedGameId === "tactical-movement-canary"
+            ? await this.#tactical.createMatch(playerIds, matchId)
+            : normalizedGameId === "tactical-combat-canary"
+              ? await this.#combat.createMatch(playerIds, matchId)
+              : await this.#monsterMaster.createMatch(playerIds, matchId);
     this.#matchGames.set(matchId, normalizedGameId);
     return { gameId: normalizedGameId, ...view } as PublicGameMatchView;
   }
@@ -184,54 +150,39 @@ export class InMemoryGameFrameService {
       ? await this.#ticTacToe.view(matchId, playerId)
       : gameId === "american-checkers"
         ? await this.#checkers.view(matchId, playerId)
-        : gameId === "tactical-movement-canary"
-          ? await this.#tactical.view(matchId, playerId)
-          : gameId === "tactical-combat-canary"
-            ? await this.#combat.view(matchId, playerId)
-            : await this.#monsterMaster.view(matchId, playerId);
+        : gameId === "othello"
+          ? await this.#othello.view(matchId, playerId)
+          : gameId === "tactical-movement-canary"
+            ? await this.#tactical.view(matchId, playerId)
+            : gameId === "tactical-combat-canary"
+              ? await this.#combat.view(matchId, playerId)
+              : await this.#monsterMaster.view(matchId, playerId);
     return { gameId, ...view } as PublicGameMatchView;
   }
 
-  async submitAction(input: {
-    matchId: string;
-    playerId: string;
-    actionId: string;
-    expectedRevision: number;
-    action: unknown;
-  }): Promise<PublicGameMatchView> {
+  async submitAction(input: { matchId: string; playerId: string; actionId: string; expectedRevision: number; action: unknown }): Promise<PublicGameMatchView> {
     const gameId = this.#gameFor(input.matchId);
     if (gameId === "tic-tac-toe") {
-      const view = await this.#ticTacToe.submitAction({
-        ...input,
-        action: parseTicTacToeAction(input.action),
-      });
+      const view = await this.#ticTacToe.submitAction({ ...input, action: parseTicTacToeAction(input.action) });
       return { gameId, ...view };
     }
     if (gameId === "american-checkers") {
-      const view = await this.#checkers.submitAction({
-        ...input,
-        action: parseCheckersAction(input.action),
-      });
+      const view = await this.#checkers.submitAction({ ...input, action: parseCheckersAction(input.action) });
+      return { gameId, ...view };
+    }
+    if (gameId === "othello") {
+      const view = await this.#othello.submitAction({ ...input, action: parseOthelloAction(input.action) });
       return { gameId, ...view };
     }
     if (gameId === "tactical-movement-canary") {
-      const view = await this.#tactical.submitAction({
-        ...input,
-        action: parseTacticalMovementAction(input.action),
-      });
+      const view = await this.#tactical.submitAction({ ...input, action: parseTacticalMovementAction(input.action) });
       return { gameId, ...view };
     }
     if (gameId === "tactical-combat-canary") {
-      const view = await this.#combat.submitAction({
-        ...input,
-        action: parseTacticalCombatAction(input.action),
-      });
+      const view = await this.#combat.submitAction({ ...input, action: parseTacticalCombatAction(input.action) });
       return { gameId, ...view };
     }
-    const view = await this.#monsterMaster.submitAction({
-      ...input,
-      action: parseMonsterMasterAction(input.action),
-    });
+    const view = await this.#monsterMaster.submitAction({ ...input, action: parseMonsterMasterAction(input.action) });
     return { gameId, ...view };
   }
 
@@ -249,12 +200,11 @@ export class InMemoryGameFrameService {
     if (
       gameId === "tic-tac-toe"
       || gameId === "american-checkers"
+      || gameId === "othello"
       || gameId === "tactical-movement-canary"
       || gameId === "tactical-combat-canary"
       || gameId === "monster-master-duel"
-    ) {
-      return gameId;
-    }
+    ) return gameId;
     const error = new Error(`Unsupported game: ${gameId}`);
     Object.assign(error, { code: "unknown_game" });
     throw error;
@@ -262,9 +212,7 @@ export class InMemoryGameFrameService {
 }
 
 function record(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {};
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
 function coordinate(value: unknown): { x: number; y: number } {
@@ -274,10 +222,7 @@ function coordinate(value: unknown): { x: number; y: number } {
 
 function parseTicTacToeAction(value: unknown): TicTacToeAction {
   const action = record(value);
-  return {
-    type: "place",
-    cell: Number(action.cell),
-  };
+  return { type: "place", cell: Number(action.cell) };
 }
 
 function parseCheckersAction(value: unknown): CheckersAction {
@@ -287,10 +232,13 @@ function parseCheckersAction(value: unknown): CheckersAction {
     pieceId: String(action.pieceId ?? ""),
     from: Number(action.from),
     path: Array.isArray(action.path) ? action.path.map((square) => Number(square)) : [],
-    capturedPieceIds: Array.isArray(action.capturedPieceIds)
-      ? action.capturedPieceIds.map((pieceId) => String(pieceId))
-      : [],
+    capturedPieceIds: Array.isArray(action.capturedPieceIds) ? action.capturedPieceIds.map((pieceId) => String(pieceId)) : [],
   };
+}
+
+function parseOthelloAction(value: unknown): OthelloAction {
+  const action = record(value);
+  return { type: "place", row: Number(action.row), column: Number(action.column) };
 }
 
 function parseTacticalMovementAction(value: unknown): TacticalMovementAction {
@@ -333,9 +281,7 @@ function parseTacticalCombatAction(value: unknown): TacticalCombatAction {
 function parseMonsterMasterAction(value: unknown): MonsterMasterAction {
   const action = record(value);
   const unitId = String(action.unitId ?? "");
-  if (action.type === "deploy-unit") {
-    return { type: "deploy-unit", unitId, position: coordinate(action.position) };
-  }
+  if (action.type === "deploy-unit") return { type: "deploy-unit", unitId, position: coordinate(action.position) };
   if (action.type === "end-activation") return { type: "end-activation", unitId };
   if (action.type === "attack") {
     return {
