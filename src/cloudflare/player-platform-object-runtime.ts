@@ -2,10 +2,13 @@ import { errorResponse, json, readJson } from "./http-utils.ts";
 import type { DurableStorageLike } from "./runtime-contracts.ts";
 
 const DIRECTORY_KEY = "gameframe:player-directory:v1";
+const LEADERBOARD_KEY = "gameframe:leaderboard:v1";
 const FEED_KEY = "gameframe:player-feed:v1";
 const MAX_DIRECTORY_PLAYERS = 250;
 const MAX_MATCH_HISTORY = 200;
 const MAX_INVITATION_HISTORY = 100;
+const MAX_LEADERBOARD_MATCHES = 1_000;
+const MAX_FAVORITES = 12;
 
 export interface GameFramePlayerProfile {
   playerId: string;
@@ -48,10 +51,25 @@ interface PlayerDirectoryRecord {
   players: GameFramePlayerProfile[];
 }
 
+interface LeaderboardMatchSummary {
+  matchId: string;
+  gameId: string;
+  playerIds: string[];
+  winnerPlayerId: string | null;
+  draw: boolean;
+  updatedAt: number;
+}
+
+interface LeaderboardRecord {
+  version: 1;
+  matches: LeaderboardMatchSummary[];
+}
+
 interface PlayerFeedRecord {
   version: 1;
   matches: PlayerMatchSummary[];
   invitations: PlayerInvitationSummary[];
+  favoriteGameIds?: string[];
 }
 
 function boundedText(value: unknown, name: string, maximum = 512): string {
@@ -109,6 +127,25 @@ function matchSummary(value: Record<string, unknown>): PlayerMatchSummary {
   };
 }
 
+function leaderboardMatch(value: Record<string, unknown>): LeaderboardMatchSummary {
+  const status = value.status && typeof value.status === "object" && !Array.isArray(value.status)
+    ? value.status as Record<string, unknown>
+    : {};
+  if (status.lifecycle !== "completed") {
+    throw Object.assign(new Error("Only completed matches belong in the leaderboard read model."), { code: "player_platform_invalid" });
+  }
+  return {
+    matchId: boundedText(value.matchId, "Match ID", 160),
+    gameId: boundedText(value.gameId, "Game ID", 80),
+    playerIds: Array.isArray(value.playerIds)
+      ? value.playerIds.map((playerId) => boundedText(playerId, "Match player ID", 160))
+      : [],
+    winnerPlayerId: nullableText(status.winnerPlayerId, 160),
+    draw: Boolean(status.draw),
+    updatedAt: timestamp(value.updatedAt),
+  };
+}
+
 function invitationSummary(value: Record<string, unknown>): PlayerInvitationSummary {
   const inviter = value.inviter && typeof value.inviter === "object" && !Array.isArray(value.inviter)
     ? value.inviter as Record<string, unknown>
@@ -139,6 +176,15 @@ function invitationSummary(value: Record<string, unknown>): PlayerInvitationSumm
   };
 }
 
+function favoriteGameIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.map((gameId) => boundedText(gameId, "Favorite game ID", 80)))].slice(0, MAX_FAVORITES);
+}
+
+function emptyFeed(): PlayerFeedRecord {
+  return { version: 1, matches: [], invitations: [], favoriteGameIds: [] };
+}
+
 export class PlayerPlatformObjectRuntime {
   readonly #storage: DurableStorageLike;
   #tail: Promise<void> = Promise.resolve();
@@ -163,11 +209,20 @@ export class PlayerPlatformObjectRuntime {
       if (request.method === "GET" && url.pathname === "/directory/list") {
         return json(200, await this.#listDirectory(String(url.searchParams.get("playerId") ?? "")));
       }
+      if (request.method === "POST" && url.pathname === "/directory/match") {
+        return json(200, await this.#upsertLeaderboardMatch(await readJson(request)));
+      }
+      if (request.method === "GET" && url.pathname === "/directory/leaderboard") {
+        return json(200, await this.#leaderboard());
+      }
       if (request.method === "POST" && url.pathname === "/player/match") {
         return json(200, await this.#upsertMatch(await readJson(request)));
       }
       if (request.method === "POST" && url.pathname === "/player/invitation") {
         return json(200, await this.#upsertInvitation(await readJson(request)));
+      }
+      if (request.method === "POST" && url.pathname === "/player/preferences") {
+        return json(200, await this.#updatePreferences(await readJson(request)));
       }
       if (request.method === "GET" && url.pathname === "/player/feed") {
         return json(200, await this.#feed());
@@ -202,9 +257,58 @@ export class PlayerPlatformObjectRuntime {
     };
   }
 
+  async #upsertLeaderboardMatch(body: Record<string, unknown>) {
+    const summary = leaderboardMatch(body);
+    const record = await this.#storage.get<LeaderboardRecord>(LEADERBOARD_KEY) ?? { version: 1, matches: [] };
+    const matches = [summary, ...record.matches.filter((match) => match.matchId !== summary.matchId)]
+      .sort((left, right) => right.updatedAt - left.updatedAt)
+      .slice(0, MAX_LEADERBOARD_MATCHES);
+    await this.#storage.put(LEADERBOARD_KEY, { version: 1, matches });
+    return summary;
+  }
+
+  async #leaderboard() {
+    const directory = await this.#storage.get<PlayerDirectoryRecord>(DIRECTORY_KEY) ?? { version: 1, players: [] };
+    const record = await this.#storage.get<LeaderboardRecord>(LEADERBOARD_KEY) ?? { version: 1, matches: [] };
+    const profiles = new Map(directory.players.map((profile) => [profile.playerId, profile]));
+    const byGame = new Map<string, Map<string, { played: number; wins: number; losses: number; draws: number }>>();
+
+    for (const match of record.matches) {
+      const game = byGame.get(match.gameId) ?? new Map();
+      byGame.set(match.gameId, game);
+      for (const playerId of match.playerIds) {
+        if (!profiles.has(playerId)) continue;
+        const stats = game.get(playerId) ?? { played: 0, wins: 0, losses: 0, draws: 0 };
+        stats.played += 1;
+        if (match.draw) stats.draws += 1;
+        else if (match.winnerPlayerId === playerId) stats.wins += 1;
+        else stats.losses += 1;
+        game.set(playerId, stats);
+      }
+    }
+
+    return {
+      games: [...byGame.entries()].map(([gameId, players]) => ({
+        gameId,
+        entries: [...players.entries()]
+          .map(([playerId, stats]) => {
+            const profile = profiles.get(playerId)!;
+            return {
+              playerId,
+              displayName: profile.displayName,
+              avatarUrl: profile.avatarUrl,
+              ...stats,
+              points: stats.wins * 3 + stats.draws,
+            };
+          })
+          .sort((left, right) => right.points - left.points || right.wins - left.wins || left.losses - right.losses || left.playerId.localeCompare(right.playerId)),
+      })),
+    };
+  }
+
   async #upsertMatch(body: Record<string, unknown>) {
     const summary = matchSummary(body);
-    const record = await this.#storage.get<PlayerFeedRecord>(FEED_KEY) ?? { version: 1, matches: [], invitations: [] };
+    const record = await this.#storage.get<PlayerFeedRecord>(FEED_KEY) ?? emptyFeed();
     const matches = [summary, ...record.matches.filter((match) => match.matchId !== summary.matchId)]
       .sort((left, right) => right.updatedAt - left.updatedAt)
       .slice(0, MAX_MATCH_HISTORY);
@@ -214,7 +318,7 @@ export class PlayerPlatformObjectRuntime {
 
   async #upsertInvitation(body: Record<string, unknown>) {
     const incoming = invitationSummary(body);
-    const record = await this.#storage.get<PlayerFeedRecord>(FEED_KEY) ?? { version: 1, matches: [], invitations: [] };
+    const record = await this.#storage.get<PlayerFeedRecord>(FEED_KEY) ?? emptyFeed();
     const existing = record.invitations.find((invitation) => invitation.invitationId === incoming.invitationId);
     const summary = existing && !incoming.claimToken
       ? { ...incoming, claimToken: existing.claimToken }
@@ -226,8 +330,16 @@ export class PlayerPlatformObjectRuntime {
     return summary;
   }
 
+  async #updatePreferences(body: Record<string, unknown>) {
+    const record = await this.#storage.get<PlayerFeedRecord>(FEED_KEY) ?? emptyFeed();
+    const favorites = favoriteGameIds(body.favoriteGameIds);
+    const next = { ...record, favoriteGameIds: favorites };
+    await this.#storage.put(FEED_KEY, next);
+    return { favoriteGameIds: [...favorites] };
+  }
+
   async #feed() {
-    const record = await this.#storage.get<PlayerFeedRecord>(FEED_KEY) ?? { version: 1, matches: [], invitations: [] };
+    const record = await this.#storage.get<PlayerFeedRecord>(FEED_KEY) ?? emptyFeed();
     const now = Math.floor(Date.now() / 1000);
     return {
       matches: record.matches.map((match) => ({ ...match, playerIds: [...match.playerIds] })),
@@ -235,6 +347,7 @@ export class PlayerPlatformObjectRuntime {
         ...invitation,
         status: invitation.status === "pending" && invitation.expiresAt <= now ? "expired" : invitation.status,
       })),
+      favoriteGameIds: [...(record.favoriteGameIds ?? [])],
     };
   }
 }

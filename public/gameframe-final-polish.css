@@ -118,6 +118,13 @@ body.gameframe-has-destination-bar .tic-noir-footer {
   justify-content: flex-end;
 }
 
+@media (min-width: 721px) and (max-width: 1100px) {
+  .gameframe-destination-links a,
+  .gameframe-destination-links button {
+    min-width: 0;
+  }
+}
+
 @media (max-width: 720px) {
   :root {
     --gameframe-destination-height: 62px;
@@ -129,10 +136,16 @@ body.gameframe-has-destination-bar .tic-noir-footer {
   .gameframe-destination-brand {
     min-width: 0;
   }
+  .gameframe-destination-links a,
+  .gameframe-destination-links button {
+    min-width: 0;
+    flex: 1;
+  }
   .gameframe-has-destination-bar > .gameframe-session-badge {
     grid-template-columns: 27px minmax(0, 1fr);
     gap: 5px;
     width: 101px;
+    min-width: 0;
     max-width: 101px;
     height: 48px;
     padding: 5px 6px;

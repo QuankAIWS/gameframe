@@ -55,6 +55,7 @@ test("an Othello move survives browser closure and appears as the other player's
 
   await page.goto("/");
   await expect(page.locator(".gameframe-home-dashboard")).toBeVisible();
+  await expect(page.locator(".home-news-strip")).toContainText("WHAT'S NEW");
   await expect(page.locator(".gameframe-home-dashboard")).toContainText("YOUR TURN");
   await expect(page.locator(".gameframe-home-dashboard")).toContainText("Othello");
   await expect(page.locator("#game-grid")).toBeHidden();
@@ -68,17 +69,43 @@ test("an Othello move survives browser closure and appears as the other player's
   await expect(page.locator("#profile-active")).toContainText("Othello");
 });
 
-test("Games, Matches, and Profile are first-class destination bar links", async ({ page }) => {
+test("favorite games persist in the player profile and appear on Home", async ({ page }) => {
+  await page.goto("/profile.html?player=favorite-player");
+  const othello = page.locator('[data-favorite-game-id="othello"]');
+  await expect(othello).toHaveAttribute("aria-pressed", "false");
+  await othello.click();
+  await expect(othello).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#profile-favorites-status")).toHaveText("Favorites saved.");
+
+  await page.reload();
+  await expect(page.locator('[data-favorite-game-id="othello"]')).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#profile-favorites-count")).toHaveText("1");
+
+  await page.goto("/?player=favorite-player");
+  const favorites = page.locator(".home-favorites-section");
+  await expect(favorites).toBeVisible();
+  await expect(favorites).toContainText("Othello");
+  await expect(favorites.getByRole("link", { name: /Othello/ })).toHaveAttribute("href", "/othello.html");
+});
+
+test("Games, Matches, Leaderboard, and Profile are first-class destination bar links", async ({ page }) => {
   await page.goto("/?catalog=1&player=platform-nav-test");
   await expect(page.locator("#game-grid")).toBeVisible();
   await expect(page.locator("#lobby .section-label")).toHaveText("GAMES");
   await expect(page.locator("#gameframe-destination-bar [data-gameframe-games]")).toHaveClass(/is-active/);
   await expect(page.locator("#gameframe-destination-bar [data-gameframe-matches]")).toHaveAttribute("href", "/matches.html");
+  await expect(page.locator("#gameframe-destination-bar [data-gameframe-leaderboard]")).toHaveAttribute("href", "/leaderboard.html");
   await expect(page.locator("#gameframe-destination-bar [data-gameframe-profile]")).toHaveAttribute("href", "/profile.html");
 
   await page.locator("#gameframe-destination-bar [data-gameframe-matches]").click();
   await expect(page).toHaveURL(/\/matches\.html$/);
   await expect(page.getByRole("heading", { name: "Matches" })).toBeVisible();
+
+  await page.locator("#gameframe-destination-bar [data-gameframe-leaderboard]").click();
+  await expect(page).toHaveURL(/\/leaderboard\.html$/);
+  await expect(page.getByRole("heading", { name: "Leaderboard" })).toBeVisible();
+  await expect(page.locator("#leaderboard-list")).toBeVisible();
+  await expect(page.locator("#leaderboard-error")).toBeHidden();
 
   await page.locator("#gameframe-destination-bar [data-gameframe-profile]").click();
   await expect(page).toHaveURL(/\/profile\.html$/);
@@ -87,4 +114,17 @@ test("Games, Matches, and Profile are first-class destination bar links", async 
   await page.locator("#gameframe-destination-bar [data-gameframe-home]").click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator(".gameframe-home-dashboard")).toBeVisible();
+});
+
+test("five platform destinations remain bounded at tablet width", async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 800 });
+  await page.goto("/leaderboard.html?player=platform-tablet-test");
+  const bar = page.locator("#gameframe-destination-bar");
+  await expect(bar).toBeVisible();
+  await expect(bar.locator("[data-gameframe-home]")).toBeVisible();
+  await expect(bar.locator("[data-gameframe-games]")).toBeVisible();
+  await expect(bar.locator("[data-gameframe-matches]")).toBeVisible();
+  await expect(bar.locator("[data-gameframe-leaderboard]")).toBeVisible();
+  await expect(bar.locator("[data-gameframe-profile]")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 });

@@ -77,8 +77,28 @@ export async function listKnownPlayers(env: GameFrameWorkerEnv, viewerPlayerId: 
 }
 
 export async function readPlayerFeed(env: GameFrameWorkerEnv, playerId: string) {
-  return internalJson<{ matches: unknown[]; invitations: unknown[] }>(
+  return internalJson<{ matches: unknown[]; invitations: unknown[]; favoriteGameIds: string[] }>(
     await playerStub(env, playerId).fetch(new Request("https://player.internal/player/feed")),
+  );
+}
+
+export async function updatePlayerPreferences(
+  env: GameFrameWorkerEnv,
+  playerId: string,
+  favoriteGameIds: unknown,
+) {
+  return internalJson<{ favoriteGameIds: string[] }>(
+    await playerStub(env, playerId).fetch(new Request("https://player.internal/player/preferences", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ favoriteGameIds }),
+    })),
+  );
+}
+
+export async function readLeaderboard(env: GameFrameWorkerEnv) {
+  return internalJson<{ games: unknown[] }>(
+    await directoryStub(env).fetch(new Request("https://player.internal/directory/leaderboard")),
   );
 }
 
@@ -100,13 +120,24 @@ export async function indexMatchView(env: GameFrameWorkerEnv, view: IndexedMatch
     updatedAt: Date.now(),
     resumePath: resumePathForGame(gameId, view.matchId),
   };
-  await Promise.allSettled(view.playerIds.map((playerId) => internalJson(
+
+  const writes: Promise<unknown>[] = view.playerIds.map((playerId) => internalJson(
     playerStub(env, playerId).fetch(new Request("https://player.internal/player/match", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(summary),
     })),
-  )));
+  ));
+  if (summary.status.lifecycle === "completed") {
+    writes.push(internalJson(
+      directoryStub(env).fetch(new Request("https://player.internal/directory/match", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(summary),
+      })),
+    ));
+  }
+  await Promise.allSettled(writes);
 }
 
 export async function indexInvitation(

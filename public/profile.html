@@ -12,7 +12,7 @@
     <header class="platform-heading">
       <small>GAMEFRAME PLAYER</small>
       <h1>Profile</h1>
-      <p>Your GameFrame identity and durable board-game record.</p>
+      <p>Your GameFrame identity, favorite games, and durable board-game record.</p>
     </header>
     <div id="profile-error" class="platform-error" hidden></div>
     <div class="platform-grid">
@@ -24,6 +24,11 @@
           <h2 id="profile-name">Loading…</h2>
           <p id="profile-id"></p>
         </div>
+      </section>
+      <section class="platform-section" aria-labelledby="profile-favorites-title">
+        <header class="platform-section-header"><div><h2 id="profile-favorites-title">Favorite games</h2><span class="platform-count">Pin games to Home</span></div><span id="profile-favorites-count" class="platform-count">—</span></header>
+        <div id="profile-favorites" class="profile-favorites"><p class="platform-empty">Loading favorites…</p></div>
+        <p id="profile-favorites-status" class="profile-preference-status" role="status" aria-live="polite"></p>
       </section>
       <section class="platform-section" aria-labelledby="profile-record-title">
         <header class="platform-section-header"><h2 id="profile-record-title">Board-game record</h2><span id="profile-record-count" class="platform-count">—</span></header>

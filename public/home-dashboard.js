@@ -15,6 +15,15 @@ if (!document.head.querySelector('link[href="/home-dashboard.css"]')) {
   document.head.append(stylesheet);
 }
 
+const FAVORITE_GAMES = new Map([
+  ["cascade", { name: "Cascade", detail: "Match-3 puzzle", href: "/cascade.html" }],
+  ["othello", { name: "Othello", detail: "Strategy", href: "/othello.html" }],
+  ["american-checkers", { name: "Clockwork Checkers", detail: "Strategy", href: "/?game=american-checkers&menu=1" }],
+  ["tic-tac-toe", { name: "Tic-Tac-Toe", detail: "Quick game", href: "/?game=tic-tac-toe&menu=1" }],
+  ["monster-master-duel", { name: "Monster Master Arena", detail: "Tactical battle", href: "/monster-master.html" }],
+  ["monster-master-rpg", { name: "Monster Master RPG", detail: "Campaign", href: "/gameframe-rpg.html" }],
+]);
+
 function gameName(gameId) {
   if (gameId === "othello") return "Othello";
   if (gameId === "american-checkers") return "Clockwork Checkers";
@@ -75,6 +84,45 @@ function section(title, items, emptyText, waiting = false) {
   return wrapper;
 }
 
+function newsStrip() {
+  const strip = document.createElement("section");
+  strip.className = "home-news-strip";
+  strip.setAttribute("aria-label", "What's new in GameFrame");
+  strip.innerHTML = `
+    <strong>WHAT'S NEW</strong>
+    <span><b>ASYNC PLAY</b> Othello matches stay saved between visits.</span>
+    <span><b>PLAYER HUB</b> Matches, profiles, favorites, and standings now travel with your player.</span>
+  `;
+  return strip;
+}
+
+function favoritesSection(favoriteGameIds) {
+  const wrapper = document.createElement("section");
+  wrapper.className = "home-section home-favorites-section";
+  const heading = document.createElement("header");
+  heading.className = "home-section-heading";
+  heading.innerHTML = `<strong>Favorites</strong><span>${favoriteGameIds.length}</span>`;
+  const list = document.createElement("div");
+  list.className = "home-favorite-grid";
+  const games = favoriteGameIds.map((gameId) => ({ gameId, ...FAVORITE_GAMES.get(gameId) })).filter((game) => game.name);
+  if (!games.length) {
+    const empty = document.createElement("p");
+    empty.className = "home-dashboard-empty";
+    empty.innerHTML = 'Pin favorite games from <a href="/profile.html">Profile</a> and they will appear here.';
+    list.append(empty);
+  } else {
+    for (const game of games) {
+      const link = document.createElement("a");
+      link.className = "home-favorite-card";
+      link.href = game.href;
+      link.innerHTML = `<span aria-hidden="true">★</span><strong>${game.name}</strong><small>${game.detail}</small>`;
+      list.append(link);
+    }
+  }
+  wrapper.append(heading, list);
+  return wrapper;
+}
+
 const dashboard = document.createElement("div");
 dashboard.className = "gameframe-home-dashboard";
 dashboard.innerHTML = '<p class="home-dashboard-empty">Loading your GameFrame activity…</p>';
@@ -82,7 +130,7 @@ gameGrid.before(dashboard);
 gameGrid.hidden = true;
 if (sectionLabel) sectionLabel.textContent = "HOME";
 if (lobbyTitle) lobbyTitle.textContent = "Ready when you are";
-if (lobbyMessage) lobbyMessage.textContent = "Your open games and anything that needs your attention.";
+if (lobbyMessage) lobbyMessage.textContent = "Your games, open matches, and anything that needs your attention.";
 document.title = "Home · Scribbles GameFrame";
 
 async function refresh() {
@@ -91,6 +139,7 @@ async function refresh() {
     const feed = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(feed.message || "GameFrame activity could not be loaded.");
     const matches = Array.isArray(feed.matches) ? feed.matches : [];
+    const favoriteGameIds = Array.isArray(feed.favoriteGameIds) ? feed.favoriteGameIds : [];
     const active = matches.filter((match) => match.lifecycle === "active");
     const yourTurn = active.filter((match) => match.activePlayerId === identity.playerId);
     const waiting = active.filter((match) => match.activePlayerId !== identity.playerId);
@@ -98,8 +147,10 @@ async function refresh() {
       .filter((invitation) => invitation.status === "pending" && invitation.inviter?.playerId !== identity.playerId);
 
     dashboard.replaceChildren(
+      newsStrip(),
       section("Your turn", yourTurn, "Nothing needs your move right now."),
       section("Waiting", waiting, "No open games are waiting on another player.", true),
+      favoritesSection(favoriteGameIds),
     );
 
     if (incomingChallenges.length) {
@@ -129,7 +180,7 @@ async function refresh() {
         list.append(row);
       }
       challenges.append(heading, list);
-      dashboard.append(challenges);
+      dashboard.insertBefore(challenges, dashboard.querySelector(".home-favorites-section"));
     }
 
     const footer = document.createElement("div");
@@ -142,7 +193,11 @@ async function refresh() {
     matchesLink.className = "home-dashboard-action secondary";
     matchesLink.href = "/matches.html";
     matchesLink.textContent = "All Matches";
-    footer.append(games, matchesLink);
+    const leaderboard = document.createElement("a");
+    leaderboard.className = "home-dashboard-action secondary";
+    leaderboard.href = "/leaderboard.html";
+    leaderboard.textContent = "Leaderboard";
+    footer.append(games, matchesLink, leaderboard);
     dashboard.append(footer);
   } catch (error) {
     dashboard.replaceChildren();
