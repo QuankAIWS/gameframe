@@ -69,7 +69,7 @@ interface PlayerFeedRecord {
   version: 1;
   matches: PlayerMatchSummary[];
   invitations: PlayerInvitationSummary[];
-  favoriteGameIds: string[];
+  favoriteGameIds?: string[];
 }
 
 function boundedText(value: unknown, name: string, maximum = 512): string {
@@ -347,7 +347,7 @@ export class PlayerPlatformObjectRuntime {
         ...invitation,
         status: invitation.status === "pending" && invitation.expiresAt <= now ? "expired" : invitation.status,
       })),
-      favoriteGameIds: [...record.favoriteGameIds],
+      favoriteGameIds: [...(record.favoriteGameIds ?? [])],
     };
   }
 }
