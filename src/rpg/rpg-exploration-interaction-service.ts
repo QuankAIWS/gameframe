@@ -10,7 +10,7 @@ const MAX_TALK_TEXT_LENGTH = 2_000;
 const CHECKPOINT_CART_ENTITY_ID = "object.checkpoint-cart";
 const CHECKPOINT_CART_UNCOVER_ACTION = "Uncover the checkpoint cart.";
 
-export type RpgExplorationTalkRequestV1 = {
+export type RpgExplorationInteractionRequestV1 = {
   type: "exploration_interact";
   protocolVersion: 1;
   campaignId: string;
@@ -24,23 +24,54 @@ export type RpgExplorationTalkRequestV1 = {
   expectedGameframeCoordinationRevision: number;
   commandId: string;
   issuedAt: string;
-  interaction: "talk";
   interactionTargetId: string;
-  text: string;
-};
+} & (
+  | { interaction: "talk"; text: string }
+  | { interaction: "travel" }
+);
 
-export type AuthorizedRpgExplorationTalkV1 = {
-  campaignId: string;
-  sceneId: string;
-  commandId: string;
-  issuedAt: string;
-  expectedGameframeCoordinationRevision: number;
-  interaction: "talk";
-  interactionTargetId: string;
-  targetEntityId: string;
-  targetDisplayLabel: string;
-  text: string;
-};
+export type RpgExplorationTalkRequestV1 = Extract<
+  RpgExplorationInteractionRequestV1,
+  { interaction: "talk" }
+>;
+export type RpgExplorationTravelRequestV1 = Extract<
+  RpgExplorationInteractionRequestV1,
+  { interaction: "travel" }
+>;
+
+export type AuthorizedRpgExplorationInteractionV1 =
+  | {
+      campaignId: string;
+      sceneId: string;
+      commandId: string;
+      issuedAt: string;
+      expectedGameframeCoordinationRevision: number;
+      interaction: "talk";
+      interactionTargetId: string;
+      targetEntityId: string;
+      targetDisplayLabel: string;
+      text: string;
+    }
+  | {
+      campaignId: string;
+      sceneId: string;
+      commandId: string;
+      issuedAt: string;
+      expectedGameframeCoordinationRevision: number;
+      interaction: "travel";
+      interactionTargetId: string;
+      routeId: string;
+      routeDisplayLabel: string;
+    };
+
+export type AuthorizedRpgExplorationTalkV1 = Extract<
+  AuthorizedRpgExplorationInteractionV1,
+  { interaction: "talk" }
+>;
+export type AuthorizedRpgExplorationTravelV1 = Extract<
+  AuthorizedRpgExplorationInteractionV1,
+  { interaction: "travel" }
+>;
 
 export class RpgExplorationInteractionError extends Error {
   readonly code:
@@ -58,22 +89,19 @@ export class RpgExplorationInteractionError extends Error {
 }
 
 /**
- * Converts a viewer-safe materialization target into a canonical semantic entity
- * only after GameFrame has proved current physical eligibility.
- *
- * The request deliberately contains no targetEntityId field. Browsers may select
- * only an interactionTargetId that already exists in the authenticated viewer's
- * current accepted materialization. Actor Talk remains the normal path. The
- * checkpoint-cart uncover canary temporarily reuses this physically-authorized
- * transport until a second object operation justifies a general interaction
- * contract; Runtime intercepts that exact cart action before entity performance.
+ * Converts a viewer-safe physical handle into one bounded semantic interaction
+ * only after GameFrame proves the current scene/materialization/position. The
+ * browser never supplies a Runtime entity ID, destination scene, or destination
+ * location. Talk resolves an adjacent actor (plus the existing checkpoint-cart
+ * CHANGE canary); Travel resolves only an adjacent route anchor already exposed
+ * by the current viewer-safe materialization.
  */
-export function authorizeRpgExplorationTalk(input: {
+export function authorizeRpgExplorationInteraction(input: {
   request: unknown;
   materialization: RpgExplorationPhysicalMaterializationV1;
   position: RpgExplorationPositionMessageV1;
-}): AuthorizedRpgExplorationTalkV1 {
-  const request = normalizeRpgExplorationTalkRequest(input.request);
+}): AuthorizedRpgExplorationInteractionV1 {
+  const request = normalizeRpgExplorationInteractionRequest(input.request);
   const { materialization, position } = input;
   if (
     request.campaignId !== materialization.campaignId
@@ -98,21 +126,7 @@ export function authorizeRpgExplorationTalk(input: {
   const target = materialization.anchors.find((anchor) =>
     anchor.interactionTargetId === request.interactionTargetId
   );
-  const talkActor = Boolean(
-    target
-    && target.kind === "entity"
-    && target.entityClass === "actor"
-    && typeof target.semanticId === "string"
-    && target.semanticId !== position.playerEntityId
-  );
-  const checkpointCartUncover = Boolean(
-    target
-    && target.kind === "object"
-    && target.semanticId === CHECKPOINT_CART_ENTITY_ID
-    && target.objectState === "covered"
-    && request.text === CHECKPOINT_CART_UNCOVER_ACTION
-  );
-  if (!target || (!talkActor && !checkpointCartUncover)) {
+  if (!target) {
     throw new RpgExplorationInteractionError(
       "interaction-target-unavailable",
       "The selected interaction target is not available in the current viewer-safe scene.",
@@ -123,30 +137,82 @@ export function authorizeRpgExplorationTalk(input: {
   if (distance !== 1) {
     throw new RpgExplorationInteractionError(
       "interaction-out-of-range",
-      talkActor
-        ? "Move next to the character before talking."
-        : "Move next to the checkpoint cart before uncovering it.",
+      request.interaction === "travel"
+        ? "Move next to the route edge before traveling."
+        : "Move next to the interaction target first.",
     );
   }
 
-  return {
+  const common = {
     campaignId: request.campaignId,
     sceneId: request.sceneId,
     commandId: request.commandId,
     issuedAt: request.issuedAt,
-    expectedGameframeCoordinationRevision:
-      request.expectedGameframeCoordinationRevision,
-    interaction: "talk",
+    expectedGameframeCoordinationRevision: request.expectedGameframeCoordinationRevision,
     interactionTargetId: request.interactionTargetId,
+  };
+
+  if (request.interaction === "travel") {
+    if (
+      target.kind !== "route"
+      || typeof target.semanticId !== "string"
+      || target.semanticId.length === 0
+    ) {
+      throw new RpgExplorationInteractionError(
+        "interaction-target-unavailable",
+        "The selected target is not an available route in the current viewer-safe scene.",
+      );
+    }
+    return {
+      ...common,
+      interaction: "travel",
+      routeId: target.semanticId,
+      routeDisplayLabel: target.label,
+    };
+  }
+
+  const talkActor = Boolean(
+    target.kind === "entity"
+    && target.entityClass === "actor"
+    && typeof target.semanticId === "string"
+    && target.semanticId !== position.playerEntityId
+  );
+  const checkpointCartUncover = Boolean(
+    target.kind === "object"
+    && target.semanticId === CHECKPOINT_CART_ENTITY_ID
+    && target.objectState === "covered"
+    && request.text === CHECKPOINT_CART_UNCOVER_ACTION
+  );
+  if (!talkActor && !checkpointCartUncover) {
+    throw new RpgExplorationInteractionError(
+      "interaction-target-unavailable",
+      "The selected Talk target is not available in the current viewer-safe scene.",
+    );
+  }
+  return {
+    ...common,
+    interaction: "talk",
     targetEntityId: target.semanticId,
     targetDisplayLabel: target.label,
     text: request.text,
   };
 }
 
-export function normalizeRpgExplorationTalkRequest(
+export function authorizeRpgExplorationTalk(input: {
+  request: unknown;
+  materialization: RpgExplorationPhysicalMaterializationV1;
+  position: RpgExplorationPositionMessageV1;
+}): AuthorizedRpgExplorationTalkV1 {
+  const authorized = authorizeRpgExplorationInteraction(input);
+  if (authorized.interaction !== "talk") {
+    throw invalid("Expected a Talk exploration interaction.");
+  }
+  return authorized;
+}
+
+export function normalizeRpgExplorationInteractionRequest(
   value: unknown,
-): RpgExplorationTalkRequestV1 {
+): RpgExplorationInteractionRequestV1 {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw invalid("Exploration interaction must be an object.");
   }
@@ -172,16 +238,15 @@ export function normalizeRpgExplorationTalkRequest(
   if (input.type !== "exploration_interact" || input.protocolVersion !== 1) {
     throw invalid("Exploration interaction protocol or type is not supported.");
   }
-  if (input.interaction !== "talk") {
-    throw invalid("Only Talk is supported by the current exploration interaction slice.");
+  if (input.interaction !== "talk" && input.interaction !== "travel") {
+    throw invalid("Exploration interaction must be Talk or Travel.");
   }
-  const materializationRef = normalizeMaterializationRef(input.materializationRef);
-  return {
-    type: "exploration_interact",
-    protocolVersion: 1,
+  const base = {
+    type: "exploration_interact" as const,
+    protocolVersion: 1 as const,
     campaignId: identifier(input.campaignId, "campaignId"),
     sceneId: identifier(input.sceneId, "sceneId"),
-    materializationRef,
+    materializationRef: normalizeMaterializationRef(input.materializationRef),
     expectedPositionRevision: revision(
       input.expectedPositionRevision,
       "expectedPositionRevision",
@@ -192,10 +257,27 @@ export function normalizeRpgExplorationTalkRequest(
     ),
     commandId: identifier(input.commandId, "commandId"),
     issuedAt: timestamp(input.issuedAt, "issuedAt"),
-    interaction: "talk",
     interactionTargetId: identifier(input.interactionTargetId, "interactionTargetId"),
+  };
+  if (input.interaction === "travel") {
+    if (input.text !== undefined) {
+      throw invalid("Travel interaction does not accept browser-supplied action text.");
+    }
+    return { ...base, interaction: "travel" };
+  }
+  return {
+    ...base,
+    interaction: "talk",
     text: boundedText(input.text, "text", MAX_TALK_TEXT_LENGTH),
   };
+}
+
+export function normalizeRpgExplorationTalkRequest(
+  value: unknown,
+): RpgExplorationTalkRequestV1 {
+  const request = normalizeRpgExplorationInteractionRequest(value);
+  if (request.interaction !== "talk") throw invalid("Expected a Talk exploration interaction.");
+  return request;
 }
 
 function normalizeMaterializationRef(value: unknown) {

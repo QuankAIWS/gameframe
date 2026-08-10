@@ -1,3 +1,4 @@
+import "./monster-master-rpg-travel-control.js";
 import { gameFrameFetch } from "./gameframe-auth.js";
 import { buildExplorationMonsterControlRequest } from "./monster-master-rpg-model.js";
 

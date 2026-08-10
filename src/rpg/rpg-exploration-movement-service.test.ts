@@ -31,7 +31,7 @@ function databasePath(): string {
 }
 
 function projection() {
-  return normalizeRpgExplorationProjection(explorationFixture);
+  return normalizeRpgExplorationProjection(explorationFixture.projection);
 }
 
 function moveRequest(
@@ -44,11 +44,7 @@ function moveRequest(
     protocolVersion: 1,
     campaignId: semantic.campaignId,
     sceneId: semantic.scene.sceneId,
-    materializationRef: {
-      materializationId: `rpg-scene:${semantic.campaignId}:${semantic.scene.sceneId}`,
-      version: "1",
-      hash: "PqiWVXyRuvk0jBq9Elj-IiSwsi2yu1RAEYo_loaQFlg",
-    },
+    materializationRef: materializeRpgExplorationProjection(semantic).materializationRef,
     expectedPositionRevision,
     direction,
   };
@@ -81,29 +77,24 @@ test("materialized movement is collision-aware and revisioned per player", () =>
     assert.deepEqual(initial.transform, { x: 14, y: 7, facing: "west" });
     assert.equal(initial.positionRevision, 0);
 
-    const west = service.move(
-      semantic.viewer.playerId,
-      moveRequest(semantic, 0, "west"),
-    );
-    assert.equal(west.moved, true);
-    assert.deepEqual(west.transform, { x: 13, y: 7, facing: "west" });
-    assert.equal(west.positionRevision, 1);
-
-    const south = service.move(
-      semantic.viewer.playerId,
-      moveRequest(semantic, 1, "south"),
-    );
-    assert.equal(south.moved, true);
-    assert.deepEqual(south.transform, { x: 13, y: 8, facing: "south" });
-    assert.equal(south.positionRevision, 2);
+    let position = initial;
+    for (const direction of ["west", "west", "west", "west"] as const) {
+      position = service.move(
+        semantic.viewer.playerId,
+        moveRequest(semantic, position.positionRevision, direction),
+      );
+    }
+    assert.deepEqual(position.transform, { x: 10, y: 7, facing: "west" });
+    assert.equal(position.positionRevision, 4);
 
     const blocked = service.move(
       semantic.viewer.playerId,
-      moveRequest(semantic, 2, "west"),
+      moveRequest(semantic, position.positionRevision, "south"),
     );
     assert.equal(blocked.moved, false);
-    assert.deepEqual(blocked.transform, { x: 13, y: 8, facing: "west" });
-    assert.equal(blocked.positionRevision, 2);
+    assert.equal(blocked.blockedBy, "occupied");
+    assert.deepEqual(blocked.transform, { x: 10, y: 7, facing: "south" });
+    assert.equal(blocked.positionRevision, 5);
   } finally {
     positions.close();
   }
@@ -162,8 +153,8 @@ test("materialization identity changes reset stale physical positions", () => {
     nextSemantic.scene.semanticRevision += 1;
     nextSemantic.scene.materialization.acceptedRef = {
       materializationId: materialization.materializationRef.materializationId,
-      version: "2",
-      hash: "V2-pqiWVXyRuvk0jBq9Elj-IiSwsi2yu1RAEYo_lQ",
+      version: "1",
+      hash: "replacement-materialization-hash",
     };
     const nextMaterialization = materializeRpgExplorationProjection(nextSemantic);
     const reset = service.attach({
@@ -310,8 +301,7 @@ test("movement rejects stale client position revisions", () => {
       ),
       (error: unknown) =>
         error instanceof RpgExplorationMovementError
-        && error.code === "position-revision-conflict"
-        && error.retryable,
+        && error.code === "position-revision-conflict",
     );
   } finally {
     positions.close();

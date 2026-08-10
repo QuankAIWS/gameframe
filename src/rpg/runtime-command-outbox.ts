@@ -27,6 +27,10 @@ export type RuntimePlayerCommandV1 =
             kind: "monster-control";
             operation: "deploy" | "recall";
             targetEntityId: string;
+          }
+        | {
+            kind: "travel";
+            routeId: string;
           };
     }
   | {
@@ -661,9 +665,21 @@ function normalizeInteraction(
 ):
   | { kind: "talk"; targetEntityId: string }
   | { kind: "monster-control"; operation: "deploy" | "recall"; targetEntityId: string }
+  | { kind: "travel"; routeId: string }
   | undefined {
   if (value === undefined) return undefined;
   const interaction = record(value, "command.interaction");
+  if (interaction.kind === "travel") {
+    const allowed = new Set(["kind", "routeId"]);
+    const unknown = Object.keys(interaction).filter((key) => !allowed.has(key));
+    if (unknown.length > 0) {
+      throw invalid(`command.interaction contains unsupported fields: ${unknown.sort().join(", ")}`);
+    }
+    return {
+      kind: "travel",
+      routeId: normalizeIdentifier(interaction.routeId, "command.interaction.routeId"),
+    };
+  }
   const allowed = interaction.kind === "monster-control"
     ? new Set(["kind", "operation", "targetEntityId"])
     : new Set(["kind", "targetEntityId"]);

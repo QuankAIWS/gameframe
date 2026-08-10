@@ -19,8 +19,8 @@ import {
   type DurableRpgPrincipal,
 } from "../rpg/durable-rpg-campaign-service.ts";
 import {
-  authorizeRpgExplorationTalk,
-  normalizeRpgExplorationTalkRequest,
+  authorizeRpgExplorationInteraction,
+  normalizeRpgExplorationInteractionRequest,
   RpgExplorationInteractionError,
 } from "../rpg/rpg-exploration-interaction-service.ts";
 import {
@@ -165,6 +165,7 @@ export function createDurableRpgHttpServer(
                   "rpg-exploration-materialization",
                   "rpg-exploration-movement",
                   "rpg-exploration-talk",
+                  "rpg-exploration-travel",
                   "rpg-exploration-monster-control",
                 ]
               : []),
@@ -307,22 +308,31 @@ export function createDurableRpgHttpServer(
         }
 
         if (explorationRoute.operation === "interact") {
-          const normalized = normalizeRpgExplorationTalkRequest(body);
+          const normalized = normalizeRpgExplorationInteractionRequest(body);
           requireBodyIdentity(normalized.campaignId, explorationRoute.campaignId, "campaignId");
-          const committedRetry = campaigns.findCommittedExplorationTalk({
-            campaignId: normalized.campaignId,
-            commandId: normalized.commandId,
-            expectedGameframeCoordinationRevision:
-              normalized.expectedGameframeCoordinationRevision,
-            issuedAt: normalized.issuedAt,
-            interactionTargetId: normalized.interactionTargetId,
-            text: normalized.text,
-          }, { kind: "player", playerId: principal.playerId });
+          const committedRetry = normalized.interaction === "travel"
+            ? campaigns.findCommittedExplorationTravel({
+                campaignId: normalized.campaignId,
+                commandId: normalized.commandId,
+                expectedGameframeCoordinationRevision:
+                  normalized.expectedGameframeCoordinationRevision,
+                issuedAt: normalized.issuedAt,
+                interactionTargetId: normalized.interactionTargetId,
+              }, { kind: "player", playerId: principal.playerId })
+            : campaigns.findCommittedExplorationTalk({
+                campaignId: normalized.campaignId,
+                commandId: normalized.commandId,
+                expectedGameframeCoordinationRevision:
+                  normalized.expectedGameframeCoordinationRevision,
+                issuedAt: normalized.issuedAt,
+                interactionTargetId: normalized.interactionTargetId,
+                text: normalized.text,
+              }, { kind: "player", playerId: principal.playerId });
           if (committedRetry) {
             return sendJson(response, 200, {
               protocolVersion: 1,
               kind: "campaign.exploration_interaction_committed",
-              interaction: "talk",
+              interaction: normalized.interaction,
               interactionTargetId: normalized.interactionTargetId,
               command: committedRetry,
               replayed: true,
@@ -346,27 +356,38 @@ export function createDurableRpgHttpServer(
             projection,
             materialization,
           });
-          const authorized = authorizeRpgExplorationTalk({
+          const authorized = authorizeRpgExplorationInteraction({
             request: normalized,
             materialization,
             position: playerPosition,
           });
-          const committed = campaigns.handleAuthorizedExplorationTalk({
-            campaignId: authorized.campaignId,
-            commandId: authorized.commandId,
-            expectedGameframeCoordinationRevision:
-              authorized.expectedGameframeCoordinationRevision,
-            issuedAt: authorized.issuedAt,
-            interactionTargetId: authorized.interactionTargetId,
-            targetEntityId: authorized.targetEntityId,
-            targetDisplayLabel: authorized.targetDisplayLabel,
-            text: authorized.text,
-          }, { kind: "player", playerId: principal.playerId });
+          const committed = authorized.interaction === "travel"
+            ? campaigns.handleAuthorizedExplorationTravel({
+                campaignId: authorized.campaignId,
+                commandId: authorized.commandId,
+                expectedGameframeCoordinationRevision:
+                  authorized.expectedGameframeCoordinationRevision,
+                issuedAt: authorized.issuedAt,
+                interactionTargetId: authorized.interactionTargetId,
+                routeId: authorized.routeId,
+                routeDisplayLabel: authorized.routeDisplayLabel,
+              }, { kind: "player", playerId: principal.playerId })
+            : campaigns.handleAuthorizedExplorationTalk({
+                campaignId: authorized.campaignId,
+                commandId: authorized.commandId,
+                expectedGameframeCoordinationRevision:
+                  authorized.expectedGameframeCoordinationRevision,
+                issuedAt: authorized.issuedAt,
+                interactionTargetId: authorized.interactionTargetId,
+                targetEntityId: authorized.targetEntityId,
+                targetDisplayLabel: authorized.targetDisplayLabel,
+                text: authorized.text,
+              }, { kind: "player", playerId: principal.playerId });
           realtime.notifyCampaign(explorationRoute.campaignId);
           return sendJson(response, 200, {
             protocolVersion: 1,
             kind: "campaign.exploration_interaction_committed",
-            interaction: "talk",
+            interaction: authorized.interaction,
             interactionTargetId: authorized.interactionTargetId,
             command: committed,
             playerPosition,
