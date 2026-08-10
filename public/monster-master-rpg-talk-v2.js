@@ -3,10 +3,12 @@ import { buildExplorationTalkRequest } from "./monster-master-rpg-model.js";
 import "./monster-master-rpg-interaction-shell.js";
 
 const VIEW_EVENT = "gameframe:monster-master-pixi-view";
+const STATE_EVENT = "gameframe:monster-master-rpg-state";
 const NEARBY_EVENT = "gameframe:rpg-nearby-interaction";
 const TALK_REQUEST_EVENT = "gameframe:rpg-talk-requested";
 const MAX_REQUEST_TIMEOUT_MS = 12_000;
 const MAX_TALK_LENGTH = 2_000;
+const MAX_VISIBLE_BUBBLES = 20;
 
 const identity = window.gameFrameIdentity;
 if (!identity?.playerId) {
@@ -17,7 +19,6 @@ const elements = {
   error: document.querySelector("#mm-rpg-error"),
   coordination: document.querySelector("#mm-rpg-coordination"),
   refresh: document.querySelector("#mm-rpg-refresh"),
-  events: document.querySelector("#mm-rpg-events"),
 };
 
 let currentTargets = [];
@@ -34,6 +35,10 @@ function worldState() {
     payload: world?.getPayload?.() ?? null,
     position: world?.getPlayerPosition?.() ?? null,
   };
+}
+
+function structuredEvents() {
+  return window.gameFrameMonsterRpgApp?.getEvents?.() ?? [];
 }
 
 function nearbyTalkTargets() {
@@ -148,7 +153,7 @@ function buildTalkPanel() {
     void submitTalk();
   });
   textarea.addEventListener("keydown", (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       form.requestSubmit();
     }
@@ -270,29 +275,61 @@ function clearTalkMode({ preserveStatus = false } = {}) {
   synchronize();
 }
 
+function talkTranscript(target) {
+  const events = structuredEvents();
+  const commandIds = new Set();
+  const entries = [];
+
+  for (const event of events) {
+    const payload = event?.payload;
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) continue;
+
+    if (
+      event.kind === "campaign.action_submitted"
+      && payload.interaction === "talk"
+      && payload.interactionTargetId === target.interactionTargetId
+      && typeof payload.commandId === "string"
+      && typeof payload.text === "string"
+      && payload.text.trim()
+    ) {
+      commandIds.add(payload.commandId);
+      entries.push({ speaker: "player", text: payload.text.trim(), commandId: payload.commandId });
+      continue;
+    }
+
+    if (
+      event.kind === "scene.presented"
+      && typeof payload.sourceCommandId === "string"
+      && commandIds.has(payload.sourceCommandId)
+      && Array.isArray(payload.dialogue)
+    ) {
+      for (const candidate of payload.dialogue) {
+        if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) continue;
+        if (candidate.speakerId !== target.semanticId || typeof candidate.text !== "string") continue;
+        const text = candidate.text.trim();
+        if (text) entries.push({ speaker: "character", text, commandId: payload.sourceCommandId });
+      }
+    }
+  }
+
+  if (pendingRequest?.text && !commandIds.has(pendingRequest.commandId)) {
+    entries.push({ speaker: "player", text: pendingRequest.text, commandId: pendingRequest.commandId });
+  }
+  return entries.slice(-MAX_VISIBLE_BUBBLES);
+}
+
 function synchronizeTalkHistory() {
   const history = panel?.querySelector("#mm-rpg-talk-history");
   if (!history || !selectedTarget) return;
-  const bubbles = [];
-  for (const item of elements.events?.children ?? []) {
-    const heading = item.querySelector(".mm-rpg-event-header strong")?.textContent?.trim();
-    if (heading !== selectedTarget.displayLabel) continue;
-    const body = item.querySelector("p")?.textContent?.trim();
-    if (!body) continue;
+  const bubbles = talkTranscript(selectedTarget).map((entry) => {
     const bubble = document.createElement("div");
     bubble.className = "mm-rpg-talk-bubble";
-    bubble.dataset.speaker = "character";
-    bubble.textContent = body;
-    bubbles.push(bubble);
-  }
-  if (pendingRequest?.text) {
-    const bubble = document.createElement("div");
-    bubble.className = "mm-rpg-talk-bubble";
-    bubble.dataset.speaker = "player";
-    bubble.textContent = pendingRequest.text;
-    bubbles.push(bubble);
-  }
-  history.replaceChildren(...bubbles.slice(-10));
+    bubble.dataset.speaker = entry.speaker;
+    bubble.dataset.commandId = entry.commandId;
+    bubble.textContent = entry.text;
+    return bubble;
+  });
+  history.replaceChildren(...bubbles);
   history.scrollTop = history.scrollHeight;
 }
 
@@ -463,6 +500,7 @@ window.addEventListener(TALK_REQUEST_EVENT, (event) => {
   if (target) selectTalkTarget(target);
 });
 window.addEventListener(VIEW_EVENT, () => queueMicrotask(synchronize));
+window.addEventListener(STATE_EVENT, () => queueMicrotask(synchronize));
 window.addEventListener("gameframe:before-home", () => {
   currentTargets = [];
   selectedTarget = null;
@@ -472,10 +510,5 @@ window.addEventListener("gameframe:before-home", () => {
   if (panel) panel.hidden = true;
 });
 window.addEventListener("resize", synchronize);
-
-const eventObserver = new MutationObserver(() => {
-  if (selectedTarget) synchronizeTalkHistory();
-});
-if (elements.events) eventObserver.observe(elements.events, { childList: true });
 
 queueMicrotask(synchronize);
