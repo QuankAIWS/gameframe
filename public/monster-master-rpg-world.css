@@ -158,6 +158,19 @@ body.monster-master-pixi-ready .mm-rpg-world-stage .monster-master-pixi-canvas {
   backdrop-filter: blur(8px);
 }
 
+.mm-rpg-world-monster-control {
+  bottom: 70px;
+  border-color: rgba(112, 196, 245, .58);
+  background: rgba(7, 22, 34, .92);
+  box-shadow:
+    0 12px 34px rgba(0, 0, 0, .42),
+    0 0 24px rgba(91, 190, 246, .14);
+}
+
+.mm-rpg-world-monster-control-chooser {
+  bottom: 122px;
+}
+
 .mm-rpg-world-interact:hover,
 .mm-rpg-world-interact:focus-visible {
   background: rgba(21, 62, 42, .95);
@@ -309,6 +322,14 @@ body.monster-master-pixi-ready .mm-rpg-world-stage .monster-master-pixi-canvas {
   .mm-rpg-world-interact-chooser {
     bottom: 226px;
     max-height: 138px;
+  }
+
+  .mm-rpg-world-monster-control {
+    bottom: 226px;
+  }
+
+  .mm-rpg-world-monster-control-chooser {
+    bottom: 282px;
   }
 
   .mm-rpg-world-interact-choice {

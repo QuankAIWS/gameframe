@@ -88,6 +88,48 @@ export function buildExplorationTalkRequest({
   };
 }
 
+export function buildExplorationMonsterControlRequest({
+  campaignId: campaignIdValue,
+  commandId,
+  expectedGameframeCoordinationRevision,
+  sceneId,
+  materializationRef,
+  expectedPositionRevision,
+  operation,
+  controlTargetId,
+}) {
+  const campaignId = normalizeCampaignId(campaignIdValue);
+  validateCommandIdAndRevision(commandId, expectedGameframeCoordinationRevision);
+  if (operation !== "deploy" && operation !== "recall") {
+    throw new TypeError("Monster control operation must be deploy or recall.");
+  }
+  if (!materializationRef || typeof materializationRef !== "object" || Array.isArray(materializationRef)) {
+    throw new TypeError("Monster control requires the current materialization reference.");
+  }
+  return {
+    type: "exploration_monster_control",
+    protocolVersion: 1,
+    campaignId,
+    sceneId: boundedIdentifier(sceneId, "sceneId"),
+    materializationRef: {
+      materializationId: boundedIdentifier(
+        materializationRef.materializationId,
+        "materializationId",
+      ),
+      version: boundedIdentifier(materializationRef.version, "materializationVersion"),
+      hash: boundedIdentifier(materializationRef.hash, "materializationHash"),
+    },
+    expectedPositionRevision: nonNegativeInteger(
+      expectedPositionRevision,
+      "expectedPositionRevision",
+    ),
+    expectedGameframeCoordinationRevision,
+    commandId,
+    operation,
+    controlTargetId: boundedIdentifier(controlTargetId, "controlTargetId"),
+  };
+}
+
 export function buildChoiceCommand({
   campaignId: campaignIdValue,
   commandId,

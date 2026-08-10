@@ -231,6 +231,60 @@ test("a newly occupied recovered tile resets and persists a usable spawn revisio
   }
 });
 
+test("reattach keeps a persisted player position when companion placement occupies the authored spawn", () => {
+  const filePath = databasePath();
+  const positions = new SqliteRpgExplorationPositionStore({ filePath });
+  const semantic = projection();
+  const monsterId = "monster:cinder-reattach-test";
+  semantic.viewer.monsters = [{
+    monsterId,
+    displayLabel: "Cinder",
+    controlTargetId: `roster:${monsterId}`,
+    rulesProfileId: "mm.monster.skirmisher.v1",
+    deploymentState: "deployed",
+    deployedSceneId: semantic.scene.sceneId,
+  }];
+  semantic.scene.entities.push({
+    entityId: monsterId,
+    entityClass: "monster",
+    displayLabel: "Cinder",
+    identityStage: "name",
+    interactionTargetId: `entity:${monsterId}`,
+    rulesProfileId: "mm.monster.skirmisher.v1",
+  });
+  const service = new RpgExplorationMovementService({ positions });
+  try {
+    const firstMaterialization = materializeRpgExplorationProjection(semantic);
+    const attached = service.attach({
+      playerId: semantic.viewer.playerId,
+      projection: semantic,
+      materialization: firstMaterialization,
+    });
+    assert.deepEqual(attached.transform, { x: 14, y: 7, facing: "west" });
+
+    const moved = service.move(
+      semantic.viewer.playerId,
+      moveRequest(semantic, attached.positionRevision, "east"),
+    );
+    assert.deepEqual(moved.transform, { x: 15, y: 7, facing: "east" });
+
+    const freshMaterialization = materializeRpgExplorationProjection(semantic);
+    const recovered = service.attach({
+      playerId: semantic.viewer.playerId,
+      projection: semantic,
+      materialization: freshMaterialization,
+    });
+    assert.deepEqual(recovered.transform, { x: 15, y: 7, facing: "east" });
+    const companion = freshMaterialization.anchors.find((anchor) =>
+      anchor.semanticId === monsterId
+    );
+    assert.ok(companion);
+    assert.deepEqual({ x: companion.x, y: companion.y }, { x: 14, y: 7 });
+  } finally {
+    positions.close();
+  }
+});
+
 test("movement rejects stale client position revisions", () => {
   const filePath = databasePath();
   const positions = new SqliteRpgExplorationPositionStore({ filePath });

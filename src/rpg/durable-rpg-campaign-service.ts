@@ -51,6 +51,20 @@ export type AuthorizedExplorationTalkCommand = ExplorationTalkRetryCommand & {
   targetDisplayLabel: string;
 };
 
+export type ExplorationMonsterControlRetryCommand = {
+  campaignId: string;
+  commandId: string;
+  expectedGameframeCoordinationRevision: number;
+  issuedAt: string;
+  operation: "deploy" | "recall";
+  controlTargetId: string;
+};
+
+export type AuthorizedExplorationMonsterControlCommand = ExplorationMonsterControlRetryCommand & {
+  targetEntityId: string;
+  targetDisplayLabel: string;
+};
+
 export class DurableRpgCampaignServiceError extends Error {
   readonly code: string;
   readonly status: number;
@@ -298,6 +312,128 @@ export class DurableRpgCampaignService {
               text,
               interaction: "talk",
               interactionTargetId,
+              targetDisplayLabel,
+            },
+          },
+        ],
+      });
+    } catch (error) {
+      throw mapCommandError(error, this.#commands.state(campaignId));
+    }
+  }
+
+  findCommittedExplorationMonsterControl(
+    inputValue: ExplorationMonsterControlRetryCommand,
+    principalValue: DurableRpgPrincipal,
+  ): DurableGameFrameCommandReceipt | undefined {
+    const principal = playerPrincipal(principalValue);
+    const input = requestRecord(inputValue, "exploration monster-control retry");
+    const campaignId = identifier(input.campaignId, "campaignId");
+    const commandId = identifier(input.commandId, "commandId");
+    const expected = nonNegativeInteger(
+      input.expectedGameframeCoordinationRevision,
+      "expectedGameframeCoordinationRevision",
+    );
+    const issuedAt = timestamp(input.issuedAt, "issuedAt");
+    const operation = input.operation === "deploy" || input.operation === "recall"
+      ? input.operation
+      : undefined;
+    if (!operation) throw invalid("operation must be deploy or recall");
+    const controlTargetId = identifier(input.controlTargetId, "controlTargetId");
+
+    let committed;
+    try {
+      committed = this.#commands.committedCommand(campaignId, commandId);
+    } catch (error) {
+      throw mapCommandError(error, this.#commands.state(campaignId));
+    }
+    if (!committed) return undefined;
+
+    const command = committed.delivery.command;
+    const presentation = committed.presentationEvents.find((event) =>
+      event.kind === "campaign.action_submitted"
+    );
+    const payload = presentation?.payload;
+    const exact = committed.delivery.authenticatedPlayerId === principal.playerId
+      && committed.delivery.sourceGameframeCoordinationRevision === expected
+      && committed.delivery.issuedAt === issuedAt
+      && command.kind === "campaign.submit_action"
+      && command.visibility === "private-to-runtime"
+      && command.interaction?.kind === "monster-control"
+      && command.interaction.operation === operation
+      && presentation?.audience.kind === "player"
+      && presentation.audience.playerId === principal.playerId
+      && payload?.actorId === principal.playerId
+      && payload?.interaction === "monster-control"
+      && payload?.operation === operation
+      && payload?.controlTargetId === controlTargetId;
+    if (!exact) {
+      throw new DurableRpgCampaignServiceError({
+        code: "command-conflict",
+        message: `Command ${campaignId}/${commandId} was reused with different monster-control content.`,
+        status: 409,
+      });
+    }
+    return committed.receipt;
+  }
+
+  handleAuthorizedExplorationMonsterControl(
+    inputValue: AuthorizedExplorationMonsterControlCommand,
+    principalValue: DurableRpgPrincipal,
+  ): DurableGameFrameCommandReceipt {
+    const principal = playerPrincipal(principalValue);
+    const input = requestRecord(inputValue, "authorized exploration monster control");
+    const campaignId = identifier(input.campaignId, "campaignId");
+    const commandId = identifier(input.commandId, "commandId");
+    const expected = nonNegativeInteger(
+      input.expectedGameframeCoordinationRevision,
+      "expectedGameframeCoordinationRevision",
+    );
+    const issuedAt = timestamp(input.issuedAt, "issuedAt");
+    const operation = input.operation === "deploy" || input.operation === "recall"
+      ? input.operation
+      : undefined;
+    if (!operation) throw invalid("operation must be deploy or recall");
+    const controlTargetId = identifier(input.controlTargetId, "controlTargetId");
+    const targetEntityId = identifier(input.targetEntityId, "targetEntityId");
+    const targetDisplayLabel = boundedText(
+      input.targetDisplayLabel,
+      "targetDisplayLabel",
+      MAX_CHOICE_LABEL_LENGTH,
+    );
+    const text = operation === "deploy"
+      ? "Deploy selected roster monster."
+      : "Recall selected roster monster.";
+
+    try {
+      return this.#commands.acceptCommand({
+        campaignId,
+        commandId,
+        authenticatedPlayerId: principal.playerId,
+        expectedGameframeCoordinationRevision: expected,
+        issuedAt,
+        command: {
+          kind: "campaign.submit_action",
+          visibility: "private-to-runtime",
+          text,
+          interaction: {
+            kind: "monster-control",
+            operation,
+            targetEntityId,
+          },
+        },
+        presentationEvents: [
+          {
+            eventId: actionEventId(campaignId, commandId),
+            kind: "campaign.action_submitted",
+            audience: { kind: "player", playerId: principal.playerId },
+            payload: {
+              commandId,
+              actorId: principal.playerId,
+              text,
+              interaction: "monster-control",
+              operation,
+              controlTargetId,
               targetDisplayLabel,
             },
           },

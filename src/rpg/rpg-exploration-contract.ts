@@ -37,6 +37,15 @@ export type RpgExplorationEntityV1 = {
   rulesProfileId?: string;
 };
 
+export type RpgExplorationOwnedMonsterV1 = {
+  monsterId: string;
+  displayLabel: string;
+  controlTargetId: string;
+  rulesProfileId: string;
+  deploymentState: "deployed" | "recalled" | "deployed-elsewhere";
+  deployedSceneId?: string;
+};
+
 export type RpgExplorationObjectV1 = {
   entityId: string;
   displayLabel: string;
@@ -78,6 +87,7 @@ export type RpgExplorationProjectionV1 = {
     playerId: string;
     playerCharacterEntityId: string;
     rulesProfileId?: string;
+    monsters: RpgExplorationOwnedMonsterV1[];
   };
   scene: {
     sceneId: string;
@@ -130,7 +140,11 @@ export function normalizeRpgExplorationProjection(
   knownKeys(ruleset, ["rulesetId", "rulesetVersion", "capabilityProfileId"], "package.ruleset");
 
   const viewer = record(root.viewer, "viewer");
-  knownKeys(viewer, ["playerId", "playerCharacterEntityId", "rulesProfileId"], "viewer");
+  knownKeys(
+    viewer,
+    ["playerId", "playerCharacterEntityId", "rulesProfileId", "monsters"],
+    "viewer",
+  );
 
   const scene = record(root.scene, "scene");
   knownKeys(
@@ -192,6 +206,11 @@ export function normalizeRpgExplorationProjection(
       ...(viewer.rulesProfileId === undefined
         ? {}
         : { rulesProfileId: identifier(viewer.rulesProfileId, "viewer.rulesProfileId") }),
+      monsters: viewer.monsters === undefined
+        ? []
+        : boundedArray(viewer.monsters, "viewer.monsters").map((entry, index) =>
+            normalizeOwnedMonster(entry, `viewer.monsters[${index}]`)
+          ),
     },
     scene: {
       sceneId: identifier(scene.sceneId, "scene.sceneId"),
@@ -229,6 +248,8 @@ export function normalizeRpgExplorationProjection(
     },
   };
 
+  unique(normalized.viewer.monsters.map((entry) => entry.monsterId), "viewer monster IDs");
+  unique(normalized.viewer.monsters.map((entry) => entry.controlTargetId), "viewer monster control target IDs");
   unique(normalized.scene.landmarks.map((entry) => entry.locationId), "scene landmark location IDs");
   unique(normalized.scene.entities.map((entry) => entry.entityId), "scene entity IDs");
   unique(normalized.scene.objects.map((entry) => entry.entityId), "scene object IDs");
@@ -237,6 +258,23 @@ export function normalizeRpgExplorationProjection(
     entry.entityId === normalized.viewer.playerCharacterEntityId && entry.identityStage === "self"
   )) {
     throw invalid("viewer player-character must appear in scene.entities as identityStage self");
+  }
+  const sceneMonsterIds = new Set(
+    normalized.scene.entities
+      .filter((entry) => entry.entityClass === "monster")
+      .map((entry) => entry.entityId),
+  );
+  for (const monster of normalized.viewer.monsters) {
+    if (monster.deploymentState === "deployed") {
+      if (monster.deployedSceneId !== normalized.scene.sceneId || !sceneMonsterIds.has(monster.monsterId)) {
+        throw invalid(`viewer monster ${monster.monsterId} is marked deployed without current-scene presence`);
+      }
+    } else if (sceneMonsterIds.has(monster.monsterId)) {
+      throw invalid(`viewer monster ${monster.monsterId} is present in the current scene but not marked deployed`);
+    }
+    if (monster.deploymentState === "deployed-elsewhere" && monster.deployedSceneId !== undefined) {
+      throw invalid(`viewer monster ${monster.monsterId} cannot disclose an off-scene semantic scene ID`);
+    }
   }
   const acceptedRef = normalized.scene.materialization.acceptedRef;
   if (acceptedRef) {
@@ -396,6 +434,48 @@ function normalizeEntity(value: unknown, label: string): RpgExplorationEntityV1 
     ...(root.rulesProfileId === undefined
       ? {}
       : { rulesProfileId: identifier(root.rulesProfileId, `${label}.rulesProfileId`) }),
+  };
+}
+
+function normalizeOwnedMonster(value: unknown, label: string): RpgExplorationOwnedMonsterV1 {
+  const root = record(value, label);
+  knownKeys(
+    root,
+    [
+      "monsterId",
+      "displayLabel",
+      "controlTargetId",
+      "rulesProfileId",
+      "deploymentState",
+      "deployedSceneId",
+    ],
+    label,
+  );
+  const monsterId = identifier(root.monsterId, `${label}.monsterId`);
+  const deploymentState = enumValue(
+    root.deploymentState,
+    ["deployed", "recalled", "deployed-elsewhere"] as const,
+    `${label}.deploymentState`,
+  );
+  const deployedSceneId = root.deployedSceneId === undefined
+    ? undefined
+    : identifier(root.deployedSceneId, `${label}.deployedSceneId`);
+  if (deploymentState === "recalled" && deployedSceneId !== undefined) {
+    throw invalid(`${label}.deployedSceneId must be absent while recalled`);
+  }
+  if (deploymentState === "deployed" && deployedSceneId === undefined) {
+    throw invalid(`${label}.deployedSceneId is required for current-scene deployment`);
+  }
+  if (deploymentState === "deployed-elsewhere" && deployedSceneId !== undefined) {
+    throw invalid(`${label}.deployedSceneId must stay opaque while deployed elsewhere`);
+  }
+  return {
+    monsterId,
+    displayLabel: text(root.displayLabel, `${label}.displayLabel`, MAX_LABEL_LENGTH),
+    controlTargetId: identifier(root.controlTargetId, `${label}.controlTargetId`),
+    rulesProfileId: identifier(root.rulesProfileId, `${label}.rulesProfileId`),
+    deploymentState,
+    ...(deployedSceneId ? { deployedSceneId } : {}),
   };
 }
 
