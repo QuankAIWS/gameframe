@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070a0d">
+  <title>Leaderboard · Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/player-platform.css">
+</head>
+<body class="gameframe-platform-page">
+  <main class="platform-shell">
+    <header class="platform-heading">
+      <small>GAMEFRAME RECORDS</small>
+      <h1>Leaderboard</h1>
+      <p>Results from completed shared board-game matches.</p>
+    </header>
+    <div id="leaderboard-error" class="platform-error" hidden></div>
+    <section class="platform-section" aria-labelledby="leaderboard-title">
+      <header class="platform-section-header leaderboard-header">
+        <div>
+          <h2 id="leaderboard-title">Standings</h2>
+          <span class="platform-count">3 points per win · 1 per draw</span>
+        </div>
+        <label class="leaderboard-filter">Game <select id="leaderboard-game" aria-label="Leaderboard game"></select></label>
+      </header>
+      <div id="leaderboard-list" class="leaderboard-list"><p class="platform-empty">Loading standings…</p></div>
+    </section>
+  </main>
+  <script type="module" src="/leaderboard-app.js"></script>
+</body>
+</html>
