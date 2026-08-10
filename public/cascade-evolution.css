@@ -1,0 +1,178 @@
+.cascade-tile.has-special {
+  position: relative;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.cascade-special-mark {
+  position: absolute;
+  z-index: 4;
+  inset: 8%;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, .9);
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 2px rgba(91, 63, 128, .15), 0 0 14px rgba(255, 255, 255, .7);
+}
+
+.cascade-tile[data-special="stripe-h"] .cascade-special-mark {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255,255,255,.76) 0 6px,
+    rgba(255,255,255,.06) 6px 14px
+  );
+}
+
+.cascade-tile[data-special="stripe-v"] .cascade-special-mark {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255,255,255,.76) 0 6px,
+    rgba(255,255,255,.06) 6px 14px
+  );
+}
+
+.cascade-tile[data-special="bomb"] .cascade-special-mark {
+  inset: 18%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255,255,255,.95) 0 8%, transparent 9%),
+    radial-gradient(circle, rgba(72,39,96,.88) 0 44%, rgba(255,255,255,.9) 46% 54%, rgba(72,39,96,.88) 56% 70%, transparent 72%);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.48), 0 0 18px rgba(110, 59, 145, .48);
+}
+
+.cascade-tile[data-special="color"] {
+  --tile-a: #5a377f;
+  --tile-b: #251936;
+  border-radius: 50%;
+}
+
+.cascade-tile[data-special="color"]::before {
+  content: "✦";
+  color: #fff;
+  text-shadow:
+    0 -10px 0 #ff5eaa,
+    10px -3px 0 #ffd34e,
+    7px 8px 0 #69d877,
+    -7px 8px 0 #44c9ee,
+    -10px -3px 0 #a56af4;
+}
+
+.cascade-tile[data-special="color"] .cascade-special-mark {
+  inset: 12%;
+  border-radius: 50%;
+  background: conic-gradient(#ff5eaa, #ffd34e, #69d877, #44c9ee, #a56af4, #ff914d, #ff5eaa);
+  opacity: .44;
+  mix-blend-mode: screen;
+}
+
+.cascade-tile.is-special-triggered {
+  z-index: 8;
+  filter: brightness(1.28) saturate(1.22);
+  box-shadow: 0 0 0 5px rgba(255,255,255,.82), 0 0 28px rgba(165,106,244,.72);
+}
+
+.cascade-blitz-overlay {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  margin-bottom: 10px;
+  padding: 10px 16px;
+  border: 3px solid rgba(255,255,255,.92);
+  border-radius: 18px;
+  background: linear-gradient(100deg, rgba(255,94,170,.96), rgba(165,106,244,.96), rgba(68,201,238,.96));
+  color: white;
+  box-shadow: 0 12px 28px rgba(94, 55, 141, .3);
+  pointer-events: none;
+}
+
+.cascade-blitz-overlay[hidden] {
+  display: none;
+}
+
+#blitz-callout {
+  font-size: clamp(1rem, 2.2vw, 1.5rem);
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-shadow: 0 2px 4px rgba(58, 28, 82, .25);
+}
+
+#blitz-clock {
+  min-width: 2.1ch;
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-weight: 1000;
+  line-height: 1;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 3px 5px rgba(58, 28, 82, .28);
+}
+
+.cascade-blitz-overlay.is-countdown {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: min(330px, calc(100% - 48px));
+  min-height: 180px;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 32px;
+  text-align: center;
+}
+
+.cascade-blitz-overlay.is-countdown #blitz-callout {
+  font-size: clamp(4rem, 16vw, 8rem);
+  line-height: .9;
+}
+
+.cascade-blitz-overlay.is-countdown #blitz-clock {
+  display: none;
+}
+
+body.cascade-blitz-mode .cascade-board {
+  box-shadow:
+    inset 0 3px 8px rgba(92, 59, 132, .14),
+    inset 0 -8px 18px rgba(112, 77, 145, .08),
+    0 0 0 5px rgba(255,255,255,.82),
+    0 18px 42px rgba(255, 94, 170, .3);
+}
+
+body.cascade-blitz-mode .cascade-map {
+  opacity: .55;
+}
+
+body.cascade-blitz-mode #booster-hammer {
+  opacity: .55;
+}
+
+#bonus-status {
+  display: block;
+  margin-top: 8px;
+  color: #8a54b2;
+  font-size: .7rem;
+  font-weight: 950;
+  letter-spacing: .04em;
+}
+
+#bonus-status[hidden] {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .cascade-blitz-overlay {
+    min-height: 52px;
+    padding: 8px 12px;
+  }
+
+  .cascade-blitz-overlay.is-countdown {
+    inset: 48% auto auto 50%;
+  }
+
+  .cascade-special-mark {
+    inset: 6%;
+    border-width: 1px;
+  }
+}
