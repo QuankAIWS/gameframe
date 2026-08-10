@@ -31,7 +31,7 @@ function databasePath(): string {
 }
 
 function projection() {
-  return normalizeRpgExplorationProjection(explorationFixture);
+  return normalizeRpgExplorationProjection(explorationFixture.projection);
 }
 
 function moveRequest(
