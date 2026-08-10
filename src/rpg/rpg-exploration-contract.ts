@@ -50,6 +50,7 @@ export type RpgExplorationObjectV1 = {
   entityId: string;
   displayLabel: string;
   interactionTargetId: string;
+  state: string;
 };
 
 export type RpgExplorationRouteV1 = {
@@ -293,8 +294,9 @@ export function normalizeRpgExplorationProjection(
 
 /**
  * Produces the shared GameFrame materialization identity for one semantic scene.
- * Viewer-specific routes, landmarks, identities, and object presence are
- * deliberately excluded so knowledge changes cannot split physical map identity.
+ * Viewer-specific routes, landmarks, identities, object state, and object
+ * presence are deliberately excluded so semantic updates cannot split physical
+ * map identity.
  */
 export function deriveRpgExplorationMaterializationRef(
   projectionValue: unknown,
@@ -481,11 +483,12 @@ function normalizeOwnedMonster(value: unknown, label: string): RpgExplorationOwn
 
 function normalizeObject(value: unknown, label: string): RpgExplorationObjectV1 {
   const root = record(value, label);
-  knownKeys(root, ["entityId", "displayLabel", "interactionTargetId"], label);
+  knownKeys(root, ["entityId", "displayLabel", "interactionTargetId", "state"], label);
   return {
     entityId: identifier(root.entityId, `${label}.entityId`),
     displayLabel: text(root.displayLabel, `${label}.displayLabel`, MAX_LABEL_LENGTH),
     interactionTargetId: identifier(root.interactionTargetId, `${label}.interactionTargetId`),
+    state: identifier(root.state, `${label}.state`),
   };
 }
 
