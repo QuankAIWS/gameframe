@@ -61,7 +61,8 @@ test("an Othello move survives browser closure and appears as the other player's
 
   await page.goto("/profile.html?player=player-mom");
   await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
-  await expect(page.locator("#profile-name")).toContainText("player-mom");
+  await expect(page.locator("#profile-name")).toHaveText("Development player");
+  await expect(page.locator("#profile-id")).toHaveText("player-mom");
   await expect(page.locator("#profile-active-count")).toHaveText("1");
   await expect(page.locator("#profile-active")).toContainText("YOUR TURN");
   await expect(page.locator("#profile-active")).toContainText("Othello");
