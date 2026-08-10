@@ -283,7 +283,12 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
           const body = await readJson(request);
           const created = await invitationsFor(env).create(url.origin, principal, body);
           const targetPlayerId = discordTargetPlayerId(body.targetDiscordUserId);
-          await indexInvitation(env, created.invitation, [principal.playerId, targetPlayerId ?? ""]);
+          await indexInvitation(
+            env,
+            created.invitation,
+            [principal.playerId, targetPlayerId ?? ""],
+            { claimToken: created.token, claimTokenPlayerId: targetPlayerId ?? null },
+          );
           return json(201, created);
         }
 
