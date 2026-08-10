@@ -7,16 +7,30 @@ const identity = await establishGameFrameIdentity({
 window.gameFrameIdentity = identity;
 await import("./gameframe-nav.js");
 
+const FAVORITE_GAMES = [
+  { id: "cascade", name: "Cascade", detail: "Match-3 puzzle", href: "/cascade.html" },
+  { id: "othello", name: "Othello", detail: "Strategy board game", href: "/othello.html" },
+  { id: "american-checkers", name: "Clockwork Checkers", detail: "Strategy board game", href: "/?game=american-checkers&menu=1" },
+  { id: "tic-tac-toe", name: "Tic-Tac-Toe", detail: "Quick board game", href: "/?game=tic-tac-toe&menu=1" },
+  { id: "monster-master-duel", name: "Monster Master Arena", detail: "Tactical battle", href: "/monster-master.html" },
+  { id: "monster-master-rpg", name: "Monster Master RPG", detail: "Role-playing campaign", href: "/gameframe-rpg.html" },
+];
+
 const errorBox = document.querySelector("#profile-error");
 const avatar = document.querySelector("#profile-avatar");
 const avatarFallback = document.querySelector("#profile-avatar-fallback");
 const name = document.querySelector("#profile-name");
 const playerId = document.querySelector("#profile-id");
 const source = document.querySelector("#profile-source");
+const favorites = document.querySelector("#profile-favorites");
+const favoritesCount = document.querySelector("#profile-favorites-count");
+const favoritesStatus = document.querySelector("#profile-favorites-status");
 const stats = document.querySelector("#profile-stats");
 const recordCount = document.querySelector("#profile-record-count");
 const activeList = document.querySelector("#profile-active");
 const activeCount = document.querySelector("#profile-active-count");
+let favoriteGameIds = [];
+let preferencePending = false;
 
 function gameName(gameId) {
   if (gameId === "othello") return "Othello";
@@ -118,12 +132,55 @@ function renderActive(matches) {
   }
 }
 
+function renderFavorites() {
+  const selected = new Set(favoriteGameIds);
+  favoritesCount.textContent = String(selected.size);
+  favorites.replaceChildren();
+  for (const game of FAVORITE_GAMES) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `profile-favorite${selected.has(game.id) ? " is-favorite" : ""}`;
+    button.dataset.favoriteGameId = game.id;
+    button.setAttribute("aria-pressed", String(selected.has(game.id)));
+    button.innerHTML = `<span class="profile-favorite-star" aria-hidden="true">${selected.has(game.id) ? "★" : "☆"}</span><span><strong>${game.name}</strong><small>${game.detail}</small></span>`;
+    button.addEventListener("click", () => void toggleFavorite(game.id));
+    favorites.append(button);
+  }
+}
+
+async function toggleFavorite(gameId) {
+  if (preferencePending) return;
+  preferencePending = true;
+  favoritesStatus.textContent = "Saving favorites…";
+  const selected = new Set(favoriteGameIds);
+  if (selected.has(gameId)) selected.delete(gameId);
+  else selected.add(gameId);
+  try {
+    const response = await gameFrameFetch("/api/me/preferences", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ favoriteGameIds: [...selected] }),
+    }, identity);
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.message || "Favorites could not be saved.");
+    favoriteGameIds = Array.isArray(body.favoriteGameIds) ? body.favoriteGameIds : [];
+    renderFavorites();
+    favoritesStatus.textContent = "Favorites saved.";
+  } catch (error) {
+    favoritesStatus.textContent = error instanceof Error ? error.message : "Favorites could not be saved.";
+  } finally {
+    preferencePending = false;
+  }
+}
+
 async function refresh() {
   try {
     const response = await gameFrameFetch("/api/me/feed", {}, identity);
     const feed = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(feed.message || "Player record could not be loaded.");
     const matches = Array.isArray(feed.matches) ? feed.matches : [];
+    favoriteGameIds = Array.isArray(feed.favoriteGameIds) ? feed.favoriteGameIds : [];
+    renderFavorites();
     renderStats(matches);
     renderActive(matches);
   } catch (error) {
