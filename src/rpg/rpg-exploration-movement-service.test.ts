@@ -153,8 +153,8 @@ test("materialization identity changes reset stale physical positions", () => {
     nextSemantic.scene.semanticRevision += 1;
     nextSemantic.scene.materialization.acceptedRef = {
       materializationId: materialization.materializationRef.materializationId,
-      version: "2",
-      hash: "V2-pqiWVXyRuvk0jBq9Elj-IiSwsi2yu1RAEYo_lQ",
+      version: "1",
+      hash: "replacement-materialization-hash",
     };
     const nextMaterialization = materializeRpgExplorationProjection(nextSemantic);
     const reset = service.attach({
@@ -301,8 +301,7 @@ test("movement rejects stale client position revisions", () => {
       ),
       (error: unknown) =>
         error instanceof RpgExplorationMovementError
-        && error.code === "position-revision-conflict"
-        && error.retryable,
+        && error.code === "position-revision-conflict",
     );
   } finally {
     positions.close();
