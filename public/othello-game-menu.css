@@ -5,6 +5,7 @@
   display: grid;
   place-items: center;
   padding: 24px;
+  overflow: auto;
   background:
     radial-gradient(circle at 50% 36%, rgba(188, 157, 94, .13), transparent 28rem),
     rgba(4, 7, 8, .86);
@@ -13,11 +14,12 @@
 .othello-game-menu[hidden] { display: none; }
 .othello-game-menu-card {
   width: min(720px, 100%);
+  max-height: calc(100dvh - var(--gameframe-destination-height, 72px) - 48px);
+  overflow: auto;
   padding: clamp(24px, 5vw, 42px);
   border: 1px solid rgba(202, 177, 121, .28);
   border-radius: 28px;
-  background:
-    linear-gradient(145deg, rgba(28, 31, 28, .97), rgba(9, 12, 12, .98));
+  background: linear-gradient(145deg, rgba(28, 31, 28, .97), rgba(9, 12, 12, .98));
   box-shadow: 0 34px 100px rgba(0, 0, 0, .58), inset 0 1px rgba(255, 255, 255, .035);
   color: #f1eee6;
 }
@@ -30,8 +32,40 @@
 }
 .othello-game-menu-card h2 { margin: 0; font-size: clamp(2rem, 5vw, 3.5rem); line-height: .95; }
 .othello-game-menu-card > p:not(.othello-menu-kicker) { max-width: 580px; color: #aaa99f; line-height: 1.6; }
-.othello-menu-actions { display: grid; gap: 10px; margin: 24px 0 18px; }
-.othello-menu-actions button {
+.othello-open-games-block {
+  display: grid;
+  gap: 9px;
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid rgba(196, 170, 111, .16);
+  border-radius: 16px;
+  background: rgba(6, 9, 9, .38);
+}
+.othello-open-games-block > strong {
+  color: #d7bd82;
+  font-size: .72rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.othello-open-games { display: grid; gap: 8px; }
+.othello-open-games p { margin: 0; color: #8f918a; font-size: .82rem; }
+.othello-open-games a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .035);
+  color: #f1eee6;
+  text-decoration: none;
+}
+.othello-open-games a strong { color: #e4c77f; font-size: .7rem; letter-spacing: .08em; }
+.othello-open-games a span { color: #a9aaa2; font-size: .8rem; }
+.othello-all-matches { color: #d9c28f; font-size: .76rem; font-weight: 800; text-decoration: none; }
+.othello-menu-actions { display: grid; gap: 10px; margin: 18px 0; }
+.othello-menu-actions button,
+.othello-player-choice {
   display: grid;
   gap: 5px;
   padding: 17px 18px;
@@ -43,27 +77,36 @@
   cursor: pointer;
 }
 .othello-menu-actions button:hover,
-.othello-menu-actions button:focus-visible {
+.othello-menu-actions button:focus-visible,
+.othello-player-choice:hover,
+.othello-player-choice:focus-visible {
   border-color: rgba(218, 187, 119, .58);
   transform: translateY(-1px);
   box-shadow: 0 14px 28px rgba(0, 0, 0, .28);
 }
-.othello-menu-actions button strong { font-size: 1rem; }
-.othello-menu-actions button small { color: #9d9e95; line-height: 1.45; }
+.othello-menu-actions button strong,
+.othello-player-choice strong { font-size: 1rem; }
+.othello-menu-actions button small,
+.othello-player-choice small { color: #9d9e95; line-height: 1.45; }
+.othello-player-picker {
+  display: grid;
+  gap: 8px;
+  padding: 10px 0 2px;
+}
+.othello-player-picker[hidden] { display: none; }
+.othello-player-picker p { margin: 0; padding: 8px 2px; color: #9d9e95; font-size: .84rem; }
+.othello-online-status { min-height: 1.2em; margin: 0 0 14px; color: #d9c28f !important; font-size: .82rem; }
 .othello-game-menu-card > a { color: #d9c28f; font-size: .78rem; font-weight: 800; text-decoration: none; }
 .othello-game-menu-card > a:hover,
 .othello-game-menu-card > a:focus-visible { text-decoration: underline; }
 .othello-menu-open .play-layout,
 .othello-menu-open .command-bar { filter: blur(4px); pointer-events: none; user-select: none; }
 
-body.gameframe-has-destination-bar .othello-app {
-  min-height: calc(100dvh - var(--gameframe-destination-height));
-}
-body.gameframe-has-destination-bar .product-header {
-  display: none;
-}
+body.gameframe-has-destination-bar .othello-app { min-height: calc(100dvh - var(--gameframe-destination-height)); }
+body.gameframe-has-destination-bar .product-header { display: none; }
 
 @media (max-width: 640px) {
   .othello-game-menu { inset: var(--gameframe-destination-height, 62px) 0 0; padding: 12px; }
-  .othello-game-menu-card { padding: 22px 18px; border-radius: 20px; }
+  .othello-game-menu-card { max-height: calc(100dvh - var(--gameframe-destination-height, 62px) - 24px); padding: 22px 18px; border-radius: 20px; }
+  .othello-open-games a { align-items: flex-start; flex-direction: column; }
 }
