@@ -19,6 +19,11 @@ import {
   type DurableRpgPrincipal,
 } from "../rpg/durable-rpg-campaign-service.ts";
 import {
+  normalizeActorInspectRequest,
+  RpgExplorationActorActionError,
+  RpgExplorationActorActionService,
+} from "../rpg/rpg-exploration-actor-action-service.ts";
+import {
   authorizeRpgExplorationInteraction,
   normalizeRpgExplorationInteractionRequest,
   RpgExplorationInteractionError,
@@ -44,9 +49,7 @@ import {
   RuntimeExplorationTransportError,
   type RuntimeExplorationHttpTransport,
 } from "../rpg/runtime-exploration-transport.ts";
-import {
-  SqliteRpgCampaignIndex,
-} from "../rpg/sqlite-rpg-campaign-index.ts";
+import { SqliteRpgCampaignIndex } from "../rpg/sqlite-rpg-campaign-index.ts";
 import {
   SqliteRpgEncounterMatchCoordinator,
 } from "../rpg/sqlite-rpg-encounter-match-coordinator.ts";
@@ -55,6 +58,9 @@ import {
   SqliteRpgEncounterError,
   SqliteRpgEncounterStore,
 } from "../rpg/sqlite-rpg-encounter-store.ts";
+import {
+  SqliteRpgExplorationActorPositionStore,
+} from "../rpg/sqlite-rpg-exploration-actor-position-store.ts";
 import {
   SqliteRpgExplorationPositionStore,
 } from "../rpg/sqlite-rpg-exploration-position-store.ts";
@@ -66,6 +72,7 @@ import {
 const MAX_REQUEST_BODY_BYTES = 131_072;
 const STAGING_ADMIN_RESET_PATH = "/api/rpg/admin/reset-staging";
 const STAGING_ADMIN_RESET_CONFIRMATION = "RESET MONSTER MASTER STAGING";
+const RPG_RUNTIME_SERVICE_ID = "rpg-gm-runtime";
 
 type ApiError = Error & {
   code?: string;
@@ -125,6 +132,12 @@ export function createDurableRpgHttpServer(
     positions: explorationPositions,
     clock,
   });
+  const explorationActorPositions = new SqliteRpgExplorationActorPositionStore({
+    filePath: options.filePath,
+  });
+  const explorationActorActions = new RpgExplorationActorActionService({
+    positions: explorationActorPositions,
+  });
   for (const bootstrap of options.bootstrapCampaigns ?? []) {
     campaigns.bootstrapCampaign(bootstrap);
   }
@@ -172,6 +185,7 @@ export function createDurableRpgHttpServer(
                   "rpg-exploration-talk",
                   "rpg-exploration-travel",
                   "rpg-exploration-monster-control",
+                  "rpg-exploration-actor-inspect",
                 ]
               : []),
           ],
@@ -246,8 +260,56 @@ export function createDurableRpgHttpServer(
         }
         const bodyBytes = await readRequestBody(request);
         const principal = await authenticate(authenticator, request, url, bodyBytes);
-        requirePlayerPrincipal(principal);
         const body = parseJsonBody(bodyBytes);
+
+        if (explorationRoute.operation === "actor-inspect") {
+          requireRuntimeServicePrincipal(principal);
+          const normalized = normalizeActorInspectRequest(body);
+          requireBodyIdentity(normalized.campaignId, explorationRoute.campaignId, "campaignId");
+          if (!options.explorationTransport) {
+            return sendJson(response, 503, {
+              error: "runtime-exploration-unavailable",
+              message: "Runtime exploration projection is not configured.",
+              retryable: true,
+            });
+          }
+          const projection = await options.explorationTransport.attach({
+            campaignId: explorationRoute.campaignId,
+            authenticatedPlayerId: normalized.authenticatedPlayerId,
+          });
+          if (projection.scene.sceneId !== normalized.sceneId) {
+            throw new RpgExplorationActorActionError(
+              "scene-conflict",
+              `Runtime requested scene ${normalized.sceneId}, but the player is in ${projection.scene.sceneId}.`,
+            );
+          }
+          const materialization = materializeRpgExplorationProjection(projection);
+          explorationActorActions.applyPersistedTransforms(materialization);
+          const playerPosition = explorationMovement.attach({
+            playerId: normalized.authenticatedPlayerId,
+            projection,
+            materialization,
+          });
+          explorationActorActions.applyPlayerPosition(
+            materialization,
+            projection.viewer.playerCharacterEntityId,
+            playerPosition.transform,
+          );
+          const receipt = explorationActorActions.inspect(normalized, materialization);
+
+          // Rebuild the player's movement session after the NPC move so its
+          // collision set stops blocking the actor's old square and starts
+          // blocking the new durable square immediately.
+          explorationActorActions.applyPersistedTransforms(materialization);
+          explorationMovement.attach({
+            playerId: normalized.authenticatedPlayerId,
+            projection,
+            materialization,
+          });
+          return sendJson(response, 200, receipt);
+        }
+
+        requirePlayerPrincipal(principal);
 
         if (explorationRoute.operation === "move") {
           const normalized = normalizeMoveRequest(body);
@@ -290,6 +352,7 @@ export function createDurableRpgHttpServer(
             authenticatedPlayerId: principal.playerId,
           });
           const materialization = materializeRpgExplorationProjection(projection);
+          explorationActorActions.applyPersistedTransforms(materialization);
           const playerPosition = explorationMovement.attach({
             playerId: principal.playerId,
             projection,
@@ -368,6 +431,7 @@ export function createDurableRpgHttpServer(
             authenticatedPlayerId: principal.playerId,
           });
           const materialization = materializeRpgExplorationProjection(projection);
+          explorationActorActions.applyPersistedTransforms(materialization);
           const playerPosition = explorationMovement.attach({
             playerId: principal.playerId,
             projection,
@@ -425,6 +489,7 @@ export function createDurableRpgHttpServer(
           authenticatedPlayerId: principal.playerId,
         });
         const materialization = materializeRpgExplorationProjection(projection);
+        explorationActorActions.applyPersistedTransforms(materialization);
         const playerPosition = explorationMovement.attach({
           playerId: principal.playerId,
           projection,
@@ -560,6 +625,7 @@ export function createDurableRpgHttpServer(
     if (closed) return;
     closed = true;
     realtime.terminateAll();
+    explorationActorPositions.close();
     explorationPositions.close();
     encounterMatches.close();
     encounters.close();
@@ -571,12 +637,15 @@ export function createDurableRpgHttpServer(
 
 function matchExplorationRoute(
   pathname: string,
-): { campaignId: string; operation: "attach" | "move" | "interact" | "control" } | undefined {
-  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/exploration\/(attach|move|interact|control)$/.exec(pathname);
+): {
+  campaignId: string;
+  operation: "attach" | "move" | "interact" | "control" | "actor-inspect";
+} | undefined {
+  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/exploration\/(attach|move|interact|control|actor-inspect)$/.exec(pathname);
   if (!match) return undefined;
   return {
     campaignId: decodeURIComponent(match[1]!),
-    operation: match[2] as "attach" | "move" | "interact" | "control",
+    operation: match[2] as "attach" | "move" | "interact" | "control" | "actor-inspect",
   };
 }
 
@@ -661,6 +730,15 @@ async function authenticate(
       ...(body.byteLength > 0 ? { body } : {}),
     }),
   );
+}
+
+function requireRuntimeServicePrincipal(principal: AuthenticatedPrincipal): void {
+  if (principal.source !== "service" || principal.playerId !== RPG_RUNTIME_SERVICE_ID) {
+    throw new AuthenticationError(
+      "forbidden",
+      "Physical actor actions require the authenticated RPG GM Runtime service.",
+    );
+  }
 }
 
 function toRpgPrincipal(principal: AuthenticatedPrincipal): DurableRpgPrincipal {
@@ -770,6 +848,14 @@ function normalizeError(error: unknown): {
     );
   }
   if (error instanceof RpgExplorationMonsterControlError) {
+    return failure(
+      error.code === "invalid-input" ? 400 : 409,
+      error.code,
+      error.message,
+      false,
+    );
+  }
+  if (error instanceof RpgExplorationActorActionError) {
     return failure(
       error.code === "invalid-input" ? 400 : 409,
       error.code,
