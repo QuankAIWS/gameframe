@@ -1,5 +1,6 @@
 const board = document.querySelector("#board");
 const wrap = document.querySelector(".cascade-board-wrap");
+const levelNumber = document.querySelector("#level-number");
 
 if (board && wrap) {
   const coatingLayer = document.createElement("div");
@@ -10,6 +11,7 @@ if (board && wrap) {
   let previousIce = new Map();
   let initialized = false;
   let syncQueued = false;
+  let previousLevel = levelNumber?.textContent?.trim() || "";
 
   function iceSnapshot() {
     const next = new Map();
@@ -54,6 +56,13 @@ if (board && wrap) {
 
   function syncCoatings() {
     syncQueued = false;
+    const currentLevel = levelNumber?.textContent?.trim() || "";
+    if (currentLevel !== previousLevel) {
+      previousLevel = currentLevel;
+      previousIce = new Map();
+      initialized = false;
+    }
+
     const nextIce = iceSnapshot();
     const fragment = document.createDocumentFragment();
 
@@ -93,6 +102,14 @@ if (board && wrap) {
     attributes: true,
     attributeFilter: ["data-ice"],
   });
+
+  if (levelNumber) {
+    new MutationObserver(scheduleSync).observe(levelNumber, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+    });
+  }
 
   if (window.ResizeObserver) {
     new ResizeObserver(syncGeometry).observe(board);
