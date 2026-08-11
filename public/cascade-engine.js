@@ -65,7 +65,7 @@ function tunedIceCount(value, factor, pattern, { layers = 1, precision = false }
   if (pattern === "edges") count -= precision ? 3 : layers === 1 ? 2 : 1;
   if (layers > 1 && pattern === "diagonal") {
     count -= 2;
-    if (factor >= 1.1) count -= 1;
+    if (factor >= 1.1) count -= 2;
   }
   return Math.max(2, count);
 }
