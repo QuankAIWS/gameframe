@@ -106,6 +106,7 @@ jobs:
           && node --experimental-strip-types --check src/rpg/rpg-exploration-movement-service.ts
           && node --experimental-strip-types --check src/rpg/rpg-exploration-interaction-service.ts
           && node --experimental-strip-types --check src/rpg/sqlite-rpg-exploration-position-store.ts
+          && node --experimental-strip-types --check src/rpg/sqlite-rpg-command-acceptance.ts
           && node --experimental-strip-types --check src/rpg/runtime-exploration-transport.ts
           && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
           && node --experimental-strip-types --check src/rpg/monster-master-rpg-encounter-materializer.ts
@@ -145,6 +146,8 @@ jobs:
           src/rpg/runtime-command-delivery-worker.test.ts
           src/rpg/sqlite-rpg-campaign-store.test.ts
           src/rpg/sqlite-rpg-command-acceptance.test.ts
+          src/rpg/sqlite-rpg-command-acceptance-travel.test.ts
+          src/rpg/durable-rpg-travel.test.ts
           src/rpg/sqlite-rpg-runtime-linkage.test.ts
           src/rpg/sqlite-rpg-encounter-store.test.ts
           src/rpg/durable-rpg-campaign-service.test.ts
