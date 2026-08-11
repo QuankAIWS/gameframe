@@ -90,11 +90,15 @@ export class RpgExplorationInteractionError extends Error {
 
 /**
  * Converts a viewer-safe physical handle into one bounded semantic interaction
- * only after GameFrame proves the current scene/materialization/position. The
- * browser never supplies a Runtime entity ID, destination scene, or destination
- * location. Normal actor speech may address any actor physically present in the
- * current materialized scene; physical object actions and route traversal remain
- * adjacency-gated. A future acoustics/line-of-sight contract may narrow speech.
+ * only after GameFrame proves the target belongs to the current materialized
+ * scene. The browser never supplies a Runtime entity ID, destination scene, or
+ * destination location.
+ *
+ * Normal actor speech is scene-wide for the current bounded-map slice, so exact
+ * player x/y is deliberately not an authority input and cannot make Talk stale.
+ * Physical object actions and route traversal still require both the current
+ * position revision and Manhattan-distance-1 adjacency. A future acoustics /
+ * line-of-sight contract may make speech depend on physical state again.
  */
 export function authorizeRpgExplorationInteraction(input: {
   request: unknown;
@@ -114,12 +118,6 @@ export function authorizeRpgExplorationInteraction(input: {
     throw new RpgExplorationInteractionError(
       "stale-materialization",
       "Exploration interaction refers to a stale physical materialization.",
-    );
-  }
-  if (request.expectedPositionRevision !== position.positionRevision) {
-    throw new RpgExplorationInteractionError(
-      "position-revision-conflict",
-      `Expected exploration position revision ${request.expectedPositionRevision}, but current revision is ${position.positionRevision}.`,
     );
   }
 
@@ -145,6 +143,7 @@ export function authorizeRpgExplorationInteraction(input: {
   };
 
   if (request.interaction === "travel") {
+    requireCurrentPosition(request.expectedPositionRevision, position.positionRevision);
     if (distance !== 1) {
       throw new RpgExplorationInteractionError(
         "interaction-out-of-range",
@@ -175,19 +174,30 @@ export function authorizeRpgExplorationInteraction(input: {
     && typeof target.semanticId === "string"
     && target.semanticId !== position.playerEntityId
   );
+  if (talkActor) {
+    return {
+      ...common,
+      interaction: "talk",
+      targetEntityId: target.semanticId,
+      targetDisplayLabel: target.label,
+      text: request.text,
+    };
+  }
+
   const checkpointCartUncover = Boolean(
     target.kind === "object"
     && target.semanticId === CHECKPOINT_CART_ENTITY_ID
     && target.objectState === "covered"
     && request.text === CHECKPOINT_CART_UNCOVER_ACTION
   );
-  if (!talkActor && !checkpointCartUncover) {
+  if (!checkpointCartUncover) {
     throw new RpgExplorationInteractionError(
       "interaction-target-unavailable",
       "The selected Talk target is not available in the current viewer-safe scene.",
     );
   }
-  if (checkpointCartUncover && distance !== 1) {
+  requireCurrentPosition(request.expectedPositionRevision, position.positionRevision);
+  if (distance !== 1) {
     throw new RpgExplorationInteractionError(
       "interaction-out-of-range",
       "Move next to the interaction target first.",
@@ -282,6 +292,14 @@ export function normalizeRpgExplorationTalkRequest(
   const request = normalizeRpgExplorationInteractionRequest(value);
   if (request.interaction !== "talk") throw invalid("Expected a Talk exploration interaction.");
   return request;
+}
+
+function requireCurrentPosition(expected: number, actual: number): void {
+  if (expected === actual) return;
+  throw new RpgExplorationInteractionError(
+    "position-revision-conflict",
+    `Expected exploration position revision ${expected}, but current revision is ${actual}.`,
+  );
 }
 
 function normalizeMaterializationRef(value: unknown) {
