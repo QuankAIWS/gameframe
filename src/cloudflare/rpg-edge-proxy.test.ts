@@ -129,6 +129,39 @@ test("edge proxy strips hostile headers and forwards a verifiable exact-body cla
   assert.deepEqual(verified, principal);
 });
 
+test("campaign index GET is HMAC-proxied with the authenticated player and an empty body", async () => {
+  let forwarded: Request | undefined;
+  const response = await proxyPublicRpgRequest(
+    new Request("https://game.example.test/api/rpg/campaigns"),
+    environment(),
+    principal,
+    {
+      now: () => issuedAt,
+      randomBytes: () => new Uint8Array(24).fill(9),
+      fetcher: async (input, init) => {
+        forwarded = new Request(input, init);
+        return new Response(JSON.stringify([{ campaignId: "campaign:edge" }]), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      },
+    },
+  );
+  assert.equal(response.status, 200);
+  assert(forwarded);
+  assert.equal(forwarded.method, "GET");
+  assert.equal(forwarded.url, "https://rpg-origin.example.test/api/rpg/campaigns");
+  assert.equal(await forwarded.clone().text(), "");
+  assert.equal(forwarded.headers.get("content-type"), null);
+
+  const verified = await new HmacProxyRequestAuthenticator({
+    proxySecret,
+    serviceToken,
+    now: () => issuedAt,
+  }).authenticate(forwarded.clone());
+  assert.deepEqual(verified, principal);
+});
+
 test("edge proxy rejects cross-origin and non-Discord mutation attempts before origin fetch", async () => {
   let fetchCount = 0;
   const dependencies = {
@@ -164,7 +197,8 @@ test("edge proxy rejects cross-origin and non-Discord mutation attempts before o
   assert.equal(fetchCount, 0);
 });
 
-test("public route grammar exposes campaign and supported exploration mutations", () => {
+test("public route grammar exposes campaign index and supported exploration mutations", () => {
+  assert.deepEqual(publicRpgEdgeRoute("/api/rpg/campaigns"), { operation: "collection" });
   assert.deepEqual(publicRpgEdgeRoute("/api/rpg/campaigns/campaign%3Aedge/attach"), {
     campaignId: "campaign:edge",
     operation: "attach",
@@ -195,7 +229,7 @@ test("public route grammar exposes campaign and supported exploration mutations"
   assert.equal(publicRpgEdgeRoute("/api/rpg/encounters/encounter/complete"), null);
 });
 
-test("worker wrapper authenticates exploration attach, move, and control while blocking private runtime routes", async () => {
+test("worker wrapper authenticates campaign index and exploration routes while blocking private runtime routes", async () => {
   let authenticated = 0;
   const forwardedPaths: string[] = [];
   const authenticator: RequestAuthenticator = {
@@ -219,6 +253,12 @@ test("worker wrapper authenticates exploration attach, move, and control while b
     },
   });
   const env = environment();
+
+  const collection = await worker.fetch(new Request(
+    "https://game.example.test/api/rpg/campaigns",
+  ), env);
+  assert.equal(collection.status, 200);
+
   const allowed = await worker.fetch(new Request(
     "https://game.example.test/api/rpg/campaigns/campaign/attach",
     {
@@ -290,8 +330,9 @@ test("worker wrapper authenticates exploration attach, move, and control while b
     },
   ), env);
   assert.equal(control.status, 200);
-  assert.equal(authenticated, 4);
+  assert.equal(authenticated, 5);
   assert.deepEqual(forwardedPaths, [
+    "/api/rpg/campaigns",
     "/api/rpg/campaigns/campaign/attach",
     "/api/rpg/campaigns/campaign/exploration/attach",
     "/api/rpg/campaigns/campaign/exploration/move",
@@ -303,8 +344,8 @@ test("worker wrapper authenticates exploration attach, move, and control while b
     { method: "POST" },
   ), env);
   assert.equal(privateRoute.status, 404);
-  assert.equal(authenticated, 4);
-  assert.equal(forwardedPaths.length, 4);
+  assert.equal(authenticated, 5);
+  assert.equal(forwardedPaths.length, 5);
 
   const health = await worker.fetch(new Request(
     "https://game.example.test/api/rpg/edge/health",
