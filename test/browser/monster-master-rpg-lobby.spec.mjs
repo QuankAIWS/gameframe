@@ -124,7 +124,12 @@ test("campaign lobby loads durable My Campaigns memberships across browser histo
 test("deep links present an intentional resume state while the campaign attaches", async ({ page }) => {
   const campaignId = "campaign-deep-link";
   let releaseAttach;
+  let markAttachRequested;
+  const attachRequested = new Promise((resolve) => {
+    markAttachRequested = resolve;
+  });
   await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, async (route) => {
+    markAttachRequested();
     await new Promise((resolve) => {
       releaseAttach = resolve;
     });
@@ -138,6 +143,7 @@ test("deep links present an intentional resume state while the campaign attaches
   await expect(page.getByRole("heading", { name: "Resuming campaign…" })).toBeVisible();
   await expect(page.locator("#mm-rpg-campaign-lobby")).toBeHidden();
   await expect(page.locator("#mm-rpg-join-form")).toBeHidden();
+  await attachRequested;
   releaseAttach();
   await navigation;
   await expect(page.locator("#mm-rpg-campaign")).toBeVisible();

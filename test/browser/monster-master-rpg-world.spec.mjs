@@ -58,7 +58,7 @@ function positionMessage(position, { moved = false, blockedBy } = {}) {
   };
 }
 
-function materializedExploration(position) {
+function materializedExploration(position, { cartState = "covered" } = {}) {
   return {
     protocolVersion: 1,
     kind: "campaign.exploration_materialized",
@@ -107,7 +107,12 @@ function materializedExploration(position) {
         },
         landmarks: [],
         entities: [],
-        objects: [],
+        objects: [{
+          entityId: "object.checkpoint-cart",
+          displayLabel: "covered confiscation cart",
+          state: cartState,
+          interactionTargetId: "entity:object.checkpoint-cart",
+        }],
         routes: [],
       },
     },
@@ -150,6 +155,7 @@ function materializedExploration(position) {
           semanticId: "object.checkpoint-cart",
           interactionTargetId: "entity:object.checkpoint-cart",
           label: "covered confiscation cart",
+          objectState: cartState,
           x: 10,
           y: 8,
         },
@@ -199,29 +205,17 @@ test("Monster Master RPG uses click for the Master and WASD for the camera", asy
   const position = { x: 9, y: 6, facing: "west", positionRevision: 4 };
 
   await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(campaignProjection()),
-    });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(campaignProjection()) });
   });
   await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/attach`, async (route) => {
     explorationAttachCount += 1;
     explorationRequest = route.request().postDataJSON();
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(materializedExploration(position)),
-    });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(materializedExploration(position)) });
   });
   await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/move`, async (route) => {
     const request = route.request().postDataJSON();
     movementRequests.push(request);
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(moveResult(position, request)),
-    });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(moveResult(position, request)) });
   });
 
   await page.goto(`/monster-master-rpg.html?player=${playerId}&campaign=${campaignId}`);
@@ -236,11 +230,7 @@ test("Monster Master RPG uses click for the Master and WASD for the camera", asy
   await expect(page.locator('[data-semantic-id="route.crooked-checkpoint-west-woods"]')).toContainText("West Woods Route");
   await expect(page.locator("#mm-rpg-world-materialization")).toContainText(materializationId);
 
-  expect(explorationRequest).toEqual({
-    protocolVersion: 1,
-    kind: "campaign.exploration.attach",
-    campaignId,
-  });
+  expect(explorationRequest).toEqual({ protocolVersion: 1, kind: "campaign.exploration.attach", campaignId });
   expect(explorationRequest.authenticatedPlayerId).toBeUndefined();
 
   const stats = await page.evaluate(() => window.gameFrameMonsterPixi?.getTerrainStats?.());
@@ -259,13 +249,8 @@ test("Monster Master RPG uses click for the Master and WASD for the camera", asy
   await page.keyboard.press("KeyA");
   await page.waitForTimeout(150);
   expect(movementRequests).toHaveLength(1);
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi?.getCamera?.()))
-    .not.toEqual(cameraBeforeWasd);
-  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({
-    x: 10,
-    y: 6,
-    facing: "east",
-  });
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi?.getCamera?.())).not.toEqual(cameraBeforeWasd);
+  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({ x: 10, y: 6, facing: "east" });
 
   await page.keyboard.press("KeyE");
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi?.getCamera?.()?.quarter)).toBe(1);
@@ -277,13 +262,71 @@ test("Monster Master RPG uses click for the Master and WASD for the camera", asy
   await page.locator("#mm-rpg-refresh").click();
   await expect.poll(() => explorationAttachCount).toBe(2);
   await expect(page.locator("#mm-rpg-world-materialization")).toContainText(materializationId);
-  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().positionRevision))
-    .toBe(revisionBeforeRefresh);
-  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({
-    x: 10,
-    y: 6,
-    facing: "east",
+  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().positionRevision)).toBe(revisionBeforeRefresh);
+  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({ x: 10, y: 6, facing: "east" });
+});
+
+test("clicking the covered cart walks adjacent and exposes Uncover cart in Nearby Actions", async ({ page }) => {
+  const movementRequests = [];
+  let interactionRequest = null;
+  let cartState = "covered";
+  const position = { x: 14, y: 7, facing: "west", positionRevision: 1 };
+
+  await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(campaignProjection()) });
   });
+  await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/attach`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(materializedExploration(position, { cartState })),
+    });
+  });
+  await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/move`, async (route) => {
+    const request = route.request().postDataJSON();
+    movementRequests.push(request);
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(moveResult(position, request)) });
+  });
+  await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/interact`, async (route) => {
+    interactionRequest = route.request().postDataJSON();
+    cartState = "uncovered";
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        protocolVersion: 1,
+        kind: "campaign.exploration_interaction_committed",
+        interaction: "talk",
+        interactionTargetId: "entity:object.checkpoint-cart",
+        command: { commandId: interactionRequest.commandId },
+        replayed: false,
+      }),
+    });
+  });
+
+  await page.goto(`/monster-master-rpg.html?player=${playerId}&campaign=${campaignId}`);
+  await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
+  await expect(page.locator(".mm-rpg-dock-nearby")).toBeHidden();
+
+  const cart = await page.evaluate(() => window.gameFrameMonsterPixi?.worldToScreen?.({ x: 10, y: 8 }));
+  expect(cart).toBeTruthy();
+  await page.locator("#monster-master-pixi-canvas").click({ position: { x: cart.x, y: cart.y } });
+
+  await expect.poll(() => Math.abs(position.x - 10) + Math.abs(position.y - 8)).toBe(1);
+  expect(movementRequests.length).toBeGreaterThan(0);
+  const nearby = page.locator(".mm-rpg-dock-nearby");
+  await expect(nearby).toBeVisible();
+  await expect(nearby).toContainText("NEARBY ACTIONS");
+  const uncover = page.getByRole("button", { name: "Uncover cart" });
+  await expect(uncover).toBeVisible();
+  await expect(uncover.locator("xpath=..")).toHaveClass(/mm-rpg-dock-nearby-actions/);
+
+  await uncover.click();
+  await expect.poll(() => interactionRequest).not.toBeNull();
+  expect(interactionRequest.interactionTargetId).toBe("entity:object.checkpoint-cart");
+  expect(interactionRequest.text).toBe("Uncover the checkpoint cart.");
+  expect(interactionRequest.authenticatedPlayerId).toBeUndefined();
+  await expect(uncover).toBeHidden();
 });
 
 test("Monster Master RPG touch controls use the same HTTP movement authority", async ({ page }) => {
@@ -292,41 +335,22 @@ test("Monster Master RPG touch controls use the same HTTP movement authority", a
   const position = { x: 9, y: 6, facing: "west", positionRevision: 4 };
 
   await page.route(`**/api/rpg/campaigns/${campaignId}/attach`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(campaignProjection()),
-    });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(campaignProjection()) });
   });
   await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/attach`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(materializedExploration(position)),
-    });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(materializedExploration(position)) });
   });
   await page.route(`**/api/rpg/campaigns/${campaignId}/exploration/move`, async (route) => {
     const request = route.request().postDataJSON();
     movementRequests.push(request);
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(moveResult(position, request)),
-    });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(moveResult(position, request)) });
   });
 
   await page.goto(`/monster-master-rpg.html?player=${playerId}&campaign=${campaignId}`);
   await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
   await expect(page.locator("#mm-rpg-touch-controls")).toBeVisible();
 
-  for (const label of [
-    "Move up",
-    "Move left",
-    "Move right",
-    "Move down",
-    "Rotate view left",
-    "Rotate view right",
-  ]) {
+  for (const label of ["Move up", "Move left", "Move right", "Move down", "Rotate view left", "Rotate view right"]) {
     await expect(page.getByRole("button", { name: label })).toBeVisible();
   }
 
@@ -347,9 +371,5 @@ test("Monster Master RPG touch controls use the same HTTP movement authority", a
   expect(movementRequests[1].direction).toBe("west");
   await expect(page.locator("#mm-rpg-world-status")).toContainText("Exploring · 9,6");
 
-  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({
-    x: 9,
-    y: 6,
-    facing: "west",
-  });
+  expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({ x: 9, y: 6, facing: "west" });
 });

@@ -99,12 +99,22 @@ function ensureDock() {
   const worldHeading = document.createElement("div");
   worldHeading.className = "mm-rpg-dock-section-heading";
   worldHeading.innerHTML = "<small>SCENE & WORLD CHAT</small><strong>What is happening here</strong>";
+
+  const nearby = document.createElement("section");
+  nearby.className = "mm-rpg-dock-nearby";
+  nearby.hidden = true;
+  nearby.innerHTML = '<small>NEARBY ACTIONS</small>';
+  const nearbyActions = document.createElement("div");
+  nearbyActions.className = "mm-rpg-dock-nearby-actions";
+  nearbyActions.dataset.mmRpgNearbyActions = "";
+  nearby.append(nearbyActions);
+
   const feed = document.createElement("div");
   feed.className = "mm-rpg-dock-world-feed";
   const empty = document.querySelector("#mm-rpg-empty");
   if (empty) feed.append(empty);
   feed.append(events);
-  worldPane.append(worldHeading, feed, actionForm);
+  worldPane.append(worldHeading, nearby, feed, actionForm);
 
   const talkEmpty = document.createElement("div");
   talkEmpty.className = "mm-rpg-dock-empty";
@@ -137,8 +147,6 @@ function ensureDock() {
   dock.append(header, tabbar, body);
   campaign.append(dock);
 
-  // The old Chronicle panel remains a compatibility projection. Its underlying
-  // #mm-rpg-events list now lives directly in World, so keep the clone hidden.
   chroniclePanel.hidden = true;
   document.querySelector(".mm-rpg-play-hud")?.classList.add("mm-rpg-legacy-hud-hidden");
 
@@ -161,6 +169,19 @@ function ensureAdminProxy() {
   actions.append(proxy);
 }
 
+function adoptNearbyWorldActions() {
+  const stage = document.querySelector("#mm-rpg-world .mm-rpg-world-stage");
+  const host = dock?.querySelector("[data-mm-rpg-nearby-actions]");
+  const nearby = host?.closest(".mm-rpg-dock-nearby");
+  if (!stage || !host || !nearby) return;
+
+  for (const control of stage.querySelectorAll(".mm-rpg-world-interact")) {
+    host.append(control);
+  }
+  const controls = [...host.querySelectorAll(".mm-rpg-world-interact")];
+  nearby.hidden = !controls.some((control) => !control.hidden);
+}
+
 function adoptDynamicSurfaces() {
   if (!dock) return;
   const talkPane = panes.get("talk");
@@ -173,15 +194,18 @@ function adoptDynamicSurfaces() {
     if (talkPanel.dataset.mmRpgDockObserved !== "true") {
       talkPanel.dataset.mmRpgDockObserved = "true";
       new MutationObserver(() => {
-        if (!talkPanel.hidden) activate("talk");
+        if (!talkPanel.hidden) {
+          activate("talk");
+        } else if (activeTab === "talk") {
+          activate("world");
+        }
       }).observe(talkPanel, { attributes: true, attributeFilter: ["hidden"] });
     }
     if (!talkPanel.hidden) activate("talk");
   }
 
-  // Campaign lobby deliberately owns the real Campaigns/Admin controls and
-  // continuously keeps them in the legacy toolbar. Move that host itself into
-  // the unified header instead of fighting the lobby's observer over children.
+  adoptNearbyWorldActions();
+
   const header = dock.querySelector(".mm-rpg-dock-header");
   const toolbar = document.querySelector(".mm-rpg-play-toolbar");
   if (header && toolbar && toolbar.parentElement !== header) {
