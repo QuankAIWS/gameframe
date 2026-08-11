@@ -204,7 +204,7 @@ test("checkpoint cart uncover resolves only after GameFrame proves current cover
   }
 });
 
-test("Talk rejects stale position and browser-supplied semantic target fields", () => {
+test("actor Talk ignores irrelevant position revision drift while physical object actions remain strict", () => {
   const semantic = projection();
   const materialization = materializeRpgExplorationProjection(semantic);
   const positions = new SqliteRpgExplorationPositionStore({ filePath: databasePath() });
@@ -215,9 +215,25 @@ test("Talk rejects stale position and browser-supplied semantic target fields", 
       projection: semantic,
       materialization,
     });
-    const stale = talkRequest(semantic, position.positionRevision + 1);
+
+    const actorTalk = authorizeRpgExplorationTalk({
+      request: talkRequest(semantic, position.positionRevision + 9),
+      materialization,
+      position,
+    });
+    assert.equal(actorTalk.targetEntityId, "npc.warden-pell");
+
     assert.throws(
-      () => authorizeRpgExplorationTalk({ request: stale, materialization, position }),
+      () => authorizeRpgExplorationTalk({
+        request: talkRequest(
+          semantic,
+          position.positionRevision + 1,
+          CART_TARGET,
+          CART_ACTION,
+        ),
+        materialization,
+        position,
+      }),
       (error: unknown) => error instanceof RpgExplorationInteractionError
         && error.code === "position-revision-conflict",
     );
