@@ -69,12 +69,14 @@ function queueSafeReload() {
 }
 
 function setBoardBlocked(blocked) {
+  const bonus = bonusBoardActive();
   document.body.classList.toggle("cascade-no-lives", blocked);
   if (lifeLock) lifeLock.hidden = !blocked;
   board?.querySelectorAll("button").forEach((tile) => {
     tile.disabled = blocked;
   });
-  if (hammerButton) hammerButton.disabled = blocked;
+  if (hammerButton && blocked) hammerButton.disabled = true;
+  else if (hammerButton && !bonus) hammerButton.disabled = false;
 }
 
 function tick() {
