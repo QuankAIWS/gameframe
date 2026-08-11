@@ -32,6 +32,7 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   await expect(page.locator("#cascade-sound-toggle")).toBeVisible();
   await expect(page.locator("#level-stars")).toBeVisible();
   await expect(page.locator("#cascade-weekly-card")).toBeVisible();
+  await expect(page.locator("#level-map > li")).toHaveCount(30);
   await expect(page.locator('link[href="/cascade-polish.css"]')).toHaveCount(1);
   await expect(page.locator('link[href="/cascade-evolution.css"]')).toHaveCount(1);
   await expect(page.locator('link[href="/cascade-bonus-modes.css"]')).toHaveCount(1);
@@ -141,13 +142,26 @@ test("Cascade Crush Quick Recall reads as a distinct but related bonus mode", as
   await page.screenshot({ path: `${output}/cascade-crush-quick-recall-desktop.png`, fullPage: true });
 });
 
-test("Cascade Crush layered objective styling remains obvious in the polished theme", async ({ page }) => {
-  await prepare(page, 81);
+test("Cascade Crush layered objective styling remains obvious in veteran chapters", async ({ page }) => {
+  await prepare(page, 181);
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
 
-  await expect(page.locator("#level-number")).toHaveText("81");
+  await expect(page.locator("#level-number")).toHaveText("181");
   await expect(page.locator('.cascade-tile[data-ice="2"]')).not.toHaveCount(0);
   await expect(page.locator("#objective-label")).toContainText(/ice|pink|cyan|yellow|green|purple|orange/i);
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "181-210");
   await page.screenshot({ path: `${output}/cascade-crush-layered-objective-desktop.png`, fullPage: true });
+});
+
+test("Cascade Crush level 300 capstone keeps the progression UI compact", async ({ page }) => {
+  await prepare(page, 300);
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto("/cascade.html");
+
+  await expect(page.locator("#level-number")).toHaveText("300");
+  await expect(page.locator("#level-map > li")).toHaveCount(30);
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "271-300");
+  await expect(page.locator('#level-map > li[data-level="300"]')).toContainText("Super hard");
+  await page.screenshot({ path: `${output}/cascade-crush-level-300-desktop.png`, fullPage: true });
 });
