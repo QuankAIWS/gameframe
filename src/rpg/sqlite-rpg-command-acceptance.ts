@@ -638,15 +638,24 @@ function normalizeInteraction(
 ):
   | { kind: "talk"; targetEntityId: string }
   | { kind: "monster-control"; operation: "deploy" | "recall"; targetEntityId: string }
+  | { kind: "travel"; routeId: string }
   | undefined {
   if (value === undefined) return undefined;
   const interaction = record(value, "command.interaction");
   const allowed = interaction.kind === "monster-control"
     ? new Set(["kind", "operation", "targetEntityId"])
-    : new Set(["kind", "targetEntityId"]);
+    : interaction.kind === "travel"
+      ? new Set(["kind", "routeId"])
+      : new Set(["kind", "targetEntityId"]);
   const unknown = Object.keys(interaction).filter((key) => !allowed.has(key));
   if (unknown.length > 0) {
     throw invalid(`command.interaction contains unsupported fields: ${unknown.sort().join(", ")}`);
+  }
+  if (interaction.kind === "travel") {
+    return {
+      kind: "travel",
+      routeId: identifier(interaction.routeId, "command.interaction.routeId"),
+    };
   }
   const targetEntityId = identifier(
     interaction.targetEntityId,
