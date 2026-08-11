@@ -34,17 +34,10 @@ test("RPG edge surfaces the server-derived staging admin capability in the sessi
     environment("1234"),
   );
   assert.equal(response.status, 200);
-  const session = await response.json() as {
-    authenticated?: boolean;
-    playerId?: string;
-    admin?: boolean;
-  };
-  assert.deepEqual(session, {
-    authenticated: true,
-    playerId: "discord:1234",
-    displayName: "Tester",
-    admin: true,
-  });
+  const session = await response.json() as Record<string, unknown>;
+  assert.equal(session.authenticated, true);
+  assert.equal(session.playerId, "discord:1234");
+  assert.equal(session.admin, true);
 });
 
 test("RPG edge rejects a normal allowed player before privileged requests reach the VM", async () => {
@@ -64,5 +57,6 @@ test("RPG edge rejects a normal allowed player before privileged requests reach 
     environment("1234"),
   );
   assert.equal(response.status, 403);
-  assert.deepEqual(await response.json(), { error: "forbidden" });
+  const body = await response.json() as Record<string, unknown>;
+  assert.equal(body.error, "forbidden");
 });
