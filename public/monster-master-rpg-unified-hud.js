@@ -194,7 +194,11 @@ function adoptDynamicSurfaces() {
     if (talkPanel.dataset.mmRpgDockObserved !== "true") {
       talkPanel.dataset.mmRpgDockObserved = "true";
       new MutationObserver(() => {
-        if (!talkPanel.hidden) activate("talk");
+        if (!talkPanel.hidden) {
+          activate("talk");
+        } else if (activeTab === "talk") {
+          activate("world");
+        }
       }).observe(talkPanel, { attributes: true, attributeFilter: ["hidden"] });
     }
     if (!talkPanel.hidden) activate("talk");
