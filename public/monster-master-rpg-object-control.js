@@ -15,6 +15,7 @@ if (!identity?.playerId) {
 let button = null;
 let submitting = false;
 let pendingRequest = null;
+let anchorObserver = null;
 
 function worldState() {
   const world = window.gameFrameMonsterRpgWorld;
@@ -24,9 +25,9 @@ function worldState() {
   };
 }
 
-function currentCartAnchor() {
-  const { payload, position } = worldState();
-  if (!payload?.materialization?.anchors || !position?.transform) return null;
+function visibleCartAnchor() {
+  const { payload } = worldState();
+  if (!payload?.materialization?.anchors) return null;
   return payload.materialization.anchors.find((anchor) =>
     anchor?.kind === "object"
     && anchor.semanticId === CHECKPOINT_CART_ID
@@ -35,23 +36,78 @@ function currentCartAnchor() {
     && anchor.interactionTargetId
     && Number.isSafeInteger(anchor.x)
     && Number.isSafeInteger(anchor.y)
-    && Math.abs(anchor.x - position.transform.x) + Math.abs(anchor.y - position.transform.y) === 1
   ) ?? null;
+}
+
+function currentCartAnchor() {
+  const cart = visibleCartAnchor();
+  const { position } = worldState();
+  if (!cart || !position?.transform) return null;
+  return Math.abs(cart.x - position.transform.x) + Math.abs(cart.y - position.transform.y) === 1
+    ? cart
+    : null;
 }
 
 function ensureButton() {
   const stage = document.querySelector("#mm-rpg-world .mm-rpg-world-stage");
   if (!stage) return null;
-  if (button?.isConnected) return button;
-  button = document.createElement("button");
-  button.type = "button";
-  button.id = "mm-rpg-object-control";
-  button.className = "mm-rpg-world-interact mm-rpg-world-object-control";
-  button.textContent = "Uncover cart";
-  button.hidden = true;
-  button.addEventListener("click", () => void uncoverCart());
-  stage.append(button);
+  if (!button?.isConnected) {
+    button = document.createElement("button");
+    button.type = "button";
+    button.id = "mm-rpg-object-control";
+    button.className = "mm-rpg-world-interact mm-rpg-world-object-control";
+    button.textContent = "Uncover cart";
+    button.hidden = true;
+    button.addEventListener("click", () => void uncoverCart());
+    stage.append(button);
+  }
+  ensureAnchorObserver();
   return button;
+}
+
+function ensureAnchorObserver() {
+  const layer = document.querySelector("#mm-rpg-world-anchors");
+  if (!layer) return;
+  if (anchorObserver?.layer === layer) {
+    decorateCartAnchor();
+    return;
+  }
+  anchorObserver?.observer?.disconnect?.();
+  const observer = new MutationObserver(() => queueMicrotask(decorateCartAnchor));
+  observer.observe(layer, { childList: true });
+  anchorObserver = { layer, observer };
+  decorateCartAnchor();
+}
+
+function decorateCartAnchor() {
+  const layer = document.querySelector("#mm-rpg-world-anchors");
+  if (!layer) return;
+  for (const marker of layer.querySelectorAll(".mm-rpg-world-anchor")) {
+    marker.classList.remove("has-attention");
+    marker.querySelector(".mm-rpg-world-anchor-attention")?.remove();
+  }
+  const cart = visibleCartAnchor();
+  if (!cart) return;
+  const marker = [...layer.querySelectorAll(".mm-rpg-world-anchor[data-kind='object']")]
+    .find((candidate) => candidate.dataset.semanticId === CHECKPOINT_CART_ID);
+  if (!marker) return;
+  marker.classList.add("has-attention");
+  const attention = document.createElement("button");
+  attention.type = "button";
+  attention.className = "mm-rpg-world-anchor-attention";
+  attention.setAttribute("aria-label", "Approach the covered checkpoint cart");
+  attention.title = "Something here can be investigated";
+  attention.textContent = "!";
+  attention.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (currentCartAnchor()) {
+      void uncoverCart();
+      return;
+    }
+    void window.gameFrameMonsterRpgClickMove?.moveTo?.({ x: cart.x, y: cart.y });
+  });
+  marker.prepend(attention);
 }
 
 function synchronize() {
@@ -65,25 +121,25 @@ function synchronize() {
     : pendingRequest
       ? "Retry uncover"
       : "Uncover cart";
+  decorateCartAnchor();
 }
 
-function buildPendingRequest() {
+async function buildPendingRequest() {
   if (pendingRequest) return pendingRequest;
+  const snapshot = await window.gameFrameMonsterRpgCoordination?.freshExplorationState?.();
+  if (!snapshot) throw new Error("The current exploration command state is unavailable. Refresh and try again.");
   const cart = currentCartAnchor();
-  const { payload, position } = worldState();
+  const { payload, position, revision } = snapshot;
   const projection = payload?.projection;
   const materialization = payload?.materialization;
   if (!cart || !projection || !materialization || !position) {
     throw new Error("Move next to the covered checkpoint cart before uncovering it.");
   }
-  if (!Number.isSafeInteger(projection.gameframeCoordinationRevision)) {
-    throw new Error("Campaign coordination state is unavailable. Refresh and try again.");
-  }
   pendingRequest = {
     ...buildExplorationTalkRequest({
       campaignId: projection.campaignId,
       commandId: `command:${crypto.randomUUID()}`,
-      expectedGameframeCoordinationRevision: projection.gameframeCoordinationRevision,
+      expectedGameframeCoordinationRevision: revision,
       sceneId: projection.scene.sceneId,
       materializationRef: materialization.materializationRef,
       expectedPositionRevision: position.positionRevision,
@@ -99,7 +155,7 @@ async function uncoverCart() {
   if (submitting) return;
   let request;
   try {
-    request = buildPendingRequest();
+    request = await buildPendingRequest();
   } catch (error) {
     showError(error instanceof Error ? error.message : "The checkpoint cart cannot be uncovered now.");
     return;
@@ -191,6 +247,8 @@ window.addEventListener(STATE_EVENT, () => queueMicrotask(synchronize));
 window.addEventListener("gameframe:before-home", () => {
   submitting = false;
   pendingRequest = null;
+  anchorObserver?.observer?.disconnect?.();
+  anchorObserver = null;
   if (button) button.hidden = true;
 });
 window.addEventListener("resize", synchronize);
