@@ -22,7 +22,10 @@ const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
 const BLITZ_SECONDS = 30;
-const BLITZ_AFTER_LEVELS = Object.freeze(new Set([5, 12, 20, 30, 42, 55, 70, 85]));
+const BLITZ_AFTER_LEVELS = Object.freeze(new Set([
+  5, 12, 20, 30, 45, 60, 75, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290,
+]));
+const LEVEL_MAP_WINDOW = 30;
 const PRESENTATION = Object.freeze({
   swap: 150,
   invalidHold: 75,
@@ -294,7 +297,8 @@ function mapLabel(level) {
   if (level.level === 3) return "Bombs";
   if (level.level === 4) return "Combos";
   if (level.level === 5) return "Color";
-  if (level.hard) return "Hard";
+  if (level.difficulty === "super-hard") return "Super hard";
+  if (level.difficulty === "hard" || level.hard) return "Hard";
   const hasIce = Boolean(level.objective?.ice);
   const hasCollect = Boolean(level.objective?.collect?.length);
   if (hasIce && hasCollect) return "Mix";
@@ -305,7 +309,12 @@ function mapLabel(level) {
 
 function renderLevelMap() {
   levelMapElement.replaceChildren();
-  for (const level of levels) {
+  const referenceLevel = mode === "normal" ? state.level : Math.max(1, blitzReturningLevel || state.level);
+  const chapterStart = Math.floor((referenceLevel - 1) / LEVEL_MAP_WINDOW) * LEVEL_MAP_WINDOW + 1;
+  const chapterEnd = Math.min(LEVEL_COUNT, chapterStart + LEVEL_MAP_WINDOW - 1);
+  const visibleLevels = levels.slice(chapterStart - 1, chapterEnd);
+
+  for (const level of visibleLevels) {
     const li = document.createElement("li");
     li.dataset.level = String(level.level);
     if (level.level < state.level) li.classList.add("is-complete");
@@ -323,6 +332,7 @@ function renderLevelMap() {
     }
     levelMapElement.append(li);
   }
+  levelMapElement.dataset.range = `${chapterStart}-${chapterEnd}`;
   levelMapElement.querySelector(".is-current")?.scrollIntoView({ block: "nearest" });
 }
 
@@ -874,6 +884,8 @@ function startLevel(levelNumber = state.level) {
     target: activeLevel.target,
     moves: activeLevel.moves,
     hard: activeLevel.hard,
+    difficulty: activeLevel.difficulty,
+    chapter: activeLevel.chapter,
     objective: activeLevel.objective,
     specialRules: currentRules(),
   });
