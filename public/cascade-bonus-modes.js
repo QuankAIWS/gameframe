@@ -3,7 +3,9 @@ import { establishGameFrameIdentity, gameFrameFetch } from "./gameframe-auth.js"
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
-const QUICK_RECALL_AFTER_LEVELS = Object.freeze(new Set([8, 24, 48, 72, 96]));
+const QUICK_RECALL_AFTER_LEVELS = Object.freeze(new Set([
+  8, 24, 48, 72, 96, 126, 156, 186, 216, 246, 276,
+]));
 const RECALL_ROUNDS = Object.freeze([3, 4, 5]);
 const BONUS_STAR_STEP = 10;
 const HAMMER_MAX = 6;
@@ -533,7 +535,7 @@ window.cascadeBonusModes = Object.freeze({
   },
   startWeeklyBlitz,
   startQuickRecall(afterLevel = 8) {
-    const level = Math.max(1, Math.min(100, Number(afterLevel) || 8));
+    const level = Math.max(1, Math.min(300, Number(afterLevel) || 8));
     runQuickRecall(level);
   },
   exportRecall() {
