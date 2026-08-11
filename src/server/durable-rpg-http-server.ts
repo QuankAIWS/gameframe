@@ -19,6 +19,11 @@ import {
   type DurableRpgPrincipal,
 } from "../rpg/durable-rpg-campaign-service.ts";
 import {
+  normalizeActorInspectRequest,
+  RpgExplorationActorActionError,
+  RpgExplorationActorActionService,
+} from "../rpg/rpg-exploration-actor-action-service.ts";
+import {
   authorizeRpgExplorationInteraction,
   normalizeRpgExplorationInteractionRequest,
   RpgExplorationInteractionError,
@@ -44,9 +49,7 @@ import {
   RuntimeExplorationTransportError,
   type RuntimeExplorationHttpTransport,
 } from "../rpg/runtime-exploration-transport.ts";
-import {
-  SqliteRpgCampaignIndex,
-} from "../rpg/sqlite-rpg-campaign-index.ts";
+import { SqliteRpgCampaignIndex } from "../rpg/sqlite-rpg-campaign-index.ts";
 import {
   SqliteRpgEncounterMatchCoordinator,
 } from "../rpg/sqlite-rpg-encounter-match-coordinator.ts";
@@ -55,6 +58,9 @@ import {
   SqliteRpgEncounterError,
   SqliteRpgEncounterStore,
 } from "../rpg/sqlite-rpg-encounter-store.ts";
+import {
+  SqliteRpgExplorationActorPositionStore,
+} from "../rpg/sqlite-rpg-exploration-actor-position-store.ts";
 import {
   SqliteRpgExplorationPositionStore,
 } from "../rpg/sqlite-rpg-exploration-position-store.ts";
@@ -66,6 +72,7 @@ import {
 const MAX_REQUEST_BODY_BYTES = 131_072;
 const STAGING_ADMIN_RESET_PATH = "/api/rpg/admin/reset-staging";
 const STAGING_ADMIN_RESET_CONFIRMATION = "RESET MONSTER MASTER STAGING";
+const RPG_RUNTIME_SERVICE_ID = "rpg-gm-runtime";
 
 type ApiError = Error & {
   code?: string;
@@ -92,13 +99,6 @@ export type DurableRpgHttpServer = Server & {
   closeRealtime(): Promise<void>;
 };
 
-/**
- * Production-shaped RPG boundary over the durable SQLite services.
- *
- * HTTP remains the command/mutation/recovery authority. Campaign WebSockets
- * remain projection-only and can always be reconstructed from durable state.
- * Exploration x/y/facing is GameFrame physical state, not RPG campaign truth.
- */
 export function createDurableRpgHttpServer(
   options: DurableRpgHttpServerOptions,
 ): DurableRpgHttpServer {
@@ -107,10 +107,7 @@ export function createDurableRpgHttpServer(
   }
   const clock = options.clock ?? (() => new Date().toISOString());
   const authenticator = options.authenticator ?? new DevelopmentHeaderAuthenticator();
-  const campaigns = new DurableRpgCampaignService({
-    filePath: options.filePath,
-    clock,
-  });
+  const campaigns = new DurableRpgCampaignService({ filePath: options.filePath, clock });
   const campaignIndex = new SqliteRpgCampaignIndex({ filePath: options.filePath });
   const encounters = new SqliteRpgEncounterStore({ filePath: options.filePath });
   const encounterMatches = new SqliteRpgEncounterMatchCoordinator({
@@ -118,16 +115,11 @@ export function createDurableRpgHttpServer(
     encounters,
     clock,
   });
-  const explorationPositions = new SqliteRpgExplorationPositionStore({
-    filePath: options.filePath,
-  });
-  const explorationMovement = new RpgExplorationMovementService({
-    positions: explorationPositions,
-    clock,
-  });
-  for (const bootstrap of options.bootstrapCampaigns ?? []) {
-    campaigns.bootstrapCampaign(bootstrap);
-  }
+  const explorationPositions = new SqliteRpgExplorationPositionStore({ filePath: options.filePath });
+  const explorationMovement = new RpgExplorationMovementService({ positions: explorationPositions, clock });
+  const explorationActorPositions = new SqliteRpgExplorationActorPositionStore({ filePath: options.filePath });
+  const explorationActorActions = new RpgExplorationActorActionService({ positions: explorationActorPositions });
+  for (const bootstrap of options.bootstrapCampaigns ?? []) campaigns.bootstrapCampaign(bootstrap);
 
   const realtime = new DurableRpgRealtimeHub({
     authenticator,
@@ -165,26 +157,20 @@ export function createDurableRpgHttpServer(
             "durable-encounters",
             "terminal-outcomes",
             "websocket-realtime",
-            ...(options.explorationTransport
-              ? [
-                  "rpg-exploration-materialization",
-                  "rpg-exploration-movement",
-                  "rpg-exploration-talk",
-                  "rpg-exploration-travel",
-                  "rpg-exploration-monster-control",
-                ]
-              : []),
+            ...(options.explorationTransport ? [
+              "rpg-exploration-materialization",
+              "rpg-exploration-movement",
+              "rpg-exploration-talk",
+              "rpg-exploration-travel",
+              "rpg-exploration-monster-control",
+              "rpg-exploration-actor-inspect",
+            ] : []),
           ],
         });
       }
 
       if (request.method === "GET" && url.pathname === "/api/rpg/campaigns") {
-        const principal = await authenticate(
-          authenticator,
-          request,
-          url,
-          Buffer.alloc(0),
-        );
+        const principal = await authenticate(authenticator, request, url, Buffer.alloc(0));
         requirePlayerPrincipal(principal);
         rejectIdentityClaim(principal, url.searchParams.get("playerId"));
         return sendJson(response, 200, campaignIndex.listForPlayer(principal.playerId));
@@ -215,11 +201,7 @@ export function createDurableRpgHttpServer(
           );
         }
         const body = parseJsonBody(bodyBytes);
-        requireBodyIdentity(
-          body.campaignId,
-          options.stagingAdminReset.campaignId,
-          "campaignId",
-        );
+        requireBodyIdentity(body.campaignId, options.stagingAdminReset.campaignId, "campaignId");
         if (body.confirmation !== STAGING_ADMIN_RESET_CONFIRMATION) {
           throw new HttpBoundaryError(
             400,
@@ -246,8 +228,52 @@ export function createDurableRpgHttpServer(
         }
         const bodyBytes = await readRequestBody(request);
         const principal = await authenticate(authenticator, request, url, bodyBytes);
-        requirePlayerPrincipal(principal);
         const body = parseJsonBody(bodyBytes);
+
+        if (explorationRoute.operation === "actor-inspect") {
+          requireRuntimeServicePrincipal(principal);
+          const normalized = normalizeActorInspectRequest(body);
+          requireBodyIdentity(normalized.campaignId, explorationRoute.campaignId, "campaignId");
+          if (!options.explorationTransport) {
+            return sendJson(response, 503, {
+              error: "runtime-exploration-unavailable",
+              message: "Runtime exploration projection is not configured.",
+              retryable: true,
+            });
+          }
+          const projection = await options.explorationTransport.attach({
+            campaignId: explorationRoute.campaignId,
+            authenticatedPlayerId: normalized.authenticatedPlayerId,
+          });
+          if (projection.scene.sceneId !== normalized.sceneId) {
+            throw new RpgExplorationActorActionError(
+              "scene-conflict",
+              `Runtime requested scene ${normalized.sceneId}, but the player is in ${projection.scene.sceneId}.`,
+            );
+          }
+          const materialization = materializeRpgExplorationProjection(projection);
+          explorationActorActions.applyPersistedTransforms(materialization);
+          const playerPosition = explorationMovement.attach({
+            playerId: normalized.authenticatedPlayerId,
+            projection,
+            materialization,
+          });
+          explorationActorActions.applyPlayerPosition(
+            materialization,
+            projection.viewer.playerCharacterEntityId,
+            playerPosition.transform,
+          );
+          const receipt = explorationActorActions.inspect(normalized, materialization);
+          explorationActorActions.applyPersistedTransforms(materialization);
+          explorationMovement.attach({
+            playerId: normalized.authenticatedPlayerId,
+            projection,
+            materialization,
+          });
+          return sendJson(response, 200, receipt);
+        }
+
+        requirePlayerPrincipal(principal);
 
         if (explorationRoute.operation === "move") {
           const normalized = normalizeMoveRequest(body);
@@ -261,8 +287,7 @@ export function createDurableRpgHttpServer(
           const committedRetry = campaigns.findCommittedExplorationMonsterControl({
             campaignId: normalized.campaignId,
             commandId: normalized.commandId,
-            expectedGameframeCoordinationRevision:
-              normalized.expectedGameframeCoordinationRevision,
+            expectedGameframeCoordinationRevision: normalized.expectedGameframeCoordinationRevision,
             issuedAt: normalized.issuedAt,
             operation: normalized.operation,
             controlTargetId: normalized.controlTargetId,
@@ -277,7 +302,6 @@ export function createDurableRpgHttpServer(
               replayed: true,
             });
           }
-
           if (!options.explorationTransport) {
             return sendJson(response, 503, {
               error: "runtime-exploration-unavailable",
@@ -290,6 +314,7 @@ export function createDurableRpgHttpServer(
             authenticatedPlayerId: principal.playerId,
           });
           const materialization = materializeRpgExplorationProjection(projection);
+          explorationActorActions.applyPersistedTransforms(materialization);
           const playerPosition = explorationMovement.attach({
             playerId: principal.playerId,
             projection,
@@ -304,8 +329,7 @@ export function createDurableRpgHttpServer(
           const committed = campaigns.handleAuthorizedExplorationMonsterControl({
             campaignId: authorized.campaignId,
             commandId: authorized.commandId,
-            expectedGameframeCoordinationRevision:
-              authorized.expectedGameframeCoordinationRevision,
+            expectedGameframeCoordinationRevision: authorized.expectedGameframeCoordinationRevision,
             issuedAt: authorized.issuedAt,
             operation: authorized.operation,
             controlTargetId: authorized.controlTargetId,
@@ -331,16 +355,14 @@ export function createDurableRpgHttpServer(
             ? campaigns.findCommittedExplorationTravel({
                 campaignId: normalized.campaignId,
                 commandId: normalized.commandId,
-                expectedGameframeCoordinationRevision:
-                  normalized.expectedGameframeCoordinationRevision,
+                expectedGameframeCoordinationRevision: normalized.expectedGameframeCoordinationRevision,
                 issuedAt: normalized.issuedAt,
                 interactionTargetId: normalized.interactionTargetId,
               }, { kind: "player", playerId: principal.playerId })
             : campaigns.findCommittedExplorationTalk({
                 campaignId: normalized.campaignId,
                 commandId: normalized.commandId,
-                expectedGameframeCoordinationRevision:
-                  normalized.expectedGameframeCoordinationRevision,
+                expectedGameframeCoordinationRevision: normalized.expectedGameframeCoordinationRevision,
                 issuedAt: normalized.issuedAt,
                 interactionTargetId: normalized.interactionTargetId,
                 text: normalized.text,
@@ -355,7 +377,6 @@ export function createDurableRpgHttpServer(
               replayed: true,
             });
           }
-
           if (!options.explorationTransport) {
             return sendJson(response, 503, {
               error: "runtime-exploration-unavailable",
@@ -368,6 +389,7 @@ export function createDurableRpgHttpServer(
             authenticatedPlayerId: principal.playerId,
           });
           const materialization = materializeRpgExplorationProjection(projection);
+          explorationActorActions.applyPersistedTransforms(materialization);
           const playerPosition = explorationMovement.attach({
             playerId: principal.playerId,
             projection,
@@ -382,8 +404,7 @@ export function createDurableRpgHttpServer(
             ? campaigns.handleAuthorizedExplorationTravel({
                 campaignId: authorized.campaignId,
                 commandId: authorized.commandId,
-                expectedGameframeCoordinationRevision:
-                  authorized.expectedGameframeCoordinationRevision,
+                expectedGameframeCoordinationRevision: authorized.expectedGameframeCoordinationRevision,
                 issuedAt: authorized.issuedAt,
                 interactionTargetId: authorized.interactionTargetId,
                 routeId: authorized.routeId,
@@ -392,8 +413,7 @@ export function createDurableRpgHttpServer(
             : campaigns.handleAuthorizedExplorationTalk({
                 campaignId: authorized.campaignId,
                 commandId: authorized.commandId,
-                expectedGameframeCoordinationRevision:
-                  authorized.expectedGameframeCoordinationRevision,
+                expectedGameframeCoordinationRevision: authorized.expectedGameframeCoordinationRevision,
                 issuedAt: authorized.issuedAt,
                 interactionTargetId: authorized.interactionTargetId,
                 targetEntityId: authorized.targetEntityId,
@@ -425,6 +445,7 @@ export function createDurableRpgHttpServer(
           authenticatedPlayerId: principal.playerId,
         });
         const materialization = materializeRpgExplorationProjection(projection);
+        explorationActorActions.applyPersistedTransforms(materialization);
         const playerPosition = explorationMovement.attach({
           playerId: principal.playerId,
           projection,
@@ -447,11 +468,7 @@ export function createDurableRpgHttpServer(
         requireBodyIdentity(body.campaignId, campaignRoute.campaignId, "campaignId");
         const rpgPrincipal = toRpgPrincipal(principal);
         if (campaignRoute.operation === "attach") {
-          return sendJson(
-            response,
-            200,
-            await campaigns.attachCampaign(body, rpgPrincipal),
-          );
+          return sendJson(response, 200, await campaigns.attachCampaign(body, rpgPrincipal));
         }
         if (campaignRoute.operation === "commands") {
           const committed = await campaigns.handleCommand(body, rpgPrincipal);
@@ -468,59 +485,33 @@ export function createDurableRpgHttpServer(
         const bodyBytes = await readRequestBody(request);
         const principal = await authenticate(authenticator, request, url, bodyBytes);
         const body = parseJsonBody(bodyBytes);
-        return sendJson(
-          response,
-          200,
-          await encounterMatches.launchEncounter(body, {
-            serviceId: principal.playerId,
-            createdAt: clock(),
-          }),
-        );
+        return sendJson(response, 200, await encounterMatches.launchEncounter(body, {
+          serviceId: principal.playerId,
+          createdAt: clock(),
+        }));
       }
       if (encounterRoute?.operation === "item" && request.method === "GET") {
-        const principal = await authenticate(
-          authenticator,
-          request,
-          url,
-          Buffer.alloc(0),
-        );
-        return sendJson(
-          response,
-          200,
-          await encounterMatches.getEncounter(encounterRoute.encounterId, {
-            serviceId: principal.playerId,
-          }),
-        );
+        const principal = await authenticate(authenticator, request, url, Buffer.alloc(0));
+        return sendJson(response, 200, await encounterMatches.getEncounter(encounterRoute.encounterId, {
+          serviceId: principal.playerId,
+        }));
       }
       if (encounterRoute?.operation === "complete" && request.method === "POST") {
         const bodyBytes = await readRequestBody(request);
         const principal = await authenticate(authenticator, request, url, bodyBytes);
         const body = parseJsonBody(bodyBytes);
-        return sendJson(
-          response,
-          200,
-          encounters.complete(encounterRoute.encounterId, body, {
-            serviceId: principal.playerId,
-            completedAt: clock(),
-          }),
-        );
+        return sendJson(response, 200, encounters.complete(encounterRoute.encounterId, body, {
+          serviceId: principal.playerId,
+          completedAt: clock(),
+        }));
       }
 
       const matchRoute = matchRpgMatchRoute(url.pathname);
       if (matchRoute?.operation === "view" && request.method === "GET") {
-        const principal = await authenticate(
-          authenticator,
-          request,
-          url,
-          Buffer.alloc(0),
-        );
+        const principal = await authenticate(authenticator, request, url, Buffer.alloc(0));
         requirePlayerPrincipal(principal);
         rejectIdentityClaim(principal, url.searchParams.get("playerId"));
-        return sendJson(
-          response,
-          200,
-          await encounterMatches.viewMatchForPlayer(matchRoute.matchId, principal.playerId),
-        );
+        return sendJson(response, 200, await encounterMatches.viewMatchForPlayer(matchRoute.matchId, principal.playerId));
       }
       if (matchRoute?.operation === "actions" && request.method === "POST") {
         const bodyBytes = await readRequestBody(request);
@@ -560,6 +551,7 @@ export function createDurableRpgHttpServer(
     if (closed) return;
     closed = true;
     realtime.terminateAll();
+    explorationActorPositions.close();
     explorationPositions.close();
     encounterMatches.close();
     encounters.close();
@@ -569,20 +561,19 @@ export function createDurableRpgHttpServer(
   return server;
 }
 
-function matchExplorationRoute(
-  pathname: string,
-): { campaignId: string; operation: "attach" | "move" | "interact" | "control" } | undefined {
-  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/exploration\/(attach|move|interact|control)$/.exec(pathname);
+function matchExplorationRoute(pathname: string): {
+  campaignId: string;
+  operation: "attach" | "move" | "interact" | "control" | "actor-inspect";
+} | undefined {
+  const match = /^\/api\/rpg\/campaigns\/([^/]+)\/exploration\/(attach|move|interact|control|actor-inspect)$/.exec(pathname);
   if (!match) return undefined;
   return {
     campaignId: decodeURIComponent(match[1]!),
-    operation: match[2] as "attach" | "move" | "interact" | "control",
+    operation: match[2] as "attach" | "move" | "interact" | "control" | "actor-inspect",
   };
 }
 
-function matchCampaignRoute(
-  pathname: string,
-): { campaignId: string; operation: "attach" | "commands" | "events" } | undefined {
+function matchCampaignRoute(pathname: string): { campaignId: string; operation: "attach" | "commands" | "events" } | undefined {
   const match = /^\/api\/rpg\/campaigns\/([^/]+)\/(attach|commands|events)$/.exec(pathname);
   if (!match) return undefined;
   return {
@@ -598,29 +589,18 @@ function matchEncounterRoute(pathname: string):
   if (pathname === "/api/rpg/encounters") return { operation: "collection" };
   const match = /^\/api\/rpg\/encounters\/([^/]+)(\/complete)?$/.exec(pathname);
   if (!match) return undefined;
-  return {
-    encounterId: decodeURIComponent(match[1]!),
-    operation: match[2] ? "complete" : "item",
-  };
+  return { encounterId: decodeURIComponent(match[1]!), operation: match[2] ? "complete" : "item" };
 }
 
-function matchRpgMatchRoute(pathname: string):
-  | { operation: "view" | "actions"; matchId: string }
-  | undefined {
+function matchRpgMatchRoute(pathname: string): { operation: "view" | "actions"; matchId: string } | undefined {
   const match = /^\/api\/matches\/([^/]+)(\/actions)?$/.exec(pathname);
   if (!match) return undefined;
   const matchId = decodeURIComponent(match[1]!);
   if (!matchId.startsWith("rpg:")) return undefined;
-  return {
-    matchId,
-    operation: match[2] ? "actions" : "view",
-  };
+  return { matchId, operation: match[2] ? "actions" : "view" };
 }
 
-function normalizeBrowserExplorationAttach(
-  body: Record<string, unknown>,
-  campaignId: string,
-): void {
+function normalizeBrowserExplorationAttach(body: Record<string, unknown>, campaignId: string): void {
   const allowed = new Set(["protocolVersion", "kind", "campaignId"]);
   const unknown = Object.keys(body).filter((key) => !allowed.has(key));
   if (unknown.length > 0) {
@@ -648,19 +628,23 @@ async function authenticate(
 ): Promise<AuthenticatedPrincipal> {
   const headers = new Headers();
   for (const [name, value] of Object.entries(request.headers)) {
-    if (Array.isArray(value)) {
-      value.forEach((entry) => headers.append(name, entry));
-    } else if (value !== undefined) {
-      headers.set(name, value);
-    }
+    if (Array.isArray(value)) value.forEach((entry) => headers.append(name, entry));
+    else if (value !== undefined) headers.set(name, value);
   }
-  return await authenticator.authenticate(
-    new Request(url, {
-      method: request.method,
-      headers,
-      ...(body.byteLength > 0 ? { body } : {}),
-    }),
-  );
+  return await authenticator.authenticate(new Request(url, {
+    method: request.method,
+    headers,
+    ...(body.byteLength > 0 ? { body } : {}),
+  }));
+}
+
+function requireRuntimeServicePrincipal(principal: AuthenticatedPrincipal): void {
+  if (principal.source !== "service" || principal.playerId !== RPG_RUNTIME_SERVICE_ID) {
+    throw new AuthenticationError(
+      "forbidden",
+      "Physical actor actions require the authenticated RPG GM Runtime service.",
+    );
+  }
 }
 
 function toRpgPrincipal(principal: AuthenticatedPrincipal): DurableRpgPrincipal {
@@ -688,9 +672,7 @@ function parseJsonBody(body: Uint8Array): Record<string, unknown> {
   try {
     const text = new TextDecoder("utf-8", { fatal: true }).decode(body);
     const value = JSON.parse(text) as unknown;
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
-      throw new Error("JSON body must be an object");
-    }
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("JSON body must be an object");
     return value as Record<string, unknown>;
   } catch (error) {
     throw new HttpBoundaryError(400, "invalid-json", "Request body is not valid JSON.", error);
@@ -727,20 +709,10 @@ class HttpBoundaryError extends Error {
   }
 }
 
-function normalizeError(error: unknown): {
-  status: number;
-  body: Record<string, unknown>;
-} {
-  if (error instanceof HttpBoundaryError) {
-    return failure(error.status, error.code, error.message, false);
-  }
+function normalizeError(error: unknown): { status: number; body: Record<string, unknown> } {
+  if (error instanceof HttpBoundaryError) return failure(error.status, error.code, error.message, false);
   if (error instanceof AuthenticationError) {
-    return failure(
-      error.code === "authentication_required" ? 401 : 403,
-      error.code,
-      error.message,
-      false,
-    );
+    return failure(error.code === "authentication_required" ? 401 : 403, error.code, error.message, false);
   }
   if (error instanceof RuntimeExplorationTransportError) {
     return failure(
@@ -750,41 +722,13 @@ function normalizeError(error: unknown): {
       error.retryable,
     );
   }
-  if (error instanceof RpgExplorationMaterializationError) {
-    return failure(422, "unsupported-materialization", error.message, false);
-  }
-  if (error instanceof RpgExplorationMovementError) {
-    return failure(
-      error.code === "invalid-input" ? 400 : 409,
-      error.code,
-      error.message,
-      false,
-    );
-  }
-  if (error instanceof RpgExplorationInteractionError) {
-    return failure(
-      error.code === "invalid-input" ? 400 : 409,
-      error.code,
-      error.message,
-      false,
-    );
-  }
-  if (error instanceof RpgExplorationMonsterControlError) {
-    return failure(
-      error.code === "invalid-input" ? 400 : 409,
-      error.code,
-      error.message,
-      false,
-    );
-  }
+  if (error instanceof RpgExplorationMaterializationError) return failure(422, "unsupported-materialization", error.message, false);
+  if (error instanceof RpgExplorationMovementError) return failure(error.code === "invalid-input" ? 400 : 409, error.code, error.message, false);
+  if (error instanceof RpgExplorationInteractionError) return failure(error.code === "invalid-input" ? 400 : 409, error.code, error.message, false);
+  if (error instanceof RpgExplorationMonsterControlError) return failure(error.code === "invalid-input" ? 400 : 409, error.code, error.message, false);
+  if (error instanceof RpgExplorationActorActionError) return failure(error.code === "invalid-input" ? 400 : 409, error.code, error.message, false);
   if (error instanceof DurableRpgCampaignServiceError) {
-    return failure(
-      error.status,
-      error.code,
-      error.message,
-      error.retryable,
-      error,
-    );
+    return failure(error.status, error.code, error.message, error.retryable, error);
   }
   if (error instanceof MonsterMasterRpgEncounterConfigurationError) {
     return failure(error.status, error.code, error.message, error.retryable);
@@ -803,8 +747,7 @@ function normalizeError(error: unknown): {
       status,
       error.code,
       error.message,
-      error.code === "coordination-revision-conflict"
-        || error.code === "runtime-source-revision-conflict",
+      error.code === "coordination-revision-conflict" || error.code === "runtime-source-revision-conflict",
     );
   }
   const apiError = error as ApiError;
