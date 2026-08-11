@@ -228,7 +228,10 @@ assert.match(readme, /GameFrameBot/);
 assert.match(readme, /rules-based bots/);
 assert.match(readme, /not model-driven AI/);
 assert.match(readme, /rpg-gm-runtime/);
-assert.match(readme, /Theo is a separate agent hosted by Scribbles Runtime/);
+assert.match(
+  readme,
+  new RegExp(`${retiredBuiltInIdentity} is a separate agent hosted by Scribbles Runtime`, "i"),
+);
 
 const agents = await read("AGENTS.md");
 assert.match(agents, /GameFrameBot/);
