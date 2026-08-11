@@ -138,9 +138,9 @@ function request(operation: "deploy" | "recall") {
 }
 
 describe("RPG exploration monster control", () => {
-  it("maps only the authenticated viewer-owned roster handle to the canonical monster", () => {
+  it("maps only the authenticated viewer-owned roster handle and ignores irrelevant physical revision drift", () => {
     assert.deepEqual(authorizeRpgExplorationMonsterControl({
-      request: request("deploy"),
+      request: { ...request("deploy"), expectedPositionRevision: 999 },
       projection: projection("recalled"),
       materialization,
       position,

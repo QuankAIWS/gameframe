@@ -67,18 +67,12 @@ function synchronize() {
         : "Travel";
 }
 
-function currentCoordinationRevision() {
-  const revision = window.gameFrameMonsterRpgCoordination?.getRevision?.();
-  if (!Number.isSafeInteger(revision) || revision < 0) {
-    throw new Error("Campaign coordination state is unavailable. Refresh and try again.");
-  }
-  return revision;
-}
-
-function buildPendingRequest() {
+async function buildPendingRequest() {
   if (pendingRequest) return pendingRequest;
+  const snapshot = await window.gameFrameMonsterRpgCoordination?.freshExplorationState?.();
+  if (!snapshot) throw new Error("The current exploration command state is unavailable. Refresh and try again.");
   const route = currentRouteAnchor();
-  const { payload, position } = worldState();
+  const { payload, position, revision } = snapshot;
   const projection = payload?.projection;
   const materialization = payload?.materialization;
   if (!route || !projection || !materialization || !position) {
@@ -91,7 +85,7 @@ function buildPendingRequest() {
     sceneId: projection.scene.sceneId,
     materializationRef: materialization.materializationRef,
     expectedPositionRevision: position.positionRevision,
-    expectedGameframeCoordinationRevision: currentCoordinationRevision(),
+    expectedGameframeCoordinationRevision: revision,
     commandId: `command:${crypto.randomUUID()}`,
     issuedAt: new Date().toISOString(),
     interaction: "travel",
@@ -112,7 +106,7 @@ async function travel() {
   if (submitting) return;
   let request;
   try {
-    request = buildPendingRequest();
+    request = await buildPendingRequest();
   } catch (error) {
     showError(error instanceof Error ? error.message : "Travel is not available here.");
     return;
@@ -135,9 +129,6 @@ async function travel() {
       : "Travel was accepted. The map will update when Runtime finishes the scene transfer.");
   } catch (error) {
     if (isRuntimeVersionSkew(error)) {
-      // Current Runtime accepts { kind: "travel", routeId }. Do not preserve an
-      // exact retry against an older deployed Runtime that cannot understand it;
-      // the release pair must be brought back into sync instead.
       pendingRequest = null;
       showStatus("Travel is blocked by a GameFrame / RPG Runtime deployment mismatch.");
       showError("Travel cannot be retried against this deployed RPG Runtime because it is older than the current GameFrame travel contract. Deploy the matched Runtime and GameFrame staging pair, then refresh.");

@@ -222,10 +222,10 @@ test("centered world interaction buttons do not jump sideways on hover", async (
   expect(Math.abs(after.x - before.x)).toBeLessThan(2);
 });
 
-test("coordination bridge recovers a temporarily missing exploration coordination revision", async ({ page }) => {
+test("coordination bridge recovers current semantic coordination without mutating exploration payload", async ({ page }) => {
   await page.goto("/monster-master-rpg.html?player=coordination-bridge-player");
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterRpgCoordination))).toBe(true);
-  const revision = await page.evaluate(() => {
+  const revisions = await page.evaluate(() => {
     const payload = { projection: {} };
     window.gameFrameMonsterRpgWorld = {
       getPayload: () => payload,
@@ -235,9 +235,13 @@ test("coordination bridge recovers a temporarily missing exploration coordinatio
       getProjection: () => ({ gameframeCoordinationRevision: 9 }),
     };
     window.gameFrameMonsterRpgCoordination.synchronize();
-    return payload.projection.gameframeCoordinationRevision;
+    return {
+      bridge: window.gameFrameMonsterRpgCoordination.getRevision(),
+      displayed: Number(document.querySelector("#mm-rpg-coordination")?.textContent ?? "NaN"),
+      exploration: payload.projection.gameframeCoordinationRevision ?? null,
+    };
   });
-  expect(revision).toBe(9);
+  expect(revisions).toEqual({ bridge: 9, displayed: 9, exploration: null });
 });
 
 test("click movement walks adjacent to an interaction target instead of onto it", async ({ page }) => {
