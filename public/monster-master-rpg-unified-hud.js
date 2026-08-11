@@ -119,7 +119,7 @@ function ensureDock() {
   const talkEmpty = document.createElement("div");
   talkEmpty.className = "mm-rpg-dock-empty";
   talkEmpty.dataset.mmRpgTalkEmpty = "";
-  talkEmpty.innerHTML = "<strong>No conversation selected.</strong><span>Move next to someone and use Talk. Their conversation will stay in this pane.</span>";
+  talkEmpty.innerHTML = "<strong>No conversation selected.</strong><span>Use the speech bubble over a character to start an in-world conversation. Current bounded maps allow ordinary speech across the scene.</span>";
   talkPane.append(talkEmpty);
 
   askPanel.hidden = false;
@@ -176,6 +176,7 @@ function adoptNearbyWorldActions() {
   if (!stage || !host || !nearby) return;
 
   for (const control of stage.querySelectorAll(".mm-rpg-world-interact")) {
+    if (control.id === "mm-rpg-talk-nearby") continue;
     host.append(control);
   }
   const controls = [...host.querySelectorAll(".mm-rpg-world-interact")];
