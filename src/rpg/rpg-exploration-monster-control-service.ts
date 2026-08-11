@@ -42,7 +42,6 @@ export class RpgExplorationMonsterControlError extends Error {
   readonly code:
     | "invalid-input"
     | "stale-materialization"
-    | "position-revision-conflict"
     | "control-target-unavailable"
     | "control-state-conflict";
 
@@ -54,10 +53,13 @@ export class RpgExplorationMonsterControlError extends Error {
 }
 
 /**
- * Converts a viewer-owned roster handle into a canonical monster entity only
- * after GameFrame proves the request belongs to the current authenticated
- * exploration projection and physical session. The browser never supplies a
- * targetEntityId and cannot use this boundary to control another player's roster.
+ * Converts a viewer-owned roster handle into a canonical monster entity after
+ * GameFrame proves the request belongs to the current authenticated exploration
+ * scene/materialization. Exact player x/y is deliberately not an authority
+ * input: recall is semantic roster control, and deployment materializes beside
+ * the player's current stored position after the semantic commit. Coordination
+ * revision remains the concurrency guard for roster state. The browser never
+ * supplies a targetEntityId and cannot control another player's roster.
  */
 export function authorizeRpgExplorationMonsterControl(input: {
   request: unknown;
@@ -80,12 +82,6 @@ export function authorizeRpgExplorationMonsterControl(input: {
     throw new RpgExplorationMonsterControlError(
       "stale-materialization",
       "Monster control refers to a stale exploration materialization.",
-    );
-  }
-  if (request.expectedPositionRevision !== position.positionRevision) {
-    throw new RpgExplorationMonsterControlError(
-      "position-revision-conflict",
-      `Expected exploration position revision ${request.expectedPositionRevision}, but current revision is ${position.positionRevision}.`,
     );
   }
 
