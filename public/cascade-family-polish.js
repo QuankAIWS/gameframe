@@ -38,10 +38,12 @@ function restoreNormalRunAfterBlitz(event) {
   window.location.reload();
 }
 
-function hardenTerminalDialog() {
-  resultDialog?.addEventListener("cancel", (event) => {
-    event.preventDefault();
-  });
+function hardenTerminalDialogs() {
+  document.addEventListener("cancel", (event) => {
+    const dialog = event.target;
+    if (!(dialog instanceof HTMLDialogElement)) return;
+    if (dialog === resultDialog || dialog.id === "cascade-recall-dialog") event.preventDefault();
+  }, true);
 }
 
 function polishPlayerCopy() {
@@ -60,7 +62,8 @@ function polishPlayerCopy() {
 }
 
 let audioContext = null;
-const soundSeen = new WeakSet();
+const clearSoundSeen = new WeakSet();
+const specialSoundSeen = new WeakSet();
 let resultSoundOpen = false;
 
 function soundEnabled() {
@@ -129,9 +132,9 @@ function bodyThump(frequency = 105, duration = 0.1, volume = 0.018) {
 }
 
 function addTactileSound(node) {
-  if (!(node instanceof HTMLElement) || !node.classList.contains("cascade-tile") || soundSeen.has(node)) return;
-  if (node.classList.contains("is-special-triggered")) {
-    soundSeen.add(node);
+  if (!(node instanceof HTMLElement) || !node.classList.contains("cascade-tile")) return;
+  if (node.classList.contains("is-special-triggered") && !specialSoundSeen.has(node)) {
+    specialSoundSeen.add(node);
     const special = node.dataset.special || "";
     if (special === "bomb") {
       bodyThump(92, 0.16, 0.024);
@@ -141,10 +144,9 @@ function addTactileSound(node) {
     } else if (special === "color") {
       noiseBurst(0.18, 0.01, 1500, 9800);
     }
-    return;
   }
-  if (node.classList.contains("is-clearing")) {
-    soundSeen.add(node);
+  if (node.classList.contains("is-clearing") && !clearSoundSeen.has(node)) {
+    clearSoundSeen.add(node);
     noiseBurst(0.045, 0.0065, 650, 5000);
   }
 }
@@ -181,7 +183,7 @@ function installTactileAudio() {
 }
 
 wrapResearchBlitz();
-hardenTerminalDialog();
+hardenTerminalDialogs();
 installTactileAudio();
 polishPlayerCopy();
 
