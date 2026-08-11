@@ -128,7 +128,7 @@ test("Cascade Crush big-pop color clear creates a board-wide dopamine hit", asyn
   const started = await page.evaluate(() => window.cascadePolish.demo("color"));
   expect(started).toBe(true);
   await expect(page.locator(".cascade-color-wash")).toBeVisible();
-  await expect(page.locator(".cascade-pop-burst")).toBeVisible();
+  await expect(page.locator(".cascade-pop-burst .cascade-pop-ring").first()).toBeVisible();
   await expect(page.locator(".cascade-hype-word")).toContainText("Mega!");
   await page.screenshot({ path: `${output}/cascade-crush-big-pop-color-desktop.png`, fullPage: true });
 });
