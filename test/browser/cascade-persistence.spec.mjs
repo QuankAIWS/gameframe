@@ -126,3 +126,36 @@ test("Cascade labels progression stars as best ratings and distinguishes a lower
   await expect(page.locator("#result-dialog")).toBeVisible({ timeout: 8_000 });
   await expect(page.locator("#result-copy")).toContainText("★☆☆ this run · best ★★★");
 });
+
+test("Cascade admin same-level jump explicitly starts a fresh run", async ({ page }) => {
+  await installState(page, { level: 31 });
+  await page.route("**/api/session", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        playerId: "cascade-persistence-admin",
+        displayName: "Cascade Admin",
+        source: "discord",
+        admin: true,
+      }),
+    });
+  });
+
+  await page.goto("/cascade.html");
+  const move = await firstLegalMove(page);
+  expect(move).toBeTruthy();
+  await page.locator(`.cascade-tile[data-index="${move.from}"]`).click();
+  await page.locator(`.cascade-tile[data-index="${move.to}"]`).click();
+  await expect.poll(() => page.evaluate(() => window.cascadeResearch.exportLevel().score), { timeout: 8_000 }).toBeGreaterThan(0);
+
+  await expect(page.locator("#cascade-admin-open")).toBeVisible();
+  await page.locator("#cascade-admin-open").click();
+  await page.locator("#cascade-admin-command").fill("go to level 31");
+  await page.getByRole("button", { name: "Run" }).click();
+
+  await expect(page.locator("#level-number")).toHaveText("31", { timeout: 5_000 });
+  await expect(page.locator("#score")).toHaveText("0");
+  await expect(page.locator("#moves")).toHaveText("22");
+  await expect.poll(() => page.evaluate(() => window.cascadeResearch.exportActiveRun()?.score ?? -1)).toBe(0);
+});
