@@ -2,6 +2,7 @@ import { LEVEL_COUNT } from "./cascade-engine.js";
 
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
+const FRESH_RUN_KEY = "scribbles-gameframe.cascade-fresh-run:v1";
 const LIFE_MAX = 5;
 const HAMMER_MAX = 6;
 
@@ -143,15 +144,13 @@ function installConsole(identity) {
     stateLine.textContent = stateSummary();
   }
 
-  function discardActiveRunOnReload() {
+  function requestFreshRun() {
+    window.localStorage.setItem(FRESH_RUN_KEY, "1");
     window.localStorage.removeItem(ACTIVE_RUN_KEY);
-    window.addEventListener("pagehide", () => {
-      window.localStorage.removeItem(ACTIVE_RUN_KEY);
-    }, { once: true });
   }
 
   function reloadWithStatus(message, { freshRun = false } = {}) {
-    if (freshRun) discardActiveRunOnReload();
+    if (freshRun) requestFreshRun();
     status.textContent = message;
     window.setTimeout(() => window.location.reload(), 100);
   }
