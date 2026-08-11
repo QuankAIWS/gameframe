@@ -94,7 +94,7 @@ async function buildPendingRequest() {
   return pendingRequest;
 }
 
-function isRuntimeVersionSkew(error) {
+function isTravelContractRejection(error) {
   return error?.status >= 400
     && error?.status < 500
     && /command\.interaction contains unsupported fields[^\n]*routeId/i.test(
@@ -128,10 +128,13 @@ async function travel() {
       ? "Travel complete."
       : "Travel was accepted. The map will update when Runtime finishes the scene transfer.");
   } catch (error) {
-    if (isRuntimeVersionSkew(error)) {
+    if (isTravelContractRejection(error)) {
       pendingRequest = null;
-      showStatus("Travel is blocked by a GameFrame / RPG Runtime deployment mismatch.");
-      showError("Travel cannot be retried against this deployed RPG Runtime because it is older than the current GameFrame travel contract. Deploy the matched Runtime and GameFrame staging pair, then refresh.");
+      showStatus("Travel was rejected by the deployed RPG integration.");
+      showError(
+        `Travel contract rejection: ${error?.message || "the deployed RPG boundary rejected routeId"}. `
+        + "This error does not establish that either deployed service is older than the other.",
+      );
       return;
     }
 
