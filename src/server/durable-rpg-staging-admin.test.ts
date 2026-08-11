@@ -87,19 +87,17 @@ test("durable RPG staging reset requires exact confirmation and invokes only its
   assert.equal(requestResetCount, 1);
 });
 
-test("browser reset request, confirmation, and reload remain bound to the active campaign", async () => {
+test("browser reset request, cleanup, and reload remain bound to the canonical staging campaign", async () => {
   const source = await readFile(
     new URL("../../public/monster-master-rpg-admin.js", import.meta.url),
     "utf8",
   );
 
-  assert.match(source, /document\.querySelector\("#mm-rpg-campaign-code"\)/);
-  assert.match(source, /new URLSearchParams\(window\.location\.search\)\.get\("campaign"\)/);
-  assert.match(source, /let armedCampaignId = null/);
-  assert.match(source, /armedCampaignId !== campaignId/);
-  assert.match(source, /const confirmedCampaignId = armedCampaignId/);
-  assert.match(source, /campaignId: confirmedCampaignId/);
-  assert.match(source, /url\.searchParams\.set\("campaign", confirmedCampaignId\)/);
-  assert.doesNotMatch(source, /campaignId: "monster-master-staging"/);
-  assert.doesNotMatch(source, /profile\.v1:monster-master-staging"/);
+  assert.match(source, /const STAGING_CAMPAIGN_ID = "monster-master-staging-v6"/);
+  assert.match(source, /campaignId: STAGING_CAMPAIGN_ID/);
+  assert.match(source, /profile\.v1:\$\{STAGING_CAMPAIGN_ID\}/);
+  assert.match(source, /url\.searchParams\.set\("campaign", STAGING_CAMPAIGN_ID\)/);
+  assert.match(source, /stagingCampaignId: STAGING_CAMPAIGN_ID/);
+  assert.doesNotMatch(source, /#mm-rpg-campaign-code/);
+  assert.doesNotMatch(source, /new URLSearchParams\(window\.location\.search\)/);
 });
