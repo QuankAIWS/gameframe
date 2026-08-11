@@ -34,23 +34,26 @@ export interface RpgEdgeProxyDependencies {
   maxResponseBytes?: number;
 }
 
-export type RpgEdgeRoute = {
-  campaignId: string;
-  operation:
-    | "attach"
-    | "commands"
-    | "exploration/attach"
-    | "exploration/move"
-    | "exploration/interact"
-    | "exploration/control";
-};
+export type RpgEdgeRoute =
+  | { operation: "collection" }
+  | {
+      campaignId: string;
+      operation:
+        | "attach"
+        | "commands"
+        | "exploration/attach"
+        | "exploration/move"
+        | "exploration/interact"
+        | "exploration/control";
+    };
 
 export function publicRpgEdgeRoute(pathname: string): RpgEdgeRoute | null {
+  if (pathname === "/api/rpg/campaigns") return { operation: "collection" };
   const match = /^\/api\/rpg\/campaigns\/([^/]+)\/(attach|commands|exploration\/(?:attach|move|interact|control))$/.exec(pathname);
   if (!match) return null;
   return {
     campaignId: decodeURIComponent(match[1]!),
-    operation: match[2] as RpgEdgeRoute["operation"],
+    operation: match[2] as Exclude<RpgEdgeRoute, { operation: "collection" }>["operation"],
   };
 }
 
@@ -66,11 +69,12 @@ export async function proxyPublicRpgRequest(
     if (!route) {
       throw new RpgEdgeProxyError(404, "not_found", "The requested RPG edge route does not exist.");
     }
-    if (request.method !== "POST") {
+    const expectedMethod = route.operation === "collection" ? "GET" : "POST";
+    if (request.method !== expectedMethod) {
       return json(405, {
         error: "method_not_allowed",
-        message: "The requested RPG edge route accepts POST only.",
-      }, { allow: "POST" });
+        message: `The requested RPG edge route accepts ${expectedMethod} only.`,
+      }, { allow: expectedMethod });
     }
     if (principal.source !== "discord") {
       throw new RpgEdgeProxyError(
@@ -80,21 +84,25 @@ export async function proxyPublicRpgRequest(
       );
     }
 
-    requireSameOrigin(request, requestUrl);
-    const contentType = request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
-    if (contentType !== ALLOWED_CONTENT_TYPE) {
-      throw new RpgEdgeProxyError(
-        415,
-        "unsupported_media_type",
-        "RPG edge requests must use application/json.",
-      );
+    if (request.method === "POST") {
+      requireSameOrigin(request, requestUrl);
+      const contentType = request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
+      if (contentType !== ALLOWED_CONTENT_TYPE) {
+        throw new RpgEdgeProxyError(
+          415,
+          "unsupported_media_type",
+          "RPG edge requests must use application/json.",
+        );
+      }
     }
 
     const contentLength = request.headers.get("content-length");
     if (contentLength && Number(contentLength) > MAX_REQUEST_BODY_BYTES) {
       throw new RpgEdgeProxyError(413, "request_too_large", "The RPG request body is too large.");
     }
-    const body = new Uint8Array(await request.arrayBuffer());
+    const body = request.method === "GET"
+      ? new Uint8Array()
+      : new Uint8Array(await request.arrayBuffer());
     if (body.byteLength > MAX_REQUEST_BODY_BYTES) {
       throw new RpgEdgeProxyError(413, "request_too_large", "The RPG request body is too large.");
     }
@@ -119,7 +127,7 @@ export async function proxyPublicRpgRequest(
       avatarUrl: principal.avatarUrl,
     });
     signedHeaders.set("accept", "application/json");
-    signedHeaders.set("content-type", ALLOWED_CONTENT_TYPE);
+    if (request.method === "POST") signedHeaders.set("content-type", ALLOWED_CONTENT_TYPE);
 
     const requestTimeoutMs = boundedInteger(
       dependencies.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS,
@@ -132,9 +140,9 @@ export async function proxyPublicRpgRequest(
     let upstream: Response;
     try {
       upstream = await (dependencies.fetcher ?? fetch)(upstreamUrl, {
-        method: "POST",
+        method: request.method,
         headers: signedHeaders,
-        body,
+        ...(body.byteLength > 0 ? { body } : {}),
         redirect: "manual",
         signal: controller.signal,
       });
@@ -358,52 +366,42 @@ function defaultRandomBytes(length: number): Uint8Array {
   return bytes;
 }
 
-function encodeBase64Url(bytes: Uint8Array): string {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
 function secretBytes(value: string | Uint8Array): Uint8Array {
-  const bytes = typeof value === "string" ? encoder.encode(value) : new Uint8Array(value);
-  if (bytes.byteLength < MINIMUM_SECRET_BYTES) {
+  const bytes = typeof value === "string" ? encoder.encode(value) : value;
+  if (!(bytes instanceof Uint8Array) || bytes.byteLength < MINIMUM_SECRET_BYTES) {
     throw new TypeError(`proxySecret must contain at least ${MINIMUM_SECRET_BYTES} bytes`);
   }
   return bytes;
 }
 
-function requiredText(value: string, label: string, maximumLength: number): string {
-  const normalized = value.trim();
-  if (!normalized || normalized.length > maximumLength || /[\r\n\0]/.test(normalized)) {
-    throw new TypeError(`${label} is invalid`);
-  }
+function requiredText(value: unknown, label: string, maximum: number): string {
+  const normalized = typeof value === "string" ? value.trim() : "";
+  if (!normalized || normalized.length > maximum) throw new TypeError(`${label} is invalid`);
   return normalized;
 }
 
-function optionalText(
-  value: string | undefined,
-  label: string,
-  maximumLength: number,
-): string | undefined {
-  if (value === undefined || value === "") return undefined;
-  return requiredText(value, label, maximumLength);
+function optionalText(value: unknown, label: string, maximum: number): string | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  return requiredText(value, label, maximum);
 }
 
-function optionalAvatarUrl(value: string | undefined): string | undefined {
+function optionalAvatarUrl(value: unknown): string | undefined {
   const normalized = optionalText(value, "avatarUrl", 2_048);
   if (!normalized) return undefined;
-  const url = new URL(normalized);
-  if (url.protocol !== "https:") throw new TypeError("avatarUrl must use https");
+  let url: URL;
+  try {
+    url = new URL(normalized);
+  } catch {
+    throw new TypeError("avatarUrl is invalid");
+  }
+  if (url.protocol !== "https:" || url.username || url.password) {
+    throw new TypeError("avatarUrl must be a public HTTPS URL");
+  }
   return url.toString();
 }
 
-function boundedInteger(
-  value: number,
-  label: string,
-  minimum: number,
-  maximum: number,
-): number {
-  if (!Number.isInteger(value) || value < minimum || value > maximum) {
+function boundedInteger(value: number, label: string, minimum: number, maximum: number): number {
+  if (!Number.isSafeInteger(value) || value < minimum || value > maximum) {
     throw new TypeError(`${label} must be an integer from ${minimum} through ${maximum}`);
   }
   return value;
@@ -411,6 +409,12 @@ function boundedInteger(
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
+}
+
+function encodeBase64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 class RpgEdgeProxyError extends Error {
