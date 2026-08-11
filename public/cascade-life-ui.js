@@ -1,4 +1,5 @@
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
+const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
 const LIFE_QUEUE_KEY = "scribbles-gameframe.cascade-life-queue:v1";
 const LIFE_MAX = 5;
 const LIFE_REGEN_MS = 10 * 60 * 1000;
@@ -15,13 +16,17 @@ const resultCopy = $("#result-copy");
 
 let reloadQueued = false;
 
-function readState() {
+function readJson(key) {
   try {
-    const parsed = JSON.parse(window.localStorage.getItem(STATE_KEY) || "null");
+    const parsed = JSON.parse(window.localStorage.getItem(key) || "null");
     return parsed && typeof parsed === "object" ? parsed : null;
   } catch {
     return null;
   }
+}
+
+function readState() {
+  return readJson(STATE_KEY);
 }
 
 function queueStart(state, now = Date.now()) {
@@ -56,9 +61,30 @@ function bonusBoardActive() {
   return document.body.classList.contains("cascade-blitz-mode");
 }
 
+function sameArray(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  return a.every((value, index) => value === b[index]);
+}
+
+function activeRunCommitted() {
+  const current = window.cascadeResearch?.exportLevel?.();
+  if (!current || current.mode !== "normal") return true;
+  const saved = readJson(ACTIVE_RUN_KEY);
+  if (!saved) return false;
+  if (Number(saved.level) !== Number(current.level?.level)) return false;
+  if (Number(saved.score) !== Number(current.score)) return false;
+  if (Number(saved.movesRemaining) !== Number(current.movesRemaining)) return false;
+  if (!sameArray(saved.board, current.board) || !sameArray(saved.specials, current.specials)) return false;
+  if (!sameArray(saved.levelProgress?.collected, current.progress?.collected)) return false;
+  if (!sameArray(saved.levelProgress?.ice, current.progress?.ice)) return false;
+  return true;
+}
+
 function boardBusy() {
+  if (!activeRunCommitted()) return true;
+  if (board?.getAnimations?.({ subtree: true }).some((animation) => animation.playState === "running")) return true;
   return Boolean(document.querySelector(
-    ".cascade-tile.is-clearing, .cascade-tile.is-falling, .cascade-tile.is-landing, .cascade-tile.is-special-triggered, .cascade-board.is-shuffling, .cascade-board.is-shuffle-in",
+    ".cascade-tile.is-selected, .cascade-tile.is-hammer-target, .cascade-tile.is-hammer-hit, .cascade-tile.is-clearing, .cascade-tile.is-falling, .cascade-tile.is-landing, .cascade-tile.is-special-triggered, .cascade-board.is-shuffling, .cascade-board.is-shuffle-in",
   ));
 }
 
