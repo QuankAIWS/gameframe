@@ -30,7 +30,6 @@ async function refreshCommandState() {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
     await window.gameFrameMonsterRpgApp?.refresh?.();
-    await window.gameFrameMonsterRpgWorld?.attachCurrentCampaign?.({ quiet: true });
     synchronize();
   })().finally(() => {
     refreshPromise = null;
@@ -41,8 +40,13 @@ async function refreshCommandState() {
 async function freshExplorationState() {
   await refreshCommandState();
   const world = window.gameFrameMonsterRpgWorld;
-  const payload = world?.getPayload?.() ?? null;
-  const position = world?.getPlayerPosition?.() ?? null;
+  let payload = world?.getPayload?.() ?? null;
+  let position = world?.getPlayerPosition?.() ?? null;
+  if ((!payload?.projection || !payload?.materialization || !position) && world?.attachCurrentCampaign) {
+    await world.attachCurrentCampaign({ quiet: true });
+    payload = world.getPayload?.() ?? null;
+    position = world.getPlayerPosition?.() ?? null;
+  }
   const revision = currentRevision();
   if (!payload?.projection || !payload?.materialization || !position || revision === null) {
     throw new Error("The current exploration command state is not ready. Refresh and try again.");
