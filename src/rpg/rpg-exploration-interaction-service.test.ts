@@ -80,34 +80,20 @@ function talkRequest(
   };
 }
 
-test("Talk resolves Pell only after GameFrame proves adjacency", () => {
+test("Talk resolves a present actor anywhere in the current materialized scene", () => {
   const semantic = projection();
   const materialization = materializeRpgExplorationProjection(semantic);
   const positions = new SqliteRpgExplorationPositionStore({ filePath: databasePath() });
   const movement = new RpgExplorationMovementService({ positions });
   try {
-    let position = movement.attach({
+    const position = movement.attach({
       playerId: semantic.viewer.playerId,
       projection: semantic,
       materialization,
     });
-    assert.throws(
-      () => authorizeRpgExplorationTalk({
-        request: talkRequest(semantic, position.positionRevision),
-        materialization,
-        position,
-      }),
-      (error: unknown) => error instanceof RpgExplorationInteractionError
-        && error.code === "interaction-out-of-range",
-    );
-
-    for (const direction of ["west", "west", "west", "west"] as const) {
-      position = movement.move(
-        semantic.viewer.playerId,
-        moveRequest(semantic, position.positionRevision, direction),
-      );
-    }
-    assert.deepEqual(position.transform, { x: 10, y: 7, facing: "west" });
+    assert.deepEqual(position.transform, { x: 14, y: 7, facing: "west" });
+    const pell = materialization.anchors.find((anchor) => anchor.semanticId === "npc.warden-pell");
+    assert.equal(Math.abs((pell?.x ?? 0) - position.transform.x) + Math.abs((pell?.y ?? 0) - position.transform.y), 5);
 
     const authorized = authorizeRpgExplorationTalk({
       request: talkRequest(semantic, position.positionRevision),
@@ -253,7 +239,7 @@ test("Talk rejects stale position and browser-supplied semantic target fields", 
   }
 });
 
-test("first-slice Talk rejects an adjacent non-actor entity", () => {
+test("Talk rejects a present non-actor entity even though actor speech is scene-wide", () => {
   const semantic = projection();
   const materialization = materializeRpgExplorationProjection(semantic);
   materialization.anchors.push({
@@ -275,7 +261,6 @@ test("first-slice Talk rejects an adjacent non-actor entity", () => {
       projection: semantic,
       materialization,
     });
-    assert.deepEqual(position.transform, { x: 14, y: 7, facing: "west" });
     assert.throws(
       () => authorizeRpgExplorationTalk({
         request: talkRequest(
