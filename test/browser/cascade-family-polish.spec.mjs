@@ -14,6 +14,21 @@ async function installState(page, { level = 6, lives = 5, lastLifeAt = Date.now(
   });
 }
 
+async function showSyntheticBlitzComplete(page) {
+  await page.evaluate(() => {
+    const dialog = document.querySelector("#result-dialog");
+    document.querySelector("#result-kicker").textContent = "BLITZ COMPLETE";
+    document.querySelector("#result-title").textContent = "Test complete";
+    const actions = document.querySelector("#result-actions");
+    actions.replaceChildren();
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Continue";
+    actions.append(button);
+    if (!dialog.open) dialog.showModal();
+  });
+}
+
 test("Cascade preserves an already-running life timer when another life is lost", async ({ page }) => {
   const startedAt = Date.now() - (5 * 60 * 1000);
   await installState(page, { level: 7, lives: 4, lastLifeAt: startedAt });
@@ -54,6 +69,35 @@ test("Cascade restores a partial life while the page remains open", async ({ pag
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 });
 
+test("Cascade waits for an in-flight move to commit before applying a ready life", async ({ page }) => {
+  await installState(page, { level: 9, lives: 3, lastLifeAt: Date.now() });
+  await page.goto("/cascade.html");
+
+  const move = await page.evaluate(async () => {
+    const { listLegalMoves } = await import("/cascade-engine.js");
+    const state = window.cascadeResearch.exportLevel();
+    return { ...listLegalMoves(state.board)[0], movesBefore: state.movesRemaining };
+  });
+  expect(move.from).toBeGreaterThanOrEqual(0);
+  expect(move.to).toBeGreaterThanOrEqual(0);
+
+  await page.locator(`.cascade-tile[data-index="${move.from}"]`).click();
+  await page.locator(`.cascade-tile[data-index="${move.to}"]`).click();
+  await page.evaluate((key) => {
+    localStorage.setItem(key, String(Date.now() - (10 * 60 * 1000) - 100));
+    document.body.classList.toggle("cascade-test-life-tick");
+  }, lifeQueueKey);
+
+  await page.waitForTimeout(120);
+  expect(await page.evaluate(() => window.cascadeResearch.exportLevel().movesRemaining)).toBe(move.movesBefore - 1);
+
+  await expect.poll(
+    () => page.evaluate((key) => Number(JSON.parse(localStorage.getItem(key))?.lives || 0), stateKey),
+    { timeout: 8_000 },
+  ).toBe(4);
+  expect(await page.evaluate(() => window.cascadeResearch.exportLevel().movesRemaining)).toBe(move.movesBefore - 1);
+});
+
 test("Cascade Weekly Blitz preserves the normal board underneath it", async ({ page }) => {
   await installState(page, { level: 7, lives: 5 });
   await page.goto("/cascade.html");
@@ -68,24 +112,12 @@ test("Cascade Weekly Blitz preserves the normal board underneath it", async ({ p
     () => page.evaluate((key) => sessionStorage.getItem(key), blitzReturnKey),
   ).not.toBeNull();
 
-  await page.evaluate(() => {
-    const dialog = document.querySelector("#result-dialog");
-    document.querySelector("#result-kicker").textContent = "BLITZ COMPLETE";
-    document.querySelector("#result-title").textContent = "Test complete";
-    const actions = document.querySelector("#result-actions");
-    actions.replaceChildren();
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = "Continue";
-    actions.append(button);
-    if (!dialog.open) dialog.showModal();
-  });
-
-  await Promise.all([
-    page.waitForLoadState("domcontentloaded"),
-    page.getByRole("button", { name: "Continue", exact: true }).click(),
-  ]);
+  await showSyntheticBlitzComplete(page);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(page.locator("#level-number")).toHaveText("7");
+  await expect.poll(
+    () => page.evaluate((key) => sessionStorage.getItem(key), blitzReturnKey),
+  ).toBeNull();
 
   const after = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)), activeRunKey);
   expect(after?.level).toBe(before.level);
@@ -93,6 +125,33 @@ test("Cascade Weekly Blitz preserves the normal board underneath it", async ({ p
   expect(after?.specials).toEqual(before.specials);
   expect(after?.score).toBe(before.score);
   expect(after?.movesRemaining).toBe(before.movesRemaining);
+});
+
+test("Cascade waits for Weekly Blitz score submission before restoring the normal board", async ({ page }) => {
+  await installState(page, { level: 7, lives: 5 });
+  await page.goto("/cascade.html");
+  await expect.poll(() => page.evaluate(() => Boolean(window.cascadeBonusModes))).toBe(true);
+
+  await page.locator("[data-weekly-start]").click();
+  await expect(page.locator("body")).toHaveClass(/cascade-blitz-mode/);
+  await page.evaluate(() => {
+    document.querySelector("[data-weekly-status]").textContent = "Saving weekly score…";
+  });
+  await showSyntheticBlitzComplete(page);
+
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Saving score…", exact: true })).toBeDisabled();
+  await page.waitForTimeout(100);
+  await expect(page.locator("body")).toHaveClass(/cascade-blitz-mode/);
+  expect(await page.evaluate((key) => sessionStorage.getItem(key), blitzReturnKey)).not.toBeNull();
+
+  await page.evaluate(() => {
+    document.querySelector("[data-weekly-status]").textContent = "New weekly best saved.";
+  });
+  await expect(page.locator("#level-number")).toHaveText("7", { timeout: 4_000 });
+  await expect.poll(
+    () => page.evaluate((key) => sessionStorage.getItem(key), blitzReturnKey),
+  ).toBeNull();
 });
 
 test("Cascade bonus play remains available at zero lives", async ({ page }) => {
