@@ -23,7 +23,25 @@ function wrapResearchBlitz() {
   });
 }
 
-function restoreNormalRunAfterBlitz(event) {
+function waitForWeeklyScoreSettlement() {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => {
+      const status = document.querySelector("[data-weekly-status]");
+      if (!status || !status.textContent?.startsWith("Saving weekly score")) {
+        resolve();
+        return;
+      }
+      const observer = new MutationObserver(() => {
+        if (status.textContent?.startsWith("Saving weekly score")) return;
+        observer.disconnect();
+        resolve();
+      });
+      observer.observe(status, { subtree: true, childList: true, characterData: true });
+    });
+  });
+}
+
+async function restoreNormalRunAfterBlitz(event) {
   const button = event.target instanceof Element ? event.target.closest("#result-actions button") : null;
   if (!button || button.textContent !== "Continue") return;
   if (resultKicker?.textContent !== "BLITZ COMPLETE") return;
@@ -32,6 +50,13 @@ function restoreNormalRunAfterBlitz(event) {
 
   event.preventDefault();
   event.stopImmediatePropagation();
+  button.disabled = true;
+  const originalLabel = button.textContent;
+  if (document.querySelector("[data-weekly-status]")?.textContent?.startsWith("Saving weekly score")) {
+    button.textContent = "Saving score…";
+  }
+  await waitForWeeklyScoreSettlement();
+  button.textContent = originalLabel;
   window.localStorage.setItem(ACTIVE_RUN_KEY, snapshot);
   window.sessionStorage.removeItem(BLITZ_RETURN_KEY);
   if (resultDialog?.open) resultDialog.close();
