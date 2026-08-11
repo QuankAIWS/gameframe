@@ -302,6 +302,7 @@ function showHype(text, tier = 2, subtext = "") {
   const wrap = document.querySelector(".cascade-board-wrap");
   if (!layer || !wrap) return;
   const token = ++hypeToken;
+  layer.querySelectorAll(".cascade-hype-word").forEach((existing) => existing.remove());
   const word = document.createElement("div");
   word.className = "cascade-hype-word";
   word.style.setProperty("--hype-color", palette[(tier + 1) % palette.length]);
@@ -332,7 +333,8 @@ function hypeForCascade(cascade) {
 function specialPriority(type) {
   if (type === "color") return 3;
   if (type === "bomb") return 2;
-  return 1;
+  if (type === "stripe-h" || type === "stripe-v") return 1;
+  return 0;
 }
 
 function processBoardEffects() {
@@ -345,7 +347,7 @@ function processBoardEffects() {
 
   for (const tile of clears) {
     const special = tile.dataset.special || "";
-    const intensity = special || cascade >= 4 ? 3 : cascade >= 2 ? 2 : 1;
+    const intensity = (special || cascade >= 4) ? 3 : cascade >= 2 ? 2 : 1;
     spawnPopBurst(tile, intensity);
   }
   if (clears.length) playClear(clears.length);
