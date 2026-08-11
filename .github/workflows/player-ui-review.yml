@@ -91,7 +91,7 @@ jobs:
       - name: Player navigation, platform, renderer geometry, asset, game, and Monster Master rule contracts
         run: node --experimental-strip-types --test src/browser/monster-master-ground-asset-contract.test.mjs src/browser/monster-master-wall-top-asset-contract.test.mjs src/browser/monster-master-cliff-face-asset-contract.test.mjs src/browser/monster-master-terrain-geometry.test.mjs src/browser/player-navigation-contract.test.ts src/browser/player-platform-extension-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/monster-master-option-layer-contract.test.mjs src/browser/othello-runtime-contract.test.ts src/cloudflare/player-platform-object-runtime.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/delivery-contract.test.ts src/games/monster-master/checkpoint-contract.test.ts
 
-      - name: Cascade 100-level engine, persistent specials, and bot profile
+      - name: Cascade 300-level engine, persistent specials, and bot profile
         run: |
           npm run cascade:test
           node --test src/games/cascade/cascade-special-engine.test.mjs
