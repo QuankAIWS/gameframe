@@ -62,8 +62,11 @@ function patternFor(levelNumber, phase = 0, precision = false) {
 
 function tunedIceCount(value, factor, pattern, { layers = 1, precision = false } = {}) {
   let count = scaleCount(value, factor);
-  if (pattern === "edges") count -= precision ? 2 : layers === 1 ? 2 : 1;
-  if (layers > 1 && pattern === "diagonal") count -= 2;
+  if (pattern === "edges") count -= precision ? 3 : layers === 1 ? 2 : 1;
+  if (layers > 1 && pattern === "diagonal") {
+    count -= 2;
+    if (factor >= 1.1) count -= 1;
+  }
   return Math.max(2, count);
 }
 
