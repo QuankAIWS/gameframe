@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  CAMPAIGN_CAPACITY,
   CASCADE_LEVELS,
+  CHAPTER_SIZE,
   LEVEL_COUNT,
   applyLevelProgress,
   applySwap,
@@ -15,23 +17,73 @@ import {
 } from "../../../public/cascade-engine.js";
 import { profileCascadeLevels, runCascadeLevel } from "./cascade-simulator.js";
 
-test("Cascade preserves the opening curve and extends the authored run to 100 levels", () => {
-  assert.equal(LEVEL_COUNT, 100);
-  assert.equal(CASCADE_LEVELS.length, 100);
+test("Cascade ships 300 levels on a campaign model sized for 1000", () => {
+  assert.equal(LEVEL_COUNT, 300);
+  assert.equal(CAMPAIGN_CAPACITY, 1000);
+  assert.equal(CHAPTER_SIZE, 30);
+  assert.equal(CASCADE_LEVELS.length, 300);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
   assert.equal(CASCADE_LEVELS[0].moves, 20);
   assert.equal(CASCADE_LEVELS[4].target, 2375);
   assert.equal(CASCADE_LEVELS[4].hard, true);
-  assert.equal(CASCADE_LEVELS[19].hard, true);
-  assert.equal(CASCADE_LEVELS[29].target, 13600);
-  assert.equal(CASCADE_LEVELS[29].moves, 14);
-  assert.equal(CASCADE_LEVELS[29].hard, true);
+
+  assert.equal(CASCADE_LEVELS[29].chapter, "special-mastery");
+  assert.equal(CASCADE_LEVELS[29].difficulty, "super-hard");
+
+  assert.equal(CASCADE_LEVELS[30].chapter, "ice");
   assert.ok(CASCADE_LEVELS[30].objective.ice);
-  assert.ok(CASCADE_LEVELS[40].objective.collect.length > 0);
-  assert.ok(CASCADE_LEVELS[60].mechanics.includes("cross-blast"));
-  assert.equal(CASCADE_LEVELS[70].objective.ice.layers, 2);
-  assert.ok(CASCADE_LEVELS[99].objective.ice);
-  assert.equal(CASCADE_LEVELS[99].objective.collect.length, 2);
+  assert.equal(CASCADE_LEVELS[30].objective.ice.layers, 1);
+
+  assert.equal(CASCADE_LEVELS[60].chapter, "collection");
+  assert.equal(CASCADE_LEVELS[60].objective.collect.length, 1);
+
+  assert.equal(CASCADE_LEVELS[90].chapter, "mixed");
+  assert.ok(CASCADE_LEVELS[90].objective.ice);
+  assert.equal(CASCADE_LEVELS[90].objective.collect.length, 1);
+
+  assert.equal(CASCADE_LEVELS[120].chapter, "dual-collection");
+  assert.equal(CASCADE_LEVELS[120].objective.collect.length, 2);
+
+  assert.equal(CASCADE_LEVELS[150].chapter, "layered-ice");
+  assert.equal(CASCADE_LEVELS[150].objective.ice.layers, 2);
+
+  assert.equal(CASCADE_LEVELS[180].chapter, "layered-mix");
+  assert.equal(CASCADE_LEVELS[180].objective.ice.layers, 2);
+  assert.equal(CASCADE_LEVELS[180].objective.collect.length, 1);
+
+  assert.equal(CASCADE_LEVELS[210].chapter, "precision");
+  assert.ok(CASCADE_LEVELS[210].objective.ice);
+  assert.ok(CASCADE_LEVELS[210].objective.collect.length > 0);
+
+  assert.equal(CASCADE_LEVELS[240].chapter, "heavy-remix");
+  assert.equal(CASCADE_LEVELS[240].objective.collect.length, 2);
+  assert.equal(CASCADE_LEVELS[240].objective.ice.layers, 2);
+
+  assert.equal(CASCADE_LEVELS[270].chapter, "expert-remix");
+  assert.equal(CASCADE_LEVELS[299].chapter, "capstone");
+  assert.equal(CASCADE_LEVELS[299].difficulty, "super-hard");
+  assert.equal(CASCADE_LEVELS[299].objective.collect.length, 2);
+  assert.equal(CASCADE_LEVELS[299].objective.ice.layers, 2);
+});
+
+test("difficulty uses repeating tension waves instead of a monotonic staircase", () => {
+  const wave = CASCADE_LEVELS.slice(30, 40);
+  assert.equal(wave[0].difficulty, "relief");
+  assert.equal(wave[4].difficulty, "hard");
+  assert.equal(wave[5].difficulty, "relief");
+  assert.equal(wave[9].difficulty, "super-hard");
+  assert.ok(wave[0].moves > wave[4].moves);
+  assert.ok(wave[5].moves > wave[9].moves);
+  assert.ok(wave[0].target < wave[4].target);
+  assert.ok(wave[5].target < wave[9].target);
+
+  for (let start = 30; start < LEVEL_COUNT - 10; start += 10) {
+    const ten = CASCADE_LEVELS.slice(start, start + 10);
+    assert.equal(ten[0].difficulty, "relief", `level ${start + 1} should open a relief beat`);
+    assert.equal(ten[4].difficulty, "hard", `level ${start + 5} should be hard`);
+    assert.equal(ten[5].difficulty, "relief", `level ${start + 6} should release tension`);
+    assert.equal(ten[9].difficulty, "super-hard", `level ${start + 10} should cap the wave`);
+  }
 });
 
 test("seeded board creation is deterministic, stable, and immediately playable", () => {
@@ -66,7 +118,7 @@ test("four and five tile powers unlock only when their level mechanic is active"
   assert.ok(sweepFive.matched.length > 5);
 });
 
-test("a T or L intersection triggers the late-game area blast", () => {
+test("a T or L intersection triggers the legacy area-blast compatibility path", () => {
   const board = Array.from({ length: 64 }, (_, index) => (Math.floor(index / 8) * 2 + (index % 8)) % 6);
   for (const index of [18, 19, 20, 12, 28]) board[index] = 5;
   const plain = resolveCascades(board, createRng(17), { mechanics: ["power-match", "color-sweep"] }).transitions[0];
@@ -78,7 +130,7 @@ test("a T or L intersection triggers the late-game area blast", () => {
 });
 
 test("matched cells chip fixed ice layers and objective progress tracks collection", () => {
-  const definition = CASCADE_LEVELS[80];
+  const definition = CASCADE_LEVELS[180];
   const progress = createLevelProgress(definition);
   assert.ok(progress.ice.some((layers) => layers === 2));
 
@@ -101,7 +153,7 @@ test("matched cells chip fixed ice layers and objective progress tracks collecti
 });
 
 test("a legal swap returns replayable objective-aware cascade transition records", () => {
-  const level = CASCADE_LEVELS[65];
+  const level = CASCADE_LEVELS[185];
   const progress = createLevelProgress(level);
   const rng = createRng(24680);
   const board = createBoard({ rng });
@@ -128,7 +180,7 @@ test("a legal swap returns replayable objective-aware cascade transition records
   assert.ok(listLegalMoves(result.board).length > 0);
 });
 
-test("all 100 levels exercise the objective-aware lookahead bot without engine errors", () => {
+test("all 300 levels exercise the objective-aware lookahead bot without engine errors", () => {
   for (const level of CASCADE_LEVELS) {
     const run = runCascadeLevel({ level, seed: 1000 + level.level, strategy: "lookahead" });
     assert.ok(run.moveHistory.length > 0, `lookahead made no moves on level ${level.level}`);
@@ -137,9 +189,9 @@ test("all 100 levels exercise the objective-aware lookahead bot without engine e
   }
 });
 
-test("sample profiling covers all 100 levels and records skill/planning sensitivity", () => {
+test("sample profiling covers all 300 levels and records skill/planning sensitivity", () => {
   const report = profileCascadeLevels({ runsPerLevel: 1 });
-  assert.equal(report.levels.length, 100);
+  assert.equal(report.levels.length, 300);
   for (const level of report.levels) {
     assert.ok(level.strategies.random);
     assert.ok(level.strategies.greedy);
@@ -151,7 +203,7 @@ test("sample profiling covers all 100 levels and records skill/planning sensitiv
 });
 
 test("objectiveComplete requires score plus every authored non-score objective", () => {
-  const definition = CASCADE_LEVELS[90];
+  const definition = CASCADE_LEVELS[240];
   const progress = createLevelProgress(definition);
   assert.equal(objectiveComplete(definition, progress, definition.target), false);
   const complete = {
