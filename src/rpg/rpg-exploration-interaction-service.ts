@@ -92,9 +92,9 @@ export class RpgExplorationInteractionError extends Error {
  * Converts a viewer-safe physical handle into one bounded semantic interaction
  * only after GameFrame proves the current scene/materialization/position. The
  * browser never supplies a Runtime entity ID, destination scene, or destination
- * location. Talk resolves an adjacent actor (plus the existing checkpoint-cart
- * CHANGE canary); Travel resolves only an adjacent route anchor already exposed
- * by the current viewer-safe materialization.
+ * location. Normal actor speech may address any actor physically present in the
+ * current materialized scene; physical object actions and route traversal remain
+ * adjacency-gated. A future acoustics/line-of-sight contract may narrow speech.
  */
 export function authorizeRpgExplorationInteraction(input: {
   request: unknown;
@@ -134,14 +134,6 @@ export function authorizeRpgExplorationInteraction(input: {
   }
   const distance = Math.abs(target.x - position.transform.x)
     + Math.abs(target.y - position.transform.y);
-  if (distance !== 1) {
-    throw new RpgExplorationInteractionError(
-      "interaction-out-of-range",
-      request.interaction === "travel"
-        ? "Move next to the route edge before traveling."
-        : "Move next to the interaction target first.",
-    );
-  }
 
   const common = {
     campaignId: request.campaignId,
@@ -153,6 +145,12 @@ export function authorizeRpgExplorationInteraction(input: {
   };
 
   if (request.interaction === "travel") {
+    if (distance !== 1) {
+      throw new RpgExplorationInteractionError(
+        "interaction-out-of-range",
+        "Move next to the route edge before traveling.",
+      );
+    }
     if (
       target.kind !== "route"
       || typeof target.semanticId !== "string"
@@ -187,6 +185,12 @@ export function authorizeRpgExplorationInteraction(input: {
     throw new RpgExplorationInteractionError(
       "interaction-target-unavailable",
       "The selected Talk target is not available in the current viewer-safe scene.",
+    );
+  }
+  if (checkpointCartUncover && distance !== 1) {
+    throw new RpgExplorationInteractionError(
+      "interaction-out-of-range",
+      "Move next to the interaction target first.",
     );
   }
   return {
