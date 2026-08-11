@@ -98,7 +98,7 @@ The current run contains 100 levels. Later chapters add objective pressure witho
 - layered ice;
 - tighter move budgets and harder combinations.
 
-The existing automated player remains useful for solvability and curve calibration, but special-piece strategy should eventually be included in the profiler so late-game tuning reflects the real player rules.
+The automated player uses the same persistent-special rules as the browser game so solvability and curve calibration reflect the real game rather than the old instant-detonation mechanics.
 
 ## Lives
 
@@ -125,7 +125,7 @@ Bonus modes are short interruptions between ordinary levels. They are optional, 
 
 ### Blitz
 
-The first implemented bonus mode is **Blitz**.
+The first bonus mode is **Blitz**.
 
 - 30 seconds
 - no move limit
@@ -136,18 +136,22 @@ The first implemented bonus mode is **Blitz**.
 - result records score, match groups, specials created, and best rating
 - replay is allowed, but only a new best star result advances the reward total
 
-Initial Blitz slots occur after selected progression milestones instead of attaching a small timer to ordinary levels.
+Progression Blitz slots occur after selected milestones instead of attaching a small timer to ordinary levels.
 
-### Quick Recall — planned
+### Quick Recall
 
-A short visual-memory intermission using the game's existing tile vocabulary. Example structure:
+**Quick Recall** is a short sequence-memory intermission using Cascade's existing six tile identities.
 
-1. briefly show a small sequence or set of tiles;
-2. hide them;
-3. present distractors;
-4. ask the player to reproduce the set, order, or positions;
-5. award an optional bonus result;
-6. allow Skip with no penalty.
+- optional and non-failing;
+- three rounds per session;
+- sequence lengths 3, 4, and 5;
+- each tile is shown briefly, then hidden;
+- the player repeats the sequence from a six-tile palette;
+- result records total accuracy, perfect rounds, best result, and 0–3 stars;
+- Skip has no penalty;
+- best-star improvements participate in the same earned-star hammer progression as the other bonus modes.
+
+Initial Quick Recall offers occur after levels 8, 24, 48, 72, and 96. The mode is deliberately short enough to feel like a change of rhythm rather than homework.
 
 ### Memory Fog — planned
 
@@ -155,15 +159,29 @@ A future match-3 bonus mode in which selected tile identities are visible for a 
 
 ## Competition and leaderboard direction
 
-Cascade Crush should use scored-game leaderboard semantics rather than pretending a solo score run is a win/loss board-game match.
+GameFrame now has separate semantics for competitive board games and scored events.
 
-Useful ranking surfaces:
+Board games keep their existing win/loss/draw standings. Solo score runs are stored through a scored-event contract keyed by game, mode, event, and authenticated player. Only the player's best score for an event is retained.
 
-- Weekly Blitz best score
-- total best stars
-- deepest level / run completion
+### Weekly Blitz
 
-The preferred competitive Blitz format uses a shared deterministic seed for the same event so family members receive the same starting board and refill sequence. That makes the comparison more meaningful than unrelated random boards.
+Weekly Blitz is the first scored Cascade event.
+
+- each event runs on a UTC Monday-to-Monday week;
+- the event ID includes a versioned ruleset and the UTC week start date;
+- the event ID deterministically produces the same starting board and refill RNG sequence for every player;
+- each player's highest submitted score is retained for that week;
+- the shared leaderboard ranks by score rather than manufacturing wins/losses;
+- useful run metrics such as match groups, specials, and maximum cascade depth travel with the best result;
+- the public score route binds the authenticated GameFrame player and does not accept a payload-supplied player identity as authority.
+
+This is a family-playtest competition system, not an anti-cheat tournament service. Score calculation still originates in the client game, while player identity and best-result storage are server-bound.
+
+Useful ranking surfaces now or later:
+
+- Weekly Blitz best score;
+- total best stars;
+- deepest level / run completion.
 
 ## Local play telemetry
 
@@ -181,7 +199,9 @@ Useful events include:
 - board shuffle;
 - level win/failure;
 - booster armed/used;
-- Blitz offered/started/completed.
+- Blitz offered/started/completed;
+- Quick Recall offered/started/skipped/completed;
+- Weekly Blitz started/submitted/submission failed.
 
 Local telemetry must never interfere with gameplay.
 
@@ -202,16 +222,18 @@ Track enough to tune the game, not to manufacture pressure:
 - hammer use rate;
 - best stars by level;
 - Blitz attempts, scores, and improvement rate;
-- optional-memory-mode participation and performance once those modes exist.
+- Quick Recall participation, accuracy, and improvement rate;
+- Weekly Blitz participation and best-score spread;
+- optional-memory-mode participation and performance once additional modes exist.
 
 ## Current development order
 
-1. Persistent special-piece engine and combinations.
-2. Teach permanent special rules in levels 1–5.
-3. Remove the IOU/fake-economy code path completely.
-4. Standalone 30-second Blitz bonus mode.
-5. Rerun automated and browser/visual acceptance and retune difficulty where special pieces change the curve.
-6. Quick Recall bonus mode.
-7. Scored-game leaderboard contract, with Weekly Blitz as the first Cascade leaderboard.
+1. Persistent special-piece engine and combinations — implemented.
+2. Teach permanent special rules in levels 1–5 — implemented.
+3. Remove the IOU/fake-economy code path completely — implemented.
+4. Standalone 30-second Blitz bonus mode — implemented.
+5. Rerun automated/browser/visual acceptance and retune the special-piece curve — implemented for the current 100-level run.
+6. Quick Recall bonus mode — implemented in the current development slice.
+7. Generic scored-game leaderboard contract + Weekly Blitz — implemented in the current development slice.
 8. Memory Fog and other memory/attention variations after real playtest feedback.
-9. Continue polishing effects, sound, authored level beats, and accessibility without making the UI busier than the board needs.
+9. Continue polishing effects, sound, authored level beats, competitive surfaces, and accessibility without making the UI busier than the board needs.

@@ -220,6 +220,13 @@ export function createGameFrameServer(
         return json(response, 200, players.updateFavorites(principal.playerId, body.favoriteGameIds));
       }
 
+      if (request.method === "POST" && url.pathname === "/api/scores") {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        players.register(principal);
+        const body = await readJson(request);
+        return json(response, 200, players.submitScore(principal.playerId, body));
+      }
+
       if (request.method === "GET" && url.pathname === "/api/leaderboard") {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
         players.register(principal);

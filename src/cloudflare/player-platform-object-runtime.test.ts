@@ -36,6 +36,18 @@ function completedMatch(matchId: string, winnerPlayerId: string | null, draw = f
   };
 }
 
+function scored(playerId: string, score: number, eventId = "cascade-weekly-blitz-v1:2026-08-10") {
+  return {
+    gameId: "cascade",
+    modeId: "weekly-blitz",
+    eventId,
+    playerId,
+    score,
+    metrics: { matches: 12, specials: 3, cascades: 4 },
+    updatedAt: score + 1000,
+  };
+}
+
 test("player directory lists other Discord players but not the viewer", async () => {
   const runtime = new PlayerPlatformObjectRuntime(new MemoryStorage());
   await runtime.fetch(request("/directory/upsert", "POST", {
@@ -142,4 +154,39 @@ test("leaderboard counts each completed authoritative match once and ranks by po
     { playerId: "discord:2", played: 2, points: 4 },
     { playerId: "discord:1", played: 2, points: 1 },
   ]);
+  assert.deepEqual(leaderboard.scoredGames, []);
+});
+
+test("scored leaderboards keep each player's best event result and rank by score", async () => {
+  const runtime = new PlayerPlatformObjectRuntime(new MemoryStorage());
+  await runtime.fetch(request("/directory/upsert", "POST", {
+    playerId: "discord:1", displayName: "Alice", source: "discord", lastSeenAt: 1000,
+  }));
+  await runtime.fetch(request("/directory/upsert", "POST", {
+    playerId: "discord:2", displayName: "Mom", source: "discord", lastSeenAt: 2000,
+  }));
+
+  const first = await body(await runtime.fetch(request("/directory/score", "POST", scored("discord:1", 12_000))));
+  assert.equal(first.improved, true);
+  assert.equal(first.previousBest, null);
+
+  const lower = await body(await runtime.fetch(request("/directory/score", "POST", scored("discord:1", 9_000))));
+  assert.equal(lower.improved, false);
+  assert.equal(lower.entry.score, 12_000);
+  assert.equal(lower.previousBest, 12_000);
+
+  await runtime.fetch(request("/directory/score", "POST", scored("discord:2", 15_000)));
+  await runtime.fetch(request("/directory/score", "POST", scored("discord:1", 8_000, "cascade-weekly-blitz-v1:2026-08-17")));
+
+  const leaderboard = await body(await runtime.fetch(request("/directory/leaderboard")));
+  assert.equal(leaderboard.scoredGames.length, 2);
+  assert.equal(leaderboard.scoredGames[0].eventId, "cascade-weekly-blitz-v1:2026-08-17");
+  assert.deepEqual(leaderboard.scoredGames[1].entries.map((entry: any) => ({
+    playerId: entry.playerId,
+    score: entry.score,
+  })), [
+    { playerId: "discord:2", score: 15_000 },
+    { playerId: "discord:1", score: 12_000 },
+  ]);
+  assert.deepEqual(leaderboard.scoredGames[1].entries[1].metrics, { matches: 12, specials: 3, cascades: 4 });
 });

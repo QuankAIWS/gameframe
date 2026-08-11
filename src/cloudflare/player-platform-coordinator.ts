@@ -97,9 +97,33 @@ export async function updatePlayerPreferences(
 }
 
 export async function readLeaderboard(env: GameFrameWorkerEnv) {
-  return internalJson<{ games: unknown[] }>(
+  return internalJson<{ games: unknown[]; scoredGames: unknown[] }>(
     await directoryStub(env).fetch(new Request("https://player.internal/directory/leaderboard")),
   );
+}
+
+export async function submitScoredResult(
+  env: GameFrameWorkerEnv,
+  playerId: string,
+  value: Record<string, unknown>,
+) {
+  return internalJson<{
+    entry: Record<string, unknown>;
+    improved: boolean;
+    previousBest: number | null;
+  }>(await directoryStub(env).fetch(new Request("https://player.internal/directory/score", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      gameId: value.gameId,
+      modeId: value.modeId,
+      eventId: value.eventId,
+      score: value.score,
+      metrics: value.metrics,
+      playerId,
+      updatedAt: Date.now(),
+    }),
+  })));
 }
 
 export async function indexMatchView(env: GameFrameWorkerEnv, view: IndexedMatchView): Promise<void> {

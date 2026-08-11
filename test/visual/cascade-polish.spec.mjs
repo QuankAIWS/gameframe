@@ -31,8 +31,10 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   await expect(page.locator("#cascade-sound-toggle")).toBeVisible();
   await expect(page.locator("#level-stars")).toBeVisible();
+  await expect(page.locator("#cascade-weekly-card")).toBeVisible();
   await expect(page.locator('link[href="/cascade-polish.css"]')).toHaveCount(1);
   await expect(page.locator('link[href="/cascade-evolution.css"]')).toHaveCount(1);
+  await expect(page.locator('link[href="/cascade-bonus-modes.css"]')).toHaveCount(1);
 
   const shapes = await page.locator(".cascade-tile").evaluateAll((tiles) => {
     const byKind = new Map();
@@ -47,6 +49,7 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
+  await expect(page.locator("#cascade-weekly-card")).toBeVisible();
   const board = await page.locator("#board").boundingBox();
   expect(board).toBeTruthy();
   expect(board.width).toBeLessThanOrEqual(390);
@@ -115,6 +118,27 @@ test("Cascade Crush Blitz takes over the board without replacing the core visual
   await expect(page.locator("#moves")).toHaveText("∞");
   await expect(page.locator("#blitz-callout")).toHaveText("BLITZ", { timeout: 4_000 });
   await page.screenshot({ path: `${output}/cascade-crush-blitz-desktop.png`, fullPage: true });
+});
+
+test("Cascade Crush Quick Recall reads as a distinct but related bonus mode", async ({ page }) => {
+  await prepare(page, 9, {
+    starsByLevel: { "8": 2 },
+    blitzBest: {},
+    blitzStars: {},
+    blitzSeen: {},
+    recallBest: {},
+    recallSeen: {},
+    pendingHammerRewards: 0,
+  });
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto("/cascade.html");
+  await page.evaluate(() => window.cascadeBonusModes.startQuickRecall(8));
+
+  const dialog = page.locator("#cascade-recall-dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator("[data-recall-kicker]")).toHaveText("QUICK RECALL");
+  await expect(dialog.locator("[data-recall-title]")).toContainText("Round 1");
+  await page.screenshot({ path: `${output}/cascade-crush-quick-recall-desktop.png`, fullPage: true });
 });
 
 test("Cascade Crush layered objective styling remains obvious in the polished theme", async ({ page }) => {
