@@ -45,11 +45,15 @@ if (board && wrap) {
     const paddingRight = Number.parseFloat(style.paddingRight) || 0;
     const paddingBottom = Number.parseFloat(style.paddingBottom) || 0;
     const paddingLeft = Number.parseFloat(style.paddingLeft) || 0;
+    const borderTop = Number.parseFloat(style.borderTopWidth) || 0;
+    const borderRight = Number.parseFloat(style.borderRightWidth) || 0;
+    const borderBottom = Number.parseFloat(style.borderBottomWidth) || 0;
+    const borderLeft = Number.parseFloat(style.borderLeftWidth) || 0;
 
-    coatingLayer.style.left = `${boardRect.left - wrapRect.left + paddingLeft}px`;
-    coatingLayer.style.top = `${boardRect.top - wrapRect.top + paddingTop}px`;
-    coatingLayer.style.width = `${Math.max(0, boardRect.width - paddingLeft - paddingRight)}px`;
-    coatingLayer.style.height = `${Math.max(0, boardRect.height - paddingTop - paddingBottom)}px`;
+    coatingLayer.style.left = `${boardRect.left - wrapRect.left + borderLeft + paddingLeft}px`;
+    coatingLayer.style.top = `${boardRect.top - wrapRect.top + borderTop + paddingTop}px`;
+    coatingLayer.style.width = `${Math.max(0, boardRect.width - borderLeft - borderRight - paddingLeft - paddingRight)}px`;
+    coatingLayer.style.height = `${Math.max(0, boardRect.height - borderTop - borderBottom - paddingTop - paddingBottom)}px`;
     coatingLayer.style.columnGap = style.columnGap;
     coatingLayer.style.rowGap = style.rowGap;
   }
