@@ -6,7 +6,7 @@
 
 .cascade-cell-coating-layer {
   position: absolute;
-  z-index: 18;
+  z-index: 11;
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
   grid-template-rows: repeat(8, minmax(0, 1fr));
