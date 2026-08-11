@@ -1,7 +1,9 @@
 import {
+  BOARD_SIZE,
   CASCADE_LEVELS as levels,
   LEVEL_COUNT,
   SPECIAL,
+  TILE_KINDS,
   adjacent,
   applySpecialHammer,
   applySpecialLevelProgress,
@@ -21,6 +23,10 @@ const HAMMER_STAR_STEP = 10;
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
+const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
+const ACTIVE_RUN_VERSION = 1;
+const BOARD_CELL_COUNT = BOARD_SIZE * BOARD_SIZE;
+const VALID_SPECIALS = new Set(Object.values(SPECIAL));
 const BLITZ_SECONDS = 30;
 const BLITZ_AFTER_LEVELS = Object.freeze(new Set([
   5, 12, 20, 30, 45, 60, 75, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290,
@@ -148,6 +154,65 @@ function saveState() {
 
 function savePerformance() {
   localStorage.setItem(PERFORMANCE_KEY, JSON.stringify(performance));
+}
+
+function clearActiveRun() {
+  localStorage.removeItem(ACTIVE_RUN_KEY);
+}
+
+function saveActiveRun() {
+  if (mode !== "normal" || !activeLevel || board.length !== BOARD_CELL_COUNT || movesRemaining <= 0) return;
+  localStorage.setItem(ACTIVE_RUN_KEY, JSON.stringify({
+    version: ACTIVE_RUN_VERSION,
+    level: activeLevel.level,
+    board: board.slice(),
+    specials: specials.slice(),
+    score: Math.max(0, Number(score) || 0),
+    movesRemaining: Math.max(0, Math.floor(Number(movesRemaining) || 0)),
+    levelProgress: {
+      collected: Array.isArray(levelProgress?.collected) ? levelProgress.collected.slice() : [],
+      ice: Array.isArray(levelProgress?.ice) ? levelProgress.ice.slice() : [],
+    },
+    rngState: boardRng.snapshot(),
+    savedAt: Date.now(),
+  }));
+}
+
+function loadActiveRun(levelNumber) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ACTIVE_RUN_KEY) || "null");
+    if (!parsed || typeof parsed !== "object" || parsed.version !== ACTIVE_RUN_VERSION) return null;
+    if (Number(parsed.level) !== Number(levelNumber)) return null;
+    const level = levels[levelNumber - 1];
+    if (!level) return null;
+    if (!Array.isArray(parsed.board) || parsed.board.length !== BOARD_CELL_COUNT) return null;
+    const savedBoard = parsed.board.map((value) => Number(value));
+    if (savedBoard.some((value) => !Number.isInteger(value) || value < 0 || value >= TILE_KINDS)) return null;
+    if (!Array.isArray(parsed.specials) || parsed.specials.length !== BOARD_CELL_COUNT) return null;
+    if (parsed.specials.some((value) => value !== null && !VALID_SPECIALS.has(value))) return null;
+    const savedMoves = Math.floor(Number(parsed.movesRemaining));
+    if (!Number.isFinite(savedMoves) || savedMoves <= 0 || savedMoves > level.moves) return null;
+    const savedScore = Number(parsed.score);
+    if (!Number.isFinite(savedScore) || savedScore < 0) return null;
+    const baseline = createLevelProgress(level);
+    if (!Array.isArray(parsed.levelProgress?.collected) || parsed.levelProgress.collected.length !== baseline.collected.length) return null;
+    if (!Array.isArray(parsed.levelProgress?.ice) || parsed.levelProgress.ice.length !== baseline.ice.length) return null;
+    const collected = parsed.levelProgress.collected.map((value) => Math.max(0, Math.floor(Number(value) || 0)));
+    const ice = parsed.levelProgress.ice.map((value) => Math.max(0, Math.floor(Number(value) || 0)));
+    const rngState = Number(parsed.rngState) >>> 0;
+    if (!rngState) return null;
+    return {
+      board: savedBoard,
+      specials: parsed.specials.slice(),
+      score: savedScore,
+      movesRemaining: savedMoves,
+      levelProgress: { collected, ice },
+      rngState,
+      savedAt: Number(parsed.savedAt) || 0,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function track(type, detail = {}) {
@@ -326,6 +391,8 @@ function renderLevelMap() {
       const badge = document.createElement("b");
       badge.className = "cascade-map-stars";
       badge.textContent = starGlyphs(best);
+      badge.title = `Best rating: ${best} of 3 stars`;
+      badge.setAttribute("aria-label", `Best rating: ${best} of 3 stars`);
       li.append(span, badge);
     } else {
       li.append(span);
@@ -637,6 +704,7 @@ function showBlitzOffer(completedLevel) {
 async function checkNormalLevelEnd() {
   if (objectiveComplete(activeLevel, levelProgress, score)) {
     locked = true;
+    clearActiveRun();
     const completedLevel = activeLevel.level;
     const bonus = movesRemaining * 100;
     score += bonus;
@@ -652,7 +720,7 @@ async function checkNormalLevelEnd() {
     showDialog({
       kicker: finalLevel ? "RUN COMPLETE" : "LEVEL COMPLETE",
       title: finalLevel ? `${LEVEL_COUNT} down.` : `Level ${completedLevel} cleared.`,
-      copy: `${starGlyphs(stars)} · ${bonus.toLocaleString()} bonus points from ${movesRemaining} unused moves. Streak: ${state.streak}.${rewardCopy}`,
+      copy: `${starGlyphs(stars)} this run · best ${starGlyphs(reward.best)} · ${bonus.toLocaleString()} bonus points from ${movesRemaining} unused moves. Streak: ${state.streak}.${rewardCopy}`,
       actions: [
         button(finalLevel ? `Replay level ${LEVEL_COUNT}` : "Continue", "primary", () => {
           closeResultDialog();
@@ -666,6 +734,7 @@ async function checkNormalLevelEnd() {
   if (movesRemaining > 0) return;
 
   locked = true;
+  clearActiveRun();
   state.streak = 0;
   if (state.lives > 0) {
     state.lives -= 1;
@@ -782,8 +851,6 @@ async function onTileClick(index) {
   if (hammerMode && mode === "normal") {
     hammerMode = false;
     state.hammers -= 1;
-    saveState();
-    track("booster_used", { booster: "hammer" });
     locked = true;
     tileAt(index)?.classList.add("is-hammer-hit");
     await sleep(120);
@@ -793,7 +860,11 @@ async function onTileClick(index) {
     });
     await presentResolvedResult(result);
     locked = false;
+    saveState();
+    saveActiveRun();
+    track("booster_used", { booster: "hammer" });
     await checkNormalLevelEnd();
+    if (!locked) renderStatus();
     return;
   }
 
@@ -853,11 +924,13 @@ async function onTileClick(index) {
   if (mode === "blitz") {
     if (blitzExpired || (blitzEndsAt && performanceNow() >= blitzEndsAt)) finishBlitz();
   } else {
+    saveActiveRun();
     await checkNormalLevelEnd();
+    if (!locked) renderStatus();
   }
 }
 
-function startLevel(levelNumber = state.level) {
+function startLevel(levelNumber = state.level, { resume = false } = {}) {
   stopBlitzTimer();
   if (blitzOverlay) blitzOverlay.hidden = true;
   document.body.classList.remove("cascade-blitz-mode");
@@ -867,16 +940,35 @@ function startLevel(levelNumber = state.level) {
   applyLifeRegen();
   state.level = Math.min(LEVEL_COUNT, Math.max(1, levelNumber));
   activeLevel = levels[state.level - 1];
-  levelProgress = createLevelProgress(activeLevel);
-  score = 0;
-  movesRemaining = activeLevel.moves;
   selectedIndex = null;
   hammerMode = false;
   locked = false;
+
+  const savedRun = resume ? loadActiveRun(state.level) : null;
+  if (savedRun) {
+    levelProgress = savedRun.levelProgress;
+    score = savedRun.score;
+    movesRemaining = savedRun.movesRemaining;
+    boardRng = createRng(savedRun.rngState);
+    board = savedRun.board;
+    specials = savedRun.specials;
+    saveState();
+    renderBoard();
+    renderStatus();
+    renderHelp();
+    track("level_resume", { savedAt: savedRun.savedAt });
+    return;
+  }
+
+  clearActiveRun();
+  levelProgress = createLevelProgress(activeLevel);
+  score = 0;
+  movesRemaining = activeLevel.moves;
   boardRng = createRng(((activeLevel.level * 0x9e3779b1) ^ Date.now()) >>> 0);
   board = createBoard({ rng: boardRng });
   specials = emptySpecials();
   saveState();
+  saveActiveRun();
   renderBoard();
   renderStatus();
   renderHelp();
@@ -893,6 +985,7 @@ function startLevel(levelNumber = state.level) {
 
 function startBlitz(completedLevel) {
   stopBlitzTimer();
+  clearActiveRun();
   mode = "blitz";
   finishingBlitz = false;
   blitzExpired = false;
@@ -934,15 +1027,23 @@ boosterButton.addEventListener("click", () => {
 });
 
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && mode === "normal") {
+  if (document.hidden) {
+    if (mode === "normal" && !locked) saveActiveRun();
+    return;
+  }
+  if (mode === "normal") {
     applyLifeRegen();
     renderStatus();
   }
 });
 
+window.addEventListener("pagehide", () => {
+  if (mode === "normal" && !locked) saveActiveRun();
+});
+
 applyLifeRegen();
 claimPendingHammerRewards();
-startLevel(state.level);
+startLevel(state.level, { resume: true });
 
 window.cascadeResearch = Object.freeze({
   exportEvents() {
@@ -953,6 +1054,9 @@ window.cascadeResearch = Object.freeze({
   },
   exportPerformance() {
     return JSON.parse(localStorage.getItem(PERFORMANCE_KEY) || "null");
+  },
+  exportActiveRun() {
+    return JSON.parse(localStorage.getItem(ACTIVE_RUN_KEY) || "null");
   },
   exportLevel() {
     return {

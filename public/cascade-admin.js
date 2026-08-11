@@ -1,6 +1,8 @@
 import { LEVEL_COUNT } from "./cascade-engine.js";
 
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
+const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
+const FRESH_RUN_KEY = "scribbles-gameframe.cascade-fresh-run:v1";
 const LIFE_MAX = 5;
 const HAMMER_MAX = 6;
 
@@ -142,22 +144,28 @@ function installConsole(identity) {
     stateLine.textContent = stateSummary();
   }
 
-  function reloadWithStatus(message) {
+  function requestFreshRun() {
+    window.localStorage.setItem(FRESH_RUN_KEY, "1");
+    window.localStorage.removeItem(ACTIVE_RUN_KEY);
+  }
+
+  function reloadWithStatus(message, { freshRun = false } = {}) {
+    if (freshRun) requestFreshRun();
     status.textContent = message;
     window.setTimeout(() => window.location.reload(), 100);
   }
 
-  function mutateState(mutator, message) {
+  function mutateState(mutator, message, options = {}) {
     const state = readState();
     mutator(state);
     writeState(state);
     refreshSummary();
-    reloadWithStatus(message);
+    reloadWithStatus(message, options);
   }
 
   function jump(level) {
     writeLevel(level);
-    reloadWithStatus(`Jumping to level ${level}…`);
+    reloadWithStatus(`Jumping to level ${level}…`, { freshRun: true });
   }
 
   function runCommand() {
@@ -191,7 +199,7 @@ function installConsole(identity) {
       state.lastLifeAt = Date.now();
       state.streak = 0;
       state.hammers = 2;
-    }, "Resetting gameplay state…");
+    }, "Resetting gameplay state…", { freshRun: true });
   }
 
   open.addEventListener("click", () => {
