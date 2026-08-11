@@ -225,11 +225,13 @@ assert.match(encounterCoordinator, /rpg-gm-runtime/);
 
 const readme = await read("README.md");
 assert.match(readme, /GameFrameBot/);
-assert.match(readme, /gameframe-bot/);
-assert.match(readme, /rules-based deterministic bots/);
-assert.match(readme, /not presented as model-driven AI/);
+assert.match(readme, /rules-based bots/);
+assert.match(readme, /not model-driven AI/);
 assert.match(readme, /rpg-gm-runtime/);
-assert.match(readme, /future connector may allow Scribbles Runtime/i);
+assert.match(
+  readme,
+  new RegExp(`${retiredBuiltInIdentity} is a separate agent hosted by Scribbles Runtime`, "i"),
+);
 
 const agents = await read("AGENTS.md");
 assert.match(agents, /GameFrameBot/);
@@ -244,9 +246,8 @@ assert.match(decision, /ordinary player seat/);
 assert.match(decision, /No compatibility alias/);
 
 const roadmap = await read("planning/ROADMAP.md");
-assert.match(roadmap, /Monster Master BattleBot/);
-assert.match(roadmap, /External .* player connector/);
 assert.match(roadmap, /rpg-gm-runtime.*Dungeon Master/s);
+assert.match(roadmap, /Campaign combat uses \*\*Tactical Activation/);
 assert.doesNotMatch(roadmap, /Game Director.*Scribbles Runtime/is);
 
 const architecture = await read("planning/architecture.md");

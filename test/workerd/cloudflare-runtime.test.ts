@@ -139,6 +139,7 @@ describe("GameFrame real workerd runtime", () => {
     expect(health.games).toEqual([
       "tic-tac-toe",
       "american-checkers",
+      "othello",
       "tactical-movement-canary",
       "tactical-combat-canary",
       "monster-master-duel",

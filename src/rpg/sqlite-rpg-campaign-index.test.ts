@@ -15,6 +15,7 @@ function campaign(input: {
   role?: "player" | "observer";
   leftPresentationSequence?: number;
 }): DurableCampaignBootstrap {
+  const role = input.role ?? "player";
   return {
     campaignId: input.campaignId,
     title: input.title,
@@ -26,14 +27,20 @@ function campaign(input: {
     },
     memberships: [{
       playerId: input.playerId,
-      role: input.role ?? "player",
-      ...(input.role === "player" ? { partyId: "party:main" } : {}),
+      role,
+      ...(role === "player" ? { partyId: "party:main" } : {}),
       joinedPresentationSequence: 0,
       ...(input.leftPresentationSequence === undefined
         ? {}
         : { leftPresentationSequence: input.leftPresentationSequence }),
     }],
-    events: [],
+    events: [1, 2, 3].map((sequence) => ({
+      eventId: `event:${input.campaignId}:${sequence}`,
+      kind: "campaign.index_fixture",
+      audience: { kind: "public" as const },
+      payload: { sequence },
+      createdAt: input.initializedAt,
+    })),
     initializedAt: input.initializedAt,
   };
 }

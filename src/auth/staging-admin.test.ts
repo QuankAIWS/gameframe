@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import test from "node:test";
 
 import {
   isStagingAdminPrincipal,
@@ -6,38 +7,41 @@ import {
   stagingAdminDiscordUserIds,
 } from "./staging-admin.ts";
 
-describe("staging administrator authorization", () => {
-  it("grants only explicitly configured Discord principals", () => {
-    const env = { GAMEFRAME_ADMIN_DISCORD_USER_IDS: "1234,5678" };
-    expect(stagingAdminDiscordUserIds(env)).toEqual(new Set(["1234", "5678"]));
-    expect(isStagingAdminPrincipal(env, {
-      playerId: "discord:1234",
-      source: "discord",
-    })).toBe(true);
-    expect(isStagingAdminPrincipal(env, {
-      playerId: "discord:9999",
-      source: "discord",
-    })).toBe(false);
-    expect(isStagingAdminPrincipal(env, {
-      playerId: "discord:1234",
-      source: "development",
-    })).toBe(false);
-  });
+test("staging administrator grants only explicitly configured Discord principals", () => {
+  const env = { GAMEFRAME_ADMIN_DISCORD_USER_IDS: "1234,5678" };
+  assert.deepEqual(stagingAdminDiscordUserIds(env), new Set(["1234", "5678"]));
+  assert.equal(isStagingAdminPrincipal(env, {
+    playerId: "discord:1234",
+    source: "discord",
+  }), true);
+  assert.equal(isStagingAdminPrincipal(env, {
+    playerId: "discord:9999",
+    source: "discord",
+  }), false);
+  assert.equal(isStagingAdminPrincipal(env, {
+    playerId: "discord:1234",
+    source: "development",
+  }), false);
+});
 
-  it("never accepts wildcard or malformed administrator configuration", () => {
-    expect(() => stagingAdminDiscordUserIds({
-      GAMEFRAME_ADMIN_DISCORD_USER_IDS: "*",
-    })).toThrow(/wildcard/i);
-    expect(() => stagingAdminDiscordUserIds({
-      GAMEFRAME_ADMIN_DISCORD_USER_IDS: "1234,nope",
-    })).toThrow(/numeric/i);
-    expect(stagingAdminDiscordUserIds({})).toEqual(new Set());
-  });
+test("staging administrator never accepts wildcard or malformed configuration", () => {
+  assert.throws(
+    () => stagingAdminDiscordUserIds({ GAMEFRAME_ADMIN_DISCORD_USER_IDS: "*" }),
+    /wildcard/i,
+  );
+  assert.throws(
+    () => stagingAdminDiscordUserIds({ GAMEFRAME_ADMIN_DISCORD_USER_IDS: "1234,nope" }),
+    /numeric/i,
+  );
+  assert.deepEqual(stagingAdminDiscordUserIds({}), new Set());
+});
 
-  it("fails closed when a non-admin principal requests operator authority", () => {
-    expect(() => requireStagingAdminPrincipal(
+test("staging administrator fails closed for a non-admin principal", () => {
+  assert.throws(
+    () => requireStagingAdminPrincipal(
       { GAMEFRAME_ADMIN_DISCORD_USER_IDS: "1234" },
       { playerId: "discord:5678", source: "discord" },
-    )).toThrow(/administrator authority/i);
-  });
+    ),
+    /administrator authority/i,
+  );
 });

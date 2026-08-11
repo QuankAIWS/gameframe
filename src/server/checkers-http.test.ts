@@ -26,6 +26,7 @@ test("HTTP health advertises every supported deterministic game", async (context
   assert.deepEqual(health.games, [
     "tic-tac-toe",
     "american-checkers",
+    "othello",
     "tactical-movement-canary",
     "tactical-combat-canary",
     "monster-master-duel",

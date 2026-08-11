@@ -54,6 +54,7 @@ describe("Discord identity boundary in the real workerd runtime", () => {
       source: "discord",
       displayName: "Workers Tester",
       avatarUrl: "https://cdn.discordapp.com/avatars/111/hash.png?size=128",
+      admin: false,
     });
 
     const logout = await workerExports.default.fetch(new Request(
