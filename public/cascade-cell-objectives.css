@@ -114,7 +114,10 @@ body[data-cascade-effects="reduced"] .cascade-cell-coating {
 }
 
 body[data-cascade-effects="reduced"] .cascade-cell-coating.is-cracking,
-body[data-cascade-effects="reduced"] .cascade-cell-coating.is-shattering,
+body[data-cascade-effects="reduced"] .cascade-cell-coating.is-shattering {
+  animation-duration: 1ms !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cascade-cell-coating.is-cracking,
   .cascade-cell-coating.is-shattering {
