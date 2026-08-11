@@ -75,10 +75,11 @@ for (const [chapter, chapterLevels] of chapters) {
 
 const allLookaheadBeatable = report.levels.every((level) => level.strategies.lookahead.wins > 0);
 const laterLevels = report.levels.slice(30);
+const postOnboardingLevels = report.levels.slice(5);
 const skillSeparated = laterLevels.filter((level) => level.strategies.random.winRate < level.strategies.lookahead.winRate).length;
 const planningSeparated = laterLevels.filter((level) => level.strategies.greedy.winRate < level.strategies.lookahead.winRate).length;
-const reliefCliffs = laterLevels.filter((level) => level.difficulty === "relief" && level.strategies.lookahead.winRate < 0.5);
-const normalCliffs = laterLevels.filter((level) => level.difficulty === "normal" && level.strategies.lookahead.winRate < (1 / 3));
+const reliefCliffs = postOnboardingLevels.filter((level) => level.difficulty === "relief" && level.strategies.lookahead.winRate < 0.5);
+const normalCliffs = postOnboardingLevels.filter((level) => level.difficulty === "normal" && level.strategies.lookahead.winRate < (1 / 3));
 
 console.log("");
 console.log(`Lookahead can clear all ${report.levels.length} levels in the sampled seeds: ${allLookaheadBeatable ? "yes" : "no"}`);
