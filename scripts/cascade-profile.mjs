@@ -75,22 +75,32 @@ for (const [chapter, chapterLevels] of chapters) {
 
 const allLookaheadBeatable = report.levels.every((level) => level.strategies.lookahead.wins > 0);
 const laterLevels = report.levels.slice(30);
+const postOnboardingLevels = report.levels.slice(5);
 const skillSeparated = laterLevels.filter((level) => level.strategies.random.winRate < level.strategies.lookahead.winRate).length;
 const planningSeparated = laterLevels.filter((level) => level.strategies.greedy.winRate < level.strategies.lookahead.winRate).length;
+const reliefCliffs = postOnboardingLevels.filter((level) => level.difficulty === "relief" && level.strategies.lookahead.winRate < 0.5);
+const normalCliffs = postOnboardingLevels.filter((level) => level.difficulty === "normal" && level.strategies.lookahead.winRate < (1 / 3));
+
 console.log("");
 console.log(`Lookahead can clear all ${report.levels.length} levels in the sampled seeds: ${allLookaheadBeatable ? "yes" : "no"}`);
 console.log(`L31-${report.levels.length} levels with random < lookahead: ${skillSeparated}/${laterLevels.length}`);
 console.log(`L31-${report.levels.length} levels with greedy < lookahead: ${planningSeparated}/${laterLevels.length}`);
+console.log(`Family-beta relief cliffs (<50% lookahead): ${reliefCliffs.length ? reliefCliffs.map((level) => level.level).join(", ") : "none"}`);
+console.log(`Family-beta normal cliffs (<33% lookahead): ${normalCliffs.length ? normalCliffs.map((level) => level.level).join(", ") : "none"}`);
 
 if (jsonPath) {
   await writeFile(jsonPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   console.log(`JSON report written to ${jsonPath}`);
 }
 
-if (!allLookaheadBeatable) {
-  const deadLevels = report.levels
-    .filter((level) => level.strategies.lookahead.wins === 0)
-    .map((level) => level.level);
-  console.error(`Lookahead sampled no wins on levels: ${deadLevels.join(", ")}`);
+if (!allLookaheadBeatable || reliefCliffs.length || normalCliffs.length) {
+  if (!allLookaheadBeatable) {
+    const deadLevels = report.levels
+      .filter((level) => level.strategies.lookahead.wins === 0)
+      .map((level) => level.level);
+    console.error(`Lookahead sampled no wins on levels: ${deadLevels.join(", ")}`);
+  }
+  if (reliefCliffs.length) console.error(`Relief beats are not releasing tension on levels: ${reliefCliffs.map((level) => level.level).join(", ")}`);
+  if (normalCliffs.length) console.error(`Normal levels are behaving like unintended hard spikes on levels: ${normalCliffs.map((level) => level.level).join(", ")}`);
   process.exitCode = 1;
 }

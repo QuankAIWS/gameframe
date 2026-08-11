@@ -20,6 +20,12 @@ const DIFFICULTY_WAVE = Object.freeze([
 
 const ICE_PATTERNS = Object.freeze(["checker", "center", "edges", "diagonal", "cross", "columns"]);
 const PRECISION_ICE_PATTERNS = Object.freeze(["edges", "columns", "center", "cross"]);
+const FAMILY_BETA_PATTERN_OVERRIDES = Object.freeze({
+  47: "columns",
+  154: "center",
+  159: "center",
+  182: "center",
+});
 
 function mechanicsForLevel(levelNumber) {
   const mechanics = [];
@@ -56,16 +62,22 @@ function scaleCount(value, factor) {
 }
 
 function patternFor(levelNumber, phase = 0, precision = false) {
+  const override = FAMILY_BETA_PATTERN_OVERRIDES[levelNumber];
+  if (override) return override;
   const patterns = precision ? PRECISION_ICE_PATTERNS : ICE_PATTERNS;
   return patterns[(levelNumber + (phase * 2) + Math.floor(levelNumber / CHAPTER_SIZE)) % patterns.length];
 }
 
 function tunedIceCount(value, factor, pattern, { layers = 1, precision = false } = {}) {
   let count = scaleCount(value, factor);
-  if (pattern === "edges") count -= precision ? 3 : layers === 1 ? 2 : 1;
-  if (layers > 1 && pattern === "diagonal") {
-    count -= 2;
-    if (factor >= 1.1) count -= 2;
+  if (pattern === "edges") count -= precision ? 4 : layers === 1 ? 3 : 2;
+  if (pattern === "diagonal") {
+    if (layers > 1) {
+      count -= 3;
+      if (factor >= 1.1) count -= 1;
+    } else {
+      count -= 1;
+    }
   }
   return Math.max(2, count);
 }
@@ -85,13 +97,22 @@ function chapterPosition(levelNumber, start) {
   };
 }
 
+function compoundGeometryMoveBonus(levelObjective, difficulty) {
+  const ice = levelObjective?.ice;
+  const collectGoals = levelObjective?.collect?.length || 0;
+  if (!ice || ice.layers < 2 || collectGoals === 0) return 0;
+  if (difficulty === "relief") return 1;
+  if (difficulty === "normal" && (ice.pattern === "edges" || ice.pattern === "diagonal")) return 1;
+  return 0;
+}
+
 function buildSpec({ levelNumber, start, chapter, baseTarget, targetStep, baseMoves, objectiveFactory = null }) {
   const position = chapterPosition(levelNumber, start);
   const levelObjective = objectiveFactory ? objectiveFactory({ ...position, levelNumber }) : objective();
   const hard = position.wave.difficulty === "hard" || position.wave.difficulty === "super-hard";
   return {
     target: roundedTarget((baseTarget + position.offset * targetStep) * position.wave.targetFactor),
-    moves: Math.max(12, baseMoves + position.wave.moveDelta),
+    moves: Math.max(12, baseMoves + position.wave.moveDelta + compoundGeometryMoveBonus(levelObjective, position.wave.difficulty)),
     hard,
     difficulty: position.wave.difficulty,
     chapter,
