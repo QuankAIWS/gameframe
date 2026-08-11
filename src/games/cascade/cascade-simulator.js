@@ -216,6 +216,8 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
   const remaining = objectiveRemaining(definition, progress, score);
   return {
     level: definition.level,
+    chapter: definition.chapter,
+    difficulty: definition.difficulty,
     strategy,
     seed: baseSeed,
     win,
@@ -251,6 +253,8 @@ function summarizeRuns(level, strategy, runs) {
   const margins = runs.map((run) => run.scoreMargin);
   return {
     level: level.level,
+    chapter: level.chapter,
+    difficulty: level.difficulty,
     hard: level.hard,
     target: level.target,
     moves: level.moves,
@@ -292,6 +296,8 @@ export function profileCascadeLevels({ runsPerLevel = 40, strategies = ["random"
     const lookahead = strategyReports.lookahead;
     levels.push({
       level: level.level,
+      chapter: level.chapter,
+      difficulty: level.difficulty,
       hard: level.hard,
       target: level.target,
       moves: level.moves,
@@ -304,7 +310,7 @@ export function profileCascadeLevels({ runsPerLevel = 40, strategies = ["random"
   }
   return {
     generatedAt: new Date().toISOString(),
-    rules: "persistent-specials-v1",
+    rules: "persistent-specials-v1/campaign-wave-v1",
     runsPerLevel,
     strategies,
     levels,
