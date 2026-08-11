@@ -1,0 +1,140 @@
+/* Cell-bound objective treatment. The moving candy stays visually separate from the iced square. */
+
+.cascade-tile.has-ice::after {
+  content: none !important;
+}
+
+.cascade-cell-coating-layer {
+  position: absolute;
+  z-index: 11;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  pointer-events: none;
+}
+
+.cascade-cell-coating {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  border: 3px solid rgba(234, 252, 255, .96);
+  border-radius: 17%;
+  background:
+    radial-gradient(circle at 8% 8%, rgba(255,255,255,.9) 0 9%, rgba(186,239,255,.52) 10% 18%, transparent 19%),
+    radial-gradient(circle at 92% 10%, rgba(255,255,255,.78) 0 7%, rgba(141,224,247,.42) 8% 16%, transparent 17%),
+    radial-gradient(circle at 10% 92%, rgba(168,234,252,.48) 0 10%, transparent 20%),
+    radial-gradient(circle at 92% 92%, rgba(255,255,255,.72) 0 8%, transparent 18%);
+  box-shadow:
+    inset 0 0 0 2px rgba(105, 217, 246, .32),
+    inset 0 0 14px rgba(185, 240, 255, .3),
+    0 0 10px rgba(68, 201, 238, .28),
+    0 0 0 1px rgba(98, 190, 223, .2);
+  filter: drop-shadow(0 2px 2px rgba(69, 126, 161, .12));
+}
+
+.cascade-cell-coating::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(210, 248, 255, .66);
+  border-radius: 12%;
+  box-shadow:
+    inset 3px 0 5px rgba(255,255,255,.16),
+    inset -3px 0 6px rgba(92, 204, 237, .12);
+}
+
+.cascade-cell-coating::after {
+  content: "";
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(239, 253, 255, .96);
+  box-shadow: 0 0 7px rgba(96, 215, 245, .6);
+  opacity: .72;
+}
+
+.cascade-cell-coating.ice-2 {
+  border-width: 5px;
+  border-color: rgba(245, 254, 255, .99);
+  background:
+    radial-gradient(circle at 8% 8%, rgba(255,255,255,.96) 0 13%, rgba(176,237,255,.66) 14% 23%, transparent 24%),
+    radial-gradient(circle at 92% 10%, rgba(255,255,255,.92) 0 11%, rgba(123,216,244,.55) 12% 22%, transparent 23%),
+    radial-gradient(circle at 9% 92%, rgba(178,238,255,.62) 0 14%, transparent 25%),
+    radial-gradient(circle at 92% 92%, rgba(255,255,255,.88) 0 11%, transparent 23%);
+  box-shadow:
+    inset 0 0 0 3px rgba(98, 209, 241, .44),
+    inset 0 0 18px rgba(181, 240, 255, .46),
+    0 0 13px rgba(68, 201, 238, .38),
+    0 0 0 2px rgba(116, 208, 235, .25);
+}
+
+.cascade-cell-coating.ice-2::before {
+  inset: 7px;
+  border-width: 2px;
+  border-color: rgba(225, 250, 255, .8);
+}
+
+.cascade-cell-coating.ice-2::after {
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  box-shadow:
+    -12px 3px 0 -2px rgba(226, 251, 255, .9),
+    0 0 8px rgba(68, 201, 238, .68);
+}
+
+.cascade-cell-coating.is-cracking {
+  animation: cascade-cell-crack 420ms ease-out both;
+}
+
+.cascade-cell-coating.is-shattering {
+  z-index: 2;
+  animation: cascade-cell-shatter 500ms cubic-bezier(.12,.7,.2,1) both;
+}
+
+@keyframes cascade-cell-crack {
+  0% { transform: scale(1); filter: brightness(1); }
+  38% { transform: scale(1.055); filter: brightness(1.45); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes cascade-cell-shatter {
+  0% { transform: scale(1); opacity: 1; filter: brightness(1.1); }
+  45% { transform: scale(1.08); opacity: .95; filter: brightness(1.65); }
+  100% { transform: scale(1.22); opacity: 0; filter: brightness(1.9); }
+}
+
+body[data-cascade-effects="reduced"] .cascade-cell-coating {
+  box-shadow:
+    inset 0 0 0 2px rgba(105, 217, 246, .32),
+    0 0 0 1px rgba(98, 190, 223, .22);
+}
+
+body[data-cascade-effects="reduced"] .cascade-cell-coating.is-cracking,
+body[data-cascade-effects="reduced"] .cascade-cell-coating.is-shattering {
+  animation-duration: 1ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade-cell-coating.is-cracking,
+  .cascade-cell-coating.is-shattering {
+    animation-duration: 1ms !important;
+  }
+}
+
+@media (max-width: 650px) {
+  .cascade-cell-coating {
+    border-width: 2px;
+  }
+
+  .cascade-cell-coating.ice-2 {
+    border-width: 4px;
+  }
+
+  .cascade-cell-coating::before {
+    inset: 3px;
+  }
+}

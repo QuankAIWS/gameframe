@@ -41,6 +41,7 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   await expect(page.locator('link[href="/cascade-juice.css"]')).toHaveCount(1);
   await expect(page.locator('link[href="/cascade-evolution.css"]')).toHaveCount(1);
   await expect(page.locator('link[href="/cascade-bonus-modes.css"]')).toHaveCount(1);
+  await expect(page.locator('link[href="/cascade-cell-objectives.css"]')).toHaveCount(1);
 
   const shapes = await page.locator(".cascade-tile").evaluateAll((tiles) => {
     const byKind = new Map();
@@ -131,6 +132,40 @@ test("Cascade Crush big-pop color clear creates a board-wide dopamine hit", asyn
   await expect(page.locator(".cascade-pop-burst .cascade-pop-ring").first()).toBeVisible();
   await expect(page.locator(".cascade-hype-word")).toContainText("Mega!");
   await page.screenshot({ path: `${output}/cascade-crush-big-pop-color-desktop.png`, fullPage: true });
+});
+
+test("Cascade Crush level 105 presents ice as fixed board cells instead of shiny moving pieces", async ({ page }) => {
+  await prepare(page, 105);
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto("/cascade.html");
+
+  await expect(page.locator("#level-number")).toHaveText("105");
+  await expect(page.locator('.cascade-tile[data-ice]')).not.toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => document.querySelectorAll(".cascade-cell-coating").length)).toBeGreaterThan(0);
+  await page.screenshot({ path: `${output}/cascade-crush-level-105-cell-ice-desktop.png`, fullPage: true });
+
+  const alignment = await page.evaluate(() => {
+    const coating = document.querySelector(".cascade-cell-coating");
+    if (!coating) return null;
+    const index = coating.dataset.index;
+    const tile = document.querySelector(`.cascade-tile[data-index="${index}"]`);
+    if (!tile) return null;
+    const coatingRect = coating.getBoundingClientRect();
+    const tileRect = tile.getBoundingClientRect();
+    return {
+      separate: !tile.contains(coating),
+      dx: Math.abs(coatingRect.left - tileRect.left),
+      dy: Math.abs(coatingRect.top - tileRect.top),
+      dw: Math.abs(coatingRect.width - tileRect.width),
+      dh: Math.abs(coatingRect.height - tileRect.height),
+    };
+  });
+  expect(alignment).toBeTruthy();
+  expect(alignment.separate).toBe(true);
+  expect(alignment.dx).toBeLessThanOrEqual(2);
+  expect(alignment.dy).toBeLessThanOrEqual(2);
+  expect(alignment.dw).toBeLessThanOrEqual(2);
+  expect(alignment.dh).toBeLessThanOrEqual(2);
 });
 
 test("Cascade Crush Blitz takes over the board without replacing the core visual language", async ({ page }) => {
