@@ -35,4 +35,15 @@
     gap: 3px;
     padding: 5px;
   }
+
+  .cascade-map ol {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .cascade-map li {
+    min-width: 0;
+    justify-items: center;
+  }
 }

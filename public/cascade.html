@@ -8,13 +8,13 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/cascade.css">
   <link rel="stylesheet" href="/cascade-vfx.css">
-  <link rel="stylesheet" href="/cascade-family.css">
   <link rel="stylesheet" href="/cascade-life-ui.css">
   <link rel="stylesheet" href="/cascade-mechanics.css">
   <link rel="stylesheet" href="/cascade-admin.css">
   <link rel="stylesheet" href="/cascade-polish.css">
   <link rel="stylesheet" href="/cascade-polish-responsive.css">
   <link rel="stylesheet" href="/cascade-performance.css">
+  <link rel="stylesheet" href="/cascade-evolution.css">
 </head>
 <body class="cascade-route">
   <main class="cascade-shell">
@@ -22,11 +22,6 @@
       <div>
         <p class="cascade-kicker">MATCH. POP. CASCADE.</p>
         <h1>Cascade Crush</h1>
-      </div>
-      <div class="cascade-ledger" aria-label="IOU dollars owed">
-        <small>FAMILY IOU LEDGER</small>
-        <strong id="iou-total">IOU$ 0</strong>
-        <button id="open-ledger" type="button">View IOUs</button>
       </div>
     </header>
 
@@ -49,6 +44,10 @@
           <span id="objective-label">Hit the target before moves run out.</span>
           <b id="combo-label" aria-live="polite"></b>
         </div>
+        <div id="blitz-overlay" class="cascade-blitz-overlay" hidden aria-live="polite">
+          <strong id="blitz-callout">BLITZ</strong>
+          <strong id="blitz-clock">30</strong>
+        </div>
         <div id="board" class="cascade-board" role="grid" aria-label="Cascade Crush board"></div>
         <p class="cascade-help">Make matches and build cascades before the moves run out.</p>
         <div id="life-lock" class="cascade-life-lock" hidden>
@@ -69,13 +68,13 @@
         <div class="cascade-card">
           <small>BOOSTER</small>
           <button id="booster-hammer" type="button">Hammer <b id="hammer-count">2</b></button>
-          <span>Remove one tile without spending a move. Earn another hammer every 10 new best stars.</span>
+          <span>Smash one tile without spending a move. Earn another hammer every 10 new best stars.</span>
         </div>
         <div class="cascade-card cascade-performance-card">
-          <small>PERFORMANCE</small>
+          <small>BEST</small>
           <strong id="level-stars" aria-label="0 of 3 best stars on this level">☆☆☆</strong>
           <span id="star-progress">0 total stars · next hammer at 10</span>
-          <b id="quick-bonus" hidden>QUICK BONUS</b>
+          <b id="bonus-status" hidden></b>
         </div>
       </aside>
     </section>
@@ -90,25 +89,10 @@
     </form>
   </dialog>
 
-  <dialog id="ledger-dialog" class="cascade-dialog cascade-ledger-dialog">
-    <form method="dialog">
-      <small>IOU LEDGER</small>
-      <h2>Family IOU Dollars</h2>
-      <p>Old joke purchases stay here for posterity. Gameplay boosts are earned now, not bought with IOU$.</p>
-      <ul id="ledger-list"></ul>
-      <div class="cascade-dialog-actions">
-        <button value="close" class="primary">Close</button>
-      </div>
-    </form>
-  </dialog>
-
-  <button id="reset-ledger" type="button" hidden aria-hidden="true" tabindex="-1"></button>
-
   <script type="module" src="/gameframe-nav.js"></script>
-  <script type="module" src="/cascade-runtime.js"></script>
+  <script type="module" src="/cascade-runtime-v2.js"></script>
   <script type="module" src="/cascade-life-ui.js"></script>
   <script type="module" src="/cascade-admin.js"></script>
-  <script type="module" src="/cascade-performance.js"></script>
   <script type="module" src="/cascade-polish.js"></script>
 </body>
 </html>

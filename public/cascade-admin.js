@@ -2,6 +2,7 @@ import { LEVEL_COUNT } from "./cascade-engine.js";
 
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const LIFE_MAX = 5;
+const HAMMER_MAX = 6;
 
 function parseLevelCommand(value) {
   const text = String(value || "").trim();
@@ -25,17 +26,12 @@ function readState() {
     lives: Math.min(LIFE_MAX, Math.max(0, Number(state.lives) || 0)),
     lastLifeAt: Number(state.lastLifeAt) || Date.now(),
     streak: Math.max(0, Number(state.streak) || 0),
-    hammers: Math.max(0, Number(state.hammers) || 0),
-    ledger: Array.isArray(state.ledger) ? state.ledger : [],
+    hammers: Math.min(HAMMER_MAX, Math.max(0, Number(state.hammers) || 0)),
   };
 }
 
 function writeState(state) {
   window.localStorage.setItem(STATE_KEY, JSON.stringify(state));
-}
-
-function iouTotal(state) {
-  return state.ledger.reduce((sum, item) => sum + Number(item?.amount || 0), 0);
 }
 
 function writeLevel(level) {
@@ -45,7 +41,7 @@ function writeLevel(level) {
 }
 
 function stateSummary(state = readState()) {
-  return `L${state.level} · ${state.lives}/${LIFE_MAX} lives · ${state.hammers} hammers · streak ${state.streak} · IOU$ ${iouTotal(state).toLocaleString()}`;
+  return `L${state.level} · ${state.lives}/${LIFE_MAX} lives · ${state.hammers}/${HAMMER_MAX} hammers · streak ${state.streak}`;
 }
 
 function installConsole(identity) {
@@ -75,7 +71,7 @@ function installConsole(identity) {
 
       <section class="cascade-admin-section">
         <small>LEVEL JUMP</small>
-        <p>Jump to mechanic milestones or any level from 1 to ${LEVEL_COUNT}.</p>
+        <p>Jump straight to teaching levels, objective milestones, or any level from 1 to ${LEVEL_COUNT}.</p>
         <label for="cascade-admin-command">Command</label>
         <div class="cascade-admin-command-row">
           <input id="cascade-admin-command" autocomplete="off" spellcheck="false" placeholder="go to level 61">
@@ -83,21 +79,27 @@ function installConsole(identity) {
         </div>
         <div class="cascade-admin-jumps" aria-label="Quick level jumps">
           <button type="button" data-level="1">1</button>
-          <button type="button" data-level="8">8</button>
-          <button type="button" data-level="13">13</button>
+          <button type="button" data-level="2">2</button>
+          <button type="button" data-level="3">3</button>
+          <button type="button" data-level="5">5</button>
           <button type="button" data-level="31">31</button>
           <button type="button" data-level="41">41</button>
-          <button type="button" data-level="61">61</button>
           <button type="button" data-level="71">71</button>
-          <button type="button" data-level="81">81</button>
-          <button type="button" data-level="91">91</button>
           <button type="button" data-level="100">100</button>
         </div>
       </section>
 
       <section class="cascade-admin-section">
+        <small>BONUS MODE</small>
+        <p>Launch a Blitz immediately without changing campaign progress.</p>
+        <div class="cascade-admin-control-grid">
+          <button type="button" data-admin-blitz>Start 30-second Blitz</button>
+        </div>
+      </section>
+
+      <section class="cascade-admin-section">
         <small>LIVES</small>
-        <p>Force life states to test countdowns, refill offers, and lockout behavior.</p>
+        <p>Force recharge and lockout states.</p>
         <div class="cascade-admin-control-grid cascade-admin-control-grid-four">
           <button type="button" data-life-delta="-1">−1 life</button>
           <button type="button" data-lives="0">0 lives</button>
@@ -108,7 +110,7 @@ function installConsole(identity) {
 
       <section class="cascade-admin-section">
         <small>HAMMERS / STREAK</small>
-        <p>Set inventory edges quickly so the booster offers can be exercised.</p>
+        <p>Set earned inventory edges quickly.</p>
         <div class="cascade-admin-control-grid">
           <button type="button" data-hammers="0">0 hammers</button>
           <button type="button" data-hammers="1">1 hammer</button>
@@ -119,10 +121,9 @@ function installConsole(identity) {
 
       <section class="cascade-admin-section cascade-admin-reset-section">
         <small>TEST STATE</small>
-        <p>Reset gameplay to level 1, 5 lives, 2 hammers, and streak 0. IOUs are preserved.</p>
+        <p>Reset gameplay to level 1, 5 lives, 2 hammers, and streak 0.</p>
         <div class="cascade-admin-control-grid">
           <button type="button" class="cascade-admin-reset" data-admin-reset-game>Reset gameplay state</button>
-          <button type="button" class="cascade-admin-reset" data-admin-reset-iou>Reset IOU ledger</button>
         </div>
       </section>
 
@@ -134,9 +135,7 @@ function installConsole(identity) {
   const command = dialog.querySelector("#cascade-admin-command");
   const status = dialog.querySelector("[data-admin-status]");
   const stateLine = dialog.querySelector("[data-admin-state]");
-  const resetIou = dialog.querySelector("[data-admin-reset-iou]");
   const resetGame = dialog.querySelector("[data-admin-reset-game]");
-  let resetIouExpiresAt = 0;
   let resetGameExpiresAt = 0;
 
   function refreshSummary() {
@@ -171,40 +170,15 @@ function installConsole(identity) {
     jump(level);
   }
 
-  function clearConfirmations() {
-    resetIouExpiresAt = 0;
+  function clearConfirmation() {
     resetGameExpiresAt = 0;
-    resetIou.textContent = "Reset IOU ledger";
     resetGame.textContent = "Reset gameplay state";
-  }
-
-  function resetIouLedger() {
-    const now = Date.now();
-    if (now > resetIouExpiresAt) {
-      clearConfirmations();
-      resetIouExpiresAt = now + 10_000;
-      resetIou.textContent = "Confirm IOU reset";
-      status.textContent = "IOU reset armed for 10 seconds.";
-      return;
-    }
-
-    const resetHook = document.querySelector("#reset-ledger");
-    if (!resetHook) {
-      clearConfirmations();
-      status.textContent = "IOU reset hook is unavailable.";
-      return;
-    }
-
-    resetHook.click();
-    clearConfirmations();
-    refreshSummary();
-    status.textContent = "IOU ledger cleared.";
   }
 
   function resetGameplayState() {
     const now = Date.now();
     if (now > resetGameExpiresAt) {
-      clearConfirmations();
+      clearConfirmation();
       resetGameExpiresAt = now + 10_000;
       resetGame.textContent = "Confirm gameplay reset";
       status.textContent = "Gameplay reset armed for 10 seconds.";
@@ -221,15 +195,18 @@ function installConsole(identity) {
   }
 
   open.addEventListener("click", () => {
-    clearConfirmations();
+    clearConfirmation();
     refreshSummary();
     if (!dialog.open) dialog.showModal();
     command.focus();
   });
-  dialog.addEventListener("close", clearConfirmations);
+  dialog.addEventListener("close", clearConfirmation);
   dialog.querySelector("[data-admin-run]").addEventListener("click", runCommand);
-  resetIou.addEventListener("click", resetIouLedger);
   resetGame.addEventListener("click", resetGameplayState);
+  dialog.querySelector("[data-admin-blitz]").addEventListener("click", () => {
+    dialog.close();
+    window.cascadeResearch?.startBlitz?.(5);
+  });
 
   command.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
@@ -264,7 +241,7 @@ function installConsole(identity) {
 
   dialog.querySelectorAll("[data-hammers]").forEach((button) => {
     button.addEventListener("click", () => {
-      const hammers = Math.max(0, Number(button.dataset.hammers) || 0);
+      const hammers = Math.min(HAMMER_MAX, Math.max(0, Number(button.dataset.hammers) || 0));
       mutateState((state) => { state.hammers = hammers; }, `Setting hammers to ${hammers}…`);
     });
   });
@@ -272,7 +249,7 @@ function installConsole(identity) {
   dialog.querySelectorAll("[data-hammer-delta]").forEach((button) => {
     button.addEventListener("click", () => {
       const delta = Number(button.dataset.hammerDelta) || 0;
-      mutateState((state) => { state.hammers = Math.max(0, state.hammers + delta); }, `Adding ${delta} hammers…`);
+      mutateState((state) => { state.hammers = Math.min(HAMMER_MAX, Math.max(0, state.hammers + delta)); }, `Adding ${delta} hammers…`);
     });
   });
 

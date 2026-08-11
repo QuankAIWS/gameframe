@@ -167,7 +167,8 @@ test("the Games catalog opens Role-Playing Games, Battle Simulator, Casual Games
   await expect(page).toHaveTitle(/Cascade Crush/);
   await expect(page.getByRole("heading", { name: "Cascade Crush", exact: true })).toBeVisible();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
-  await expect(page.locator("#iou-total")).toHaveText("IOU$ 0");
+  await expect(page.locator("#level-stars")).toBeVisible();
+  await expect(page.locator("#iou-total")).toHaveCount(0);
 
   await page.goto("/?catalog=1&player=hub-navigation-test");
   await expect(page.locator("#game-card-tic-tac-toe")).toContainText("CPU Opponent");
