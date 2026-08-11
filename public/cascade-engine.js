@@ -1,24 +1,36 @@
 export const BOARD_SIZE = 8;
 export const TILE_KINDS = 6;
-export const LEVEL_COUNT = 100;
+export const LEVEL_COUNT = 300;
+export const CAMPAIGN_CAPACITY = 1000;
+export const CHAPTER_SIZE = 30;
 export const TILE_LABELS = Object.freeze(["pink", "cyan", "yellow", "green", "purple", "orange"]);
 
-function targetFor(level, hard = false) {
-  return 900 + (level * 185) + (hard ? 550 : 0);
-}
+const DIFFICULTY_WAVE = Object.freeze([
+  Object.freeze({ difficulty: "relief", targetFactor: 0.84, objectiveFactor: 0.85, moveDelta: 2 }),
+  Object.freeze({ difficulty: "normal", targetFactor: 0.92, objectiveFactor: 0.92, moveDelta: 1 }),
+  Object.freeze({ difficulty: "normal", targetFactor: 0.96, objectiveFactor: 0.96, moveDelta: 1 }),
+  Object.freeze({ difficulty: "normal", targetFactor: 1.00, objectiveFactor: 1.00, moveDelta: 0 }),
+  Object.freeze({ difficulty: "hard", targetFactor: 1.08, objectiveFactor: 1.08, moveDelta: -1 }),
+  Object.freeze({ difficulty: "relief", targetFactor: 0.88, objectiveFactor: 0.86, moveDelta: 2 }),
+  Object.freeze({ difficulty: "normal", targetFactor: 0.98, objectiveFactor: 0.96, moveDelta: 1 }),
+  Object.freeze({ difficulty: "normal", targetFactor: 1.03, objectiveFactor: 1.02, moveDelta: 0 }),
+  Object.freeze({ difficulty: "normal", targetFactor: 1.08, objectiveFactor: 1.06, moveDelta: 0 }),
+  Object.freeze({ difficulty: "super-hard", targetFactor: 1.16, objectiveFactor: 1.12, moveDelta: -1 }),
+]);
+
+const ICE_PATTERNS = Object.freeze(["checker", "center", "edges", "diagonal", "cross", "columns"]);
+const PRECISION_ICE_PATTERNS = Object.freeze(["edges", "columns", "center", "cross"]);
 
 function mechanicsForLevel(levelNumber) {
   const mechanics = [];
-  if (levelNumber >= 8) mechanics.push("power-match");
-  if (levelNumber >= 13) mechanics.push("color-sweep");
+  if (levelNumber >= 2) mechanics.push("power-match");
+  if (levelNumber >= 3) mechanics.push("cross-blast");
+  if (levelNumber >= 5) mechanics.push("color-sweep");
   if (levelNumber >= 31) mechanics.push("ice-blockers");
-  if (levelNumber >= 41) mechanics.push("collection");
-  if (levelNumber >= 61) mechanics.push("cross-blast");
-  if (levelNumber >= 71) mechanics.push("layered-ice");
+  if (levelNumber >= 61) mechanics.push("collection");
+  if (levelNumber >= 151) mechanics.push("layered-ice");
   return mechanics;
 }
-
-const ICE_PATTERNS = Object.freeze(["checker", "center", "edges", "diagonal", "cross", "columns"]);
 
 function collectGoal(kind, count) {
   return Object.freeze({ kind, count });
@@ -31,194 +43,317 @@ function objective({ collect = [], ice = null } = {}) {
   });
 }
 
-function lateSpec(levelNumber) {
-  const offset = (levelNumber - 31) % 10;
-  const hard = levelNumber % 5 === 0;
-  const pattern = ICE_PATTERNS[(levelNumber + Math.floor(levelNumber / 10)) % ICE_PATTERNS.length];
+function waveForLevel(levelNumber) {
+  return DIFFICULTY_WAVE[(Math.max(1, levelNumber) - 1) % DIFFICULTY_WAVE.length];
+}
 
-  if (levelNumber <= 40) {
-    return {
-      target: 6800 + (offset * 360) + (hard ? 300 : 0),
-      moves: 18,
-      hard,
-      objective: objective({ ice: { count: 8 + Math.floor(offset * 0.75), layers: 1, pattern } }),
-    };
-  }
+function roundedTarget(value) {
+  return Math.max(500, Math.round(value / 100) * 100);
+}
 
-  if (levelNumber <= 50) {
-    return {
-      target: 6900 + (offset * 380) + (hard ? 400 : 0),
-      moves: hard ? 16 : 17,
-      hard,
-      objective: objective({
-        collect: [{ kind: (levelNumber + 1) % TILE_KINDS, count: 22 + offset }],
-      }),
-    };
+function scaleCount(value, factor) {
+  return Math.max(1, Math.round(value * factor));
+}
+
+function patternFor(levelNumber, phase = 0, precision = false) {
+  const patterns = precision ? PRECISION_ICE_PATTERNS : ICE_PATTERNS;
+  return patterns[(levelNumber + (phase * 2) + Math.floor(levelNumber / CHAPTER_SIZE)) % patterns.length];
+}
+
+function twoKinds(levelNumber, separation = 2) {
+  const first = (levelNumber + Math.floor(levelNumber / CHAPTER_SIZE)) % TILE_KINDS;
+  return [first, (first + separation) % TILE_KINDS];
+}
+
+function chapterPosition(levelNumber, start) {
+  const offset = levelNumber - start;
+  return {
+    offset,
+    phase: Math.floor(offset / 10),
+    within: offset % 10,
+    wave: waveForLevel(levelNumber),
+  };
+}
+
+function buildSpec({
+  levelNumber,
+  start,
+  chapter,
+  baseTarget,
+  targetStep,
+  baseMoves,
+  objectiveFactory = null,
+}) {
+  const position = chapterPosition(levelNumber, start);
+  const levelObjective = objectiveFactory
+    ? objectiveFactory({ ...position, levelNumber })
+    : objective();
+  const hard = position.wave.difficulty === "hard" || position.wave.difficulty === "super-hard";
+  return {
+    target: roundedTarget((baseTarget + position.offset * targetStep) * position.wave.targetFactor),
+    moves: Math.max(12, baseMoves + position.wave.moveDelta),
+    hard,
+    difficulty: position.wave.difficulty,
+    chapter,
+    objective: levelObjective,
+  };
+}
+
+function campaignSpec(levelNumber) {
+  if (levelNumber <= 30) {
+    return buildSpec({
+      levelNumber,
+      start: 6,
+      chapter: "special-mastery",
+      baseTarget: 3200,
+      targetStep: 180,
+      baseMoves: 19,
+    });
   }
 
   if (levelNumber <= 60) {
-    return {
-      target: 7300 + (offset * 380) + (hard ? 350 : 0),
-      moves: 18,
-      hard,
-      objective: objective({
-        collect: [{ kind: (levelNumber + 2) % TILE_KINDS, count: 16 + Math.floor(offset * 0.6) }],
-        ice: { count: 6 + Math.floor(offset * 0.6), layers: 1, pattern },
+    return buildSpec({
+      levelNumber,
+      start: 31,
+      chapter: "ice",
+      baseTarget: 5200,
+      targetStep: 90,
+      baseMoves: 20,
+      objectiveFactory: ({ phase, within, wave }) => objective({
+        ice: {
+          count: scaleCount(6 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor),
+          layers: 1,
+          pattern: patternFor(levelNumber, phase),
+        },
       }),
-    };
-  }
-
-  if (levelNumber <= 70) {
-    const firstKind = (levelNumber + 1) % TILE_KINDS;
-    const secondKind = (firstKind + 3) % TILE_KINDS;
-    return {
-      target: 8600 + (offset * 510) + (hard ? 600 : 0),
-      moves: hard ? 15 : 16,
-      hard,
-      objective: objective({
-        collect: [
-          { kind: firstKind, count: 15 + offset },
-          { kind: secondKind, count: 15 + offset },
-        ],
-      }),
-    };
-  }
-
-  if (levelNumber === 79) {
-    return {
-      target: 11800,
-      moves: 20,
-      hard: false,
-      objective: objective({ ice: { count: 8, layers: 2, pattern } }),
-    };
-  }
-
-  if (levelNumber <= 80) {
-    return {
-      target: 8600 + (offset * 450) + (hard ? 450 : 0),
-      moves: hard ? 18 : 19,
-      hard,
-      objective: objective({ ice: { count: 5 + Math.floor(offset * 0.55), layers: 2, pattern } }),
-    };
-  }
-
-  if (levelNumber === 90) {
-    const firstKind = (levelNumber + 2) % TILE_KINDS;
-    const secondKind = (firstKind + 2) % TILE_KINDS;
-    return {
-      target: 12800,
-      moves: 20,
-      hard: true,
-      objective: objective({
-        collect: [
-          { kind: firstKind, count: 15 },
-          { kind: secondKind, count: 15 },
-        ],
-        ice: { count: 6, layers: 2, pattern },
-      }),
-    };
+    });
   }
 
   if (levelNumber <= 90) {
-    const firstKind = (levelNumber + 2) % TILE_KINDS;
-    const secondKind = (firstKind + 2) % TILE_KINDS;
-    return {
-      target: 9200 + (offset * 450) + (hard ? 400 : 0),
-      moves: hard ? 18 : 19,
-      hard,
-      objective: objective({
-        collect: [
-          { kind: firstKind, count: 12 + Math.floor(offset * 0.5) },
-          { kind: secondKind, count: 12 + Math.floor(offset * 0.5) },
-        ],
-        ice: { count: 4 + Math.floor(offset * 0.5), layers: 2, pattern },
+    return buildSpec({
+      levelNumber,
+      start: 61,
+      chapter: "collection",
+      baseTarget: 5800,
+      targetStep: 100,
+      baseMoves: 19,
+      objectiveFactory: ({ phase, within, wave }) => objective({
+        collect: [{
+          kind: (levelNumber + phase) % TILE_KINDS,
+          count: scaleCount(13 + phase * 3 + Math.floor(within / 2), wave.objectiveFactor),
+        }],
       }),
-    };
+    });
   }
 
-  if (levelNumber === 95) {
-    const firstKind = (levelNumber + 3) % TILE_KINDS;
-    const secondKind = (firstKind + 2) % TILE_KINDS;
-    return {
-      target: 12000,
-      moves: 20,
-      hard: true,
-      objective: objective({
-        collect: [
-          { kind: firstKind, count: 15 },
-          { kind: secondKind, count: 15 },
-        ],
-        ice: { count: 6, layers: 2, pattern },
+  if (levelNumber <= 120) {
+    return buildSpec({
+      levelNumber,
+      start: 91,
+      chapter: "mixed",
+      baseTarget: 6400,
+      targetStep: 110,
+      baseMoves: 20,
+      objectiveFactory: ({ phase, within, wave }) => objective({
+        collect: [{
+          kind: (levelNumber + phase + 1) % TILE_KINDS,
+          count: scaleCount(9 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor),
+        }],
+        ice: {
+          count: scaleCount(5 + phase + Math.floor(within / 4), wave.objectiveFactor),
+          layers: 1,
+          pattern: patternFor(levelNumber, phase),
+        },
       }),
-    };
+    });
   }
 
-  if (levelNumber === 100) {
-    const firstKind = (levelNumber + 3) % TILE_KINDS;
-    const secondKind = (firstKind + 2) % TILE_KINDS;
-    return {
-      target: 15000,
-      moves: 22,
-      hard: true,
-      objective: objective({
-        collect: [
-          { kind: firstKind, count: 16 },
-          { kind: secondKind, count: 16 },
-        ],
-        ice: { count: 7, layers: 2, pattern },
-      }),
-    };
+  if (levelNumber <= 150) {
+    return buildSpec({
+      levelNumber,
+      start: 121,
+      chapter: "dual-collection",
+      baseTarget: 7000,
+      targetStep: 120,
+      baseMoves: 19,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const [firstKind, secondKind] = twoKinds(levelNumber, 3);
+        const count = scaleCount(8 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor);
+        return objective({
+          collect: [
+            { kind: firstKind, count },
+            { kind: secondKind, count },
+          ],
+        });
+      },
+    });
   }
 
-  const firstKind = (levelNumber + 3) % TILE_KINDS;
-  const secondKind = (firstKind + 2) % TILE_KINDS;
+  if (levelNumber <= 180) {
+    return buildSpec({
+      levelNumber,
+      start: 151,
+      chapter: "layered-ice",
+      baseTarget: 7600,
+      targetStep: 125,
+      baseMoves: 21,
+      objectiveFactory: ({ phase, within, wave }) => objective({
+        ice: {
+          count: scaleCount(4 + phase + Math.floor(within / 3), wave.objectiveFactor),
+          layers: 2,
+          pattern: patternFor(levelNumber, phase),
+        },
+      }),
+    });
+  }
+
+  if (levelNumber <= 210) {
+    return buildSpec({
+      levelNumber,
+      start: 181,
+      chapter: "layered-mix",
+      baseTarget: 8200,
+      targetStep: 130,
+      baseMoves: 21,
+      objectiveFactory: ({ phase, within, wave }) => objective({
+        collect: [{
+          kind: (levelNumber + phase + 2) % TILE_KINDS,
+          count: scaleCount(8 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor),
+        }],
+        ice: {
+          count: scaleCount(3 + phase + Math.floor(within / 4), wave.objectiveFactor),
+          layers: 2,
+          pattern: patternFor(levelNumber, phase),
+        },
+      }),
+    });
+  }
+
+  if (levelNumber <= 240) {
+    return buildSpec({
+      levelNumber,
+      start: 211,
+      chapter: "precision",
+      baseTarget: 8800,
+      targetStep: 135,
+      baseMoves: 20,
+      objectiveFactory: ({ phase, within, wave }) => objective({
+        collect: [{
+          kind: (levelNumber + 2) % TILE_KINDS,
+          count: scaleCount(8 + phase + Math.floor(within / 4), wave.objectiveFactor),
+        }],
+        ice: {
+          count: scaleCount(4 + phase + Math.floor(within / 3), wave.objectiveFactor),
+          layers: 2,
+          pattern: patternFor(levelNumber, phase, true),
+        },
+      }),
+    });
+  }
+
+  if (levelNumber <= 270) {
+    return buildSpec({
+      levelNumber,
+      start: 241,
+      chapter: "heavy-remix",
+      baseTarget: 9400,
+      targetStep: 140,
+      baseMoves: 21,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const [firstKind, secondKind] = twoKinds(levelNumber, 2);
+        const count = scaleCount(8 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor);
+        return objective({
+          collect: [
+            { kind: firstKind, count },
+            { kind: secondKind, count },
+          ],
+          ice: {
+            count: scaleCount(4 + phase + Math.floor(within / 4), wave.objectiveFactor),
+            layers: 2,
+            pattern: patternFor(levelNumber, phase),
+          },
+        });
+      },
+    });
+  }
+
+  if (levelNumber < 300) {
+    return buildSpec({
+      levelNumber,
+      start: 271,
+      chapter: "expert-remix",
+      baseTarget: 10000,
+      targetStep: 145,
+      baseMoves: 22,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const [firstKind, secondKind] = twoKinds(levelNumber, 2);
+        const count = scaleCount(9 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor);
+        return objective({
+          collect: [
+            { kind: firstKind, count },
+            { kind: secondKind, count },
+          ],
+          ice: {
+            count: scaleCount(5 + phase + Math.floor(within / 3), wave.objectiveFactor),
+            layers: 2,
+            pattern: patternFor(levelNumber, phase),
+          },
+        });
+      },
+    });
+  }
+
+  const [firstKind, secondKind] = twoKinds(levelNumber, 2);
   return {
-    target: 10000 + (offset * 500) + (hard ? 500 : 0),
-    moves: hard ? 17 : 18,
-    hard,
+    target: 18000,
+    moves: 24,
+    hard: true,
+    difficulty: "super-hard",
+    chapter: "capstone",
     objective: objective({
       collect: [
-        { kind: firstKind, count: 14 + Math.floor(offset * 0.55) },
-        { kind: secondKind, count: 14 + Math.floor(offset * 0.55) },
+        { kind: firstKind, count: 18 },
+        { kind: secondKind, count: 18 },
       ],
-      ice: { count: 5 + Math.floor(offset * 0.55), layers: 2, pattern },
+      ice: { count: 10, layers: 2, pattern: "cross" },
     }),
   };
 }
 
-function level(levelNumber, { target, moves, hard = false, mechanics, objective: levelObjective } = {}) {
+function level(levelNumber, {
+  target,
+  moves,
+  hard = false,
+  difficulty = "normal",
+  chapter = "onboarding",
+  mechanics,
+  objective: levelObjective,
+} = {}) {
   return Object.freeze({
     level: levelNumber,
-    target: target ?? targetFor(levelNumber, hard),
-    moves: moves ?? (Math.max(14, 20 - Math.floor(levelNumber / 4)) + (hard ? 1 : 0)),
+    target: target ?? 1000,
+    moves: moves ?? 20,
     hard,
+    difficulty,
+    chapter,
     mechanics: Object.freeze((mechanics ?? mechanicsForLevel(levelNumber)).slice()),
     objective: levelObjective ?? objective(),
   });
 }
 
-const openingLevels = [
-  level(1), level(2), level(3), level(4), level(5, { hard: true }),
-  level(6), level(7), level(8), level(9), level(10, { hard: true }),
-  level(11), level(12), level(13), level(14), level(15, { hard: true }),
-  level(16), level(17), level(18), level(19), level(20, { hard: true }),
-  level(21, { target: 7600, moves: 15 }),
-  level(22, { target: 8200, moves: 15 }),
-  level(23, { target: 8800, moves: 15 }),
-  level(24, { target: 9400, moves: 15 }),
-  level(25, { target: 10200, moves: 15, hard: true }),
-  level(26, { target: 10800, moves: 14 }),
-  level(27, { target: 11400, moves: 14 }),
-  level(28, { target: 12100, moves: 14 }),
-  level(29, { target: 12800, moves: 14 }),
-  level(30, { target: 13600, moves: 14, hard: true }),
-];
+const openingLevels = Object.freeze([
+  level(1, { target: 1085, moves: 20, difficulty: "relief" }),
+  level(2, { target: 1270, moves: 20 }),
+  level(3, { target: 1455, moves: 20 }),
+  level(4, { target: 1640, moves: 20 }),
+  level(5, { target: 2375, moves: 20, hard: true, difficulty: "hard" }),
+]);
 
 export const CASCADE_LEVELS = Object.freeze([
   ...openingLevels,
   ...Array.from({ length: LEVEL_COUNT - openingLevels.length }, (_, index) => {
     const levelNumber = openingLevels.length + index + 1;
-    return level(levelNumber, lateSpec(levelNumber));
+    return level(levelNumber, campaignSpec(levelNumber));
   }),
 ]);
 
