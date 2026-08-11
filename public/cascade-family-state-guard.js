@@ -36,9 +36,9 @@
 
   function restoreInterruptedBlitz() {
     const snapshot = nativeGetItem.call(session, BLITZ_RETURN_KEY);
+    if (!snapshot) return;
     const active = nativeGetItem.call(storage, ACTIVE_RUN_KEY);
-    if (!snapshot || active) return;
-    nativeSetItem.call(storage, ACTIVE_RUN_KEY, snapshot);
+    if (!active) nativeSetItem.call(storage, ACTIVE_RUN_KEY, snapshot);
     nativeRemoveItem.call(session, BLITZ_RETURN_KEY);
   }
 
