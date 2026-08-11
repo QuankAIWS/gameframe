@@ -20,6 +20,12 @@ const DIFFICULTY_WAVE = Object.freeze([
 
 const ICE_PATTERNS = Object.freeze(["checker", "center", "edges", "diagonal", "cross", "columns"]);
 const PRECISION_ICE_PATTERNS = Object.freeze(["edges", "columns", "center", "cross"]);
+const FAMILY_BETA_PATTERN_OVERRIDES = Object.freeze({
+  47: "columns",
+  154: "center",
+  159: "center",
+  182: "center",
+});
 
 function mechanicsForLevel(levelNumber) {
   const mechanics = [];
@@ -56,6 +62,8 @@ function scaleCount(value, factor) {
 }
 
 function patternFor(levelNumber, phase = 0, precision = false) {
+  const override = FAMILY_BETA_PATTERN_OVERRIDES[levelNumber];
+  if (override) return override;
   const patterns = precision ? PRECISION_ICE_PATTERNS : ICE_PATTERNS;
   return patterns[(levelNumber + (phase * 2) + Math.floor(levelNumber / CHAPTER_SIZE)) % patterns.length];
 }
@@ -92,13 +100,9 @@ function chapterPosition(levelNumber, start) {
 function compoundGeometryMoveBonus(levelObjective, difficulty) {
   const ice = levelObjective?.ice;
   const collectGoals = levelObjective?.collect?.length || 0;
-  if (!ice) return 0;
-  const expensiveGeometry = ice.pattern === "edges" || ice.pattern === "diagonal";
-  if (difficulty === "relief" && ice.layers >= 2 && collectGoals > 0) return 1;
-  if (difficulty === "normal" && expensiveGeometry) {
-    if (ice.layers >= 2 && collectGoals > 0) return 2;
-    return 1;
-  }
+  if (!ice || ice.layers < 2 || collectGoals === 0) return 0;
+  if (difficulty === "relief") return 1;
+  if (difficulty === "normal" && (ice.pattern === "edges" || ice.pattern === "diagonal")) return 1;
   return 0;
 }
 
