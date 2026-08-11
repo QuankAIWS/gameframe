@@ -82,8 +82,9 @@ function bindBattlefieldInput() {
       event.preventDefault();
       event.stopImmediatePropagation();
     }
-    document.querySelector("#monster-master-pixi-canvas")?.classList.remove("is-camera-dragging");
-    if (frame.hasPointerCapture?.(event.pointerId)) frame.releasePointerCapture(event.pointerId);
+    const canvas = document.querySelector("#monster-master-pixi-canvas");
+    canvas?.classList.remove("is-camera-dragging");
+    if (canvas?.hasPointerCapture?.(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
     drag.pointerId = null;
     drag.moved = false;
   }
@@ -96,7 +97,7 @@ function bindBattlefieldInput() {
     drag.originX = event.clientX;
     drag.originY = event.clientY;
     drag.moved = false;
-    frame.setPointerCapture?.(event.pointerId);
+    event.target.setPointerCapture?.(event.pointerId);
   }, true);
 
   frame.addEventListener("pointermove", (event) => {
@@ -117,14 +118,15 @@ function bindBattlefieldInput() {
   frame.addEventListener("pointercancel", finishDrag, true);
 
   frame.addEventListener("click", (event) => {
+    const canvas = document.querySelector("#monster-master-pixi-canvas");
+    if (!canvas || event.target !== canvas) return;
     if (performance.now() < suppressBattlefieldClickUntil) {
       event.preventDefault();
       event.stopImmediatePropagation();
       return;
     }
     const currentRenderer = renderer();
-    const canvas = document.querySelector("#monster-master-pixi-canvas");
-    if (!currentRenderer?.screenToTile || !canvas) return;
+    if (!currentRenderer?.screenToTile) return;
     const rect = canvas.getBoundingClientRect();
     if (
       event.clientX < rect.left
