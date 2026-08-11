@@ -28,6 +28,7 @@ let submitting = false;
 let button = null;
 let chooser = null;
 let panel = null;
+let anchorObserver = null;
 
 function worldState() {
   const world = window.gameFrameMonsterRpgWorld;
@@ -41,25 +42,24 @@ function structuredEvents() {
   return window.gameFrameMonsterRpgApp?.getEvents?.() ?? [];
 }
 
-function nearbyTalkTargets() {
-  const { payload, position } = worldState();
-  if (!payload?.materialization?.anchors || !position?.transform) return [];
+function sceneTalkTargets() {
+  const { payload } = worldState();
+  if (!payload?.materialization?.anchors) return [];
   return payload.materialization.anchors
     .filter((anchor) =>
       anchor?.kind === "entity"
       && anchor.entityClass === "actor"
       && typeof anchor.interactionTargetId === "string"
       && anchor.interactionTargetId
-      && Number.isSafeInteger(anchor.x)
-      && Number.isSafeInteger(anchor.y)
-      && Math.abs(anchor.x - position.transform.x) + Math.abs(anchor.y - position.transform.y) === 1
+      && typeof anchor.semanticId === "string"
+      && anchor.semanticId
     )
     .map((anchor) => ({
       kind: "entity",
       interaction: "talk",
       semanticId: String(anchor.semanticId || "").trim(),
       interactionTargetId: anchor.interactionTargetId,
-      displayLabel: String(anchor.label || "Nearby character").trim() || "Nearby character",
+      displayLabel: String(anchor.label || "Character").trim() || "Character",
     }))
     .sort((left, right) => {
       const byLabel = left.displayLabel.localeCompare(right.displayLabel);
@@ -102,6 +102,7 @@ function ensureControls() {
     panel = buildTalkPanel();
     stage.append(panel);
   }
+  ensureTalkAnchorObserver();
   return button;
 }
 
@@ -162,6 +163,47 @@ function buildTalkPanel() {
   return root;
 }
 
+function ensureTalkAnchorObserver() {
+  const layer = document.querySelector("#mm-rpg-world-anchors");
+  if (!layer) return;
+  if (anchorObserver?.layer === layer) {
+    decorateTalkAnchors();
+    return;
+  }
+  anchorObserver?.observer?.disconnect?.();
+  const observer = new MutationObserver(() => queueMicrotask(decorateTalkAnchors));
+  observer.observe(layer, { childList: true });
+  anchorObserver = { layer, observer };
+  decorateTalkAnchors();
+}
+
+function decorateTalkAnchors() {
+  const layer = document.querySelector("#mm-rpg-world-anchors");
+  if (!layer) return;
+  for (const marker of layer.querySelectorAll(".mm-rpg-world-anchor")) {
+    marker.classList.remove("is-talkable");
+    marker.querySelector(".mm-rpg-world-anchor-talk")?.remove();
+  }
+  for (const target of currentTargets) {
+    const marker = [...layer.querySelectorAll(".mm-rpg-world-anchor[data-kind='entity']")]
+      .find((candidate) => candidate.dataset.semanticId === target.semanticId);
+    if (!marker) continue;
+    marker.classList.add("is-talkable");
+    const talk = document.createElement("button");
+    talk.type = "button";
+    talk.className = "mm-rpg-world-anchor-talk";
+    talk.setAttribute("aria-label", `Talk to ${target.displayLabel}`);
+    talk.title = `Talk to ${target.displayLabel}`;
+    talk.textContent = "💬";
+    talk.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      selectTalkTarget(target);
+    });
+    marker.prepend(talk);
+  }
+}
+
 function renderChooser(open = false) {
   ensureControls();
   if (!chooser) return;
@@ -193,12 +235,12 @@ function sameTarget(left, right) {
   return Boolean(left && right && left.interactionTargetId === right.interactionTargetId);
 }
 
-function targetStillNearby(target) {
+function targetStillPresent(target) {
   return currentTargets.some((candidate) => sameTarget(candidate, target));
 }
 
 function synchronize() {
-  const nextTargets = nearbyTalkTargets();
+  const nextTargets = sceneTalkTargets();
   const changed = JSON.stringify(nextTargets) !== JSON.stringify(currentTargets);
   currentTargets = nextTargets;
   const control = ensureControls();
@@ -208,22 +250,23 @@ function synchronize() {
     control.textContent = currentTargets.length === 1
       ? `Talk to ${currentTargets[0].displayLabel}`
       : currentTargets.length > 1
-        ? `Talk · ${currentTargets.length} nearby`
+        ? `Talk · ${currentTargets.length} in scene`
         : "Talk";
     control.setAttribute(
       "aria-label",
       currentTargets.length === 1
         ? `Talk to ${currentTargets[0].displayLabel}`
         : currentTargets.length > 1
-          ? `Choose among ${currentTargets.length} nearby characters to talk to`
-          : "Talk to nearby character",
+          ? `Choose among ${currentTargets.length} characters in the scene to talk to`
+          : "Talk to a character in the scene",
     );
   }
   if (chooser && !chooser.hidden) renderChooser(true);
-  if (selectedTarget && !pendingRequest && !targetStillNearby(selectedTarget)) {
+  if (selectedTarget && !pendingRequest && !targetStillPresent(selectedTarget)) {
     clearTalkMode({ preserveStatus: true });
   }
   if (selectedTarget) synchronizeTalkHistory();
+  decorateTalkAnchors();
   if (changed) {
     window.dispatchEvent(new CustomEvent(NEARBY_EVENT, {
       detail: {
@@ -235,7 +278,7 @@ function synchronize() {
 }
 
 function selectTalkTarget(target) {
-  if (!targetStillNearby(target) || pendingRequest || submitting) return false;
+  if (!targetStillPresent(target) || pendingRequest || submitting) return false;
   selectedTarget = { ...target };
   if (chooser) chooser.hidden = true;
   window.gameFrameMonsterRpgInteractionShell?.closeOverlays?.();
@@ -333,24 +376,14 @@ function synchronizeTalkHistory() {
   history.scrollTop = history.scrollHeight;
 }
 
-function currentCoordinationRevision() {
-  const bridged = window.gameFrameMonsterRpgCoordination?.getRevision?.();
-  if (Number.isSafeInteger(bridged) && bridged >= 0) return bridged;
-  const payloadRevision = worldState().payload?.projection?.gameframeCoordinationRevision;
-  if (Number.isSafeInteger(payloadRevision) && payloadRevision >= 0) return payloadRevision;
-  const value = Number(elements.coordination?.textContent ?? "");
-  if (!Number.isSafeInteger(value) || value < 0) {
-    throw new Error("Campaign coordination state is unavailable. Refresh and try again.");
-  }
-  return value;
-}
-
-function buildPendingRequest() {
+async function buildPendingRequest() {
   if (pendingRequest) return pendingRequest;
-  if (!selectedTarget || !targetStillNearby(selectedTarget)) {
-    throw new Error("Move next to the character and select Talk again.");
+  if (!selectedTarget || !targetStillPresent(selectedTarget)) {
+    throw new Error("That character is no longer present in the current scene.");
   }
-  const { payload, position } = worldState();
+  const snapshot = await window.gameFrameMonsterRpgCoordination?.freshExplorationState?.();
+  if (!snapshot) throw new Error("The current exploration command state is unavailable. Refresh and try again.");
+  const { payload, position, revision } = snapshot;
   const textarea = panel?.querySelector("#mm-rpg-talk-input");
   if (!payload?.projection || !payload?.materialization || !position) {
     throw new Error("The physical campaign scene is not ready for Talk.");
@@ -363,7 +396,7 @@ function buildPendingRequest() {
     ...buildExplorationTalkRequest({
       campaignId: payload.projection.campaignId,
       commandId: `command:${crypto.randomUUID()}`,
-      expectedGameframeCoordinationRevision: currentCoordinationRevision(),
+      expectedGameframeCoordinationRevision: revision,
       sceneId: payload.projection.scene.sceneId,
       materializationRef: payload.materialization.materializationRef,
       expectedPositionRevision: position.positionRevision,
@@ -417,7 +450,7 @@ async function submitTalk() {
   if (submitting || (!selectedTarget && !pendingRequest)) return;
   let request;
   try {
-    request = buildPendingRequest();
+    request = await buildPendingRequest();
   } catch (error) {
     showError(error instanceof Error ? error.message : "Talk could not be prepared.");
     return;
@@ -430,16 +463,19 @@ async function submitTalk() {
     send.disabled = true;
     send.textContent = "Sending…";
   }
-  if (status) status.textContent = `Speaking to ${selectedTarget?.displayLabel || "the nearby character"}…`;
+  if (status) status.textContent = `Speaking to ${selectedTarget?.displayLabel || "the character"}…`;
   showError("");
   synchronizeTalkHistory();
 
   try {
     await requestTalk(request);
-    const targetLabel = selectedTarget?.displayLabel || "the nearby character";
+    const targetLabel = selectedTarget?.displayLabel || "the character";
     pendingRequest = null;
     const textarea = panel?.querySelector("#mm-rpg-talk-input");
-    if (textarea) textarea.value = "";
+    if (textarea) {
+      textarea.value = "";
+      textarea.blur();
+    }
     if (status) status.textContent = `Spoken. Waiting for ${targetLabel} to answer.`;
     if (send) send.textContent = "Speak";
     elements.refresh?.click();
@@ -456,16 +492,13 @@ async function submitTalk() {
     if (physicalConflict || coordinationConflict) {
       pendingRequest = null;
       if (physicalConflict) {
-        // Never hold the Talk UI hostage to a recovery fetch. A stale physical
-        // command is already known to be invalid; release the composer now and
-        // let exploration recovery happen independently.
         void window.gameFrameMonsterRpgWorld?.attachCurrentCampaign?.({ quiet: true })
           ?.catch?.(() => undefined);
       }
       elements.refresh?.click();
       if (status) {
         status.textContent = physicalConflict
-          ? "Your position or target changed. Move next to the character and start Talk again."
+          ? "Physical scene changed. Refreshed; select the character and try again."
           : "Campaign state changed. Refreshed; start Talk again.";
       }
       showError(error?.message || "Talk must be retried from the current campaign state.");
@@ -510,6 +543,8 @@ window.addEventListener("gameframe:before-home", () => {
   currentTargets = [];
   selectedTarget = null;
   pendingRequest = null;
+  anchorObserver?.observer?.disconnect?.();
+  anchorObserver = null;
   if (button) button.hidden = true;
   if (chooser) chooser.hidden = true;
   if (panel) panel.hidden = true;
