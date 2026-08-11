@@ -44,7 +44,8 @@
 }
 
 .mm-rpg-dock-header small,
-.mm-rpg-dock-section-heading small {
+.mm-rpg-dock-section-heading small,
+.mm-rpg-dock-nearby > small {
   color: var(--mm-rpg-green);
   font: 900 .58rem/1 ui-monospace, "SFMono-Regular", Consolas, monospace;
   letter-spacing: .13em;
@@ -128,7 +129,7 @@
 
 .mm-rpg-dock-pane[data-mm-rpg-dock-pane="world"] {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
 }
 
 .mm-rpg-dock-section-heading {
@@ -140,6 +141,51 @@
 
 .mm-rpg-dock-section-heading strong {
   font-size: .85rem;
+}
+
+.mm-rpg-dock-nearby {
+  display: grid;
+  gap: 7px;
+  padding: 9px 12px 10px;
+  border-bottom: 1px solid rgba(181, 215, 179, .12);
+  background: rgba(19, 35, 23, .62);
+}
+
+.mm-rpg-dock-nearby[hidden] {
+  display: none !important;
+}
+
+.mm-rpg-dock-nearby-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.mm-rpg-unified-dock .mm-rpg-dock-nearby .mm-rpg-world-interact {
+  position: static !important;
+  inset: auto !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  max-width: 100%;
+  margin: 0;
+  padding: 7px 10px;
+  transform: none !important;
+  border: 1px solid rgba(181, 215, 179, .23);
+  border-radius: 9px;
+  background: rgba(12, 26, 17, .94);
+  color: var(--mm-rpg-ink);
+  box-shadow: none;
+  font-size: .68rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.mm-rpg-unified-dock .mm-rpg-dock-nearby .mm-rpg-world-interact:hover:not(:disabled) {
+  transform: none !important;
+  border-color: rgba(194, 255, 151, .42);
+  background: rgba(43, 72, 30, .72);
 }
 
 .mm-rpg-dock-world-feed {
@@ -312,6 +358,10 @@
   .mm-rpg-dock-tabs button {
     min-height: 36px;
     font-size: .6rem;
+  }
+
+  .mm-rpg-dock-nearby {
+    padding: 7px 9px 8px;
   }
 
   .mm-rpg-play-shell .mm-rpg-touch-controls {
