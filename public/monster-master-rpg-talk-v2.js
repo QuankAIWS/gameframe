@@ -192,7 +192,7 @@ function decorateTalkAnchors() {
     const talk = document.createElement("button");
     talk.type = "button";
     talk.className = "mm-rpg-world-anchor-talk";
-    talk.setAttribute("aria-label", `Talk to ${target.displayLabel}`);
+    talk.setAttribute("aria-label", `Open conversation with ${target.displayLabel}`);
     talk.title = `Talk to ${target.displayLabel}`;
     talk.textContent = "💬";
     talk.addEventListener("click", (event) => {
@@ -257,7 +257,7 @@ function synchronize() {
       currentTargets.length === 1
         ? `Talk to ${currentTargets[0].displayLabel}`
         : currentTargets.length > 1
-          ? `Choose among ${currentTargets.length} characters in the scene to talk to`
+          ? `Choose among ${currentTargets.length} nearby characters to talk to`
           : "Talk to a character in the scene",
     );
   }
