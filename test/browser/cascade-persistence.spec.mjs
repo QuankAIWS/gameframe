@@ -4,8 +4,8 @@ const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
 
-async function installState(page, { level, hammers = 2, performance = null }) {
-  await page.addInitScript(({ stateKey, performanceKey, targetLevel, hammerCount, savedPerformance }) => {
+async function installState(page, { level, hammers = 2, performance = null, activeRun = null }) {
+  await page.addInitScript(({ stateKey, performanceKey, activeRunKey, targetLevel, hammerCount, savedPerformance, savedActiveRun }) => {
     localStorage.setItem(stateKey, JSON.stringify({
       level: targetLevel,
       lives: 5,
@@ -14,12 +14,15 @@ async function installState(page, { level, hammers = 2, performance = null }) {
       hammers: hammerCount,
     }));
     if (savedPerformance) localStorage.setItem(performanceKey, JSON.stringify(savedPerformance));
+    if (savedActiveRun) localStorage.setItem(activeRunKey, JSON.stringify(savedActiveRun));
   }, {
     stateKey: STATE_KEY,
     performanceKey: PERFORMANCE_KEY,
+    activeRunKey: ACTIVE_RUN_KEY,
     targetLevel: level,
     hammerCount: hammers,
     savedPerformance: performance,
+    savedActiveRun: activeRun,
   });
 }
 
@@ -86,6 +89,7 @@ test("Cascade allows spending multiple owned hammers in the same level without s
 });
 
 test("Cascade labels progression stars as best ratings and distinguishes a lower replay result", async ({ page }) => {
+  const board = Array.from({ length: 64 }, (_, index) => ((Math.floor(index / 8) * 2) + (index % 8)) % 6);
   await installState(page, {
     level: 1,
     hammers: 1,
@@ -96,18 +100,24 @@ test("Cascade labels progression stars as best ratings and distinguishes a lower
       blitzSeen: {},
       pendingHammerRewards: 0,
     },
+    activeRun: {
+      version: 1,
+      level: 1,
+      board,
+      specials: Array(64).fill(null),
+      score: 1085,
+      movesRemaining: 1,
+      levelProgress: {
+        collected: Array(6).fill(0),
+        ice: Array(64).fill(0),
+      },
+      rngState: 123456789,
+      savedAt: Date.now(),
+    },
   });
   await page.goto("/cascade.html");
 
   await expect(page.locator('#level-map > li[data-level="1"] .cascade-map-stars')).toHaveAttribute("aria-label", "Best rating: 3 of 3 stars");
-  await page.evaluate(({ key }) => {
-    const run = window.cascadeResearch.exportActiveRun();
-    run.score = 1085;
-    run.movesRemaining = 1;
-    localStorage.setItem(key, JSON.stringify(run));
-  }, { key: ACTIVE_RUN_KEY });
-
-  await page.reload();
   await expect(page.locator("#score")).toHaveText("1,085");
   await expect(page.locator("#moves")).toHaveText("1");
   await page.locator("#booster-hammer").click();
