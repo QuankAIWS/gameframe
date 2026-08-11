@@ -13,6 +13,7 @@ import {
 import { errorResponse, json, readJson } from "./http-utils.ts";
 import {
   readLeaderboard,
+  submitScoredResult,
   updatePlayerPreferences,
   upsertPlayerDirectory,
 } from "./player-platform-coordinator.ts";
@@ -113,6 +114,13 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           await upsertPlayerDirectory(env, principal);
           const body = await readJson(request);
           return json(200, await updatePlayerPreferences(env, principal.playerId, body.favoriteGameIds));
+        }
+
+        if (request.method === "POST" && url.pathname === "/api/scores") {
+          const principal = await authenticatorFor(env).authenticate(request);
+          await upsertPlayerDirectory(env, principal);
+          const body = await readJson(request);
+          return json(200, await submitScoredResult(env, principal.playerId, body));
         }
 
         if (request.method === "GET" && url.pathname === "/api/leaderboard") {

@@ -3,11 +3,13 @@ import type { DurableStorageLike } from "./runtime-contracts.ts";
 
 const DIRECTORY_KEY = "gameframe:player-directory:v1";
 const LEADERBOARD_KEY = "gameframe:leaderboard:v1";
+const SCORED_LEADERBOARD_KEY = "gameframe:scored-leaderboard:v1";
 const FEED_KEY = "gameframe:player-feed:v1";
 const MAX_DIRECTORY_PLAYERS = 250;
 const MAX_MATCH_HISTORY = 200;
 const MAX_INVITATION_HISTORY = 100;
 const MAX_LEADERBOARD_MATCHES = 1_000;
+const MAX_SCORED_RESULTS = 2_000;
 const MAX_FAVORITES = 12;
 
 export interface GameFramePlayerProfile {
@@ -46,6 +48,16 @@ export interface PlayerInvitationSummary {
   updatedAt: number;
 }
 
+export interface PlayerScoredResult {
+  gameId: string;
+  modeId: string;
+  eventId: string;
+  playerId: string;
+  score: number;
+  metrics: Record<string, number>;
+  updatedAt: number;
+}
+
 interface PlayerDirectoryRecord {
   version: 1;
   players: GameFramePlayerProfile[];
@@ -63,6 +75,11 @@ interface LeaderboardMatchSummary {
 interface LeaderboardRecord {
   version: 1;
   matches: LeaderboardMatchSummary[];
+}
+
+interface ScoredLeaderboardRecord {
+  version: 1;
+  results: PlayerScoredResult[];
 }
 
 interface PlayerFeedRecord {
@@ -92,6 +109,31 @@ function nullableText(value: unknown, maximum: number): string | null {
 function timestamp(value: unknown, fallback = Date.now()): number {
   const numeric = Number(value);
   return Number.isFinite(numeric) && numeric > 0 ? Math.floor(numeric) : fallback;
+}
+
+function boundedScore(value: unknown): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0 || numeric > 1_000_000_000) {
+    throw Object.assign(new Error("Score must be a finite non-negative number."), { code: "player_platform_invalid" });
+  }
+  return Math.floor(numeric);
+}
+
+function scoredMetrics(value: unknown): Record<string, number> {
+  if (value === undefined || value === null) return {};
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw Object.assign(new Error("Score metrics must be an object."), { code: "player_platform_invalid" });
+  }
+  const result: Record<string, number> = {};
+  for (const [rawKey, rawValue] of Object.entries(value as Record<string, unknown>).slice(0, 12)) {
+    const key = boundedText(rawKey, "Score metric name", 40);
+    const numeric = Number(rawValue);
+    if (!Number.isFinite(numeric) || Math.abs(numeric) > 1_000_000_000) {
+      throw Object.assign(new Error("Score metrics must contain bounded finite numbers."), { code: "player_platform_invalid" });
+    }
+    result[key] = numeric;
+  }
+  return result;
 }
 
 function directoryProfile(value: Record<string, unknown>): GameFramePlayerProfile {
@@ -142,6 +184,18 @@ function leaderboardMatch(value: Record<string, unknown>): LeaderboardMatchSumma
       : [],
     winnerPlayerId: nullableText(status.winnerPlayerId, 160),
     draw: Boolean(status.draw),
+    updatedAt: timestamp(value.updatedAt),
+  };
+}
+
+function scoredResult(value: Record<string, unknown>): PlayerScoredResult {
+  return {
+    gameId: boundedText(value.gameId, "Scored game ID", 80),
+    modeId: boundedText(value.modeId, "Scored mode ID", 80),
+    eventId: boundedText(value.eventId, "Scored event ID", 160),
+    playerId: boundedText(value.playerId, "Scored player ID", 160),
+    score: boundedScore(value.score),
+    metrics: scoredMetrics(value.metrics),
     updatedAt: timestamp(value.updatedAt),
   };
 }
@@ -212,6 +266,9 @@ export class PlayerPlatformObjectRuntime {
       if (request.method === "POST" && url.pathname === "/directory/match") {
         return json(200, await this.#upsertLeaderboardMatch(await readJson(request)));
       }
+      if (request.method === "POST" && url.pathname === "/directory/score") {
+        return json(200, await this.#upsertScoredResult(await readJson(request)));
+      }
       if (request.method === "GET" && url.pathname === "/directory/leaderboard") {
         return json(200, await this.#leaderboard());
       }
@@ -267,9 +324,39 @@ export class PlayerPlatformObjectRuntime {
     return summary;
   }
 
+  async #upsertScoredResult(body: Record<string, unknown>) {
+    const incoming = scoredResult(body);
+    const record = await this.#storage.get<ScoredLeaderboardRecord>(SCORED_LEADERBOARD_KEY) ?? { version: 1, results: [] };
+    const existing = record.results.find((entry) => (
+      entry.gameId === incoming.gameId
+      && entry.modeId === incoming.modeId
+      && entry.eventId === incoming.eventId
+      && entry.playerId === incoming.playerId
+    ));
+    const improved = !existing || incoming.score > existing.score;
+    const entry = improved ? incoming : existing;
+    if (improved) {
+      const results = [entry, ...record.results.filter((candidate) => !(
+        candidate.gameId === incoming.gameId
+        && candidate.modeId === incoming.modeId
+        && candidate.eventId === incoming.eventId
+        && candidate.playerId === incoming.playerId
+      ))]
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .slice(0, MAX_SCORED_RESULTS);
+      await this.#storage.put(SCORED_LEADERBOARD_KEY, { version: 1, results });
+    }
+    return {
+      entry: { ...entry, metrics: { ...entry.metrics } },
+      improved,
+      previousBest: existing?.score ?? null,
+    };
+  }
+
   async #leaderboard() {
     const directory = await this.#storage.get<PlayerDirectoryRecord>(DIRECTORY_KEY) ?? { version: 1, players: [] };
     const record = await this.#storage.get<LeaderboardRecord>(LEADERBOARD_KEY) ?? { version: 1, matches: [] };
+    const scored = await this.#storage.get<ScoredLeaderboardRecord>(SCORED_LEADERBOARD_KEY) ?? { version: 1, results: [] };
     const profiles = new Map(directory.players.map((profile) => [profile.playerId, profile]));
     const byGame = new Map<string, Map<string, { played: number; wins: number; losses: number; draws: number }>>();
 
@@ -285,6 +372,24 @@ export class PlayerPlatformObjectRuntime {
         else stats.losses += 1;
         game.set(playerId, stats);
       }
+    }
+
+    const scoredGroups = new Map<string, {
+      gameId: string;
+      modeId: string;
+      eventId: string;
+      entries: PlayerScoredResult[];
+    }>();
+    for (const entry of scored.results) {
+      const key = `${entry.gameId}\u0000${entry.modeId}\u0000${entry.eventId}`;
+      const group = scoredGroups.get(key) ?? {
+        gameId: entry.gameId,
+        modeId: entry.modeId,
+        eventId: entry.eventId,
+        entries: [],
+      };
+      group.entries.push(entry);
+      scoredGroups.set(key, group);
     }
 
     return {
@@ -303,6 +408,26 @@ export class PlayerPlatformObjectRuntime {
           })
           .sort((left, right) => right.points - left.points || right.wins - left.wins || left.losses - right.losses || left.playerId.localeCompare(right.playerId)),
       })),
+      scoredGames: [...scoredGroups.values()]
+        .map((group) => ({
+          gameId: group.gameId,
+          modeId: group.modeId,
+          eventId: group.eventId,
+          entries: group.entries
+            .map((entry) => {
+              const profile = profiles.get(entry.playerId);
+              return {
+                playerId: entry.playerId,
+                displayName: profile?.displayName ?? null,
+                avatarUrl: profile?.avatarUrl ?? null,
+                score: entry.score,
+                metrics: { ...entry.metrics },
+                updatedAt: entry.updatedAt,
+              };
+            })
+            .sort((left, right) => right.score - left.score || left.updatedAt - right.updatedAt || left.playerId.localeCompare(right.playerId)),
+        }))
+        .sort((left, right) => right.eventId.localeCompare(left.eventId) || left.gameId.localeCompare(right.gameId) || left.modeId.localeCompare(right.modeId)),
     };
   }
 

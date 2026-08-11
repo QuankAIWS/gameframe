@@ -88,6 +88,58 @@ test("favorite games persist in the player profile and appear on Home", async ({
   await expect(favorites.getByRole("link", { name: /Othello/ })).toHaveAttribute("href", "/othello.html");
 });
 
+test("scored events bind the authenticated player, keep the best score, and render as a score leaderboard", async ({ page }) => {
+  const eventId = "cascade-weekly-blitz-v1:2099-01-05";
+  const first = await page.request.post("/api/scores", {
+    headers: playerHeader("score-player-a"),
+    data: {
+      playerId: "forged-player-id",
+      gameId: "cascade",
+      modeId: "weekly-blitz",
+      eventId,
+      score: 12_000,
+      metrics: { matches: 18, specials: 4, cascades: 5 },
+    },
+  });
+  expect(first.status()).toBe(200);
+  const firstBody = await first.json();
+  expect(firstBody.entry.playerId).toBe("score-player-a");
+  expect(firstBody.entry.score).toBe(12_000);
+  expect(firstBody.improved).toBe(true);
+
+  const lower = await page.request.post("/api/scores", {
+    headers: playerHeader("score-player-a"),
+    data: { gameId: "cascade", modeId: "weekly-blitz", eventId, score: 9_000 },
+  });
+  expect(lower.status()).toBe(200);
+  const lowerBody = await lower.json();
+  expect(lowerBody.entry.score).toBe(12_000);
+  expect(lowerBody.improved).toBe(false);
+
+  const second = await page.request.post("/api/scores", {
+    headers: playerHeader("score-player-b"),
+    data: {
+      gameId: "cascade",
+      modeId: "weekly-blitz",
+      eventId,
+      score: 15_500,
+      metrics: { matches: 22, specials: 7, cascades: 6 },
+    },
+  });
+  expect(second.status()).toBe(200);
+
+  await page.goto(`/leaderboard.html?player=score-player-a&game=cascade-weekly&event=${encodeURIComponent(eventId)}`);
+  await expect(page.locator("#leaderboard-error")).toBeHidden();
+  await expect(page.locator("#leaderboard-rule")).toContainText("Best score per player");
+  await expect(page.locator("#leaderboard-rule")).toContainText("shared seed");
+  await expect(page.locator("#leaderboard-list .leaderboard-row")).toHaveCount(2);
+  const rows = page.locator("#leaderboard-list .leaderboard-row");
+  await expect(rows.nth(0).locator(".leaderboard-points strong")).toHaveText("15,500");
+  await expect(rows.nth(0)).toContainText("22 match groups");
+  await expect(rows.nth(1)).toContainText("You");
+  await expect(rows.nth(1).locator(".leaderboard-points strong")).toHaveText("12,000");
+});
+
 test("Games, Matches, Leaderboard, and Profile are first-class destination bar links", async ({ page }) => {
   await page.goto("/?catalog=1&player=platform-nav-test");
   await expect(page.locator("#game-grid")).toBeVisible();

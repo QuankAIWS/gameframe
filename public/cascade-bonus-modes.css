@@ -1,0 +1,148 @@
+.cascade-recall-dialog {
+  width: min(620px, calc(100% - 24px));
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 22px;
+  padding: 0;
+  background: #11131b;
+  color: var(--c-text, #f7f7fb);
+  box-shadow: 0 30px 100px rgba(0, 0, 0, .68);
+}
+
+.cascade-recall-dialog::backdrop {
+  background: rgba(3, 4, 8, .8);
+  backdrop-filter: blur(6px);
+}
+
+.cascade-recall-card {
+  display: grid;
+  gap: 14px;
+  padding: clamp(20px, 5vw, 32px);
+}
+
+.cascade-recall-card > small {
+  color: var(--c-yellow, #ffd84d);
+  font-size: .62rem;
+  font-weight: 900;
+  letter-spacing: .18em;
+}
+
+.cascade-recall-card h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 7vw, 3rem);
+  line-height: .95;
+}
+
+.cascade-recall-card p {
+  margin: 0;
+  color: var(--c-muted, #989eae);
+  line-height: 1.5;
+}
+
+.cascade-recall-stage {
+  min-height: 108px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .025);
+}
+
+.cascade-recall-tile {
+  width: clamp(54px, 15vw, 78px);
+  height: clamp(54px, 15vw, 78px);
+  flex: 0 0 auto;
+}
+
+.cascade-recall-tile.is-recall-correct {
+  outline: 3px solid var(--c-green, #83ef7b);
+  outline-offset: 2px;
+}
+
+.cascade-recall-tile.is-recall-wrong {
+  outline: 3px solid var(--c-pink, #ff5ca8);
+  outline-offset: 2px;
+  filter: saturate(.55) brightness(.8);
+}
+
+.cascade-recall-progress {
+  min-height: 22px;
+  color: var(--c-cyan, #59e1ef);
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-align: center;
+}
+
+.cascade-recall-choices {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cascade-recall-choices .cascade-recall-tile {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.cascade-recall-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.cascade-recall-actions button {
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .05);
+  color: var(--c-text, #f7f7fb);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cascade-recall-actions button.primary {
+  border-color: rgba(255, 216, 77, .38);
+  background: rgba(255, 216, 77, .12);
+  color: #fff5bd;
+}
+
+.cascade-weekly-card {
+  border-color: rgba(255, 216, 77, .18);
+}
+
+.cascade-weekly-card > strong {
+  color: var(--c-yellow, #ffd84d);
+}
+
+.cascade-weekly-card > a {
+  color: var(--c-cyan, #59e1ef);
+  font-size: .7rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.cascade-weekly-card > a:hover,
+.cascade-weekly-card > a:focus-visible {
+  text-decoration: underline;
+}
+
+.cascade-weekly-status {
+  min-height: 16px;
+  color: var(--c-muted, #989eae);
+  font-size: .62rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 650px) {
+  .cascade-recall-card { padding: 18px; }
+  .cascade-recall-stage { min-height: 86px; }
+  .cascade-recall-choices { gap: 5px; }
+  .cascade-recall-tile { width: 52px; height: 52px; }
+  .cascade-recall-choices .cascade-recall-tile { width: 100%; height: auto; }
+}
