@@ -1,0 +1,472 @@
+/* Cascade Crush reward-juice layer: spectacle scales with the size of the play. */
+
+.cascade-juice-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cascade-pop-burst,
+.cascade-special-birth,
+.cascade-impact-bomb {
+  position: fixed;
+  left: var(--juice-x, 50%);
+  top: var(--juice-y, 50%);
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.cascade-pop-ring,
+.cascade-birth-ring,
+.cascade-bomb-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--ring-size, 24px);
+  height: var(--ring-size, 24px);
+  border: var(--ring-width, 3px) solid var(--juice-color, #fff);
+  border-radius: 50%;
+  opacity: .95;
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--juice-color, #fff) 70%, transparent));
+  animation: cascade-juice-ring 520ms cubic-bezier(.08,.72,.18,1) both;
+}
+
+.cascade-pop-spark,
+.cascade-birth-spark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--spark-size, 7px);
+  height: var(--spark-size, 7px);
+  border-radius: 50%;
+  background: var(--juice-color, #fff);
+  box-shadow:
+    0 0 8px var(--juice-color, #fff),
+    0 0 18px color-mix(in srgb, var(--juice-color, #fff) 64%, transparent);
+  animation: cascade-juice-spark var(--spark-duration, 520ms) var(--spark-delay, 0ms) cubic-bezier(.08,.72,.2,1) both;
+}
+
+.cascade-pop-burst[data-intensity="2"] .cascade-pop-ring {
+  --ring-size: 30px;
+  --ring-width: 4px;
+}
+
+.cascade-pop-burst[data-intensity="3"] .cascade-pop-ring {
+  --ring-size: 38px;
+  --ring-width: 5px;
+  box-shadow: 0 0 22px color-mix(in srgb, var(--juice-color, #fff) 56%, transparent);
+}
+
+.cascade-special-birth {
+  z-index: 98;
+}
+
+.cascade-birth-ring {
+  --ring-size: 34px;
+  --ring-width: 4px;
+  border-style: double;
+  animation-duration: 720ms;
+}
+
+.cascade-special-birth::after {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+  text-shadow:
+    0 0 8px #fff,
+    0 0 20px var(--juice-color, #fff),
+    0 0 34px var(--juice-color, #fff);
+  animation: cascade-birth-star 680ms cubic-bezier(.12,.72,.2,1) both;
+}
+
+.cascade-stripe-beam {
+  position: fixed;
+  z-index: 96;
+  border-radius: 999px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--juice-color, #fff) 40%, transparent) 12%,
+      #fff 48%,
+      #fff 52%,
+      color-mix(in srgb, var(--juice-color, #fff) 40%, transparent) 88%,
+      transparent 100%);
+  filter:
+    drop-shadow(0 0 7px #fff)
+    drop-shadow(0 0 18px var(--juice-color, #fff));
+  opacity: 0;
+}
+
+.cascade-stripe-beam.is-horizontal {
+  transform-origin: center;
+  animation: cascade-stripe-horizontal 430ms cubic-bezier(.08,.72,.2,1) both;
+}
+
+.cascade-stripe-beam.is-vertical {
+  transform-origin: center;
+  background:
+    linear-gradient(180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--juice-color, #fff) 40%, transparent) 12%,
+      #fff 48%,
+      #fff 52%,
+      color-mix(in srgb, var(--juice-color, #fff) 40%, transparent) 88%,
+      transparent 100%);
+  animation: cascade-stripe-vertical 430ms cubic-bezier(.08,.72,.2,1) both;
+}
+
+.cascade-impact-bomb {
+  z-index: 97;
+}
+
+.cascade-bomb-ring {
+  --ring-size: 56px;
+  --ring-width: 7px;
+  border-color: #fff7b0;
+  box-shadow:
+    0 0 12px #fff,
+    0 0 30px var(--juice-color, #ff914d),
+    inset 0 0 20px color-mix(in srgb, var(--juice-color, #ff914d) 54%, transparent);
+  animation: cascade-bomb-wave 620ms cubic-bezier(.08,.7,.18,1) both;
+}
+
+.cascade-impact-bomb::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 12%, #fff2a1 13% 28%, var(--juice-color, #ff914d) 29% 58%, transparent 60%);
+  filter: blur(.2px) drop-shadow(0 0 18px var(--juice-color, #ff914d));
+  animation: cascade-bomb-core 400ms ease-out both;
+}
+
+.cascade-color-wash {
+  position: fixed;
+  z-index: 94;
+  pointer-events: none;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.94) 0 5%, transparent 22%),
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--juice-color, #ff5eaa) 62%, transparent) 0 34%, transparent 76%);
+  box-shadow:
+    inset 0 0 52px color-mix(in srgb, var(--juice-color, #ff5eaa) 60%, transparent),
+    0 0 40px color-mix(in srgb, var(--juice-color, #ff5eaa) 45%, transparent);
+  animation: cascade-color-wash 620ms ease-out both;
+}
+
+.cascade-hype-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.cascade-hype-word {
+  position: absolute;
+  top: 46%;
+  max-width: 88%;
+  padding: .16em .38em .22em;
+  border-radius: .38em;
+  color: #fff;
+  font-size: clamp(2rem, 6.3vw, 4.8rem);
+  font-weight: 1000;
+  line-height: .94;
+  letter-spacing: -.055em;
+  text-align: center;
+  text-transform: uppercase;
+  -webkit-text-stroke: 2px rgba(86, 38, 125, .16);
+  text-shadow:
+    0 3px 0 rgba(117, 57, 151, .2),
+    0 0 10px #fff,
+    0 0 26px var(--hype-color, #ff5eaa),
+    0 12px 30px rgba(94, 52, 129, .28);
+  background: linear-gradient(100deg, #ff5eaa, #ffb54e 28%, #ffe66d 48%, #44d8ee 72%, #a56af4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: cascade-hype-word var(--hype-duration, 920ms) cubic-bezier(.12,.78,.2,1) both;
+}
+
+.cascade-hype-word small {
+  display: block;
+  margin-top: .28rem;
+  color: #fff;
+  font-size: .28em;
+  font-weight: 950;
+  letter-spacing: .12em;
+  text-shadow: 0 2px 8px rgba(82, 45, 120, .42);
+  -webkit-text-stroke: 0;
+}
+
+.cascade-board-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  z-index: 29;
+  border: 3px solid transparent;
+  border-radius: 24px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.cascade-board-wrap[data-juice-hype="2"]::after,
+.cascade-board-wrap[data-juice-hype="3"]::after,
+.cascade-board-wrap[data-juice-hype="4"]::after {
+  border-color: color-mix(in srgb, var(--juice-hype-color, #ff5eaa) 52%, transparent);
+  box-shadow:
+    inset 0 0 28px color-mix(in srgb, var(--juice-hype-color, #ff5eaa) 24%, transparent),
+    0 0 28px color-mix(in srgb, var(--juice-hype-color, #ff5eaa) 30%, transparent);
+  animation: cascade-hype-frame 620ms ease-out both;
+}
+
+.cascade-board-wrap[data-juice-hype="4"]::after {
+  border-width: 5px;
+  box-shadow:
+    inset 0 0 42px color-mix(in srgb, var(--juice-hype-color, #ff5eaa) 34%, transparent),
+    0 0 42px color-mix(in srgb, var(--juice-hype-color, #ff5eaa) 42%, transparent);
+}
+
+body[data-cascade-effects="full"] .cascade-board-wrap.is-juice-impact-small {
+  animation: cascade-impact-small 170ms ease-out both;
+}
+
+body[data-cascade-effects="full"] .cascade-board-wrap.is-juice-impact-medium {
+  animation: cascade-impact-medium 210ms ease-out both;
+}
+
+body[data-cascade-effects="full"] .cascade-board-wrap.is-juice-impact-big {
+  animation: cascade-impact-big 260ms ease-out both;
+}
+
+.cascade-tile.has-special .cascade-special-mark {
+  animation: cascade-special-idle 1.75s ease-in-out infinite;
+}
+
+.cascade-tile[data-special="bomb"].has-special {
+  animation: cascade-bomb-idle 1.55s ease-in-out infinite;
+}
+
+.cascade-tile[data-special="color"].has-special {
+  box-shadow:
+    inset 0 3px 7px rgba(255,255,255,.5),
+    inset 0 -8px 12px rgba(0,0,0,.16),
+    0 0 0 2px rgba(255,255,255,.72),
+    0 0 16px rgba(255,94,170,.44),
+    0 0 27px rgba(68,201,238,.28);
+}
+
+.cascade-tile.is-special-born {
+  z-index: 7;
+  animation: cascade-special-born 650ms cubic-bezier(.12,.78,.2,1) both !important;
+}
+
+.cascade-dialog.is-celebrating form {
+  animation: cascade-result-celebrate 620ms cubic-bezier(.12,.78,.2,1) both;
+}
+
+.cascade-dialog.is-celebrating h2 {
+  text-shadow:
+    0 0 10px rgba(255,255,255,.94),
+    0 0 24px rgba(255,94,170,.36),
+    0 0 34px rgba(68,201,238,.25);
+}
+
+.cascade-win-bloom {
+  position: fixed;
+  z-index: 89;
+  left: 50%;
+  top: 50%;
+  width: min(78vmin, 760px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    conic-gradient(from 0deg,
+      transparent 0 5%, rgba(255,94,170,.28) 6% 8%, transparent 9% 18%,
+      rgba(255,211,78,.30) 19% 21%, transparent 22% 34%, rgba(68,201,238,.28) 35% 37%,
+      transparent 38% 50%, rgba(165,106,244,.28) 51% 53%, transparent 54% 66%,
+      rgba(105,216,119,.28) 67% 69%, transparent 70% 83%, rgba(255,145,77,.28) 84% 86%, transparent 87% 100%);
+  mask-image: radial-gradient(circle, transparent 0 17%, #000 34% 74%, transparent 75%);
+  animation: cascade-win-bloom 1.25s ease-out both;
+}
+
+.cascade-feedback-controls {
+  display: grid;
+  gap: 7px;
+  margin-top: 6px;
+}
+
+.cascade-feedback-controls button {
+  width: 100%;
+}
+
+body[data-cascade-effects="reduced"] .cascade-pop-burst .cascade-pop-spark:nth-of-type(n+6),
+body[data-cascade-effects="reduced"] .cascade-birth-spark:nth-of-type(n+5) {
+  display: none;
+}
+
+body[data-cascade-effects="reduced"] .cascade-color-wash,
+body[data-cascade-effects="reduced"] .cascade-win-bloom,
+body[data-cascade-effects="reduced"] .cascade-board-wrap::after {
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+body[data-cascade-effects="reduced"] .cascade-hype-word {
+  font-size: clamp(1.5rem, 4.4vw, 3rem);
+  text-shadow: 0 2px 9px rgba(94,52,129,.24);
+}
+
+@keyframes cascade-juice-ring {
+  0% { transform: translate(-50%, -50%) scale(.18); opacity: .98; }
+  60% { opacity: .78; }
+  100% { transform: translate(-50%, -50%) scale(4.1); opacity: 0; }
+}
+
+@keyframes cascade-juice-spark {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--spark-angle, 0deg)) translateX(2px) scale(1.15);
+    opacity: 1;
+  }
+  72% { opacity: 1; }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--spark-angle, 0deg)) translateX(var(--spark-distance, 52px)) scale(.08);
+    opacity: 0;
+  }
+}
+
+@keyframes cascade-birth-star {
+  0% { transform: translate(-50%, -50%) scale(.2) rotate(-40deg); opacity: 0; }
+  42% { transform: translate(-50%, -50%) scale(1.45) rotate(12deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(.72) rotate(70deg); opacity: 0; }
+}
+
+@keyframes cascade-stripe-horizontal {
+  0% { transform: scaleX(.04); opacity: 0; filter: brightness(1.8); }
+  28% { transform: scaleX(.5); opacity: 1; }
+  64% { transform: scaleX(1); opacity: .95; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+
+@keyframes cascade-stripe-vertical {
+  0% { transform: scaleY(.04); opacity: 0; filter: brightness(1.8); }
+  28% { transform: scaleY(.5); opacity: 1; }
+  64% { transform: scaleY(1); opacity: .95; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+
+@keyframes cascade-bomb-wave {
+  0% { transform: translate(-50%, -50%) scale(.15); opacity: 1; }
+  55% { opacity: .9; }
+  100% { transform: translate(-50%, -50%) scale(4.3); opacity: 0; }
+}
+
+@keyframes cascade-bomb-core {
+  0% { transform: translate(-50%, -50%) scale(.2); opacity: 0; }
+  24% { transform: translate(-50%, -50%) scale(1.45); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2.1); opacity: 0; }
+}
+
+@keyframes cascade-color-wash {
+  0% { transform: scale(.9); opacity: 0; filter: saturate(1); }
+  24% { transform: scale(1); opacity: .82; filter: saturate(1.45) brightness(1.16); }
+  100% { transform: scale(1.035); opacity: 0; filter: saturate(1.18); }
+}
+
+@keyframes cascade-hype-word {
+  0% { transform: translateY(18px) scale(.35) rotate(-4deg); opacity: 0; filter: blur(4px); }
+  28% { transform: translateY(-3px) scale(1.18) rotate(1deg); opacity: 1; filter: blur(0); }
+  66% { transform: translateY(-7px) scale(1); opacity: 1; }
+  100% { transform: translateY(-36px) scale(.96); opacity: 0; }
+}
+
+@keyframes cascade-hype-frame {
+  0% { opacity: 0; transform: scale(.965); }
+  28% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.015); }
+}
+
+@keyframes cascade-impact-small {
+  0%, 100% { transform: translate(0, 0); }
+  30% { transform: translate(-1px, 1px); }
+  62% { transform: translate(1px, -1px); }
+}
+
+@keyframes cascade-impact-medium {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-2px, 1px); }
+  42% { transform: translate(2px, -2px); }
+  64% { transform: translate(-1px, 2px); }
+  82% { transform: translate(1px, -1px); }
+}
+
+@keyframes cascade-impact-big {
+  0%, 100% { transform: translate(0, 0); }
+  16% { transform: translate(-3px, 2px) rotate(-.08deg); }
+  34% { transform: translate(3px, -2px) rotate(.08deg); }
+  52% { transform: translate(-2px, -2px); }
+  70% { transform: translate(2px, 2px); }
+  86% { transform: translate(-1px, 1px); }
+}
+
+@keyframes cascade-special-idle {
+  0%, 100% { transform: scale(1); filter: brightness(1); opacity: .88; }
+  50% { transform: scale(1.08); filter: brightness(1.34); opacity: 1; }
+}
+
+@keyframes cascade-bomb-idle {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50% { filter: brightness(1.10) saturate(1.08); }
+}
+
+@keyframes cascade-special-born {
+  0% { transform: scale(.35) rotate(-16deg); filter: brightness(2); opacity: .15; }
+  42% { transform: scale(1.28) rotate(4deg); filter: brightness(1.6) saturate(1.3); opacity: 1; }
+  72% { transform: scale(.94) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0); filter: brightness(1); }
+}
+
+@keyframes cascade-result-celebrate {
+  0% { transform: translateY(14px) scale(.92); filter: brightness(1); }
+  42% { transform: translateY(-2px) scale(1.035); filter: brightness(1.08); }
+  100% { transform: translateY(0) scale(1); filter: brightness(1); }
+}
+
+@keyframes cascade-win-bloom {
+  0% { transform: translate(-50%, -50%) scale(.18) rotate(-12deg); opacity: 0; }
+  26% { opacity: .95; }
+  100% { transform: translate(-50%, -50%) scale(1.25) rotate(18deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade-pop-ring,
+  .cascade-pop-spark,
+  .cascade-special-birth,
+  .cascade-stripe-beam,
+  .cascade-impact-bomb,
+  .cascade-color-wash,
+  .cascade-hype-word,
+  .cascade-win-bloom,
+  .cascade-tile.has-special .cascade-special-mark,
+  .cascade-tile[data-special="bomb"].has-special,
+  .cascade-tile.is-special-born,
+  .cascade-dialog.is-celebrating form {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
