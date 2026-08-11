@@ -5,11 +5,13 @@ const output = "visual-results/player-ui-review";
 const stateKey = "scribbles-gameframe.cascade-state:v1";
 const performanceKey = "scribbles-gameframe.cascade-performance:v1";
 const soundKey = "scribbles-gameframe.cascade-sound:v1";
+const effectsKey = "scribbles-gameframe.cascade-effects:v1";
 
 async function prepare(page, level = 1, performance = null) {
   await mkdir(output, { recursive: true });
-  await page.addInitScript(({ stateKey: key, performanceKey: perfKey, soundKey: audioKey, level: targetLevel, performance: perf }) => {
+  await page.addInitScript(({ stateKey: key, performanceKey: perfKey, soundKey: audioKey, effectsKey: fxKey, level: targetLevel, performance: perf }) => {
     localStorage.setItem(audioKey, "off");
+    localStorage.setItem(fxKey, "full");
     localStorage.setItem(key, JSON.stringify({
       level: targetLevel,
       lives: 5,
@@ -18,7 +20,7 @@ async function prepare(page, level = 1, performance = null) {
       hammers: 2,
     }));
     if (perf) localStorage.setItem(perfKey, JSON.stringify(perf));
-  }, { stateKey, performanceKey, soundKey, level, performance });
+  }, { stateKey, performanceKey, soundKey, effectsKey, level, performance });
 }
 
 test("Cascade Crush bright casual polish is readable on desktop and mobile", async ({ page }) => {
@@ -30,10 +32,13 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   await expect(page.getByRole("heading", { name: "Cascade Crush", exact: true })).toBeVisible();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   await expect(page.locator("#cascade-sound-toggle")).toBeVisible();
+  await expect(page.locator("#cascade-effects-toggle")).toHaveText(/Effects full/);
+  await expect(page.locator("body")).toHaveAttribute("data-cascade-effects", "full");
   await expect(page.locator("#level-stars")).toBeVisible();
   await expect(page.locator("#cascade-weekly-card")).toBeVisible();
   await expect(page.locator("#level-map > li")).toHaveCount(30);
   await expect(page.locator('link[href="/cascade-polish.css"]')).toHaveCount(1);
+  await expect(page.locator('link[href="/cascade-juice.css"]')).toHaveCount(1);
   await expect(page.locator('link[href="/cascade-evolution.css"]')).toHaveCount(1);
   await expect(page.locator('link[href="/cascade-bonus-modes.css"]')).toHaveCount(1);
 
@@ -57,6 +62,20 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   const levelMapFits = await page.locator("#level-map").evaluate((map) => map.scrollWidth <= map.clientWidth + 1);
   expect(levelMapFits).toBe(true);
   await page.screenshot({ path: `${output}/cascade-crush-bright-mobile.png`, fullPage: true });
+});
+
+test("Cascade Crush feedback control can reduce visual spectacle without changing play", async ({ page }) => {
+  await prepare(page, 5);
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto("/cascade.html");
+
+  const button = page.locator("#cascade-effects-toggle");
+  await expect(button).toHaveText(/Effects full/);
+  await button.click();
+  await expect(button).toHaveText(/Effects reduced/);
+  await expect(page.locator("body")).toHaveAttribute("data-cascade-effects", "reduced");
+  await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), effectsKey)).toBe("reduced");
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
 });
 
 test("Cascade Crush performance card shows earned stars and the next Blitz slot", async ({ page }) => {
@@ -98,6 +117,20 @@ test("Cascade Crush persistent specials remain visually distinct", async ({ page
   await expect(page.locator('.cascade-tile[data-special="bomb"]')).toBeVisible();
   await expect(page.locator('.cascade-tile[data-special="color"]')).toBeVisible();
   await page.screenshot({ path: `${output}/cascade-crush-specials-desktop.png`, fullPage: true });
+});
+
+test("Cascade Crush big-pop color clear creates a board-wide dopamine hit", async ({ page }) => {
+  await prepare(page, 5);
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto("/cascade.html");
+
+  await expect.poll(() => page.evaluate(() => Boolean(window.cascadePolish))).toBe(true);
+  const started = await page.evaluate(() => window.cascadePolish.demo("color"));
+  expect(started).toBe(true);
+  await expect(page.locator(".cascade-color-wash")).toBeVisible();
+  await expect(page.locator(".cascade-pop-burst")).toBeVisible();
+  await expect(page.locator(".cascade-hype-word")).toContainText("Mega!");
+  await page.screenshot({ path: `${output}/cascade-crush-big-pop-color-desktop.png`, fullPage: true });
 });
 
 test("Cascade Crush Blitz takes over the board without replacing the core visual language", async ({ page }) => {
