@@ -21,7 +21,8 @@ test("Cascade Crush resolves a legal move through the animated presentation laye
 
   await expect(page.getByRole("heading", { name: "Cascade Crush", exact: true })).toBeVisible();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
-  await expect(page.locator("#level-map > li")).toHaveCount(100);
+  await expect(page.locator("#level-map > li")).toHaveCount(30);
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "1-30");
 
   const move = await page.evaluate(async () => {
     const { listLegalMoves } = await import("/cascade-engine.js");
@@ -62,21 +63,30 @@ test("Cascade teaches persistent specials in the opening five levels", async ({ 
   await expect(page.locator(".cascade-help")).toContainText("Match five to make a color clearer");
 });
 
-test("Cascade late chapters still expose ice, collection, and layered ice", async ({ page }) => {
+test("Cascade spreads objective families across the 300-level campaign", async ({ page }) => {
   await installLevelFixture(page, 31);
 
   await page.goto("/cascade.html?cascadeTestLevel=31");
   await expect(page.locator("#level-number")).toHaveText("31");
   await expect(page.locator(".cascade-tile[data-ice]")).not.toHaveCount(0);
   await expect(page.locator("#objective-label")).toContainText("ice");
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "31-60");
 
-  await page.goto("/cascade.html?cascadeTestLevel=41");
-  await expect(page.locator("#level-number")).toHaveText("41");
+  await page.goto("/cascade.html?cascadeTestLevel=61");
+  await expect(page.locator("#level-number")).toHaveText("61");
   await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().level.objective.collect.length)).toBe(1);
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "61-90");
 
-  await page.goto("/cascade.html?cascadeTestLevel=71");
-  await expect(page.locator("#level-number")).toHaveText("71");
+  await page.goto("/cascade.html?cascadeTestLevel=151");
+  await expect(page.locator("#level-number")).toHaveText("151");
   await expect(page.locator('.cascade-tile[data-ice="2"]')).not.toHaveCount(0);
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "151-180");
+
+  await page.goto("/cascade.html?cascadeTestLevel=241");
+  await expect(page.locator("#level-number")).toHaveText("241");
+  await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().level.objective.collect.length)).toBe(2);
+  await expect(page.locator('.cascade-tile[data-ice="2"]')).not.toHaveCount(0);
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "241-270");
 });
 
 test("Cascade has no IOU ledger, purchase path, or fake currency surface", async ({ page }) => {
@@ -133,6 +143,16 @@ test("Cascade keeps best stars and replaces ordinary quick timers with scheduled
   await expect(page.locator('#level-map > li[data-level="6"] .cascade-map-stars')).toHaveText("★★☆");
 });
 
+test("Cascade bonus cadence continues through the veteran chapters", async ({ page }) => {
+  await installLevelFixture(page, 171);
+  await page.goto("/cascade.html?cascadeTestLevel=171");
+  await expect(page.locator("#bonus-status")).toContainText("NEXT BLITZ AFTER LEVEL 190");
+
+  await page.evaluate(() => window.cascadeBonusModes.startQuickRecall(216));
+  await expect(page.locator("#cascade-recall-dialog")).toBeVisible();
+  await expect(page.locator("[data-recall-title]")).toContainText("Round 1");
+});
+
 test("Cascade zero-hammer state points back to earned stars", async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("scribbles-gameframe.cascade-state:v1", JSON.stringify({
@@ -180,7 +200,7 @@ test("Cascade admin can launch a standalone non-failing Blitz round", async ({ p
   await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().mode), { timeout: 4_000 }).toBe("blitz");
 });
 
-test("Cascade admin console jumps levels and contains no IOU controls", async ({ page }) => {
+test("Cascade admin console reaches level 300 and keeps the map bounded", async ({ page }) => {
   await page.route("**/api/session", async (route) => {
     await route.fulfill({
       status: 200,
@@ -198,14 +218,16 @@ test("Cascade admin console jumps levels and contains no IOU controls", async ({
   await expect(page.locator("#cascade-admin-open")).toBeVisible();
   await page.locator("#cascade-admin-open").click();
   await expect(page.locator("#cascade-admin-dialog")).toBeVisible();
-  await expect(page.locator('#cascade-admin-dialog [data-level="100"]')).toBeVisible();
+  await expect(page.locator("#cascade-admin-dialog")).toContainText("1 to 300");
   await expect(page.locator("#cascade-admin-dialog")).not.toContainText("IOU");
 
-  await page.locator("#cascade-admin-command").fill("go to level 100");
+  await page.locator("#cascade-admin-command").fill("go to level 300");
   await page.getByRole("button", { name: "Run" }).click();
 
-  await expect(page.locator("#level-number")).toHaveText("100", { timeout: 5_000 });
-  await expect(page.locator("#level-map > li")).toHaveCount(100);
+  await expect(page.locator("#level-number")).toHaveText("300", { timeout: 5_000 });
+  await expect(page.locator("#level-map > li")).toHaveCount(30);
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "271-300");
+  await expect(page.locator('#level-map > li[data-level="300"]')).toBeVisible();
 });
 
 test("Cascade admin can force life and inventory edge states", async ({ page }) => {
