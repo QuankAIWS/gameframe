@@ -64,6 +64,8 @@ function polishPlayerCopy() {
 let audioContext = null;
 const clearSoundSeen = new WeakSet();
 const specialSoundSeen = new WeakSet();
+let clearSoundQueued = false;
+let pendingClearCount = 0;
 let resultSoundOpen = false;
 
 function soundEnabled() {
@@ -131,6 +133,20 @@ function bodyThump(frequency = 105, duration = 0.1, volume = 0.018) {
   oscillator.stop(now + duration + 0.02);
 }
 
+function queueClearSound() {
+  pendingClearCount += 1;
+  if (clearSoundQueued) return;
+  clearSoundQueued = true;
+  queueMicrotask(() => {
+    clearSoundQueued = false;
+    const count = pendingClearCount;
+    pendingClearCount = 0;
+    if (!count) return;
+    const intensity = Math.min(1, count / 10);
+    noiseBurst(0.04 + intensity * 0.025, 0.0055 + intensity * 0.003, 650, 5000 + count * 80);
+  });
+}
+
 function addTactileSound(node) {
   if (!(node instanceof HTMLElement) || !node.classList.contains("cascade-tile")) return;
   if (node.classList.contains("is-special-triggered") && !specialSoundSeen.has(node)) {
@@ -147,7 +163,7 @@ function addTactileSound(node) {
   }
   if (node.classList.contains("is-clearing") && !clearSoundSeen.has(node)) {
     clearSoundSeen.add(node);
-    noiseBurst(0.045, 0.0065, 650, 5000);
+    queueClearSound();
   }
 }
 
