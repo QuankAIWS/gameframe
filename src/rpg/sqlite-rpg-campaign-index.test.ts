@@ -33,7 +33,13 @@ function campaign(input: {
         ? {}
         : { leftPresentationSequence: input.leftPresentationSequence }),
     }],
-    events: [],
+    events: [1, 2, 3].map((sequence) => ({
+      eventId: `event:${input.campaignId}:${sequence}`,
+      kind: "campaign.index_fixture",
+      audience: { kind: "public" as const },
+      payload: { sequence },
+      createdAt: input.initializedAt,
+    })),
     initializedAt: input.initializedAt,
   };
 }
