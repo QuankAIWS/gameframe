@@ -160,14 +160,6 @@ function synchronize() {
   if (chooser && !chooser.hidden) renderChooser(true);
 }
 
-function currentCoordinationRevision() {
-  const value = Number(elements.coordination?.textContent ?? "");
-  if (!Number.isSafeInteger(value) || value < 0) {
-    throw new Error("Campaign coordination state is unavailable. Refresh the campaign and try again.");
-  }
-  return value;
-}
-
 function sameControl(left, right) {
   return Boolean(
     left
@@ -177,16 +169,19 @@ function sameControl(left, right) {
   );
 }
 
-function prepareRequest(target) {
+async function prepareRequest(target) {
   if (pendingRequest) {
     if (!sameControl(target, pendingTarget)) {
       throw new Error("An earlier roster command has unconfirmed delivery. Retry it before issuing another.");
     }
     return pendingRequest;
   }
+  const snapshot = await window.gameFrameMonsterRpgCoordination?.freshExplorationState?.();
+  if (!snapshot) throw new Error("The current exploration command state is unavailable. Refresh and try again.");
+  synchronize();
   const current = controls.find((candidate) => sameControl(candidate, target));
   if (!current) throw new Error("The selected roster control is no longer available.");
-  const { payload, position } = worldState();
+  const { payload, position, revision } = snapshot;
   if (!payload?.projection || !payload?.materialization || !position) {
     throw new Error("The physical campaign scene is not ready for roster control.");
   }
@@ -195,7 +190,7 @@ function prepareRequest(target) {
     ...buildExplorationMonsterControlRequest({
       campaignId: payload.projection.campaignId,
       commandId: `command:${crypto.randomUUID()}`,
-      expectedGameframeCoordinationRevision: currentCoordinationRevision(),
+      expectedGameframeCoordinationRevision: revision,
       sceneId: payload.projection.scene.sceneId,
       materializationRef: payload.materialization.materializationRef,
       expectedPositionRevision: position.positionRevision,
@@ -273,7 +268,7 @@ async function submitControl(target) {
   if (submitting) return;
   let request;
   try {
-    request = prepareRequest(target);
+    request = await prepareRequest(target);
   } catch (error) {
     showError(error instanceof Error ? error.message : "Roster control could not be prepared.");
     return;
