@@ -88,7 +88,8 @@ function chooseDeployment(view) {
       return edgeDifference
         || Math.abs(left.position.y - 11) - Math.abs(right.position.y - 11)
         || left.position.y - right.position.y
-        || left.position.x - right.position.x;
+        || left.position.x - right.position.x
+        || left.unitId.localeCompare(right.unitId);
     })[0];
 }
 
@@ -162,7 +163,7 @@ async function openPrepared(page, prepared, playerId) {
   await waitForPixi(page);
 }
 
-test("deploys a full creature roster, advances combat against Monster Master BattleBot, and resumes the battle", async ({ page }) => {
+test("deploys a Master and three monsters, advances combat against Monster Master BattleBot, and resumes the battle", async ({ page }) => {
   test.setTimeout(45_000);
   await page.goto("/monster-master.html?player=monster-master-human");
   await page.locator("#monster-master-bot").click();
@@ -170,10 +171,10 @@ test("deploys a full creature roster, advances combat against Monster Master Bat
 
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 0");
   await expect(page.locator("#monster-master-phase")).toHaveText("Deployment");
-  await expect(page.locator("#monster-master-roster-list .combat-roster-unit")).toHaveCount(6);
+  await expect(page.locator("#monster-master-roster-list .combat-roster-unit")).toHaveCount(8);
   await expect(page.locator("#monster-master-status")).toContainText("Verdant Sage");
 
-  for (let deployment = 1; deployment <= 3; deployment += 1) {
+  for (let deployment = 1; deployment <= 4; deployment += 1) {
     await deploySelectedUnit(page);
     await expect(page.locator("#monster-master-revision")).toHaveText(`Revision ${deployment * 2}`);
   }
@@ -185,11 +186,11 @@ test("deploys a full creature roster, advances combat against Monster Master Bat
   ));
   expect(move).not.toBeNull();
   await dispatchBoardCoordinate(page, move.path.at(-1));
-  await expect(page.locator("#monster-master-revision")).toHaveText("Revision 7");
+  await expect(page.locator("#monster-master-revision")).toHaveText("Revision 9");
   await expect(page.locator(".combat-canvas-frame")).toHaveAttribute("data-last-effect-types", /unit-moved/);
 
   await page.locator("#monster-master-end-activation").click();
-  await expect.poll(async () => Number(await page.locator("#monster-master-revision-small").textContent())).toBeGreaterThan(7);
+  await expect.poll(async () => Number(await page.locator("#monster-master-revision-small").textContent())).toBeGreaterThan(9);
   const matchId = (await diagnostics(page)).matchId;
   const beforeReloadRevision = Number(await page.locator("#monster-master-revision-small").textContent());
   await page.reload();
@@ -263,7 +264,7 @@ test("renders a completed Monster Master victory and disables actions", async ({
 });
 
 test("renders the bounded round-cap draw", async ({ page, request }) => {
-  const prepared = await prepareAuthoritativeState(request, (view) => view.observation.status.draw, { passiveCombat: true, maximumActions: 220 });
+  const prepared = await prepareAuthoritativeState(request, (view) => view.observation.status.draw, { passiveCombat: true, maximumActions: 260 });
   await openPrepared(page, prepared, prepared.playerIds[0]);
   await expect(page.locator("#monster-master-result-screen")).toBeVisible();
   await expect(page.locator("#monster-master-result-title")).toHaveText("Draw");
