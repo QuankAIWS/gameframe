@@ -1,0 +1,30 @@
+/* Keep compositor hints on active effects instead of promoting all 64 tiles forever. */
+.cascade-tile {
+  will-change: auto;
+}
+
+.cascade-tile.is-matched,
+.cascade-tile.is-clearing,
+.cascade-tile.is-hammer-hit,
+.cascade-tile.is-special-born,
+.cascade-tile.is-drag-origin,
+.cascade-tile.is-drag-target {
+  will-change: transform, opacity, filter;
+}
+
+.cascade-dopamine-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 97;
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  contain: strict;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade-dopamine-canvas {
+    display: none;
+  }
+}
