@@ -24,6 +24,13 @@ export interface CascadeProgression {
   weeklyBlitzBestScore: number;
 }
 
+export interface CascadeProgressionSummary {
+  highestCompletedLevel: number;
+  totalBestStars: number;
+  weeklyBlitzEntries: number;
+  weeklyBlitzBestScore: number;
+}
+
 export interface PlayerProgressionRecord {
   version: 1;
   playerId: string;
@@ -49,6 +56,14 @@ export interface PublicPlayerProgression extends GamerLevelSummary {
   xpUpdatedAt: number;
   games: Record<string, LifetimeGameRecord>;
   cascade: CascadeProgression;
+  updatedAt: number;
+}
+
+export interface PublicPlayerProgressionSummary extends GamerLevelSummary {
+  playerId: string;
+  xpUpdatedAt: number;
+  games: Record<string, LifetimeGameRecord>;
+  cascade: CascadeProgressionSummary;
   updatedAt: number;
 }
 
@@ -94,6 +109,12 @@ function cloneGameRecord(record: LifetimeGameRecord | undefined): LifetimeGameRe
   };
 }
 
+function cloneGames(games: Record<string, LifetimeGameRecord> | undefined): Record<string, LifetimeGameRecord> {
+  return Object.fromEntries(
+    Object.entries(games ?? {}).map(([gameId, stats]) => [gameId, cloneGameRecord(stats)]),
+  );
+}
+
 function cloneCascade(value: CascadeProgression | undefined): CascadeProgression {
   const starsByLevel: Record<string, number> = {};
   for (const [level, stars] of Object.entries(value?.starsByLevel ?? {})) {
@@ -107,6 +128,15 @@ function cloneCascade(value: CascadeProgression | undefined): CascadeProgression
     highestCompletedLevel: Math.min(MAX_CASCADE_LEVEL, whole(value?.highestCompletedLevel)),
     starsByLevel,
     totalBestStars: Object.values(starsByLevel).reduce((total, stars) => total + stars, 0),
+    weeklyBlitzEntries: whole(value?.weeklyBlitzEntries),
+    weeklyBlitzBestScore: whole(value?.weeklyBlitzBestScore),
+  };
+}
+
+function cascadeSummary(value: CascadeProgression | CascadeProgressionSummary | undefined): CascadeProgressionSummary {
+  return {
+    highestCompletedLevel: Math.min(MAX_CASCADE_LEVEL, whole(value?.highestCompletedLevel)),
+    totalBestStars: whole(value?.totalBestStars),
     weeklyBlitzEntries: whole(value?.weeklyBlitzEntries),
     weeklyBlitzBestScore: whole(value?.weeklyBlitzBestScore),
   };
@@ -151,16 +181,26 @@ export function gamerLevelSummary(gamerXp: number): GamerLevelSummary {
 }
 
 export function publicPlayerProgression(record: PlayerProgressionRecord): PublicPlayerProgression {
-  const games = Object.fromEntries(
-    Object.entries(record.games ?? {}).map(([gameId, stats]) => [gameId, cloneGameRecord(stats)]),
-  );
   return {
     playerId: record.playerId,
     ...gamerLevelSummary(record.gamerXp),
     xpUpdatedAt: whole(record.xpUpdatedAt),
-    games,
+    games: cloneGames(record.games),
     cascade: cloneCascade(record.cascade),
     updatedAt: whole(record.updatedAt),
+  };
+}
+
+export function compactPlayerProgression(
+  progression: PlayerProgressionRecord | PublicPlayerProgression,
+): PublicPlayerProgressionSummary {
+  return {
+    playerId: progression.playerId,
+    ...gamerLevelSummary(progression.gamerXp),
+    xpUpdatedAt: whole(progression.xpUpdatedAt),
+    games: cloneGames(progression.games),
+    cascade: cascadeSummary(progression.cascade),
+    updatedAt: whole(progression.updatedAt),
   };
 }
 
