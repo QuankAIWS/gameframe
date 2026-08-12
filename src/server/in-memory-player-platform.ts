@@ -1,5 +1,13 @@
 import type { AuthenticatedPrincipal } from "../auth/request-authenticator.ts";
 import { resumePathForGame, type InvitationGameId } from "../auth/match-invitation.ts";
+import {
+  applyCascadeProgression,
+  applyCompletedMatch,
+  applyScoredProgression,
+  emptyPlayerProgression,
+  publicPlayerProgression,
+  type PlayerProgressionRecord,
+} from "../cloudflare/player-progression.ts";
 import type { PublicGameMatchView } from "./in-memory-match-service.ts";
 
 const MAX_FAVORITES = 12;
@@ -25,6 +33,15 @@ export interface LocalScoredResult {
   score: number;
   metrics: Record<string, number>;
   updatedAt: number;
+}
+
+interface LocalPlayerProfile {
+  playerId: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  source: string;
+  firstSeenAt: number;
+  lastSeenAt: number;
 }
 
 function boundedText(value: unknown, name: string, maximum: number): string {
@@ -61,29 +78,29 @@ function scoreMetrics(value: unknown): Record<string, number> {
 }
 
 export class InMemoryPlayerPlatform {
-  readonly #players = new Map<string, {
-    playerId: string;
-    displayName: string | null;
-    avatarUrl: string | null;
-    source: string;
-    firstSeenAt: number;
-    lastSeenAt: number;
-  }>();
+  readonly #players = new Map<string, LocalPlayerProfile>();
   readonly #matches = new Map<string, LocalPlayerMatchSummary>();
   readonly #favorites = new Map<string, string[]>();
   readonly #scores = new Map<string, LocalScoredResult>();
+  readonly #progressions = new Map<string, PlayerProgressionRecord>();
+  readonly #processedMatches = new Set<string>();
+  readonly #scoredParticipations = new Set<string>();
 
   register(principal: AuthenticatedPrincipal): void {
     const now = Date.now();
     const existing = this.#players.get(principal.playerId);
-    this.#players.set(principal.playerId, {
+    const profile = {
       playerId: principal.playerId,
       displayName: principal.displayName ?? null,
       avatarUrl: principal.avatarUrl ?? null,
       source: principal.source,
       firstSeenAt: existing?.firstSeenAt ?? now,
       lastSeenAt: now,
-    });
+    };
+    this.#players.set(principal.playerId, profile);
+    if (!this.#progressions.has(principal.playerId)) {
+      this.#progressions.set(principal.playerId, emptyPlayerProgression(principal.playerId, profile.firstSeenAt));
+    }
   }
 
   playersFor(viewerPlayerId: string) {
@@ -93,11 +110,39 @@ export class InMemoryPlayerPlatform {
       .map((profile) => ({ ...profile }));
   }
 
+  progressionFor(playerId: string) {
+    const existing = this.#progressions.get(playerId) ?? emptyPlayerProgression(playerId);
+    if (!this.#progressions.has(playerId)) this.#progressions.set(playerId, existing);
+    return publicPlayerProgression(existing);
+  }
+
+  publicProfile(playerId: string) {
+    const profile = this.#players.get(playerId);
+    if (!profile) {
+      throw Object.assign(new Error("Player profile was not found."), { code: "not_found", status: 404 });
+    }
+    return {
+      profile: { ...profile },
+      progression: this.progressionFor(playerId),
+    };
+  }
+
   updateFavorites(playerId: string, favoriteGameIds: unknown) {
     if (!Array.isArray(favoriteGameIds)) throw Object.assign(new Error("favoriteGameIds must be an array."), { code: "bad_request" });
     const favorites = [...new Set(favoriteGameIds.map((value) => String(value).trim()).filter(Boolean))].slice(0, MAX_FAVORITES);
     this.#favorites.set(playerId, favorites);
     return { favoriteGameIds: [...favorites] };
+  }
+
+  recordCascadeProgression(playerId: string, value: Record<string, unknown>) {
+    const current = this.#progressions.get(playerId) ?? emptyPlayerProgression(playerId);
+    const next = applyCascadeProgression(current, {
+      highestCompletedLevel: value.highestCompletedLevel,
+      starsByLevel: value.starsByLevel,
+      updatedAt: Date.now(),
+    });
+    this.#progressions.set(playerId, next);
+    return publicPlayerProgression(next);
   }
 
   submitScore(playerId: string, value: Record<string, unknown>) {
@@ -115,6 +160,20 @@ export class InMemoryPlayerPlatform {
     const improved = !existing || incoming.score > existing.score;
     if (improved) this.#scores.set(key, incoming);
     const entry = improved ? incoming : existing!;
+
+    const participationKey = `${playerId}\u0000${incoming.gameId}\u0000${incoming.modeId}\u0000${incoming.eventId}`;
+    const firstParticipation = !this.#scoredParticipations.has(participationKey);
+    const currentProgression = this.#progressions.get(playerId) ?? emptyPlayerProgression(playerId);
+    const nextProgression = applyScoredProgression(currentProgression, {
+      gameId: incoming.gameId,
+      modeId: incoming.modeId,
+      score: incoming.score,
+      firstParticipation,
+      updatedAt: incoming.updatedAt,
+    });
+    this.#progressions.set(playerId, nextProgression);
+    if (firstParticipation) this.#scoredParticipations.add(participationKey);
+
     return {
       entry: { ...entry, metrics: { ...entry.metrics } },
       improved,
@@ -129,7 +188,8 @@ export class InMemoryPlayerPlatform {
       status?: { lifecycle?: string; winnerPlayerId?: string | null; draw?: boolean };
     };
     const status = observation.status ?? {};
-    this.#matches.set(view.matchId, {
+    const updatedAt = Date.now();
+    const summary: LocalPlayerMatchSummary = {
       matchId: view.matchId,
       gameId: view.gameId,
       playerIds: [...view.playerIds],
@@ -138,9 +198,25 @@ export class InMemoryPlayerPlatform {
       lifecycle: status.lifecycle === "completed" ? "completed" : "active",
       winnerPlayerId: status.winnerPlayerId ?? null,
       draw: Boolean(status.draw),
-      updatedAt: Date.now(),
+      updatedAt,
       resumePath: resumePathForGame(view.gameId as InvitationGameId, view.matchId),
-    });
+    };
+    this.#matches.set(view.matchId, summary);
+
+    if (summary.lifecycle !== "completed") return;
+    for (const playerId of summary.playerIds) {
+      const accomplishmentKey = `${playerId}\u0000${summary.matchId}`;
+      if (this.#processedMatches.has(accomplishmentKey)) continue;
+      const current = this.#progressions.get(playerId) ?? emptyPlayerProgression(playerId, updatedAt);
+      this.#progressions.set(playerId, applyCompletedMatch(current, {
+        playerId,
+        gameId: summary.gameId,
+        winnerPlayerId: summary.winnerPlayerId,
+        draw: summary.draw,
+        updatedAt,
+      }));
+      this.#processedMatches.add(accomplishmentKey);
+    }
   }
 
   feedFor(playerId: string) {
@@ -180,7 +256,21 @@ export class InMemoryPlayerPlatform {
       scored.set(key, group);
     }
 
+    const gamerLevels = [...this.#players.values()]
+      .map((profile) => ({
+        playerId: profile.playerId,
+        displayName: profile.displayName,
+        avatarUrl: profile.avatarUrl,
+        ...this.progressionFor(profile.playerId),
+      }))
+      .sort((left, right) => (
+        right.gamerXp - left.gamerXp
+        || left.xpUpdatedAt - right.xpUpdatedAt
+        || left.playerId.localeCompare(right.playerId)
+      ));
+
     return {
+      gamerLevels,
       games: [...games.entries()].map(([gameId, entries]) => ({
         gameId,
         entries: [...entries.entries()]
