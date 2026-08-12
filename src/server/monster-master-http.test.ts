@@ -32,8 +32,9 @@ test("HTTP boundary alternates human and Monster Master BattleBot deployments", 
   let view = await createdResponse.json();
   assert.equal(view.gameId, "monster-master-duel");
   assert.equal(view.observation.phase, "deployment");
+  assert.equal(view.observation.undeployedUnitIds.length, 8);
 
-  for (let deployment = 0; deployment < 3; deployment += 1) {
+  for (let deployment = 0; deployment < 4; deployment += 1) {
     const action = view.observation.legalActions.find((candidate: { type: string }) => (
       candidate.type === "deploy-unit"
     ));
@@ -55,10 +56,10 @@ test("HTTP boundary alternates human and Monster Master BattleBot deployments", 
     view = await response.json();
   }
 
-  assert.equal(view.revision, 6);
-  assert.equal(view.eventCount, 6);
+  assert.equal(view.revision, 8);
+  assert.equal(view.eventCount, 8);
   assert.equal(view.observation.phase, "combat");
-  assert.equal(view.observation.board.units.length, 6);
+  assert.equal(view.observation.board.units.length, 8);
   assert.equal(view.observation.activePlayerId, "human");
   assert.equal(view.observation.activeUnitId, "alpha-emberling");
 });
