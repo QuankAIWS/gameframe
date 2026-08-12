@@ -178,7 +178,7 @@ export function applyCompletedMatch(
   record: PlayerProgressionRecord,
   input: CompletedMatchProgressionInput,
 ): PlayerProgressionRecord {
-  const now = whole(input.updatedAt, Date.now());
+  const now = positiveTimestamp(input.updatedAt, Date.now());
   const current = cloneGameRecord(record.games[input.gameId]);
   current.played += 1;
   let xpGain = GAMER_XP_RULES.completedMatch;
@@ -216,7 +216,7 @@ export function applyCascadeProgression(
   record: PlayerProgressionRecord,
   input: CascadeProgressionInput,
 ): PlayerProgressionRecord {
-  const now = whole(input.updatedAt, Date.now());
+  const now = positiveTimestamp(input.updatedAt, Date.now());
   const incoming = normalizedCascadeInput(input);
   const cascade = cloneCascade(record.cascade);
   const nextHighest = Math.max(cascade.highestCompletedLevel, incoming.highestCompletedLevel);
@@ -239,7 +239,7 @@ export function applyScoredProgression(
   record: PlayerProgressionRecord,
   input: ScoredProgressionInput,
 ): PlayerProgressionRecord {
-  const now = whole(input.updatedAt, Date.now());
+  const now = positiveTimestamp(input.updatedAt, Date.now());
   if (input.gameId !== "cascade" || input.modeId !== "weekly-blitz") {
     return { ...record, updatedAt: now };
   }
