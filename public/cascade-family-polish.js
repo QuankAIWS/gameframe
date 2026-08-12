@@ -87,7 +87,18 @@ function hardenTerminalDialogs() {
   }, true);
 }
 
+function polishLevelTreeStars() {
+  for (const badge of document.querySelectorAll(".cascade-map-stars")) {
+    const match = badge.getAttribute("aria-label")?.match(/^Best rating: ([1-3]) of 3 stars$/);
+    if (!match) continue;
+    const filled = "★".repeat(Number(match[1]));
+    if (badge.textContent !== filled) badge.textContent = filled;
+  }
+}
+
 function polishPlayerCopy() {
+  polishLevelTreeStars();
+
   const feedbackLabel = document.querySelector("#cascade-feedback-card > small");
   if (feedbackLabel?.textContent === "FEEDBACK") feedbackLabel.textContent = "SETTINGS";
 
@@ -247,4 +258,4 @@ polishPlayerCopy();
 document.addEventListener("click", restoreNormalRunAfterBlitz, true);
 new MutationObserver(polishPlayerCopy).observe(document.body, { subtree: true, childList: true, characterData: true });
 
-window.cascadeFamilyPolish = Object.freeze({ preserveNormalRunForBonus, polishPlayerCopy });
+window.cascadeFamilyPolish = Object.freeze({ preserveNormalRunForBonus, polishLevelTreeStars, polishPlayerCopy });
