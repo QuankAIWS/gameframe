@@ -7,6 +7,11 @@ const QUICK_RECALL_AFTER_LEVELS = Object.freeze(new Set([
   8, 24, 48, 72, 96, 126, 156, 186, 216, 246, 276,
 ]));
 const RECALL_ROUNDS = Object.freeze([3, 4, 5]);
+const RECALL_PACE = Object.freeze([
+  Object.freeze({ leadIn: 700, show: 1100, gap: 260 }),
+  Object.freeze({ leadIn: 650, show: 950, gap: 230 }),
+  Object.freeze({ leadIn: 600, show: 825, gap: 200 }),
+]);
 const BONUS_STAR_STEP = 10;
 const HAMMER_MAX = 6;
 const WEEKLY_MODE_ID = "weekly-blitz";
@@ -198,19 +203,20 @@ async function playRecallRound(dialog, roundIndex, sequence) {
   const progress = dialog.querySelector("[data-recall-progress]");
   const choices = dialog.querySelector("[data-recall-choices]");
   const actions = dialog.querySelector("[data-recall-actions]");
+  const pace = RECALL_PACE[roundIndex] || RECALL_PACE.at(-1);
   title.textContent = `Round ${roundIndex + 1} of ${RECALL_ROUNDS.length}`;
-  copy.textContent = `Watch ${sequence.length} tiles, then repeat them in order.`;
+  copy.textContent = `Watch ${sequence.length} tiles, then repeat them in order. Your picks stay visible as you enter them.`;
   progress.textContent = "WATCH";
   choices.hidden = true;
   actions.replaceChildren();
   stage.replaceChildren();
 
-  await sleep(350);
+  await sleep(pace.leadIn);
   for (const kind of sequence) {
     stage.replaceChildren(tile(kind));
-    await sleep(560);
+    await sleep(pace.show);
     stage.replaceChildren();
-    await sleep(150);
+    await sleep(pace.gap);
   }
 
   progress.textContent = `REPEAT · 0/${sequence.length}`;
@@ -231,12 +237,17 @@ async function playRecallRound(dialog, roundIndex, sequence) {
         answer.classList.add(kind === sequence[index] ? "is-recall-correct" : "is-recall-wrong");
         return answer;
       }));
-      window.setTimeout(() => resolve({ correct, total: sequence.length, perfect }), 650);
+      window.setTimeout(() => resolve({ correct, total: sequence.length, perfect }), 800);
     };
     clicks.forEach((button) => button.addEventListener("click", () => {
       if (response.length >= sequence.length) return;
       response.push(Number(button.dataset.kind));
       progress.textContent = `REPEAT · ${response.length}/${sequence.length}`;
+      stage.replaceChildren(...response.map((kind) => {
+        const answer = tile(kind);
+        answer.classList.add("is-recall-entered");
+        return answer;
+      }));
       if (response.length === sequence.length) finish();
     }));
   });

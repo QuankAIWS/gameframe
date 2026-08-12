@@ -15,21 +15,23 @@ const none = {
 test("Casual Games changes stay in the Casual Games lane", () => {
   assert.deepEqual(classifyUiTestScope([
     "public/casual-games.html",
+    "public/casual-games.js",
     "test/visual/casual-games-destination.spec.mjs",
   ]), { ...none, casual: true });
 });
 
-test("Cascade presentation changes do not run the 300-level profile", () => {
+test("Cascade browser input and presentation changes do not run the 300-level profile", () => {
   assert.deepEqual(classifyUiTestScope([
+    "public/cascade-runtime-v2.js",
+    "public/cascade-input.js",
+    "public/cascade-bonus-modes.js",
     "public/cascade-polish.css",
-    "public/cascade-family-polish.js",
     "test/browser/cascade-mobile-scroll.spec.mjs",
   ]), { ...none, cascadeUi: true });
 });
 
-test("Cascade mechanics/runtime changes add the profile gate", () => {
+test("Cascade simulator and game mechanics changes add the profile gate", () => {
   assert.deepEqual(classifyUiTestScope([
-    "public/cascade-runtime-v2.js",
     "src/games/cascade/cascade-engine.test.mjs",
   ]), { ...none, cascadeUi: true, cascadeProfile: true });
 });
