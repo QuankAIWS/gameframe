@@ -42,7 +42,13 @@ function updateDragTarget(event) {
   const dx = event.clientX - drag.startX;
   const dy = event.clientY - drag.startY;
   const distance = Math.hypot(dx, dy);
-  if (distance < drag.threshold) return;
+  if (distance < drag.threshold) {
+    if (drag.didDrag) {
+      clearDragPresentation();
+      drag.to = null;
+    }
+    return;
+  }
 
   const next = adjacentIndex(drag.from, dx, dy);
   drag.didDrag = true;
@@ -85,7 +91,7 @@ if (board) {
     updateDragTarget(event);
     const completed = { ...drag };
     finishDrag();
-    board.releasePointerCapture?.(event.pointerId);
+    if (board.hasPointerCapture?.(event.pointerId)) board.releasePointerCapture(event.pointerId);
 
     if (!completed.didDrag) return;
     suppressTrustedClickUntil = performance.now() + 650;
@@ -117,10 +123,9 @@ if (board) {
       return;
     }
 
-    // The runtime commits the hammer decrement immediately but previously did not
-    // repaint the inventory until the potentially long resolution animation ended.
-    // Reflect the already-committed intent at pointer release; the runtime's next
-    // render reconciles this with canonical local state.
+    // The runtime commits the hammer decrement before resolving the hammer animation,
+    // but its next status repaint can occur noticeably later. Mirror that committed
+    // inventory change immediately; the runtime reconciles the canonical count on render.
     if (event.isTrusted && tile.classList.contains("is-hammer-target") && hammerCount) {
       const current = Math.max(0, Number(hammerCount.textContent) || 0);
       if (current > 0) hammerCount.textContent = String(current - 1);
