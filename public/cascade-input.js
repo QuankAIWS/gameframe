@@ -32,6 +32,11 @@ function clearDragPresentation() {
   });
 }
 
+function clearPendingClickSelection() {
+  const selected = board?.querySelector(".cascade-tile.is-selected");
+  if (selected) selected.click();
+}
+
 function finishDrag() {
   clearDragPresentation();
   drag = null;
@@ -50,6 +55,7 @@ function updateDragTarget(event) {
     return;
   }
 
+  if (!drag.didDrag) clearPendingClickSelection();
   const next = adjacentIndex(drag.from, dx, dy);
   drag.didDrag = true;
   if (drag.to === next) return;
