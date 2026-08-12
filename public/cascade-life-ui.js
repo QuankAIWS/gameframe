@@ -95,14 +95,14 @@ function queueSafeReload() {
 }
 
 function setBoardBlocked(blocked) {
-  const bonus = bonusBoardActive();
   document.body.classList.toggle("cascade-no-lives", blocked);
   if (lifeLock) lifeLock.hidden = !blocked;
   board?.querySelectorAll("button").forEach((tile) => {
     tile.disabled = blocked;
   });
+  // This layer may impose the zero-life lock, but the runtime owns when the
+  // Hammer becomes enabled again (for example after a cascade finishes).
   if (hammerButton && blocked) hammerButton.disabled = true;
-  else if (hammerButton && !bonus) hammerButton.disabled = false;
 }
 
 function tick() {
