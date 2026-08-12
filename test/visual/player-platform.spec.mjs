@@ -105,7 +105,7 @@ async function openLeaderboard(page, viewport) {
   await page.setViewportSize(viewport);
   await page.goto(`/leaderboard.html?player=${playerId}`);
   await expectPlatformBar(page, "[data-gameframe-leaderboard]");
-  await expect(page.getByRole("heading", { name: "Hall of Fame" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Leaderboard" })).toBeVisible();
   await expect(page.locator(`#hall-podium a[href="/profile.html?view=${playerId}"]`)).toHaveCount(1);
   await expect(page.locator("#hall-categories .hall-category-card")).toHaveCount(3);
   await expect(page.locator("#leaderboard-list")).toBeVisible();
