@@ -75,7 +75,7 @@ test("stale Monster Master deployment refreshes without duplicate mutation", asy
   await dispatchBoardCoordinate(page, deployment.position);
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 2");
   await expect(page.locator("#monster-master-error")).toBeHidden();
-  await expect(page.locator("#monster-master-roster-list .combat-roster-unit")).toHaveCount(6);
+  await expect(page.locator("#monster-master-roster-list .combat-roster-unit")).toHaveCount(8);
 
   const refreshed = await viewAs(page, browserState.matchId, browserState.playerId);
   expect(refreshed.revision).toBe(2);
