@@ -11,7 +11,10 @@ const errorBox = document.querySelector("#leaderboard-error");
 const gameSelect = document.querySelector("#leaderboard-game");
 const rule = document.querySelector("#leaderboard-rule");
 const list = document.querySelector("#leaderboard-list");
+const podium = document.querySelector("#hall-podium");
+const categories = document.querySelector("#hall-categories");
 let boards = [];
+let gamerLevels = [];
 
 function gameName(gameId) {
   if (gameId === "othello") return "Othello";
@@ -35,12 +38,14 @@ function eventDateLabel(eventId) {
 }
 
 function boardValue(board) {
+  if (board.kind === "gamer") return "gamer|level";
   return board.kind === "score"
     ? `score|${board.gameId}|${board.modeId}|${encodeURIComponent(board.eventId)}`
     : `board|${board.gameId}`;
 }
 
 function boardLabel(board) {
+  if (board.kind === "gamer") return "Gamer Level";
   if (board.kind === "score") {
     return `${gameName(board.gameId)} · ${scoredModeName(board.modeId)} · ${eventDateLabel(board.eventId)}`;
   }
@@ -51,20 +56,28 @@ function selectedBoard() {
   return boards.find((candidate) => boardValue(candidate) === gameSelect.value) ?? boards[0];
 }
 
-function playerCell(entry) {
-  const player = document.createElement("div");
-  player.className = "leaderboard-player";
+function profileHref(playerId) {
+  return `/profile.html?view=${encodeURIComponent(playerId)}`;
+}
+
+function avatarFor(entry, className = "leaderboard-avatar-fallback") {
   if (entry.avatarUrl) {
     const avatar = document.createElement("img");
     avatar.src = entry.avatarUrl;
     avatar.alt = "";
-    player.append(avatar);
-  } else {
-    const avatar = document.createElement("span");
-    avatar.className = "leaderboard-avatar-fallback";
-    avatar.textContent = String(entry.displayName || "GF").slice(0, 2).toUpperCase();
-    player.append(avatar);
+    return avatar;
   }
+  const avatar = document.createElement("span");
+  avatar.className = className;
+  avatar.textContent = String(entry.displayName || "GF").slice(0, 2).toUpperCase();
+  return avatar;
+}
+
+function playerCell(entry) {
+  const player = document.createElement("a");
+  player.className = "leaderboard-player";
+  player.href = profileHref(entry.playerId);
+  player.append(avatarFor(entry));
   const copy = document.createElement("div");
   const name = document.createElement("strong");
   name.textContent = entry.playerId === identity.playerId ? `${entry.displayName || "You"} · You` : entry.displayName || "GameFrame Player";
@@ -72,6 +85,26 @@ function playerCell(entry) {
   copy.append(name, detail);
   player.append(copy);
   return { player, detail };
+}
+
+function renderGamerLevel(board) {
+  rule.textContent = "Gamer Level · activity and accomplishments across GameFrame";
+  if (!Array.isArray(board.entries) || !board.entries.length) return false;
+  board.entries.forEach((entry, index) => {
+    const row = document.createElement("article");
+    row.className = `leaderboard-row gamer-level-row${entry.playerId === identity.playerId ? " is-you" : ""}`;
+    const rank = document.createElement("strong");
+    rank.className = "leaderboard-rank";
+    rank.textContent = String(index + 1);
+    const { player, detail } = playerCell(entry);
+    detail.textContent = `${Math.max(0, Number(entry.gamerXp) || 0).toLocaleString()} XP · ${Math.max(0, Number(entry.xpToNextLevel) || 0).toLocaleString()} to next level`;
+    const level = document.createElement("div");
+    level.className = "leaderboard-points gamer-level-value";
+    level.innerHTML = `<strong>${Math.max(1, Math.floor(Number(entry.gamerLevel) || 1))}</strong><span>LEVEL</span>`;
+    row.append(rank, player, level);
+    list.append(row);
+  });
+  return true;
 }
 
 function renderBoardGame(board) {
@@ -132,12 +165,84 @@ function render() {
     return;
   }
 
-  const rendered = board.kind === "score" ? renderScoredGame(board) : renderBoardGame(board);
+  const rendered = board.kind === "gamer"
+    ? renderGamerLevel(board)
+    : board.kind === "score"
+      ? renderScoredGame(board)
+      : renderBoardGame(board);
   if (rendered) return;
   const empty = document.createElement("p");
   empty.className = "platform-empty";
-  empty.textContent = board.kind === "score" ? "No scores have been submitted for this event yet." : "No completed shared board-game results yet.";
+  empty.textContent = board.kind === "score" ? "No scores have been submitted for this event yet." : "No completed shared results yet.";
   list.append(empty);
+}
+
+function podiumCard(entry, rank) {
+  const link = document.createElement("a");
+  link.href = profileHref(entry.playerId);
+  link.className = `hall-podium-card hall-rank-${rank}${entry.playerId === identity.playerId ? " is-you" : ""}`;
+  link.append(avatarFor(entry, "hall-avatar-fallback"));
+  const copy = document.createElement("div");
+  const rankLabel = document.createElement("small");
+  rankLabel.textContent = rank === 1 ? "#1 GAMER" : `#${rank}`;
+  const playerName = document.createElement("strong");
+  playerName.textContent = entry.playerId === identity.playerId ? `${entry.displayName || "You"} · You` : entry.displayName || "GameFrame Player";
+  const level = document.createElement("span");
+  level.innerHTML = `LV <b>${Math.max(1, Math.floor(Number(entry.gamerLevel) || 1))}</b> · ${Math.max(0, Number(entry.gamerXp) || 0).toLocaleString()} XP`;
+  copy.append(rankLabel, playerName, level);
+  link.append(copy);
+  return link;
+}
+
+function categoryCard(title, entries, valueFor, detailFor) {
+  if (!entries.length) return null;
+  const winner = entries[0];
+  const value = valueFor(winner);
+  if (!Number.isFinite(Number(value)) || Number(value) <= 0) return null;
+  const card = document.createElement("a");
+  card.className = "hall-category-card";
+  card.href = profileHref(winner.playerId);
+  card.innerHTML = `
+    <small>${title}</small>
+    <strong>${Number(value).toLocaleString()}</strong>
+    <span>${winner.displayName || "GameFrame Player"}</span>
+    <b>${detailFor(winner)}</b>
+  `;
+  return card;
+}
+
+function renderHallOverview() {
+  podium.replaceChildren();
+  const leaders = gamerLevels.slice(0, 3);
+  if (!leaders.length) {
+    const empty = document.createElement("p");
+    empty.className = "platform-empty";
+    empty.textContent = "No players have entered the Hall yet.";
+    podium.append(empty);
+  } else {
+    leaders.forEach((entry, index) => podium.append(podiumCard(entry, index + 1)));
+  }
+
+  categories.replaceChildren();
+  const byCascadeLevels = gamerLevels
+    .filter((entry) => Number(entry.cascade?.highestCompletedLevel) > 0)
+    .slice()
+    .sort((a, b) => Number(b.cascade?.highestCompletedLevel || 0) - Number(a.cascade?.highestCompletedLevel || 0) || Number(b.gamerXp || 0) - Number(a.gamerXp || 0));
+  const byCascadeStars = gamerLevels
+    .filter((entry) => Number(entry.cascade?.totalBestStars) > 0)
+    .slice()
+    .sort((a, b) => Number(b.cascade?.totalBestStars || 0) - Number(a.cascade?.totalBestStars || 0) || Number(b.gamerXp || 0) - Number(a.gamerXp || 0));
+  const byBlitzBest = gamerLevels
+    .filter((entry) => Number(entry.cascade?.weeklyBlitzBestScore) > 0)
+    .slice()
+    .sort((a, b) => Number(b.cascade?.weeklyBlitzBestScore || 0) - Number(a.cascade?.weeklyBlitzBestScore || 0));
+  const cards = [
+    categoryCard("CASCADE PROGRESS", byCascadeLevels, (entry) => entry.cascade.highestCompletedLevel, () => "levels cleared"),
+    categoryCard("CASCADE STARS", byCascadeStars, (entry) => entry.cascade.totalBestStars, () => "best stars"),
+    categoryCard("BLITZ PERSONAL BEST", byBlitzBest, (entry) => entry.cascade.weeklyBlitzBestScore, () => "points"),
+  ].filter(Boolean);
+  cards.forEach((card) => categories.append(card));
+  categories.hidden = !cards.length;
 }
 
 function requestedWeeklyEventBoard() {
@@ -165,14 +270,19 @@ function preferredBoardValue() {
     ));
     if (candidate) return boardValue(candidate);
   }
-  return null;
+  if (requested) {
+    const candidate = boards.find((board) => board.gameId === requested);
+    if (candidate) return boardValue(candidate);
+  }
+  return "gamer|level";
 }
 
 async function refresh() {
   try {
     const response = await gameFrameFetch("/api/leaderboard", {}, identity);
     const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(body.message || "Leaderboard could not be loaded.");
+    if (!response.ok) throw new Error(body.message || "Hall of Fame could not be loaded.");
+    gamerLevels = Array.isArray(body.gamerLevels) ? body.gamerLevels : [];
     const boardGames = Array.isArray(body.games) ? body.games.map((game) => ({ ...game, kind: "board" })) : [];
     const scoredGames = Array.isArray(body.scoredGames) ? body.scoredGames.map((game) => ({ ...game, kind: "score" })) : [];
     const requestedWeekly = requestedWeeklyEventBoard();
@@ -183,27 +293,23 @@ async function refresh() {
     ))) {
       scoredGames.unshift(requestedWeekly);
     }
-    boards = [...scoredGames, ...boardGames];
+    boards = [{ kind: "gamer", entries: gamerLevels }, ...scoredGames, ...boardGames];
     gameSelect.replaceChildren();
-    if (!boards.length) {
+    for (const board of boards) {
       const option = document.createElement("option");
-      option.value = "";
-      option.textContent = "No results yet";
+      option.value = boardValue(board);
+      option.textContent = boardLabel(board);
       gameSelect.append(option);
-    } else {
-      for (const board of boards) {
-        const option = document.createElement("option");
-        option.value = boardValue(board);
-        option.textContent = boardLabel(board);
-        gameSelect.append(option);
-      }
-      const preferred = preferredBoardValue();
-      if (preferred) gameSelect.value = preferred;
     }
+    const preferred = preferredBoardValue();
+    if (boards.some((board) => boardValue(board) === preferred)) gameSelect.value = preferred;
+    renderHallOverview();
     render();
   } catch (error) {
     errorBox.hidden = false;
-    errorBox.textContent = error instanceof Error ? error.message : "Leaderboard could not be loaded.";
+    errorBox.textContent = error instanceof Error ? error.message : "Hall of Fame could not be loaded.";
+    podium.replaceChildren();
+    categories.replaceChildren();
     list.replaceChildren();
     const empty = document.createElement("p");
     empty.className = "platform-empty";
