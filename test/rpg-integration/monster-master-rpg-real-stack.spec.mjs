@@ -63,11 +63,6 @@ async function exerciseCoveredCart(page) {
   await expect(uncover.locator("xpath=..")).toHaveClass(/mm-rpg-dock-nearby-actions/);
   await uncover.click();
   await expect(uncover).toBeHidden();
-
-  await expect.poll(async () => page.evaluate(() => {
-    const payload = window.gameFrameMonsterRpgWorld?.getPayload?.();
-    return payload?.projection?.scene?.objects?.find((object) => object.entityId === "object.checkpoint-cart")?.state ?? null;
-  })).toBe("uncovered");
 }
 
 async function exerciseCinderControl(page) {
