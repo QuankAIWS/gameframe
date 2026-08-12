@@ -1,13 +1,14 @@
-import { establishGameFrameIdentity, gameFrameFetch } from "./gameframe-auth.js";
+import { gameFrameFetch, tryGameFrameIdentity } from "./gameframe-auth.js";
 
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const OWNER_KEY = "scribbles-gameframe.cascade-progression-owner:v1";
+const SYNC_INTERVAL_MS = 750;
 const storage = window.localStorage;
-const previousSetItem = Storage.prototype.setItem;
 const query = new URLSearchParams(window.location.search);
-let syncTimer = null;
 let lastSubmitted = "";
+let syncPending = false;
+let identity = null;
 
 function readJson(key) {
   try {
@@ -42,13 +43,8 @@ function snapshot() {
   };
 }
 
-const identityPromise = establishGameFrameIdentity({
-  preferredDevelopmentPlayerId: query.get("player"),
-});
-
 async function submitSnapshot() {
-  syncTimer = null;
-  const identity = await identityPromise;
+  if (!identity || syncPending) return;
   const current = snapshot();
   const hasProgress = current.highestCompletedLevel > 0 || Object.keys(current.starsByLevel).length > 0;
   const owner = storage.getItem(OWNER_KEY);
@@ -56,31 +52,35 @@ async function submitSnapshot() {
     storage.setItem(OWNER_KEY, identity.playerId);
   }
   if (storage.getItem(OWNER_KEY) !== identity.playerId) return;
+
   const serialized = JSON.stringify(current);
   if (serialized === lastSubmitted) return;
+  syncPending = true;
   try {
     const response = await gameFrameFetch("/api/me/cascade/progression", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: serialized,
     }, identity);
-    if (!response.ok) return;
-    lastSubmitted = serialized;
+    if (response.ok) lastSubmitted = serialized;
   } catch {
-    // Gamer progression is additive platform metadata. Cascade play must never
-    // fail because the player-platform projection is unavailable.
+    // Gamer progression is optional platform metadata. Cascade must remain
+    // playable even when the player session or progression service is absent.
+  } finally {
+    syncPending = false;
   }
 }
 
-function scheduleSync() {
-  if (syncTimer) window.clearTimeout(syncTimer);
-  syncTimer = window.setTimeout(() => void submitSnapshot(), 140);
+async function start() {
+  identity = await tryGameFrameIdentity({
+    preferredDevelopmentPlayerId: query.get("player"),
+  });
+  if (!identity) return;
+  await submitSnapshot();
+  window.setInterval(() => void submitSnapshot(), SYNC_INTERVAL_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) void submitSnapshot();
+  });
 }
 
-Storage.prototype.setItem = function gameFrameCascadeProgressionSetItem(key, value) {
-  const result = previousSetItem.call(this, key, value);
-  if (this === storage && (key === STATE_KEY || key === PERFORMANCE_KEY)) scheduleSync();
-  return result;
-};
-
-void identityPromise.then(() => scheduleSync());
+void start();
