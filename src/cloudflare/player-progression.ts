@@ -117,7 +117,7 @@ export function emptyPlayerProgression(playerId: string, now = Date.now()): Play
     version: 1,
     playerId,
     gamerXp: 0,
-    xpUpdatedAt: now,
+    xpUpdatedAt: 0,
     games: {},
     cascade: cloneCascade(undefined),
     updatedAt: now,
@@ -169,7 +169,7 @@ function withXp(record: PlayerProgressionRecord, xpGain: number, now: number): P
   return {
     ...record,
     gamerXp: whole(record.gamerXp) + gain,
-    xpUpdatedAt: gain > 0 ? now : positiveTimestamp(record.xpUpdatedAt, now),
+    xpUpdatedAt: gain > 0 ? now : positiveTimestamp(record.xpUpdatedAt, 0),
     updatedAt: now,
   };
 }
