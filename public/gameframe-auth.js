@@ -104,9 +104,37 @@ async function readSession(preferredDevelopmentPlayerId) {
   });
 }
 
+async function identityFromResponse(response) {
+  if (!response.ok) return null;
+  const identity = await response.json();
+  if (!normalizeIdentity(identity.playerId)) {
+    throw new Error("The server returned an invalid GameFrame identity.");
+  }
+  installedIdentity = identity;
+  installIdentityBadge(installedIdentity);
+  return installedIdentity;
+}
+
 async function establishActivitySession() {
   const { bootstrapDiscordActivitySession } = await import("/discord-activity-bootstrap.js");
   return bootstrapDiscordActivitySession();
+}
+
+/**
+ * Reads the current GameFrame identity when one is already available without
+ * turning an otherwise playable page into a sign-in gate. This is intended for
+ * optional platform features such as social progression layered onto games that
+ * can still run without an authenticated player session.
+ */
+export async function tryGameFrameIdentity(options = {}) {
+  if (installedIdentity) return installedIdentity;
+  try {
+    const response = await readSession(options.preferredDevelopmentPlayerId);
+    if (!response.ok) return null;
+    return await identityFromResponse(response);
+  } catch {
+    return null;
+  }
 }
 
 export async function establishGameFrameIdentity(options = {}) {
@@ -132,12 +160,7 @@ export async function establishGameFrameIdentity(options = {}) {
     const body = await response.json().catch(() => ({}));
     throw new Error(body.message || `Session initialization failed with ${response.status}.`);
   }
-  installedIdentity = await response.json();
-  if (!normalizeIdentity(installedIdentity.playerId)) {
-    throw new Error("The server returned an invalid GameFrame identity.");
-  }
-  installIdentityBadge(installedIdentity);
-  return installedIdentity;
+  return identityFromResponse(response);
 }
 
 export async function gameFrameFetch(url, options = {}, identity = installedIdentity) {
