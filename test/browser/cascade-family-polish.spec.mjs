@@ -69,6 +69,23 @@ test("Cascade restores a partial life while the page remains open", async ({ pag
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 });
 
+test("Cascade applies a ready life even when a harmless first tile is selected", async ({ page }) => {
+  await installState(page, { level: 9, lives: 3, lastLifeAt: Date.now() });
+  await page.goto("/cascade.html");
+  await page.locator('.cascade-tile[data-index="0"]').click();
+  await expect(page.locator('.cascade-tile[data-index="0"]')).toHaveClass(/is-selected/);
+
+  await page.evaluate((key) => {
+    localStorage.setItem(key, String(Date.now() - (10 * 60 * 1000) - 100));
+  }, lifeQueueKey);
+
+  await expect.poll(
+    () => page.evaluate((key) => Number(JSON.parse(localStorage.getItem(key))?.lives || 0), stateKey),
+    { timeout: 8_000 },
+  ).toBe(4);
+  await expect(page.locator("#level-number")).toHaveText("9");
+});
+
 test("Cascade waits for an in-flight move to commit before applying a ready life", async ({ page }) => {
   await installState(page, { level: 9, lives: 3, lastLifeAt: Date.now() });
   await page.goto("/cascade.html");
@@ -149,6 +166,24 @@ test("Cascade waits for Weekly Blitz score submission before restoring the norma
     document.querySelector("[data-weekly-status]").textContent = "New weekly best saved.";
   });
   await expect(page.locator("#level-number")).toHaveText("7", { timeout: 4_000 });
+  await expect.poll(
+    () => page.evaluate((key) => sessionStorage.getItem(key), blitzReturnKey),
+  ).toBeNull();
+});
+
+test("Cascade bounds a stalled Weekly score save and restores the normal board", async ({ page }) => {
+  await installState(page, { level: 7, lives: 5 });
+  await page.goto("/cascade.html");
+  await expect.poll(() => page.evaluate(() => Boolean(window.cascadeBonusModes))).toBe(true);
+
+  await page.locator("[data-weekly-start]").click();
+  await page.evaluate(() => {
+    document.querySelector("[data-weekly-status]").textContent = "Saving weekly score…";
+  });
+  await showSyntheticBlitzComplete(page);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+  await expect(page.locator("#level-number")).toHaveText("7", { timeout: 6_500 });
   await expect.poll(
     () => page.evaluate((key) => sessionStorage.getItem(key), blitzReturnKey),
   ).toBeNull();
