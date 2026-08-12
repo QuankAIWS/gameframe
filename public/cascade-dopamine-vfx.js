@@ -72,20 +72,20 @@ function addWave(x, y, color, intensity = 1) {
     y,
     color,
     age: 0,
-    life: 0.46 + intensity * 0.08,
-    startRadius: 14 + intensity * 5,
-    endRadius: 95 + intensity * 52,
-    width: 3 + intensity * 1.1,
+    life: 0.62 + intensity * 0.11,
+    startRadius: 18 + intensity * 7,
+    endRadius: 170 + intensity * 92,
+    width: 3.5 + intensity * 1.35,
   });
 }
 
 function addParticle(x, y, color, intensity, cascade, ordinal) {
   if (particles.length >= particleBudget()) return false;
   const angle = Math.random() * Math.PI * 2;
-  const speed = 170 + Math.random() * (220 + intensity * 105 + Math.min(cascade, 5) * 36);
-  const upwardBias = 35 + Math.random() * 95;
-  const life = 0.62 + Math.random() * 0.54 + intensity * 0.06;
-  const size = 2.8 + Math.random() * (4.8 + intensity * 1.3);
+  const speed = 300 + Math.random() * (410 + intensity * 155 + Math.min(cascade, 5) * 68);
+  const upwardBias = 60 + Math.random() * 150;
+  const life = 0.78 + Math.random() * 0.62 + intensity * 0.08;
+  const size = 3.2 + Math.random() * (5.6 + intensity * 1.55);
   particles.push({
     x,
     y,
@@ -93,14 +93,14 @@ function addParticle(x, y, color, intensity, cascade, ordinal) {
     previousY: y,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed - upwardBias,
-    gravity: 180 + Math.random() * 210,
-    drag: 0.965 + Math.random() * 0.018,
+    gravity: 150 + Math.random() * 230,
+    drag: 0.978 + Math.random() * 0.012,
     age: 0,
     life,
     size,
     color,
     rotation: Math.random() * Math.PI,
-    spin: (Math.random() - 0.5) * 9,
+    spin: (Math.random() - 0.5) * 11,
     shape: ordinal % 5 === 0 ? "ribbon" : ordinal % 3 === 0 ? "square" : "dot",
   });
   return true;
@@ -166,7 +166,7 @@ function drawWave(wave) {
   if (!ctx) return;
   const progress = Math.min(1, wave.age / wave.life);
   const radius = wave.startRadius + (wave.endRadius - wave.startRadius) * (1 - Math.pow(1 - progress, 2));
-  ctx.globalAlpha = Math.max(0, 0.82 * (1 - progress));
+  ctx.globalAlpha = Math.max(0, 0.84 * (1 - progress));
   ctx.strokeStyle = wave.color;
   ctx.lineWidth = wave.width * (1 - progress * 0.5);
   ctx.beginPath();
@@ -208,7 +208,7 @@ function animate(now) {
     particle.y += particle.vy * dt;
     particle.rotation += particle.spin * dt;
     const progress = particle.age / particle.life;
-    const alpha = progress < 0.12 ? progress / 0.12 : Math.pow(1 - progress, 0.72);
+    const alpha = progress < 0.1 ? progress / 0.1 : Math.pow(1 - progress, 0.58);
     drawParticle(particle, Math.max(0, alpha));
   }
 
