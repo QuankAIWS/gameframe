@@ -40,8 +40,8 @@ function integer(value, fallback) {
   return parsed;
 }
 
-function startChild(label, cwd, entryPath, environment) {
-  const child = spawn(process.execPath, ["--experimental-strip-types", entryPath], {
+function startChild(label, cwd, entryPath, environment, nodeArguments = ["--experimental-strip-types"]) {
+  const child = spawn(process.execPath, [...nodeArguments, entryPath], {
     cwd,
     env: { ...process.env, ...environment },
     stdio: ["ignore", "pipe", "pipe"],
@@ -228,6 +228,7 @@ try {
       RPG_STAGING_PLAYER_NAME: "RPG Browser Integration",
       RPG_STAGING_PACKAGE_PATH: join(runtimeRoot, "fixtures/rpg-private/monster-master-campaign-package-v1.json"),
     },
+    ["--import", "tsx"],
   );
   await waitForHealth(`http://127.0.0.1:${runtimePort}/healthz`, "RPG GM Runtime");
 
