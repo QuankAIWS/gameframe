@@ -2,6 +2,7 @@ import type { AuthenticatedPrincipal } from "../auth/request-authenticator.ts";
 import type { InvitationGameId } from "../auth/match-invitation.ts";
 import { resumePathForGame } from "../auth/match-invitation.ts";
 import type { PublicMatchInvitation } from "./invitation-object-runtime.ts";
+import type { PublicPlayerProgression } from "./player-progression.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
 interface InternalErrorBody {
@@ -48,6 +49,36 @@ function directoryStub(env: GameFrameWorkerEnv) {
   return env.MATCHES.get(env.MATCHES.idFromName("directory:players"));
 }
 
+async function publishPlayerProgression(env: GameFrameWorkerEnv, progression: PublicPlayerProgression): Promise<void> {
+  await internalJson(await directoryStub(env).fetch(new Request("https://player.internal/directory/progression", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(progression),
+  })));
+}
+
+export async function readPlayerProgression(env: GameFrameWorkerEnv, playerId: string) {
+  const url = new URL("https://player.internal/player/progression");
+  url.searchParams.set("playerId", playerId);
+  return internalJson<PublicPlayerProgression>(await playerStub(env, playerId).fetch(new Request(url)));
+}
+
+export async function readPublicPlayerProfile(env: GameFrameWorkerEnv, playerId: string) {
+  const url = new URL("https://player.internal/directory/profile");
+  url.searchParams.set("playerId", playerId);
+  return internalJson<{
+    profile: {
+      playerId: string;
+      displayName: string | null;
+      avatarUrl: string | null;
+      source: string | null;
+      firstSeenAt: number;
+      lastSeenAt: number;
+    };
+    progression: PublicPlayerProgression;
+  }>(await directoryStub(env).fetch(new Request(url)));
+}
+
 export async function upsertPlayerDirectory(
   env: GameFrameWorkerEnv,
   principal: AuthenticatedPrincipal,
@@ -64,9 +95,10 @@ export async function upsertPlayerDirectory(
         lastSeenAt: Date.now(),
       }),
     })));
+    await publishPlayerProgression(env, await readPlayerProgression(env, principal.playerId));
   } catch {
-    // Directory presence is a reconstructable convenience index. Authentication
-    // must not fail because this read model is temporarily unavailable.
+    // Directory presence and public progression are reconstructable read models.
+    // Authentication must not fail because either read model is unavailable.
   }
 }
 
@@ -97,9 +129,30 @@ export async function updatePlayerPreferences(
 }
 
 export async function readLeaderboard(env: GameFrameWorkerEnv) {
-  return internalJson<{ games: unknown[]; scoredGames: unknown[] }>(
+  return internalJson<{ gamerLevels: unknown[]; games: unknown[]; scoredGames: unknown[] }>(
     await directoryStub(env).fetch(new Request("https://player.internal/directory/leaderboard")),
   );
+}
+
+export async function recordCascadeProgression(
+  env: GameFrameWorkerEnv,
+  playerId: string,
+  value: Record<string, unknown>,
+) {
+  const progression = await internalJson<PublicPlayerProgression>(
+    await playerStub(env, playerId).fetch(new Request("https://player.internal/player/progression/cascade", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        playerId,
+        highestCompletedLevel: value.highestCompletedLevel,
+        starsByLevel: value.starsByLevel,
+        updatedAt: Date.now(),
+      }),
+    })),
+  );
+  await publishPlayerProgression(env, progression);
+  return progression;
 }
 
 export async function submitScoredResult(
@@ -107,7 +160,8 @@ export async function submitScoredResult(
   playerId: string,
   value: Record<string, unknown>,
 ) {
-  return internalJson<{
+  const submittedAt = Date.now();
+  const result = await internalJson<{
     entry: Record<string, unknown>;
     improved: boolean;
     previousBest: number | null;
@@ -121,9 +175,30 @@ export async function submitScoredResult(
       score: value.score,
       metrics: value.metrics,
       playerId,
-      updatedAt: Date.now(),
+      updatedAt: submittedAt,
     }),
   })));
+  try {
+    const progressionResult = await internalJson<{ progression: PublicPlayerProgression }>(
+      await playerStub(env, playerId).fetch(new Request("https://player.internal/player/progression/score", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          playerId,
+          gameId: value.gameId,
+          modeId: value.modeId,
+          eventId: value.eventId,
+          score: value.score,
+          updatedAt: submittedAt,
+        }),
+      })),
+    );
+    await publishPlayerProgression(env, progressionResult.progression);
+  } catch {
+    // The scored-event leaderboard remains usable if the optional social
+    // progression projection is temporarily unavailable.
+  }
+  return result;
 }
 
 export async function indexMatchView(env: GameFrameWorkerEnv, view: IndexedMatchView): Promise<void> {
@@ -145,16 +220,27 @@ export async function indexMatchView(env: GameFrameWorkerEnv, view: IndexedMatch
     resumePath: resumePathForGame(gameId, view.matchId),
   };
 
-  const writes: Promise<unknown>[] = view.playerIds.map((playerId) => internalJson(
-    playerStub(env, playerId).fetch(new Request("https://player.internal/player/match", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(summary),
-    })),
-  ));
+  const writes: Promise<unknown>[] = view.playerIds.map(async (playerId) => {
+    await internalJson(
+      await playerStub(env, playerId).fetch(new Request("https://player.internal/player/match", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(summary),
+      })),
+    );
+    if (summary.status.lifecycle !== "completed") return;
+    const progressionResult = await internalJson<{ progression: PublicPlayerProgression }>(
+      await playerStub(env, playerId).fetch(new Request("https://player.internal/player/progression/match", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...summary, playerId }),
+      })),
+    );
+    await publishPlayerProgression(env, progressionResult.progression);
+  });
   if (summary.status.lifecycle === "completed") {
     writes.push(internalJson(
-      directoryStub(env).fetch(new Request("https://player.internal/directory/match", {
+      await directoryStub(env).fetch(new Request("https://player.internal/directory/match", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(summary),
