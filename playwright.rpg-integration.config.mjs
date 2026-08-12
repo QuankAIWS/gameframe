@@ -4,6 +4,9 @@ if (!process.env.RPG_GM_RUNTIME_ROOT?.trim()) {
   throw new Error("RPG_GM_RUNTIME_ROOT must point to a checked-out rpg-gm-runtime repository.");
 }
 
+const browserPort = process.env.GAMEFRAME_RPG_BROWSER_PORT?.trim() || "18787";
+const browserOrigin = `http://127.0.0.1:${browserPort}`;
+
 export default defineConfig({
   testDir: "./test/rpg-integration",
   testMatch: "**/*.spec.mjs",
@@ -17,7 +20,7 @@ export default defineConfig({
   reporter: [["line"]],
   outputDir: "test-results/rpg-integration",
   use: {
-    baseURL: "http://127.0.0.1:8787",
+    baseURL: browserOrigin,
     ...devices["Desktop Chrome"],
     reducedMotion: "reduce",
     screenshot: "only-on-failure",
@@ -26,7 +29,7 @@ export default defineConfig({
   },
   webServer: {
     command: "node --experimental-strip-types scripts/run-rpg-browser-integration-stack.mjs",
-    url: "http://127.0.0.1:8787/api/health",
+    url: `${browserOrigin}/api/health`,
     reuseExistingServer: false,
     timeout: 60_000,
   },
