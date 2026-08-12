@@ -32,7 +32,7 @@ async function enterCombat(page, player, viewport) {
   await page.goto(`/monster-master.html?player=${encodeURIComponent(player)}`);
   await page.locator("#monster-master-bot").click();
   await waitForPixi(page);
-  for (let deployment = 1; deployment <= 3; deployment += 1) {
+  for (let deployment = 1; deployment <= 4; deployment += 1) {
     await deploySelectedUnit(page);
     await expect(page.locator("#monster-master-revision")).toHaveText(`Revision ${deployment * 2}`);
   }
@@ -123,7 +123,7 @@ async function assertOptionsOwnTheirHitArea(page) {
   const firstButton = buttons.first();
   await firstButton.scrollIntoViewIfNeeded();
   await firstButton.click();
-  await expect(page.locator("#monster-master-revision")).toHaveText("Revision 7");
+  await expect(page.locator("#monster-master-revision")).toHaveText("Revision 9");
 }
 
 for (const candidate of [
