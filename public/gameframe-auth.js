@@ -120,6 +120,19 @@ async function establishActivitySession() {
   return bootstrapDiscordActivitySession();
 }
 
+async function authenticatedFetch(url, options, identity) {
+  if (!identity) throw new Error("GameFrame identity has not been established.");
+  const headers = new Headers(options.headers);
+  if (identity.source === "development") {
+    headers.set("x-gameframe-player-id", identity.playerId);
+  }
+  return fetch(url, {
+    ...options,
+    headers,
+    credentials: "same-origin",
+  });
+}
+
 /**
  * Reads the current GameFrame identity when one is already available without
  * turning an otherwise playable page into a sign-in gate. This is intended for
@@ -163,17 +176,17 @@ export async function establishGameFrameIdentity(options = {}) {
   return identityFromResponse(response);
 }
 
+/**
+ * Authenticated request for optional metadata. A missing/expired Discord session
+ * is returned to the caller as a normal 401 instead of blocking the page with the
+ * global sign-in gate.
+ */
+export async function gameFrameOptionalFetch(url, options = {}, identity = installedIdentity) {
+  return authenticatedFetch(url, options, identity);
+}
+
 export async function gameFrameFetch(url, options = {}, identity = installedIdentity) {
-  if (!identity) throw new Error("GameFrame identity has not been established.");
-  const headers = new Headers(options.headers);
-  if (identity.source === "development") {
-    headers.set("x-gameframe-player-id", identity.playerId);
-  }
-  const response = await fetch(url, {
-    ...options,
-    headers,
-    credentials: "same-origin",
-  });
+  const response = await authenticatedFetch(url, options, identity);
   if (response.status === 401 && identity.source !== "development") {
     renderAuthenticationGate(
       "Your GameFrame session expired. Sign in again to continue.",
