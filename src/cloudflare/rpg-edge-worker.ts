@@ -12,6 +12,10 @@ import {
 } from "../auth/signed-session.ts";
 import { errorResponse, json, readJson } from "./http-utils.ts";
 import {
+  exportCascadeTelemetry,
+  recordCascadeTelemetry,
+} from "./cascade-telemetry-coordinator.ts";
+import {
   readLeaderboard,
   readPlayerProgression,
   readPublicPlayerProfile,
@@ -63,8 +67,8 @@ function publicPlayerProfileRoute(pathname: string): string | null {
  *
  * Staging administrator authority is deliberately independent from ordinary
  * Discord staging access. Only explicitly configured administrator Discord IDs
- * may enter /api/rpg/admin/*; the VM still requires the normal signed HMAC edge
- * envelope before accepting the privileged request.
+ * may enter privileged admin routes; the VM still requires the normal signed
+ * HMAC edge envelope before accepting privileged RPG requests.
  */
 export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {}) {
   const gameFrame = createGameFrameWorker();
@@ -147,6 +151,20 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           await upsertPlayerDirectory(env, principal);
           const body = await readJson(request);
           return json(200, await recordCascadeProgression(env, principal.playerId, body));
+        }
+
+        if (request.method === "POST" && url.pathname === "/api/me/cascade/telemetry") {
+          const principal = await authenticatorFor(env).authenticate(request);
+          await upsertPlayerDirectory(env, principal);
+          const body = await readJson(request);
+          return json(200, await recordCascadeTelemetry(env, principal.playerId, body));
+        }
+
+        if (request.method === "GET" && url.pathname === "/api/admin/cascade/telemetry/export") {
+          const principal = await authenticatorFor(env).authenticate(request);
+          const admin = requireStagingAdminPrincipal(env, principal);
+          await upsertPlayerDirectory(env, admin);
+          return json(200, await exportCascadeTelemetry(env, admin));
         }
 
         if (request.method === "POST" && url.pathname === "/api/scores") {
