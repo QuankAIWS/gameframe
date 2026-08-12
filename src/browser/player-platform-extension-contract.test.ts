@@ -35,6 +35,8 @@ test("GameFrame exposes Hall of Fame, Gamer Level, public profiles, and server-b
   assert.match(home, /favoriteGameIds/);
   assert.match(home, /\/api\/me\/progression/);
   assert.match(home, /\/leaderboard\.html/);
+  assert.match(home, /cascade-progression-candidate/);
+  assert.match(home, /localStorage\.removeItem\(CASCADE_CANDIDATE_KEY\)/);
   assert.doesNotMatch(home, /WHAT'S NEW/);
 
   assert.match(profile, /\/api\/me\/preferences/);
@@ -50,6 +52,8 @@ test("GameFrame exposes Hall of Fame, Gamer Level, public profiles, and server-b
   assert.match(leaderboardHtml, /<h1>Hall of Fame<\/h1>/);
   assert.match(cascadeSync, /\/api\/me\/cascade\/progression/);
   assert.match(cascadeSync, /cascade-progression-owner/);
+  assert.match(cascadeSync, /cascade-progression-candidate/);
+  assert.match(cascadeSync, /candidate !== identity\.playerId/);
 
   for (const runtime of [edgeWorker, nodeServer]) {
     assert.match(runtime, /\/api\/me\/preferences/);
