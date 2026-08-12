@@ -217,7 +217,7 @@ function renderHallOverview() {
   if (!leaders.length) {
     const empty = document.createElement("p");
     empty.className = "platform-empty";
-    empty.textContent = "No players have entered the Hall yet.";
+    empty.textContent = "No ranked players yet.";
     podium.append(empty);
   } else {
     leaders.forEach((entry, index) => podium.append(podiumCard(entry, index + 1)));
@@ -281,7 +281,7 @@ async function refresh() {
   try {
     const response = await gameFrameFetch("/api/leaderboard", {}, identity);
     const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(body.message || "Hall of Fame could not be loaded.");
+    if (!response.ok) throw new Error(body.message || "Leaderboard could not be loaded.");
     gamerLevels = Array.isArray(body.gamerLevels) ? body.gamerLevels : [];
     const boardGames = Array.isArray(body.games) ? body.games.map((game) => ({ ...game, kind: "board" })) : [];
     const scoredGames = Array.isArray(body.scoredGames) ? body.scoredGames.map((game) => ({ ...game, kind: "score" })) : [];
@@ -307,7 +307,7 @@ async function refresh() {
     render();
   } catch (error) {
     errorBox.hidden = false;
-    errorBox.textContent = error instanceof Error ? error.message : "Hall of Fame could not be loaded.";
+    errorBox.textContent = error instanceof Error ? error.message : "Leaderboard could not be loaded.";
     podium.replaceChildren();
     categories.replaceChildren();
     list.replaceChildren();

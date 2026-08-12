@@ -324,7 +324,7 @@ async function refresh() {
 
     const footer = document.createElement("footer");
     footer.className = "home-dashboard-footer";
-    footer.innerHTML = '<a href="/?catalog=1">Browse Games</a><a href="/matches.html">Matches</a><a href="/leaderboard.html">Hall of Fame</a>';
+    footer.innerHTML = '<a href="/?catalog=1">Browse Games</a><a href="/matches.html">Matches</a><a href="/leaderboard.html">Leaderboard</a>';
     dashboard.append(footer);
   } catch (error) {
     dashboard.replaceChildren();

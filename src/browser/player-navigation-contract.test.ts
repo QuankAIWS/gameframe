@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const read = (path: string) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 
-test("the player shell separates Home activity from Games and exposes Matches, Hall of Fame, and Profile", async () => {
+test("the player shell separates Home activity from Games and exposes Matches, Leaderboard, and Profile", async () => {
   const launcher = await read("public/auth-launcher.js");
   const navigation = await read("public/gameframe-nav.js");
   const navigationStyles = await read("public/gameframe-nav.css");
@@ -34,7 +34,8 @@ test("the player shell separates Home activity from Games and exposes Matches, H
   assert.match(navigation, /href="\/\?catalog=1"/);
   assert.match(navigation, /href="\/matches\.html"/);
   assert.match(navigation, /href="\/leaderboard\.html"/);
-  assert.match(navigation, /Hall of Fame/);
+  assert.match(navigation, /Leaderboard/);
+  assert.doesNotMatch(navigation, /Hall of Fame/);
   assert.match(navigation, /href="\/profile\.html"/);
   assert.doesNotMatch(navigation, /Achievements/);
   assert.match(navigation, /gameframe-nav-integrations\.css/);
@@ -63,6 +64,7 @@ test("the player shell separates Home activity from Games and exposes Matches, H
   assert.match(homeDashboard, /GAMER LEVEL/);
   assert.match(homeDashboard, /CONTINUE PLAYING/);
   assert.match(homeDashboard, /Browse Games/);
+  assert.match(homeDashboard, />Leaderboard<\/a>/);
   assert.match(matches, /\/api\/me\/feed/);
   assert.match(matches, /\/api\/players/);
   assert.match(matches, /acceptChallenge/);

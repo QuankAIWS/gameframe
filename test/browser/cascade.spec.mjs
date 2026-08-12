@@ -148,7 +148,7 @@ test("Cascade keeps best stars and replaces ordinary quick timers with scheduled
   await expect(page.locator("#star-progress")).toContainText("2 total stars");
   await expect(page.locator("#quick-bonus")).toHaveCount(0);
   await expect(page.locator("#bonus-status")).toContainText("NEXT BLITZ AFTER LEVEL 12");
-  await expect(page.locator('#level-map > li[data-level="6"] .cascade-map-stars')).toHaveText("★★☆");
+  await expect(page.locator('#level-map > li[data-level="6"] .cascade-map-stars')).toHaveText("★★");
 });
 
 test("Cascade bonus cadence continues through the veteran chapters", async ({ page }) => {

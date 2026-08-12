@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const read = (path: string) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 
-test("GameFrame exposes Hall of Fame, Gamer Level, public profiles, and server-backed favorites", async () => {
+test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-backed favorites", async () => {
   const navigation = await read("public/gameframe-nav.js");
   const navigationStyles = await read("public/gameframe-nav.css");
   const finalPolishStyles = await read("public/gameframe-final-polish.css");
@@ -23,7 +23,8 @@ test("GameFrame exposes Hall of Fame, Gamer Level, public profiles, and server-b
 
   assert.match(navigation, /data-gameframe-leaderboard/);
   assert.match(navigation, /href="\/leaderboard\.html"/);
-  assert.match(navigation, /Hall of Fame/);
+  assert.match(navigation, /Leaderboard/);
+  assert.doesNotMatch(navigation, /Hall of Fame/);
   assert.match(navigation, /gameframe-nav-label-compact/);
   assert.match(navigationStyles, /gameframe-nav-label-compact/);
   assert.match(navigationStyles, /font-size: \.48rem/);
@@ -35,6 +36,7 @@ test("GameFrame exposes Hall of Fame, Gamer Level, public profiles, and server-b
   assert.match(home, /favoriteGameIds/);
   assert.match(home, /\/api\/me\/progression/);
   assert.match(home, /\/leaderboard\.html/);
+  assert.match(home, />Leaderboard<\/a>/);
   assert.match(home, /cascade-progression-candidate/);
   assert.match(home, /localStorage\.removeItem\(CASCADE_CANDIDATE_KEY\)/);
   assert.doesNotMatch(home, /WHAT'S NEW/);
@@ -49,7 +51,9 @@ test("GameFrame exposes Hall of Fame, Gamer Level, public profiles, and server-b
   assert.match(leaderboard, /gamerLevels/);
   assert.match(leaderboard, /profileHref/);
   assert.match(leaderboard, /entry\.points/);
-  assert.match(leaderboardHtml, /<h1>Hall of Fame<\/h1>/);
+  assert.doesNotMatch(leaderboard, /Hall of Fame/);
+  assert.match(leaderboardHtml, /<h1>Leaderboard<\/h1>/);
+  assert.doesNotMatch(leaderboardHtml, /Hall of Fame/);
   assert.match(cascadeSync, /\/api\/me\/cascade\/progression/);
   assert.match(cascadeSync, /cascade-progression-owner/);
   assert.match(cascadeSync, /cascade-progression-candidate/);

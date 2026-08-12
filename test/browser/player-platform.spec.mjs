@@ -151,7 +151,7 @@ test("scored events bind the player, keep the best score, and award Weekly Blitz
   expect(second.status()).toBe(200);
 
   await page.goto(`/leaderboard.html?player=score-player-a&game=cascade-weekly&event=${encodeURIComponent(eventId)}`);
-  await expect(page.getByRole("heading", { name: "Hall of Fame" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Leaderboard" })).toBeVisible();
   await expect(page.locator("#leaderboard-error")).toBeHidden();
   await expect(page.locator("#leaderboard-rule")).toContainText("Best score per player");
   await expect(page.locator("#leaderboard-rule")).toContainText("shared seed");
@@ -163,7 +163,7 @@ test("scored events bind the player, keep the best score, and award Weekly Blitz
   await expect(rows.nth(1).locator(".leaderboard-points strong")).toHaveText("13,250");
 });
 
-test("Cascade progression is monotonic, drives Gamer Level, and is visible through public profiles and Hall of Fame", async ({ page }) => {
+test("Cascade progression is monotonic, drives Gamer Level, and is visible through public profiles and Leaderboard", async ({ page }) => {
   const importResponse = await page.request.post("/api/me/cascade/progression", {
     headers: playerHeader("cascade-mom"),
     data: {
@@ -202,20 +202,20 @@ test("Cascade progression is monotonic, drives Gamer Level, and is visible throu
   await expect(page.locator("[data-private-profile]").first()).toBeHidden();
 
   await page.goto("/leaderboard.html?player=profile-viewer");
-  await expect(page.getByRole("heading", { name: "Hall of Fame" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Leaderboard" })).toBeVisible();
   const gamerRows = page.locator("#leaderboard-list .gamer-level-row");
   await expect(gamerRows.first().locator(".gamer-level-value strong")).toHaveText(String(imported.gamerLevel));
   await expect(gamerRows.first().getByRole("link")).toHaveAttribute("href", "/profile.html?view=cascade-mom");
 });
 
-test("Games, Matches, Hall of Fame, and Profile are first-class destination bar links", async ({ page }) => {
+test("Games, Matches, Leaderboard, and Profile are first-class destination bar links", async ({ page }) => {
   await page.goto("/?catalog=1&player=platform-nav-test");
   await expect(page.locator("#game-grid")).toBeVisible();
   await expect(page.locator("#lobby .section-label")).toHaveText("GAMES");
   await expect(page.locator("#gameframe-destination-bar [data-gameframe-games]")).toHaveClass(/is-active/);
   await expect(page.locator("#gameframe-destination-bar [data-gameframe-matches]")).toHaveAttribute("href", "/matches.html");
   await expect(page.locator("#gameframe-destination-bar [data-gameframe-leaderboard]")).toHaveAttribute("href", "/leaderboard.html");
-  await expect(page.locator("#gameframe-destination-bar [data-gameframe-leaderboard]")).toHaveAccessibleName("Hall of Fame");
+  await expect(page.locator("#gameframe-destination-bar [data-gameframe-leaderboard]")).toHaveAccessibleName("Leaderboard");
   await expect(page.locator("#gameframe-destination-bar [data-gameframe-profile]")).toHaveAttribute("href", "/profile.html");
 
   await page.locator("#gameframe-destination-bar [data-gameframe-matches]").click();
@@ -224,7 +224,7 @@ test("Games, Matches, Hall of Fame, and Profile are first-class destination bar 
 
   await page.locator("#gameframe-destination-bar [data-gameframe-leaderboard]").click();
   await expect(page).toHaveURL(/\/leaderboard\.html$/);
-  await expect(page.getByRole("heading", { name: "Hall of Fame" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Leaderboard" })).toBeVisible();
   await expect(page.locator("#leaderboard-list")).toBeVisible();
   await expect(page.locator("#leaderboard-error")).toBeHidden();
 
