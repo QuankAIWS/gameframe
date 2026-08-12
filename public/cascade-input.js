@@ -44,11 +44,12 @@ function createDragGhost(tile) {
   const ghost = tile.cloneNode(true);
   ghost.classList.remove("is-selected", "is-drag-origin", "is-drag-target", "is-hammer-target");
   ghost.classList.add("cascade-drag-ghost");
+  ghost.removeAttribute("data-index");
+  ghost.removeAttribute("data-ice");
   ghost.removeAttribute("role");
   ghost.removeAttribute("aria-label");
   ghost.setAttribute("aria-hidden", "true");
   ghost.tabIndex = -1;
-  ghost.disabled = true;
   ghost.style.left = `${rect.left}px`;
   ghost.style.top = `${rect.top}px`;
   ghost.style.width = `${rect.width}px`;
