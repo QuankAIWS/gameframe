@@ -55,7 +55,10 @@ function updateDragTarget(event) {
     return;
   }
 
-  if (!drag.didDrag) clearPendingClickSelection();
+  if (!drag.didDrag) {
+    clearPendingClickSelection();
+    if (!board.hasPointerCapture?.(event.pointerId)) board.setPointerCapture?.(event.pointerId);
+  }
   const next = adjacentIndex(drag.from, dx, dy);
   drag.didDrag = true;
   if (drag.to === next) return;
@@ -83,7 +86,6 @@ if (board) {
       threshold: Math.max(10, Math.min(22, Math.min(rect.width, rect.height) * 0.24)),
       didDrag: false,
     };
-    board.setPointerCapture?.(event.pointerId);
   });
 
   board.addEventListener("pointermove", (event) => {
