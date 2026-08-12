@@ -80,6 +80,11 @@ function whole(value: unknown, minimum = 0): number {
   return Math.max(minimum, Math.floor(numeric));
 }
 
+function positiveTimestamp(value: unknown, fallback: number): number {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? Math.floor(numeric) : fallback;
+}
+
 function cloneGameRecord(record: LifetimeGameRecord | undefined): LifetimeGameRecord {
   return {
     played: whole(record?.played),
@@ -164,7 +169,7 @@ function withXp(record: PlayerProgressionRecord, xpGain: number, now: number): P
   return {
     ...record,
     gamerXp: whole(record.gamerXp) + gain,
-    xpUpdatedAt: gain > 0 ? now : whole(record.xpUpdatedAt, now),
+    xpUpdatedAt: gain > 0 ? now : positiveTimestamp(record.xpUpdatedAt, now),
     updatedAt: now,
   };
 }
