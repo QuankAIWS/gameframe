@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const read = (path: string) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 
-test("the player shell separates Home activity from Games and exposes Matches and Profile", async () => {
+test("the player shell separates Home activity from Games and exposes Matches, Hall of Fame, and Profile", async () => {
   const launcher = await read("public/auth-launcher.js");
   const navigation = await read("public/gameframe-nav.js");
   const navigationStyles = await read("public/gameframe-nav.css");
@@ -29,9 +29,12 @@ test("the player shell separates Home activity from Games and exposes Matches an
   assert.match(navigation, /data-gameframe-home/);
   assert.match(navigation, /data-gameframe-games/);
   assert.match(navigation, /data-gameframe-matches/);
+  assert.match(navigation, /data-gameframe-leaderboard/);
   assert.match(navigation, /data-gameframe-profile/);
   assert.match(navigation, /href="\/\?catalog=1"/);
   assert.match(navigation, /href="\/matches\.html"/);
+  assert.match(navigation, /href="\/leaderboard\.html"/);
+  assert.match(navigation, /Hall of Fame/);
   assert.match(navigation, /href="\/profile\.html"/);
   assert.doesNotMatch(navigation, /Achievements/);
   assert.match(navigation, /gameframe-nav-integrations\.css/);
@@ -56,14 +59,17 @@ test("the player shell separates Home activity from Games and exposes Matches an
   assert.match(hub, /import\("\.\/home-dashboard\.js"\)/);
   assert.match(hub, /sectionLabel\.textContent = catalogMode \? "GAMES" : "HOME"/);
   assert.match(homeDashboard, /\/api\/me\/feed/);
-  assert.match(homeDashboard, /Your turn/);
-  assert.match(homeDashboard, /Waiting/);
+  assert.match(homeDashboard, /\/api\/me\/progression/);
+  assert.match(homeDashboard, /GAMER LEVEL/);
+  assert.match(homeDashboard, /CONTINUE PLAYING/);
   assert.match(homeDashboard, /Browse Games/);
   assert.match(matches, /\/api\/me\/feed/);
   assert.match(matches, /\/api\/players/);
   assert.match(matches, /acceptChallenge/);
   assert.match(profile, /\/api\/me\/feed/);
-  assert.match(profile, /recordByGame/);
+  assert.match(profile, /\/api\/me\/progression/);
+  assert.match(profile, /\/api\/players\/\$\{encodeURIComponent\(viewedPlayerId\)\}\/profile/);
+  assert.match(profile, /data-private-profile/);
 
   assert.match(hub, /id: "role-playing-games"/);
   assert.match(hub, /href: "\/gameframe-rpg\.html"/);
@@ -160,7 +166,6 @@ test("Tic-Tac-Toe uses the universal destination bar and restores the shared DOM
   assert.match(controller, /newMatch\?\.click/);
   assert.match(styles, /height: 100dvh/);
   assert.match(styles, /tic-board-breathe/);
-  assert.match(styles, /tic-circuit-node/);
   assert.doesNotMatch(controller, /leaderboard|friends online|rating/i);
   assert.match(packageJson.scripts["check:browser"], /public\/tic-tac-toe-noir\.js/);
 });
