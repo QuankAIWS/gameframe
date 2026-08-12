@@ -47,7 +47,8 @@ test("Weekly Blitz uses a stable weekly event and deterministic starting board",
   const card = page.locator("#cascade-weekly-card");
   await expect(card).toBeVisible();
   await expect(card).toContainText("WEEKLY BLITZ");
-  await expect(card).toContainText("same board seed for everyone");
+  await expect(card).toContainText("everyone gets the same board this week");
+  await expect(card).not.toContainText(/seed/i);
 
   const first = await page.evaluate(() => {
     const event = window.cascadeBonusModes.currentWeeklyEvent();
