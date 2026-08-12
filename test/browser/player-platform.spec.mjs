@@ -35,7 +35,6 @@ test("an Othello move survives browser closure and appears as the other player's
   expect(moved.revision).toBe(1);
   expect(moved.observation.nextPlayerId).toBe("player-mom");
 
-  // Simulate Alice closing the browser and Mom opening GameFrame later.
   await page.goto("/matches.html?player=player-mom");
   await expect(page.getByRole("heading", { name: "Matches" })).toBeVisible();
   await expect(page.locator("#your-turn-count")).toHaveText("1");
@@ -205,7 +204,7 @@ test("Cascade progression is monotonic, drives Gamer Level, and is visible throu
   await page.goto("/leaderboard.html?player=profile-viewer");
   await expect(page.getByRole("heading", { name: "Hall of Fame" })).toBeVisible();
   const gamerRows = page.locator("#leaderboard-list .gamer-level-row");
-  await expect(gamerRows.first()).toContainText("cascade-mom");
+  await expect(gamerRows.first().locator(".gamer-level-value strong")).toHaveText(String(imported.gamerLevel));
   await expect(gamerRows.first().getByRole("link")).toHaveAttribute("href", "/profile.html?view=cascade-mom");
 });
 
