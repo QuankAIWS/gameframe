@@ -46,7 +46,7 @@ test("Monster Master RPG materializes and persists movement through real GameFra
   await expect(page.locator('[data-semantic-id="npc.warden-pell"]')).toBeVisible();
   await expect(page.locator('[data-semantic-id="object.checkpoint-cart"]')).toBeVisible();
 
-  const before = await expect.poll(async () => page.evaluate(() => {
+  await expect.poll(async () => page.evaluate(() => {
     const payload = window.gameFrameMonsterRpgWorld?.getPayload?.();
     const position = window.gameFrameMonsterRpgWorld?.getPlayerPosition?.();
     return payload && position ? { payload, position } : null;
