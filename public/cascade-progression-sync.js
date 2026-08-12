@@ -3,6 +3,7 @@ import { gameFrameOptionalFetch, tryGameFrameIdentity } from "./gameframe-auth.j
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const OWNER_KEY = "scribbles-gameframe.cascade-progression-owner:v1";
+const CANDIDATE_KEY = "scribbles-gameframe.cascade-progression-candidate:v1";
 const SYNC_INTERVAL_MS = 750;
 const storage = window.localStorage;
 const query = new URLSearchParams(window.location.search);
@@ -43,15 +44,31 @@ function snapshot() {
   };
 }
 
+function resolveOwner(hasProgress) {
+  const owner = storage.getItem(OWNER_KEY);
+  if (owner) {
+    storage.removeItem(CANDIDATE_KEY);
+    return owner;
+  }
+
+  if (!hasProgress) {
+    storage.setItem(CANDIDATE_KEY, identity.playerId);
+    return null;
+  }
+
+  const candidate = storage.getItem(CANDIDATE_KEY);
+  if (candidate !== identity.playerId) return null;
+  storage.setItem(OWNER_KEY, identity.playerId);
+  storage.removeItem(CANDIDATE_KEY);
+  return identity.playerId;
+}
+
 async function submitSnapshot() {
   if (!identity || syncPending) return;
   const current = snapshot();
   const hasProgress = current.highestCompletedLevel > 0 || Object.keys(current.starsByLevel).length > 0;
-  const owner = storage.getItem(OWNER_KEY);
-  if (!owner && !hasProgress) {
-    storage.setItem(OWNER_KEY, identity.playerId);
-  }
-  if (storage.getItem(OWNER_KEY) !== identity.playerId) return;
+  if (resolveOwner(hasProgress) !== identity.playerId) return;
+  if (!hasProgress) return;
 
   const serialized = JSON.stringify(current);
   if (serialized === lastSubmitted) return;
