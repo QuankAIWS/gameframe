@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { InMemoryMatchSnapshotStore } from "../../platform/match-store.ts";
+import { MonsterMasterMatchService } from "../../server/monster-master-match-service.ts";
 import {
   createMonsterMasterArenaState,
   isMonsterMasterArenaState,
@@ -9,6 +11,7 @@ import {
   monsterMasterArenaDefinition,
 } from "./arena-definition.ts";
 import {
+  createMonsterMasterState,
   monsterMasterUnit,
   type MonsterMasterAction,
   type MonsterMasterState,
@@ -114,4 +117,20 @@ test("standalone Arena ends when the opposing Master falls even while monsters s
     "unit-defeated",
     "duel-completed",
   ]);
+});
+
+test("configured Monster Master states keep the base roster and do not opt into Arena rules", async () => {
+  const service = new MonsterMasterMatchService({
+    store: new InMemoryMatchSnapshotStore<MonsterMasterState, MonsterMasterAction>(),
+    idGenerator: () => "required-contract-id",
+  });
+  const configured = createMonsterMasterState(["alpha", "beta"]);
+  const created = await service.createMatch(["alpha", "beta"], "configured-contract", configured);
+
+  assert.equal(created.observation.undeployedUnitIds.length, 6);
+  assert.equal(isMonsterMasterArenaState(configured), false);
+  assert.deepEqual(created.observation.rosters.alpha.map((unit) => unit.role), ["master", "bulwark", "emberling"]);
+
+  const reloaded = await service.view(created.matchId, "alpha");
+  assert.equal(reloaded.observation.undeployedUnitIds.length, 6);
 });
