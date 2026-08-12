@@ -239,10 +239,10 @@ test("captures Monster Master lobby, deployment, combat, and move-selection stat
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.locator("#monster-master-bot").click();
   await expect(page.locator("#monster-master-phase")).toHaveText("Deployment");
-  await expect(page.locator('#monster-master-options button[data-action-kind="deploy-unit"]')).toHaveCount(3);
+  await expect(page.locator('#monster-master-options button[data-action-kind="deploy-unit"]')).toHaveCount(4);
   await capture(page, testInfo, "21-monster-master-deployment");
 
-  for (let deployment = 0; deployment < 3; deployment += 1) {
+  for (let deployment = 0; deployment < 4; deployment += 1) {
     await deploySelectedUnit(page);
   }
   await expect(page.locator("#monster-master-phase")).toHaveText("Combat");
@@ -316,7 +316,7 @@ test("captures Monster Master victory from the winner's seat", async ({ page, re
     (view) => view.observation.status.lifecycle === "completed" && Boolean(view.observation.status.winnerPlayerId),
   );
   await openPreparedState(page, prepared, prepared.observation.status.winnerPlayerId);
-  await expect(page.locator("#monster-master-status")).toHaveText("Your Warden won the duel.");
+  await expect(page.locator("#monster-master-status")).toHaveText("The opposing Master has fallen. You won the duel.");
   await expect(page.locator("#monster-master-effects .victory")).toBeVisible();
   await capture(page, testInfo, "29-monster-master-victory");
 });
