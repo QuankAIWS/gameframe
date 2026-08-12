@@ -160,9 +160,15 @@ test("the Games catalog opens Role-Playing Games, Battle Simulator, Casual Games
   await expect(casualCard).toHaveAttribute("href", "/casual-games.html");
   await casualCard.click();
   await expect(page).toHaveURL(/\/casual-games\.html$/);
-  await expect(page.getByRole("heading", { name: "Short games. Dangerous “one more round” energy." })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Open Cascade Crush", exact: true })).toHaveAttribute("href", "/cascade.html");
-  await page.getByRole("link", { name: "Open Cascade Crush", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Casual Games", exact: true })).toBeVisible();
+  await expect(page.getByText("Short games. Dangerous “one more round” energy.", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Small, polished games built for quick sessions and repeated play.", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".casual-future")).toHaveCount(0);
+  const cascadeLaunch = page.getByRole("link", { name: "Open Cascade Crush", exact: true });
+  await expect(cascadeLaunch).toHaveAttribute("href", "/cascade.html");
+  await expect(cascadeLaunch).toContainText("300 LEVELS");
+  await expect(cascadeLaunch.locator(".casual-card-art img")).toHaveAttribute("src", "/assets/gameframe/cards/cascade-crush-card.webp");
+  await cascadeLaunch.click();
   await expect(page).toHaveURL(/\/cascade\.html$/);
   await expect(page).toHaveTitle(/Cascade Crush/);
   await expect(page.getByRole("heading", { name: "Cascade Crush", exact: true })).toBeVisible();
