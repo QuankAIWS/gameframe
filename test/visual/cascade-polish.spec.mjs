@@ -93,7 +93,7 @@ test("Cascade Crush performance card shows earned stars and the next Blitz slot"
   await expect(page.locator("#level-stars")).toHaveText("★★☆");
   await expect(page.locator("#star-progress")).toContainText("10 total stars");
   await expect(page.locator("#bonus-status")).toContainText("NEXT BLITZ AFTER LEVEL 12");
-  await expect(page.locator('#level-map > li[data-level="6"] .cascade-map-stars')).toHaveText("★★☆");
+  await expect(page.locator('#level-map > li[data-level="6"] .cascade-map-stars')).toHaveText("★★");
   await page.screenshot({ path: `${output}/cascade-crush-performance-desktop.png`, fullPage: true });
 });
 
