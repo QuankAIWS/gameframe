@@ -39,7 +39,62 @@ async function completeNewPlayerOnboarding(page) {
   await expect(page.locator("#mm-rpg-onboarding")).toBeHidden();
 }
 
-test("Monster Master RPG materializes and persists movement through real GameFrame and Runtime services", async ({ page }) => {
+async function clickWorldAnchor(page, semanticId) {
+  const anchor = await page.evaluate((id) => {
+    const payload = window.gameFrameMonsterRpgWorld?.getPayload?.();
+    return payload?.materialization?.anchors?.find((candidate) => candidate.semanticId === id) ?? null;
+  }, semanticId);
+  expect(anchor, `Expected materialized anchor ${semanticId}`).toBeTruthy();
+
+  const target = await page.evaluate(
+    ({ x, y }) => window.gameFrameMonsterPixi?.worldToScreen?.({ x, y }) ?? null,
+    { x: anchor.x, y: anchor.y },
+  );
+  expect(target, `Expected Pixi world coordinate for ${semanticId}`).toBeTruthy();
+  await page.locator("#monster-master-pixi-canvas").click({ position: { x: target.x, y: target.y } });
+}
+
+async function exerciseCoveredCart(page) {
+  await expect(page.locator('[data-semantic-id="object.checkpoint-cart"]')).toBeVisible();
+  await clickWorldAnchor(page, "object.checkpoint-cart");
+
+  const uncover = page.getByRole("button", { name: "Uncover cart" });
+  await expect(uncover).toBeVisible();
+  await expect(uncover.locator("xpath=..")).toHaveClass(/mm-rpg-dock-nearby-actions/);
+  await uncover.click();
+  await expect(uncover).toBeHidden();
+
+  await expect.poll(async () => page.evaluate(() => {
+    const payload = window.gameFrameMonsterRpgWorld?.getPayload?.();
+    return payload?.projection?.scene?.objects?.find((object) => object.entityId === "object.checkpoint-cart")?.state ?? null;
+  })).toBe("uncovered");
+}
+
+async function exerciseCinderControl(page) {
+  const recall = page.getByRole("button", { name: "Recall Cinder" });
+  const deploy = page.getByRole("button", { name: "Deploy Cinder" });
+
+  await expect.poll(async () => ({
+    recall: await recall.isVisible().catch(() => false),
+    deploy: await deploy.isVisible().catch(() => false),
+  })).toSatisfy(({ recall: canRecall, deploy: canDeploy }) => canRecall !== canDeploy);
+
+  const startedDeployed = await recall.isVisible().catch(() => false);
+  const first = startedDeployed ? recall : deploy;
+  const second = startedDeployed ? deploy : recall;
+
+  await first.click();
+  await expect(second).toBeVisible();
+  await second.click();
+  await expect(first).toBeVisible();
+
+  await expect.poll(async () => page.evaluate(() => {
+    const payload = window.gameFrameMonsterRpgWorld?.getPayload?.();
+    return payload?.projection?.viewer?.monsters?.find((monster) => monster.displayLabel === "Cinder")?.deploymentState ?? null;
+  })).toBe(startedDeployed ? "deployed" : "recalled");
+}
+
+test("Monster Master RPG completes authoritative player actions through real GameFrame and Runtime services", async ({ page }) => {
   const rpgResponses = [];
   page.on("response", (response) => {
     const url = new URL(response.url());
@@ -90,7 +145,12 @@ test("Monster Master RPG materializes and persists movement through real GameFra
     facing: move.direction,
   });
 
+  await exerciseCoveredCart(page);
+  await exerciseCinderControl(page);
+
   expect(rpgResponses.some((entry) => entry.method === "POST" && entry.path.endsWith("/attach") && entry.status === 200)).toBe(true);
   expect(rpgResponses.some((entry) => entry.method === "POST" && entry.path.endsWith("/exploration/attach") && entry.status === 200)).toBe(true);
   expect(rpgResponses.some((entry) => entry.method === "POST" && entry.path.endsWith("/exploration/move") && entry.status === 200)).toBe(true);
+  expect(rpgResponses.some((entry) => entry.method === "POST" && entry.path.endsWith("/exploration/interact") && entry.status === 200)).toBe(true);
+  expect(rpgResponses.filter((entry) => entry.method === "POST" && entry.path.endsWith("/exploration/control") && entry.status === 200)).toHaveLength(2);
 });
