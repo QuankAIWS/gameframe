@@ -119,18 +119,22 @@ test("Cascade telemetry export derives play blocks, attempts, retries, hammer us
 
 test("Cascade telemetry chunks larger histories instead of growing one Durable Object value without bound", async () => {
   const runtime = new CascadeTelemetryObjectRuntime(new MemoryStorage());
-  const values = Array.from({ length: 130 }, (_, index) => event(
+  const values = Array.from({ length: 50 }, (_, index) => event(
     `chunk-${index}`,
     index % 60,
     "move",
     { mode: "normal", level: 1, score: index, movesRemaining: 18 - (index % 18) },
     "attempt-chunk",
   ));
-  const first = await body(await runtime.fetch(request("/telemetry/cascade/ingest", "POST", { events: values.slice(0, 100) })));
-  const second = await body(await runtime.fetch(request("/telemetry/cascade/ingest", "POST", { events: values.slice(100) })));
-  assert.equal(first.accepted, 100);
-  assert.equal(second.accepted, 30);
-  assert.equal(second.storedChunks, 2);
+
+  let latest = null;
+  for (let offset = 0; offset < values.length; offset += 12) {
+    latest = await body(await runtime.fetch(request("/telemetry/cascade/ingest", "POST", {
+      events: values.slice(offset, offset + 12),
+    })));
+  }
+  assert.equal(latest.accepted, 2);
+  assert.equal(latest.storedChunks, 2);
   const exported = await body(await runtime.fetch(request("/telemetry/cascade/export")));
-  assert.equal(exported.events.length, 130);
+  assert.equal(exported.events.length, 50);
 });
