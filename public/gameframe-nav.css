@@ -32,6 +32,11 @@
   --destination-accent-soft: rgba(201, 147, 54, .13);
   --destination-line: rgba(199, 151, 72, .2);
 }
+.gameframe-destination-bar[data-theme="casual"] {
+  --destination-accent: #ffd84d;
+  --destination-accent-soft: rgba(255, 216, 77, .12);
+  --destination-line: rgba(255, 216, 77, .18);
+}
 .gameframe-destination-bar[data-theme="monster"] {
   --destination-accent: #7fc9ff;
   --destination-accent-soft: rgba(48, 142, 221, .14);
