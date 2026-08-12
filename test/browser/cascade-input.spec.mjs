@@ -21,7 +21,7 @@ function gridDistance(a, b) {
   return Math.abs(Math.floor(a / 8) - Math.floor(b / 8)) + Math.abs((a % 8) - (b % 8));
 }
 
-test("Cascade supports click-hold-drag-release swapping, cancellation, and existing click controls", async ({ page }) => {
+test("Cascade visibly picks up a dragged tile, supports cancellation, and preserves click controls", async ({ page }) => {
   await page.goto("/cascade.html?player=cascade-drag-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 
@@ -41,15 +41,28 @@ test("Cascade supports click-hold-drag-release swapping, cancellation, and exist
   await preselected.click();
   await expect(preselected).toHaveClass(/is-selected/);
 
-  // Pulling back onto the starting tile before release cancels the gesture and clears that old selection.
+  // Crossing the drag threshold lifts a visible copy that follows the pointer while
+  // the destination slot yields toward the incoming tile.
   await page.mouse.move(fromCenter.x, fromCenter.y);
   await page.mouse.down();
   await page.mouse.move(toCenter.x, toCenter.y, { steps: 4 });
+  await expect(from).toHaveClass(/is-drag-origin/);
   await expect(to).toHaveClass(/is-drag-target/);
+  await expect(page.locator(".cascade-drag-ghost")).toHaveCount(1);
   await expect(page.locator(".cascade-tile.is-selected")).toHaveCount(0);
+  const ghostBox = await page.locator(".cascade-drag-ghost").boundingBox();
+  expect(ghostBox).toBeTruthy();
+  expect(Math.hypot(
+    ghostBox.x + ghostBox.width / 2 - fromCenter.x,
+    ghostBox.y + ghostBox.height / 2 - fromCenter.y,
+  )).toBeGreaterThan(10);
+
+  // Pulling back onto the starting tile before release cancels the move and returns
+  // the lifted visual home without spending a move.
   await page.mouse.move(fromCenter.x, fromCenter.y, { steps: 4 });
   await expect(page.locator(".is-drag-target")).toHaveCount(0);
   await page.mouse.up();
+  await expect(page.locator(".cascade-drag-ghost")).toHaveCount(0, { timeout: 1_000 });
   await expect(page.locator("#moves")).toHaveText(String(movesBefore));
   await expect(page.locator("#score")).toHaveText("0");
 
@@ -57,6 +70,7 @@ test("Cascade supports click-hold-drag-release swapping, cancellation, and exist
   await page.mouse.move(fromCenter.x, fromCenter.y);
   await page.mouse.down();
   await page.mouse.move(toCenter.x, toCenter.y, { steps: 4 });
+  await expect(page.locator(".cascade-drag-ghost")).toHaveCount(1);
   await expect(to).toHaveClass(/is-drag-target/);
   await page.mouse.up();
 
@@ -65,8 +79,9 @@ test("Cascade supports click-hold-drag-release swapping, cancellation, and exist
   }).toBeGreaterThan(0);
   await expect(page.locator("#moves")).toHaveText(String(movesBefore - 1));
   await expect(page.locator(".is-drag-origin, .is-drag-target")).toHaveCount(0);
+  await expect(page.locator(".cascade-drag-ghost")).toHaveCount(0, { timeout: 1_000 });
 
-  // Existing click-then-click selection remains available after a drag.
+  // Existing click-then-click selection remains available immediately after a drag.
   await page.locator(".cascade-tile").first().click();
   await expect(page.locator(".cascade-tile").first()).toHaveClass(/is-selected/);
 });
