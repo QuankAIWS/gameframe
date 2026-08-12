@@ -84,7 +84,7 @@ function boardBusy() {
   if (!activeRunCommitted()) return true;
   if (board?.getAnimations?.({ subtree: true }).some((animation) => animation.playState === "running")) return true;
   return Boolean(document.querySelector(
-    ".cascade-tile.is-selected, .cascade-tile.is-hammer-target, .cascade-tile.is-hammer-hit, .cascade-tile.is-clearing, .cascade-tile.is-falling, .cascade-tile.is-landing, .cascade-tile.is-special-triggered, .cascade-board.is-shuffling, .cascade-board.is-shuffle-in",
+    ".cascade-tile.is-hammer-hit, .cascade-tile.is-clearing, .cascade-tile.is-falling, .cascade-tile.is-landing, .cascade-tile.is-special-triggered, .cascade-board.is-shuffling, .cascade-board.is-shuffle-in",
   ));
 }
 
