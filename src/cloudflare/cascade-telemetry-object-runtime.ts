@@ -3,10 +3,10 @@ import type { DurableStorageLike } from "./runtime-contracts.ts";
 
 const INDEX_KEY = "gameframe:cascade-telemetry-index:v1";
 const CHUNK_PREFIX = "gameframe:cascade-telemetry-chunk:v1:";
-const MAX_REQUEST_EVENTS = 100;
-const MAX_EVENTS_PER_CHUNK = 120;
+const MAX_REQUEST_EVENTS = 12;
+const MAX_EVENTS_PER_CHUNK = 40;
 const RECENT_EVENT_ID_LIMIT = 512;
-const MAX_EVENT_PAYLOAD_BYTES = 8_192;
+const MAX_EVENT_PAYLOAD_BYTES = 2_048;
 
 export interface CascadeTelemetryStoredEvent {
   eventId: string;
