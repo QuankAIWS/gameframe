@@ -46,7 +46,7 @@ test("Cascade amplified reward burst escapes the board", async ({ page }) => {
   await page.goto("/cascade.html?player=cascade-vfx-visual");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   await page.evaluate(() => window.cascadeDopamineVfx.demo(3));
-  await page.waitForTimeout(90);
+  await page.waitForTimeout(320);
   await expect(page.locator(".cascade-dopamine-canvas")).toBeVisible();
   await page.screenshot({ path: `${output}/cascade-dopamine-burst-desktop.png`, fullPage: true });
 });
