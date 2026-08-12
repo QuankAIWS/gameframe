@@ -22,6 +22,7 @@ on:
       - "src/browser/monster-master-art-contract.test.ts"
       - "src/browser/monster-master-option-layer-contract.test.mjs"
       - "src/browser/othello-runtime-contract.test.ts"
+      - "src/cloudflare/player-progression.ts"
       - "src/cloudflare/player-platform-object-runtime.ts"
       - "src/cloudflare/player-platform-object-runtime.test.ts"
       - "src/cloudflare/player-platform-coordinator.ts"
@@ -35,6 +36,7 @@ on:
       - "src/games/monster-master/delivery-contract.test.ts"
       - "src/games/monster-master/checkpoint-contract.test.ts"
       - "test/browser/player-platform.spec.mjs"
+      - "test/workerd/player-progression.test.ts"
       - "test/browser/monster-master.spec.mjs"
       - "test/browser/monster-master-controls.spec.mjs"
       - "test/browser/monster-master-option-hit-testing.spec.mjs"
@@ -86,10 +88,14 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Browser syntax gate
-        run: npm run check:browser
+        run: |
+          npm run check:browser
+          node --check public/cascade-progression-sync.js
 
       - name: Player navigation, platform, renderer geometry, asset, game, and Monster Master rule contracts
-        run: node --experimental-strip-types --test src/browser/monster-master-ground-asset-contract.test.mjs src/browser/monster-master-wall-top-asset-contract.test.mjs src/browser/monster-master-cliff-face-asset-contract.test.mjs src/browser/monster-master-terrain-geometry.test.mjs src/browser/player-navigation-contract.test.ts src/browser/player-platform-extension-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/monster-master-option-layer-contract.test.mjs src/browser/othello-runtime-contract.test.ts src/cloudflare/player-platform-object-runtime.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/delivery-contract.test.ts src/games/monster-master/checkpoint-contract.test.ts
+        run: |
+          node --experimental-strip-types --test src/browser/monster-master-ground-asset-contract.test.mjs src/browser/monster-master-wall-top-asset-contract.test.mjs src/browser/monster-master-cliff-face-asset-contract.test.mjs src/browser/monster-master-terrain-geometry.test.mjs src/browser/player-navigation-contract.test.ts src/browser/player-platform-extension-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/monster-master-option-layer-contract.test.mjs src/browser/othello-runtime-contract.test.ts src/cloudflare/player-platform-object-runtime.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/delivery-contract.test.ts src/games/monster-master/checkpoint-contract.test.ts
+          npx vitest run --config vitest.config.ts test/workerd/player-progression.test.ts --max-workers=1 --no-isolate
 
       - name: Cascade 300-level engine, persistent specials, and bot profile
         run: |
