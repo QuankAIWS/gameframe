@@ -45,11 +45,14 @@
 
 .cascade-map-stars {
   display: block;
+  grid-column: 2;
+  justify-self: start;
   margin-top: 2px;
   color: #e5a335;
   font-size: .57rem;
   letter-spacing: -.02em;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .cascade-map-stars[hidden] {
