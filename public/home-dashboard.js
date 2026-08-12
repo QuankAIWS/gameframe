@@ -18,6 +18,7 @@ if (!document.head.querySelector('link[href="/home-dashboard.css"]')) {
 const CASCADE_STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const CASCADE_PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const CASCADE_OWNER_KEY = "scribbles-gameframe.cascade-progression-owner:v1";
+const CASCADE_CANDIDATE_KEY = "scribbles-gameframe.cascade-progression-candidate:v1";
 
 const GAMES = new Map([
   ["cascade", { name: "Cascade Crush", kicker: "MATCH-3", href: "/cascade.html", hubId: "casual-games", detail: "Keep the run moving." }],
@@ -150,14 +151,19 @@ function updateProgressionCard(card, progression) {
 function importPrompt(cascade, progression) {
   const owner = localStorage.getItem(CASCADE_OWNER_KEY);
   if (cascade.highestCompletedLevel <= 0 && cascade.totalBestStars <= 0) {
-    if (!owner) localStorage.setItem(CASCADE_OWNER_KEY, identity.playerId);
+    if (owner) localStorage.removeItem(CASCADE_CANDIDATE_KEY);
+    else localStorage.setItem(CASCADE_CANDIDATE_KEY, identity.playerId);
     return null;
   }
-  if (owner === identity.playerId) return null;
+  if (owner === identity.playerId) {
+    localStorage.removeItem(CASCADE_CANDIDATE_KEY);
+    return null;
+  }
 
   const prompt = document.createElement("section");
   prompt.className = "home-cascade-import";
   if (owner) {
+    localStorage.removeItem(CASCADE_CANDIDATE_KEY);
     prompt.innerHTML = `
       <div><small>CASCADE PROFILE LINK</small><strong>This browser's Cascade progress belongs to another player.</strong><span>It will stay local and will not be added to ${identity.displayName || "this player"}.</span></div>
     `;
@@ -185,6 +191,7 @@ function importPrompt(cascade, progression) {
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.message || "Cascade progress could not be added.");
       localStorage.setItem(CASCADE_OWNER_KEY, identity.playerId);
+      localStorage.removeItem(CASCADE_CANDIDATE_KEY);
       const levelCard = document.querySelector("[data-gamer-progression]");
       if (levelCard) updateProgressionCard(levelCard, body);
       prompt.remove();
