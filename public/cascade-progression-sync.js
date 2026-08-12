@@ -1,4 +1,4 @@
-import { gameFrameFetch, tryGameFrameIdentity } from "./gameframe-auth.js";
+import { gameFrameOptionalFetch, tryGameFrameIdentity } from "./gameframe-auth.js";
 
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
@@ -57,12 +57,13 @@ async function submitSnapshot() {
   if (serialized === lastSubmitted) return;
   syncPending = true;
   try {
-    const response = await gameFrameFetch("/api/me/cascade/progression", {
+    const response = await gameFrameOptionalFetch("/api/me/cascade/progression", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: serialized,
     }, identity);
     if (response.ok) lastSubmitted = serialized;
+    if (response.status === 401) identity = null;
   } catch {
     // Gamer progression is optional platform metadata. Cascade must remain
     // playable even when the player session or progression service is absent.
