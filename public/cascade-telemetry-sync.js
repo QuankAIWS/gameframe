@@ -215,20 +215,11 @@ async function sendSessionEvent(type, payload = {}, options = {}) {
 }
 
 async function rotateSession(now = Date.now()) {
-  const previous = session;
+  await sendSessionEvent("telemetry_session_end", { reason: "inactivity" }, { keepalive: true });
   session = newSession(now);
   lastInputAt = now;
   lastTickAt = now;
   persistSession(true);
-  try {
-    session = previous;
-    await sendSessionEvent("telemetry_session_end", { reason: "inactivity" }, { keepalive: true });
-  } finally {
-    session = newSession(now);
-    lastInputAt = now;
-    lastTickAt = now;
-    persistSession(true);
-  }
   await sendSessionEvent("telemetry_session_start", { reason: "return_after_inactivity" });
 }
 
