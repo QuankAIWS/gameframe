@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
-import type {
-  MonsterMasterAction,
-  MonsterMasterObservation,
-  MonsterMasterState,
+import {
+  createMonsterMasterState,
+  type MonsterMasterAction,
+  type MonsterMasterObservation,
+  type MonsterMasterState,
 } from "../games/monster-master/index.ts";
 import { InMemoryMatchSnapshotStore } from "../platform/match-store.ts";
 import { MonsterMasterMatchService } from "./monster-master-match-service.ts";
@@ -39,6 +40,19 @@ test("Monster Master service creates a public Arena deployment match", async () 
   assert.equal(created.observation.rosters.beta.length, 4);
   assert.equal(created.observation.activePlayerId, "alpha");
   assert.ok(created.observation.legalActions.every((action) => action.type === "deploy-unit"));
+});
+
+test("explicitly configured Monster Master states retain the base roster instead of Arena reshaping", async () => {
+  const service = createService();
+  const configured = createMonsterMasterState(["alpha", "beta"]);
+  const created = await service.createMatch(["alpha", "beta"], "mm-configured", configured);
+
+  assert.equal(created.observation.undeployedUnitIds.length, 6);
+  assert.deepEqual(created.observation.rosters.alpha.map((unit) => unit.role), ["master", "bulwark", "emberling"]);
+  assert.deepEqual(created.observation.rosters.beta.map((unit) => unit.role), ["master", "bulwark", "emberling"]);
+
+  const reloaded = await service.view(created.matchId, "alpha");
+  assert.equal(reloaded.observation.undeployedUnitIds.length, 6);
 });
 
 test("Monster Master BattleBot deploys after each human deployment and Arena combat begins after eight actions", async () => {
