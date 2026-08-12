@@ -292,6 +292,5 @@ test("captures Monster Master bounded draw at the configured final round", async
   await expect(page.locator("#monster-master-round")).toHaveText("24");
   await expect(page.locator("#monster-master-status")).toContainText("draw");
   await expect(page.locator("#monster-master-effects .victory")).toContainText("draw");
-  await page.locator("#monster-master-center-field").click();
   await capture(page, testInfo, "30-monster-master-draw");
 });
