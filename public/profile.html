@@ -6,35 +6,55 @@
   <meta name="theme-color" content="#070a0d">
   <title>Profile · Scribbles GameFrame</title>
   <link rel="stylesheet" href="/player-platform.css">
+  <link rel="stylesheet" href="/player-social.css">
 </head>
 <body class="gameframe-platform-page">
-  <main class="platform-shell">
-    <header class="platform-heading">
+  <main class="platform-shell profile-shell">
+    <header class="platform-heading profile-page-heading">
       <small>GAMEFRAME PLAYER</small>
-      <h1>Profile</h1>
-      <p>Your GameFrame identity, favorite games, and durable board-game record.</p>
+      <h1 id="profile-page-title">Profile</h1>
+      <p id="profile-page-description">Your GameFrame level, records, progress, and favorite games.</p>
     </header>
     <div id="profile-error" class="platform-error" hidden></div>
-    <div class="platform-grid">
-      <section class="platform-section profile-card" aria-labelledby="profile-name">
-        <img id="profile-avatar" class="profile-avatar" alt="" hidden>
-        <div id="profile-avatar-fallback" class="profile-avatar" aria-hidden="true"></div>
-        <div class="profile-copy">
-          <small id="profile-source">PLAYER</small>
-          <h2 id="profile-name">Loading…</h2>
-          <p id="profile-id"></p>
+    <div class="platform-grid profile-grid">
+      <section class="platform-section profile-card profile-hero" aria-labelledby="profile-name">
+        <div class="profile-identity">
+          <img id="profile-avatar" class="profile-avatar" alt="" hidden>
+          <div id="profile-avatar-fallback" class="profile-avatar" aria-hidden="true"></div>
+          <div class="profile-copy">
+            <small id="profile-source">PLAYER</small>
+            <h2 id="profile-name">Loading…</h2>
+            <p id="profile-id"></p>
+          </div>
+        </div>
+        <div class="profile-level" aria-label="Gamer Level">
+          <div class="profile-level-label"><span>GAMER LEVEL</span><b id="profile-xp-total">— XP</b></div>
+          <div class="profile-level-number"><small>LV</small><strong id="profile-level-number">1</strong></div>
+          <div class="profile-xp-track"><i id="profile-xp-fill"></i></div>
+          <div class="profile-level-meta"><span id="profile-level-progress">Loading progression…</span><span id="profile-level-next"></span></div>
         </div>
       </section>
-      <section class="platform-section" aria-labelledby="profile-favorites-title">
+
+      <section class="platform-section profile-feature-section" aria-labelledby="profile-cascade-title">
+        <header class="platform-section-header">
+          <div><h2 id="profile-cascade-title">Cascade Crush</h2><span class="platform-count">Puzzle progress</span></div>
+          <a class="platform-text-link" href="/cascade.html">Play →</a>
+        </header>
+        <div id="profile-cascade" class="profile-highlight-grid"><p class="platform-empty">Loading Cascade progress…</p></div>
+      </section>
+
+      <section class="platform-section" aria-labelledby="profile-record-title">
+        <header class="platform-section-header"><h2 id="profile-record-title">Game records</h2><span id="profile-record-count" class="platform-count">—</span></header>
+        <div id="profile-stats" class="profile-stats"><p class="platform-empty">Loading records…</p></div>
+      </section>
+
+      <section class="platform-section" data-private-profile aria-labelledby="profile-favorites-title">
         <header class="platform-section-header"><div><h2 id="profile-favorites-title">Favorite games</h2><span class="platform-count">Pin games to Home</span></div><span id="profile-favorites-count" class="platform-count">—</span></header>
         <div id="profile-favorites" class="profile-favorites"><p class="platform-empty">Loading favorites…</p></div>
         <p id="profile-favorites-status" class="profile-preference-status" role="status" aria-live="polite"></p>
       </section>
-      <section class="platform-section" aria-labelledby="profile-record-title">
-        <header class="platform-section-header"><h2 id="profile-record-title">Board-game record</h2><span id="profile-record-count" class="platform-count">—</span></header>
-        <div id="profile-stats" class="profile-stats"><p class="platform-empty">Loading record…</p></div>
-      </section>
-      <section class="platform-section" aria-labelledby="profile-active-title">
+
+      <section class="platform-section" data-private-profile aria-labelledby="profile-active-title">
         <header class="platform-section-header"><h2 id="profile-active-title">Open matches</h2><span id="profile-active-count" class="platform-count">—</span></header>
         <div id="profile-active" class="platform-list"><p class="platform-empty">Loading open matches…</p></div>
       </section>

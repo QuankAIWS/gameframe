@@ -4,24 +4,31 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#070a0d">
-  <title>Leaderboard · Scribbles GameFrame</title>
+  <title>Hall of Fame · Scribbles GameFrame</title>
   <link rel="stylesheet" href="/player-platform.css">
+  <link rel="stylesheet" href="/player-social.css">
 </head>
 <body class="gameframe-platform-page">
-  <main class="platform-shell">
-    <header class="platform-heading">
-      <small>GAMEFRAME RECORDS</small>
-      <h1>Leaderboard</h1>
-      <p>Shared board-game records and scored events from GameFrame.</p>
+  <main class="platform-shell hall-shell">
+    <header class="platform-heading hall-page-heading">
+      <small>GAMEFRAME HALL OF FAME</small>
+      <h1>Hall of Fame</h1>
+      <p>Gamer Level measures how much you have done across GameFrame. Game standings stay separate, so activity and skill both have somewhere to compete.</p>
     </header>
     <div id="leaderboard-error" class="platform-error" hidden></div>
-    <section class="platform-section" aria-labelledby="leaderboard-title">
+
+    <section id="hall-overview" class="hall-overview" aria-label="Hall of Fame leaders">
+      <div id="hall-podium" class="hall-podium"><p class="platform-empty">Loading Gamer Level leaders…</p></div>
+      <div id="hall-categories" class="hall-category-grid"></div>
+    </section>
+
+    <section class="platform-section hall-standings" aria-labelledby="leaderboard-title">
       <header class="platform-section-header leaderboard-header">
         <div>
           <h2 id="leaderboard-title">Standings</h2>
-          <span id="leaderboard-rule" class="platform-count">3 points per win · 1 per draw</span>
+          <span id="leaderboard-rule" class="platform-count">Gamer Level · activity across GameFrame</span>
         </div>
-        <label class="leaderboard-filter">Game <select id="leaderboard-game" aria-label="Leaderboard game"></select></label>
+        <label class="leaderboard-filter">Ranking <select id="leaderboard-game" aria-label="Leaderboard ranking"></select></label>
       </header>
       <div id="leaderboard-list" class="leaderboard-list"><p class="platform-empty">Loading standings…</p></div>
     </section>

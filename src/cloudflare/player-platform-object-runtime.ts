@@ -1,10 +1,23 @@
 import { errorResponse, json, readJson } from "./http-utils.ts";
+import {
+  applyCascadeProgression,
+  applyCompletedMatch,
+  applyScoredProgression,
+  emptyPlayerProgression,
+  publicPlayerProgression,
+  type PlayerProgressionRecord,
+  type PublicPlayerProgression,
+} from "./player-progression.ts";
 import type { DurableStorageLike } from "./runtime-contracts.ts";
 
 const DIRECTORY_KEY = "gameframe:player-directory:v1";
 const LEADERBOARD_KEY = "gameframe:leaderboard:v1";
 const SCORED_LEADERBOARD_KEY = "gameframe:scored-leaderboard:v1";
 const FEED_KEY = "gameframe:player-feed:v1";
+const PROGRESSION_KEY = "gameframe:player-progression:v1";
+const PROGRESSION_DIRECTORY_KEY = "gameframe:player-progression-directory:v1";
+const PROGRESSION_MARKER_PREFIX = "gameframe:player-progression-marker:v1:";
+const RECENT_ACCOMPLISHMENT_LIMIT = 256;
 const MAX_DIRECTORY_PLAYERS = 250;
 const MAX_MATCH_HISTORY = 200;
 const MAX_INVITATION_HISTORY = 100;
@@ -88,6 +101,15 @@ interface PlayerFeedRecord {
   invitations: PlayerInvitationSummary[];
   favoriteGameIds?: string[];
 }
+
+interface ProgressionDirectoryRecord {
+  version: 1;
+  players: PublicPlayerProgression[];
+}
+
+type StoredPlayerProgression = PlayerProgressionRecord & {
+  recentAccomplishments?: string[];
+};
 
 function boundedText(value: unknown, name: string, maximum = 512): string {
   const normalized = String(value ?? "").trim();
@@ -239,6 +261,16 @@ function emptyFeed(): PlayerFeedRecord {
   return { version: 1, matches: [], invitations: [], favoriteGameIds: [] };
 }
 
+function markerKey(accomplishmentId: string): string {
+  return `${PROGRESSION_MARKER_PREFIX}${accomplishmentId}`;
+}
+
+function recentAccomplishments(record: StoredPlayerProgression): string[] {
+  return Array.isArray(record.recentAccomplishments)
+    ? record.recentAccomplishments.filter((value) => typeof value === "string").slice(-RECENT_ACCOMPLISHMENT_LIMIT)
+    : [];
+}
+
 export class PlayerPlatformObjectRuntime {
   readonly #storage: DurableStorageLike;
   #tail: Promise<void> = Promise.resolve();
@@ -269,6 +301,12 @@ export class PlayerPlatformObjectRuntime {
       if (request.method === "POST" && url.pathname === "/directory/score") {
         return json(200, await this.#upsertScoredResult(await readJson(request)));
       }
+      if (request.method === "POST" && url.pathname === "/directory/progression") {
+        return json(200, await this.#upsertDirectoryProgression(await readJson(request)));
+      }
+      if (request.method === "GET" && url.pathname === "/directory/profile") {
+        return json(200, await this.#publicProfile(String(url.searchParams.get("playerId") ?? "")));
+      }
       if (request.method === "GET" && url.pathname === "/directory/leaderboard") {
         return json(200, await this.#leaderboard());
       }
@@ -283,6 +321,18 @@ export class PlayerPlatformObjectRuntime {
       }
       if (request.method === "GET" && url.pathname === "/player/feed") {
         return json(200, await this.#feed());
+      }
+      if (request.method === "GET" && url.pathname === "/player/progression") {
+        return json(200, await this.#progression(String(url.searchParams.get("playerId") ?? "")));
+      }
+      if (request.method === "POST" && url.pathname === "/player/progression/match") {
+        return json(200, await this.#recordMatchProgression(await readJson(request)));
+      }
+      if (request.method === "POST" && url.pathname === "/player/progression/score") {
+        return json(200, await this.#recordScoredProgression(await readJson(request)));
+      }
+      if (request.method === "POST" && url.pathname === "/player/progression/cascade") {
+        return json(200, await this.#recordCascadeProgression(await readJson(request)));
       }
       return json(404, { error: "not_found" });
     } catch (error) {
@@ -312,6 +362,35 @@ export class PlayerPlatformObjectRuntime {
         .filter((profile) => profile.playerId !== viewer && profile.source === "discord")
         .map((profile) => ({ ...profile })),
     };
+  }
+
+  async #upsertDirectoryProgression(body: Record<string, unknown>) {
+    const playerId = boundedText(body.playerId, "Progression player ID", 160);
+    const directory = await this.#storage.get<PlayerDirectoryRecord>(DIRECTORY_KEY) ?? { version: 1, players: [] };
+    if (!directory.players.some((profile) => profile.playerId === playerId)) {
+      return { stored: false, playerId };
+    }
+    const incoming = body as unknown as PublicPlayerProgression;
+    const record = await this.#storage.get<ProgressionDirectoryRecord>(PROGRESSION_DIRECTORY_KEY) ?? { version: 1, players: [] };
+    const players = [
+      { ...incoming, playerId },
+      ...record.players.filter((entry) => entry.playerId !== playerId),
+    ].slice(0, MAX_DIRECTORY_PLAYERS);
+    await this.#storage.put(PROGRESSION_DIRECTORY_KEY, { version: 1, players });
+    return { stored: true, playerId };
+  }
+
+  async #publicProfile(rawPlayerId: string) {
+    const playerId = boundedText(rawPlayerId, "Public profile player ID", 160);
+    const directory = await this.#storage.get<PlayerDirectoryRecord>(DIRECTORY_KEY) ?? { version: 1, players: [] };
+    const profile = directory.players.find((entry) => entry.playerId === playerId);
+    if (!profile) {
+      throw Object.assign(new Error("Player profile was not found."), { code: "not_found", status: 404 });
+    }
+    const progressionDirectory = await this.#storage.get<ProgressionDirectoryRecord>(PROGRESSION_DIRECTORY_KEY) ?? { version: 1, players: [] };
+    const progression = progressionDirectory.players.find((entry) => entry.playerId === playerId)
+      ?? publicPlayerProgression(emptyPlayerProgression(playerId, profile.firstSeenAt));
+    return { profile: { ...profile }, progression };
   }
 
   async #upsertLeaderboardMatch(body: Record<string, unknown>) {
@@ -357,7 +436,9 @@ export class PlayerPlatformObjectRuntime {
     const directory = await this.#storage.get<PlayerDirectoryRecord>(DIRECTORY_KEY) ?? { version: 1, players: [] };
     const record = await this.#storage.get<LeaderboardRecord>(LEADERBOARD_KEY) ?? { version: 1, matches: [] };
     const scored = await this.#storage.get<ScoredLeaderboardRecord>(SCORED_LEADERBOARD_KEY) ?? { version: 1, results: [] };
+    const progressionDirectory = await this.#storage.get<ProgressionDirectoryRecord>(PROGRESSION_DIRECTORY_KEY) ?? { version: 1, players: [] };
     const profiles = new Map(directory.players.map((profile) => [profile.playerId, profile]));
+    const progressions = new Map(progressionDirectory.players.map((progression) => [progression.playerId, progression]));
     const byGame = new Map<string, Map<string, { played: number; wins: number; losses: number; draws: number }>>();
 
     for (const match of record.matches) {
@@ -392,7 +473,25 @@ export class PlayerPlatformObjectRuntime {
       scoredGroups.set(key, group);
     }
 
+    const gamerLevels = directory.players
+      .map((profile) => {
+        const progression = progressions.get(profile.playerId)
+          ?? publicPlayerProgression(emptyPlayerProgression(profile.playerId, profile.firstSeenAt));
+        return {
+          playerId: profile.playerId,
+          displayName: profile.displayName,
+          avatarUrl: profile.avatarUrl,
+          ...progression,
+        };
+      })
+      .sort((left, right) => (
+        right.gamerXp - left.gamerXp
+        || left.xpUpdatedAt - right.xpUpdatedAt
+        || left.playerId.localeCompare(right.playerId)
+      ));
+
     return {
+      gamerLevels,
       games: [...byGame.entries()].map(([gameId, players]) => ({
         gameId,
         entries: [...players.entries()]
@@ -429,6 +528,89 @@ export class PlayerPlatformObjectRuntime {
         }))
         .sort((left, right) => right.eventId.localeCompare(left.eventId) || left.gameId.localeCompare(right.gameId) || left.modeId.localeCompare(right.modeId)),
     };
+  }
+
+  async #readStoredProgression(playerId: string): Promise<StoredPlayerProgression> {
+    const existing = await this.#storage.get<StoredPlayerProgression>(PROGRESSION_KEY);
+    if (!existing || existing.playerId !== playerId) return emptyPlayerProgression(playerId);
+    return existing;
+  }
+
+  async #progression(rawPlayerId: string) {
+    const playerId = boundedText(rawPlayerId, "Progression player ID", 160);
+    return publicPlayerProgression(await this.#readStoredProgression(playerId));
+  }
+
+  async #applyAccomplishment(
+    playerId: string,
+    accomplishmentId: string,
+    apply: (record: PlayerProgressionRecord) => PlayerProgressionRecord,
+  ) {
+    const key = markerKey(accomplishmentId);
+    const existingMarker = await this.#storage.get<boolean>(key);
+    let record = await this.#readStoredProgression(playerId);
+    const recent = recentAccomplishments(record);
+    if (existingMarker || recent.includes(accomplishmentId)) {
+      if (!existingMarker) await this.#storage.put(key, true);
+      return { progression: publicPlayerProgression(record), awarded: false };
+    }
+    const next = apply(record) as StoredPlayerProgression;
+    next.recentAccomplishments = [...recent.filter((id) => id !== accomplishmentId), accomplishmentId]
+      .slice(-RECENT_ACCOMPLISHMENT_LIMIT);
+    await this.#storage.put(PROGRESSION_KEY, next);
+    await this.#storage.put(key, true);
+    record = next;
+    return { progression: publicPlayerProgression(record), awarded: true };
+  }
+
+  async #recordMatchProgression(body: Record<string, unknown>) {
+    const playerId = boundedText(body.playerId, "Progression player ID", 160);
+    const summary = matchSummary(body);
+    if (summary.lifecycle !== "completed" || !summary.playerIds.includes(playerId)) {
+      return { progression: await this.#progression(playerId), awarded: false };
+    }
+    return this.#applyAccomplishment(playerId, `match:${summary.matchId}`, (record) => applyCompletedMatch(record, {
+      playerId,
+      gameId: summary.gameId,
+      winnerPlayerId: summary.winnerPlayerId,
+      draw: summary.draw,
+      updatedAt: summary.updatedAt,
+    }));
+  }
+
+  async #recordScoredProgression(body: Record<string, unknown>) {
+    const playerId = boundedText(body.playerId, "Progression player ID", 160);
+    const gameId = boundedText(body.gameId, "Scored game ID", 80);
+    const modeId = boundedText(body.modeId, "Scored mode ID", 80);
+    const eventId = boundedText(body.eventId, "Scored event ID", 160);
+    const score = boundedScore(body.score);
+    const now = timestamp(body.updatedAt);
+    const accomplishmentId = `score:${gameId}:${modeId}:${eventId}`;
+    const marker = await this.#storage.get<boolean>(markerKey(accomplishmentId));
+    let record = await this.#readStoredProgression(playerId);
+    const recent = recentAccomplishments(record);
+    const firstParticipation = !marker && !recent.includes(accomplishmentId);
+    const next = applyScoredProgression(record, { gameId, modeId, score, firstParticipation, updatedAt: now }) as StoredPlayerProgression;
+    if (firstParticipation) {
+      next.recentAccomplishments = [...recent, accomplishmentId].slice(-RECENT_ACCOMPLISHMENT_LIMIT);
+    }
+    await this.#storage.put(PROGRESSION_KEY, next);
+    if (firstParticipation) await this.#storage.put(markerKey(accomplishmentId), true);
+    record = next;
+    return { progression: publicPlayerProgression(record), awarded: firstParticipation };
+  }
+
+  async #recordCascadeProgression(body: Record<string, unknown>) {
+    const playerId = boundedText(body.playerId, "Progression player ID", 160);
+    const record = await this.#readStoredProgression(playerId);
+    const next = applyCascadeProgression(record, {
+      highestCompletedLevel: body.highestCompletedLevel,
+      starsByLevel: body.starsByLevel,
+      updatedAt: timestamp(body.updatedAt),
+    }) as StoredPlayerProgression;
+    next.recentAccomplishments = recentAccomplishments(record);
+    await this.#storage.put(PROGRESSION_KEY, next);
+    return publicPlayerProgression(next);
   }
 
   async #upsertMatch(body: Record<string, unknown>) {

@@ -70,6 +70,16 @@ function matchRoute(pathname: string): { matchId: string; action: boolean } | nu
   return { matchId: decodeURIComponent(match[1]), action: Boolean(match[2]) };
 }
 
+function publicPlayerProfileRoute(pathname: string): string | null {
+  const match = /^\/api\/players\/([^/]+)\/profile$/.exec(pathname);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
+}
+
 function rpgCampaignRoute(pathname: string): { campaignId: string; operation: "attach" | "commands" | "events" } | null {
   const match = /^\/api\/rpg\/campaigns\/([^/]+)\/(attach|commands|events)$/.exec(pathname);
   if (!match) return null;
@@ -213,11 +223,31 @@ export function createGameFrameServer(
         return json(response, 200, players.feedFor(principal.playerId));
       }
 
+      if (request.method === "GET" && url.pathname === "/api/me/progression") {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        players.register(principal);
+        return json(response, 200, players.progressionFor(principal.playerId));
+      }
+
+      const viewedPlayerId = request.method === "GET" ? publicPlayerProfileRoute(url.pathname) : null;
+      if (viewedPlayerId) {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        players.register(principal);
+        return json(response, 200, players.publicProfile(viewedPlayerId));
+      }
+
       if (request.method === "POST" && url.pathname === "/api/me/preferences") {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
         players.register(principal);
         const body = await readJson(request);
         return json(response, 200, players.updateFavorites(principal.playerId, body.favoriteGameIds));
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/me/cascade/progression") {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        players.register(principal);
+        const body = await readJson(request);
+        return json(response, 200, players.recordCascadeProgression(principal.playerId, body));
       }
 
       if (request.method === "POST" && url.pathname === "/api/scores") {
