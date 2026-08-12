@@ -74,10 +74,11 @@ async function exerciseCinderControl(page) {
   const recall = page.getByRole("button", { name: "Recall Cinder" });
   const deploy = page.getByRole("button", { name: "Deploy Cinder" });
 
-  await expect.poll(async () => ({
-    recall: await recall.isVisible().catch(() => false),
-    deploy: await deploy.isVisible().catch(() => false),
-  })).toSatisfy(({ recall: canRecall, deploy: canDeploy }) => canRecall !== canDeploy);
+  await expect.poll(async () => {
+    const canRecall = await recall.isVisible().catch(() => false);
+    const canDeploy = await deploy.isVisible().catch(() => false);
+    return canRecall !== canDeploy;
+  }).toBe(true);
 
   const startedDeployed = await recall.isVisible().catch(() => false);
   const first = startedDeployed ? recall : deploy;
