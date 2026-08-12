@@ -47,6 +47,11 @@ async function expectPlatformBar(page, active) {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 }
 
+async function returnToTop(page) {
+  await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+}
+
 async function openProfile(page, viewport) {
   await page.setViewportSize(viewport);
   await page.goto(`/profile.html?player=${playerId}`);
@@ -60,6 +65,7 @@ async function openProfile(page, viewport) {
     await expect(favorite).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator("#profile-favorites-status")).toHaveText("Favorites saved.");
   }
+  await returnToTop(page);
 }
 
 async function openHome(page, viewport) {
@@ -92,6 +98,7 @@ async function openHome(page, viewport) {
   await expect(page.locator("[data-gamer-progression]")).toContainText("GAMER LEVEL");
   await expect(page.locator("[data-gamer-progression] .home-level-number strong")).not.toHaveText("1");
   await expect(page.locator(".home-jump-grid")).toContainText("Othello");
+  await returnToTop(page);
 }
 
 async function openLeaderboard(page, viewport) {
@@ -99,10 +106,11 @@ async function openLeaderboard(page, viewport) {
   await page.goto(`/leaderboard.html?player=${playerId}`);
   await expectPlatformBar(page, "[data-gameframe-leaderboard]");
   await expect(page.getByRole("heading", { name: "Hall of Fame" })).toBeVisible();
-  await expect(page.locator("#hall-podium .hall-podium-card")).toHaveCount(1);
+  await expect(page.locator(`#hall-podium a[href="/profile.html?view=${playerId}"]`)).toHaveCount(1);
   await expect(page.locator("#hall-categories .hall-category-card")).toHaveCount(3);
   await expect(page.locator("#leaderboard-list")).toBeVisible();
   await expect(page.locator("#leaderboard-error")).toBeHidden();
+  await returnToTop(page);
 }
 
 test.beforeAll(async () => {
