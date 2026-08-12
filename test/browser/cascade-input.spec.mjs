@@ -81,7 +81,9 @@ test("Cascade visibly picks up a dragged tile, supports cancellation, and preser
   await expect(page.locator(".is-drag-origin, .is-drag-target")).toHaveCount(0);
   await expect(page.locator(".cascade-drag-ghost")).toHaveCount(0, { timeout: 1_000 });
 
-  // Existing click-then-click selection remains available immediately after a drag.
+  // The score/move counters update before cascade presentation finishes. Wait for
+  // the normal unlocked UI signal, then prove click-then-click remains available.
+  await expect(page.locator("#booster-hammer")).toBeEnabled({ timeout: 8_000 });
   await page.locator(".cascade-tile").first().click();
   await expect(page.locator(".cascade-tile").first()).toHaveClass(/is-selected/);
 });
