@@ -13,6 +13,9 @@ import {
 import { errorResponse, json, readJson } from "./http-utils.ts";
 import {
   readLeaderboard,
+  readPlayerProgression,
+  readPublicPlayerProfile,
+  recordCascadeProgression,
   submitScoredResult,
   updatePlayerPreferences,
   upsertPlayerDirectory,
@@ -40,6 +43,16 @@ import { createGameFrameWorker } from "./worker-router.ts";
 export interface RpgEdgeWorkerOptions {
   authenticator?: RequestAuthenticator;
   proxyDependencies?: RpgEdgeProxyDependencies;
+}
+
+function publicPlayerProfileRoute(pathname: string): string | null {
+  const match = /^\/api\/players\/([^/]+)\/profile$/.exec(pathname);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -109,11 +122,31 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           });
         }
 
+        if (request.method === "GET" && url.pathname === "/api/me/progression") {
+          const principal = await authenticatorFor(env).authenticate(request);
+          await upsertPlayerDirectory(env, principal);
+          return json(200, await readPlayerProgression(env, principal.playerId));
+        }
+
+        const viewedPlayerId = request.method === "GET" ? publicPlayerProfileRoute(url.pathname) : null;
+        if (viewedPlayerId) {
+          const principal = await authenticatorFor(env).authenticate(request);
+          await upsertPlayerDirectory(env, principal);
+          return json(200, await readPublicPlayerProfile(env, viewedPlayerId));
+        }
+
         if (request.method === "POST" && url.pathname === "/api/me/preferences") {
           const principal = await authenticatorFor(env).authenticate(request);
           await upsertPlayerDirectory(env, principal);
           const body = await readJson(request);
           return json(200, await updatePlayerPreferences(env, principal.playerId, body.favoriteGameIds));
+        }
+
+        if (request.method === "POST" && url.pathname === "/api/me/cascade/progression") {
+          const principal = await authenticatorFor(env).authenticate(request);
+          await upsertPlayerDirectory(env, principal);
+          const body = await readJson(request);
+          return json(200, await recordCascadeProgression(env, principal.playerId, body));
         }
 
         if (request.method === "POST" && url.pathname === "/api/scores") {
