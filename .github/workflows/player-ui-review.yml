@@ -1,126 +1,349 @@
-name: Player UI Review
+name: Feature UI Review
 
 on:
   workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
+      - ".github/workflows/player-ui-review.yml"
+      - "scripts/ui-test-scope.mjs"
+      - "scripts/ui-test-scope.test.mjs"
       - "public/**"
       - "planning/monster-master-rules.md"
       - "planning/monster-master/assets/**"
       - "scripts/build-monster-master-pixi.mjs"
-      - "scripts/monster-master-terrain-assets.mjs"
+      - "scripts/monster-master-*.mjs"
       - "scripts/cascade-profile.mjs"
-      - "src/browser/monster-master-pixi-entry.js"
-      - "src/browser/monster-master-ground-asset-contract.test.mjs"
-      - "src/browser/monster-master-wall-top-asset-contract.test.mjs"
-      - "src/browser/monster-master-cliff-face-asset-contract.test.mjs"
-      - "src/browser/monster-master-terrain-geometry.js"
-      - "src/browser/monster-master-terrain-geometry.test.mjs"
-      - "src/browser/player-navigation-contract.test.ts"
-      - "src/browser/player-platform-extension-contract.test.ts"
-      - "src/browser/monster-master-art-contract.test.ts"
-      - "src/browser/monster-master-option-layer-contract.test.mjs"
-      - "src/browser/othello-runtime-contract.test.ts"
-      - "src/cloudflare/player-progression.ts"
-      - "src/cloudflare/player-platform-object-runtime.ts"
-      - "src/cloudflare/player-platform-object-runtime.test.ts"
-      - "src/cloudflare/player-platform-coordinator.ts"
+      - "src/browser/player-*"
+      - "src/browser/monster-master*"
+      - "src/cloudflare/player-*"
       - "src/cloudflare/cascade-telemetry-*.ts"
-      - "src/cloudflare/rpg-edge-worker.ts"
-      - "src/server/http-server.ts"
       - "src/server/in-memory-player-platform.ts"
       - "src/games/cascade/**"
-      - "src/games/monster-master/index.ts"
-      - "src/games/monster-master/index.test.ts"
-      - "src/games/monster-master/repository-contract.test.ts"
-      - "src/games/monster-master/delivery-contract.test.ts"
-      - "src/games/monster-master/checkpoint-contract.test.ts"
+      - "src/games/monster-master/**"
+      - "test/browser/casual-games.spec.mjs"
+      - "test/browser/cascade*.spec.mjs"
+      - "test/browser/game-hub-navigation.spec.mjs"
       - "test/browser/player-platform.spec.mjs"
-      - "test/workerd/player-progression.test.ts"
-      - "test/browser/monster-master.spec.mjs"
-      - "test/browser/monster-master-controls.spec.mjs"
-      - "test/browser/monster-master-option-hit-testing.spec.mjs"
+      - "test/browser/monster-master*.spec.mjs"
       - "test/browser/motion-polish.spec.mjs"
-      - "test/visual/cascade-polish.spec.mjs"
+      - "test/workerd/player-progression.test.ts"
       - "test/visual/casual-games-destination.spec.mjs"
+      - "test/visual/cascade*.spec.mjs"
       - "test/visual/player-platform.spec.mjs"
       - "test/visual/player-ui-review.spec.mjs"
       - "test/visual/player-ui-regressions.spec.mjs"
-      - "test/visual/monster-master-pixi.spec.mjs"
-      - "test/visual/monster-master-cardinal-camera.spec.mjs"
-      - "test/visual/monster-master-results-and-depth.spec.mjs"
-      - "test/visual/monster-master-trainer-shell.spec.mjs"
-      - "THIRD_PARTY_NOTICES.md"
+      - "test/visual/monster-master*.spec.mjs"
       - "playwright.config.mjs"
       - "playwright.visual.config.mjs"
       - "package.json"
       - "package-lock.json"
-      - ".github/workflows/player-ui-review.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: player-ui-review-${{ github.event.pull_request.number || github.ref }}
+  group: feature-ui-review-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  capture:
+  scope:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    outputs:
+      shell: ${{ steps.classify.outputs.shell }}
+      casual: ${{ steps.classify.outputs.casual }}
+      cascadeUi: ${{ steps.classify.outputs.cascadeUi }}
+      cascadeProfile: ${{ steps.classify.outputs.cascadeProfile }}
+      cascadeTelemetry: ${{ steps.classify.outputs.cascadeTelemetry }}
+      monsterMaster: ${{ steps.classify.outputs.monsterMaster }}
+      playerPlatform: ${{ steps.classify.outputs.playerPlatform }}
     steps:
       - name: Check out candidate
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 22.16.0
-          cache: npm
 
+      - name: Verify UI scope classifier
+        run: node --test scripts/ui-test-scope.test.mjs
+
+      - name: Classify changed UI features
+        id: classify
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            node scripts/ui-test-scope.mjs --all --github-output "$GITHUB_OUTPUT"
+          else
+            git diff --name-only "$BASE_SHA" "$HEAD_SHA" | node scripts/ui-test-scope.mjs --github-output "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report selected lanes
+        run: |
+          echo "### Feature UI lanes" >> "$GITHUB_STEP_SUMMARY"
+          echo "- shared shell: ${{ steps.classify.outputs.shell }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Casual Games: ${{ steps.classify.outputs.casual }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Cascade UI: ${{ steps.classify.outputs.cascadeUi }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Cascade 300-level profile: ${{ steps.classify.outputs.cascadeProfile }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Cascade telemetry: ${{ steps.classify.outputs.cascadeTelemetry }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Monster Master: ${{ steps.classify.outputs.monsterMaster }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Player Platform: ${{ steps.classify.outputs.playerPlatform }}" >> "$GITHUB_STEP_SUMMARY"
+
+  shell:
+    needs: scope
+    if: needs.scope.outputs.shell == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
       - name: Install dependencies
         run: npm ci
-
-      - name: Verify committed Pixi bundle
-        run: npm run check:monster-master-pixi
-
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-
-      - name: Browser syntax gate
+      - name: Shared shell syntax
         run: |
-          npm run check:browser
-          node --check public/cascade-progression-sync.js
-
-      - name: Player navigation, platform, telemetry, renderer geometry, asset, game, and Monster Master rule contracts
-        run: |
-          node --experimental-strip-types --test src/browser/monster-master-ground-asset-contract.test.mjs src/browser/monster-master-wall-top-asset-contract.test.mjs src/browser/monster-master-cliff-face-asset-contract.test.mjs src/browser/monster-master-terrain-geometry.test.mjs src/browser/player-navigation-contract.test.ts src/browser/player-platform-extension-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/monster-master-option-layer-contract.test.mjs src/browser/othello-runtime-contract.test.ts src/cloudflare/player-platform-object-runtime.test.ts src/cloudflare/cascade-telemetry-object-runtime.test.ts src/cloudflare/cascade-telemetry-edge.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/delivery-contract.test.ts src/games/monster-master/checkpoint-contract.test.ts
-          npx vitest run --config vitest.config.ts test/workerd/player-progression.test.ts --max-workers=1 --no-isolate
-
-      - name: Cascade 300-level engine, persistent specials, and bot profile
-        run: |
-          npm run cascade:test
-          node --test src/games/cascade/cascade-special-engine.test.mjs
-          npm run cascade:profile -- --runs=6
-
-      - name: Required active-product browser smoke
-        run: npm run test:browser:required
-
-      - name: Capture player UI screenshots and cross-game regressions
-        run: npx playwright test test/visual/cascade-polish.spec.mjs test/visual/casual-games-destination.spec.mjs test/visual/player-platform.spec.mjs test/visual/player-ui-review.spec.mjs test/visual/player-ui-regressions.spec.mjs test/visual/monster-master-pixi.spec.mjs test/visual/monster-master-cardinal-camera.spec.mjs test/visual/monster-master-results-and-depth.spec.mjs test/visual/monster-master-trainer-shell.spec.mjs --config playwright.visual.config.mjs
-
-      - name: Upload player UI screenshots
+          node --check public/app.js
+          node --check public/auth-launcher.js
+          node --check public/game-hub.js
+          node --check public/gameframe-nav.js
+      - name: Shared navigation browser journey
+        run: npx playwright test test/browser/game-hub-navigation.spec.mjs --config playwright.config.mjs
+      - name: Shared shell visual regressions
+        run: npx playwright test test/visual/player-ui-review.spec.mjs test/visual/player-ui-regressions.spec.mjs --config playwright.visual.config.mjs
+      - name: Upload shared shell screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: player-ui-review-${{ github.run_id }}
+          name: shared-shell-ui-review-${{ github.run_id }}
           path: |
             visual-results/player-ui-review
-            visual-results/**/*.zip
+            test-results/**/*.png
+          if-no-files-found: warn
+          retention-days: 7
+
+  casual:
+    needs: scope
+    if: needs.scope.outputs.casual == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Casual Games browser smoke
+        run: npx playwright test test/browser/casual-games.spec.mjs --config playwright.config.mjs
+      - name: Casual Games desktop and mobile visual review
+        run: npx playwright test test/visual/casual-games-destination.spec.mjs --config playwright.visual.config.mjs
+      - name: Upload Casual Games screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: casual-games-ui-review-${{ github.run_id }}
+          path: |
+            visual-results/player-ui-review/casual-games-*.png
+            test-results/**/*.png
+          if-no-files-found: warn
+          retention-days: 10
+
+  cascade-ui:
+    needs: scope
+    if: needs.scope.outputs.cascadeUi == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Cascade syntax
+        run: |
+          for file in public/cascade*.js; do
+            if [ -f "$file" ]; then node --check "$file"; fi
+          done
+      - name: Cascade browser journeys
+        run: npx playwright test test/browser/cascade*.spec.mjs --config playwright.config.mjs
+      - name: Cascade visual regressions
+        run: npx playwright test test/visual/cascade*.spec.mjs --config playwright.visual.config.mjs
+      - name: Upload Cascade screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cascade-ui-review-${{ github.run_id }}
+          path: |
+            visual-results/player-ui-review/cascade-*.png
+            test-results/**/*.png
+          if-no-files-found: warn
+          retention-days: 10
+
+  cascade-profile:
+    needs: scope
+    if: needs.scope.outputs.cascadeProfile == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Cascade engine and persistent-special contracts
+        run: |
+          npm run cascade:test
+          node --test src/games/cascade/cascade-special-engine.test.mjs
+      - name: Cascade 300-level bot difficulty profile
+        run: npm run cascade:profile -- --runs=6
+
+  cascade-telemetry:
+    needs: scope
+    if: needs.scope.outputs.cascadeTelemetry == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Cascade telemetry syntax
+        run: |
+          node --check public/cascade-admin-telemetry.js
+          node --check public/cascade-telemetry-sync.js
+      - name: Cascade telemetry contracts
+        run: node --experimental-strip-types --test src/cloudflare/cascade-telemetry-object-runtime.test.ts src/cloudflare/cascade-telemetry-edge.test.ts
+
+  monster-master:
+    needs: scope
+    if: needs.scope.outputs.monsterMaster == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify committed Pixi bundle
+        run: npm run check:monster-master-pixi
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Monster Master syntax
+        run: |
+          for file in public/monster-master*.js src/browser/monster-master*.js scripts/build-monster-master-pixi.mjs scripts/monster-master-*.mjs; do
+            if [ -f "$file" ]; then node --check "$file"; fi
+          done
+      - name: Monster Master contracts
+        run: |
+          node --experimental-strip-types --test \
+            src/browser/monster-master-ground-asset-contract.test.mjs \
+            src/browser/monster-master-wall-top-asset-contract.test.mjs \
+            src/browser/monster-master-cliff-face-asset-contract.test.mjs \
+            src/browser/monster-master-terrain-geometry.test.mjs \
+            src/browser/monster-master-art-contract.test.ts \
+            src/browser/monster-master-option-layer-contract.test.mjs \
+            src/games/monster-master/index.test.ts \
+            src/games/monster-master/repository-contract.test.ts \
+            src/games/monster-master/delivery-contract.test.ts \
+            src/games/monster-master/checkpoint-contract.test.ts
+      - name: Monster Master browser journeys
+        run: npx playwright test test/browser/monster-master*.spec.mjs test/browser/motion-polish.spec.mjs --config playwright.config.mjs
+      - name: Monster Master visual regressions
+        run: npx playwright test test/visual/monster-master*.spec.mjs --config playwright.visual.config.mjs
+      - name: Upload Monster Master screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-master-ui-review-${{ github.run_id }}
+          path: |
             visual-results/**/*.png
-            test-results/**/*.zip
+            test-results/**/*.png
+          if-no-files-found: warn
+          retention-days: 10
+
+  player-platform:
+    needs: scope
+    if: needs.scope.outputs.playerPlatform == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Player platform syntax
+        run: |
+          node --check public/gameframe-nav.js
+          node --check public/home-dashboard.js
+          node --check public/profile-app.js
+          node --check public/leaderboard-app.js
+          node --check public/matches-app.js
+          node --check public/cascade-progression-sync.js
+      - name: Player platform contracts
+        run: |
+          node --experimental-strip-types --test \
+            src/browser/player-navigation-contract.test.ts \
+            src/browser/player-platform-extension-contract.test.ts \
+            src/cloudflare/player-platform-object-runtime.test.ts
+          npx vitest run --config vitest.config.ts test/workerd/player-progression.test.ts --max-workers=1 --no-isolate
+      - name: Player platform browser journeys
+        run: npx playwright test test/browser/player-platform.spec.mjs --config playwright.config.mjs
+      - name: Player platform desktop and mobile visual review
+        run: npx playwright test test/visual/player-platform.spec.mjs --config playwright.visual.config.mjs
+      - name: Upload player platform screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-platform-ui-review-${{ github.run_id }}
+          path: |
+            visual-results/player-ui-review/home-*.png
+            visual-results/player-ui-review/profile-*.png
+            visual-results/player-ui-review/leaderboard-*.png
             test-results/**/*.png
           if-no-files-found: warn
           retention-days: 10
