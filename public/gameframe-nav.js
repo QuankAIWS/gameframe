@@ -41,7 +41,7 @@ function gameLabel() {
   if (menuTheme === "checkers") return "CLOCKWORK CHECKERS";
   const pathname = window.location.pathname;
   if (pathname === "/matches.html") return "MATCHES";
-  if (pathname === "/leaderboard.html") return "LEADERBOARD";
+  if (pathname === "/leaderboard.html") return "HALL OF FAME";
   if (pathname === "/profile.html") return "PROFILE";
   if (pathname.includes("monster-master-rpg")) return "MONSTER MASTER RPG";
   if (pathname.includes("monster-master")) return "MONSTER MASTER";
@@ -74,7 +74,7 @@ function installDestinationBar() {
         <a data-gameframe-home href="/">Home</a>
         <a data-gameframe-games href="/?catalog=1">Games</a>
         <a data-gameframe-matches href="/matches.html">Matches</a>
-        <a data-gameframe-leaderboard href="/leaderboard.html" aria-label="Leaderboard"><span class="gameframe-nav-label-full">Leaderboard</span><span class="gameframe-nav-label-compact" aria-hidden="true">Ranks</span></a>
+        <a data-gameframe-leaderboard href="/leaderboard.html" aria-label="Hall of Fame"><span class="gameframe-nav-label-full">Hall of Fame</span><span class="gameframe-nav-label-compact" aria-hidden="true">Hall</span></a>
         <a data-gameframe-profile href="/profile.html">Profile</a>
       </nav>
       <span class="gameframe-destination-session-space" aria-hidden="true"></span>
