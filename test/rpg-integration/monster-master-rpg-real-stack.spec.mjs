@@ -28,6 +28,17 @@ function legalAdjacentMove(payload, position) {
   throw new Error("The canonical integration scene has no adjacent traversable cell for the player.");
 }
 
+async function completeNewPlayerOnboarding(page) {
+  await expect(page.locator("#mm-rpg-onboarding")).toBeVisible();
+  await page.locator("#mm-rpg-trainer-name").fill("Integration Master");
+  await page.locator("#mm-rpg-onboarding-to-starter").click();
+  await expect(page.locator('[data-onboarding-step="2"]')).toBeVisible();
+  await page.locator("#mm-rpg-onboarding-to-briefing").click();
+  await expect(page.locator('[data-onboarding-step="3"]')).toBeVisible();
+  await page.locator("#mm-rpg-onboarding-begin").click();
+  await expect(page.locator("#mm-rpg-onboarding")).toBeHidden();
+}
+
 test("Monster Master RPG materializes and persists movement through real GameFrame and Runtime services", async ({ page }) => {
   const rpgResponses = [];
   page.on("response", (response) => {
@@ -38,6 +49,7 @@ test("Monster Master RPG materializes and persists movement through real GameFra
   });
 
   await page.goto(`/monster-master-rpg.html?player=${playerId}&campaign=${campaignId}`);
+  await completeNewPlayerOnboarding(page);
 
   await expect(page.locator("#mm-rpg-campaign")).toBeVisible();
   await expect(page.locator("#mm-rpg-campaign-code")).toHaveText(campaignId);
