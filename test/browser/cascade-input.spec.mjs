@@ -17,6 +17,10 @@ async function center(locator) {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
+function gridDistance(a, b) {
+  return Math.abs(Math.floor(a / 8) - Math.floor(b / 8)) + Math.abs((a % 8) - (b % 8));
+}
+
 test("Cascade supports click-hold-drag-release swapping, cancellation, and existing click controls", async ({ page }) => {
   await page.goto("/cascade.html?player=cascade-drag-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
@@ -29,11 +33,20 @@ test("Cascade supports click-hold-drag-release swapping, cancellation, and exist
   const toCenter = await center(to);
   const movesBefore = Number(await page.locator("#moves").textContent());
 
-  // Pulling back onto the starting tile before release cancels the gesture.
+  // A previous click selection must not hijack a later drag gesture.
+  const preselectedIndex = Array.from({ length: 64 }, (_, index) => index)
+    .find((index) => index !== move.from && index !== move.to && gridDistance(index, move.from) > 1);
+  expect(preselectedIndex).not.toBeUndefined();
+  const preselected = page.locator(`.cascade-tile[data-index="${preselectedIndex}"]`);
+  await preselected.click();
+  await expect(preselected).toHaveClass(/is-selected/);
+
+  // Pulling back onto the starting tile before release cancels the gesture and clears that old selection.
   await page.mouse.move(fromCenter.x, fromCenter.y);
   await page.mouse.down();
   await page.mouse.move(toCenter.x, toCenter.y, { steps: 4 });
   await expect(to).toHaveClass(/is-drag-target/);
+  await expect(page.locator(".cascade-tile.is-selected")).toHaveCount(0);
   await page.mouse.move(fromCenter.x, fromCenter.y, { steps: 4 });
   await expect(page.locator(".is-drag-target")).toHaveCount(0);
   await page.mouse.up();
