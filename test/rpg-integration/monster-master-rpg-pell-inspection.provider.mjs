@@ -32,24 +32,105 @@ async function worldAnchor(page, semanticId) {
   }, semanticId);
 }
 
-async function clickWorldAnchor(page, semanticId) {
-  const anchor = await worldAnchor(page, semanticId);
-  expect(anchor, `Expected materialized anchor ${semanticId}`).toBeTruthy();
-  const target = await page.evaluate(
-    ({ x, y }) => window.gameFrameMonsterPixi?.worldToScreen?.({ x, y }) ?? null,
-    { x: anchor.x, y: anchor.y },
-  );
-  expect(target, `Expected Pixi world coordinate for ${semanticId}`).toBeTruthy();
-  await page.locator("#monster-master-pixi-canvas").click({ position: { x: target.x, y: target.y } });
+async function pathToAdjacentTarget(page, semanticId) {
+  return await page.evaluate((targetId) => {
+    const world = window.gameFrameMonsterRpgWorld;
+    const payload = world?.getPayload?.();
+    const player = world?.getPlayerPosition?.();
+    const map = payload?.materialization?.map;
+    const anchors = payload?.materialization?.anchors;
+    if (!map || !Array.isArray(anchors) || !player?.transform) return null;
+
+    const target = anchors.find((candidate) => candidate.semanticId === targetId);
+    if (!target) return null;
+    const directions = [
+      ["north", 0, -1],
+      ["east", 1, 0],
+      ["south", 0, 1],
+      ["west", -1, 0],
+    ];
+    const occupied = new Set(
+      anchors
+        .filter((anchor) => anchor.kind !== "route" && anchor.kind !== "player")
+        .map((anchor) => `${anchor.x},${anchor.y}`),
+    );
+    const startKey = `${player.transform.x},${player.transform.y}`;
+    const queue = [{ x: player.transform.x, y: player.transform.y, path: [] }];
+    const visited = new Set([startKey]);
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (Math.abs(current.x - target.x) + Math.abs(current.y - target.y) === 1) {
+        return current.path;
+      }
+      for (const [direction, dx, dy] of directions) {
+        const x = current.x + dx;
+        const y = current.y + dy;
+        const key = `${x},${y}`;
+        if (visited.has(key)) continue;
+        if (x < 0 || y < 0 || x >= map.width || y >= map.height) continue;
+        const cell = map.cells[y * map.width + x];
+        if (!cell || cell.terrain === "wall") continue;
+        if (occupied.has(key)) continue;
+        visited.add(key);
+        queue.push({ x, y, path: [...current.path, direction] });
+      }
+    }
+    return null;
+  }, semanticId);
+}
+
+async function walkAdjacentTo(page, semanticId) {
+  const path = await pathToAdjacentTarget(page, semanticId);
+  expect(path, `Expected a traversable path adjacent to ${semanticId}`).not.toBeNull();
+  for (const direction of path) {
+    const revisionBefore = await page.evaluate(() =>
+      window.gameFrameMonsterRpgWorld?.getPlayerPosition?.()?.positionRevision ?? -1,
+    );
+    expect(await page.evaluate(
+      (step) => window.gameFrameMonsterRpgWorld?.move?.(step) ?? false,
+      direction,
+    )).toBe(true);
+    await expect.poll(async () => page.evaluate(() =>
+      window.gameFrameMonsterRpgWorld?.getPlayerPosition?.()?.positionRevision ?? -1,
+    )).toBeGreaterThan(revisionBefore);
+  }
+
+  await expect.poll(async () => page.evaluate((targetId) => {
+    const world = window.gameFrameMonsterRpgWorld;
+    const payload = world?.getPayload?.();
+    const player = world?.getPlayerPosition?.();
+    const target = payload?.materialization?.anchors?.find((anchor) => anchor.semanticId === targetId);
+    if (!target || !player?.transform) return false;
+    return Math.abs(player.transform.x - target.x) + Math.abs(player.transform.y - target.y) === 1;
+  }, semanticId)).toBe(true);
+}
+
+async function openPellTalk(page) {
+  await walkAdjacentTo(page, pellEntityId);
+
+  const directTalk = page.getByRole("button", { name: /Talk to (?:veteran field warden|Warden Pell)/i });
+  const chooserTalk = page.getByRole("button", { name: /Choose among \d+ nearby characters to talk to/i });
+  await expect.poll(async () =>
+    (await directTalk.isVisible().catch(() => false))
+    || (await chooserTalk.isVisible().catch(() => false)),
+  ).toBe(true);
+
+  if (await directTalk.isVisible().catch(() => false)) {
+    await directTalk.click();
+  } else {
+    await chooserTalk.click();
+    const chooser = page.locator("#mm-rpg-talk-chooser");
+    await expect(chooser).toBeVisible();
+    await chooser.getByRole("button", { name: /veteran field warden|Warden Pell/i }).click();
+  }
+
+  await expect(page.locator("#mm-rpg-talk-panel")).toBeVisible();
+  await expect(page.locator("#mm-rpg-talk-panel-title")).toContainText(/veteran field warden|Warden Pell/i);
 }
 
 async function talkToPell(page, text) {
-  await clickWorldAnchor(page, pellEntityId);
-  const talk = page.getByRole("button", { name: /Talk to veteran field warden/i });
-  await expect(talk).toBeVisible();
-  await talk.click();
-  await expect(page.locator("#mm-rpg-talk-panel")).toBeVisible();
-  await expect(page.locator("#mm-rpg-talk-panel-title")).toContainText("veteran field warden");
+  await openPellTalk(page);
   await page.locator("#mm-rpg-talk-input").fill(text);
   await page.locator(".mm-rpg-talk-form").evaluate((form) => form.requestSubmit());
 }
