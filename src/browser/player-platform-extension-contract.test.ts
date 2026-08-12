@@ -39,7 +39,8 @@ test("GameFrame exposes Hall of Fame, Gamer Level, public profiles, and server-b
 
   assert.match(profile, /\/api\/me\/preferences/);
   assert.match(profile, /\/api\/me\/progression/);
-  assert.match(profile, /\/api\/players\/\$\{encodeURIComponent\(viewedPlayerId\)\}\/profile/);
+  assert.match(profile, /encodeURIComponent\(viewedPlayerId\)/);
+  assert.match(profile, /data-private-profile/);
   assert.match(profile, /dataset\.favoriteGameId/);
   assert.match(profile, /aria-pressed/);
   assert.match(leaderboard, /\/api\/leaderboard/);
@@ -54,7 +55,7 @@ test("GameFrame exposes Hall of Fame, Gamer Level, public profiles, and server-b
     assert.match(runtime, /\/api\/me\/preferences/);
     assert.match(runtime, /\/api\/me\/progression/);
     assert.match(runtime, /\/api\/me\/cascade\/progression/);
-    assert.match(runtime, /\/api\/players\//);
+    assert.match(runtime, /publicPlayerProfileRoute/);
     assert.match(runtime, /\/api\/leaderboard/);
   }
   assert.match(playerCoordinator, /updatePlayerPreferences/);
