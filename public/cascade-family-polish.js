@@ -1,6 +1,7 @@
 const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
 const BLITZ_RETURN_KEY = "scribbles-gameframe.cascade-blitz-return:v1";
 const SOUND_KEY = "scribbles-gameframe.cascade-sound:v1";
+const WEEKLY_SCORE_WAIT_MS = 4_000;
 
 const resultDialog = document.querySelector("#result-dialog");
 const resultKicker = document.querySelector("#result-kicker");
@@ -23,20 +24,35 @@ function wrapResearchBlitz() {
   });
 }
 
-function waitForWeeklyScoreSettlement() {
+function waitForWeeklyScoreSettlement(timeoutMs = WEEKLY_SCORE_WAIT_MS) {
   return new Promise((resolve) => {
     window.requestAnimationFrame(() => {
       const status = document.querySelector("[data-weekly-status]");
       if (!status || !status.textContent?.startsWith("Saving weekly score")) {
-        resolve();
+        resolve(true);
         return;
       }
-      const observer = new MutationObserver(() => {
+
+      let settled = false;
+      let observer = null;
+      const finish = (sharedSaved) => {
+        if (settled) return;
+        settled = true;
+        observer?.disconnect();
+        window.clearTimeout(timeout);
+        resolve(sharedSaved);
+      };
+      observer = new MutationObserver(() => {
         if (status.textContent?.startsWith("Saving weekly score")) return;
-        observer.disconnect();
-        resolve();
+        finish(true);
       });
       observer.observe(status, { subtree: true, childList: true, characterData: true });
+      const timeout = window.setTimeout(() => {
+        if (status.textContent?.startsWith("Saving weekly score")) {
+          status.textContent = "Score saved locally; shared standings unavailable.";
+        }
+        finish(false);
+      }, Math.max(250, Number(timeoutMs) || WEEKLY_SCORE_WAIT_MS));
     });
   });
 }
