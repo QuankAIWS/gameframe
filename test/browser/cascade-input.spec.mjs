@@ -11,7 +11,13 @@ async function firstLegalMove(page) {
   });
 }
 
-test("Cascade supports click-hold-drag-release swapping without breaking click controls", async ({ page }) => {
+async function center(locator) {
+  const box = await locator.boundingBox();
+  expect(box).toBeTruthy();
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+test("Cascade supports click-hold-drag-release swapping, cancellation, and existing click controls", async ({ page }) => {
   await page.goto("/cascade.html?player=cascade-drag-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 
@@ -19,15 +25,25 @@ test("Cascade supports click-hold-drag-release swapping without breaking click c
   expect(move).toBeTruthy();
   const from = page.locator(`.cascade-tile[data-index="${move.from}"]`);
   const to = page.locator(`.cascade-tile[data-index="${move.to}"]`);
-  const fromBox = await from.boundingBox();
-  const toBox = await to.boundingBox();
-  expect(fromBox).toBeTruthy();
-  expect(toBox).toBeTruthy();
-
+  const fromCenter = await center(from);
+  const toCenter = await center(to);
   const movesBefore = Number(await page.locator("#moves").textContent());
-  await page.mouse.move(fromBox.x + fromBox.width / 2, fromBox.y + fromBox.height / 2);
+
+  // Pulling back onto the starting tile before release cancels the gesture.
+  await page.mouse.move(fromCenter.x, fromCenter.y);
   await page.mouse.down();
-  await page.mouse.move(toBox.x + toBox.width / 2, toBox.y + toBox.height / 2, { steps: 4 });
+  await page.mouse.move(toCenter.x, toCenter.y, { steps: 4 });
+  await expect(to).toHaveClass(/is-drag-target/);
+  await page.mouse.move(fromCenter.x, fromCenter.y, { steps: 4 });
+  await expect(page.locator(".is-drag-target")).toHaveCount(0);
+  await page.mouse.up();
+  await expect(page.locator("#moves")).toHaveText(String(movesBefore));
+  await expect(page.locator("#score")).toHaveText("0");
+
+  // Releasing over the adjacent target executes the normal canonical swap path.
+  await page.mouse.move(fromCenter.x, fromCenter.y);
+  await page.mouse.down();
+  await page.mouse.move(toCenter.x, toCenter.y, { steps: 4 });
   await expect(to).toHaveClass(/is-drag-target/);
   await page.mouse.up();
 
