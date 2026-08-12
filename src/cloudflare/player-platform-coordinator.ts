@@ -2,7 +2,11 @@ import type { AuthenticatedPrincipal } from "../auth/request-authenticator.ts";
 import type { InvitationGameId } from "../auth/match-invitation.ts";
 import { resumePathForGame } from "../auth/match-invitation.ts";
 import type { PublicMatchInvitation } from "./invitation-object-runtime.ts";
-import type { PublicPlayerProgression } from "./player-progression.ts";
+import {
+  compactPlayerProgression,
+  type PublicPlayerProgression,
+  type PublicPlayerProgressionSummary,
+} from "./player-progression.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
 interface InternalErrorBody {
@@ -53,7 +57,7 @@ async function publishPlayerProgression(env: GameFrameWorkerEnv, progression: Pu
   await internalJson(await directoryStub(env).fetch(new Request("https://player.internal/directory/progression", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(progression),
+    body: JSON.stringify(compactPlayerProgression(progression)),
   })));
 }
 
@@ -75,7 +79,7 @@ export async function readPublicPlayerProfile(env: GameFrameWorkerEnv, playerId:
       firstSeenAt: number;
       lastSeenAt: number;
     };
-    progression: PublicPlayerProgression;
+    progression: PublicPlayerProgressionSummary;
   }>(await directoryStub(env).fetch(new Request(url)));
 }
 
