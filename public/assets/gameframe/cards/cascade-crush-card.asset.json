@@ -1,0 +1,16 @@
+{
+  "assetId": "gameframe.card.cascade-crush.v1",
+  "role": "casual-games-launch-card-art",
+  "destinationId": "cascade",
+  "runtimePath": "/assets/gameframe/cards/cascade-crush-card.webp",
+  "aspectRatio": "16:9",
+  "runtimeViewport": {
+    "width": 384,
+    "height": 216
+  },
+  "source": {
+    "kind": "player-ui-review-screenshot-crop",
+    "capture": "cascade-crush-bright-desktop.png",
+    "gameframeCommit": "dfea3a5faa03375a520c46f50b4676f72ece7718"
+  }
+}
