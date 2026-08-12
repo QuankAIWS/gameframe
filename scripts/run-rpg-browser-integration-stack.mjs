@@ -17,11 +17,12 @@ if (!runtimeRootValue) {
 const runtimeRoot = resolve(runtimeRootValue);
 
 // Keep the disposable integration stack away from the canonical staging ports
-// (8790/8791), which may be serving the live staging pair on this runner host.
+// (8790/8791/8792), which may be serving the live staging pair on this runner host.
 const browserPort = integer(process.env.GAMEFRAME_RPG_BROWSER_PORT, 18_787);
 const developmentPort = integer(process.env.GAMEFRAME_RPG_BROWSER_DEV_PORT, 18_788);
 const gameFrameRpgPort = integer(process.env.GAMEFRAME_RPG_BROWSER_SERVICE_PORT, 18_790);
 const runtimePort = integer(process.env.GAMEFRAME_RPG_BROWSER_RUNTIME_PORT, 18_791);
+const runtimeResetPort = integer(process.env.GAMEFRAME_RPG_BROWSER_RESET_PORT, 18_792);
 const campaignId = "monster-master-staging-v6";
 const playerId = "rpg-integration-player";
 const serviceToken = "local-rpg-browser-service-token-0000000000000001";
@@ -219,6 +220,7 @@ try {
       OPENCLAW_STATE_DIR: join(temporaryRoot, "runtime-state"),
       RPG_GM_HOST: "127.0.0.1",
       RPG_GM_PORT: String(runtimePort),
+      RPG_GM_STAGING_RESET_PORT: String(runtimeResetPort),
       GAMEFRAME_RPG_BASE_URL: `http://127.0.0.1:${gameFrameRpgPort}/`,
       RPG_GM_SERVICE_TOKEN: serviceToken,
       RPG_GM_CURSOR_SECRET: cursorSecret,
