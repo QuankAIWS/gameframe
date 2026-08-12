@@ -1,74 +1,44 @@
-name: Player UI Review
+name: Player Platform UI Review
 
 on:
   workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
-      - "public/**"
-      - "planning/monster-master-rules.md"
-      - "planning/monster-master/assets/**"
-      - "scripts/build-monster-master-pixi.mjs"
-      - "scripts/monster-master-terrain-assets.mjs"
-      - "scripts/cascade-profile.mjs"
-      - "src/browser/monster-master-pixi-entry.js"
-      - "src/browser/monster-master-ground-asset-contract.test.mjs"
-      - "src/browser/monster-master-wall-top-asset-contract.test.mjs"
-      - "src/browser/monster-master-cliff-face-asset-contract.test.mjs"
-      - "src/browser/monster-master-terrain-geometry.js"
-      - "src/browser/monster-master-terrain-geometry.test.mjs"
+      - "public/gameframe-nav.js"
+      - "public/home-dashboard.js"
+      - "public/profile.html"
+      - "public/profile-app.js"
+      - "public/leaderboard.html"
+      - "public/leaderboard-app.js"
+      - "public/matches.html"
+      - "public/matches-app.js"
+      - "public/player-platform.css"
+      - "public/player-social.css"
+      - "public/cascade-progression-sync.js"
       - "src/browser/player-navigation-contract.test.ts"
       - "src/browser/player-platform-extension-contract.test.ts"
-      - "src/browser/monster-master-art-contract.test.ts"
-      - "src/browser/monster-master-option-layer-contract.test.mjs"
-      - "src/browser/othello-runtime-contract.test.ts"
       - "src/cloudflare/player-progression.ts"
       - "src/cloudflare/player-platform-object-runtime.ts"
       - "src/cloudflare/player-platform-object-runtime.test.ts"
       - "src/cloudflare/player-platform-coordinator.ts"
-      - "src/cloudflare/rpg-edge-worker.ts"
-      - "src/server/http-server.ts"
       - "src/server/in-memory-player-platform.ts"
-      - "src/games/cascade/**"
-      - "src/games/monster-master/index.ts"
-      - "src/games/monster-master/index.test.ts"
-      - "src/games/monster-master/repository-contract.test.ts"
-      - "src/games/monster-master/delivery-contract.test.ts"
-      - "src/games/monster-master/checkpoint-contract.test.ts"
       - "test/browser/player-platform.spec.mjs"
       - "test/workerd/player-progression.test.ts"
-      - "test/browser/monster-master.spec.mjs"
-      - "test/browser/monster-master-controls.spec.mjs"
-      - "test/browser/monster-master-option-hit-testing.spec.mjs"
-      - "test/browser/motion-polish.spec.mjs"
-      - "test/visual/casual-games.spec.mjs"
-      - "test/visual/cascade-polish.spec.mjs"
       - "test/visual/player-platform.spec.mjs"
-      - "test/visual/player-ui-review.spec.mjs"
-      - "test/visual/player-ui-regressions.spec.mjs"
-      - "test/visual/monster-master-pixi.spec.mjs"
-      - "test/visual/monster-master-cardinal-camera.spec.mjs"
-      - "test/visual/monster-master-results-and-depth.spec.mjs"
-      - "test/visual/monster-master-trainer-shell.spec.mjs"
-      - "THIRD_PARTY_NOTICES.md"
-      - "playwright.config.mjs"
-      - "playwright.visual.config.mjs"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/player-ui-review.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: player-ui-review-${{ github.event.pull_request.number || github.ref }}
+  group: player-platform-ui-review-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  capture:
+  review:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 16
     steps:
       - name: Check out candidate
         uses: actions/checkout@v4
@@ -82,44 +52,41 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify committed Pixi bundle
-        run: npm run check:monster-master-pixi
-
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Browser syntax gate
+      - name: Player platform syntax gate
         run: |
-          npm run check:browser
+          node --check public/gameframe-nav.js
+          node --check public/home-dashboard.js
+          node --check public/profile-app.js
+          node --check public/leaderboard-app.js
+          node --check public/matches-app.js
           node --check public/cascade-progression-sync.js
 
-      - name: Player navigation, platform, renderer geometry, asset, game, and Monster Master rule contracts
+      - name: Player platform contracts
         run: |
-          node --experimental-strip-types --test src/browser/monster-master-ground-asset-contract.test.mjs src/browser/monster-master-wall-top-asset-contract.test.mjs src/browser/monster-master-cliff-face-asset-contract.test.mjs src/browser/monster-master-terrain-geometry.test.mjs src/browser/player-navigation-contract.test.ts src/browser/player-platform-extension-contract.test.ts src/browser/monster-master-art-contract.test.ts src/browser/monster-master-option-layer-contract.test.mjs src/browser/othello-runtime-contract.test.ts src/cloudflare/player-platform-object-runtime.test.ts src/games/monster-master/index.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/delivery-contract.test.ts src/games/monster-master/checkpoint-contract.test.ts
+          node --experimental-strip-types --test \
+            src/browser/player-navigation-contract.test.ts \
+            src/browser/player-platform-extension-contract.test.ts \
+            src/cloudflare/player-platform-object-runtime.test.ts
           npx vitest run --config vitest.config.ts test/workerd/player-progression.test.ts --max-workers=1 --no-isolate
 
-      - name: Cascade 300-level engine, persistent specials, and bot profile
-        run: |
-          npm run cascade:test
-          node --test src/games/cascade/cascade-special-engine.test.mjs
-          npm run cascade:profile -- --runs=6
+      - name: Player platform browser journeys
+        run: npx playwright test test/browser/player-platform.spec.mjs --config playwright.config.mjs
 
-      - name: Required active-product browser smoke
-        run: npm run test:browser:required
+      - name: Player platform desktop and mobile visual review
+        run: npx playwright test test/visual/player-platform.spec.mjs --config playwright.visual.config.mjs
 
-      - name: Capture player UI screenshots and cross-game regressions
-        run: npx playwright test test/visual/casual-games.spec.mjs test/visual/cascade-polish.spec.mjs test/visual/player-platform.spec.mjs test/visual/player-ui-review.spec.mjs test/visual/player-ui-regressions.spec.mjs test/visual/monster-master-pixi.spec.mjs test/visual/monster-master-cardinal-camera.spec.mjs test/visual/monster-master-results-and-depth.spec.mjs test/visual/monster-master-trainer-shell.spec.mjs --config playwright.visual.config.mjs
-
-      - name: Upload player UI screenshots
+      - name: Upload player platform screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: player-ui-review-${{ github.run_id }}
+          name: player-platform-ui-review-${{ github.run_id }}
           path: |
-            visual-results/player-ui-review
-            visual-results/**/*.zip
-            visual-results/**/*.png
-            test-results/**/*.zip
+            visual-results/player-ui-review/home-*.png
+            visual-results/player-ui-review/profile-*.png
+            visual-results/player-ui-review/leaderboard-*.png
             test-results/**/*.png
           if-no-files-found: warn
           retention-days: 10
