@@ -8,7 +8,8 @@ const HEARTBEAT_INTERVAL_MS = 30_000;
 const ACTIVE_TICK_MS = 1_000;
 const IDLE_AFTER_MS = 2 * 60 * 1000;
 const NEW_BLOCK_AFTER_MS = 30 * 60 * 1000;
-const MAX_BATCH = 80;
+const MAX_BATCH = 5;
+const MAX_CLIENT_PAYLOAD_BYTES = 1_800;
 const storage = window.localStorage;
 const query = new URLSearchParams(window.location.search);
 let identity = null;
@@ -86,10 +87,24 @@ function eventTimestamp(event) {
   return Number.isFinite(value) ? value : null;
 }
 
+function payloadFor(event) {
+  const complete = { ...event };
+  if (JSON.stringify(complete).length <= MAX_CLIENT_PAYLOAD_BYTES) return complete;
+  const compact = { telemetryPayloadTruncated: true };
+  for (const key of [
+    "at", "type", "mode", "level", "score", "movesRemaining", "target", "moves", "hard", "difficulty", "chapter",
+    "from", "to", "matched", "cascade", "gained", "specialCreated", "specialTriggered", "combo", "iceHits",
+    "bonus", "streak", "stars", "bestStars", "totalStars", "lives", "booster", "armed", "savedAt", "id", "seconds",
+    "bestScore", "matches", "specials", "cascades",
+  ]) {
+    if (Object.hasOwn(event, key)) compact[key] = event[key];
+  }
+  return compact;
+}
+
 function enrichRawEvents(events) {
   const duplicateCounts = new Map();
   let historicalSessionId = null;
-  let historicalSessionStart = null;
   let previousAt = null;
   let activeAttemptId = null;
   let activeAttemptMode = null;
@@ -104,7 +119,6 @@ function enrichRawEvents(events) {
     let sessionId = session.sessionId;
     if (timestamp !== null && timestamp < session.startedAt - 1_000) {
       if (previousAt === null || timestamp - previousAt >= NEW_BLOCK_AFTER_MS || !historicalSessionId) {
-        historicalSessionStart = timestamp;
         historicalSessionId = `cascade-history:${new Date(timestamp).toISOString()}`;
       }
       sessionId = historicalSessionId;
@@ -130,7 +144,7 @@ function enrichRawEvents(events) {
       type: String(event.type || "unknown"),
       sessionId,
       attemptId,
-      payload: { ...event },
+      payload: payloadFor(event),
     };
 
     if (event.type === "level_win" || event.type === "level_failed" || event.type === "blitz_complete") {
@@ -157,7 +171,7 @@ async function flushRawEvents() {
   if (!identity || flushPending) return;
   flushPending = true;
   try {
-    for (let round = 0; round < 8; round += 1) {
+    for (let round = 0; round < 32; round += 1) {
       const enriched = enrichRawEvents(analyticsEvents());
       if (!enriched.length) return;
       const cursor = storage.getItem(CURSOR_KEY);
@@ -201,17 +215,27 @@ async function sendSessionEvent(type, payload = {}, options = {}) {
 }
 
 async function rotateSession(now = Date.now()) {
-  await sendSessionEvent("telemetry_session_end", { reason: "inactivity" }, { keepalive: true });
+  const previous = session;
   session = newSession(now);
   lastInputAt = now;
   lastTickAt = now;
   persistSession(true);
+  try {
+    session = previous;
+    await sendSessionEvent("telemetry_session_end", { reason: "inactivity" }, { keepalive: true });
+  } finally {
+    session = newSession(now);
+    lastInputAt = now;
+    lastTickAt = now;
+    persistSession(true);
+  }
   await sendSessionEvent("telemetry_session_start", { reason: "return_after_inactivity" });
 }
 
 function noteInteraction() {
   const now = Date.now();
   if (now - session.lastInteractionAt >= NEW_BLOCK_AFTER_MS) {
+    session.lastInteractionAt = now;
     void rotateSession(now);
     return;
   }
