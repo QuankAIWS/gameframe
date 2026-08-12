@@ -1,0 +1,87 @@
+name: Monster Master UI Review
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "public/monster-master*.html"
+      - "public/monster-master*.css"
+      - "public/monster-master*.js"
+      - "planning/monster-master-rules.md"
+      - "planning/monster-master/assets/**"
+      - "scripts/build-monster-master-pixi.mjs"
+      - "scripts/monster-master-*.mjs"
+      - "src/browser/monster-master*"
+      - "src/games/monster-master/**"
+      - "test/browser/monster-master*.spec.mjs"
+      - "test/browser/motion-polish.spec.mjs"
+      - "test/visual/monster-master*.spec.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-master-ui-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify committed Pixi bundle
+        run: npm run check:monster-master-pixi
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Monster Master syntax gate
+        run: |
+          for file in public/monster-master*.js src/browser/monster-master*.js scripts/build-monster-master-pixi.mjs scripts/monster-master-*.mjs; do
+            if [ -f "$file" ]; then node --check "$file"; fi
+          done
+
+      - name: Monster Master contracts
+        run: |
+          node --experimental-strip-types --test \
+            src/browser/monster-master-ground-asset-contract.test.mjs \
+            src/browser/monster-master-wall-top-asset-contract.test.mjs \
+            src/browser/monster-master-cliff-face-asset-contract.test.mjs \
+            src/browser/monster-master-terrain-geometry.test.mjs \
+            src/browser/monster-master-art-contract.test.ts \
+            src/browser/monster-master-option-layer-contract.test.mjs \
+            src/games/monster-master/index.test.ts \
+            src/games/monster-master/repository-contract.test.ts \
+            src/games/monster-master/delivery-contract.test.ts \
+            src/games/monster-master/checkpoint-contract.test.ts
+
+      - name: Monster Master browser journeys
+        run: npx playwright test test/browser/monster-master*.spec.mjs test/browser/motion-polish.spec.mjs --config playwright.config.mjs
+
+      - name: Monster Master visual regressions
+        run: npx playwright test test/visual/monster-master*.spec.mjs --config playwright.visual.config.mjs
+
+      - name: Upload Monster Master screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-master-ui-review-${{ github.run_id }}
+          path: |
+            visual-results/**/*.png
+            test-results/**/*.png
+          if-no-files-found: warn
+          retention-days: 10
