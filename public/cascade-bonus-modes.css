@@ -56,6 +56,11 @@
   flex: 0 0 auto;
 }
 
+.cascade-recall-tile.is-recall-entered {
+  outline: 2px solid rgba(89, 225, 239, .5);
+  outline-offset: 2px;
+}
+
 .cascade-recall-tile.is-recall-correct {
   outline: 3px solid var(--c-green, #83ef7b);
   outline-offset: 2px;

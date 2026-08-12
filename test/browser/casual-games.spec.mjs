@@ -1,13 +1,31 @@
 import { test, expect } from "@playwright/test";
 
-test("Casual Games stays focused on Cascade Crush and launches it", async ({ page }) => {
-  await page.goto("/casual-games.html?player=casual-games-review");
+test("Casual Games keeps the player session visible and launches Cascade Crush", async ({ page }) => {
+  await page.route("**/api/session", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        playerId: "discord:casual-games-review",
+        displayName: "Casual Player",
+        source: "discord",
+        admin: false,
+      }),
+    });
+  });
+
+  await page.goto("/casual-games.html");
 
   const bar = page.locator("#gameframe-destination-bar");
   await expect(bar).toBeVisible();
   await expect(bar).toHaveAttribute("data-theme", "casual");
   await expect(bar.locator("[data-gameframe-destination-title]")).toHaveText("CASUAL GAMES");
   await expect(bar.locator("[data-gameframe-games]")).toHaveClass(/is-active/);
+
+  const session = page.locator("#gameframe-session-badge");
+  await expect(session).toBeVisible();
+  await expect(session).toContainText("Discord session");
+  await expect(session).toContainText("Casual Player");
 
   await expect(page.getByRole("heading", { name: "Casual Games", exact: true })).toBeAttached();
   await expect(page.locator(".casual-card")).toHaveCount(1);

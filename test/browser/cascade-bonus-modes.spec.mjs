@@ -2,29 +2,38 @@ import { expect, test } from "@playwright/test";
 
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 
-test("Quick Recall runs three optional memory rounds and stores a best result", async ({ page }) => {
+test("Quick Recall uses an accessible pace, shows entered colors, and stores a best result", async ({ page }) => {
   await page.goto("/cascade.html?player=quick-recall-test");
   await expect(page.locator("#cascade-weekly-card")).toBeVisible();
 
   await page.evaluate(() => window.cascadeBonusModes.startQuickRecall(8));
   const dialog = page.locator("#cascade-recall-dialog");
   const choices = dialog.locator("[data-recall-choices]");
+  const stage = dialog.locator("[data-recall-stage]");
   await expect(dialog).toBeVisible();
   await expect(dialog.locator("[data-recall-kicker]")).toHaveText("QUICK RECALL");
 
+  // Round one deliberately remains in WATCH long enough for a casual player to follow it.
+  await page.waitForTimeout(3_000);
+  await expect(choices).toBeHidden();
+
   for (const [round, length] of [3, 4, 5].entries()) {
-    await expect(choices).toBeVisible({ timeout: 6_000 });
+    await expect(choices).toBeVisible({ timeout: 8_000 });
     const buttons = choices.locator("button");
     await expect(buttons).toHaveCount(6);
     for (let index = 0; index < length; index += 1) {
       await buttons.nth(index % 6).click();
+      if (index < length - 1) {
+        await expect(stage.locator(".is-recall-entered")).toHaveCount(index + 1);
+        await expect(stage.locator(".is-recall-entered").nth(index)).toHaveAttribute("data-kind", String(index % 6));
+      }
     }
     if (round < 2) {
-      await expect(choices).toBeHidden({ timeout: 2_000 });
+      await expect(choices).toBeHidden({ timeout: 3_000 });
     }
   }
 
-  await expect(dialog.locator("[data-recall-kicker]")).toHaveText("QUICK RECALL COMPLETE", { timeout: 3_000 });
+  await expect(dialog.locator("[data-recall-kicker]")).toHaveText("QUICK RECALL COMPLETE", { timeout: 4_000 });
   await expect(dialog.locator("[data-recall-title]")).toContainText("% recalled");
   await expect(dialog.getByRole("button", { name: "Continue" })).toBeVisible();
 

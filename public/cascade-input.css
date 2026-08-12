@@ -1,0 +1,20 @@
+.cascade-tile {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+.cascade-tile.is-drag-origin {
+  transform: scale(.96);
+  filter: brightness(1.08);
+  outline: 2px solid rgba(255, 255, 255, .72);
+  outline-offset: -2px;
+}
+
+.cascade-tile.is-drag-target {
+  transform: scale(1.08);
+  filter: brightness(1.18);
+  outline: 3px solid var(--c-yellow, #ffd84d);
+  outline-offset: -3px;
+}
