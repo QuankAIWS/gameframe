@@ -1,0 +1,57 @@
+name: Casual Games UI Review
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "public/casual-games.html"
+      - "public/casual-games.css"
+      - "public/assets/gameframe/cards/cascade-crush-card.*"
+      - "test/browser/casual-games.spec.mjs"
+      - "test/visual/casual-games.spec.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: casual-games-ui-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Casual Games browser smoke
+        run: npx playwright test test/browser/casual-games.spec.mjs --config playwright.config.mjs
+
+      - name: Casual Games desktop and mobile visual review
+        run: npx playwright test test/visual/casual-games.spec.mjs --config playwright.visual.config.mjs
+
+      - name: Upload Casual Games screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: casual-games-ui-review-${{ github.run_id }}
+          path: |
+            visual-results/casual-games
+            test-results/**/*.png
+          if-no-files-found: warn
+          retention-days: 10
