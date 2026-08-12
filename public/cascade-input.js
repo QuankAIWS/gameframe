@@ -1,8 +1,8 @@
 const board = document.querySelector("#board");
+const hammerButton = document.querySelector("#booster-hammer");
 const hammerCount = document.querySelector("#hammer-count");
 
 let drag = null;
-let suppressTrustedClickUntil = 0;
 
 function tileFromTarget(target) {
   return target instanceof Element ? target.closest(".cascade-tile[data-index]") : null;
@@ -102,7 +102,6 @@ if (board) {
     if (board.hasPointerCapture?.(event.pointerId)) board.releasePointerCapture(event.pointerId);
 
     if (!completed.didDrag) return;
-    suppressTrustedClickUntil = performance.now() + 650;
     event.preventDefault();
     if (completed.to === null) return;
 
@@ -111,7 +110,9 @@ if (board) {
     if (!fromTile || !toTile || fromTile.disabled || toTile.disabled) return;
     if (fromTile.classList.contains("is-hammer-target") || toTile.classList.contains("is-hammer-target")) return;
 
-    // Reuse the canonical click-swap path so drag input cannot diverge from game rules.
+    // A real drag owns pointer capture, so the browser's synthetic post-pointer click
+    // targets the board rather than either tile. Programmatic tile clicks can therefore
+    // reuse the canonical swap path without a blanket post-drag click suppression window.
     fromTile.click();
     toTile.click();
   });
@@ -125,18 +126,14 @@ if (board) {
     const tile = tileFromTarget(event.target);
     if (!tile) return;
 
-    if (event.isTrusted && performance.now() < suppressTrustedClickUntil) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      return;
-    }
-
     // The runtime commits the hammer decrement before resolving the hammer animation,
     // but its next status repaint can occur noticeably later. Mirror that committed
-    // inventory change immediately; the runtime reconciles the canonical count on render.
+    // inventory change immediately and disable the booster during the same resolution
+    // window so a rapid second press cannot be swallowed while the runtime is locked.
     if (event.isTrusted && tile.classList.contains("is-hammer-target") && hammerCount) {
       const current = Math.max(0, Number(hammerCount.textContent) || 0);
       if (current > 0) hammerCount.textContent = String(current - 1);
+      if (hammerButton) hammerButton.disabled = true;
     }
   }, true);
 }
