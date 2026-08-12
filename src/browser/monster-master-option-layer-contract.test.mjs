@@ -53,5 +53,5 @@ test("Monster Master target options use a stable body-level interaction layer", 
     /monster-master-option-layer\.js/,
   );
   assert.match(workflow, /monster-master-option-layer-contract\.test\.mjs/);
-  assert.match(workflow, /monster-master-option-hit-testing\.spec\.mjs/);
+  assert.match(workflow, /test\/browser\/monster-master\*\.spec\.mjs/);
 });
