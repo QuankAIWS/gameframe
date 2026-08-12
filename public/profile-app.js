@@ -7,6 +7,9 @@ const identity = await establishGameFrameIdentity({
 window.gameFrameIdentity = identity;
 await import("./gameframe-nav.js");
 
+const viewedPlayerId = query.get("view")?.trim() || identity.playerId;
+const viewingOwnProfile = viewedPlayerId === identity.playerId;
+
 const FAVORITE_GAMES = [
   { id: "cascade", name: "Cascade Crush", detail: "Match-3 puzzle", href: "/cascade.html" },
   { id: "othello", name: "Othello", detail: "Strategy board game", href: "/othello.html" },
@@ -17,11 +20,19 @@ const FAVORITE_GAMES = [
 ];
 
 const errorBox = document.querySelector("#profile-error");
+const pageTitle = document.querySelector("#profile-page-title");
+const pageDescription = document.querySelector("#profile-page-description");
 const avatar = document.querySelector("#profile-avatar");
 const avatarFallback = document.querySelector("#profile-avatar-fallback");
 const name = document.querySelector("#profile-name");
 const playerId = document.querySelector("#profile-id");
 const source = document.querySelector("#profile-source");
+const levelNumber = document.querySelector("#profile-level-number");
+const xpTotal = document.querySelector("#profile-xp-total");
+const xpFill = document.querySelector("#profile-xp-fill");
+const levelProgress = document.querySelector("#profile-level-progress");
+const levelNext = document.querySelector("#profile-level-next");
+const cascadeStats = document.querySelector("#profile-cascade");
 const favorites = document.querySelector("#profile-favorites");
 const favoritesCount = document.querySelector("#profile-favorites-count");
 const favoritesStatus = document.querySelector("#profile-favorites-status");
@@ -36,63 +47,102 @@ function gameName(gameId) {
   if (gameId === "othello") return "Othello";
   if (gameId === "american-checkers") return "Clockwork Checkers";
   if (gameId === "tic-tac-toe") return "Tic-Tac-Toe";
+  if (gameId === "monster-master-duel") return "Monster Master Arena";
+  if (gameId === "monster-master-rpg") return "Monster Master RPG";
+  if (gameId === "cascade") return "Cascade Crush";
   return gameId;
 }
 
-function setupIdentity() {
-  name.textContent = identity.displayName || "GameFrame Player";
-  playerId.textContent = identity.playerId;
-  source.textContent = identity.source === "discord" ? "DISCORD · GAMEFRAME PLAYER" : "LOCAL DEVELOPMENT PLAYER";
-  if (identity.avatarUrl) {
-    avatar.src = identity.avatarUrl;
+function setupIdentity(profile) {
+  const displayName = profile.displayName || "GameFrame Player";
+  name.textContent = displayName;
+  playerId.textContent = profile.playerId;
+  source.textContent = profile.source === "discord" ? "DISCORD · GAMEFRAME PLAYER" : "LOCAL DEVELOPMENT PLAYER";
+  if (!viewingOwnProfile) {
+    pageTitle.textContent = displayName;
+    pageDescription.textContent = "GameFrame level, progress, and shared game records.";
+    document.title = `${displayName} · GameFrame`;
+  }
+  if (profile.avatarUrl) {
+    avatar.src = profile.avatarUrl;
     avatar.hidden = false;
     avatarFallback.hidden = true;
   } else {
-    avatarFallback.textContent = (identity.displayName || "GF").slice(0, 2).toUpperCase();
+    avatar.hidden = true;
+    avatarFallback.hidden = false;
+    avatarFallback.textContent = displayName.slice(0, 2).toUpperCase();
     avatarFallback.style.display = "grid";
     avatarFallback.style.placeItems = "center";
     avatarFallback.style.fontWeight = "900";
   }
 }
 
-function recordByGame(matches) {
-  const result = new Map();
-  for (const match of matches.filter((candidate) => candidate.lifecycle === "completed")) {
-    const record = result.get(match.gameId) || { played: 0, wins: 0, losses: 0, draws: 0 };
-    record.played += 1;
-    if (match.draw) record.draws += 1;
-    else if (match.winnerPlayerId === identity.playerId) record.wins += 1;
-    else record.losses += 1;
-    result.set(match.gameId, record);
-  }
-  return result;
+function renderProgression(progression) {
+  const level = Math.max(1, Math.floor(Number(progression?.gamerLevel) || 1));
+  const xp = Math.max(0, Math.floor(Number(progression?.gamerXp) || 0));
+  const toNext = Math.max(0, Math.floor(Number(progression?.xpToNextLevel) || 0));
+  const progress = Math.max(0, Math.min(1, Number(progression?.progress) || 0));
+  levelNumber.textContent = String(level);
+  xpTotal.textContent = `${xp.toLocaleString()} XP`;
+  xpFill.style.width = `${(progress * 100).toFixed(2)}%`;
+  levelProgress.textContent = `${Math.round(progress * 100)}% through level ${level}`;
+  levelNext.textContent = `${toNext.toLocaleString()} XP to LV ${level + 1}`;
 }
 
-function renderStats(matches) {
-  const records = recordByGame(matches);
-  const completed = matches.filter((match) => match.lifecycle === "completed").length;
+function renderCascade(progression) {
+  const cascade = progression?.cascade || {};
+  const highest = Math.max(0, Math.floor(Number(cascade.highestCompletedLevel) || 0));
+  const stars = Math.max(0, Math.floor(Number(cascade.totalBestStars) || 0));
+  const blitzEntries = Math.max(0, Math.floor(Number(cascade.weeklyBlitzEntries) || 0));
+  const blitzBest = Math.max(0, Math.floor(Number(cascade.weeklyBlitzBestScore) || 0));
+  cascadeStats.replaceChildren();
+  const values = [
+    ["LEVELS CLEARED", highest.toLocaleString(), highest ? `Next: ${highest + 1}` : "Start a run"],
+    ["BEST STARS", stars.toLocaleString(), "Across normal levels"],
+    ["WEEKLY BLITZ", blitzEntries.toLocaleString(), blitzBest ? `Best ${blitzBest.toLocaleString()}` : "No score yet"],
+  ];
+  for (const [label, value, detail] of values) {
+    const card = document.createElement("article");
+    card.className = "profile-highlight";
+    card.innerHTML = `<small>${label}</small><strong>${value}</strong><span>${detail}</span>`;
+    cascadeStats.append(card);
+  }
+}
+
+function renderStats(gameRecords) {
+  const records = gameRecords && typeof gameRecords === "object" ? Object.entries(gameRecords) : [];
+  const completed = records.reduce((total, [, record]) => total + Math.max(0, Number(record?.played) || 0), 0);
   recordCount.textContent = `${completed} completed`;
   stats.replaceChildren();
-  if (!records.size) {
+  if (!records.length) {
     const empty = document.createElement("p");
     empty.className = "platform-empty";
-    empty.textContent = "Complete a shared board game and its record will appear here.";
+    empty.textContent = "Complete a shared game and its lifetime record will appear here.";
     stats.append(empty);
     return;
   }
   for (const [gameId, record] of records) {
+    const played = Math.max(0, Math.floor(Number(record?.played) || 0));
+    const wins = Math.max(0, Math.floor(Number(record?.wins) || 0));
+    const losses = Math.max(0, Math.floor(Number(record?.losses) || 0));
+    const draws = Math.max(0, Math.floor(Number(record?.draws) || 0));
+    if (!played) continue;
     const card = document.createElement("article");
     card.className = "profile-stat";
     const label = document.createElement("small");
     label.textContent = gameName(gameId);
     const total = document.createElement("strong");
-    total.textContent = `${record.wins}–${record.losses}${record.draws ? `–${record.draws}` : ""}`;
+    total.textContent = `${wins}–${losses}${draws ? `–${draws}` : ""}`;
     const detail = document.createElement("span");
-    detail.textContent = `${record.played} played · ${record.wins} wins · ${record.losses} losses${record.draws ? ` · ${record.draws} draws` : ""}`;
-    detail.style.color = "var(--platform-muted)";
-    detail.style.fontSize = ".76rem";
+    detail.textContent = `${played} played · ${wins} wins · ${losses} losses${draws ? ` · ${draws} draws` : ""}`;
     card.append(label, total, detail);
     stats.append(card);
+  }
+  if (!stats.children.length) {
+    const empty = document.createElement("p");
+    empty.className = "platform-empty";
+    empty.textContent = "No shared game record yet.";
+    stats.append(empty);
   }
 }
 
@@ -149,7 +199,7 @@ function renderFavorites() {
 }
 
 async function toggleFavorite(gameId) {
-  if (preferencePending) return;
+  if (preferencePending || !viewingOwnProfile) return;
   preferencePending = true;
   favoritesStatus.textContent = "Saving favorites…";
   const selected = new Set(favoriteGameIds);
@@ -173,21 +223,39 @@ async function toggleFavorite(gameId) {
   }
 }
 
-async function refresh() {
-  try {
-    const response = await gameFrameFetch("/api/me/feed", {}, identity);
-    const feed = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(feed.message || "Player record could not be loaded.");
-    const matches = Array.isArray(feed.matches) ? feed.matches : [];
-    favoriteGameIds = Array.isArray(feed.favoriteGameIds) ? feed.favoriteGameIds : [];
-    renderFavorites();
-    renderStats(matches);
-    renderActive(matches);
-  } catch (error) {
-    errorBox.hidden = false;
-    errorBox.textContent = error instanceof Error ? error.message : "Profile data could not be loaded.";
-  }
+async function loadOwnProfile() {
+  const [feedResponse, progressionResponse] = await Promise.all([
+    gameFrameFetch("/api/me/feed", {}, identity),
+    gameFrameFetch("/api/me/progression", {}, identity),
+  ]);
+  const feed = await feedResponse.json().catch(() => ({}));
+  const progression = await progressionResponse.json().catch(() => ({}));
+  if (!feedResponse.ok) throw new Error(feed.message || "Player record could not be loaded.");
+  if (!progressionResponse.ok) throw new Error(progression.message || "Gamer Level could not be loaded.");
+  setupIdentity(identity);
+  renderProgression(progression);
+  renderCascade(progression);
+  renderStats(progression.games);
+  favoriteGameIds = Array.isArray(feed.favoriteGameIds) ? feed.favoriteGameIds : [];
+  renderFavorites();
+  renderActive(Array.isArray(feed.matches) ? feed.matches : []);
 }
 
-setupIdentity();
-await refresh();
+async function loadPublicProfile() {
+  document.querySelectorAll("[data-private-profile]").forEach((section) => { section.hidden = true; });
+  const response = await gameFrameFetch(`/api/players/${encodeURIComponent(viewedPlayerId)}/profile`, {}, identity);
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.message || "Player profile could not be loaded.");
+  setupIdentity(body.profile || { playerId: viewedPlayerId });
+  renderProgression(body.progression || {});
+  renderCascade(body.progression || {});
+  renderStats(body.progression?.games || {});
+}
+
+try {
+  if (viewingOwnProfile) await loadOwnProfile();
+  else await loadPublicProfile();
+} catch (error) {
+  errorBox.hidden = false;
+  errorBox.textContent = error instanceof Error ? error.message : "Profile data could not be loaded.";
+}
