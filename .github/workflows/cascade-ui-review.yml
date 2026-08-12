@@ -1,0 +1,73 @@
+name: Cascade UI Review
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "public/cascade*.html"
+      - "public/cascade*.css"
+      - "public/cascade*.js"
+      - "scripts/cascade-profile.mjs"
+      - "src/games/cascade/**"
+      - "test/browser/cascade*.spec.mjs"
+      - "test/visual/cascade*.spec.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cascade-ui-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Cascade syntax gate
+        run: |
+          for file in public/cascade*.js src/games/cascade/*.js scripts/cascade-profile.mjs; do
+            if [ -f "$file" ]; then node --check "$file"; fi
+          done
+
+      - name: Cascade engine and persistent-special contracts
+        run: |
+          npm run cascade:test
+          node --test src/games/cascade/cascade-special-engine.test.mjs
+
+      - name: Cascade bot difficulty profile
+        run: npm run cascade:profile -- --runs=6
+
+      - name: Cascade browser journeys
+        run: npx playwright test test/browser/cascade*.spec.mjs --config playwright.config.mjs
+
+      - name: Cascade visual regressions
+        run: npx playwright test test/visual/cascade*.spec.mjs --config playwright.visual.config.mjs
+
+      - name: Upload Cascade screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cascade-ui-review-${{ github.run_id }}
+          path: |
+            visual-results/player-ui-review/cascade-*.png
+            test-results/**/*.png
+          if-no-files-found: warn
+          retention-days: 10
