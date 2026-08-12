@@ -21,6 +21,7 @@ const exactShellFiles = new Set([
 const exactCasualFiles = new Set([
   "public/casual-games.html",
   "public/casual-games.css",
+  "public/casual-games.js",
   "test/browser/casual-games.spec.mjs",
   "test/visual/casual-games-destination.spec.mjs",
 ]);
@@ -48,16 +49,6 @@ const exactPlayerFiles = new Set([
   "test/visual/player-platform.spec.mjs",
 ]);
 
-const cascadeProfilePublicFiles = new Set([
-  "public/cascade-engine.js",
-  "public/cascade.js",
-  "public/cascade-runtime.js",
-  "public/cascade-runtime-v2.js",
-  "public/cascade-bonus-modes.js",
-  "public/cascade-cell-objectives.js",
-  "public/cascade-evolution.js",
-]);
-
 function normalize(path) {
   return String(path || "").trim().replaceAll("\\", "/");
 }
@@ -81,8 +72,7 @@ function isCascadeUiFile(file) {
 }
 
 function isCascadeProfileFile(file) {
-  return cascadeProfilePublicFiles.has(file)
-    || file === "scripts/cascade-profile.mjs"
+  return file === "scripts/cascade-profile.mjs"
     || file.startsWith("src/games/cascade/");
 }
 
