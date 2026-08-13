@@ -39,6 +39,7 @@ export function errorResponse(caught: unknown): Response {
             || error.code === "match_exists"
             || error.code === "invitation_claimed"
             || error.code === "invitation_cancelled"
+            || error.code === "invitation_declined"
             || error.code === "invitation_conflict"
             ? 409
             : error.code === "discord_oauth_exchange_failed" || error.code === "discord_identity_failed"
