@@ -23,9 +23,7 @@ test("Discord-authenticated Checkers challenge stays Checkers through player tar
     status: 200,
     contentType: "application/json",
     body: JSON.stringify({
-      players: [
-        { playerId: "discord:222", displayName: "Friend", avatarUrl: null, source: "discord" },
-      ],
+      players: [{ playerId: "discord:222", displayName: "Friend", avatarUrl: null, source: "discord" }],
     }),
   }));
   await page.route("**/api/invitations", async (route) => {
@@ -62,9 +60,7 @@ test("Discord-authenticated Checkers challenge stays Checkers through player tar
           gameId: "american-checkers",
           status: claimed ? "claimed" : "pending",
           inviter: { playerId: "discord:111", displayName: "Inviter", avatarUrl: null },
-          claimant: claimed
-            ? { playerId: "discord:222", displayName: "Friend", avatarUrl: null }
-            : null,
+          claimant: claimed ? { playerId: "discord:222", displayName: "Friend", avatarUrl: null } : null,
           targetPlayerId: "discord:222",
           targetRestricted: true,
           issuedAt: 1000,
@@ -98,7 +94,6 @@ test("Discord-authenticated Checkers challenge stays Checkers through player tar
   await page.goto("/?game=american-checkers&menu=1");
   await expect(page.locator("#gameframe-session-badge")).toContainText("Inviter");
   await page.locator("#create-human-match").click();
-
   const dialog = page.locator("#gameframe-invite-dialog");
   await expect(dialog).toBeVisible();
   await expect(dialog.locator("[data-invite-game]")).toHaveText("Clockwork Checkers");
@@ -110,6 +105,41 @@ test("Discord-authenticated Checkers challenge stays Checkers through player tar
   await page.waitForURL(/\?game=american-checkers&match=match-secure$/);
   await expect(page.locator("#board")).toHaveClass(/board-checkers/);
   expect(statusReads).toBeGreaterThanOrEqual(2);
+});
+
+test("profile selection opens Checkers with the same player pinned", async ({ page }) => {
+  await page.addInitScript(() => window.localStorage.setItem("scribbles-gameframe.boot-seen:v2", "seen"));
+  await page.route("**/api/session", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify(discordSession("discord:111", "Viewer")),
+  }));
+  await page.route("**/api/players/*/profile", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      profile: { playerId: "discord:222", displayName: "Friend", avatarUrl: null, source: "discord" },
+      progression: { gamerLevel: 2, gamerXp: 150, xpToNextLevel: 50, progress: 0.75, cascade: {}, games: {} },
+    }),
+  }));
+  await page.route("**/api/players", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ players: [{ playerId: "discord:222", displayName: "Friend", avatarUrl: null, source: "discord" }] }),
+  }));
+
+  await page.goto("/profile.html?view=discord%3A222");
+  const panel = page.locator(".profile-play-together");
+  await expect(panel).toHaveCount(1);
+  await panel.getByRole("link", { name: "Clockwork Checkers" }).click();
+
+  const dialog = page.locator("#gameframe-invite-dialog");
+  await expect(dialog).toBeVisible();
+  const selected = dialog.locator('[data-challenge-player-id="discord:222"]');
+  await expect(selected).toHaveAttribute("aria-current", "true");
+  await expect(selected).toContainText("Friend");
+  await expect(dialog.locator("[data-invite-status]")).toContainText("Player selected from profile");
+  await expect(page).toHaveURL(/\?game=american-checkers&menu=1$/);
 });
 
 test("authenticated recipient claims an invitation and removes the token from browser history", async ({ page }) => {
@@ -145,10 +175,7 @@ test("authenticated recipient claims an invitation and removes the token from br
   await page.goto("/invite.html?token=signed-token-value");
   await expect(page.locator("#invite-claim-status")).toHaveText("The second seat is securely claimed.");
   await expect(page.locator("#invite-claim-details")).toContainText("Inviter invited you to Tactical Combat");
-  await expect(page.locator("#invite-open-match")).toHaveAttribute(
-    "href",
-    "/combat.html?match=combat-match",
-  );
+  await expect(page.locator("#invite-open-match")).toHaveAttribute("href", "/combat.html?match=combat-match");
   await expect(page).toHaveURL(/\/invite\.html$/);
   expect(claimBody).toEqual({ token: "signed-token-value" });
 });
