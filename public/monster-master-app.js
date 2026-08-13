@@ -113,7 +113,8 @@ function unitLabel(unitOrId, view = current) {
   const unit = typeof unitOrId === "string" ? unitById(unitOrId, view) : unitOrId;
   if (!unit) return "—";
   const team = unit.id.startsWith("alpha-") ? "Alpha" : "Beta";
-  return `${team} ${roleLabel(unit.role)}`;
+  const contentLabel = window.gameFrameMonsterMasterRosterBuilder?.labelForContentId?.(unit.contentId);
+  return `${team} ${contentLabel ?? roleLabel(unit.role)}`;
 }
 
 function coordinateKey(coordinate) {
@@ -744,8 +745,9 @@ function render(view) {
 
 function setBusy(busy) {
   requestPending = busy;
-  challengeBot.disabled = busy;
-  createHumanMatch.disabled = busy;
+  const rosterReady = Boolean(window.gameFrameMonsterMasterRosterBuilder?.getSelection?.());
+  challengeBot.disabled = busy || !rosterReady;
+  createHumanMatch.disabled = busy || !rosterReady;
   newMatch.disabled = busy;
   for (const button of panButtons) button.disabled = busy;
   centerActive.disabled = busy;
@@ -794,11 +796,17 @@ async function createMatch(opponentId) {
   stopProjection();
   clearError();
   lobbyMessage.textContent = "Creating the authoritative Monster Master duel…";
+  const monsterMasterArena = window.gameFrameMonsterMasterRosterBuilder?.getSelection?.();
+  if (!monsterMasterArena) {
+    showError("Choose one Master and three monsters before starting a battle.");
+    lobbyMessage.textContent = "Choose an Arena loadout.";
+    return;
+  }
   setBusy(true);
   try {
     render(await request("/api/matches", {
       method: "POST",
-      body: JSON.stringify({ gameId, playerIds: [playerId, opponentId] }),
+      body: JSON.stringify({ gameId, playerIds: [playerId, opponentId], monsterMasterArena }),
     }));
   } catch (error) {
     showError(error.message);

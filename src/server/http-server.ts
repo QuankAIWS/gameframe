@@ -313,7 +313,10 @@ export function createGameFrameServer(
         const playerIds = Array.isArray(body.playerIds) ? body.playerIds.map((playerId) => String(playerId)) : [];
         requirePrincipalSeat(principal, playerIds);
         const gameId = String(body.gameId ?? "tic-tac-toe");
-        const view = await matchService.createMatch(gameId, playerIds);
+        const monsterMasterArena = gameId === "monster-master-duel" && body.monsterMasterArena
+          ? { playerId: principal.playerId, roster: body.monsterMasterArena }
+          : undefined;
+        const view = await matchService.createMatch(gameId, playerIds, undefined, monsterMasterArena);
         players.indexMatch(view);
         return json(response, 201, view);
       }
