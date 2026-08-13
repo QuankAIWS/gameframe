@@ -1,6 +1,7 @@
 const menu = document.querySelector("#board-game-menu");
 const slot = menu?.querySelector("[data-board-player-slot]");
 const playerControl = document.querySelector("#create-human-match");
+const matchPanel = document.querySelector("#match-panel");
 
 if (slot && playerControl) {
   const compatibilityDescription = playerControl.querySelector("#human-description");
@@ -22,3 +23,7 @@ if (slot && playerControl) {
     }
   }, true);
 }
+
+document.addEventListener("gameframe:before-home", () => {
+  if (menu && !menu.hidden && matchPanel) matchPanel.hidden = true;
+});

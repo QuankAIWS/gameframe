@@ -85,14 +85,36 @@ function drawPieces(ctx, time) {
   if (flipAnimation && animationProgress >= 1) flipAnimation = null;
 }
 
+let renderFrame = null;
+
+function requestRender() {
+  if (renderFrame !== null) return;
+  renderFrame = requestAnimationFrame(draw);
+}
+
 function draw(time) {
+  renderFrame = null;
   context.clearRect(0, 0, 960, 960);
   drawBoardFoundation(context, time);
   drawHints(context, time);
   drawPieces(context, time);
   drawLastMove(context, time);
-  if (!snapshotMode) requestAnimationFrame(draw);
+
+  // The board used to redraw at display refresh rate forever. That made the
+  // Neon theme continuously repaint a 960x960 canvas full of gradients,
+  // shadows, and glows even while idle. Only the short disc-flip animation
+  // needs a continuous frame loop; all other states render on demand.
+  if (!snapshotMode && flipAnimation) requestRender();
 }
+
+const renderObserver = new MutationObserver(requestRender);
+renderObserver.observe(document.querySelector(".othello-app"), {
+  subtree: true,
+  childList: true,
+  characterData: true,
+  attributes: true,
+  attributeFilter: ["class", "hidden", "aria-pressed"],
+});
 
 function pointerCell(event) {
   const rect = canvas.getBoundingClientRect();
@@ -105,35 +127,51 @@ function pointerCell(event) {
   return { row: Math.floor((y - margin) / cell), column: Math.floor((x - margin) / cell) };
 }
 
-canvas.addEventListener("pointermove", (event) => { hover = pointerCell(event); });
-canvas.addEventListener("pointerleave", () => { hover = null; });
+canvas.addEventListener("pointermove", (event) => {
+  const nextHover = pointerCell(event);
+  if (nextHover?.row === hover?.row && nextHover?.column === hover?.column) return;
+  hover = nextHover;
+  requestRender();
+});
+canvas.addEventListener("pointerleave", () => {
+  if (!hover) return;
+  hover = null;
+  requestRender();
+});
 canvas.addEventListener("pointerdown", (event) => {
   const cell = pointerCell(event);
   if (!cell || flipAnimation) return;
   const move = legalMoves().find((candidate) => candidate.row === cell.row && candidate.column === cell.column);
   applyMove(move);
+  requestRender();
 });
 
 document.querySelectorAll(".theme-button").forEach((button) => {
-  button.addEventListener("click", () => setTheme(button.dataset.theme));
+  button.addEventListener("click", () => {
+    setTheme(button.dataset.theme);
+    requestRender();
+  });
 });
 document.querySelector("#new-game").addEventListener("click", () => {
   state = createState();
   flipAnimation = null;
   updateUi();
+  requestRender();
 });
 document.querySelector("#demo-move").addEventListener("click", () => {
   if (!flipAnimation) playOneMove();
+  requestRender();
 });
 hintButton.addEventListener("click", () => {
   hints = !hints;
   hintButton.querySelector("span").textContent = hints ? "Hints on" : "Hints off";
   hintButton.setAttribute("aria-pressed", String(hints));
+  requestRender();
 });
 
 setTheme(theme);
 setPreviewState(query.get("state") || "start");
-requestAnimationFrame(draw);
+requestRender();
 
 if (!document.head.querySelector('link[href="/othello-game-menu.css"]')) {
   const menuStyles = document.createElement("link");
@@ -142,6 +180,10 @@ if (!document.head.querySelector('link[href="/othello-game-menu.css"]')) {
   document.head.append(menuStyles);
 }
 void import("./othello-launcher.js").then(() => {
+  // `state=` is the fidelity/visual-preview surface used by regression tests
+  // and design review. Keep its demo controls available instead of mounting
+  // the normal player game menu over them.
+  if (query.has("state")) return;
   const gameMenuScript = document.createElement("script");
   gameMenuScript.src = "/othello-game-menu.js";
   document.body.append(gameMenuScript);
