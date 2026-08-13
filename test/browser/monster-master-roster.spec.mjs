@@ -1,5 +1,13 @@
 import { expect, test } from "@playwright/test";
 
+const trainerContentIds = new Set([
+  "vanguard-trainer-v1",
+  "commander-trainer-v1",
+  "arcanic-trainer-v1",
+  "medic-trainer-v1",
+  "caller-trainer-v1",
+]);
+
 test("Arena picker uses approved art and starts the selected roster", async ({ page }) => {
   await page.goto("/monster-master.html?player=monster-roster-picker");
 
@@ -34,5 +42,6 @@ test("Arena picker uses approved art and starts the selected roster", async ({ p
     "mossmaw-colossus-v1",
   ]);
   expect(bot).toHaveLength(4);
+  expect(trainerContentIds.has(bot[0].contentId)).toBe(true);
   expect(new Set(bot.slice(1).map((unit) => unit.contentId)).size).toBe(3);
 });
