@@ -1,0 +1,35 @@
+name: Materialize Arena Roster Browser Tests
+on:
+  push:
+    branches: [agent/monster-master-arena-roster-selection]
+permissions:
+  contents: write
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/monster-master-arena-roster-selection
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - name: Apply Arena browser test updates
+        run: |
+          node .github/patch-arena-roster-browser-tests.mjs
+          node .github/patch-arena-roster-picker-test.mjs
+      - name: Verify syntax
+        run: |
+          node --check test/browser/monster-master-controls.spec.mjs
+          node --check test/browser/monster-master.spec.mjs
+          node --check test/browser/monster-master-roster.spec.mjs
+      - name: Commit final test updates
+        run: |
+          rm .github/patch-arena-roster-browser-tests.mjs
+          rm .github/patch-arena-roster-picker-test.mjs
+          rm .github/workflows/materialize-arena-roster-browser-tests.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Align Arena browser coverage with selectable rosters"
+          git push origin HEAD:agent/monster-master-arena-roster-selection
