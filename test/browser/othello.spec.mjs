@@ -130,3 +130,63 @@ test("Othello mobile surface remains horizontally bounded", async ({ page }) => 
   expect(bounds.canvasWidth).toBeLessThanOrEqual(bounds.viewportWidth - 16);
   expect(bounds.darkRailHeight).toBeLessThanOrEqual(80);
 });
+
+test("Othello idle rendering does not keep a permanent animation-frame loop", async ({ page }) => {
+  await page.addInitScript(() => {
+    const nativeRequestAnimationFrame = window.requestAnimationFrame.bind(window);
+    window.__gameframeRafRequests = 0;
+    window.requestAnimationFrame = (callback) => {
+      window.__gameframeRafRequests += 1;
+      return nativeRequestAnimationFrame(callback);
+    };
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/othello.html?theme=neon&state=midgame");
+  await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
+  await page.waitForTimeout(600);
+
+  const idleStart = await page.evaluate(() => window.__gameframeRafRequests);
+  await page.waitForTimeout(450);
+  const idleEnd = await page.evaluate(() => window.__gameframeRafRequests);
+  expect(idleEnd - idleStart).toBeLessThanOrEqual(3);
+
+  await page.getByRole("button", { name: "Play one move" }).click();
+  await page.waitForTimeout(180);
+  const animated = await page.evaluate(() => window.__gameframeRafRequests);
+  expect(animated - idleEnd).toBeGreaterThan(3);
+
+  await page.waitForTimeout(650);
+  const settledStart = await page.evaluate(() => window.__gameframeRafRequests);
+  await page.waitForTimeout(450);
+  const settledEnd = await page.evaluate(() => window.__gameframeRafRequests);
+  expect(settledEnd - settledStart).toBeLessThanOrEqual(3);
+});
+
+test("Othello board remains clear of the shared GameFrame bar at desktop heights", async ({ page }) => {
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 1920, height: 1080 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/othello.html?theme=neon&state=midgame");
+    await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
+    await expect(page.locator("body")).toHaveClass(/gameframe-othello-route/);
+
+    const geometry = await page.evaluate(() => {
+      const bar = document.querySelector("#gameframe-destination-bar").getBoundingClientRect();
+      const board = document.querySelector(".board-frame").getBoundingClientRect();
+      const command = document.querySelector(".command-bar").getBoundingClientRect();
+      return {
+        barBottom: bar.bottom,
+        boardTop: board.top,
+        boardBottom: board.bottom,
+        commandBottom: command.bottom,
+        viewportHeight: window.innerHeight,
+      };
+    });
+
+    expect(geometry.boardTop).toBeGreaterThanOrEqual(geometry.barBottom + 10);
+    expect(geometry.boardBottom).toBeLessThan(geometry.viewportHeight);
+    expect(geometry.commandBottom).toBeLessThanOrEqual(geometry.viewportHeight + 2);
+  }
+});
