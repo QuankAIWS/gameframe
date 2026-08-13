@@ -228,6 +228,35 @@ test("Commander is an unassigned Monster Master trainer asset-library archetype"
   assert.equal(createHash("sha256").update(asset).digest("hex"), commander.provenance.runtimeSha256);
 });
 
+test("Arcanic is an unassigned Monster Master trainer asset-library archetype", async () => {
+  const manifest = JSON.parse(await read("public/assets/monster-master/manifest.json"));
+  const asset = await readBytes("public/assets/monster-master/trainers/arcanic-trainer-v1-128.webp");
+  const arcanic = manifest.trainerAssets["arcanic-trainer-v1"];
+
+  assert.ok(manifest.sources.includes("approved-arcanic-trainer-isometric-master-v1"));
+  assert.equal(arcanic.label, "Arcanic");
+  assert.equal(arcanic.archetype, "arcanic");
+  assert.equal(arcanic.path, "/assets/monster-master/trainers/arcanic-trainer-v1-128.webp");
+  assert.equal(arcanic.width, 128);
+  assert.equal(arcanic.height, 192);
+  assert.equal(arcanic.alpha, true);
+  assert.equal(arcanic.usage, "asset-library");
+  assert.equal(arcanic.assignment, "unassigned");
+  assert.equal(arcanic.facing, "left");
+  assert.equal(arcanic.perspective, "three-quarter-down-isometric");
+  assert.deepEqual(arcanic.anchor, { x: 0.5, y: 0.9 });
+  assert.equal(arcanic.battlefieldScale, 1.0);
+  assert.equal(Object.hasOwn(arcanic, "role"), false);
+  assert.equal(arcanic.provenance.provider, "OpenAI ChatGPT image generation");
+  assert.equal(arcanic.provenance.sourceArchive, "private-gameframe-asset-masters");
+  assert.equal(arcanic.provenance.sourceSha256, "cc4e7e6aad10642b7e1fdb4a28ade13dcca38d713d875602080a60969aa6d16e");
+  assert.equal(arcanic.provenance.runtimeSha256, "346ec328cfc8e66a9097ca0c210d2da8a9f42e8cdd759cdbf6da343236e1079e");
+  assert.equal(arcanic.provenance.attributionRequired, false);
+  assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP");
+  assert.equal(createHash("sha256").update(asset).digest("hex"), arcanic.provenance.runtimeSha256);
+});
+
 test("standalone Arena enters combat after all eight combatants deploy", () => {
   const state = deployArena();
   assert.equal(state.phase, "combat");
