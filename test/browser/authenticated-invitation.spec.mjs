@@ -40,6 +40,7 @@ test("Discord-authenticated Checkers challenge stays Checkers through player tar
           status: "pending",
           inviter: { playerId: "discord:111", displayName: "Inviter", avatarUrl: null },
           claimant: null,
+          targetPlayerId: "discord:222",
           targetRestricted: true,
           issuedAt: 1000,
           expiresAt: 2000,
@@ -64,12 +65,13 @@ test("Discord-authenticated Checkers challenge stays Checkers through player tar
           claimant: claimed
             ? { playerId: "discord:222", displayName: "Friend", avatarUrl: null }
             : null,
+          targetPlayerId: "discord:222",
           targetRestricted: true,
           issuedAt: 1000,
           expiresAt: 2000,
           matchId: claimed ? "match-secure" : null,
         },
-        resumePath: claimed ? "/?match=match-secure" : null,
+        resumePath: claimed ? "/?game=american-checkers&match=match-secure" : null,
       }),
     });
   });
@@ -103,7 +105,7 @@ test("Discord-authenticated Checkers challenge stays Checkers through player tar
   await expect(dialog.locator('[data-challenge-player-id="discord:222"]')).toContainText("Friend");
   await dialog.locator('[data-challenge-player-id="discord:222"]').click();
 
-  expect(creationBody).toEqual({ gameId: "american-checkers", targetDiscordUserId: "222" });
+  expect(creationBody).toEqual({ gameId: "american-checkers", targetPlayerId: "discord:222" });
   await expect(dialog.locator("[data-invite-status]")).toContainText(/Challenge sent to Friend|Friend accepted/);
   await page.waitForURL(/\?game=american-checkers&match=match-secure$/);
   await expect(page.locator("#board")).toHaveClass(/board-checkers/);
@@ -129,6 +131,7 @@ test("authenticated recipient claims an invitation and removes the token from br
           status: "claimed",
           inviter: { playerId: "discord:111", displayName: "Inviter", avatarUrl: null },
           claimant: { playerId: "discord:222", displayName: "Friend", avatarUrl: null },
+          targetPlayerId: null,
           targetRestricted: false,
           issuedAt: 1000,
           expiresAt: 2000,
