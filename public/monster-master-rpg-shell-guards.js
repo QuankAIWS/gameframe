@@ -1,6 +1,11 @@
 const DOCK_ID = "mm-rpg-unified-dock";
 const STALE_TALK_MESSAGE = "The physical position changed before Talk was accepted. Move next to the character and start Talk again.";
 
+let coordinationCampaignId = null;
+let reconciledCoordinationRevision = -1;
+let pendingCoordinationRevision = -1;
+let worldReconcilePromise = null;
+
 function normalizeDockToolbar() {
   const dock = document.querySelector(`#${DOCK_ID}`);
   const header = dock?.querySelector(".mm-rpg-dock-header");
@@ -85,6 +90,71 @@ function normalizeReleasedTalkComposer() {
   }
 }
 
+function resetWorldCoordination(campaignId = null) {
+  coordinationCampaignId = campaignId;
+  reconciledCoordinationRevision = -1;
+  pendingCoordinationRevision = -1;
+}
+
+function reconcileWorldFromCampaignState(event) {
+  const campaignId = String(event?.detail?.campaignId || "").trim();
+  const revision = Number(event?.detail?.gameframeCoordinationRevision);
+  if (!campaignId) {
+    resetWorldCoordination();
+    return;
+  }
+  if (!Number.isSafeInteger(revision) || revision < 0) return;
+
+  const worldCampaignId = String(
+    window.gameFrameMonsterRpgWorld?.getPayload?.()?.projection?.campaignId || "",
+  ).trim();
+  if (!worldCampaignId || worldCampaignId !== campaignId) return;
+
+  if (coordinationCampaignId !== campaignId) resetWorldCoordination(campaignId);
+  if (revision <= reconciledCoordinationRevision) return;
+  pendingCoordinationRevision = Math.max(pendingCoordinationRevision, revision);
+  void drainWorldCoordination();
+}
+
+function drainWorldCoordination() {
+  if (worldReconcilePromise) return worldReconcilePromise;
+
+  let promise;
+  promise = (async () => {
+    while (pendingCoordinationRevision > reconciledCoordinationRevision) {
+      const campaignId = coordinationCampaignId;
+      const targetRevision = pendingCoordinationRevision;
+      const world = window.gameFrameMonsterRpgWorld;
+      const worldCampaignId = String(world?.getPayload?.()?.projection?.campaignId || "").trim();
+      if (!campaignId || worldCampaignId !== campaignId || !world?.attachCurrentCampaign) break;
+
+      // The Talk success path already requests a quiet world refresh. That request
+      // can begin before an asynchronous actor-inspection transform has committed.
+      // First absorb any attach already in flight, then force one additional attach
+      // after it. The second attach is therefore guaranteed to start after the
+      // authoritative campaign-position revision that triggered this handler.
+      try {
+        await world.attachCurrentCampaign({ quiet: true });
+        if (coordinationCampaignId !== campaignId) break;
+        await world.attachCurrentCampaign({ quiet: true });
+      } catch {
+        break;
+      }
+
+      const currentCampaignId = String(
+        world.getPayload?.()?.projection?.campaignId || "",
+      ).trim();
+      if (currentCampaignId !== campaignId) break;
+      reconciledCoordinationRevision = Math.max(reconciledCoordinationRevision, targetRevision);
+    }
+  })().finally(() => {
+    if (worldReconcilePromise === promise) worldReconcilePromise = null;
+  });
+
+  worldReconcilePromise = promise;
+  return promise;
+}
+
 function normalizeShell() {
   normalizeDockToolbar();
   normalizeReleasedTalkSelection();
@@ -100,9 +170,15 @@ observer.observe(document.body, {
   attributeFilter: ["hidden", "disabled"],
 });
 
-window.addEventListener("gameframe:monster-master-rpg-state", () => queueMicrotask(normalizeShell));
+window.addEventListener("gameframe:monster-master-rpg-state", (event) => {
+  queueMicrotask(normalizeShell);
+  queueMicrotask(() => reconcileWorldFromCampaignState(event));
+});
 window.addEventListener("gameframe:monster-master-pixi-view", () => queueMicrotask(normalizeShell));
-window.addEventListener("gameframe:before-home", () => observer.disconnect(), { once: true });
+window.addEventListener("gameframe:before-home", () => {
+  resetWorldCoordination();
+  observer.disconnect();
+}, { once: true });
 
 window.gameFrameMonsterRpgShellGuards = Object.freeze({
   refresh: normalizeShell,
