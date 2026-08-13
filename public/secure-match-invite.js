@@ -1,4 +1,6 @@
 import { gameFrameFetch } from "./gameframe-auth.js";
+import "./gameframe-alert-styles.js";
+import { installGameFrameAlerts } from "./gameframe-alerts.js";
 
 let activeInvitation = null;
 let activeTargetName = null;
@@ -331,6 +333,7 @@ async function createInvitation(configuration, options = {}) {
 }
 
 export function installAuthenticatedInvitationFlow({ identity, entry }) {
+  installGameFrameAlerts(identity);
   if (identity?.source !== "discord") return;
   const configuration = gameConfiguration(entry);
   if (!configuration) return;
