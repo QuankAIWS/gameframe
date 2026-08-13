@@ -4,7 +4,6 @@ let activeInvitation = null;
 let activeTargetName = null;
 let pollTimer = null;
 
-const BOARD_GAME_IDS = new Set(["tic-tac-toe", "american-checkers"]);
 const GAME_LABELS = new Map([
   ["tic-tac-toe", "Tic-Tac-Toe"],
   ["american-checkers", "Clockwork Checkers"],
@@ -297,11 +296,7 @@ async function createInvitation(configuration, options = {}) {
   if (options.button) options.button.disabled = true;
   try {
     const body = { gameId };
-    if (options.targetPlayerId) {
-      const match = /^discord:(\d+)$/.exec(options.targetPlayerId);
-      if (!match) throw new Error("That player cannot receive a hosted GameFrame challenge.");
-      body.targetDiscordUserId = match[1];
-    }
+    if (options.targetPlayerId) body.targetPlayerId = options.targetPlayerId;
     const result = await responseJson(
       await gameFrameFetch("/api/invitations", {
         method: "POST",
