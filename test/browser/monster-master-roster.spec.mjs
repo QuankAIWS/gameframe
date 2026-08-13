@@ -29,7 +29,7 @@ test("Arena picker uses approved art and starts the selected roster", async ({ p
   const bot = rosters["gameframe-bot"];
   expect(human.map((unit) => unit.contentId)).toEqual([
     "caller-trainer-v1",
-    "gloamspore-stalker-v1",
+    "stormcrest-skitter-v1",
     "voidshard-reaver-v1",
     "mossmaw-colossus-v1",
   ]);
