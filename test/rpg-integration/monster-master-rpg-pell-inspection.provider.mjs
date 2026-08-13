@@ -152,6 +152,10 @@ test("Pell visibly completes inspection without a browser reload", async ({ page
   await exerciseCinderControl(page);
   await page.screenshot({ path: testInfo.outputPath("06-cinder-round-trip.png"), fullPage: true });
 
+  await walkAdjacent(page, cartId);
+  await expect(page.getByRole("button", { name: "Uncover cart" })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("07-cart-available.png"), fullPage: true });
+
   expect(await currentSceneId(page)).toBe("scene.crooked-checkpoint");
   expect(browserErrors).toEqual([]);
 });
