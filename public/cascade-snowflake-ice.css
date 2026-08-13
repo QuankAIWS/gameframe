@@ -1,0 +1,58 @@
+.cascade-cell-coating {
+  border: 0;
+  background: radial-gradient(circle, rgba(50,184,222,.14) 0 34%, transparent 68%);
+  box-shadow: none;
+  filter: drop-shadow(0 2px 2px rgba(31,100,134,.22));
+}
+
+.cascade-cell-coating::before {
+  content: "\2744";
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border: 0;
+  color: #f8feff;
+  font-family: "Segoe UI Symbol", sans-serif;
+  font-size: clamp(1.65rem, 4.6vw, 3.2rem);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 2px 2px rgba(21,79,109,.78), 0 0 5px rgba(37,173,214,.96), 0 0 11px #fff;
+  box-shadow: none;
+}
+
+.cascade-cell-coating::after { content: none; }
+
+.cascade-cell-coating.ice-2 {
+  border: 0;
+  background: radial-gradient(circle, rgba(36,164,207,.22) 0 38%, transparent 70%);
+  box-shadow: none;
+}
+
+.cascade-cell-coating.ice-2::before {
+  inset: 0;
+  border: 0;
+  font-size: clamp(1.78rem, 4.9vw, 3.4rem);
+  text-shadow: 0 2px 2px rgba(14,74,106,.88), 0 0 7px rgba(22,156,202,1), 0 0 14px #fff;
+}
+
+.cascade-cell-coating.ice-2::after {
+  content: "";
+  position: absolute;
+  inset: 7%;
+  z-index: 1;
+  width: auto;
+  height: auto;
+  border: 3px solid rgba(229,250,255,.96);
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 2px rgba(78,197,228,.58), 0 0 12px rgba(47,181,220,.72);
+}
+
+body[data-cascade-effects="reduced"] .cascade-cell-coating { filter: none; }
+
+@media (max-width: 650px) {
+  .cascade-cell-coating::before { font-size: clamp(1.3rem, 8.5vw, 2.5rem); }
+  .cascade-cell-coating.ice-2::before { font-size: clamp(1.4rem, 9vw, 2.65rem); }
+  .cascade-cell-coating.ice-2::after { inset: 5%; border-width: 2px; }
+}
