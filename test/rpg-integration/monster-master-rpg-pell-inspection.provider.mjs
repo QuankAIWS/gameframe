@@ -156,6 +156,17 @@ test("Pell visibly completes inspection without a browser reload", async ({ page
   await expect(page.getByRole("button", { name: "Uncover cart" })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("07-cart-available.png"), fullPage: true });
 
+  await walkAdjacent(page, westWoodsRouteId);
+  const travel = page.locator("#mm-rpg-travel-control");
+  await expect(travel).toBeVisible();
+  await expect(travel).toHaveText(/^Travel · /);
+  await page.screenshot({ path: testInfo.outputPath("08-route-travel-available.png"), fullPage: true });
+
   expect(await currentSceneId(page)).toBe("scene.crooked-checkpoint");
+  await travel.click();
+  await expect.poll(() => currentSceneId(page), { timeout: 20_000 }).toBe("scene.west-woods");
+  await expect(page.locator("#mm-rpg-world-location")).toHaveText("West Woods");
+  await page.screenshot({ path: testInfo.outputPath("09-west-woods-after-travel.png"), fullPage: true });
+
   expect(browserErrors).toEqual([]);
 });
