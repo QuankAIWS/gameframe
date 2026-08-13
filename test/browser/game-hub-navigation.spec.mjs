@@ -184,10 +184,10 @@ test("the Games catalog opens Role-Playing Games, Battle Simulator, Casual Games
   await expect(ticCard.locator(".game-card-play")).toHaveText("Open");
   await ticCard.locator(".game-card-body").click();
   await expect(page).toHaveURL(/game=tic-tac-toe&menu=1/);
-  await expect(page.locator("body.gameframe-game-menu")).toBeVisible();
-  await expect(page.locator("#challenge-bot")).toBeVisible();
-  await expect(page.locator("#bot-challenge-label")).toHaveText("Challenge CPU Opponent");
-  await expect(page.locator("#create-human-match")).toBeVisible();
+  await expect(page.locator("#board-game-menu")).toBeVisible();
+  await expect(page.locator("#board-menu-computer")).toContainText("Play the computer");
+  await expect(page.locator("#create-human-match")).toContainText("Challenge a player");
+  await expect(page.locator("#board-menu-local")).toContainText("Two players here");
 
   await page.locator("#gameframe-destination-bar [data-gameframe-home]").click();
   await expect(page).toHaveURL(/\/$/);
@@ -207,7 +207,8 @@ test("the Games catalog opens Role-Playing Games, Battle Simulator, Casual Games
 
 test("the destination bar is the only product navigation header during play", async ({ page }) => {
   await page.goto("/?game=american-checkers&menu=1&player=checkers-navigation-test");
-  await page.locator("#challenge-bot").click();
+  await expect(page.locator("#board-game-menu")).toBeVisible();
+  await page.locator("#board-menu-computer").click();
   await expect(page.locator("#match-panel")).toBeVisible();
   await expect(page.locator("body.gameframe-shared-match-running")).toBeVisible();
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
@@ -235,4 +236,64 @@ test("the destination bar is the only product navigation header during play", as
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
   await expect(page.locator(".monster-master-shell > .hero")).toBeHidden();
   await expect(page.locator("#monster-master-lobby")).toBeVisible();
+});
+
+test("Othello Neon does not keep an idle animation-frame loop alive", async ({ page }) => {
+  await page.addInitScript(() => {
+    const nativeRequestAnimationFrame = window.requestAnimationFrame.bind(window);
+    window.__gameframeRafRequests = 0;
+    window.requestAnimationFrame = (callback) => {
+      window.__gameframeRafRequests += 1;
+      return nativeRequestAnimationFrame(callback);
+    };
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/othello.html?theme=neon&state=midgame");
+  await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
+  await page.waitForTimeout(600);
+
+  const idleStart = await page.evaluate(() => window.__gameframeRafRequests);
+  await page.waitForTimeout(450);
+  const idleEnd = await page.evaluate(() => window.__gameframeRafRequests);
+  expect(idleEnd - idleStart).toBeLessThanOrEqual(3);
+
+  await page.getByRole("button", { name: "Play one move" }).click();
+  await page.waitForTimeout(180);
+  const animated = await page.evaluate(() => window.__gameframeRafRequests);
+  expect(animated - idleEnd).toBeGreaterThan(3);
+
+  await page.waitForTimeout(650);
+  const settledStart = await page.evaluate(() => window.__gameframeRafRequests);
+  await page.waitForTimeout(450);
+  const settledEnd = await page.evaluate(() => window.__gameframeRafRequests);
+  expect(settledEnd - settledStart).toBeLessThanOrEqual(3);
+});
+
+test("Othello board stays below the destination bar at desktop heights", async ({ page }) => {
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 1920, height: 1080 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/othello.html?theme=neon&state=midgame");
+    await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
+    await expect(page.locator("body")).toHaveClass(/gameframe-othello-route/);
+
+    const geometry = await page.evaluate(() => {
+      const bar = document.querySelector("#gameframe-destination-bar").getBoundingClientRect();
+      const board = document.querySelector(".board-frame").getBoundingClientRect();
+      const command = document.querySelector(".command-bar").getBoundingClientRect();
+      return {
+        barBottom: bar.bottom,
+        boardTop: board.top,
+        boardBottom: board.bottom,
+        commandBottom: command.bottom,
+        viewportHeight: window.innerHeight,
+      };
+    });
+
+    expect(geometry.boardTop).toBeGreaterThanOrEqual(geometry.barBottom + 10);
+    expect(geometry.boardBottom).toBeLessThan(geometry.viewportHeight);
+    expect(geometry.commandBottom).toBeLessThanOrEqual(geometry.viewportHeight + 2);
+  }
 });
