@@ -59,6 +59,13 @@ test("Monster Master changes stay in the Monster Master lane", () => {
   ]), { ...none, monsterMaster: true });
 });
 
+test("Monster Master assets run the Monster Master verification lane", () => {
+  assert.deepEqual(classifyUiTestScope([
+    "public/assets/monster-master/manifest.json",
+    "public/assets/monster-master/trainers/master-trainer-v1-128.webp",
+  ]), { ...none, monsterMaster: true });
+});
+
 test("player progression changes activate only player-platform coverage", () => {
   assert.deepEqual(classifyUiTestScope([
     "src/cloudflare/player-progression.ts",
