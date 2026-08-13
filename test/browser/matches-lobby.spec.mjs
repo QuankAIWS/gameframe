@@ -8,15 +8,15 @@ test("Matches presents the board-game 1v1 lobby before match activity", async ({
 
   const start = page.getByRole("region", { name: "Start a match" });
   await expect(start).toBeVisible();
-  await expect(start.getByRole("link", { name: "Tic-Tac-Toe", exact: true })).toHaveAttribute(
+  await expect(start.getByRole("link", { name: "Tic-Tac-Toe", exact: true }).first()).toHaveAttribute(
     "href",
     "/?game=tic-tac-toe&menu=1",
   );
-  await expect(start.getByRole("link", { name: "Checkers", exact: true })).toHaveAttribute(
+  await expect(start.getByRole("link", { name: "Checkers", exact: true }).first()).toHaveAttribute(
     "href",
     "/?game=american-checkers&menu=1",
   );
-  await expect(start.getByRole("link", { name: "Othello", exact: true })).toHaveAttribute(
+  await expect(start.getByRole("link", { name: "Othello", exact: true }).first()).toHaveAttribute(
     "href",
     "/othello.html",
   );
