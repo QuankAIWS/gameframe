@@ -3,6 +3,12 @@ const slot = menu?.querySelector("[data-board-player-slot]");
 const playerControl = document.querySelector("#create-human-match");
 
 if (slot && playerControl) {
+  const compatibilityDescription = playerControl.querySelector("#human-description");
+  if (compatibilityDescription) {
+    compatibilityDescription.hidden = true;
+    document.body.append(compatibilityDescription);
+  }
+
   playerControl.className = "board-menu-player-control";
   playerControl.innerHTML = `
     <strong>Challenge a player</strong>
