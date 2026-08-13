@@ -15,10 +15,9 @@ const GAME_LABELS = new Map([
 
 function boardGameIdFromRoute() {
   const gameId = new URLSearchParams(window.location.search).get("game");
-  if (!BOARD_GAME_IDS.has(gameId)) {
-    throw new Error("Open Tic-Tac-Toe or Clockwork Checkers before creating a player challenge.");
-  }
-  return gameId;
+  if (!gameId || gameId === "tic-tac-toe") return "tic-tac-toe";
+  if (gameId === "american-checkers") return "american-checkers";
+  throw new Error("Open Tic-Tac-Toe or Clockwork Checkers before creating a player challenge.");
 }
 
 function gameConfiguration(entry) {
