@@ -1,3 +1,8 @@
+const stylesheet = document.createElement("link");
+stylesheet.rel = "stylesheet";
+stylesheet.href = "/profile-play-together.css";
+document.head.append(stylesheet);
+
 const params = new URLSearchParams(window.location.search);
 const viewedPlayerId = params.get("view")?.trim();
 
