@@ -7,7 +7,8 @@
     "approved-rootmaw-brute-isometric-master-v1",
     "approved-gloamspore-stalker-isometric-master-v1",
     "approved-voidshard-reaver-isometric-master-v1",
-    "approved-stormcrest-skitter-class-one-isometric-master-v1"
+    "approved-stormcrest-skitter-class-one-isometric-master-v1",
+    "approved-mossmaw-colossus-isometric-master-v1"
   ],
   "creatureAtlas": "/assets/monster-master/creature-atlas-v1.svg",
   "creatureCell": { "width": 96, "height": 96 },
@@ -90,6 +91,19 @@
       "perspective": "three-quarter-down-isometric",
       "anchor": { "x": 0.5, "y": 0.9 },
       "battlefieldScale": 1.18
+    },
+    "mossmaw-colossus-v1": {
+      "label": "Mossmaw Colossus",
+      "path": "/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp",
+      "width": 128,
+      "height": 192,
+      "alpha": true,
+      "usage": "asset-library",
+      "assignment": "unassigned",
+      "facing": "left",
+      "perspective": "three-quarter-down-isometric",
+      "anchor": { "x": 0.5, "y": 0.9 },
+      "battlefieldScale": 1.5
     }
   },
   "terrain": {
