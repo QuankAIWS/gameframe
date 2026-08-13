@@ -1,0 +1,36 @@
+name: Verify Arena Roster Final
+on:
+  push:
+    branches: [agent/monster-master-arena-roster-selection]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/monster-master-arena-roster-selection
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Monster Master contracts
+        run: node --experimental-strip-types --test src/games/monster-master/repository-contract.test.ts src/games/monster-master/arena-roster.test.ts src/browser/monster-master-art-contract.test.ts
+      - name: Roster and Mend browser acceptance
+        run: npx playwright test test/browser/monster-master-roster.spec.mjs test/browser/monster-master.spec.mjs --config playwright.config.mjs --grep "Arena picker|spends command energy"
+      - name: Monster Master visual acceptance
+        run: |
+          npx playwright test test/visual/player-ui-regressions.spec.mjs --config playwright.visual.config.mjs --grep "Monster Master uses a battlefield background"
+          npx playwright test test/visual/player-ui-review.spec.mjs --config playwright.visual.config.mjs --grep "capture the Monster Master lobby and battlefield"
+      - name: Remove acceptance workflow
+        if: always()
+        run: |
+          rm .github/workflows/verify-arena-roster-final.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git diff --cached --quiet || git commit -m "Remove final Arena roster acceptance workflow"
+          git push origin HEAD:agent/monster-master-arena-roster-selection
