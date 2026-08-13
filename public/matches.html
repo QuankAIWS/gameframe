@@ -12,25 +12,25 @@
     <header class="platform-heading">
       <small>GAMEFRAME PLAYER NETWORK</small>
       <h1>Matches</h1>
-      <p>Pick up persistent board games whenever you are ready. Your move is stored by GameFrame even when every browser is closed.</p>
+      <p>Your 1v1 lobby. Answer incoming challenges, take your turn, and see which games are waiting on the other player.</p>
       <span id="matches-filter" class="platform-filter"></span>
     </header>
     <div id="matches-error" class="platform-error" hidden></div>
     <div class="platform-grid">
-      <section class="platform-section" aria-labelledby="your-turn-title">
-        <header class="platform-section-header"><h2 id="your-turn-title">Your turn</h2><span id="your-turn-count" class="platform-count">—</span></header>
-        <div id="your-turn-list" class="platform-list"><p class="platform-empty">Loading matches…</p></div>
-      </section>
       <section class="platform-section" aria-labelledby="challenges-title">
-        <header class="platform-section-header"><h2 id="challenges-title">Challenges</h2><span id="challenges-count" class="platform-count">—</span></header>
+        <header class="platform-section-header"><div><h2 id="challenges-title">Challenges</h2><small>Invitations waiting for your answer</small></div><span id="challenges-count" class="platform-count">—</span></header>
         <div id="challenges-list" class="platform-list"><p class="platform-empty">Loading challenges…</p></div>
       </section>
+      <section class="platform-section" aria-labelledby="your-turn-title">
+        <header class="platform-section-header"><div><h2 id="your-turn-title">Your turn</h2><small>Games waiting on you</small></div><span id="your-turn-count" class="platform-count">—</span></header>
+        <div id="your-turn-list" class="platform-list"><p class="platform-empty">Loading matches…</p></div>
+      </section>
       <section class="platform-section" aria-labelledby="waiting-title">
-        <header class="platform-section-header"><h2 id="waiting-title">Waiting</h2><span id="waiting-count" class="platform-count">—</span></header>
+        <header class="platform-section-header"><div><h2 id="waiting-title">Waiting</h2><small>Games waiting on the other player</small></div><span id="waiting-count" class="platform-count">—</span></header>
         <div id="waiting-list" class="platform-list"><p class="platform-empty">Loading matches…</p></div>
       </section>
       <section class="platform-section" aria-labelledby="completed-title">
-        <header class="platform-section-header"><h2 id="completed-title">Completed</h2><span id="completed-count" class="platform-count">—</span></header>
+        <header class="platform-section-header"><div><h2 id="completed-title">Completed</h2><small>Recent match history</small></div><span id="completed-count" class="platform-count">—</span></header>
         <div id="completed-list" class="platform-list"><p class="platform-empty">Loading history…</p></div>
       </section>
     </div>
