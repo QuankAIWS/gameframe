@@ -30,6 +30,10 @@ async function anchor(page, id) {
   }, id);
 }
 
+async function currentSceneId(page) {
+  return page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPayload?.()?.projection?.scene?.sceneId ?? null);
+}
+
 async function walkAdjacent(page, id) {
   const path = await page.evaluate((targetId) => {
     const world = window.gameFrameMonsterRpgWorld;
@@ -87,6 +91,13 @@ async function speak(page, text, reply) {
   await expect(page.locator('#mm-rpg-talk-history .mm-rpg-talk-bubble[data-speaker="character"]').last()).toHaveText(reply);
 }
 
+async function returnToWorld(page) {
+  await page.locator('[data-mm-rpg-dock-tab="world"]').click();
+  await expect(page.locator("#mm-rpg-talk-panel")).toBeHidden();
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterRpgTalk?.getSelectedTarget?.() ?? null)).toBeNull();
+  await expect(page.locator(".mm-rpg-dock-nearby")).toBeVisible();
+}
+
 test("Pell visibly completes inspection without a browser reload", async ({ page }, testInfo) => {
   const browserErrors = [];
   page.on("pageerror", (error) => browserErrors.push(error.message));
@@ -108,16 +119,14 @@ test("Pell visibly completes inspection without a browser reload", async ({ page
   }).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("03-pell-moved.png"), fullPage: true });
 
-  await page.locator('[data-mm-rpg-dock-tab="world"]').click();
-  await expect(page.locator("#mm-rpg-talk-panel")).toBeHidden();
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterRpgTalk?.getSelectedTarget?.() ?? null)).toBeNull();
+  await returnToWorld(page);
   await expect(page.locator("#mm-rpg-talk-nearby")).toBeVisible();
-  await expect(page.locator(".mm-rpg-dock-nearby")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("04-world-recovered.png"), fullPage: true });
 
   await openPell(page);
   await speak(page, "What did her badge say?", "The badge gives her name as Mara Venn.");
   await page.screenshot({ path: testInfo.outputPath("05-learned-identity.png"), fullPage: true });
 
+  expect(await currentSceneId(page)).toBe("scene.crooked-checkpoint");
   expect(browserErrors).toEqual([]);
 });
