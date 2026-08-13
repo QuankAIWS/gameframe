@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -167,6 +168,35 @@ test("Stormcrest Skitter is a Class One unassigned asset-library creature", asyn
   assert.equal(Object.hasOwn(stormcrest, "role"), false);
   assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF");
   assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP");
+});
+
+test("Vanguard is an unassigned Monster Master trainer asset-library archetype", async () => {
+  const manifest = JSON.parse(await read("public/assets/monster-master/manifest.json"));
+  const asset = await readBytes("public/assets/monster-master/trainers/vanguard-trainer-v1-128.webp");
+  const vanguard = manifest.trainerAssets["vanguard-trainer-v1"];
+
+  assert.ok(manifest.sources.includes("approved-vanguard-trainer-isometric-master-v1"));
+  assert.equal(vanguard.label, "Vanguard");
+  assert.equal(vanguard.archetype, "vanguard");
+  assert.equal(vanguard.path, "/assets/monster-master/trainers/vanguard-trainer-v1-128.webp");
+  assert.equal(vanguard.width, 128);
+  assert.equal(vanguard.height, 192);
+  assert.equal(vanguard.alpha, true);
+  assert.equal(vanguard.usage, "asset-library");
+  assert.equal(vanguard.assignment, "unassigned");
+  assert.equal(vanguard.facing, "left");
+  assert.equal(vanguard.perspective, "three-quarter-down-isometric");
+  assert.deepEqual(vanguard.anchor, { x: 0.5, y: 0.9 });
+  assert.equal(vanguard.battlefieldScale, 1.0);
+  assert.equal(Object.hasOwn(vanguard, "role"), false);
+  assert.equal(vanguard.provenance.provider, "OpenAI ChatGPT image generation");
+  assert.equal(vanguard.provenance.sourceArchive, "private-gameframe-asset-masters");
+  assert.equal(vanguard.provenance.sourceSha256, "e76e497e8eed8b065d2b4757668222a157c82f2c70649ceb69bd50f1d978bb28");
+  assert.equal(vanguard.provenance.runtimeSha256, "6bfe5d4cfacf5f9a03a9fe7d5d3d02bdb327048e1385141ecdae3031e4043995");
+  assert.equal(vanguard.provenance.attributionRequired, false);
+  assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP");
+  assert.equal(createHash("sha256").update(asset).digest("hex"), vanguard.provenance.runtimeSha256);
 });
 
 test("standalone Arena enters combat after all eight combatants deploy", () => {
