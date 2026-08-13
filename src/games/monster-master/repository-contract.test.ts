@@ -199,6 +199,35 @@ test("Vanguard is an unassigned Monster Master trainer asset-library archetype",
   assert.equal(createHash("sha256").update(asset).digest("hex"), vanguard.provenance.runtimeSha256);
 });
 
+test("Commander is an unassigned Monster Master trainer asset-library archetype", async () => {
+  const manifest = JSON.parse(await read("public/assets/monster-master/manifest.json"));
+  const asset = await readBytes("public/assets/monster-master/trainers/commander-trainer-v1-128.webp");
+  const commander = manifest.trainerAssets["commander-trainer-v1"];
+
+  assert.ok(manifest.sources.includes("approved-commander-trainer-isometric-master-v1"));
+  assert.equal(commander.label, "Commander");
+  assert.equal(commander.archetype, "commander");
+  assert.equal(commander.path, "/assets/monster-master/trainers/commander-trainer-v1-128.webp");
+  assert.equal(commander.width, 128);
+  assert.equal(commander.height, 192);
+  assert.equal(commander.alpha, true);
+  assert.equal(commander.usage, "asset-library");
+  assert.equal(commander.assignment, "unassigned");
+  assert.equal(commander.facing, "right");
+  assert.equal(commander.perspective, "three-quarter-down-isometric");
+  assert.deepEqual(commander.anchor, { x: 0.5, y: 0.9 });
+  assert.equal(commander.battlefieldScale, 1.0);
+  assert.equal(Object.hasOwn(commander, "role"), false);
+  assert.equal(commander.provenance.provider, "OpenAI ChatGPT image generation");
+  assert.equal(commander.provenance.sourceArchive, "private-gameframe-asset-masters");
+  assert.equal(commander.provenance.sourceSha256, "ea4ff03a663cf44256c35fc15f1267659e1895e2642317f65ac84e658e8c34df");
+  assert.equal(commander.provenance.runtimeSha256, "d67b548440b55b341540159a835736d789591e0dfa49ab5ec919b118653fd7f7");
+  assert.equal(commander.provenance.attributionRequired, false);
+  assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP");
+  assert.equal(createHash("sha256").update(asset).digest("hex"), commander.provenance.runtimeSha256);
+});
+
 test("standalone Arena enters combat after all eight combatants deploy", () => {
   const state = deployArena();
   assert.equal(state.phase, "combat");
