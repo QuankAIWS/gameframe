@@ -35,6 +35,7 @@ export interface PublicMatchInvitation {
   status: InvitationStatus;
   inviter: InvitationParticipantProfile;
   claimant: InvitationParticipantProfile | null;
+  targetPlayerId: string | null;
   targetRestricted: boolean;
   issuedAt: number;
   expiresAt: number;
@@ -98,6 +99,7 @@ function publicInvitation(record: StoredMatchInvitation, nowSeconds: number): Pu
     status: publicStatus(record, nowSeconds),
     inviter: structuredClone(record.inviter),
     claimant: record.claimant ? structuredClone(record.claimant) : null,
+    targetPlayerId: record.targetPlayerId ?? null,
     targetRestricted: Boolean(record.targetPlayerId),
     issuedAt: record.issuedAt,
     expiresAt: record.expiresAt,
