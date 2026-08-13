@@ -311,7 +311,10 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
         if (inviteRoute && request.method === "GET" && inviteRoute.operation === "view") {
           const principal = await authenticator.authenticate(request);
           const viewed = await invitationsFor(env).view(inviteRoute.invitationId, principal);
-          await indexInvitation(env, viewed.invitation, [
+          const feedInvitation = viewed.invitation.status === "declined"
+            ? { ...viewed.invitation, status: "cancelled" as const }
+            : viewed.invitation;
+          await indexInvitation(env, feedInvitation, [
             viewed.invitation.inviter.playerId,
             viewed.invitation.claimant?.playerId ?? principal.playerId,
           ]);
@@ -329,7 +332,8 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
         if (inviteRoute && request.method === "POST" && inviteRoute.operation === "decline") {
           const principal = await authenticator.authenticate(request);
           const declined = await declineInvitation(env, inviteRoute.invitationId, principal);
-          await indexInvitation(env, declined, [declined.inviter.playerId, principal.playerId]);
+          const feedInvitation = { ...declined, status: "cancelled" as const };
+          await indexInvitation(env, feedInvitation, [declined.inviter.playerId, principal.playerId]);
           return json(200, { invitation: declined, resumePath: null });
         }
 
