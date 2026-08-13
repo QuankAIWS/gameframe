@@ -65,6 +65,13 @@ function installGameFrameAlerts(identity) {
   const count = root.querySelector("[data-alert-count]");
   const list = root.querySelector("[data-alert-list]");
   const error = root.querySelector("[data-alert-error]");
+
+  document.body.append(panel);
+  panel.style.position = "fixed";
+  panel.style.top = "calc(var(--gameframe-destination-height, 72px) + 8px)";
+  panel.style.right = "12px";
+  panel.style.zIndex = "9500";
+
   let invitations = [];
   let refreshInFlight = null;
   let mutationInFlight = false;
