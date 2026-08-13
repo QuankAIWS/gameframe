@@ -41,6 +41,14 @@ function gameLabel(gameId) {
   return GAME_LABELS.get(gameId) || "GameFrame Match";
 }
 
+function resumePath(invitation, fallback = null) {
+  if (!invitation?.matchId) return fallback;
+  const encodedMatchId = encodeURIComponent(invitation.matchId);
+  if (invitation.gameId === "tic-tac-toe") return `/?game=tic-tac-toe&match=${encodedMatchId}`;
+  if (invitation.gameId === "american-checkers") return `/?game=american-checkers&match=${encodedMatchId}`;
+  return fallback;
+}
+
 async function responseJson(response, context) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.message || `${context} failed with HTTP ${response.status}.`);
@@ -235,10 +243,13 @@ async function pollInvitation() {
       "Challenge status",
     );
     dialog.querySelector("[data-invite-status]").textContent = invitationStatusText(result.invitation);
-    if (result.invitation.status === "claimed" && result.resumePath) {
-      clearPolling();
-      window.setTimeout(() => window.location.assign(result.resumePath), 400);
-      return;
+    if (result.invitation.status === "claimed" && result.invitation.matchId) {
+      const destination = resumePath(result.invitation, result.resumePath);
+      if (destination) {
+        clearPolling();
+        window.setTimeout(() => window.location.assign(destination), 400);
+        return;
+      }
     }
     if (result.invitation.status === "cancelled" || result.invitation.status === "expired") {
       clearPolling();
