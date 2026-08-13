@@ -52,10 +52,7 @@ if (supported) {
         <a class="board-game-all-matches" href="/matches.html?game=${encodeURIComponent(gameId)}">View open matches</a>
       </div>
       <div class="board-game-menu-actions">
-        <button id="board-menu-player" type="button">
-          <strong>Challenge a player</strong>
-          <small>Start a persistent GameFrame match and take turns whenever you are available.</small>
-        </button>
+        <div data-board-player-slot></div>
         <button id="board-menu-computer" type="button">
           <strong>Play the computer</strong>
           <small>${game.computer}</small>
@@ -94,9 +91,6 @@ if (supported) {
     localSession.reset();
     close();
     botButton?.click();
-  });
-  menu.querySelector("#board-menu-player")?.addEventListener("click", () => {
-    document.dispatchEvent(new CustomEvent("gameframe:board-player-request", { detail: { gameId } }));
   });
 
   newMatch?.addEventListener("click", (event) => {
