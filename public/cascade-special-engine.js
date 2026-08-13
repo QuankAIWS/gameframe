@@ -525,14 +525,62 @@ export function applySpecialSwap(board, specials, from, to, rng, options = {}) {
 
 export function applySpecialHammer(board, specials, index, rng, options = {}) {
   const cleanSpecials = normalizeSpecials(specials);
+  const cleanIce = normalizeIce(options.ice);
   if (index < 0 || index >= board.length) {
-    return { legal: false, reason: "invalid_index", board: board.slice(), specials: cleanSpecials, ice: normalizeIce(options.ice), scoreGained: 0, transitions: [] };
+    return { legal: false, reason: "invalid_index", board: board.slice(), specials: cleanSpecials, ice: cleanIce, scoreGained: 0, transitions: [] };
   }
+
+  if (cleanIce[index] > 0) {
+    const chipped = chipIce(cleanIce, [index]);
+    const clearedKindCounts = Array(TILE_KINDS).fill(0);
+    const before = board.slice();
+    const specialsBefore = cleanSpecials.slice();
+    const transition = {
+      type: "special-combo",
+      combo: "hammer",
+      cascade: 1,
+      groups: [],
+      matched: [index],
+      matchedForProgress: [],
+      gained: 80,
+      before,
+      specialsBefore,
+      cleared: before.slice(),
+      clearedSpecials: specialsBefore.slice(),
+      after: before.slice(),
+      specialsAfter: specialsBefore.slice(),
+      falls: [],
+      spawns: [],
+      createdSpecials: [],
+      triggeredSpecials: [],
+      clearedKindCounts: clearedKindCounts.slice(),
+      iceBefore: chipped.before,
+      iceAfter: chipped.after,
+      iceHits: chipped.hits,
+    };
+    return {
+      legal: true,
+      index,
+      board: before,
+      specials: specialsBefore,
+      ice: chipped.after,
+      scoreGained: transition.gained,
+      transitions: [transition],
+      clearedKindCounts,
+      iceHitCount: chipped.hits.length,
+      specialCreatedCount: 0,
+      specialTriggeredCount: 0,
+      shuffled: false,
+      shuffle: null,
+      maxCascade: 1,
+    };
+  }
+
   const forced = { kind: "hammer", indices: [index], colorTarget: null };
   return {
     legal: true,
     index,
-    ...resolveSpecialCascades(board, cleanSpecials, rng, { ...options, forced }),
+    ...resolveSpecialCascades(board, cleanSpecials, rng, { ...options, ice: cleanIce, forced }),
   };
 }
 
