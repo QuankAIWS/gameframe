@@ -118,6 +118,10 @@ export class GameFrameMatchObjectRuntime {
           ? body.playerIds.map((playerId) => String(playerId))
           : [];
         const gameId = this.#normalizeGameId(String(body.gameId ?? "tic-tac-toe"));
+        const arenaInput = record(body.monsterMasterArena);
+        const monsterMasterArena = Object.keys(arenaInput).length
+          ? { playerId: String(arenaInput.playerId ?? ""), roster: arenaInput.roster }
+          : undefined;
         const view = gameId === "tic-tac-toe"
           ? await this.#ticTacToe.createMatch(playerIds, matchId)
           : gameId === "american-checkers"
@@ -128,7 +132,7 @@ export class GameFrameMatchObjectRuntime {
                 ? await this.#tactical.createMatch(playerIds, matchId)
                 : gameId === "tactical-combat-canary"
                   ? await this.#combat.createMatch(playerIds, matchId)
-                  : await this.#monsterMaster.createMatch(playerIds, matchId);
+                  : await this.#monsterMaster.createMatch(playerIds, matchId, undefined, monsterMasterArena);
         await this.#notify(matchId);
         return json(201, { gameId, ...view });
       }

@@ -7,7 +7,7 @@ const LAYER_ID = "monster-master-trainer-asset-layer";
 const STYLE_ID = "monster-master-trainer-asset-style";
 const tokens = new Map();
 
-const SPECIAL_CREATURES = Object.freeze({
+const SPECIAL_CREATURES = {
   [ROOTMAW_CONTENT_ID]: Object.freeze({
     kind: "rootmaw",
     asset: ROOTMAW_ASSET,
@@ -24,21 +24,30 @@ const SPECIAL_CREATURES = Object.freeze({
     summary: "Arcane skirmisher · quick, fragile, and built to threaten from the flank.",
     prototypeLabel: "Emberling Skirmisher",
   }),
+};
+
+const ARENA_LIBRARY_ASSETS = Object.freeze({
+  "vanguard-trainer-v1": { kind: "vanguard", asset: "/assets/monster-master/trainers/vanguard-trainer-v1-128.webp", label: "Vanguard", glyph: "V", summary: "Field-ready Master archetype.", prototypeLabel: "Warden Master" },
+  "commander-trainer-v1": { kind: "commander", asset: "/assets/monster-master/trainers/commander-trainer-v1-128.webp", label: "Commander", glyph: "C", summary: "Tactical command Master archetype.", prototypeLabel: "Warden Master" },
+  "arcanic-trainer-v1": { kind: "arcanic", asset: "/assets/monster-master/trainers/arcanic-trainer-v1-128.webp", label: "Arcanic", glyph: "A", summary: "Arcane-tech Master archetype.", prototypeLabel: "Warden Master" },
+  "medic-trainer-v1": { kind: "medic", asset: "/assets/monster-master/trainers/medic-trainer-v1-128.webp", label: "Medic", glyph: "M", summary: "Creature-care Master archetype.", prototypeLabel: "Warden Master" },
+  "caller-trainer-v1": { kind: "caller", asset: "/assets/monster-master/trainers/caller-trainer-v1-128.webp", label: "Caller", glyph: "C", summary: "Roster-management Master archetype.", prototypeLabel: "Warden Master" },
+  "voidshard-reaver-v1": { kind: "voidshard", asset: "/assets/monster-master/creatures/voidshard-reaver-v1-128.webp", label: "Voidshard Reaver", glyph: "V", summary: "Mobile melee striker.", prototypeLabel: "Emberling" },
+  "stormcrest-skitter-v1": { kind: "stormcrest", asset: "/assets/monster-master/creatures/stormcrest-skitter-v1-128.webp", label: "Stormcrest Skitter", glyph: "S", summary: "Fast harassment monster.", prototypeLabel: "Emberling" },
+  "mossmaw-colossus-v1": { kind: "mossmaw", asset: "/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp", label: "Mossmaw Colossus", glyph: "M", summary: "Slow durable anchor.", prototypeLabel: "Stone Bulwark" },
 });
 
 function specialCreature(unit) {
-  return unit?.contentId ? SPECIAL_CREATURES[unit.contentId] ?? null : null;
+  if (!unit?.contentId) return null;
+  return SPECIAL_CREATURES[unit.contentId] ?? ARENA_LIBRARY_ASSETS[unit.contentId] ?? null;
 }
 
 function assetKind(unit) {
-  if (unit && unit.role === "master") return "trainer";
-  return specialCreature(unit)?.kind ?? null;
+  return specialCreature(unit)?.kind ?? (unit?.role === "master" ? "trainer" : null);
 }
 
 function assetPath(kind) {
-  if (kind === "rootmaw") return ROOTMAW_ASSET;
-  if (kind === "gloamspore") return GLOAMSPORE_ASSET;
-  return TRAINER_ASSET;
+  return Object.values({ ...SPECIAL_CREATURES, ...ARENA_LIBRARY_ASSETS }).find((item) => item.kind === kind)?.asset ?? TRAINER_ASSET;
 }
 
 function installStyles() {
@@ -347,7 +356,7 @@ function renderTrainerAssets() {
 }
 
 installStyles();
-for (const path of [TRAINER_ASSET, ROOTMAW_ASSET, GLOAMSPORE_ASSET]) {
+for (const path of [TRAINER_ASSET, ROOTMAW_ASSET, GLOAMSPORE_ASSET, ...Object.values(ARENA_LIBRARY_ASSETS).map((item) => item.asset)]) {
   const preload = new Image();
   preload.src = path;
 }

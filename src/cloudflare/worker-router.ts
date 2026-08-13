@@ -353,6 +353,9 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
               matchId,
               playerIds,
               gameId: String(body.gameId ?? "tic-tac-toe"),
+              monsterMasterArena: body.monsterMasterArena
+                ? { playerId: principal.playerId, roster: body.monsterMasterArena }
+                : undefined,
             }),
           })));
           await indexMatchView(env, view);

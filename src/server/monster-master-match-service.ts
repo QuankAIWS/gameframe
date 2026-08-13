@@ -4,9 +4,14 @@ import {
 } from "../agents/agent-player.ts";
 import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import {
+  createMonsterMasterArenaState,
   isMonsterMasterArenaState,
   monsterMasterArenaDefinition,
 } from "../games/monster-master/arena-definition.ts";
+import {
+  createDeterministicMonsterMasterArenaRoster,
+  normalizeMonsterMasterArenaRosterSelection,
+} from "../games/monster-master/arena-roster.ts";
 import {
   DeterministicMonsterMasterPlayer,
   monsterMasterDefinition,
@@ -23,6 +28,11 @@ export interface PublicMonsterMasterMatchView {
   revision: number;
   observation: MonsterMasterObservation;
   eventCount: number;
+}
+
+export interface MonsterMasterArenaMatchRequest {
+  playerId: string;
+  roster: unknown;
 }
 
 export interface MonsterMasterMatchServiceOptions {
@@ -46,6 +56,7 @@ export class MonsterMasterMatchService {
     playerIds: readonly string[],
     requestedMatchId?: string,
     initialState?: MonsterMasterState,
+    arenaRequest?: MonsterMasterArenaMatchRequest,
   ): Promise<PublicMonsterMasterMatchView> {
     const normalizedPlayers = playerIds.map((playerId) => playerId.trim());
     if (
@@ -76,23 +87,39 @@ export class MonsterMasterMatchService {
       throw error;
     }
 
-    // Standalone Arena matches use the Arena rules profile. Explicitly configured
-    // states (used by campaign-facing encounter infrastructure) retain the base
-    // Monster Master definition and are not silently reshaped by Arena evolution.
+    let arenaInitialState: MonsterMasterState | undefined;
+    if (!initialState && arenaRequest) {
+      if (!normalizedPlayers.includes(arenaRequest.playerId)) {
+        const error = new Error("Monster Master Arena roster owner must occupy a match seat.");
+        Object.assign(error, { code: "invalid_arena_roster" });
+        throw error;
+      }
+      const rosterSelections = {
+        [arenaRequest.playerId]: normalizeMonsterMasterArenaRosterSelection(arenaRequest.roster),
+      };
+      if (normalizedPlayers.includes(this.#bot.agentId) && arenaRequest.playerId !== this.#bot.agentId) {
+        rosterSelections[this.#bot.agentId] = createDeterministicMonsterMasterArenaRoster(`${matchId}:${this.#bot.agentId}`);
+      }
+      arenaInitialState = createMonsterMasterArenaState(normalizedPlayers, { rosterSelections });
+    }
+
+    // Campaign-facing configured states retain the base rules definition. Standalone
+    // Arena loadouts are server-materialized from content IDs so clients cannot inject stats.
     const definition = initialState ? monsterMasterDefinition : monsterMasterArenaDefinition;
+    const configuredState = initialState ?? arenaInitialState;
     const session = new MatchSession({
       matchId,
       definition,
       playerIds: normalizedPlayers,
-      ...(initialState
+      ...(configuredState
         ? {
             snapshot: {
               matchId,
               gameId: definition.gameId,
               playerIds: normalizedPlayers,
               revision: 0,
-              initialState,
-              state: initialState,
+              initialState: configuredState,
+              state: configuredState,
               events: [],
             },
           }

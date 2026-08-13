@@ -13,6 +13,7 @@ import {
   monsterMasterArenaDefinition,
   ROOTMAW_BRUTE_CONTENT_ID,
 } from "./arena-definition.ts";
+import { createDeterministicMonsterMasterArenaRoster, MONSTER_MASTER_ARENA_MONSTER_CONTENT_IDS, MONSTER_MASTER_ARENA_TRAINER_CONTENT_IDS } from "./arena-roster.ts";
 import {
   createMonsterMasterState,
   monsterMasterUnit,
@@ -370,3 +371,8 @@ test("Caller is an unassigned Monster Master trainer asset-library archetype", a
   assert.equal(createHash("sha256").update(asset).digest("hex"), caller.provenance.runtimeSha256);
 });
 
+
+
+test("selectable Arena roster materializes canonical content",()=>{const s=createMonsterMasterArenaState(["alpha","beta"],{rosterSelections:{alpha:{trainerContentId:"caller-trainer-v1",monsterContentIds:["stormcrest-skitter-v1","voidshard-reaver-v1","mossmaw-colossus-v1"]}}});const r=s.rosters.alpha;assert.deepEqual(r.map(u=>u.contentId),["caller-trainer-v1","stormcrest-skitter-v1","voidshard-reaver-v1","mossmaw-colossus-v1"]);assert.equal(r[0].role,"master");assert.deepEqual(r[0].abilityIds,["mend"]);assert.equal(r[1].initiative,10);assert.equal(r[2].attackDamage,5);assert.equal(r[3].maxHealth,18)});
+
+test("generated Arena bot roster is deterministic and legal",()=>{const a=createDeterministicMonsterMasterArenaRoster("match:gameframe-bot"),b=createDeterministicMonsterMasterArenaRoster("match:gameframe-bot");assert.deepEqual(a,b);assert.ok(MONSTER_MASTER_ARENA_TRAINER_CONTENT_IDS.includes(a.trainerContentId));assert.equal(new Set(a.monsterContentIds).size,3);assert.ok(a.monsterContentIds.every(id=>MONSTER_MASTER_ARENA_MONSTER_CONTENT_IDS.includes(id)))});
