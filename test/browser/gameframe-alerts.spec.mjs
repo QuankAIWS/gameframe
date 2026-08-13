@@ -39,7 +39,7 @@ async function installRecipientRoutes(page, state) {
   }));
 }
 
-test("recipient sees a Checkers invite in the global alerts bell and can accept it", async ({ page }) => {
+test("recipient sees a Checkers invite in the game-screen alerts bell and can accept it", async ({ page }) => {
   const state = { pending: true };
   let claimBody = null;
   await installRecipientRoutes(page, state);
@@ -72,7 +72,7 @@ test("recipient sees a Checkers invite in the global alerts bell and can accept 
     }),
   }));
 
-  await page.goto("/matches.html");
+  await page.goto("/?game=american-checkers&menu=1");
   const trigger = page.locator("#gameframe-alerts-trigger");
   await expect(trigger).toHaveAttribute("aria-label", "Alerts, 1 pending challenge");
   await expect(trigger.locator("[data-alert-count]")).toHaveText("1");
@@ -86,7 +86,7 @@ test("recipient sees a Checkers invite in the global alerts bell and can accept 
   await page.waitForURL(/\?game=american-checkers&match=match-from-alert$/);
 });
 
-test("declining from the alerts bell clears the recipient badge", async ({ page }) => {
+test("declining from the game-screen alerts bell clears the recipient badge", async ({ page }) => {
   const state = { pending: true };
   let declineRequests = 0;
   await installRecipientRoutes(page, state);
@@ -96,7 +96,7 @@ test("declining from the alerts bell clears the recipient badge", async ({ page 
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
   });
 
-  await page.goto("/matches.html");
+  await page.goto("/?game=american-checkers&menu=1");
   const trigger = page.locator("#gameframe-alerts-trigger");
   await expect(trigger).toHaveAttribute("aria-label", "Alerts, 1 pending challenge");
   await trigger.click();
