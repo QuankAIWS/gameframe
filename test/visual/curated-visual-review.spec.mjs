@@ -204,11 +204,21 @@ test("captures hosted authentication and signed-session presentation", async ({ 
   await capture(page, testInfo, "15-authenticated-session-badge");
 });
 
-test("captures secure invitation pending, success, and error states", async ({ page }, testInfo) => {
+test("captures player challenge picker, invitation claim success, and error states", async ({ page }, testInfo) => {
   await page.route("**/api/session", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
     body: JSON.stringify(discordSession("discord:111", "Synthetic Inviter")),
+  }));
+  await page.route("**/api/players", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      players: [
+        { playerId: "discord:222", displayName: "Synthetic Friend", avatarUrl: null, source: "discord" },
+        { playerId: "discord:333", displayName: "Another Player", avatarUrl: null, source: "discord" },
+      ],
+    }),
   }));
   await page.route("**/api/invitations", (route) => route.fulfill({
     status: 201,
@@ -220,7 +230,7 @@ test("captures secure invitation pending, success, and error states", async ({ p
         status: "pending",
         inviter: { playerId: "discord:111", displayName: "Synthetic Inviter", avatarUrl: null },
         claimant: null,
-        targetRestricted: false,
+        targetRestricted: true,
         issuedAt: 1_000,
         expiresAt: 2_000,
         matchId: null,
@@ -238,7 +248,7 @@ test("captures secure invitation pending, success, and error states", async ({ p
         status: "pending",
         inviter: { playerId: "discord:111", displayName: "Synthetic Inviter", avatarUrl: null },
         claimant: null,
-        targetRestricted: false,
+        targetRestricted: true,
         issuedAt: 1_000,
         expiresAt: 2_000,
         matchId: null,
@@ -247,10 +257,11 @@ test("captures secure invitation pending, success, and error states", async ({ p
     }),
   }));
 
-  await page.goto("/");
+  await page.goto("/?game=tic-tac-toe&menu=1");
   await page.getByRole("button", { name: "Play with a friend" }).click();
   await expect(page.locator("#gameframe-invite-dialog")).toBeVisible();
-  await capture(page, testInfo, "16-secure-invitation-pending");
+  await expect(page.locator('[data-challenge-player-id="discord:222"]')).toContainText("Synthetic Friend");
+  await capture(page, testInfo, "16-player-challenge-picker");
 
   await page.unroute("**/api/invitations");
   await page.unroute("**/api/invitations/visual-invite");
