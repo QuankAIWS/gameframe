@@ -1,0 +1,71 @@
+name: Normalize Caller Manifest
+
+on:
+  push:
+    branches:
+      - agent/monster-master-caller-trainer-asset
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/monster-master-caller-trainer-asset
+          fetch-depth: 0
+      - name: Restore main formatting and insert Caller
+        run: |
+          git fetch origin main
+          git show origin/main:public/assets/monster-master/manifest.json > public/assets/monster-master/manifest.json
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('public/assets/monster-master/manifest.json')
+          text = p.read_text()
+          source_anchor = '    "approved-medic-trainer-isometric-master-v1",\n    "approved-rootmaw-brute-isometric-master-v1",'
+          source_repl = '    "approved-medic-trainer-isometric-master-v1",\n    "approved-caller-trainer-isometric-master-v1",\n    "approved-rootmaw-brute-isometric-master-v1",'
+          if source_anchor not in text:
+              raise SystemExit('source anchor missing')
+          text = text.replace(source_anchor, source_repl, 1)
+          marker = '    }\n  },\n  "creatures": {'
+          entry = '''    },
+              "caller-trainer-v1": {
+                "label": "Caller",
+                "archetype": "caller",
+                "path": "/assets/monster-master/trainers/caller-trainer-v1-128.webp",
+                "width": 128,
+                "height": 192,
+                "alpha": true,
+                "usage": "asset-library",
+                "assignment": "unassigned",
+                "facing": "left",
+                "perspective": "three-quarter-down-isometric",
+                "anchor": { "x": 0.5, "y": 0.9 },
+                "battlefieldScale": 1.0,
+                "provenance": {
+                  "provider": "OpenAI ChatGPT image generation",
+                  "sourceArchive": "private-gameframe-asset-masters",
+                  "sourceSha256": "36ae023f67da762947755514b797bce82e51e9e6268bdec83ce621b6bb80490d",
+                  "runtimeSha256": "d5e1d9291ac28f6f63e56cd5304ed010ca85b3bc23dae9562d4826051da4dc34",
+                  "rights": "generated-for-project; repository-proprietary",
+                  "attributionRequired": false
+                }
+              }
+            },
+            "creatures": {'''
+          idx = text.rfind(marker)
+          if idx < 0:
+              raise SystemExit('trainer insertion marker missing')
+          text = text[:idx] + entry + text[idx + len(marker):]
+          p.write_text(text)
+          PY
+          node --experimental-strip-types --test src/games/monster-master/repository-contract.test.ts
+          rm .github/workflows/normalize-caller-manifest.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/assets/monster-master/manifest.json .github/workflows/normalize-caller-manifest.yml
+          git commit -m 'Keep Caller manifest diff focused'
+          git push origin HEAD:agent/monster-master-caller-trainer-asset
