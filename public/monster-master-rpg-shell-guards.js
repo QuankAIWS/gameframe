@@ -28,6 +28,28 @@ function normalizeDockToolbar() {
   }
 }
 
+function normalizeReleasedTalkSelection() {
+  const panel = document.querySelector("#mm-rpg-talk-panel");
+  const talk = window.gameFrameMonsterRpgTalk;
+  if (!panel?.hidden || !talk?.getSelectedTarget?.()) return;
+
+  // The unified dock may hide the Talk pane directly when the player returns
+  // to World, Ask GM, or another tab. Hiding the DOM surface must also release
+  // Talk's logical selection; otherwise its nearby button remains hidden forever
+  // because Talk still believes a conversation is active.
+  talk.cancel?.();
+}
+
+function normalizeNearbyActionsVisibility() {
+  const nearby = document.querySelector(".mm-rpg-dock-nearby");
+  const host = nearby?.querySelector("[data-mm-rpg-nearby-actions]");
+  if (!nearby || !host) return;
+
+  const controls = [...host.querySelectorAll(".mm-rpg-world-interact")];
+  const hasVisibleAction = controls.some((control) => !control.hidden);
+  if (nearby.hidden === hasVisibleAction) nearby.hidden = !hasVisibleAction;
+}
+
 function normalizeReleasedTalkComposer() {
   const panel = document.querySelector("#mm-rpg-talk-panel");
   const send = panel?.querySelector("#mm-rpg-talk-send");
@@ -65,7 +87,9 @@ function normalizeReleasedTalkComposer() {
 
 function normalizeShell() {
   normalizeDockToolbar();
+  normalizeReleasedTalkSelection();
   normalizeReleasedTalkComposer();
+  normalizeNearbyActionsVisibility();
 }
 
 const observer = new MutationObserver(() => queueMicrotask(normalizeShell));
