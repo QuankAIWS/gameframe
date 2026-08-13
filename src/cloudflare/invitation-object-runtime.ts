@@ -5,7 +5,7 @@ import type { DurableStorageLike } from "./runtime-contracts.ts";
 
 export const INVITATION_RECORD_KEY = "gameframe:match-invitation:v1";
 
-export type InvitationStatus = "pending" | "claimed" | "cancelled" | "expired";
+export type InvitationStatus = "pending" | "claimed" | "cancelled" | "declined" | "expired";
 
 export interface InvitationParticipantProfile {
   playerId: string;
@@ -22,10 +22,11 @@ export interface StoredMatchInvitation {
   targetPlayerId?: string;
   issuedAt: number;
   expiresAt: number;
-  status: "pending" | "claimed" | "cancelled";
+  status: "pending" | "claimed" | "cancelled" | "declined";
   claimant?: InvitationParticipantProfile;
   matchId?: string;
   cancelledAt?: number;
+  declinedAt?: number;
   claimedAt?: number;
 }
 
@@ -152,6 +153,9 @@ export class InvitationObjectRuntime {
       if (request.method === "POST" && url.pathname === "/invitation/cancel") {
         return json(200, await this.#cancel(await readJson(request)));
       }
+      if (request.method === "POST" && url.pathname === "/invitation/decline") {
+        return json(200, await this.#decline(await readJson(request)));
+      }
       return json(404, { error: "not_found" });
     } catch (caught) {
       return errorResponse(caught as InvitationRuntimeError);
@@ -230,7 +234,11 @@ export class InvitationObjectRuntime {
     const invitationId = boundedText(invitationIdValue, "Invitation ID");
     const playerId = boundedText(playerIdValue, "Invitation viewer ID");
     const record = await this.#record(invitationId);
-    if (record.inviter.playerId !== playerId && record.claimant?.playerId !== playerId) {
+    if (
+      record.inviter.playerId !== playerId
+      && record.targetPlayerId !== playerId
+      && record.claimant?.playerId !== playerId
+    ) {
       throw Object.assign(new Error("The authenticated player cannot view this invitation."), {
         code: "forbidden",
       });
@@ -248,6 +256,11 @@ export class InvitationObjectRuntime {
     if (record.status === "cancelled") {
       throw Object.assign(new Error("The match invitation was cancelled."), {
         code: "invitation_cancelled",
+      });
+    }
+    if (record.status === "declined") {
+      throw Object.assign(new Error("The match invitation was declined."), {
+        code: "invitation_declined",
       });
     }
     if (record.status === "pending" && record.expiresAt <= nowSeconds) {
@@ -306,6 +319,7 @@ export class InvitationObjectRuntime {
         code: "invitation_claimed",
       });
     }
+    if (record.status === "declined") return publicInvitation(record, nowSeconds);
     if (record.status === "cancelled") return publicInvitation(record, nowSeconds);
     const cancelled: StoredMatchInvitation = {
       ...record,
@@ -314,5 +328,40 @@ export class InvitationObjectRuntime {
     };
     await this.#storage.put(INVITATION_RECORD_KEY, cancelled);
     return publicInvitation(cancelled, nowSeconds);
+  }
+
+  async #decline(body: Record<string, unknown>): Promise<PublicMatchInvitation> {
+    const invitationId = boundedText(body.invitationId, "Invitation ID");
+    const playerId = boundedText(body.playerId, "Invitation decline player ID");
+    const record = await this.#record(invitationId);
+    const nowSeconds = Math.floor(this.#now() / 1000);
+    if (!record.targetPlayerId || record.targetPlayerId !== playerId) {
+      throw Object.assign(new Error("Only the targeted invitation recipient can decline it."), {
+        code: "forbidden",
+      });
+    }
+    if (record.status === "claimed") {
+      throw Object.assign(new Error("A claimed invitation cannot be declined."), {
+        code: "invitation_claimed",
+      });
+    }
+    if (record.status === "cancelled") {
+      throw Object.assign(new Error("A cancelled invitation cannot be declined."), {
+        code: "invitation_cancelled",
+      });
+    }
+    if (record.status === "declined") return publicInvitation(record, nowSeconds);
+    if (record.expiresAt <= nowSeconds) {
+      throw Object.assign(new Error("The match invitation has expired."), {
+        code: "invitation_expired",
+      });
+    }
+    const declined: StoredMatchInvitation = {
+      ...record,
+      status: "declined",
+      declinedAt: nowSeconds,
+    };
+    await this.#storage.put(INVITATION_RECORD_KEY, declined);
+    return publicInvitation(declined, nowSeconds);
   }
 }
