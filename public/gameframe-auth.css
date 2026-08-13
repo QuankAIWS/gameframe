@@ -189,6 +189,134 @@
   color: #9ea7cf;
 }
 
+.gameframe-challenge-card {
+  width: min(100%, 40rem);
+}
+
+.gameframe-challenge-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.gameframe-challenge-heading h2 {
+  margin-bottom: 0.15rem;
+}
+
+.gameframe-challenge-game {
+  margin: 0;
+  color: #aeb7ff !important;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.gameframe-challenge-close {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.gameframe-challenge-picker {
+  display: grid;
+  gap: 0.65rem;
+  max-height: min(48vh, 25rem);
+  margin-top: 1rem;
+  overflow: auto;
+}
+
+.gameframe-challenge-player {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem !important;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.045) !important;
+}
+
+.gameframe-challenge-player:hover {
+  background: rgba(88, 101, 242, 0.18) !important;
+  border-color: rgba(174, 183, 255, 0.7) !important;
+}
+
+.gameframe-challenge-player-identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gameframe-challenge-player-identity > img,
+.gameframe-challenge-avatar-fallback {
+  width: 2.6rem;
+  height: 2.6rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.gameframe-challenge-player-identity > img {
+  object-fit: cover;
+}
+
+.gameframe-challenge-avatar-fallback {
+  display: grid;
+  place-items: center;
+  background: #5865f2;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.gameframe-challenge-player-identity > span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.gameframe-challenge-player-identity strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gameframe-challenge-player-identity small {
+  color: #929ac2;
+}
+
+.gameframe-challenge-player > b {
+  color: #cdd2ff;
+  font-size: 0.78rem;
+}
+
+.gameframe-challenge-empty {
+  margin: 0;
+  padding: 1rem;
+  border: 1px dashed rgba(160, 174, 255, 0.3);
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.gameframe-challenge-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(160, 174, 255, 0.16);
+  color: #929ac2;
+  font-size: 0.82rem;
+}
+
+.gameframe-challenge-sent {
+  margin-top: 0.75rem;
+}
+
 .invite-claim-shell {
   min-height: 100vh;
   display: grid;
@@ -213,5 +341,10 @@
 
   .gameframe-invite-link-row {
     grid-template-columns: 1fr;
+  }
+
+  .gameframe-challenge-secondary {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
