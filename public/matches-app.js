@@ -25,6 +25,11 @@ const counts = {
 let knownPlayers = [];
 let acceptingInvitationId = null;
 let cancellingInvitationId = null;
+let decliningInvitationId = null;
+
+function challengeMutationPending() {
+  return acceptingInvitationId !== null || cancellingInvitationId !== null || decliningInvitationId !== null;
+}
 
 function gameName(gameId) {
   if (gameId === "othello") return "Othello";
@@ -115,20 +120,29 @@ function challengeRow(invitation) {
 
   const actions = document.createElement("div");
   actions.className = "platform-actions";
-  if (incoming && invitation.claimToken) {
-    const accept = document.createElement("button");
-    accept.className = "platform-button primary";
-    accept.type = "button";
-    accept.textContent = acceptingInvitationId === invitation.invitationId ? "Accepting…" : "Accept";
-    accept.disabled = acceptingInvitationId !== null || cancellingInvitationId !== null;
-    accept.addEventListener("click", () => void acceptChallenge(invitation));
-    actions.append(accept);
-  } else if (!incoming) {
+  if (incoming) {
+    if (invitation.claimToken) {
+      const accept = document.createElement("button");
+      accept.className = "platform-button primary";
+      accept.type = "button";
+      accept.textContent = acceptingInvitationId === invitation.invitationId ? "Accepting…" : "Accept";
+      accept.disabled = challengeMutationPending();
+      accept.addEventListener("click", () => void acceptChallenge(invitation));
+      actions.append(accept);
+    }
+    const decline = document.createElement("button");
+    decline.className = "platform-button";
+    decline.type = "button";
+    decline.textContent = decliningInvitationId === invitation.invitationId ? "Declining…" : "Decline";
+    decline.disabled = challengeMutationPending();
+    decline.addEventListener("click", () => void declineChallenge(invitation));
+    actions.append(decline);
+  } else {
     const cancel = document.createElement("button");
     cancel.className = "platform-button";
     cancel.type = "button";
     cancel.textContent = cancellingInvitationId === invitation.invitationId ? "Cancelling…" : "Cancel";
-    cancel.disabled = acceptingInvitationId !== null || cancellingInvitationId !== null;
+    cancel.disabled = challengeMutationPending();
     cancel.addEventListener("click", () => void cancelChallenge(invitation));
     actions.append(cancel);
   }
@@ -146,7 +160,7 @@ function renderList(key, items, emptyText, rowFactory) {
 }
 
 async function acceptChallenge(invitation) {
-  if (!invitation.claimToken || acceptingInvitationId || cancellingInvitationId) return;
+  if (!invitation.claimToken || challengeMutationPending()) return;
   acceptingInvitationId = invitation.invitationId;
   try {
     const response = await gameFrameFetch("/api/invitations/claim", {
@@ -166,7 +180,7 @@ async function acceptChallenge(invitation) {
 }
 
 async function cancelChallenge(invitation) {
-  if (acceptingInvitationId || cancellingInvitationId) return;
+  if (challengeMutationPending()) return;
   cancellingInvitationId = invitation.invitationId;
   try {
     const response = await gameFrameFetch(
@@ -182,6 +196,27 @@ async function cancelChallenge(invitation) {
     cancellingInvitationId = null;
     errorBox.hidden = false;
     errorBox.textContent = error instanceof Error ? error.message : "The challenge could not be cancelled.";
+    await refresh();
+  }
+}
+
+async function declineChallenge(invitation) {
+  if (challengeMutationPending()) return;
+  decliningInvitationId = invitation.invitationId;
+  try {
+    const response = await gameFrameFetch(
+      `/api/invitations/${encodeURIComponent(invitation.invitationId)}/decline`,
+      { method: "POST" },
+      identity,
+    );
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.message || `Challenge decline failed with ${response.status}.`);
+    decliningInvitationId = null;
+    await refresh();
+  } catch (error) {
+    decliningInvitationId = null;
+    errorBox.hidden = false;
+    errorBox.textContent = error instanceof Error ? error.message : "The challenge could not be declined.";
     await refresh();
   }
 }
