@@ -169,3 +169,7 @@ if (window.location.pathname === "/profile.html") {
   document.querySelectorAll(".profile-play-together").forEach((node) => node.remove());
   void import("./profile-play-context.js");
 }
+
+if (new URLSearchParams(window.location.search).has("playWith")) {
+  void import("./play-with-context.js");
+}
