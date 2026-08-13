@@ -108,9 +108,9 @@ test("invitation claims require a distinct authenticated target", async () => {
   );
 });
 
-test("invitation resume paths never contain a player identity", () => {
-  assert.equal(resumePathForGame("tic-tac-toe", "match 1"), "/?match=match%201");
-  assert.equal(resumePathForGame("american-checkers", "match-2"), "/?match=match-2");
+test("invitation resume paths keep the board game and never contain a player identity", () => {
+  assert.equal(resumePathForGame("tic-tac-toe", "match 1"), "/?game=tic-tac-toe&match=match%201");
+  assert.equal(resumePathForGame("american-checkers", "match-2"), "/?game=american-checkers&match=match-2");
   assert.equal(
     resumePathForGame("tactical-movement-canary", "match-3"),
     "/tactical.html?match=match-3",
@@ -125,6 +125,7 @@ test("invitation resume paths never contain a player identity", () => {
   );
   for (const path of [
     resumePathForGame("tic-tac-toe", "m"),
+    resumePathForGame("american-checkers", "m"),
     resumePathForGame("tactical-combat-canary", "m"),
     resumePathForGame("monster-master-duel", "m"),
   ]) {
