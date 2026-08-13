@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test";
 const campaignId = "monster-master-staging-v6";
 const playerId = "rpg-provider-integration-player";
 const pellId = "npc.warden-pell";
+const cartId = "object.checkpoint-cart";
+const westWoodsRouteId = "route.crooked-checkpoint-west-woods";
 
 async function onboard(page) {
   await expect(page.locator("#mm-rpg-onboarding")).toBeVisible();
@@ -26,6 +28,10 @@ async function anchor(page, id) {
       ?.find((candidate) => candidate.semanticId === semanticId);
     return item ? { x: item.x, y: item.y, label: item.label } : null;
   }, id);
+}
+
+async function currentSceneId(page) {
+  return page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPayload?.()?.projection?.scene?.sceneId ?? null);
 }
 
 async function walkAdjacent(page, id) {
@@ -85,6 +91,34 @@ async function speak(page, text, reply) {
   await expect(page.locator('#mm-rpg-talk-history .mm-rpg-talk-bubble[data-speaker="character"]').last()).toHaveText(reply);
 }
 
+async function returnToWorld(page) {
+  await page.locator('[data-mm-rpg-dock-tab="world"]').click();
+  await expect(page.locator("#mm-rpg-talk-panel")).toBeHidden();
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterRpgTalk?.getSelectedTarget?.() ?? null)).toBeNull();
+  await expect(page.locator(".mm-rpg-dock-nearby")).toBeVisible();
+}
+
+async function exerciseCinderControl(page) {
+  const recall = page.getByRole("button", { name: "Recall Cinder" });
+  const deploy = page.getByRole("button", { name: "Deploy Cinder" });
+  await expect.poll(async () => {
+    const canRecall = await recall.isVisible().catch(() => false);
+    const canDeploy = await deploy.isVisible().catch(() => false);
+    return canRecall !== canDeploy;
+  }).toBe(true);
+  const startedDeployed = await recall.isVisible().catch(() => false);
+  const first = startedDeployed ? recall : deploy;
+  const second = startedDeployed ? deploy : recall;
+  await first.click();
+  await expect(second).toBeVisible();
+  await second.click();
+  await expect(first).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const payload = window.gameFrameMonsterRpgWorld?.getPayload?.();
+    return payload?.projection?.viewer?.monsters?.find((monster) => monster.displayLabel === "Cinder")?.deploymentState ?? null;
+  })).toBe(startedDeployed ? "deployed" : "recalled");
+}
+
 test("Pell visibly completes inspection without a browser reload", async ({ page }, testInfo) => {
   const browserErrors = [];
   page.on("pageerror", (error) => browserErrors.push(error.message));
@@ -106,16 +140,33 @@ test("Pell visibly completes inspection without a browser reload", async ({ page
   }).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("03-pell-moved.png"), fullPage: true });
 
-  await page.locator('[data-mm-rpg-dock-tab="world"]').click();
-  await expect(page.locator("#mm-rpg-talk-panel")).toBeHidden();
-  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterRpgTalk?.getSelectedTarget?.() ?? null)).toBeNull();
+  await returnToWorld(page);
   await expect(page.locator("#mm-rpg-talk-nearby")).toBeVisible();
-  await expect(page.locator(".mm-rpg-dock-nearby")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("04-world-recovered.png"), fullPage: true });
 
   await openPell(page);
   await speak(page, "What did her badge say?", "The badge gives her name as Mara Venn.");
   await page.screenshot({ path: testInfo.outputPath("05-learned-identity.png"), fullPage: true });
+
+  await returnToWorld(page);
+  await exerciseCinderControl(page);
+  await page.screenshot({ path: testInfo.outputPath("06-cinder-round-trip.png"), fullPage: true });
+
+  await walkAdjacent(page, cartId);
+  await expect(page.getByRole("button", { name: "Uncover cart" })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("07-cart-available.png"), fullPage: true });
+
+  await walkAdjacent(page, westWoodsRouteId);
+  const travel = page.locator("#mm-rpg-travel-control");
+  await expect(travel).toBeVisible();
+  await expect(travel).toHaveText(/^Travel · /);
+  await page.screenshot({ path: testInfo.outputPath("08-route-travel-available.png"), fullPage: true });
+
+  expect(await currentSceneId(page)).toBe("scene.crooked-checkpoint");
+  await travel.click();
+  await expect.poll(() => currentSceneId(page), { timeout: 20_000 }).toBe("scene.west-woods");
+  await expect(page.locator("#mm-rpg-world-location")).toHaveText("West Woods");
+  await page.screenshot({ path: testInfo.outputPath("09-west-woods-after-travel.png"), fullPage: true });
 
   expect(browserErrors).toEqual([]);
 });
