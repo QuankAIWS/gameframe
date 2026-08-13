@@ -1,0 +1,38 @@
+name: Materialize Commander Asset
+
+on:
+  push:
+    branches:
+      - agent/monster-master-commander-trainer-asset-v2
+    paths:
+      - .github/workflows/commander-asset-materialize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Commander branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Copy approved Commander runtime asset
+        run: |
+          set -euo pipefail
+          target="public/assets/monster-master/trainers/commander-trainer-v1-128.webp"
+          if [ -f "$target" ]; then
+            echo "Commander runtime asset already exists."
+            exit 0
+          fi
+          git fetch origin agent/monster-master-vanguard-trainer-asset-ready
+          mkdir -p "$(dirname "$target")"
+          git show origin/agent/monster-master-vanguard-trainer-asset-ready:commander-trainer-v1-128.webp > "$target"
+          echo "d67b548440b55b341540159a835736d789591e0dfa49ab5ec919b118653fd7f7  $target" | sha256sum --check --strict
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$target"
+          git commit -m "Add Commander trainer runtime asset [skip ci]"
+          git push origin HEAD:agent/monster-master-commander-trainer-asset-v2
