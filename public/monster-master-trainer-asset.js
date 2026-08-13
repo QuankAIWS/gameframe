@@ -162,6 +162,88 @@ function clearMissing(validIds) {
   }
 }
 
+function rosterUnits(view) {
+  return Object.values(view?.observation?.rosters ?? {}).flat();
+}
+
+function rootmawUnit(view, unitId) {
+  if (!unitId) return null;
+  const unit = rosterUnits(view).find((candidate) => candidate.id === unitId) ?? null;
+  return unit?.contentId === ROOTMAW_CONTENT_ID ? unit : null;
+}
+
+function selectedDeploymentId(view) {
+  if (view?.observation?.phase !== "deployment") return null;
+  try {
+    return JSON.parse(document.querySelector("#monster-master-details")?.textContent || "{}").selectedUnitId ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function syncRootmawPresentation(view) {
+  if (!view) return;
+  const allUnits = rosterUnits(view);
+  const byId = new Map(allUnits.map((unit) => [unit.id, unit]));
+
+  for (const item of document.querySelectorAll("[data-turn-unit-id]")) {
+    const unit = byId.get(item.dataset.turnUnitId);
+    if (unit?.contentId === ROOTMAW_CONTENT_ID) {
+      item.dataset.contentId = ROOTMAW_CONTENT_ID;
+      const name = item.querySelector("strong");
+      if (name) name.textContent = "Rootmaw Brute";
+    } else if (item.dataset.contentId === ROOTMAW_CONTENT_ID) {
+      delete item.dataset.contentId;
+    }
+  }
+
+  const inspectedId = document.querySelector("[data-turn-unit-id].is-inspected")?.dataset.turnUnitId;
+  const referenceId = inspectedId
+    ?? view.observation.activeUnitId
+    ?? selectedDeploymentId(view);
+  const rootmaw = rootmawUnit(view, referenceId);
+  const hud = document.querySelector("#monster-master-unit-hud");
+  if (hud) {
+    if (rootmaw) {
+      hud.dataset.contentId = ROOTMAW_CONTENT_ID;
+      const name = document.querySelector("#monster-master-hud-name");
+      const glyph = document.querySelector("#monster-master-hud-glyph");
+      const summary = document.querySelector("#monster-master-unit-summary");
+      const abilityOwner = document.querySelector("#monster-master-ability-owner");
+      if (name) name.textContent = "Rootmaw Brute";
+      if (glyph) glyph.textContent = "R";
+      if (summary) summary.textContent = "Mossbound heavy monster · slow, durable, and built for brutal close pressure.";
+      if (abilityOwner) abilityOwner.textContent = "Rootmaw Brute";
+    } else if (hud.dataset.contentId === ROOTMAW_CONTENT_ID) {
+      delete hud.dataset.contentId;
+    }
+  }
+
+  const activeLabel = document.querySelector("#monster-master-active-unit");
+  const activeOrSelected = rootmawUnit(view, view.observation.activeUnitId ?? selectedDeploymentId(view));
+  if (activeLabel && activeOrSelected) {
+    const team = activeOrSelected.id.startsWith("alpha-") ? "Alpha" : "Beta";
+    activeLabel.textContent = `${team} Rootmaw Brute`;
+  }
+
+  const status = document.querySelector("#monster-master-status");
+  if (status && activeOrSelected && status.textContent?.includes("Stone Bulwark")) {
+    status.textContent = status.textContent.replace("Stone Bulwark", "Rootmaw Brute");
+  }
+
+  const yourPlayerId = view.observation.yourPlayerId ?? window.gameFrameIdentity?.playerId;
+  const undeployed = (view.observation.rosters?.[yourPlayerId] ?? [])
+    .filter((unit) => view.observation.undeployedUnitIds?.includes(unit.id));
+  const deployButtons = [...document.querySelectorAll('#monster-master-options button[data-action-kind="deploy-unit"]')];
+  deployButtons.forEach((button, index) => {
+    const unit = undeployed[index];
+    if (unit?.contentId !== ROOTMAW_CONTENT_ID) return;
+    const parts = button.textContent.split("·");
+    parts[0] = "Rootmaw Brute ";
+    button.textContent = parts.join("·");
+  });
+}
+
 function renderTrainerAssets() {
   const layer = ensureLayer();
   const pixi = window.gameFrameMonsterPixi;
@@ -173,6 +255,7 @@ function renderTrainerAssets() {
     return;
   }
 
+  syncRootmawPresentation(view);
   const camera = pixi.getCamera?.() ?? { zoom: 1 };
   const zoom = Number.isFinite(camera.zoom) ? camera.zoom : 1;
   const playerIds = view.playerIds ?? [];
@@ -194,9 +277,7 @@ function renderTrainerAssets() {
     const alphaTeam = unit.ownerId === playerIds[0];
     const kind = assetKind(unit);
     token.dataset.team = alphaTeam ? "alpha" : "beta";
-    token.dataset.facing = kind === "rootmaw"
-      ? (alphaTeam ? "left" : "right")
-      : (alphaTeam ? "left" : "right");
+    token.dataset.facing = alphaTeam ? "left" : "right";
     token.dataset.defeated = String((unit.health ?? 1) <= 0);
     const verticalOffset = kind === "rootmaw" ? 4 : 7;
     token.style.transform = `translate3d(${point.x}px, ${point.y - (verticalOffset * zoom)}px, 0) translate(-50%, -100%) scale(${zoom})`;
