@@ -1,0 +1,44 @@
+/* Make Cascade Crush ice objectives visually unmistakable. */
+.cascade-tile.has-ice::after {
+  content: "\2744";
+  position: absolute;
+  inset: 8%;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(35,145,183,.88) 0 31%, rgba(178,238,251,.90) 32% 49%, rgba(255,255,255,.78) 50% 57%, transparent 58%);
+  color: #fff;
+  font-family: "Segoe UI Symbol", sans-serif;
+  font-size: clamp(1.55rem, 4.6vw, 3rem);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 2px 2px rgba(17,83,111,.78), 0 0 5px rgba(20,135,176,.95), 0 0 10px rgba(255,255,255,.92);
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.cascade-tile.ice-2::after {
+  inset: 3%;
+  border: 4px solid rgba(236,252,255,.96);
+  background: radial-gradient(circle, rgba(22,119,160,.96) 0 29%, rgba(128,220,243,.94) 30% 47%, rgba(239,252,255,.98) 48% 57%, rgba(73,190,222,.72) 58% 62%, transparent 63%);
+  box-shadow: 0 0 0 2px rgba(74,188,220,.50), 0 0 12px rgba(49,178,218,.72);
+}
+
+.cascade-tile.has-ice.is-matched::after {
+  filter: brightness(1.28);
+  transform: scale(1.06);
+}
+
+@media (max-width: 650px) {
+  .cascade-tile.has-ice::after {
+    inset: 4%;
+    font-size: clamp(1.25rem, 8.5vw, 2.4rem);
+  }
+
+  .cascade-tile.ice-2::after {
+    inset: 1%;
+    border-width: 3px;
+  }
+}
