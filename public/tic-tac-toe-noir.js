@@ -1,3 +1,5 @@
+await import("./board-surface-init.js");
+
 const stylesheetUrls = ["/tic-tac-toe-noir.css", "/tic-tac-toe-universal.css"];
 for (const stylesheetUrl of stylesheetUrls) {
   if (document.querySelector(`link[href="${stylesheetUrl}"]`)) continue;
