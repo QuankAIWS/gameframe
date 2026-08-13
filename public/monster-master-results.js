@@ -61,8 +61,8 @@ function resultFor(view) {
 }
 
 function statusCopy(result) {
-  if (result === "victory") return "Your force won the duel.";
-  if (result === "defeat") return "The opposing force won the duel.";
+  if (result === "victory") return "The opposing Master has fallen. You won the duel.";
+  if (result === "defeat") return "Your Master has fallen. You lost the duel.";
   return "The duel ended in a draw.";
 }
 
@@ -113,10 +113,10 @@ function renderResult(view = latestView) {
       ? "Defeat"
       : "Draw";
   screen.querySelector("#monster-master-result-summary").textContent = result === "victory"
-    ? "The opposing force has been eliminated. Your surviving monsters hold the battlefield."
+    ? "The opposing Master has fallen. Your surviving force holds the battlefield."
     : result === "defeat"
-      ? "Your final monster has fallen. The opposing force controls the battlefield."
-      : "The final round ended with both forces still standing.";
+      ? "Your Master has fallen. The opposing force holds the battlefield."
+      : "The final round ended with both Masters still standing.";
   screen.querySelector("#monster-master-result-friendly").textContent = String(friendlySurvivors);
   screen.querySelector("#monster-master-result-enemy").textContent = String(enemySurvivors);
   setTerminalStatus(result);

@@ -4,6 +4,10 @@ import {
 } from "../agents/agent-player.ts";
 import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import {
+  isMonsterMasterArenaState,
+  monsterMasterArenaDefinition,
+} from "../games/monster-master/arena-definition.ts";
+import {
   DeterministicMonsterMasterPlayer,
   monsterMasterDefinition,
   type MonsterMasterAction,
@@ -72,15 +76,19 @@ export class MonsterMasterMatchService {
       throw error;
     }
 
+    // Standalone Arena matches use the Arena rules profile. Explicitly configured
+    // states (used by campaign-facing encounter infrastructure) retain the base
+    // Monster Master definition and are not silently reshaped by Arena evolution.
+    const definition = initialState ? monsterMasterDefinition : monsterMasterArenaDefinition;
     const session = new MatchSession({
       matchId,
-      definition: monsterMasterDefinition,
+      definition,
       playerIds: normalizedPlayers,
       ...(initialState
         ? {
             snapshot: {
               matchId,
-              gameId: monsterMasterDefinition.gameId,
+              gameId: definition.gameId,
               playerIds: normalizedPlayers,
               revision: 0,
               initialState,
@@ -192,9 +200,12 @@ export class MonsterMasterMatchService {
       Object.assign(error, { code: "match_not_found" });
       throw error;
     }
+    const definition = isMonsterMasterArenaState(snapshot.state)
+      ? monsterMasterArenaDefinition
+      : monsterMasterDefinition;
     return new MatchSession({
       matchId,
-      definition: monsterMasterDefinition,
+      definition,
       playerIds: snapshot.playerIds,
       snapshot,
     });

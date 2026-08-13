@@ -42,7 +42,9 @@ test("Monster Master browser delivery uses authenticated GameFrame boundaries", 
   assert.match(html, /data-entry="\/monster-master-app\.js"/);
   assert.match(html, /id="monster-master-canvas"/);
   assert.match(html, /id="monster-master-select-mend"/);
-  assert.match(html, /Take the trainer's seat/);
+  assert.match(html, /Take the field as the human Monster Master/);
+  assert.match(html, /deploy three creatures beside you/);
+  assert.match(html, /If a Master falls, the round is over/);
   assert.match(html, /class="monster-master-board-briefing"/);
   assert.match(html, /Battlefield actions, targets, and resolved outcomes appear here\./);
   assert.match(html, /monster-master-trainer\.css/);

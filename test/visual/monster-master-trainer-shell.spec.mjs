@@ -8,7 +8,8 @@ test("Monster Master presents the player as trainer with compact optional battle
   await expect(page.locator(".monster-master-match-topbar")).toHaveCount(0);
   await expect(page.getByText("Warden Duel", { exact: true })).toHaveCount(0);
   await expect(page.locator("#monster-master-new-match")).toBeHidden();
-  await expect(page.locator(".hero-copy")).toContainText("trainer's seat");
+  await expect(page.locator(".hero-copy")).toContainText("human Monster Master");
+  await expect(page.locator(".hero-copy")).toContainText("If a Master falls, the round is over");
 
   await page.locator("#monster-master-bot").click();
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();

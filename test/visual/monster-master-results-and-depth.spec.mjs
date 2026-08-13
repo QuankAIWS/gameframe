@@ -103,17 +103,17 @@ test("Monster Master presents a terminal victory screen over the surviving battl
   await expect(resultScreen).toBeVisible();
   await expect(resultScreen).toHaveAttribute("data-result", "victory");
   await expect(page.locator("#monster-master-result-title")).toHaveText("Victory");
-  await expect(page.locator("#monster-master-result-summary")).toContainText("opposing force has been eliminated");
-  await expect(page.locator("#monster-master-result-friendly")).toHaveText(/^[1-3]$/);
+  await expect(page.locator("#monster-master-result-summary")).toContainText("opposing Master has fallen");
+  await expect(page.locator("#monster-master-result-friendly")).toHaveText(/^[1-4]$/);
   await expect(page.locator("#monster-master-result-enemy")).toHaveText("0");
-  await expect(page.locator("#monster-master-status")).toHaveText("Your force won the duel.");
+  await expect(page.locator("#monster-master-status")).toHaveText("The opposing Master has fallen. You won the duel.");
   await expect(page.locator("#monster-master-result-rematch")).toBeVisible();
   await expect(resultScreen.getByRole("link", { name: "Return home" })).toHaveAttribute("href", "/");
   await expect(page.locator("#monster-master-pixi-canvas")).toBeVisible();
 
   await page.waitForTimeout(900);
   await expect(resultScreen).toBeVisible();
-  await expect(page.locator("#monster-master-status")).toHaveText("Your force won the duel.");
+  await expect(page.locator("#monster-master-status")).toHaveText("The opposing Master has fallen. You won the duel.");
   await page.screenshot({ path: testInfo.outputPath("monster-master-victory-desktop.png"), fullPage: true });
 
   await page.evaluate(() => window.gameFrameMonsterResults.reset());
