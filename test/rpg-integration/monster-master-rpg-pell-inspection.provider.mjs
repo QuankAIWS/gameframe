@@ -162,10 +162,20 @@ test("RPG provider path remains playable through inspection, world controls, and
   await expect(travel).toHaveText(/^Travel · /);
   await page.screenshot({ path: testInfo.outputPath("08-route-travel-available.png"), fullPage: true });
 
+  const cameraBeforeTravel = await page.evaluate(() => window.gameFrameMonsterPixi?.getCamera?.() ?? null);
+  expect(cameraBeforeTravel).not.toBeNull();
   expect(await currentSceneId(page)).toBe("scene.crooked-checkpoint");
   await travel.click();
   await expect.poll(() => currentSceneId(page), { timeout: 20_000 }).toBe("scene.west-woods");
   await expect(page.locator("#mm-rpg-world-location")).toHaveText("West Woods Route");
+  await expect.poll(() => page.evaluate(() => {
+    const camera = window.gameFrameMonsterPixi?.getCamera?.();
+    const player = window.gameFrameMonsterRpgWorld?.getPlayerPosition?.()?.transform;
+    return Boolean(camera && player && camera.x === player.x && camera.y === player.y);
+  })).toBe(true);
+  const cameraAfterTravel = await page.evaluate(() => window.gameFrameMonsterPixi?.getCamera?.() ?? null);
+  expect(cameraAfterTravel?.zoom).toBe(cameraBeforeTravel?.zoom);
+  expect(cameraAfterTravel?.quarter).toBe(cameraBeforeTravel?.quarter);
   await page.screenshot({ path: testInfo.outputPath("09-west-woods-after-travel.png"), fullPage: true });
 
   expect(browserErrors).toEqual([]);
