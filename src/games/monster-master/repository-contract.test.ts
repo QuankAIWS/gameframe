@@ -6,6 +6,7 @@ import { InMemoryMatchSnapshotStore } from "../../platform/match-store.ts";
 import { MonsterMasterMatchService } from "../../server/monster-master-match-service.ts";
 import {
   createMonsterMasterArenaState,
+  GLOAMSPORE_STALKER_CONTENT_ID,
   isMonsterMasterArenaState,
   MONSTER_MASTER_ARENA_MONSTER_SLOTS,
   monsterMasterArenaDefinition,
@@ -73,14 +74,29 @@ test("MM-0001 remains separate, deterministic, and bounded", async () => {
 
 test("standalone Arena profile fields one embodied Master plus three distinct monsters per player", () => {
   const state = createMonsterMasterArenaState(["alpha", "beta"]);
+  const prototypeState = createMonsterMasterState(["alpha", "beta"]);
   assert.equal(isMonsterMasterArenaState(state), true);
   assert.equal(state.undeployedUnitIds.length, 8);
 
   for (const playerId of state.playerIds) {
     const roster = state.rosters[playerId];
+    const prototypeEmberling = prototypeState.rosters[playerId].find((unit) => unit.role === "emberling");
+    assert.ok(prototypeEmberling);
     assert.equal(roster.filter((unit) => unit.role === "master").length, 1);
     assert.equal(roster.filter((unit) => unit.role !== "master").length, MONSTER_MASTER_ARENA_MONSTER_SLOTS);
-    assert.equal(roster.filter((unit) => unit.role === "emberling").length, 1);
+
+    const gloamspore = roster.find((unit) => unit.contentId === GLOAMSPORE_STALKER_CONTENT_ID);
+    assert.ok(gloamspore);
+    assert.equal(gloamspore.role, "emberling");
+    assert.equal(gloamspore.movement, prototypeEmberling.movement);
+    assert.equal(gloamspore.initiative, prototypeEmberling.initiative);
+    assert.equal(gloamspore.maxHealth, prototypeEmberling.maxHealth);
+    assert.equal(gloamspore.attackRange, prototypeEmberling.attackRange);
+    assert.equal(gloamspore.attackDamage, prototypeEmberling.attackDamage);
+    assert.deepEqual(gloamspore.abilityIds, prototypeEmberling.abilityIds);
+    assert.ok(gloamspore.tags?.includes("arena-monster-slot-2"));
+    assert.equal(roster.some((unit) => unit.contentId === "emberling-skirmisher-v1"), false);
+
     const rootmaw = roster.find((unit) => unit.contentId === ROOTMAW_BRUTE_CONTENT_ID);
     assert.ok(rootmaw);
     assert.equal(rootmaw.role, "bulwark");
@@ -109,6 +125,26 @@ test("Rootmaw Brute master art is registered and delivered as an Arena runtime a
   assert.match(runtime, /Rootmaw Brute/);
   assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF");
   assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP");
+});
+
+test("Gloamspore Stalker master art is registered and delivered as an Arena runtime asset", async () => {
+  const manifest = JSON.parse(await read("public/assets/monster-master/manifest.json"));
+  const runtime = await read("public/monster-master-trainer-asset.js");
+  const asset = await read("public/assets/monster-master/creatures/gloamspore-stalker-v1-128.svg");
+
+  assert.ok(manifest.sources.includes("approved-gloamspore-stalker-isometric-master-v1"));
+  assert.equal(manifest.creatures[GLOAMSPORE_STALKER_CONTENT_ID].label, "Gloamspore Stalker");
+  assert.equal(
+    manifest.creatures[GLOAMSPORE_STALKER_CONTENT_ID].path,
+    "/assets/monster-master/creatures/gloamspore-stalker-v1-128.svg",
+  );
+  assert.equal(manifest.creatures[GLOAMSPORE_STALKER_CONTENT_ID].usage, "standalone-arena");
+  assert.match(runtime, /GLOAMSPORE_ASSET = "\/assets\/monster-master\/creatures\/gloamspore-stalker-v1-128\.svg"/);
+  assert.match(runtime, /GLOAMSPORE_CONTENT_ID = "gloamspore-stalker-v1"/);
+  assert.match(runtime, /Gloamspore Stalker/);
+  assert.match(asset, /^<svg/);
+  assert.match(asset, /width="128" height="192"/);
+  assert.match(asset, /data:image\/webp;base64,/);
 });
 
 test("standalone Arena enters combat after all eight combatants deploy", () => {
