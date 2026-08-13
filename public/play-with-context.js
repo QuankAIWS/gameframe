@@ -54,7 +54,12 @@ async function selectOthelloPlayer() {
   if (!(openButton instanceof HTMLButtonElement)) return;
   openButton.click();
 
-  const playerButton = await waitFor(() => document.querySelector(`[data-othello-player-id="${CSS.escape(selectedPlayerId)}"]`));
+  const playerButton = await waitFor(() => {
+    const players = Array.isArray(window.gameFrameKnownPlayers) ? window.gameFrameKnownPlayers : [];
+    const index = players.findIndex((player) => player?.playerId === selectedPlayerId);
+    if (index < 0) return null;
+    return document.querySelectorAll("#othello-game-menu .othello-player-choice")[index] || null;
+  });
   if (!(playerButton instanceof HTMLButtonElement)) return;
   const menu = playerButton.closest("#othello-game-menu");
   pinPlayer(
