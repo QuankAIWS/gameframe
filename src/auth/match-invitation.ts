@@ -84,11 +84,12 @@ export function isInvitationGameId(value: unknown): value is InvitationGameId {
 
 export function resumePathForGame(gameId: InvitationGameId, matchId: string): string {
   const encodedMatchId = encodeURIComponent(matchId);
+  if (gameId === "tic-tac-toe") return `/?game=tic-tac-toe&match=${encodedMatchId}`;
+  if (gameId === "american-checkers") return `/?game=american-checkers&match=${encodedMatchId}`;
   if (gameId === "othello") return `/othello.html?match=${encodedMatchId}`;
   if (gameId === "tactical-movement-canary") return `/tactical.html?match=${encodedMatchId}`;
   if (gameId === "tactical-combat-canary") return `/combat.html?match=${encodedMatchId}`;
-  if (gameId === "monster-master-duel") return `/monster-master.html?match=${encodedMatchId}`;
-  return `/?match=${encodedMatchId}`;
+  return `/monster-master.html?match=${encodedMatchId}`;
 }
 
 export function discordTargetPlayerId(discordUserId: unknown): string | undefined {
@@ -103,6 +104,22 @@ export function discordTargetPlayerId(discordUserId: unknown): string | undefine
   return `discord:${normalized}`;
 }
 
+export function invitationTargetPlayerId(
+  playerId: unknown,
+  discordUserId: unknown = undefined,
+): string | undefined {
+  const legacyTarget = discordTargetPlayerId(discordUserId);
+  if (playerId === undefined || playerId === null || playerId === "") return legacyTarget;
+  const normalized = String(playerId).trim();
+  if (!validPlayerId(normalized)) {
+    throw new MatchInvitationError("invitation_invalid", "The invitation target player ID is invalid.");
+  }
+  if (legacyTarget && legacyTarget !== normalized) {
+    throw new MatchInvitationError("invitation_invalid", "Invitation target fields disagree.");
+  }
+  return normalized;
+}
+
 export function requireInvitationTarget(
   claims: MatchInvitationClaims,
   claimantPlayerId: string,
@@ -113,7 +130,7 @@ export function requireInvitationTarget(
   if (claims.targetPlayerId && claims.targetPlayerId !== claimantPlayerId) {
     throw new MatchInvitationError(
       "invitation_target_mismatch",
-      "This invitation is restricted to a different authenticated Discord user.",
+      "This invitation is restricted to a different authenticated player.",
     );
   }
 }

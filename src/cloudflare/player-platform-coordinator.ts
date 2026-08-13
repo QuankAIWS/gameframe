@@ -260,7 +260,7 @@ export async function indexInvitation(
   playerIds: readonly string[],
   options: InvitationIndexOptions = {},
 ): Promise<void> {
-  const uniquePlayers = [...new Set(playerIds.filter(Boolean))];
+  const uniquePlayers = [...new Set([...playerIds, invitation.targetPlayerId ?? ""].filter(Boolean))];
   await Promise.allSettled(uniquePlayers.map((playerId) => {
     const summary = {
       ...invitation,

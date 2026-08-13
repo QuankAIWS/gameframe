@@ -118,7 +118,7 @@ test("authenticated invitation claim creates a match with both verified principa
   assert.equal(claimed.invitation.status, "claimed");
   assert.equal(claimed.invitation.matchId, "match-1");
   assert.equal(claimed.invitation.claimant.playerId, "discord:222");
-  assert.equal(claimed.resumePath, "/?match=match-1");
+  assert.equal(claimed.resumePath, "/?game=american-checkers&match=match-1");
 
   for (const playerId of ["discord:111", "discord:222"]) {
     const match = await authenticatedFetch(worker, env, "/api/matches/match-1", playerId);
@@ -132,7 +132,7 @@ test("authenticated invitation claim creates a match with both verified principa
   namespace.evict("match-1");
   const status = await authenticatedFetch(worker, env, "/api/invitations/invite-1", "discord:111");
   assert.equal(status.status, 200);
-  assert.equal((await status.json() as any).resumePath, "/?match=match-1");
+  assert.equal((await status.json() as any).resumePath, "/?game=american-checkers&match=match-1");
 
   const retry = await authenticatedFetch(worker, env, "/api/invitations/claim", "discord:222", {
     method: "POST",
@@ -191,9 +191,10 @@ test("targeted invitations and cancellation remain tied to authenticated princip
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       gameId: "tactical-combat-canary",
-      targetDiscordUserId: "222",
+      targetPlayerId: "discord:222",
     }),
   }).then((response) => response.json() as Promise<any>);
+  assert.equal(targeted.invitation.targetPlayerId, "discord:222");
   const targetedToken = new URL(targeted.inviteUrl).searchParams.get("token");
   const wrongUser = await authenticatedFetch(worker, env, "/api/invitations/claim", "discord:333", {
     method: "POST",
@@ -234,6 +235,18 @@ test("targeted invitations and cancellation remain tied to authenticated princip
   });
   assert.equal(claimCancelled.status, 409);
   assert.equal((await claimCancelled.json() as any).error, "invitation_cancelled");
+});
+
+test("legacy Discord target input remains supported", async () => {
+  const env: GameFrameWorkerEnv = { SESSION_SECRET: secret, MATCHES: new HybridNamespace() };
+  const worker = createGameFrameWorker({ idGenerator: sequenceGenerator(["legacy-target"]) });
+  const created = await authenticatedFetch(worker, env, "/api/invitations", "discord:111", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ gameId: "tic-tac-toe", targetDiscordUserId: "222" }),
+  });
+  assert.equal(created.status, 201);
+  assert.equal((await created.json() as any).invitation.targetPlayerId, "discord:222");
 });
 
 test("tampered invitation tokens are rejected before a seat or match is created", async () => {

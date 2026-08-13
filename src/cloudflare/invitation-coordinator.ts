@@ -1,7 +1,7 @@
 import type { AuthenticatedPrincipal } from "../auth/request-authenticator.ts";
 import {
   MatchInvitationTokenCodec,
-  discordTargetPlayerId,
+  invitationTargetPlayerId,
   isInvitationGameId,
   requireInvitationTarget,
   resumePathForGame,
@@ -94,7 +94,7 @@ export class InvitationCoordinator {
       });
     }
     const gameId = body.gameId as InvitationGameId;
-    const targetPlayerId = discordTargetPlayerId(body.targetDiscordUserId);
+    const targetPlayerId = invitationTargetPlayerId(body.targetPlayerId, body.targetDiscordUserId);
     const invitationId = this.#idGenerator();
     const { token, claims } = await this.#codec.issue({
       invitationId,

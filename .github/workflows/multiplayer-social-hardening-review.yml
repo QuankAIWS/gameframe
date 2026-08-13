@@ -1,0 +1,74 @@
+name: Multiplayer Social Hardening Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - ".github/workflows/multiplayer-social-hardening-review.yml"
+      - "public/gameframe-nav.js"
+      - "public/profile-play-context.js"
+      - "public/play-with-context.js"
+      - "public/secure-match-invite.js"
+      - "src/auth/match-invitation.ts"
+      - "src/cloudflare/invitation-coordinator.ts"
+      - "src/cloudflare/invitation-object-runtime.ts"
+      - "src/cloudflare/player-platform-coordinator.ts"
+      - "src/cloudflare/worker-router.ts"
+      - "test/browser/authenticated-invitation.spec.mjs"
+      - "test/browser/profile-play-together.spec.mjs"
+      - "test/browser/player-platform.spec.mjs"
+      - "src/auth/match-invitation.test.ts"
+      - "src/cloudflare/invitation-object-runtime.test.ts"
+      - "src/cloudflare/invitation-router.test.ts"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: multiplayer-social-hardening-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hardening-review:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Browser syntax
+        run: |
+          node --check public/gameframe-nav.js
+          node --check public/profile-play-context.js
+          node --check public/play-with-context.js
+          node --check public/secure-match-invite.js
+
+      - name: Invitation and player-index contracts
+        run: >-
+          node --experimental-strip-types --test
+          src/auth/match-invitation.test.ts
+          src/cloudflare/invitation-object-runtime.test.ts
+          src/cloudflare/invitation-router.test.ts
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Multiplayer social browser journeys
+        run: >-
+          npx playwright test
+          test/browser/authenticated-invitation.spec.mjs
+          test/browser/profile-play-together.spec.mjs
+          test/browser/player-platform.spec.mjs
+          --config playwright.config.mjs
