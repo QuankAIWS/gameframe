@@ -1,0 +1,25 @@
+name: Materialize Medic Asset
+on:
+  push:
+    branches: [agent/monster-master-medic-trainer-asset]
+permissions:
+  contents: write
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - run: python3 scripts/_materialize-medic-manifest.py && python3 scripts/_materialize-medic-contract.py
+      - run: node --experimental-strip-types --test src/games/monster-master/repository-contract.test.ts
+      - run: |
+          rm scripts/_materialize-medic-manifest.py scripts/_materialize-medic-contract.py scripts/_medic-contract-a.txt scripts/_medic-contract-b.txt .github/workflows/materialize-medic-asset.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Register Medic trainer asset"
+          git push origin HEAD:${{ github.ref_name }}
