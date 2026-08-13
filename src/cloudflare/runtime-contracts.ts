@@ -30,6 +30,12 @@ export interface AssetFetcherLike {
   fetch(request: Request): Promise<Response>;
 }
 
+export interface WorkerVersionMetadataLike {
+  id: string;
+  tag?: string;
+  timestamp?: string;
+}
+
 export interface GameFrameWorkerEnv {
   SESSION_SECRET?: string;
   DISCORD_CLIENT_ID?: string;
@@ -38,6 +44,7 @@ export interface GameFrameWorkerEnv {
   GAMEFRAME_ADMIN_DISCORD_USER_IDS?: string;
   GAMEFRAME_RPG_ORIGIN_URL?: string;
   GAMEFRAME_RPG_PROXY_HMAC_SECRET?: string;
+  CF_VERSION_METADATA?: WorkerVersionMetadataLike;
   MATCHES: DurableObjectNamespaceLike;
   ASSETS?: AssetFetcherLike;
 }
