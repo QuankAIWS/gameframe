@@ -6,7 +6,7 @@ const STYLE_ID = "monster-master-trainer-asset-style";
 const tokens = new Map();
 
 function assetKind(unit) {
-  if (unit?.role === "master") return "trainer";
+  if (unit && unit.role === "master") return "trainer";
   if (unit?.contentId === ROOTMAW_CONTENT_ID) return "rootmaw";
   return null;
 }
