@@ -6,7 +6,8 @@
     "approved-trainer-isometric-master-v1",
     "approved-rootmaw-brute-isometric-master-v1",
     "approved-gloamspore-stalker-isometric-master-v1",
-    "approved-voidshard-reaver-isometric-master-v1"
+    "approved-voidshard-reaver-isometric-master-v1",
+    "approved-stormcrest-skitter-class-one-isometric-master-v1"
   ],
   "creatureAtlas": "/assets/monster-master/creature-atlas-v1.svg",
   "creatureCell": { "width": 96, "height": 96 },
@@ -74,6 +75,21 @@
       "perspective": "three-quarter-down-isometric",
       "anchor": { "x": 0.5, "y": 0.9 },
       "battlefieldScale": 1.42
+    },
+    "stormcrest-skitter-v1": {
+      "label": "Stormcrest Skitter",
+      "class": 1,
+      "classLabel": "Class One",
+      "path": "/assets/monster-master/creatures/stormcrest-skitter-v1-128.webp",
+      "width": 128,
+      "height": 192,
+      "alpha": true,
+      "usage": "asset-library",
+      "assignment": "unassigned",
+      "facing": "left",
+      "perspective": "three-quarter-down-isometric",
+      "anchor": { "x": 0.5, "y": 0.9 },
+      "battlefieldScale": 1.18
     }
   },
   "terrain": {
