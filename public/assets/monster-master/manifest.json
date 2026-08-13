@@ -33,6 +33,10 @@
       "alpha": true,
       "usage": "asset-library",
       "assignment": "unassigned",
+      "facing": "left",
+      "perspective": "three-quarter-down-isometric",
+      "anchor": { "x": 0.5, "y": 0.9 },
+      "battlefieldScale": 1.0,
       "provenance": {
         "provider": "OpenAI ChatGPT image generation",
         "sourceArchive": "private-gameframe-asset-masters",
