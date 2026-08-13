@@ -11,6 +11,7 @@ test("Monster Master uses one authoritative controller with guarded Pixi deliver
   const monsterArena = await read("public/monster-master.html");
   const trainerRuntime = await read("public/monster-master-trainer-asset.js");
   const trainerAsset = await readFile(new URL("../../public/assets/monster-master/trainers/master-trainer-v1-128.webp", import.meta.url));
+  const voidshardAsset = await readFile(new URL("../../public/assets/monster-master/creatures/voidshard-reaver-v1-128.webp", import.meta.url));
   const gameframeNav = await read("public/gameframe-nav.js");
   const correction = await read("public/monster-master-correction.js");
   const overlay = await read("public/monster-master-overlay.js");
@@ -169,10 +170,23 @@ test("Monster Master uses one authoritative controller with guarded Pixi deliver
   assert.match(terrainAtlas, /linearGradient id="stone-top"/);
   assert.equal(manifest.version, 4);
   assert.ok(manifest.sources.includes("approved-trainer-isometric-master-v1"));
+  assert.ok(manifest.sources.includes("approved-voidshard-reaver-isometric-master-v1"));
   assert.equal(manifest.trainerAssets["master-trainer-v1"].role, "master");
   assert.equal(manifest.trainerAssets["master-trainer-v1"].usage, "standalone-arena");
   assert.equal(manifest.trainerAssets["master-trainer-v1"].path, "/assets/monster-master/trainers/master-trainer-v1-128.webp");
   assert.equal(manifest.creatures["warden-master-v1"].role, "master");
+  const voidshard = manifest.creatures["voidshard-reaver-v1"];
+  assert.equal(voidshard.label, "Voidshard Reaver");
+  assert.equal(voidshard.path, "/assets/monster-master/creatures/voidshard-reaver-v1-128.webp");
+  assert.equal(voidshard.width, 128);
+  assert.equal(voidshard.height, 192);
+  assert.equal(voidshard.alpha, true);
+  assert.equal(voidshard.usage, "asset-library");
+  assert.equal(voidshard.facing, "left");
+  assert.equal(voidshard.perspective, "three-quarter-down-isometric");
+  assert.equal(Object.hasOwn(voidshard, "role"), false);
+  assert.equal(voidshardAsset.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(voidshardAsset.subarray(8, 12).toString("ascii"), "WEBP");
   assert.equal(manifest.terrain["floor-a"].semantic, "floor");
   assert.equal(manifest.terrain["wall-rubble-a"].semantic, "wall");
 
