@@ -53,10 +53,19 @@ test("Cascade progression sync stays in the player-platform lane", () => {
 
 test("Monster Master changes stay in the Monster Master lane", () => {
   assert.deepEqual(classifyUiTestScope([
-    "public/monster-master-rpg-world.js",
     "src/browser/monster-master-pixi-entry.js",
-    "test/browser/monster-master-rpg-world.spec.mjs",
+    "public/monster-master.js",
   ]), { ...none, monsterMaster: true });
+});
+
+test("RPG browser and provider changes do not run the Monster Master Arena lane", () => {
+  assert.deepEqual(classifyUiTestScope([
+    "public/monster-master-rpg-shell-guards.js",
+    "public/monster-master-rpg-world.js",
+    "test/browser/monster-master-rpg-world.spec.mjs",
+    "test/rpg-integration/monster-master-rpg-pell-inspection.provider.mjs",
+    "playwright.rpg-provider-integration.config.mjs",
+  ]), none);
 });
 
 test("Monster Master assets run the Monster Master verification lane", () => {
