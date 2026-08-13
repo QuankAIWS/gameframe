@@ -98,6 +98,27 @@ async function returnToWorld(page) {
   await expect(page.locator(".mm-rpg-dock-nearby")).toBeVisible();
 }
 
+async function exerciseCinderControl(page) {
+  const recall = page.getByRole("button", { name: "Recall Cinder" });
+  const deploy = page.getByRole("button", { name: "Deploy Cinder" });
+  await expect.poll(async () => {
+    const canRecall = await recall.isVisible().catch(() => false);
+    const canDeploy = await deploy.isVisible().catch(() => false);
+    return canRecall !== canDeploy;
+  }).toBe(true);
+  const startedDeployed = await recall.isVisible().catch(() => false);
+  const first = startedDeployed ? recall : deploy;
+  const second = startedDeployed ? deploy : recall;
+  await first.click();
+  await expect(second).toBeVisible();
+  await second.click();
+  await expect(first).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const payload = window.gameFrameMonsterRpgWorld?.getPayload?.();
+    return payload?.projection?.viewer?.monsters?.find((monster) => monster.displayLabel === "Cinder")?.deploymentState ?? null;
+  })).toBe(startedDeployed ? "deployed" : "recalled");
+}
+
 test("Pell visibly completes inspection without a browser reload", async ({ page }, testInfo) => {
   const browserErrors = [];
   page.on("pageerror", (error) => browserErrors.push(error.message));
@@ -126,6 +147,10 @@ test("Pell visibly completes inspection without a browser reload", async ({ page
   await openPell(page);
   await speak(page, "What did her badge say?", "The badge gives her name as Mara Venn.");
   await page.screenshot({ path: testInfo.outputPath("05-learned-identity.png"), fullPage: true });
+
+  await returnToWorld(page);
+  await exerciseCinderControl(page);
+  await page.screenshot({ path: testInfo.outputPath("06-cinder-round-trip.png"), fullPage: true });
 
   expect(await currentSceneId(page)).toBe("scene.crooked-checkpoint");
   expect(browserErrors).toEqual([]);
