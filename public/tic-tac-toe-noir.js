@@ -50,7 +50,7 @@ function installTopbar() {
     </a>
     <nav class="tic-noir-nav" aria-label="Tic-Tac-Toe navigation">
       <a href="/">Games</a>
-      <button class="tic-noir-setup-top" type="button">Match setup</button>
+      <button class="tic-noir-setup-top" type="button">Game menu</button>
     </nav>
     <span class="tic-noir-discord-safe" aria-hidden="true"></span>
   `;
@@ -128,7 +128,7 @@ function installFooter() {
   footer.innerHTML = `
     <a href="/">Back to games</a>
     <span aria-hidden="true"></span>
-    <button type="button">Match setup</button>
+    <button type="button">Game menu</button>
   `;
   footer.querySelector("button")?.addEventListener("click", () => newMatch?.click());
   matchPanel.append(footer);
@@ -197,6 +197,8 @@ function mirrorState() {
 function syncPresentation() {
   syncPending = false;
   const active = isTicTacToeMatch();
+  const local = document.body.classList.contains("board-game-local");
+  const boardRoute = document.body.classList.contains("board-game-route");
   document.body.classList.toggle("tic-tac-toe-noir-running", active);
   if (hero) hero.setAttribute("aria-hidden", String(active));
 
@@ -206,9 +208,11 @@ function syncPresentation() {
   }
 
   installPresentation();
-  if (matchLabel) matchLabel.textContent = "LIVE MATCH";
-  if (matchTitle) matchTitle.textContent = "Tic-Tac-Toe";
-  if (newMatch) newMatch.textContent = "Match setup";
+  if (!local) {
+    if (matchLabel) matchLabel.textContent = "LIVE MATCH";
+    if (matchTitle) matchTitle.textContent = "Tic-Tac-Toe";
+  }
+  if (newMatch) newMatch.textContent = boardRoute ? "Game menu" : "Match setup";
   mirrorState();
 }
 
