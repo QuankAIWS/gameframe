@@ -1,0 +1,14 @@
+/* Use TV width for a persistent side status rail instead of a thin top strip. */
+@media(min-width:1180px) and (min-aspect-ratio:3/2){
+ .cascade-shell{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,232px);grid-template-areas:"header header" "game status";column-gap:18px;row-gap:16px;width:min(1540px,calc(100% - 36px))}
+ .cascade-header{grid-area:header;margin-bottom:0}
+ .cascade-game{grid-area:game;grid-template-columns:132px minmax(0,1fr) 190px;min-width:0}
+ .cascade-status{grid-area:status;grid-template-columns:1fr;align-self:start;margin:0;position:sticky;top:88px}
+ .cascade-status>div{min-height:94px;align-content:center;gap:5px;padding:14px 16px;border-radius:18px}
+ .cascade-status small{font-size:clamp(.8rem,.85vw,.94rem)}
+ .cascade-status strong{font-size:clamp(1.75rem,2.25vw,2.35rem)}
+ .cascade-status>div:nth-child(4){min-height:126px;border-color:rgba(105,216,119,.55);background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(231,255,231,.94));box-shadow:0 12px 26px rgba(70,139,83,.14),inset 0 0 0 2px rgba(105,216,119,.12)}
+ .cascade-status>div:nth-child(4) small{color:#347748;font-size:1rem}
+ .cascade-status>div:nth-child(4) strong{color:#295f39;font-size:clamp(3rem,4.3vw,4.6rem);font-weight:1000;line-height:.92}
+ .cascade-board{width:min(100%,700px)}
+}
