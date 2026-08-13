@@ -51,6 +51,15 @@ test("Cascade progression sync stays in the player-platform lane", () => {
   });
 });
 
+test("Othello and its shared-nav integration route through the shell lane", () => {
+  assert.deepEqual(classifyUiTestScope([
+    "public/othello-fidelity-app-4.js",
+    "public/othello-bake4-neon.css",
+    "public/gameframe-nav-integrations.css",
+    "test/browser/othello.spec.mjs",
+  ]), { ...none, shell: true });
+});
+
 test("Monster Master changes stay in the Monster Master lane", () => {
   assert.deepEqual(classifyUiTestScope([
     "src/browser/monster-master-pixi-entry.js",
