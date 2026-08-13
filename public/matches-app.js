@@ -24,6 +24,7 @@ const counts = {
 };
 let knownPlayers = [];
 let acceptingInvitationId = null;
+let cancellingInvitationId = null;
 
 function gameName(gameId) {
   if (gameId === "othello") return "Othello";
@@ -119,9 +120,17 @@ function challengeRow(invitation) {
     accept.className = "platform-button primary";
     accept.type = "button";
     accept.textContent = acceptingInvitationId === invitation.invitationId ? "Accepting…" : "Accept";
-    accept.disabled = acceptingInvitationId !== null;
+    accept.disabled = acceptingInvitationId !== null || cancellingInvitationId !== null;
     accept.addEventListener("click", () => void acceptChallenge(invitation));
     actions.append(accept);
+  } else if (!incoming) {
+    const cancel = document.createElement("button");
+    cancel.className = "platform-button";
+    cancel.type = "button";
+    cancel.textContent = cancellingInvitationId === invitation.invitationId ? "Cancelling…" : "Cancel";
+    cancel.disabled = acceptingInvitationId !== null || cancellingInvitationId !== null;
+    cancel.addEventListener("click", () => void cancelChallenge(invitation));
+    actions.append(cancel);
   }
   row.append(copy, actions);
   return row;
@@ -137,7 +146,7 @@ function renderList(key, items, emptyText, rowFactory) {
 }
 
 async function acceptChallenge(invitation) {
-  if (!invitation.claimToken || acceptingInvitationId) return;
+  if (!invitation.claimToken || acceptingInvitationId || cancellingInvitationId) return;
   acceptingInvitationId = invitation.invitationId;
   try {
     const response = await gameFrameFetch("/api/invitations/claim", {
@@ -152,6 +161,27 @@ async function acceptChallenge(invitation) {
     acceptingInvitationId = null;
     errorBox.hidden = false;
     errorBox.textContent = error instanceof Error ? error.message : "The challenge could not be accepted.";
+    await refresh();
+  }
+}
+
+async function cancelChallenge(invitation) {
+  if (acceptingInvitationId || cancellingInvitationId) return;
+  cancellingInvitationId = invitation.invitationId;
+  try {
+    const response = await gameFrameFetch(
+      `/api/invitations/${encodeURIComponent(invitation.invitationId)}/cancel`,
+      { method: "POST" },
+      identity,
+    );
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.message || `Challenge cancellation failed with ${response.status}.`);
+    cancellingInvitationId = null;
+    await refresh();
+  } catch (error) {
+    cancellingInvitationId = null;
+    errorBox.hidden = false;
+    errorBox.textContent = error instanceof Error ? error.message : "The challenge could not be cancelled.";
     await refresh();
   }
 }
