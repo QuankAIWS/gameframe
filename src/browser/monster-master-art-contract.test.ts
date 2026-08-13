@@ -167,7 +167,8 @@ test("Monster Master uses one authoritative controller with guarded Pixi deliver
   assert.doesNotMatch(terrainAtlas, /data:image\//);
   assert.match(terrainAtlas, /linearGradient id="grass-a"/);
   assert.match(terrainAtlas, /linearGradient id="stone-top"/);
-  assert.equal(manifest.version, 3);
+  assert.equal(manifest.version, 4);
+  assert.ok(manifest.sources.includes("approved-trainer-isometric-master-v1"));
   assert.equal(manifest.trainerAssets["master-trainer-v1"].role, "master");
   assert.equal(manifest.trainerAssets["master-trainer-v1"].usage, "standalone-arena");
   assert.equal(manifest.trainerAssets["master-trainer-v1"].path, "/assets/monster-master/trainers/master-trainer-v1-128.webp");
