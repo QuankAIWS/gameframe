@@ -15,6 +15,7 @@ test("public profiles offer the three shared 1v1 board games", async ({ page }) 
   await page.goto(`/profile.html?player=${viewer}&view=${target}`);
 
   const panel = page.locator(".profile-play-together");
+  await expect(panel).toHaveCount(1);
   await expect(panel).toBeVisible();
   await expect(panel.getByRole("heading", { name: "Play together" })).toBeVisible();
   await expect(panel).toContainText("Choose a 1v1 game");
@@ -31,5 +32,12 @@ test("public profiles offer the three shared 1v1 board games", async ({ page }) 
 
 test("own profile does not show the play-together panel", async ({ page }) => {
   await page.goto("/profile.html?player=profile-play-owner");
+  await expect(page.locator(".profile-play-together")).toHaveCount(0);
+});
+
+test("explicit self profile does not show the play-together panel", async ({ page }) => {
+  const playerId = "profile-play-explicit-self";
+  await page.goto(`/profile.html?player=${playerId}&view=${playerId}`);
+  await expect(page.locator("#profile-id")).toHaveText(playerId);
   await expect(page.locator(".profile-play-together")).toHaveCount(0);
 });
