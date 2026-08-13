@@ -295,6 +295,7 @@ function ensureTouchControls() {
 
 function present(value) {
   const payload = requireMaterializedPayload(value);
+  const previousSceneId = state.payload?.projection?.scene?.sceneId ?? null;
   const playerPosition = playerPositionFromPayload(payload);
   state.payload = payload;
   state.campaignId = payload.projection.campaignId;
@@ -306,6 +307,9 @@ function present(value) {
   state.view = toRendererView(payload, playerPosition);
   updateWorldHeader(payload);
   window.dispatchEvent(new CustomEvent(VIEW_EVENT, { detail: { view: state.view } }));
+  if (previousSceneId && previousSceneId !== payload.projection.scene.sceneId) {
+    requestAnimationFrame(() => window.gameFrameMonsterPixi?.centerActive?.());
+  }
   scheduleAnchors();
   ensureTouchControls();
   syncTouchControls();
