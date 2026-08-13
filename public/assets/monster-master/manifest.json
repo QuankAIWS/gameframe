@@ -5,6 +5,7 @@
     "generated-ruined-caldera-terrain-atlas-v1",
     "approved-trainer-isometric-master-v1",
     "approved-vanguard-trainer-isometric-master-v1",
+    "approved-commander-trainer-isometric-master-v1",
     "approved-rootmaw-brute-isometric-master-v1",
     "approved-gloamspore-stalker-isometric-master-v1",
     "approved-voidshard-reaver-isometric-master-v1",
@@ -42,6 +43,28 @@
         "sourceArchive": "private-gameframe-asset-masters",
         "sourceSha256": "e76e497e8eed8b065d2b4757668222a157c82f2c70649ceb69bd50f1d978bb28",
         "runtimeSha256": "6bfe5d4cfacf5f9a03a9fe7d5d3d02bdb327048e1385141ecdae3031e4043995",
+        "rights": "generated-for-project; repository-proprietary",
+        "attributionRequired": false
+      }
+    },
+    "commander-trainer-v1": {
+      "label": "Commander",
+      "archetype": "commander",
+      "path": "/assets/monster-master/trainers/commander-trainer-v1-128.webp",
+      "width": 128,
+      "height": 192,
+      "alpha": true,
+      "usage": "asset-library",
+      "assignment": "unassigned",
+      "facing": "right",
+      "perspective": "three-quarter-down-isometric",
+      "anchor": { "x": 0.5, "y": 0.9 },
+      "battlefieldScale": 1.0,
+      "provenance": {
+        "provider": "OpenAI ChatGPT image generation",
+        "sourceArchive": "private-gameframe-asset-masters",
+        "sourceSha256": "ea4ff03a663cf44256c35fc15f1267659e1895e2642317f65ac84e658e8c34df",
+        "runtimeSha256": "d67b548440b55b341540159a835736d789591e0dfa49ab5ec919b118653fd7f7",
         "rights": "generated-for-project; repository-proprietary",
         "attributionRequired": false
       }
