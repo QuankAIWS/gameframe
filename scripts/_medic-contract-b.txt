@@ -1,0 +1,11 @@
+  assert.equal(medic.provenance.provider, "OpenAI ChatGPT image generation");
+  assert.equal(medic.provenance.sourceArchive, "private-gameframe-asset-masters");
+  assert.equal(medic.provenance.sourceSha256, "295bfb69121120f574f1a31b04640bc928d1c37dabf8ce47d9489251b65353d4");
+  assert.equal(medic.provenance.runtimeSha256, "6203ed729ad291a4ebcbdac88ebc71d7a3295c16d891cfea7138067eaf3f894a");
+  assert.equal(medic.provenance.rights, "generated-for-project; repository-proprietary");
+  assert.equal(medic.provenance.attributionRequired, false);
+  assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP");
+  assert.equal(createHash("sha256").update(asset).digest("hex"), medic.provenance.runtimeSha256);
+});
+
