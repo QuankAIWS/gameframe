@@ -3,7 +3,8 @@
   "sources": [
     "generated-creature-atlas-v1",
     "generated-ruined-caldera-terrain-atlas-v1",
-    "approved-trainer-isometric-master-v1"
+    "approved-trainer-isometric-master-v1",
+    "approved-rootmaw-brute-isometric-master-v1"
   ],
   "creatureAtlas": "/assets/monster-master/creature-atlas-v1.svg",
   "creatureCell": { "width": 96, "height": 96 },
@@ -37,6 +38,17 @@
       "column": 2,
       "anchor": { "x": 0.5, "y": 0.88 },
       "battlefieldScale": 1.14
+    },
+    "rootmaw-brute-v1": {
+      "role": "bulwark",
+      "label": "Rootmaw Brute",
+      "path": "/assets/monster-master/creatures/rootmaw-brute-v1-128.webp",
+      "width": 128,
+      "height": 192,
+      "alpha": true,
+      "usage": "standalone-arena",
+      "anchor": { "x": 0.5, "y": 0.88 },
+      "battlefieldScale": 1.58
     }
   },
   "terrain": {
