@@ -78,6 +78,7 @@ function isCascadeProfileFile(file) {
 
 function isMonsterMasterFile(file) {
   return /^public\/monster-master[^/]*\.(?:html|css|js)$/.test(file)
+    || file.startsWith("public/assets/monster-master/")
     || file === "planning/monster-master-rules.md"
     || file.startsWith("planning/monster-master/assets/")
     || file === "scripts/build-monster-master-pixi.mjs"
