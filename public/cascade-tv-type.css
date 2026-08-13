@@ -1,0 +1,13 @@
+/* Larger, higher-contrast game text for family and TV play. */
+.cascade-kicker{font-size:.82rem;letter-spacing:.14em}
+.cascade-status>div{min-height:76px;padding:12px 14px}
+.cascade-status>div:nth-child(4){order:-1}
+.cascade-status small,.cascade-card small{font-size:clamp(.72rem,.85vw,.88rem);line-height:1.2;letter-spacing:.1em}
+.cascade-status strong{font-size:clamp(1.4rem,1.7vw,1.85rem);line-height:1.05;font-variant-numeric:tabular-nums}
+#life-timer{font-size:.86rem}.cascade-map p{font-size:.76rem}.cascade-map li{font-size:.84rem;line-height:1.25}
+.cascade-objective{min-height:54px;font-size:1rem}#objective-label{font-size:clamp(.96rem,1.15vw,1.08rem);line-height:1.35}#combo-label{font-size:.9rem}
+.cascade-help{color:#665b7d;font-size:clamp(.86rem,1vw,.98rem);font-weight:700;line-height:1.4}
+.cascade-card{gap:10px;padding:14px}.cascade-card>strong{font-size:clamp(2rem,2.5vw,2.5rem)}
+.cascade-card>span,#star-progress,#bonus-status{font-size:clamp(.84rem,.95vw,.96rem);line-height:1.5}
+.cascade-card button{min-height:48px;font-size:clamp(.92rem,1vw,1rem);font-weight:800}
+.cascade-dialog p,.cascade-life-lock-card>span{font-size:1rem;line-height:1.55}.cascade-dialog-actions button{min-height:52px;font-size:1rem;font-weight:800}
