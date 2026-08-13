@@ -91,18 +91,21 @@ test("level 5 update waits through the Blitz offer, then reloads into level 6 ex
   await waitForLoadedBuild(page, "production-a");
   await expect(page.locator("#level-number")).toHaveText("5");
 
-  await page.evaluate((activeRunKey) => {
+  const target = await page.evaluate(() => window.cascadeResearch.exportLevel().level.target);
+  await page.addInitScript(({ activeRunKey, targetScore }) => {
+    const marker = "cascade-build-refresh-level5-seeded";
+    if (sessionStorage.getItem(marker)) return;
     const run = JSON.parse(localStorage.getItem(activeRunKey) || "null");
-    const level = window.cascadeResearch.exportLevel().level;
-    if (!run) throw new Error("expected a persisted Cascade run");
-    run.score = level.target;
+    if (!run) return;
+    run.score = targetScore;
     localStorage.setItem(activeRunKey, JSON.stringify(run));
-  }, ACTIVE_RUN_KEY);
+    sessionStorage.setItem(marker, "1");
+  }, { activeRunKey: ACTIVE_RUN_KEY, targetScore: target });
 
   await page.reload();
   await waitForLoadedBuild(page, "production-a");
   await expect(page.locator("#level-number")).toHaveText("5");
-  await expect.poll(() => page.evaluate(() => window.cascadeResearch.exportLevel().score)).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => window.cascadeResearch.exportLevel().score)).toBe(target);
 
   probe.buildId = "production-b";
   await page.locator("#booster-hammer").click();
