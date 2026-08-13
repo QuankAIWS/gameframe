@@ -98,6 +98,24 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
     async fetch(request: Request, env: GameFrameWorkerEnv): Promise<Response> {
       try {
         const url = new URL(request.url);
+
+        if (request.method === "GET" && url.pathname === "/api/client-build") {
+          const metadata = env.CF_VERSION_METADATA;
+          const buildId = metadata?.id?.trim() ?? "";
+          if (!buildId) {
+            return json(503, {
+              error: "build_metadata_unavailable",
+              message: "The active GameFrame deployment does not expose version metadata.",
+            });
+          }
+          return json(200, {
+            buildId,
+            tag: metadata?.tag ?? null,
+            timestamp: metadata?.timestamp ?? null,
+            origin: url.origin,
+          });
+        }
+
         if (request.method === "GET" && url.pathname === "/api/rpg/edge/health") {
           return json(200, {
             status: "ok",
