@@ -11,3 +11,5 @@
 .cascade-card>span,#star-progress,#bonus-status{font-size:clamp(.84rem,.95vw,.96rem);line-height:1.5}
 .cascade-card button{min-height:48px;font-size:clamp(.92rem,1vw,1rem);font-weight:800}
 .cascade-dialog p,.cascade-life-lock-card>span{font-size:1rem;line-height:1.55}.cascade-dialog-actions button{min-height:52px;font-size:1rem;font-weight:800}
+@media(min-width:651px) and (max-width:1179px){.cascade-status{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){.cascade-status{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.cascade-status>div{min-height:64px;padding:9px 10px}.cascade-status small,.cascade-card small{font-size:.7rem}.cascade-status strong{font-size:1.15rem}#objective-label{font-size:.9rem}.cascade-help{font-size:.82rem}}
