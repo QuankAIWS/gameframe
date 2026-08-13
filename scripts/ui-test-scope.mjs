@@ -76,7 +76,16 @@ function isCascadeProfileFile(file) {
     || file.startsWith("src/games/cascade/");
 }
 
+function isRpgFile(file) {
+  return /^public\/monster-master-rpg[^/]*\.(?:html|css|js)$/.test(file)
+    || /^test\/browser\/monster-master-rpg.*\.spec\.mjs$/.test(file)
+    || file.startsWith("test/rpg-integration/")
+    || /^playwright\.rpg.*\.config\.mjs$/.test(file)
+    || /^src\/cloudflare\/rpg-.*\.ts$/.test(file);
+}
+
 function isMonsterMasterFile(file) {
+  if (isRpgFile(file)) return false;
   return /^public\/monster-master[^/]*\.(?:html|css|js)$/.test(file)
     || file.startsWith("public/assets/monster-master/")
     || file === "planning/monster-master-rules.md"
