@@ -12,12 +12,19 @@
     "approved-gloamspore-stalker-isometric-master-v1",
     "approved-voidshard-reaver-isometric-master-v1",
     "approved-stormcrest-skitter-class-one-isometric-master-v1",
-    "approved-mossmaw-colossus-isometric-master-v1"
+    "approved-mossmaw-colossus-isometric-master-v1",
+    "approved-caller-trainer-isometric-master-v1"
   ],
   "creatureAtlas": "/assets/monster-master/creature-atlas-v1.svg",
-  "creatureCell": { "width": 96, "height": 96 },
+  "creatureCell": {
+    "width": 96,
+    "height": 96
+  },
   "terrainAtlas": "/assets/monster-master/terrain-atlas-v1.svg",
-  "terrainCell": { "width": 64, "height": 64 },
+  "terrainCell": {
+    "width": 64,
+    "height": 64
+  },
   "trainerAssets": {
     "master-trainer-v1": {
       "role": "master",
@@ -38,7 +45,10 @@
       "assignment": "unassigned",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
       "battlefieldScale": 1.0,
       "provenance": {
         "provider": "OpenAI ChatGPT image generation",
@@ -60,7 +70,10 @@
       "assignment": "unassigned",
       "facing": "right",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
       "battlefieldScale": 1.0,
       "provenance": {
         "provider": "OpenAI ChatGPT image generation",
@@ -82,7 +95,10 @@
       "assignment": "unassigned",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
       "battlefieldScale": 1.0,
       "provenance": {
         "provider": "OpenAI ChatGPT image generation",
@@ -104,7 +120,10 @@
       "assignment": "unassigned",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
       "battlefieldScale": 1.0,
       "provenance": {
         "provider": "OpenAI ChatGPT image generation",
@@ -114,25 +133,59 @@
         "rights": "generated-for-project; repository-proprietary",
         "attributionRequired": false
       }
+    },
+    "caller-trainer-v1": {
+      "label": "Caller",
+      "archetype": "caller",
+      "path": "/assets/monster-master/trainers/caller-trainer-v1-128.webp",
+      "width": 128,
+      "height": 192,
+      "alpha": true,
+      "usage": "asset-library",
+      "assignment": "unassigned",
+      "facing": "left",
+      "perspective": "three-quarter-down-isometric",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "battlefieldScale": 1.0,
+      "provenance": {
+        "provider": "OpenAI ChatGPT image generation",
+        "sourceArchive": "private-gameframe-asset-masters",
+        "sourceSha256": "36ae023f67da762947755514b797bce82e51e9e6268bdec83ce621b6bb80490d",
+        "runtimeSha256": "d5e1d9291ac28f6f63e56cd5304ed010ca85b3bc23dae9562d4826051da4dc34",
+        "rights": "generated-for-project; repository-proprietary",
+        "attributionRequired": false
+      }
     }
   },
   "creatures": {
     "warden-master-v1": {
       "role": "master",
       "column": 0,
-      "anchor": { "x": 0.5, "y": 0.88 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      },
       "battlefieldScale": 1.34
     },
     "stone-bulwark-v1": {
       "role": "bulwark",
       "column": 1,
-      "anchor": { "x": 0.5, "y": 0.88 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      },
       "battlefieldScale": 1.48
     },
     "emberling-skirmisher-v1": {
       "role": "emberling",
       "column": 2,
-      "anchor": { "x": 0.5, "y": 0.88 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      },
       "battlefieldScale": 1.14
     },
     "rootmaw-brute-v1": {
@@ -143,7 +196,10 @@
       "height": 192,
       "alpha": true,
       "usage": "standalone-arena",
-      "anchor": { "x": 0.5, "y": 0.88 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      },
       "battlefieldScale": 1.58
     },
     "gloamspore-stalker-v1": {
@@ -154,7 +210,10 @@
       "height": 192,
       "alpha": true,
       "usage": "standalone-arena",
-      "anchor": { "x": 0.5, "y": 0.9 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
       "battlefieldScale": 1.36
     },
     "voidshard-reaver-v1": {
@@ -166,7 +225,10 @@
       "usage": "asset-library",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
       "battlefieldScale": 1.42
     },
     "stormcrest-skitter-v1": {
@@ -181,7 +243,10 @@
       "assignment": "unassigned",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
       "battlefieldScale": 1.18
     },
     "mossmaw-colossus-v1": {
@@ -194,16 +259,43 @@
       "assignment": "unassigned",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
       "battlefieldScale": 1.5
     }
   },
   "terrain": {
-    "floor-a": { "column": 0, "row": 0, "semantic": "floor" },
-    "floor-b": { "column": 1, "row": 0, "semantic": "floor" },
-    "difficult-rootstone": { "column": 2, "row": 0, "semantic": "difficult" },
-    "wall-rubble-a": { "column": 0, "row": 1, "semantic": "wall" },
-    "wall-rubble-b": { "column": 1, "row": 1, "semantic": "wall" },
-    "central-command-shrine": { "column": 2, "row": 1, "semantic": "objective" }
+    "floor-a": {
+      "column": 0,
+      "row": 0,
+      "semantic": "floor"
+    },
+    "floor-b": {
+      "column": 1,
+      "row": 0,
+      "semantic": "floor"
+    },
+    "difficult-rootstone": {
+      "column": 2,
+      "row": 0,
+      "semantic": "difficult"
+    },
+    "wall-rubble-a": {
+      "column": 0,
+      "row": 1,
+      "semantic": "wall"
+    },
+    "wall-rubble-b": {
+      "column": 1,
+      "row": 1,
+      "semantic": "wall"
+    },
+    "central-command-shrine": {
+      "column": 2,
+      "row": 1,
+      "semantic": "objective"
+    }
   }
 }
