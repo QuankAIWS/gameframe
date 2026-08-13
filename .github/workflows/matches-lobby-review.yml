@@ -9,6 +9,7 @@ on:
       - "public/matches-app.js"
       - "public/player-platform.css"
       - "test/browser/matches-lobby.spec.mjs"
+      - "test/browser/player-platform.spec.mjs"
 
 permissions:
   contents: read
@@ -21,7 +22,7 @@ jobs:
   lobby-review:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 14
     steps:
       - name: Check out candidate
         uses: actions/checkout@v4
@@ -41,5 +42,9 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Matches lobby journey
-        run: npx playwright test test/browser/matches-lobby.spec.mjs --config playwright.config.mjs
+      - name: Matches lobby and player-platform journeys
+        run: >-
+          npx playwright test
+          test/browser/matches-lobby.spec.mjs
+          test/browser/player-platform.spec.mjs
+          --config playwright.config.mjs
