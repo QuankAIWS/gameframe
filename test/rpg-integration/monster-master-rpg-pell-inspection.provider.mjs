@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test";
 const campaignId = "monster-master-staging-v6";
 const playerId = "rpg-provider-integration-player";
 const pellId = "npc.warden-pell";
+const cartId = "object.checkpoint-cart";
+const westWoodsRouteId = "route.crooked-checkpoint-west-woods";
 
 async function onboard(page) {
   await expect(page.locator("#mm-rpg-onboarding")).toBeVisible();
