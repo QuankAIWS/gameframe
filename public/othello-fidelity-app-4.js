@@ -180,6 +180,10 @@ if (!document.head.querySelector('link[href="/othello-game-menu.css"]')) {
   document.head.append(menuStyles);
 }
 void import("./othello-launcher.js").then(() => {
+  // `state=` is the fidelity/visual-preview surface used by regression tests
+  // and design review. Keep its demo controls available instead of mounting
+  // the normal player game menu over them.
+  if (query.has("state")) return;
   const gameMenuScript = document.createElement("script");
   gameMenuScript.src = "/othello-game-menu.js";
   document.body.append(gameMenuScript);
