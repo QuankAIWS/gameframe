@@ -93,6 +93,18 @@ if (supported) {
     botButton?.click();
   });
 
+  document.addEventListener("click", (event) => {
+    if (!localSession.active()) return;
+    const target = event.target instanceof Element
+      ? event.target.closest("#game-outcome-rematch, #checkers-outcome-rematch")
+      : null;
+    if (!target) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    localSession.start();
+    close();
+  }, true);
+
   newMatch?.addEventListener("click", (event) => {
     if (localSession.active()) {
       event.preventDefault();
