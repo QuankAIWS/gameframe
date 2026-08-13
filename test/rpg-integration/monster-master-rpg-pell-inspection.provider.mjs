@@ -119,7 +119,7 @@ async function exerciseCinderControl(page) {
   })).toBe(startedDeployed ? "deployed" : "recalled");
 }
 
-test("Pell visibly completes inspection without a browser reload", async ({ page }, testInfo) => {
+test("RPG provider path remains playable through inspection, world controls, and travel without reload", async ({ page }, testInfo) => {
   const browserErrors = [];
   page.on("pageerror", (error) => browserErrors.push(error.message));
   page.on("console", (message) => { if (message.type() === "error") browserErrors.push(message.text()); });
@@ -165,7 +165,7 @@ test("Pell visibly completes inspection without a browser reload", async ({ page
   expect(await currentSceneId(page)).toBe("scene.crooked-checkpoint");
   await travel.click();
   await expect.poll(() => currentSceneId(page), { timeout: 20_000 }).toBe("scene.west-woods");
-  await expect(page.locator("#mm-rpg-world-location")).toHaveText("West Woods");
+  await expect(page.locator("#mm-rpg-world-location")).toHaveText("West Woods Route");
   await page.screenshot({ path: testInfo.outputPath("09-west-woods-after-travel.png"), fullPage: true });
 
   expect(browserErrors).toEqual([]);
