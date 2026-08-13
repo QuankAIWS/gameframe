@@ -74,22 +74,26 @@ test("MM-0001 remains separate, deterministic, and bounded", async () => {
 
 test("standalone Arena profile fields one embodied Master plus three distinct monsters per player", () => {
   const state = createMonsterMasterArenaState(["alpha", "beta"]);
+  const prototypeState = createMonsterMasterState(["alpha", "beta"]);
   assert.equal(isMonsterMasterArenaState(state), true);
   assert.equal(state.undeployedUnitIds.length, 8);
 
   for (const playerId of state.playerIds) {
     const roster = state.rosters[playerId];
+    const prototypeEmberling = prototypeState.rosters[playerId].find((unit) => unit.role === "emberling");
+    assert.ok(prototypeEmberling);
     assert.equal(roster.filter((unit) => unit.role === "master").length, 1);
     assert.equal(roster.filter((unit) => unit.role !== "master").length, MONSTER_MASTER_ARENA_MONSTER_SLOTS);
 
     const gloamspore = roster.find((unit) => unit.contentId === GLOAMSPORE_STALKER_CONTENT_ID);
     assert.ok(gloamspore);
     assert.equal(gloamspore.role, "emberling");
-    assert.equal(gloamspore.movement, 4);
-    assert.equal(gloamspore.initiative, 7);
-    assert.equal(gloamspore.maxHealth, 8);
-    assert.equal(gloamspore.attackRange, 4);
-    assert.equal(gloamspore.attackDamage, 2);
+    assert.equal(gloamspore.movement, prototypeEmberling.movement);
+    assert.equal(gloamspore.initiative, prototypeEmberling.initiative);
+    assert.equal(gloamspore.maxHealth, prototypeEmberling.maxHealth);
+    assert.equal(gloamspore.attackRange, prototypeEmberling.attackRange);
+    assert.equal(gloamspore.attackDamage, prototypeEmberling.attackDamage);
+    assert.deepEqual(gloamspore.abilityIds, prototypeEmberling.abilityIds);
     assert.ok(gloamspore.tags?.includes("arena-monster-slot-2"));
     assert.equal(roster.some((unit) => unit.contentId === "emberling-skirmisher-v1"), false);
 
