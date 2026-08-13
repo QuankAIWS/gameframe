@@ -1,9 +1,9 @@
 {
-  "version": 3,
+  "version": 4,
   "sources": [
     "generated-creature-atlas-v1",
     "generated-ruined-caldera-terrain-atlas-v1",
-    "approved-trainer-master-v1"
+    "approved-trainer-isometric-master-v1"
   ],
   "creatureAtlas": "/assets/monster-master/creature-atlas-v1.svg",
   "creatureCell": { "width": 96, "height": 96 },
