@@ -1,0 +1,44 @@
+name: Fix Monster Master Arena Art Contract
+on:
+  push:
+    branches: [agent/monster-master-arena-roster-selection]
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/monster-master-arena-roster-selection
+      - name: Preserve explicit Master art fallback contract
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('public/monster-master-trainer-asset.js')
+          text = path.read_text()
+          old = '''function assetKind(unit) {
+            return specialCreature(unit)?.kind ?? (unit?.role === "master" ? "trainer" : null);
+          }'''
+          new = '''function assetKind(unit) {
+            const presentation = specialCreature(unit);
+            if (presentation) return presentation.kind;
+            if (unit && unit.role === "master") return "trainer";
+            return null;
+          }'''
+          if old not in text:
+              raise SystemExit('assetKind anchor missing')
+          path.write_text(text.replace(old, new))
+          PY
+      - name: Verify affected Monster Master contracts
+        run: |
+          node --check public/monster-master-trainer-asset.js
+          node --experimental-strip-types --test src/browser/monster-master-art-contract.test.ts src/games/monster-master/repository-contract.test.ts src/games/monster-master/arena-roster.test.ts
+      - name: Commit clean fix
+        run: |
+          rm .github/workflows/fix-monster-master-arena-art-contract.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Keep explicit Arena Master art fallback"
+          git push origin HEAD:agent/monster-master-arena-roster-selection
