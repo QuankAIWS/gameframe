@@ -1,13 +1,24 @@
 {
-  "version": 2,
+  "version": 3,
   "sources": [
     "generated-creature-atlas-v1",
-    "generated-ruined-caldera-terrain-atlas-v1"
+    "generated-ruined-caldera-terrain-atlas-v1",
+    "approved-trainer-master-v1"
   ],
   "creatureAtlas": "/assets/monster-master/creature-atlas-v1.svg",
   "creatureCell": { "width": 96, "height": 96 },
   "terrainAtlas": "/assets/monster-master/terrain-atlas-v1.svg",
   "terrainCell": { "width": 64, "height": 64 },
+  "trainerAssets": {
+    "master-trainer-v1": {
+      "role": "master",
+      "path": "/assets/monster-master/trainers/master-trainer-v1-128.webp",
+      "width": 128,
+      "height": 192,
+      "alpha": true,
+      "usage": "standalone-arena"
+    }
+  },
   "creatures": {
     "warden-master-v1": {
       "role": "master",
