@@ -20,6 +20,30 @@ const env = {
   GAMEFRAME_RPG_PROXY_HMAC_SECRET: "rpg-match-worker-secret-0123456789abcdef",
 } as GameFrameWorkerEnv;
 
+test("client build endpoint exposes the version of the Worker serving this origin", async () => {
+  const worker = createRpgEdgeGameFrameWorker({ authenticator });
+  const response = await worker.fetch(
+    new Request("https://game.example/api/client-build"),
+    {
+      ...env,
+      CF_VERSION_METADATA: {
+        id: "production-worker-version",
+        tag: "production",
+        timestamp: "2026-08-13T00:00:00.000Z",
+      },
+    },
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.deepEqual(await response.json(), {
+    buildId: "production-worker-version",
+    tag: "production",
+    timestamp: "2026-08-13T00:00:00.000Z",
+    origin: "https://game.example",
+  });
+});
+
 test("RPG match page health selects origin WebSockets while ordinary pages keep Durable Object realtime", async () => {
   const worker = createRpgEdgeGameFrameWorker({ authenticator });
   const rpgHealth = await worker.fetch(new Request("https://game.example/api/health", {
