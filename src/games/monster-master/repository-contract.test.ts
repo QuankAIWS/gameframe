@@ -9,6 +9,7 @@ import {
   isMonsterMasterArenaState,
   MONSTER_MASTER_ARENA_MONSTER_SLOTS,
   monsterMasterArenaDefinition,
+  ROOTMAW_BRUTE_CONTENT_ID,
 } from "./arena-definition.ts";
 import {
   createMonsterMasterState,
@@ -18,7 +19,9 @@ import {
 } from "./index.ts";
 
 const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
-const read = (path: string) => readFile(new URL(path, `file://${repositoryRoot}/`), "utf8");
+const file = (path: string) => new URL(path, `file://${repositoryRoot}/`);
+const read = (path: string) => readFile(file(path), "utf8");
+const readBytes = (path: string) => readFile(file(path));
 
 function applyArenaAction(
   state: MonsterMasterState,
@@ -68,7 +71,7 @@ test("MM-0001 remains separate, deterministic, and bounded", async () => {
   assert.match(contract, /Explicitly outside MM-0001/i);
 });
 
-test("standalone Arena profile fields one embodied Master plus three monsters per player", () => {
+test("standalone Arena profile fields one embodied Master plus three distinct monsters per player", () => {
   const state = createMonsterMasterArenaState(["alpha", "beta"]);
   assert.equal(isMonsterMasterArenaState(state), true);
   assert.equal(state.undeployedUnitIds.length, 8);
@@ -77,8 +80,35 @@ test("standalone Arena profile fields one embodied Master plus three monsters pe
     const roster = state.rosters[playerId];
     assert.equal(roster.filter((unit) => unit.role === "master").length, 1);
     assert.equal(roster.filter((unit) => unit.role !== "master").length, MONSTER_MASTER_ARENA_MONSTER_SLOTS);
-    assert.equal(roster.filter((unit) => unit.role === "emberling").length, 2);
+    assert.equal(roster.filter((unit) => unit.role === "emberling").length, 1);
+    const rootmaw = roster.find((unit) => unit.contentId === ROOTMAW_BRUTE_CONTENT_ID);
+    assert.ok(rootmaw);
+    assert.equal(rootmaw.role, "bulwark");
+    assert.equal(rootmaw.movement, 3);
+    assert.equal(rootmaw.initiative, 4);
+    assert.equal(rootmaw.maxHealth, 16);
+    assert.equal(rootmaw.attackRange, 1);
+    assert.equal(rootmaw.attackDamage, 5);
   }
+});
+
+test("Rootmaw Brute master art is registered and delivered as an Arena runtime asset", async () => {
+  const manifest = JSON.parse(await read("public/assets/monster-master/manifest.json"));
+  const runtime = await read("public/monster-master-trainer-asset.js");
+  const asset = await readBytes("public/assets/monster-master/creatures/rootmaw-brute-v1-128.webp");
+
+  assert.ok(manifest.sources.includes("approved-rootmaw-brute-isometric-master-v1"));
+  assert.equal(manifest.creatures[ROOTMAW_BRUTE_CONTENT_ID].label, "Rootmaw Brute");
+  assert.equal(
+    manifest.creatures[ROOTMAW_BRUTE_CONTENT_ID].path,
+    "/assets/monster-master/creatures/rootmaw-brute-v1-128.webp",
+  );
+  assert.equal(manifest.creatures[ROOTMAW_BRUTE_CONTENT_ID].usage, "standalone-arena");
+  assert.match(runtime, /ROOTMAW_ASSET = "\/assets\/monster-master\/creatures\/rootmaw-brute-v1-128\.webp"/);
+  assert.match(runtime, /ROOTMAW_CONTENT_ID = "rootmaw-brute-v1"/);
+  assert.match(runtime, /Rootmaw Brute/);
+  assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP");
 });
 
 test("standalone Arena enters combat after all eight combatants deploy", () => {
