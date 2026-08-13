@@ -43,7 +43,10 @@ function specialCreature(unit) {
 }
 
 function assetKind(unit) {
-  return specialCreature(unit)?.kind ?? (unit?.role === "master" ? "trainer" : null);
+  const presentation = specialCreature(unit);
+  if (presentation) return presentation.kind;
+  if (unit && unit.role === "master") return "trainer";
+  return null;
 }
 
 function assetPath(kind) {
