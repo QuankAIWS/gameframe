@@ -24,6 +24,7 @@ const matchId = document.querySelector("#match-id");
 const invitePanel = document.querySelector("#invite-panel");
 const copyInvite = document.querySelector("#copy-invite");
 const newMatch = document.querySelector("#new-match");
+const matchActions = newMatch?.closest(".actions");
 const players = matchPanel?.querySelector(".players");
 const playerO = document.querySelector("#player-o");
 const gameLayout = matchPanel?.querySelector(".game-layout");
@@ -128,9 +129,11 @@ function installFooter() {
   footer.innerHTML = `
     <a href="/">Back to games</a>
     <span aria-hidden="true"></span>
-    <button type="button">Game menu</button>
   `;
-  footer.querySelector("button")?.addEventListener("click", () => newMatch?.click());
+  if (newMatch) {
+    newMatch.textContent = "Game menu";
+    footer.append(newMatch);
+  }
   matchPanel.append(footer);
 }
 
@@ -150,6 +153,9 @@ function uninstallPresentation() {
 
   matchPanel?.querySelector(".tic-noir-topbar")?.remove();
   matchPanel?.querySelectorAll(".tic-noir-ambient").forEach((node) => node.remove());
+  if (newMatch && matchActions && matchPanel?.querySelector(".tic-noir-footer")?.contains(newMatch)) {
+    matchActions.append(newMatch);
+  }
   matchPanel?.querySelector(".tic-noir-footer")?.remove();
   players?.querySelector(".tic-noir-turn-signal")?.remove();
 
