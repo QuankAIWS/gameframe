@@ -147,6 +147,28 @@ test("Gloamspore Stalker master art is registered and delivered as an Arena runt
   assert.match(asset, /data:image\/webp;base64,/);
 });
 
+test("Stormcrest Skitter is a Class One unassigned asset-library creature", async () => {
+  const manifest = JSON.parse(await read("public/assets/monster-master/manifest.json"));
+  const asset = await readBytes("public/assets/monster-master/creatures/stormcrest-skitter-v1-128.webp");
+  const stormcrest = manifest.creatures["stormcrest-skitter-v1"];
+
+  assert.ok(manifest.sources.includes("approved-stormcrest-skitter-class-one-isometric-master-v1"));
+  assert.equal(stormcrest.label, "Stormcrest Skitter");
+  assert.equal(stormcrest.class, 1);
+  assert.equal(stormcrest.classLabel, "Class One");
+  assert.equal(stormcrest.path, "/assets/monster-master/creatures/stormcrest-skitter-v1-128.webp");
+  assert.equal(stormcrest.width, 128);
+  assert.equal(stormcrest.height, 192);
+  assert.equal(stormcrest.alpha, true);
+  assert.equal(stormcrest.usage, "asset-library");
+  assert.equal(stormcrest.assignment, "unassigned");
+  assert.equal(stormcrest.facing, "left");
+  assert.equal(stormcrest.perspective, "three-quarter-down-isometric");
+  assert.equal(Object.hasOwn(stormcrest, "role"), false);
+  assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP");
+});
+
 test("standalone Arena enters combat after all eight combatants deploy", () => {
   const state = deployArena();
   assert.equal(state.phase, "combat");
