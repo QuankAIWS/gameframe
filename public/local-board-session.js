@@ -106,5 +106,17 @@ export function createLocalBoardSession(gameId) {
     document.body.classList.remove("board-game-local");
   }
 
-  return Object.freeze({ start, reset, active: () => Boolean(controller), showSurface, view: () => current });
+  const matchObserver = new MutationObserver(() => {
+    if (!controller || matchId.textContent === "On this device") return;
+    reset();
+  });
+  matchObserver.observe(matchId, { childList: true, characterData: true, subtree: true });
+
+  return Object.freeze({
+    start,
+    reset,
+    active: () => Boolean(controller && document.body.classList.contains("board-game-local")),
+    showSurface,
+    view: () => current,
+  });
 }
