@@ -7,6 +7,7 @@
     "approved-vanguard-trainer-isometric-master-v1",
     "approved-commander-trainer-isometric-master-v1",
     "approved-arcanic-trainer-isometric-master-v1",
+    "approved-medic-trainer-isometric-master-v1",
     "approved-rootmaw-brute-isometric-master-v1",
     "approved-gloamspore-stalker-isometric-master-v1",
     "approved-voidshard-reaver-isometric-master-v1",
@@ -88,6 +89,28 @@
         "sourceArchive": "private-gameframe-asset-masters",
         "sourceSha256": "cc4e7e6aad10642b7e1fdb4a28ade13dcca38d713d875602080a60969aa6d16e",
         "runtimeSha256": "346ec328cfc8e66a9097ca0c210d2da8a9f42e8cdd759cdbf6da343236e1079e",
+        "rights": "generated-for-project; repository-proprietary",
+        "attributionRequired": false
+      }
+    },
+    "medic-trainer-v1": {
+      "label": "Medic",
+      "archetype": "medic",
+      "path": "/assets/monster-master/trainers/medic-trainer-v1-128.webp",
+      "width": 128,
+      "height": 192,
+      "alpha": true,
+      "usage": "asset-library",
+      "assignment": "unassigned",
+      "facing": "left",
+      "perspective": "three-quarter-down-isometric",
+      "anchor": { "x": 0.5, "y": 0.9 },
+      "battlefieldScale": 1.0,
+      "provenance": {
+        "provider": "OpenAI ChatGPT image generation",
+        "sourceArchive": "private-gameframe-asset-masters",
+        "sourceSha256": "295bfb69121120f574f1a31b04640bc928d1c37dabf8ce47d9489251b65353d4",
+        "runtimeSha256": "6203ed729ad291a4ebcbdac88ebc71d7a3295c16d891cfea7138067eaf3f894a",
         "rights": "generated-for-project; repository-proprietary",
         "attributionRequired": false
       }
