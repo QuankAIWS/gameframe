@@ -164,3 +164,8 @@ observer.observe(document.body, {
 syncDestinationBar();
 
 window.gameFrameDestinationBar = Object.freeze({ sync: syncDestinationBar });
+
+if (window.location.pathname === "/profile.html") {
+  document.querySelectorAll(".profile-play-together").forEach((node) => node.remove());
+  void import("./profile-play-context.js");
+}
