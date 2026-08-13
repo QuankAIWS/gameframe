@@ -101,6 +101,63 @@ test("first authenticated claimant wins and same-claimant retries are idempotent
   assert.equal((await loser.json() as any).error, "invitation_claimed");
 });
 
+test("targeted recipient can view and durably decline exactly their invitation", async () => {
+  const targeted = { ...claims, invitationId: "decline-targeted", targetPlayerId: "discord:222" };
+  const runtime = new InvitationObjectRuntime(new FakeStorage(), { now: () => 1_200_000 });
+  await initialize(runtime, targeted);
+
+  const targetView = await runtime.fetch(new Request(
+    "https://invitation.internal/invitation/view?invitationId=decline-targeted&playerId=discord%3A222",
+  ));
+  assert.equal(targetView.status, 200);
+  assert.equal((await targetView.json() as any).targetPlayerId, "discord:222");
+
+  const outsider = await runtime.fetch(request("/invitation/decline", {
+    invitationId: targeted.invitationId,
+    playerId: "discord:333",
+  }));
+  assert.equal(outsider.status, 403);
+
+  const declined = await runtime.fetch(request("/invitation/decline", {
+    invitationId: targeted.invitationId,
+    playerId: "discord:222",
+  }));
+  assert.equal(declined.status, 200);
+  assert.equal((await declined.json() as any).status, "declined");
+
+  const retry = await runtime.fetch(request("/invitation/decline", {
+    invitationId: targeted.invitationId,
+    playerId: "discord:222",
+  }));
+  assert.equal(retry.status, 200);
+  assert.equal((await retry.json() as any).status, "declined");
+
+  const claimAfterDecline = await runtime.fetch(request("/invitation/claim", {
+    invitationId: targeted.invitationId,
+    claimant: { playerId: "discord:222", displayName: null, avatarUrl: null },
+    matchId: "must-not-create",
+  }));
+  assert.equal(claimAfterDecline.status, 409);
+  assert.equal((await claimAfterDecline.json() as any).error, "invitation_declined");
+
+  const inviterCancelAfterDecline = await runtime.fetch(request("/invitation/cancel", {
+    invitationId: targeted.invitationId,
+    playerId: "discord:111",
+  }));
+  assert.equal(inviterCancelAfterDecline.status, 200);
+  assert.equal((await inviterCancelAfterDecline.json() as any).status, "declined");
+});
+
+test("shareable invitations cannot be declined by an arbitrary authenticated player", async () => {
+  const runtime = new InvitationObjectRuntime(new FakeStorage(), { now: () => 1_200_000 });
+  await initialize(runtime);
+  const decline = await runtime.fetch(request("/invitation/decline", {
+    invitationId: claims.invitationId,
+    playerId: "discord:222",
+  }));
+  assert.equal(decline.status, 403);
+});
+
 test("target restrictions, expiry, and cancellation fail closed", async () => {
   const targeted = { ...claims, invitationId: "targeted", targetPlayerId: "discord:222" };
   const targetedRuntime = new InvitationObjectRuntime(new FakeStorage(), { now: () => 1_200_000 });

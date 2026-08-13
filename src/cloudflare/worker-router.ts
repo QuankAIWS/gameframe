@@ -15,7 +15,7 @@ import {
   createWebsiteOAuthStateCookie,
   safeReturnTo,
 } from "../auth/discord-oauth.ts";
-import { discordTargetPlayerId } from "../auth/match-invitation.ts";
+import { invitationTargetPlayerId } from "../auth/match-invitation.ts";
 import {
   SignedCookieSessionAuthenticator,
   SignedSessionCodec,
@@ -25,6 +25,7 @@ import {
   createWebsiteSessionCookie,
 } from "../auth/signed-session.ts";
 import { InvitationCoordinator } from "./invitation-coordinator.ts";
+import { declineInvitation } from "./invitation-decline.ts";
 import { errorResponse, json, readJson } from "./http-utils.ts";
 import {
   indexInvitation,
@@ -42,6 +43,7 @@ interface WorkerRouterOptions {
 }
 
 type MatchOperation = "view" | "actions" | "events";
+type InvitationOperation = "view" | "cancel" | "decline";
 const SESSION_TTL_SECONDS = 60 * 60 * 12;
 
 function publicMatchRoute(pathname: string): { matchId: string; operation: MatchOperation } | null {
@@ -53,12 +55,12 @@ function publicMatchRoute(pathname: string): { matchId: string; operation: Match
   };
 }
 
-function invitationRoute(pathname: string): { invitationId: string; cancel: boolean } | null {
-  const match = /^\/api\/invitations\/([^/]+)(\/cancel)?$/.exec(pathname);
+function invitationRoute(pathname: string): { invitationId: string; operation: InvitationOperation } | null {
+  const match = /^\/api\/invitations\/([^/]+)(?:\/(cancel|decline))?$/.exec(pathname);
   if (!match) return null;
   return {
     invitationId: decodeURIComponent(match[1]),
-    cancel: Boolean(match[2]),
+    operation: (match[2] as InvitationOperation | undefined) ?? "view",
   };
 }
 
@@ -282,7 +284,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
           await upsertPlayerDirectory(env, principal);
           const body = await readJson(request);
           const created = await invitationsFor(env).create(url.origin, principal, body);
-          const targetPlayerId = discordTargetPlayerId(body.targetDiscordUserId);
+          const targetPlayerId = invitationTargetPlayerId(body.targetPlayerId, body.targetDiscordUserId);
           await indexInvitation(
             env,
             created.invitation,
@@ -306,10 +308,13 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
         }
 
         const inviteRoute = invitationRoute(url.pathname);
-        if (inviteRoute && request.method === "GET" && !inviteRoute.cancel) {
+        if (inviteRoute && request.method === "GET" && inviteRoute.operation === "view") {
           const principal = await authenticator.authenticate(request);
           const viewed = await invitationsFor(env).view(inviteRoute.invitationId, principal);
-          await indexInvitation(env, viewed.invitation, [
+          const feedInvitation = viewed.invitation.status === "declined"
+            ? { ...viewed.invitation, status: "cancelled" as const }
+            : viewed.invitation;
+          await indexInvitation(env, feedInvitation, [
             viewed.invitation.inviter.playerId,
             viewed.invitation.claimant?.playerId ?? principal.playerId,
           ]);
@@ -318,11 +323,18 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
           }
           return json(200, viewed);
         }
-        if (inviteRoute && request.method === "POST" && inviteRoute.cancel) {
+        if (inviteRoute && request.method === "POST" && inviteRoute.operation === "cancel") {
           const principal = await authenticator.authenticate(request);
           const cancelled = await invitationsFor(env).cancel(inviteRoute.invitationId, principal);
           await indexInvitation(env, cancelled.invitation, [principal.playerId]);
           return json(200, cancelled);
+        }
+        if (inviteRoute && request.method === "POST" && inviteRoute.operation === "decline") {
+          const principal = await authenticator.authenticate(request);
+          const declined = await declineInvitation(env, inviteRoute.invitationId, principal);
+          const feedInvitation = { ...declined, status: "cancelled" as const };
+          await indexInvitation(env, feedInvitation, [declined.inviter.playerId, principal.playerId]);
+          return json(200, { invitation: declined, resumePath: null });
         }
 
         if (request.method === "POST" && url.pathname === "/api/matches") {

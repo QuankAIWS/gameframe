@@ -4,6 +4,7 @@ import { GAMEFRAME_BOT_PLAYER_ID } from "../agents/gameframe-bot.ts";
 import { SignedSessionCodec } from "../auth/signed-session.ts";
 import { InvitationObjectRuntime } from "./invitation-object-runtime.ts";
 import { GameFrameMatchObjectRuntime } from "./match-object-runtime.ts";
+import { PlayerPlatformObjectRuntime } from "./player-platform-object-runtime.ts";
 import type {
   DurableObjectNamespaceLike,
   DurableObjectStubLike,
@@ -28,9 +29,11 @@ class FakeStorage implements DurableStorageLike {
   }
 }
 
+type Runtime = InvitationObjectRuntime | GameFrameMatchObjectRuntime | PlayerPlatformObjectRuntime;
+
 class HybridNamespace implements DurableObjectNamespaceLike {
   readonly #storage = new Map<string, FakeStorage>();
-  readonly #instances = new Map<string, InvitationObjectRuntime | GameFrameMatchObjectRuntime>();
+  readonly #instances = new Map<string, Runtime>();
 
   idFromName(name: string): unknown {
     return name;
@@ -45,7 +48,7 @@ class HybridNamespace implements DurableObjectNamespaceLike {
     this.#instances.delete(name);
   }
 
-  #instance(name: string): InvitationObjectRuntime | GameFrameMatchObjectRuntime {
+  #instance(name: string): Runtime {
     let instance = this.#instances.get(name);
     if (instance) return instance;
     let storage = this.#storage.get(name);
@@ -55,7 +58,9 @@ class HybridNamespace implements DurableObjectNamespaceLike {
     }
     instance = name.startsWith("invite:")
       ? new InvitationObjectRuntime(storage)
-      : new GameFrameMatchObjectRuntime(storage);
+      : name.startsWith("player:") || name.startsWith("directory:")
+        ? new PlayerPlatformObjectRuntime(storage)
+        : new GameFrameMatchObjectRuntime(storage);
     this.#instances.set(name, instance);
     return instance;
   }
@@ -85,6 +90,10 @@ async function authenticatedFetch(
 function sequenceGenerator(values: string[]): () => string {
   let index = 0;
   return () => values[index++] ?? `generated-${index}`;
+}
+
+function invitationFromFeed(feed: any, invitationId: string) {
+  return feed.invitations.find((invitation: any) => invitation.invitationId === invitationId);
 }
 
 test("authenticated invitation claim creates a match with both verified principals", async () => {
@@ -180,35 +189,81 @@ test("Discord direct match creation permits GameFrameBot but rejects an unclaime
   assert.equal((await botMatch.json() as any).matchId, "match-bot");
 });
 
-test("targeted invitations and cancellation remain tied to authenticated principals", async () => {
+test("canonical targeted invitations deliver Accept custody and support recipient decline", async () => {
   const env: GameFrameWorkerEnv = { SESSION_SECRET: secret, MATCHES: new HybridNamespace() };
-  const worker = createGameFrameWorker({
-    idGenerator: sequenceGenerator(["targeted-invite", "cancelled-invite"]),
-  });
+  const worker = createGameFrameWorker({ idGenerator: sequenceGenerator(["targeted-invite"]) });
 
-  const targeted = await authenticatedFetch(worker, env, "/api/invitations", "discord:111", {
+  const createdResponse = await authenticatedFetch(worker, env, "/api/invitations", "discord:111", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      gameId: "tactical-combat-canary",
-      targetPlayerId: "discord:222",
-    }),
-  }).then((response) => response.json() as Promise<any>);
-  assert.equal(targeted.invitation.targetPlayerId, "discord:222");
-  const targetedToken = new URL(targeted.inviteUrl).searchParams.get("token");
-  const wrongUser = await authenticatedFetch(worker, env, "/api/invitations/claim", "discord:333", {
+    body: JSON.stringify({ gameId: "american-checkers", targetPlayerId: "discord:222" }),
+  });
+  assert.equal(createdResponse.status, 201);
+  const created = await createdResponse.json() as any;
+  assert.equal(created.invitation.targetPlayerId, "discord:222");
+  const token = new URL(created.inviteUrl).searchParams.get("token");
+  assert.ok(token);
+
+  const recipientFeedResponse = await authenticatedFetch(worker, env, "/api/me/feed", "discord:222");
+  assert.equal(recipientFeedResponse.status, 200);
+  const recipientPending = invitationFromFeed(await recipientFeedResponse.json(), "targeted-invite");
+  assert.equal(recipientPending.status, "pending");
+  assert.equal(recipientPending.claimToken, token);
+
+  const inviterFeedResponse = await authenticatedFetch(worker, env, "/api/me/feed", "discord:111");
+  assert.equal(inviterFeedResponse.status, 200);
+  const inviterPending = invitationFromFeed(await inviterFeedResponse.json(), "targeted-invite");
+  assert.equal(inviterPending.status, "pending");
+  assert.equal(inviterPending.claimToken, null);
+
+  const outsiderDecline = await authenticatedFetch(
+    worker,
+    env,
+    "/api/invitations/targeted-invite/decline",
+    "discord:333",
+    { method: "POST" },
+  );
+  assert.equal(outsiderDecline.status, 403);
+
+  const declinedResponse = await authenticatedFetch(
+    worker,
+    env,
+    "/api/invitations/targeted-invite/decline",
+    "discord:222",
+    { method: "POST" },
+  );
+  assert.equal(declinedResponse.status, 200);
+  assert.equal((await declinedResponse.json() as any).invitation.status, "declined");
+
+  for (const playerId of ["discord:111", "discord:222"]) {
+    const feedResponse = await authenticatedFetch(worker, env, "/api/me/feed", playerId);
+    assert.equal(feedResponse.status, 200);
+    const invitation = invitationFromFeed(await feedResponse.json(), "targeted-invite");
+    assert.equal(invitation.status, "cancelled");
+  }
+
+  const viewAsInviter = await authenticatedFetch(worker, env, "/api/invitations/targeted-invite", "discord:111");
+  assert.equal(viewAsInviter.status, 200);
+  assert.equal((await viewAsInviter.json() as any).invitation.status, "declined");
+
+  const claimAfterDecline = await authenticatedFetch(worker, env, "/api/invitations/claim", "discord:222", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ token: targetedToken }),
+    body: JSON.stringify({ token }),
   });
-  assert.equal(wrongUser.status, 403);
-  assert.equal((await wrongUser.json() as any).error, "invitation_target_mismatch");
+  assert.equal(claimAfterDecline.status, 409);
+  assert.equal((await claimAfterDecline.json() as any).error, "invitation_declined");
+});
 
+test("sender cancellation remains tied to the authenticated inviter", async () => {
+  const env: GameFrameWorkerEnv = { SESSION_SECRET: secret, MATCHES: new HybridNamespace() };
+  const worker = createGameFrameWorker({ idGenerator: sequenceGenerator(["cancelled-invite"]) });
   const cancellable = await authenticatedFetch(worker, env, "/api/invitations", "discord:111", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ gameId: "tic-tac-toe" }),
   }).then((response) => response.json() as Promise<any>);
+
   const cancelByOutsider = await authenticatedFetch(
     worker,
     env,
