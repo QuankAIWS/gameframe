@@ -8,6 +8,8 @@ const TUTORIAL_KEY = "scribbles-gameframe.cascade-tutorial:v1";
 
 async function seedLevel(page, level, { blitzSeen = {} } = {}) {
   await page.addInitScript(({ stateKey, performanceKey, tutorialKey, levelNumber, seen }) => {
+    const marker = "cascade-build-refresh-initial-seed";
+    if (sessionStorage.getItem(marker)) return;
     localStorage.setItem(stateKey, JSON.stringify({
       level: levelNumber,
       lives: 5,
@@ -23,6 +25,7 @@ async function seedLevel(page, level, { blitzSeen = {} } = {}) {
       pendingHammerRewards: 0,
     }));
     localStorage.setItem(tutorialKey, JSON.stringify({ enabled: false, seen: {} }));
+    sessionStorage.setItem(marker, "1");
   }, {
     stateKey: STATE_KEY,
     performanceKey: PERFORMANCE_KEY,
