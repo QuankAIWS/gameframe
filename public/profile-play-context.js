@@ -40,15 +40,20 @@ function install() {
   const games = document.createElement("div");
   games.className = "profile-play-together-games";
   const options = [
-    ["Tic-Tac-Toe", withPlayer("/?game=tic-tac-toe&menu=1")],
-    ["Clockwork Checkers", withPlayer("/?game=american-checkers&menu=1")],
-    ["Othello", withPlayer("/othello.html")],
+    ["Tic-Tac-Toe", "/?game=tic-tac-toe&menu=1"],
+    ["Clockwork Checkers", "/?game=american-checkers&menu=1"],
+    ["Othello", "/othello.html"],
   ];
   for (const [label, href] of options) {
     const link = document.createElement("a");
     link.className = "platform-button profile-play-together-game";
     link.href = href;
     link.textContent = label;
+    link.addEventListener("click", (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      window.location.assign(withPlayer(href));
+    });
     games.append(link);
   }
 
