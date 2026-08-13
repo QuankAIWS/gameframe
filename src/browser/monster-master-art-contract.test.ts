@@ -8,6 +8,9 @@ test("Monster Master uses one authoritative controller with guarded Pixi deliver
   const launcher = await read("public/auth-launcher.js");
   const monsterApp = await read("public/monster-master-app.js");
   const monsterShell = await read("public/monster-master-shell.js");
+  const monsterArena = await read("public/monster-master.html");
+  const trainerRuntime = await read("public/monster-master-trainer-asset.js");
+  const trainerAsset = await readFile(new URL("../../public/assets/monster-master/trainers/master-trainer-v1-128.webp", import.meta.url));
   const gameframeNav = await read("public/gameframe-nav.js");
   const correction = await read("public/monster-master-correction.js");
   const overlay = await read("public/monster-master-overlay.js");
@@ -46,6 +49,16 @@ test("Monster Master uses one authoritative controller with guarded Pixi deliver
   assert.match(monsterBranch, /monster-master-legacy-fallback/);
   assert.doesNotMatch(monsterBranch, /monster-master-overlay-guard\.js/);
   assert.doesNotMatch(monsterBranch, /monster-master-terrain-depth\.js/);
+
+  assert.match(monsterArena, /monster-master-trainer-asset\.js/);
+  assert.match(trainerRuntime, /const TRAINER_ASSET = "\/assets\/monster-master\/trainers\/master-trainer-v1-128\.webp"/);
+  assert.match(trainerRuntime, /unit\.role === "master"/);
+  assert.match(trainerRuntime, /gameFrameMonsterPixi/);
+  assert.match(trainerRuntime, /worldToScreen/);
+  assert.match(trainerRuntime, /gameFrameMonsterController/);
+  assert.match(trainerRuntime, /monster-master-turn-portrait\[data-role="master"\]/);
+  assert.equal(trainerAsset.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(trainerAsset.subarray(8, 12).toString("ascii"), "WEBP");
 
   assert.match(monsterApp, /const monsterMasterViewEvent = "gameframe:monster-master-pixi-view"/);
   assert.match(monsterApp, /window\.gameFrameMonsterController = Object\.freeze/);
@@ -154,7 +167,10 @@ test("Monster Master uses one authoritative controller with guarded Pixi deliver
   assert.doesNotMatch(terrainAtlas, /data:image\//);
   assert.match(terrainAtlas, /linearGradient id="grass-a"/);
   assert.match(terrainAtlas, /linearGradient id="stone-top"/);
-  assert.equal(manifest.version, 2);
+  assert.equal(manifest.version, 3);
+  assert.equal(manifest.trainerAssets["master-trainer-v1"].role, "master");
+  assert.equal(manifest.trainerAssets["master-trainer-v1"].usage, "standalone-arena");
+  assert.equal(manifest.trainerAssets["master-trainer-v1"].path, "/assets/monster-master/trainers/master-trainer-v1-128.webp");
   assert.equal(manifest.creatures["warden-master-v1"].role, "master");
   assert.equal(manifest.terrain["floor-a"].semantic, "floor");
   assert.equal(manifest.terrain["wall-rubble-a"].semantic, "wall");
