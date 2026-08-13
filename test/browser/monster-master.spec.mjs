@@ -110,10 +110,36 @@ function distanceToEnemyMaster(view, action) {
   );
 }
 
-function chooseDeterministicAction(view, { passiveCombat = false } = {}) {
+function chooseDeterministicAction(view, { passiveCombat = false, preferSupportSetup = false } = {}) {
   if (view.observation.phase === "deployment") return chooseDeployment(view);
   const actions = view.observation.legalActions;
   if (passiveCombat) return actions.find((action) => action.type === "end-activation");
+
+  const activeUnit = view.observation.board.units.find((unit) => unit.id === view.observation.activeUnitId);
+  if (preferSupportSetup && activeUnit?.role === "master") {
+    const damagedFriendly = view.observation.board.units
+      .filter((unit) => unit.ownerId === activeUnit.ownerId && unit.id !== activeUnit.id && unit.health > 0 && unit.health < unit.maxHealth)
+      .sort((left, right) => left.health / left.maxHealth - right.health / right.maxHealth || left.id.localeCompare(right.id))[0];
+    if (damagedFriendly) {
+      const supportMove = [...actions]
+        .filter((action) => action.type === "move")
+        .sort((left, right) => {
+          const leftTarget = destination(left);
+          const rightTarget = destination(right);
+          const leftDistance = Math.max(Math.abs(leftTarget.x - damagedFriendly.position.x), Math.abs(leftTarget.y - damagedFriendly.position.y));
+          const rightDistance = Math.max(Math.abs(rightTarget.x - damagedFriendly.position.x), Math.abs(rightTarget.y - damagedFriendly.position.y));
+          return leftDistance - rightDistance || right.movementCost - left.movementCost;
+        })[0];
+      if (supportMove) return supportMove;
+    }
+    return actions.find((action) => action.type === "end-activation");
+  }
+
+  const supportAttack = preferSupportSetup ? actions.find((action) => (
+    action.type === "attack"
+    && view.observation.board.units.find((unit) => unit.id === action.targetUnitId)?.role !== "master"
+  )) : null;
+  if (supportAttack) return supportAttack;
 
   const enemyMasterAttack = actions.find((action) => (
     action.type === "attack"
@@ -172,7 +198,7 @@ test("deploys a Master and three monsters, advances combat against Monster Maste
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 0");
   await expect(page.locator("#monster-master-phase")).toHaveText("Deployment");
   await expect(page.locator("#monster-master-roster-list .combat-roster-unit")).toHaveCount(8);
-  await expect(page.locator("#monster-master-status")).toContainText("Verdant Sage");
+  await expect(page.locator("#monster-master-status")).toContainText("Vanguard");
 
   for (let deployment = 1; deployment <= 4; deployment += 1) {
     await deploySelectedUnit(page);
@@ -214,9 +240,9 @@ test("two browser seats alternate Monster Master deployment on one Pixi battlefi
     await waitForPixi(beta);
 
     await deploySelectedUnit(alpha);
-    await expect(beta.locator("#monster-master-status")).toContainText("Beta Verdant Sage");
+    await expect(beta.locator("#monster-master-status")).toContainText("Beta Vanguard");
     await deploySelectedUnit(beta);
-    await expect(alpha.locator("#monster-master-status")).toContainText("Stone Bulwark");
+    await expect(alpha.locator("#monster-master-status")).toContainText("Rootmaw Brute");
   } finally {
     await alphaContext.close().catch(() => {});
     await betaContext.close().catch(() => {});
@@ -236,7 +262,7 @@ test("commits an attack and presents its authoritative battlefield damage effect
 });
 
 test("spends command energy and presents a legal Mend effect", async ({ page, request }) => {
-  const prepared = await prepareAuthoritativeState(request, (view) => view.observation.legalActions.some((action) => action.type === "use-ability"));
+  const prepared = await prepareAuthoritativeState(request, (view) => view.observation.legalActions.some((action) => action.type === "use-ability"), { preferSupportSetup: true });
   const actingPlayer = prepared.observation.activePlayerId;
   const mend = prepared.observation.legalActions.find((action) => action.type === "use-ability");
   const commandBefore = prepared.observation.commandByPlayer[actingPlayer];

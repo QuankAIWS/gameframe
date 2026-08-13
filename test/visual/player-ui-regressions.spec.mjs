@@ -179,13 +179,16 @@ test("Monster Master uses a battlefield background with working contextual unit 
   await deployNextMonsterMasterUnit(page);
   await deployNextMonsterMasterUnit(page);
   await deployNextMonsterMasterUnit(page);
+  await deployNextMonsterMasterUnit(page);
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterController?.getView()?.observation.phase), {
     timeout: 8_000,
   }).toBe("combat");
   await expect(page.locator("#monster-master-unit-hud")).toHaveAttribute("data-role", "emberling");
+  await expect(page.locator("#monster-master-unit-hud")).toHaveAttribute("data-content-id", "stormcrest-skitter-v1");
   await expect(page.locator("#monster-master-unit-hud .section-label")).toHaveText("ACTIVE UNIT");
-  await expect(page.locator("#monster-master-hud-health")).toHaveText("8/8");
-  await expect(page.locator("#monster-master-hud-initiative")).toHaveText("Initiative 9");
+  await expect(page.locator("#monster-master-hud-name")).toHaveText("Stormcrest Skitter");
+  await expect(page.locator("#monster-master-hud-health")).toHaveText("9/9");
+  await expect(page.locator("#monster-master-hud-initiative")).toHaveText("Initiative 10");
   await expect(page.locator("#monster-master-select-attack .monster-master-action-label")).toHaveText("Cinder Volley");
   await expect(page.locator("#monster-master-select-mend")).toBeHidden();
   await expect(page.locator('#monster-master-ability-list [data-ability-id="cinder-volley"]')).toBeVisible();

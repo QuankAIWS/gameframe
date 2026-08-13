@@ -7,7 +7,11 @@ import type { TacticalMovementAction, TacticalMovementObservation, TacticalMovem
 import type { TicTacToeAction, TicTacToeObservation, TicTacToeState } from "../games/tic-tac-toe/index.ts";
 import { InMemoryMatchSnapshotStore } from "../platform/match-store.ts";
 import { CheckersMatchService, type PublicCheckersMatchView } from "./checkers-match-service.ts";
-import { MonsterMasterMatchService, type PublicMonsterMasterMatchView } from "./monster-master-match-service.ts";
+import {
+  MonsterMasterMatchService,
+  type MonsterMasterArenaMatchRequest,
+  type PublicMonsterMasterMatchView,
+} from "./monster-master-match-service.ts";
 import { OthelloMatchService, type OthelloPublicMatchView } from "./othello-match-service.ts";
 import { TacticalCombatMatchService, type PublicTacticalCombatMatchView } from "./tactical-combat-match-service.ts";
 import { TacticalMovementMatchService, type PublicTacticalMovementMatchView } from "./tactical-movement-match-service.ts";
@@ -120,7 +124,12 @@ export class InMemoryGameFrameService {
     });
   }
 
-  async createMatch(gameId: string, playerIds: readonly string[], requestedMatchId?: string): Promise<PublicGameMatchView> {
+  async createMatch(
+    gameId: string,
+    playerIds: readonly string[],
+    requestedMatchId?: string,
+    monsterMasterArena?: MonsterMasterArenaMatchRequest,
+  ): Promise<PublicGameMatchView> {
     const normalizedGameId = this.#normalizeGameId(gameId);
     const matchId = requestedMatchId ?? this.#idGenerator();
     if (this.#matchGames.has(matchId)) {
@@ -139,7 +148,7 @@ export class InMemoryGameFrameService {
             ? await this.#tactical.createMatch(playerIds, matchId)
             : normalizedGameId === "tactical-combat-canary"
               ? await this.#combat.createMatch(playerIds, matchId)
-              : await this.#monsterMaster.createMatch(playerIds, matchId);
+              : await this.#monsterMaster.createMatch(playerIds, matchId, undefined, monsterMasterArena);
     this.#matchGames.set(matchId, normalizedGameId);
     return { gameId: normalizedGameId, ...view } as PublicGameMatchView;
   }
