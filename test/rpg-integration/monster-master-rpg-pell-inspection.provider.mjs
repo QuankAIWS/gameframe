@@ -79,8 +79,7 @@ async function openPell(page) {
   await expect(page.locator("#mm-rpg-talk-panel")).toBeVisible();
 }
 
-async function say(page, text, reply) {
-  await openPell(page);
+async function speak(page, text, reply) {
   await page.locator("#mm-rpg-talk-input").fill(text);
   await page.locator(".mm-rpg-talk-form").evaluate((form) => form.requestSubmit());
   await expect(page.locator('#mm-rpg-talk-history .mm-rpg-talk-bubble[data-speaker="character"]').last()).toHaveText(reply);
@@ -97,8 +96,9 @@ test("Pell visibly completes inspection without a browser reload", async ({ page
   await page.screenshot({ path: testInfo.outputPath("01-initial.png"), fullPage: true });
 
   const before = await anchor(page, pellId);
-  await say(page, "Pell, go check her badge.", "Give me a second. I'll check her badge.");
-  await page.screenshot({ path: testInfo.outputPath("02-inspection-requested.png"), fullPage: true });
+  await openPell(page);
+  await page.screenshot({ path: testInfo.outputPath("02-pell-before-inspection.png"), fullPage: true });
+  await speak(page, "Pell, go check her badge.", "Give me a second. I'll check her badge.");
 
   await expect.poll(async () => {
     const after = await anchor(page, pellId);
@@ -107,9 +107,15 @@ test("Pell visibly completes inspection without a browser reload", async ({ page
   await page.screenshot({ path: testInfo.outputPath("03-pell-moved.png"), fullPage: true });
 
   await page.locator('[data-mm-rpg-dock-tab="world"]').click();
+  await expect(page.locator("#mm-rpg-talk-panel")).toBeHidden();
   await expect.poll(() => page.evaluate(() => window.gameFrameMonsterRpgTalk?.getSelectedTarget?.() ?? null)).toBeNull();
-  await say(page, "What did her badge say?", "The badge gives her name as Mara Venn.");
-  await page.screenshot({ path: testInfo.outputPath("04-learned-identity.png"), fullPage: true });
+  await expect(page.locator("#mm-rpg-talk-nearby")).toBeVisible();
+  await expect(page.locator(".mm-rpg-dock-nearby")).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("04-world-recovered.png"), fullPage: true });
+
+  await openPell(page);
+  await speak(page, "What did her badge say?", "The badge gives her name as Mara Venn.");
+  await page.screenshot({ path: testInfo.outputPath("05-learned-identity.png"), fullPage: true });
 
   expect(browserErrors).toEqual([]);
 });
