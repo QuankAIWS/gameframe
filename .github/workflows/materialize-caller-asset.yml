@@ -1,0 +1,37 @@
+name: Materialize Caller Asset
+
+on:
+  push:
+    branches:
+      - agent/monster-master-caller-trainer-asset
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/monster-master-caller-trainer-asset
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - name: Materialize Caller manifest and contract
+        run: |
+          python3 scripts/_materialize-caller-manifest.py
+          python3 scripts/_materialize-caller-contract.py
+      - name: Verify Caller contract
+        run: node --experimental-strip-types --test src/games/monster-master/repository-contract.test.ts
+      - name: Clean temporary materializer
+        run: rm scripts/_materialize-caller-manifest.py scripts/_materialize-caller-contract.py .github/workflows/materialize-caller-asset.yml
+      - name: Commit Caller asset registration
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/assets/monster-master/manifest.json src/games/monster-master/repository-contract.test.ts scripts/_materialize-caller-manifest.py scripts/_materialize-caller-contract.py .github/workflows/materialize-caller-asset.yml
+          git commit -m 'Register Caller trainer asset'
+          git push origin HEAD:agent/monster-master-caller-trainer-asset
