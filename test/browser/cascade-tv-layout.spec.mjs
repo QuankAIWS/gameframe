@@ -16,6 +16,12 @@ test("Cascade keeps the full TV cabinet around a board-height playfield under br
   await expect(map).toBeVisible();
   await expect(page.locator(".cascade-help")).toBeHidden();
 
+  // Even at level 1 the run track should fill from the available future
+  // levels instead of showing four dots in a mostly-empty sidewall.
+  const visibleLevelRows = await page.locator("#level-map > li:visible").count();
+  expect(visibleLevelRows).toBeGreaterThanOrEqual(10);
+  expect(visibleLevelRows).toBeLessThanOrEqual(11);
+
   const [headerBox, mapBox, boardWrapBox, boardBox, utilityBox, statusBox] = await Promise.all([
     header.boundingBox(),
     map.boundingBox(),
