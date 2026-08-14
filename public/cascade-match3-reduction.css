@@ -42,8 +42,8 @@
   }
 
   /* The run rail should feel like a game-map slice, not six lonely menu rows.
-     On shorter/zoomed TVs show a useful nearby window; taller displays can
-     spend their extra height on more progression rather than empty panel. */
+     On shorter/zoomed TVs show an eleven-node chapter slice. Near the chapter
+     edges, fill the unavailable past/future slots from the other direction. */
   .cascade-map {
     padding: 7px 6px 8px;
   }
@@ -70,13 +70,20 @@
   .cascade-map li.is-current + li,
   .cascade-map li.is-current + li + li,
   .cascade-map li.is-current + li + li + li,
+  .cascade-map li.is-current + li + li + li + li,
+  .cascade-map li.is-current + li + li + li + li + li,
   .cascade-map li:has(+ .is-current),
   .cascade-map li:has(+ li + .is-current),
   .cascade-map li:has(+ li + li + .is-current),
   .cascade-map li:has(+ li + li + li + .is-current),
-  .cascade-map li:has(+ li + li + li + li + .is-current),
-  .cascade-map li:has(+ li + li + li + li + li + .is-current),
-  .cascade-map li:has(+ li + li + li + li + li + li + .is-current) {
+  .cascade-map li:has(+ li + li + li + li + .is-current) {
+    display: grid;
+  }
+
+  /* Fill the chapter slice at either edge. This keeps levels 1–5 and 26–30
+     from looking empty just because there are fewer neighbors on one side. */
+  #level-map:has(> .is-current:nth-child(-n+5)) > li:nth-child(-n+11),
+  #level-map:has(> .is-current:nth-last-child(-n+5)) > li:nth-last-child(-n+11) {
     display: grid;
   }
 
@@ -284,8 +291,13 @@
     font-size: clamp(1.6rem, 3.2vh, 2.2rem);
   }
 
+  /* Settings stay accessible, but visually collapse to familiar game-control
+     icons instead of three persistent web-form labels. The button text remains
+     in the DOM for accessible names and family-facing copy tests. */
   #cascade-feedback-card {
-    gap: 4px;
+    min-height: 0;
+    gap: 3px;
+    padding-block: clamp(5px, .7vh, 7px);
   }
 
   #cascade-feedback-card > small {
@@ -301,32 +313,74 @@
 
   .cascade-feedback-controls {
     align-self: center;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px;
+    grid-template-columns: repeat(3, 1fr);
+    justify-items: center;
+    gap: 5px;
   }
 
   #cascade-tutorial-toggle {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 
   .cascade-feedback-controls button {
-    min-height: clamp(29px, 4.4vh, 37px);
-    padding: 3px 2px;
+    display: grid;
+    place-items: center;
+    width: clamp(31px, 5.2vh, 39px);
+    min-width: clamp(31px, 5.2vh, 39px);
+    height: clamp(31px, 5.2vh, 39px);
+    min-height: 0;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0;
+    line-height: 1;
   }
 
+  .cascade-feedback-controls button::before {
+    font-size: clamp(.92rem, 2.2vh, 1.22rem);
+    line-height: 1;
+  }
+
+  #cascade-sound-toggle::before { content: "🔊"; }
+  #cascade-sound-toggle[aria-pressed="false"]::before { content: "🔇"; }
+  #cascade-effects-toggle::before { content: "✨"; }
+  #cascade-effects-toggle[aria-pressed="true"]::before { content: "✦"; }
+  #cascade-tutorial-toggle::before { content: "💡"; }
+  #cascade-tutorial-toggle[aria-pressed="false"]::before { opacity: .48; filter: grayscale(1); }
+
   .cascade-weekly-card {
+    min-height: 0;
     align-content: center;
-    gap: 4px;
+    gap: 3px;
+    padding-block: clamp(5px, .7vh, 7px);
   }
 
   .cascade-weekly-card small {
-    color: #744398;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .cascade-weekly-card [data-weekly-start] {
-    min-height: clamp(36px, 5.4vh, 45px);
-    padding: 4px 7px;
-    font-size: clamp(.64rem, 1.15vh, .78rem);
+    min-height: clamp(38px, 5.6vh, 46px);
+    padding: 4px 8px;
+    font-size: 0;
+    letter-spacing: .06em;
+  }
+
+  .cascade-weekly-card [data-weekly-start]::before {
+    content: "BLITZ";
+    margin-right: 7px;
+    font-size: clamp(.68rem, 1.3vh, .84rem);
+    font-weight: 1000;
+  }
+
+  .cascade-weekly-card [data-weekly-start] b {
+    font-size: clamp(.66rem, 1.2vh, .78rem);
   }
 
   .cascade-board-wrap {
@@ -338,16 +392,20 @@
   }
 }
 
-/* A taller display should expose more of the run instead of surrounding the
-   same tiny level slice with empty cabinet. */
+/* A taller display should expose a fifteen-node slice instead of surrounding
+   the same tiny progression window with empty cabinet. Edge chapters fill the
+   slice from the available direction, just like the shorter layout. */
 @media (min-width: 760px) and (min-height: 700px) and (min-aspect-ratio: 3/2) {
-  .cascade-map li.is-current + li + li + li + li,
-  .cascade-map li:has(+ li + li + li + li + li + li + li + .is-current),
-  .cascade-map li:has(+ li + li + li + li + li + li + li + li + .is-current),
-  .cascade-map li:has(+ li + li + li + li + li + li + li + li + li + .is-current),
-  .cascade-map li:has(+ li + li + li + li + li + li + li + li + li + li + .is-current),
-  .cascade-map li:has(+ li + li + li + li + li + li + li + li + li + li + li + .is-current),
-  .cascade-map li:has(+ li + li + li + li + li + li + li + li + li + li + li + li + .is-current) {
+  .cascade-map li.is-current + li + li + li + li + li + li,
+  .cascade-map li.is-current + li + li + li + li + li + li + li,
+  .cascade-map li:has(+ li + li + li + li + li + .is-current),
+  .cascade-map li:has(+ li + li + li + li + li + li + .is-current),
+  .cascade-map li:has(+ li + li + li + li + li + li + li + .is-current) {
+    display: grid;
+  }
+
+  #level-map:has(> .is-current:nth-child(-n+7)) > li:nth-child(-n+15),
+  #level-map:has(> .is-current:nth-last-child(-n+7)) > li:nth-last-child(-n+15) {
     display: grid;
   }
 
