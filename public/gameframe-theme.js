@@ -3,6 +3,13 @@ import { gameFrameFetch, gameFrameOptionalFetch } from "./gameframe-auth.js";
 const legacyThemeStorageKey = "scribbles-gameframe.shell-theme:v1";
 const playerIdStorageKey = "scribbles-gameframe.player-id";
 
+if (window.location.pathname === "/" && !document.head.querySelector('link[href="/gameframe-theme-environments.css"]')) {
+  const stylesheet = document.createElement("link");
+  stylesheet.rel = "stylesheet";
+  stylesheet.href = "/gameframe-theme-environments.css";
+  document.head.append(stylesheet);
+}
+
 const themes = Object.freeze([
   {
     id: "standard",
