@@ -11,7 +11,6 @@ const cascadeOwnerKey = "scribbles-gameframe.cascade-progression-owner:v1";
 const playerId = "visual-player-platform";
 const viewerPlayerId = "visual-theme-viewer";
 const playerHeader = { "x-gameframe-player-id": playerId };
-const viewerHeader = { "x-gameframe-player-id": viewerPlayerId };
 const visualStarsByLevel = Object.fromEntries(Array.from({ length: 180 }, (_, index) => [String(index + 1), index % 5 === 0 ? 2 : 3]));
 
 async function seedPlayerProgression(page) {
@@ -34,17 +33,32 @@ async function seedPlayerProgression(page) {
     },
   });
   expect(blitz.ok()).toBe(true);
-  const ownerTheme = await page.request.post("/api/me/preferences", {
-    headers: playerHeader,
-    data: { themeId: "cascade-pop" },
+}
+
+async function installThemeReadModel(page) {
+  await page.route("**/api/me/feed", async (route) => {
+    const response = await route.fetch();
+    const value = await response.json();
+    const requestPlayerId = route.request().headers()["x-gameframe-player-id"] || "";
+    const themeId = requestPlayerId === playerId ? "cascade-pop" : "standard";
+    await route.fulfill({
+      response,
+      contentType: "application/json",
+      body: JSON.stringify({ ...value, themeId, themeConfigured: true }),
+    });
   });
-  expect(ownerTheme.ok()).toBe(true);
-  expect((await ownerTheme.json()).themeId).toBe("cascade-pop");
-  const viewerTheme = await page.request.post("/api/me/preferences", {
-    headers: viewerHeader,
-    data: { themeId: "standard" },
+  await page.route(`**/api/players/${encodeURIComponent(playerId)}/profile`, async (route) => {
+    const response = await route.fetch();
+    const value = await response.json();
+    await route.fulfill({
+      response,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...value,
+        profile: { ...(value.profile || {}), themeId: "cascade-pop" },
+      }),
+    });
   });
-  expect(viewerTheme.ok()).toBe(true);
 }
 
 async function expectPlatformBar(page, active) {
@@ -127,6 +141,8 @@ async function openHome(page, viewport) {
   await expect(page.locator("[data-gamer-progression]")).toContainText("GAMER LEVEL");
   await expect(page.locator("[data-gamer-progression] .home-level-number strong")).not.toHaveText("1");
   await expect(page.locator(".home-jump-grid")).toContainText("Othello");
+  const pageBackground = await page.locator("body").evaluate((node) => getComputedStyle(node).backgroundImage);
+  expect(pageBackground).toContain("255, 217, 235");
   await returnToTop(page);
 }
 
@@ -148,23 +164,24 @@ test.beforeAll(async () => {
 });
 
 test("capture the player platform at desktop and mobile sizes", async ({ page }) => {
+  await installThemeReadModel(page);
   await seedPlayerProgression(page);
 
   await openProfile(page, desktop);
-  await page.screenshot({ path: `${output}/profile-favorites-desktop.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/profile-cascade-pop-desktop.png`, fullPage: true });
   await openViewedProfile(page, desktop);
   await page.screenshot({ path: `${output}/profile-viewed-theme-desktop.png`, fullPage: true });
   await openHome(page, desktop);
-  await page.screenshot({ path: `${output}/home-dashboard-desktop.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/home-cascade-pop-desktop.png`, fullPage: true });
   await openLeaderboard(page, desktop);
   await page.screenshot({ path: `${output}/leaderboard-desktop.png`, fullPage: true });
 
   await openProfile(page, mobile);
-  await page.screenshot({ path: `${output}/profile-favorites-mobile.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/profile-cascade-pop-mobile.png`, fullPage: true });
   await openViewedProfile(page, mobile);
   await page.screenshot({ path: `${output}/profile-viewed-theme-mobile.png`, fullPage: true });
   await openHome(page, mobile);
-  await page.screenshot({ path: `${output}/home-dashboard-mobile.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/home-cascade-pop-mobile.png`, fullPage: true });
   await openLeaderboard(page, mobile);
   await page.screenshot({ path: `${output}/leaderboard-mobile.png`, fullPage: true });
 });
