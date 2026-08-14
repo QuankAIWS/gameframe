@@ -1,4 +1,5 @@
 const board = document.getElementById("board");
+const boardWrap = document.querySelector(".cascade-board-wrap");
 
 if (board) {
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -10,25 +11,36 @@ if (board) {
     ".is-hammer-hit",
     ".is-matched",
     ".is-clearing",
+    ".is-falling",
+    ".is-landing",
     ".is-special-born",
     ".is-special-triggered",
   ].join(",");
 
-  let nextKind = 0;
-  let pulseTimeout = 0;
+  const ATTRACT_EVERY_MS = 9_000;
+  const ATTRACT_DURATION_MS = 820;
+  const IDLE_BEFORE_ATTRACT_MS = 4_500;
 
-  const clearPulse = () => {
-    window.clearTimeout(pulseTimeout);
-    pulseTimeout = 0;
-    board.querySelectorAll(".cascade-tile.is-idle-pulse").forEach((tile) => {
-      tile.classList.remove("is-idle-pulse");
-    });
-  };
+  let nextIndex = 3;
+  let cueTimeout = 0;
+  let lastInteractionAt = performance.now();
 
   const effectsAreReduced = () => (
     reducedMotion.matches
     || document.body?.dataset.cascadeEffects === "reduced"
   );
+
+  const clearCue = () => {
+    window.clearTimeout(cueTimeout);
+    cueTimeout = 0;
+    board.querySelector(".cascade-tile.is-idle-twinkle")?.classList.remove("is-idle-twinkle");
+    boardWrap?.classList.remove("is-idle-attract");
+  };
+
+  const noteInteraction = () => {
+    lastInteractionAt = performance.now();
+    clearCue();
+  };
 
   const boardIsBusy = () => (
     document.hidden
@@ -44,48 +56,48 @@ if (board) {
     || document.getElementById("blitz-overlay")?.hidden === false
   );
 
-  const pulseColor = () => {
-    clearPulse();
+  const nextCalmTile = () => {
+    const tiles = [...board.querySelectorAll(".cascade-tile")];
+    if (!tiles.length) return null;
 
-    const kind = nextKind;
-    nextKind = (nextKind + 1) % 6;
-
-    if (boardIsBusy()) return;
-
-    const tiles = board.querySelectorAll(`.cascade-tile[data-kind="${kind}"]`);
-    if (!tiles.length) return;
-
-    tiles.forEach((tile) => tile.classList.add("is-idle-pulse"));
-    pulseTimeout = window.setTimeout(clearPulse, 1100);
+    // Walk the board with a coprime stride so attract cues wander instead of
+    // appearing to march in rows or animate a whole color family together.
+    for (let attempt = 0; attempt < tiles.length; attempt += 1) {
+      const index = (nextIndex + attempt * 11) % tiles.length;
+      const tile = tiles[index];
+      if (!tile.matches(activeSelector) && !tile.disabled) {
+        nextIndex = (index + 11) % tiles.length;
+        return tile;
+      }
+    }
+    return null;
   };
 
-  const cancelForInteraction = () => clearPulse();
-  board.addEventListener("pointerdown", cancelForInteraction, true);
-  board.addEventListener("keydown", cancelForInteraction, true);
+  const attractIfIdle = () => {
+    clearCue();
+    if (performance.now() - lastInteractionAt < IDLE_BEFORE_ATTRACT_MS) return;
+    if (boardIsBusy()) return;
+
+    const tile = nextCalmTile();
+    if (!tile) return;
+
+    tile.classList.add("is-idle-twinkle");
+    boardWrap?.classList.add("is-idle-attract");
+    cueTimeout = window.setTimeout(clearCue, ATTRACT_DURATION_MS);
+  };
+
+  document.addEventListener("pointerdown", noteInteraction, { capture: true, passive: true });
+  document.addEventListener("keydown", noteInteraction, true);
 
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) clearPulse();
+    if (document.hidden) clearCue();
+    else lastInteractionAt = performance.now();
   });
 
   reducedMotion.addEventListener?.("change", () => {
-    if (reducedMotion.matches) clearPulse();
+    if (reducedMotion.matches) clearCue();
   });
 
-  const stateObserver = new MutationObserver((records) => {
-    for (const record of records) {
-      const tile = record.target;
-      if (!(tile instanceof HTMLElement)) continue;
-      if (!tile.classList.contains("cascade-tile") || !tile.classList.contains("is-idle-pulse")) continue;
-      if (tile.matches(activeSelector)) tile.classList.remove("is-idle-pulse");
-    }
-  });
-
-  stateObserver.observe(board, {
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["class"],
-  });
-
-  window.setTimeout(pulseColor, 1600);
-  window.setInterval(pulseColor, 4200);
+  window.setTimeout(attractIfIdle, 5_500);
+  window.setInterval(attractIfIdle, ATTRACT_EVERY_MS);
 }
