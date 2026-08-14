@@ -1,0 +1,83 @@
+/* Secondary profile materials that are owned by player-social.css in the base skin. */
+
+.profile-shell[data-profile-theme="cascade-pop"] .profile-level {
+  border-left-color: rgba(150,72,126,.14);
+  background:
+    radial-gradient(circle at 88% 10%, rgba(104,222,218,.48), transparent 34%),
+    radial-gradient(circle at 18% 94%, rgba(255,117,178,.25), transparent 42%),
+    linear-gradient(145deg,rgba(251,255,254,.92),rgba(255,230,245,.86));
+  color: #3d2941;
+}
+.profile-shell[data-profile-theme="cascade-pop"] .profile-level-label span { color: #a62f79; }
+.profile-shell[data-profile-theme="cascade-pop"] .profile-level-label b,
+.profile-shell[data-profile-theme="cascade-pop"] .profile-level-number small,
+.profile-shell[data-profile-theme="cascade-pop"] .profile-level-meta { color: #755f76; }
+.profile-shell[data-profile-theme="cascade-pop"] .profile-level-number strong { color: #4a2750; }
+.profile-shell[data-profile-theme="cascade-pop"] .platform-text-link { color: #8f366f; }
+.profile-shell[data-profile-theme="cascade-pop"] .platform-button:not(.primary) {
+  border-color: rgba(91,179,177,.28);
+  background: linear-gradient(135deg,rgba(104,222,218,.16),rgba(255,255,255,.42));
+  color: #57364f;
+}
+.profile-shell[data-profile-theme="cascade-pop"] .platform-button:not(.primary):hover,
+.profile-shell[data-profile-theme="cascade-pop"] .platform-button:not(.primary):focus-visible {
+  border-color: rgba(255,117,178,.42);
+  background: linear-gradient(135deg,rgba(255,117,178,.17),rgba(255,215,103,.22));
+}
+.profile-shell[data-profile-theme="cascade-pop"] .profile-play-together-note { color: #755f76; }
+
+.profile-shell[data-profile-theme="cyberpunk"] .profile-level {
+  border-left-color: rgba(55,232,255,.18);
+  background:
+    linear-gradient(rgba(55,232,255,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,79,216,.04) 1px, transparent 1px),
+    radial-gradient(circle at 84% 12%,rgba(55,232,255,.17),transparent 34%),
+    linear-gradient(145deg,rgba(9,17,37,.94),rgba(10,7,26,.92));
+  background-size: 22px 22px, 22px 22px, auto, auto;
+}
+.profile-shell[data-profile-theme="cyberpunk"] .profile-level-number strong {
+  color: #f2f5ff;
+  text-shadow: 0 0 22px rgba(141,92,255,.2);
+}
+.profile-shell[data-profile-theme="cyberpunk"] .platform-button:not(.primary) {
+  border-color: rgba(55,232,255,.3);
+  background: rgba(55,232,255,.08);
+  color: #dffbff;
+}
+
+.profile-shell[data-profile-theme="clockwork"] .profile-level {
+  border-left-color: rgba(230,184,95,.18);
+  background:
+    repeating-linear-gradient(115deg,rgba(242,216,149,.025) 0 1px,transparent 1px 17px),
+    radial-gradient(circle at 84% 12%,rgba(230,184,95,.18),transparent 35%),
+    linear-gradient(145deg,rgba(42,28,17,.96),rgba(18,12,8,.94));
+  box-shadow: inset 7px 0 18px rgba(0,0,0,.12);
+}
+.profile-shell[data-profile-theme="clockwork"] .profile-level-number strong { color: #f0d69d; }
+.profile-shell[data-profile-theme="clockwork"] .platform-button:not(.primary) {
+  border-color: rgba(230,184,95,.3);
+  background: rgba(230,184,95,.08);
+  color: #f2dfbd;
+}
+
+.profile-shell[data-profile-theme="deep-space"] .profile-level {
+  border-left-color: rgba(121,183,255,.17);
+  background:
+    radial-gradient(circle,rgba(255,255,255,.45) 0 1px,transparent 1.5px),
+    radial-gradient(circle at 82% 14%,rgba(121,183,255,.18),transparent 34%),
+    linear-gradient(145deg,rgba(14,24,54,.95),rgba(7,11,25,.95));
+  background-size: 48px 48px, auto, auto;
+}
+.profile-shell[data-profile-theme="deep-space"] .profile-level-number strong { color: #eaf1ff; text-shadow: 0 0 24px rgba(121,183,255,.16); }
+.profile-shell[data-profile-theme="deep-space"] .platform-button:not(.primary) {
+  border-color: rgba(121,183,255,.28);
+  background: rgba(121,183,255,.08);
+  color: #e4efff;
+}
+
+@media (max-width: 800px) {
+  .profile-shell[data-profile-theme] .profile-level {
+    border-left: 0;
+    border-top-color: color-mix(in srgb, var(--profile-theme-secondary) 18%, transparent);
+  }
+}
