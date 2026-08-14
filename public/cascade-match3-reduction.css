@@ -1,0 +1,161 @@
+/*
+ * Final active-play reduction for the wide/TV cabinet.
+ *
+ * The objective pill already owns score/target/objective and the progression
+ * track already owns level identity. Do not repeat those values in a second
+ * dashboard while the player is matching. Keep only the two persistent
+ * resources that matter at a glance: moves and lives.
+ */
+@media (min-width: 760px) and (min-height: 400px) and (min-aspect-ratio: 3/2) {
+  .cascade-shell {
+    --cascade-tv-utility-width: clamp(118px, 9.5vw, 146px);
+    --cascade-tv-status-width: clamp(116px, 9.4vw, 146px);
+  }
+
+  /* Level is already highlighted on the run track; score and target are
+     already combined in the objective HUD. Remove the duplicate readouts. */
+  .cascade-status {
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-content: stretch;
+    padding: 5px 5px 7px;
+  }
+
+  .cascade-status > div:nth-child(1),
+  .cascade-status > div:nth-child(2),
+  .cascade-status > div:nth-child(3) {
+    display: none;
+  }
+
+  .cascade-status > div:nth-child(4) {
+    display: grid;
+    align-content: center;
+    align-self: stretch;
+    margin: 5px 3px 8px;
+    min-height: 0;
+    padding: 12px 5px;
+  }
+
+  .cascade-status > div:nth-child(4) small {
+    font-size: clamp(.72rem, 1.35vh, .9rem);
+  }
+
+  .cascade-status > div:nth-child(4) strong {
+    font-size: clamp(3.4rem, 8.8vh, 5.6rem);
+  }
+
+  .cascade-status > div:nth-child(5) {
+    display: grid;
+    justify-items: center;
+    gap: 5px;
+    margin: 0 3px 3px;
+    padding: 8px 4px 9px;
+    border-top: 1px solid rgba(91,57,121,.12);
+  }
+
+  .cascade-status > div:nth-child(5) small {
+    font-size: clamp(.62rem, 1.12vh, .74rem);
+  }
+
+  #lives {
+    min-width: 0;
+    min-height: 0;
+    padding: 5px 7px;
+    border: 2px solid rgba(255,255,255,.86);
+    border-radius: 999px;
+    background: linear-gradient(145deg, #fff1f8, #ffd9e9);
+    box-shadow:
+      0 4px 9px rgba(159,55,102,.11),
+      inset 0 1px 0 rgba(255,255,255,.98);
+    color: #e83d82;
+    font-size: clamp(1rem, 2.2vh, 1.48rem);
+  }
+
+  #life-timer:not([hidden]) {
+    display: block;
+    color: #875974;
+    font-size: clamp(.52rem, .98vh, .64rem);
+    font-weight: 900;
+  }
+
+  /* Keep the control dock functional but stop advertising future meta systems
+     during every move. Tutorials/settings remain available as compact buttons. */
+  .cascade-side {
+    grid-template-rows: .64fr 1.2fr .65fr .75fr .82fr;
+  }
+
+  #star-progress,
+  #bonus-status,
+  .cascade-weekly-card > strong,
+  .cascade-weekly-card [data-weekly-copy],
+  .cascade-weekly-card [data-weekly-leaderboard],
+  .cascade-weekly-card [data-weekly-status] {
+    display: none !important;
+  }
+
+  .cascade-performance-card {
+    gap: 2px;
+  }
+
+  .cascade-performance-card small {
+    margin-bottom: 2px;
+  }
+
+  #level-stars {
+    font-size: clamp(1.75rem, 4vh, 2.6rem);
+  }
+
+  #cascade-feedback-card {
+    gap: 4px;
+  }
+
+  #cascade-feedback-card > small {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .cascade-feedback-controls {
+    align-self: center;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  #cascade-tutorial-toggle {
+    grid-column: 1 / -1;
+  }
+
+  .cascade-feedback-controls button {
+    min-height: clamp(34px, 5.4vh, 43px);
+    padding: 4px 3px;
+  }
+
+  .cascade-weekly-card {
+    align-content: center;
+    gap: 5px;
+  }
+
+  .cascade-weekly-card small {
+    color: #744398;
+  }
+
+  .cascade-weekly-card [data-weekly-start] {
+    min-height: clamp(42px, 6.6vh, 52px);
+    padding: 5px 7px;
+    font-size: clamp(.66rem, 1.25vh, .82rem);
+  }
+
+  /* With the peripheral columns reduced, let the playfield use the reclaimed
+     width while remaining constrained by the TV-height master calculation. */
+  .cascade-board-wrap {
+    border-radius: 30px;
+  }
+
+  .cascade-objective {
+    margin-inline: 4px;
+  }
+}
