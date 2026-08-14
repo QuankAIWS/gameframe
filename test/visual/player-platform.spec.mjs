@@ -76,6 +76,11 @@ async function expectPlatformBar(page, active) {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 }
 
+async function expectPastelPageCanvas(page) {
+  const pageBackground = await page.locator("body").evaluate((node) => getComputedStyle(node).backgroundImage);
+  expect(pageBackground).toContain("255, 217, 235");
+}
+
 async function returnToTop(page) {
   await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
@@ -88,6 +93,7 @@ async function openProfile(page, viewport) {
   await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
   await expect(page.locator("body")).toHaveAttribute("data-gameframe-shell-theme", "cascade-pop");
   await expect(page.locator(".profile-shell")).toHaveAttribute("data-profile-theme", "cascade-pop");
+  await expectPastelPageCanvas(page);
   await expect(page.locator("#profile-level-number")).not.toHaveText("1");
   await expect(page.locator("#profile-cascade")).toContainText("180");
   const favorite = page.locator('[data-favorite-game-id="othello"]');
@@ -105,6 +111,7 @@ async function openViewedProfile(page, viewport) {
   await expectPlatformBar(page, "[data-gameframe-profile]");
   await expect(page.locator("body")).toHaveAttribute("data-gameframe-shell-theme", "standard");
   await expect(page.locator(".profile-shell")).toHaveAttribute("data-profile-theme", "cascade-pop");
+  await expectPastelPageCanvas(page);
   await expect(page.locator("#profile-level-number")).not.toHaveText("1");
   await expect(page.locator("#profile-cascade")).toContainText("180");
   await returnToTop(page);
@@ -141,8 +148,7 @@ async function openHome(page, viewport) {
   await expect(page.locator("[data-gamer-progression]")).toContainText("GAMER LEVEL");
   await expect(page.locator("[data-gamer-progression] .home-level-number strong")).not.toHaveText("1");
   await expect(page.locator(".home-jump-grid")).toContainText("Othello");
-  const pageBackground = await page.locator("body").evaluate((node) => getComputedStyle(node).backgroundImage);
-  expect(pageBackground).toContain("255, 217, 235");
+  await expectPastelPageCanvas(page);
   await returnToTop(page);
 }
 
