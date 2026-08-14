@@ -54,10 +54,14 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   assert.doesNotMatch(leaderboard, /Hall of Fame/);
   assert.match(leaderboardHtml, /<h1>Leaderboard<\/h1>/);
   assert.doesNotMatch(leaderboardHtml, /Hall of Fame/);
+  assert.match(cascadeSync, /\/api\/me\/progression/);
   assert.match(cascadeSync, /\/api\/me\/cascade\/progression/);
   assert.match(cascadeSync, /cascade-progression-owner/);
   assert.match(cascadeSync, /cascade-progression-candidate/);
-  assert.match(cascadeSync, /candidate !== identity\.playerId/);
+  assert.match(cascadeSync, /candidate === identity\.playerId/);
+  assert.match(cascadeSync, /storage\.setItem\(CANDIDATE_KEY, identity\.playerId\)/);
+  assert.match(cascadeSync, /Math\.max\([\s\S]*server\?\.highestCompletedLevel/);
+  assert.match(cascadeSync, /starsByLevel\[level\] = Math\.max/);
 
   for (const runtime of [edgeWorker, nodeServer]) {
     assert.match(runtime, /\/api\/me\/preferences/);
