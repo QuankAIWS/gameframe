@@ -1,23 +1,101 @@
 /*
  * Final active-play reduction for the wide/TV cabinet.
  *
- * The objective pill already owns score/target/objective and the progression
- * track already owns level identity. Do not repeat those values in a second
- * dashboard while the player is matching. Keep only the two persistent
- * resources that matter at a glance: moves and lives.
+ * The board, immediate objective, moves, lives and tactile controls own the
+ * play screen. Progression stays useful but compact; meta explanations stay
+ * out of the player's peripheral vision while a level is active.
  */
 @media (min-width: 760px) and (min-height: 400px) and (min-aspect-ratio: 3/2) {
   .cascade-shell {
-    --cascade-tv-utility-width: clamp(118px, 9.5vw, 146px);
-    --cascade-tv-status-width: clamp(116px, 9.4vw, 146px);
+    --cascade-tv-map-width: clamp(108px, 9vw, 136px);
+    --cascade-tv-utility-width: clamp(118px, 9.5vw, 144px);
+    --cascade-tv-status-width: clamp(112px, 8.8vw, 136px);
+  }
+
+  /* The run rail should feel like a game-map slice, not six lonely menu rows.
+     Show a useful window around the current level while keeping every node big
+     enough to read from a couch. */
+  .cascade-map {
+    padding: 7px 6px 8px;
+  }
+
+  .cascade-map p {
+    margin-bottom: 4px;
+  }
+
+  .cascade-map ol {
+    justify-content: center;
+    gap: clamp(2px, .4vh, 4px);
+    padding: 3px 0;
+  }
+
+  .cascade-map li {
+    display: none;
+    min-height: clamp(27px, 4vh, 31px);
+    padding: 1px 2px;
+    border-radius: 999px;
+    font-size: clamp(.62rem, 1.15vh, .75rem);
+  }
+
+  .cascade-map li.is-current,
+  .cascade-map li.is-current + li,
+  .cascade-map li.is-current + li + li,
+  .cascade-map li.is-current + li + li + li,
+  .cascade-map li:has(+ .is-current),
+  .cascade-map li:has(+ li + .is-current),
+  .cascade-map li:has(+ li + li + .is-current),
+  .cascade-map li:has(+ li + li + li + .is-current),
+  .cascade-map li:has(+ li + li + li + li + .is-current),
+  .cascade-map li:has(+ li + li + li + li + li + .is-current),
+  .cascade-map li:has(+ li + li + li + li + li + li + .is-current) {
+    display: grid;
+  }
+
+  .cascade-map li:not(.is-current) {
+    grid-template-columns: 1fr;
+    justify-items: start;
+    background: transparent;
+  }
+
+  .cascade-map li:not(.is-current) > span {
+    display: none;
+  }
+
+  .cascade-map li:not(.is-current)::before {
+    justify-self: start;
+    width: clamp(25px, 4.2vh, 30px);
+    height: clamp(25px, 4.2vh, 30px);
+    margin-left: 5px;
+    font-size: clamp(.58rem, 1.08vh, .7rem);
+  }
+
+  .cascade-map li:not(.is-current):nth-child(even)::before {
+    transform: translateX(8px);
+  }
+
+  .cascade-map li.is-current {
+    grid-template-columns: clamp(29px, 4.7vh, 34px) minmax(0, 1fr);
+    min-height: clamp(34px, 5.1vh, 39px);
+    padding: 2px 4px;
+  }
+
+  .cascade-map li.is-current::before {
+    width: clamp(28px, 4.5vh, 33px);
+    height: clamp(28px, 4.5vh, 33px);
+  }
+
+  .cascade-map li.is-current .cascade-map-stars {
+    display: block;
   }
 
   /* Level is already highlighted on the run track; score and target are
      already combined in the objective HUD. Remove the duplicate readouts. */
   .cascade-status {
-    grid-template-rows: minmax(0, 1fr) auto;
-    align-content: stretch;
-    padding: 5px 5px 7px;
+    grid-template-rows: auto auto;
+    align-content: start;
+    gap: clamp(8px, 1.4vh, 12px);
+    padding: clamp(12px, 2vh, 18px) 7px 8px;
+    background: linear-gradient(180deg, rgba(255,255,255,.26), transparent 48%);
   }
 
   .cascade-status > div:nth-child(1),
@@ -26,34 +104,56 @@
     display: none;
   }
 
+  /* Mature match-3 games make the move counter emphatic but compact. Keep the
+     giant readable numeral; remove the full-height green trough. */
   .cascade-status > div:nth-child(4) {
     display: grid;
     align-content: center;
-    align-self: stretch;
-    margin: 5px 3px 8px;
+    align-self: start;
+    justify-self: stretch;
+    width: 100%;
+    max-width: 132px;
+    aspect-ratio: 1 / .92;
+    margin: 0;
     min-height: 0;
-    padding: 12px 5px;
+    padding: 8px 5px 9px;
+    border-width: 3px;
+    border-radius: clamp(22px, 3.5vh, 29px);
+  }
+
+  .cascade-status > div:nth-child(4)::before {
+    inset: 5px;
+    border-radius: clamp(17px, 2.8vh, 23px);
   }
 
   .cascade-status > div:nth-child(4) small {
-    font-size: clamp(.72rem, 1.35vh, .9rem);
+    font-size: clamp(.68rem, 1.24vh, .82rem);
+    line-height: 1;
   }
 
   .cascade-status > div:nth-child(4) strong {
-    font-size: clamp(3.4rem, 8.8vh, 5.6rem);
+    font-size: clamp(3rem, 7.1vh, 4.45rem);
+    line-height: .82;
   }
 
   .cascade-status > div:nth-child(5) {
     display: grid;
     justify-items: center;
-    gap: 5px;
-    margin: 0 3px 3px;
-    padding: 8px 4px 9px;
+    gap: 4px;
+    margin: 0;
+    padding: 8px 3px 9px;
+    border: 0;
     border-top: 1px solid rgba(91,57,121,.12);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .cascade-status > div:nth-child(5)::before {
+    display: none;
   }
 
   .cascade-status > div:nth-child(5) small {
-    font-size: clamp(.62rem, 1.12vh, .74rem);
+    font-size: clamp(.6rem, 1.08vh, .72rem);
   }
 
   #lives {
@@ -67,7 +167,7 @@
       0 4px 9px rgba(159,55,102,.11),
       inset 0 1px 0 rgba(255,255,255,.98);
     color: #e83d82;
-    font-size: clamp(1rem, 2.2vh, 1.48rem);
+    font-size: clamp(.98rem, 2.05vh, 1.38rem);
   }
 
   #life-timer:not([hidden]) {
@@ -77,10 +177,24 @@
     font-weight: 900;
   }
 
-  /* Keep the control dock functional but stop advertising future meta systems
-     during every move. Tutorials/settings remain available as compact buttons. */
+  /* Controls should cluster like game controls, not stretch into five equal
+     dashboard rows. Keep Streak/Hammer/Best/Settings/Blitz together as one
+     compact dock with the board still dominating the cabinet. */
   .cascade-side {
-    grid-template-rows: .64fr 1.2fr .65fr .75fr .82fr;
+    grid-template-rows: auto auto auto auto auto;
+    align-content: center;
+    gap: 0;
+    padding: clamp(7px, 1.1vh, 10px) 0;
+  }
+
+  .cascade-card {
+    min-height: clamp(52px, 8.5vh, 76px);
+    padding: clamp(6px, .9vh, 9px) clamp(7px, .6vw, 10px);
+  }
+
+  .cascade-card:not(:last-child)::after {
+    left: 13px;
+    right: 13px;
   }
 
   #star-progress,
@@ -101,7 +215,7 @@
   }
 
   #level-stars {
-    font-size: clamp(1.75rem, 4vh, 2.6rem);
+    font-size: clamp(1.65rem, 3.5vh, 2.35rem);
   }
 
   #cascade-feedback-card {
@@ -122,7 +236,7 @@
   .cascade-feedback-controls {
     align-self: center;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 5px;
+    gap: 4px;
   }
 
   #cascade-tutorial-toggle {
@@ -130,13 +244,13 @@
   }
 
   .cascade-feedback-controls button {
-    min-height: clamp(34px, 5.4vh, 43px);
-    padding: 4px 3px;
+    min-height: clamp(31px, 4.8vh, 39px);
+    padding: 3px 2px;
   }
 
   .cascade-weekly-card {
     align-content: center;
-    gap: 5px;
+    gap: 4px;
   }
 
   .cascade-weekly-card small {
@@ -144,9 +258,9 @@
   }
 
   .cascade-weekly-card [data-weekly-start] {
-    min-height: clamp(42px, 6.6vh, 52px);
-    padding: 5px 7px;
-    font-size: clamp(.66rem, 1.25vh, .82rem);
+    min-height: clamp(38px, 5.8vh, 47px);
+    padding: 4px 6px;
+    font-size: clamp(.64rem, 1.18vh, .78rem);
   }
 
   /* With the peripheral columns reduced, let the playfield use the reclaimed
