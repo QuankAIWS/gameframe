@@ -217,4 +217,4 @@ test("Cascade family-facing settings and Weekly Blitz copy avoid developer termi
   await expect(page.locator("#cascade-feedback-card")).toContainText(/sound/i);
   await expect(page.locator("#cascade-weekly-card")).toContainText(/blitz/i);
   await expect(page.locator("#cascade-feedback-card")).not.toContainText(/debug|developer|telemetry/i);
-}
+});
