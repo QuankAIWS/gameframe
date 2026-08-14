@@ -14,6 +14,18 @@
     position: relative;
     isolation: isolate;
     overflow: hidden;
+    width: min(
+      calc(
+        var(--cascade-tv-map-width)
+        + var(--cascade-tv-board-size)
+        + 18px
+        + var(--cascade-tv-utility-width)
+        + var(--cascade-tv-status-width)
+        + (var(--cascade-tv-gap) * 3)
+        + 6px
+      ),
+      calc(100% - 12px)
+    );
     border: 3px solid rgba(255, 255, 255, .9);
     border-radius: 30px;
     background:
