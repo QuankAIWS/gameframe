@@ -1,8 +1,10 @@
 const board = document.getElementById("board");
 const boardWrap = document.querySelector(".cascade-board-wrap");
+const statusRail = document.querySelector(".cascade-status");
 
 if (board) {
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const compactViewport = window.matchMedia("(max-width: 650px)");
   const activeSelector = [
     ".is-selected",
     ".is-drag-origin",
@@ -17,34 +19,62 @@ if (board) {
     ".is-special-triggered",
   ].join(",");
 
-  const ATTRACT_EVERY_MS = 9_000;
-  const ATTRACT_DURATION_MS = 820;
-  const IDLE_BEFORE_ATTRACT_MS = 4_500;
+  const AMBIENT_MIN_MS = 1_350;
+  const AMBIENT_STEP_MS = 220;
+  const AMBIENT_DURATION_MS = 720;
+  const QUIET_AFTER_INPUT_MS = 1_600;
+  const QUIET_AFTER_RENDER_MS = 1_150;
+  const DEEP_IDLE_AFTER_MS = 6_000;
+  const ATTRACT_EVERY_MS = 11_500;
+  const ATTRACT_DURATION_MS = 900;
 
-  let nextIndex = 3;
-  let cueTimeout = 0;
+  let cursor = 5;
+  let beat = 0;
+  let ambientTimer = 0;
+  let ambientClearTimer = 0;
+  let attractTimer = 0;
   let lastInteractionAt = performance.now();
+  let lastBoardRenderAt = performance.now();
+  let lastAttractAt = -Infinity;
 
   const effectsAreReduced = () => (
     reducedMotion.matches
     || document.body?.dataset.cascadeEffects === "reduced"
   );
 
-  const clearCue = () => {
-    window.clearTimeout(cueTimeout);
-    cueTimeout = 0;
-    board.querySelector(".cascade-tile.is-idle-twinkle")?.classList.remove("is-idle-twinkle");
+  const clearAmbient = () => {
+    window.clearTimeout(ambientClearTimer);
+    ambientClearTimer = 0;
+    board.querySelectorAll(".cascade-tile.is-idle-life").forEach((tile) => {
+      tile.classList.remove("is-idle-life");
+      tile.style.removeProperty("--cascade-idle-delay");
+    });
+  };
+
+  const clearAttract = () => {
+    window.clearTimeout(attractTimer);
+    attractTimer = 0;
     boardWrap?.classList.remove("is-idle-attract");
+    statusRail?.classList.remove("is-idle-attract");
+    document.body?.classList.remove("cascade-idle-attract");
+  };
+
+  const clearAllAmbient = () => {
+    clearAmbient();
+    clearAttract();
   };
 
   const noteInteraction = () => {
     lastInteractionAt = performance.now();
-    clearCue();
+    lastAttractAt = -Infinity;
+    clearAllAmbient();
   };
 
-  const boardIsBusy = () => (
+  const boardIsBusy = (now = performance.now()) => (
     document.hidden
     || effectsAreReduced()
+    || now - lastInteractionAt < QUIET_AFTER_INPUT_MS
+    || now - lastBoardRenderAt < QUIET_AFTER_RENDER_MS
     || Boolean(document.querySelector("dialog[open]"))
     || Boolean(document.querySelector(".cascade-drag-ghost"))
     || Boolean(board.querySelector(activeSelector))
@@ -56,48 +86,108 @@ if (board) {
     || document.getElementById("blitz-overlay")?.hidden === false
   );
 
-  const nextCalmTile = () => {
-    const tiles = [...board.querySelectorAll(".cascade-tile")];
+  const calmTiles = () => [...board.querySelectorAll(".cascade-tile")]
+    .filter((tile) => !tile.matches(activeSelector) && !tile.disabled);
+
+  const pickTile = (tiles, used, preferSpecial = false) => {
     if (!tiles.length) return null;
 
-    // Walk the board with a coprime stride so attract cues wander instead of
-    // appearing to march in rows or animate a whole color family together.
-    for (let attempt = 0; attempt < tiles.length; attempt += 1) {
-      const index = (nextIndex + attempt * 11) % tiles.length;
-      const tile = tiles[index];
-      if (!tile.matches(activeSelector) && !tile.disabled) {
-        nextIndex = (index + 11) % tiles.length;
+    const specialTiles = preferSpecial
+      ? tiles.filter((tile) => tile.dataset.special && !used.has(tile))
+      : [];
+    const pool = specialTiles.length ? specialTiles : tiles;
+
+    // A deterministic coprime stride keeps the board lively without using
+    // Math.random(), which makes browser coverage flaky and can accidentally
+    // revisit one corner for long stretches.
+    for (let attempt = 0; attempt < pool.length; attempt += 1) {
+      const index = (cursor + attempt * 11) % pool.length;
+      const tile = pool[index];
+      if (!used.has(tile)) {
+        cursor = (cursor + 17) % Math.max(1, tiles.length);
         return tile;
       }
     }
     return null;
   };
 
-  const attractIfIdle = () => {
-    clearCue();
-    if (performance.now() - lastInteractionAt < IDLE_BEFORE_ATTRACT_MS) return;
-    if (boardIsBusy()) return;
+  const runDeepIdleAttract = (now) => {
+    const idleSince = Math.max(lastInteractionAt, lastBoardRenderAt);
+    if (now - idleSince < DEEP_IDLE_AFTER_MS) return;
+    if (now - lastAttractAt < ATTRACT_EVERY_MS) return;
 
-    const tile = nextCalmTile();
-    if (!tile) return;
-
-    tile.classList.add("is-idle-twinkle");
+    lastAttractAt = now;
     boardWrap?.classList.add("is-idle-attract");
-    cueTimeout = window.setTimeout(clearCue, ATTRACT_DURATION_MS);
+    statusRail?.classList.add("is-idle-attract");
+    document.body?.classList.add("cascade-idle-attract");
+    window.clearTimeout(attractTimer);
+    attractTimer = window.setTimeout(clearAttract, ATTRACT_DURATION_MS);
   };
+
+  const runAmbientBeat = () => {
+    clearAmbient();
+    const now = performance.now();
+    if (boardIsBusy(now)) return;
+
+    const tiles = calmTiles();
+    if (!tiles.length) return;
+
+    beat += 1;
+    const wideSecondTile = !compactViewport.matches && beat % 3 === 0;
+    const count = wideSecondTile ? 2 : 1;
+    const used = new Set();
+
+    for (let slot = 0; slot < count; slot += 1) {
+      // Roughly every fourth beat gives an existing special first refusal so
+      // useful board state feels more alive than ordinary candy without
+      // creating a perpetual animation on every special.
+      const preferSpecial = slot === 0 && beat % 4 === 0;
+      const tile = pickTile(tiles, used, preferSpecial);
+      if (!tile) continue;
+      used.add(tile);
+      tile.style.setProperty("--cascade-idle-delay", `${slot * 105}ms`);
+      tile.classList.add("is-idle-life");
+    }
+
+    ambientClearTimer = window.setTimeout(clearAmbient, AMBIENT_DURATION_MS + 140);
+    runDeepIdleAttract(now);
+  };
+
+  const scheduleAmbientBeat = () => {
+    window.clearTimeout(ambientTimer);
+    const delay = AMBIENT_MIN_MS + ((beat * 7) % 5) * AMBIENT_STEP_MS;
+    ambientTimer = window.setTimeout(() => {
+      runAmbientBeat();
+      scheduleAmbientBeat();
+    }, delay);
+  };
+
+  // renderBoard() replaces the board's direct children throughout swap,
+  // cascade, fall, and landing presentation. Treat each replacement as an
+  // explicit busy signal and keep ambient transforms away until the board has
+  // been visually settled for a full grace period.
+  new MutationObserver((records) => {
+    if (!records.some((record) => record.type === "childList")) return;
+    lastBoardRenderAt = performance.now();
+    clearAllAmbient();
+  }).observe(board, { childList: true });
 
   document.addEventListener("pointerdown", noteInteraction, { capture: true, passive: true });
   document.addEventListener("keydown", noteInteraction, true);
 
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) clearCue();
-    else lastInteractionAt = performance.now();
+    if (document.hidden) clearAllAmbient();
+    else {
+      const now = performance.now();
+      lastInteractionAt = now;
+      lastBoardRenderAt = now;
+      lastAttractAt = -Infinity;
+    }
   });
 
   reducedMotion.addEventListener?.("change", () => {
-    if (reducedMotion.matches) clearCue();
+    if (reducedMotion.matches) clearAllAmbient();
   });
 
-  window.setTimeout(attractIfIdle, 5_500);
-  window.setInterval(attractIfIdle, ATTRACT_EVERY_MS);
+  scheduleAmbientBeat();
 }
