@@ -6,7 +6,6 @@ const navStylesheetUrls = [
   "/gameframe-final-polish.css",
   "/gameframe-session-override.css",
   "/gameframe-themes.css",
-  "/gameframe-theme-environments.css",
 ];
 for (const href of navStylesheetUrls) {
   if (document.querySelector(`link[href="${href}"]`)) continue;
