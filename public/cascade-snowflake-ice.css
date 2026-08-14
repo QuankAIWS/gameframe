@@ -17,7 +17,7 @@
   display: grid;
   place-items: center;
   border: 0;
-  color: rgba(248,254,255,.72);
+  color: rgba(248,254,255,.78);
   font-family: "Segoe UI Symbol", sans-serif;
   font-size: clamp(2.05rem, 5.55vw, 3.9rem);
   font-weight: 900;
@@ -27,7 +27,6 @@
     0 0 5px rgba(40,185,222,.64),
     0 0 11px rgba(255,255,255,.58);
   box-shadow: none;
-  animation: cascade-snowflake-glow 3.2s ease-in-out infinite alternate;
 }
 
 .cascade-cell-coating::after {
@@ -58,7 +57,7 @@
 .cascade-cell-coating.ice-2::before {
   inset: 0;
   border: 0;
-  color: rgba(255,255,255,.78);
+  color: rgba(255,255,255,.82);
   font-size: clamp(2.2rem, 5.85vw, 4.05rem);
   text-shadow:
     0 2px 2px rgba(11,69,100,.66),
@@ -89,9 +88,8 @@
     inset 0 -9px 13px rgba(84,46,96,.18),
     0 7px 11px rgba(82,57,113,.18),
     0 2px 0 rgba(91,62,128,.14),
-    0 0 7px var(--tile-glow, rgba(165,106,244,.4)),
-    0 0 18px var(--tile-glow-mid, rgba(165,106,244,.2)),
-    0 0 28px var(--tile-glow-soft, rgba(165,106,244,.09));
+    0 0 6px var(--tile-glow, rgba(165,106,244,.4)),
+    0 0 15px var(--tile-glow-mid, rgba(165,106,244,.2));
   transform-origin: 50% 72%;
 }
 
@@ -157,39 +155,24 @@
   --tile-glow-soft: rgba(255,125,59,.10);
 }
 
-.cascade-tile.is-idle-pulse:not(:hover):not(:active):not(.is-selected):not(.is-drag-origin):not(.is-drag-target):not(.is-hammer-target):not(.is-hammer-hit):not(.is-matched):not(.is-clearing):not(.is-special-born):not(.is-special-triggered) {
-  animation: cascade-color-group-wiggle .94s cubic-bezier(.28,.02,.22,1) both;
+/* Idle attract is intentionally sparse: one calm tile briefly catches light.
+   The board never animates an entire color family at rest. */
+.cascade-tile.is-idle-twinkle:not(:hover):not(:active):not(.is-selected):not(.is-drag-origin):not(.is-drag-target):not(.is-hammer-target):not(.is-hammer-hit):not(.is-matched):not(.is-clearing):not(.is-falling):not(.is-landing):not(.is-special-born):not(.is-special-triggered) {
+  animation: cascade-idle-twinkle 720ms cubic-bezier(.2,.72,.24,1) both;
 }
 
-@keyframes cascade-snowflake-glow {
-  from { opacity: .8; filter: brightness(.98); }
-  to { opacity: .94; filter: brightness(1.1); }
-}
-
-@keyframes cascade-color-group-wiggle {
+@keyframes cascade-idle-twinkle {
   0%, 100% {
-    transform: translateY(0) scaleX(1) scaleY(1) rotate(0deg) skewX(0deg);
+    transform: translateY(0) scale(1);
     filter: none;
   }
-  18% {
-    transform: translateY(1px) scaleX(1.06) scaleY(.94) rotate(-.3deg) skewX(.55deg);
-    filter: saturate(1.04) brightness(1.02) drop-shadow(0 0 4px var(--tile-glow));
+  38% {
+    transform: translateY(-1px) scale(1.035);
+    filter: saturate(1.07) brightness(1.08) drop-shadow(0 0 7px var(--tile-glow));
   }
-  39% {
-    transform: translateY(-2px) scaleX(.95) scaleY(1.10) rotate(.38deg) skewX(-.8deg);
-    filter: saturate(1.1) brightness(1.05) drop-shadow(0 0 11px var(--tile-glow));
-  }
-  58% {
-    transform: translateY(0) scaleX(1.035) scaleY(.975) rotate(-.22deg) skewX(.42deg);
-    filter: saturate(1.06) brightness(1.035) drop-shadow(0 0 7px var(--tile-glow-mid));
-  }
-  74% {
-    transform: translateY(-1px) scaleX(.985) scaleY(1.025) rotate(.14deg) skewX(-.24deg);
-    filter: saturate(1.03) brightness(1.02) drop-shadow(0 0 4px var(--tile-glow-mid));
-  }
-  88% {
-    transform: translateY(0) scaleX(1.012) scaleY(.992) rotate(0deg) skewX(.08deg);
-    filter: none;
+  68% {
+    transform: translateY(0) scale(.995);
+    filter: saturate(1.03) brightness(1.035) drop-shadow(0 0 3px var(--tile-glow-mid));
   }
 }
 
@@ -197,14 +180,12 @@ body[data-cascade-effects="reduced"] .cascade-cell-coating {
   filter: none;
 }
 
-body[data-cascade-effects="reduced"] .cascade-cell-coating::before,
-body[data-cascade-effects="reduced"] .cascade-tile.is-idle-pulse {
+body[data-cascade-effects="reduced"] .cascade-tile.is-idle-twinkle {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cascade-cell-coating::before,
-  .cascade-tile.is-idle-pulse {
+  .cascade-tile.is-idle-twinkle {
     animation: none;
   }
 }
