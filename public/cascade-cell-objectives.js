@@ -41,6 +41,7 @@ if (board && wrap) {
     const boardRect = board.getBoundingClientRect();
     const wrapRect = wrap.getBoundingClientRect();
     const style = getComputedStyle(board);
+    const wrapStyle = getComputedStyle(wrap);
     const paddingTop = Number.parseFloat(style.paddingTop) || 0;
     const paddingRight = Number.parseFloat(style.paddingRight) || 0;
     const paddingBottom = Number.parseFloat(style.paddingBottom) || 0;
@@ -49,9 +50,14 @@ if (board && wrap) {
     const borderRight = Number.parseFloat(style.borderRightWidth) || 0;
     const borderBottom = Number.parseFloat(style.borderBottomWidth) || 0;
     const borderLeft = Number.parseFloat(style.borderLeftWidth) || 0;
+    const wrapBorderTop = Number.parseFloat(wrapStyle.borderTopWidth) || 0;
+    const wrapBorderLeft = Number.parseFloat(wrapStyle.borderLeftWidth) || 0;
 
-    coatingLayer.style.left = `${boardRect.left - wrapRect.left + borderLeft + paddingLeft}px`;
-    coatingLayer.style.top = `${boardRect.top - wrapRect.top + borderTop + paddingTop}px`;
+    // Absolutely positioned children use the wrapper's padding box as their
+    // containing block. Subtract the wrapper border so a thicker cabinet bezel
+    // cannot shift fixed cell coatings away from the underlying candy grid.
+    coatingLayer.style.left = `${boardRect.left - wrapRect.left - wrapBorderLeft + borderLeft + paddingLeft}px`;
+    coatingLayer.style.top = `${boardRect.top - wrapRect.top - wrapBorderTop + borderTop + paddingTop}px`;
     coatingLayer.style.width = `${Math.max(0, boardRect.width - borderLeft - borderRight - paddingLeft - paddingRight)}px`;
     coatingLayer.style.height = `${Math.max(0, boardRect.height - borderTop - borderBottom - paddingTop - paddingBottom)}px`;
     coatingLayer.style.columnGap = style.columnGap;
