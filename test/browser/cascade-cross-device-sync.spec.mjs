@@ -3,9 +3,15 @@ import { expect, test } from "@playwright/test";
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const OWNER_KEY = "scribbles-gameframe.cascade-progression-owner:v1";
+const SEEDED_KEY = "scribbles-gameframe.test-cross-device-seeded:v1";
 
 async function installLocalProgress(page, playerId, level, starsByLevel) {
-  await page.addInitScript(({ stateKey, performanceKey, ownerKey, owner, localLevel, stars }) => {
+  await page.addInitScript(({ stateKey, performanceKey, ownerKey, seededKey, owner, localLevel, stars }) => {
+    // addInitScript executes again after the hydration-triggered reload. Seed the
+    // stale device only once so the test behaves like a real device instead of
+    // restoring the stale fixture after the app has successfully reconciled it.
+    if (sessionStorage.getItem(seededKey) === owner) return;
+    sessionStorage.setItem(seededKey, owner);
     localStorage.setItem(stateKey, JSON.stringify({
       level: localLevel,
       lives: 5,
@@ -25,6 +31,7 @@ async function installLocalProgress(page, playerId, level, starsByLevel) {
     stateKey: STATE_KEY,
     performanceKey: PERFORMANCE_KEY,
     ownerKey: OWNER_KEY,
+    seededKey: SEEDED_KEY,
     owner: playerId,
     localLevel: level,
     stars: starsByLevel,
