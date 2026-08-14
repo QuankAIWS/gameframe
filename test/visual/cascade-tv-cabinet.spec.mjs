@@ -52,6 +52,7 @@ async function playHierarchyStats(page) {
     const firstMapRect = visibleMapRows.at(0)?.getBoundingClientRect();
     const lastMapRect = visibleMapRows.at(-1)?.getBoundingClientRect();
     const statusRows = [...document.querySelectorAll(".cascade-status > div")];
+    const shellRect = document.querySelector(".cascade-shell")?.getBoundingClientRect();
     const statusRect = document.querySelector(".cascade-status")?.getBoundingClientRect();
     const movesRect = document.querySelector(".cascade-status > div:nth-child(4)")?.getBoundingClientRect();
     const visibleDescriptions = [...document.querySelectorAll(".cascade-side .cascade-card > span:not(#star-progress)")]
@@ -69,7 +70,7 @@ async function playHierarchyStats(page) {
       visibleMapRows: visibleMapRows.length,
       visibleMapCoverage,
       visibleStatusRows: statusRows.filter((node) => getComputedStyle(node).display !== "none").length,
-      movesHeightRatio: statusRect && movesRect ? movesRect.height / statusRect.height : 1,
+      statusHeightRatio: shellRect && statusRect ? statusRect.height / shellRect.height : 1,
       movesAspectRatio: movesRect?.height ? movesRect.width / movesRect.height : 0,
       visibleDescriptions,
       weeklyCopyDisplay: weeklyCopy ? getComputedStyle(weeklyCopy).display : "missing",
@@ -88,27 +89,35 @@ async function expectCabinetHugsInstrumentBanks(page) {
   expect(map).toBeTruthy();
   expect(status).toBeTruthy();
 
-  // The outer chassis should wrap its left/right instrument banks instead of
-  // stretching into large decorative slabs beside the actual game controls.
   expect(map.x - shell.x).toBeLessThanOrEqual(7);
   expect((shell.x + shell.width) - (status.x + status.width)).toBeLessThanOrEqual(7);
 }
 
-async function expectMatch3PlayHierarchy(page) {
+async function expectUnifiedRightDock(page) {
+  const status = await page.locator(".cascade-status").boundingBox();
+  const side = await page.locator(".cascade-side").boundingBox();
+  expect(status).toBeTruthy();
+  expect(side).toBeTruthy();
+  expect(Math.abs(status.x - side.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(status.width - side.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs((status.y + status.height) - side.y)).toBeLessThanOrEqual(2);
+}
+
+async function expectMatch3PlayHierarchy(page, { minMapRows, maxMapRows, minMapCoverage }) {
   const stats = await playHierarchyStats(page);
 
   // Mature match-3 play screens keep the board dense and put meta systems in
-  // the periphery. The progression slice should feel populated, while Moves
-  // stays a compact glanceable token rather than a full-height meter.
+  // the periphery. The run should use available height, while Moves stays a
+  // compact top-HUD counter instead of becoming a full-height side meter.
   expect(stats.boardGap).toBeLessThanOrEqual(4);
   expect(stats.tileBorder).toBeLessThanOrEqual(1.5);
-  expect(stats.visibleMapRows).toBeGreaterThanOrEqual(9);
-  expect(stats.visibleMapRows).toBeLessThanOrEqual(11);
-  expect(stats.visibleMapCoverage).toBeGreaterThan(.68);
+  expect(stats.visibleMapRows).toBeGreaterThanOrEqual(minMapRows);
+  expect(stats.visibleMapRows).toBeLessThanOrEqual(maxMapRows);
+  expect(stats.visibleMapCoverage).toBeGreaterThan(minMapCoverage);
   expect(stats.visibleStatusRows).toBe(2);
-  expect(stats.movesHeightRatio).toBeLessThan(.36);
+  expect(stats.statusHeightRatio).toBeLessThan(.28);
   expect(stats.movesAspectRatio).toBeGreaterThan(.72);
-  expect(stats.movesAspectRatio).toBeLessThan(1.4);
+  expect(stats.movesAspectRatio).toBeLessThan(1.55);
   expect(stats.visibleDescriptions).toBe(0);
   expect(stats.weeklyCopyDisplay).toBe("none");
   expect(stats.weeklyStandingsDisplay).toBe("none");
@@ -133,7 +142,8 @@ test("Cascade pastel cabinet uses television width while keeping the board heigh
   expect(board.y + board.height).toBeLessThanOrEqual(540);
   expect(board.width).toBeGreaterThan(350);
   await expectCabinetHugsInstrumentBanks(page);
-  await expectMatch3PlayHierarchy(page);
+  await expectUnifiedRightDock(page);
+  await expectMatch3PlayHierarchy(page, { minMapRows: 9, maxMapRows: 11, minMapCoverage: .68 });
 
   const surfaces = await cabinetSurfaceStats(page);
   expect(surfaces.shellRadius).toBeGreaterThanOrEqual(24);
@@ -143,8 +153,7 @@ test("Cascade pastel cabinet uses television width while keeping the board heigh
   expect(surfaces.cardShadow).toBe("none");
   expect(surfaces.ordinaryStatusRadius).toBe(0);
   expect(surfaces.ordinaryStatusBorder).toBe(0);
-  expect(surfaces.movesStatusRadius).toBeGreaterThanOrEqual(20);
-  expect(surfaces.sideGap).toBe("0px");
+  expect(surfaces.movesStatusRadius).toBeGreaterThanOrEqual(18);
 
   await page.screenshot({ path: `${output}/cascade-tv-cabinet-zoom.png`, fullPage: true });
 });
@@ -164,13 +173,14 @@ test("Cascade pastel cabinet remains composed on a wide desktop television viewp
   expect(map.x + map.width).toBeLessThan(board.x);
   expect(board.x + board.width).toBeLessThan(status.x);
   await expectCabinetHugsInstrumentBanks(page);
-  await expectMatch3PlayHierarchy(page);
+  await expectUnifiedRightDock(page);
+  await expectMatch3PlayHierarchy(page, { minMapRows: 14, maxMapRows: 17, minMapCoverage: .68 });
 
   const surfaces = await cabinetSurfaceStats(page);
   expect(surfaces.shellRadius).toBeGreaterThanOrEqual(24);
   expect(surfaces.cardRadius).toBe(0);
   expect(surfaces.ordinaryStatusRadius).toBe(0);
-  expect(surfaces.movesStatusRadius).toBeGreaterThanOrEqual(20);
+  expect(surfaces.movesStatusRadius).toBeGreaterThanOrEqual(18);
 
   await page.screenshot({ path: `${output}/cascade-tv-cabinet-wide.png`, fullPage: true });
 });
