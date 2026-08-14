@@ -63,6 +63,9 @@ test("hammer inventory updates immediately and an iced target loses only one ice
 
 test("banked rewards do not refill a spent hammer during an active level", async ({ page }) => {
   await page.addInitScript(({ stateKey, performanceKey, activeRunKey }) => {
+    const seedKey = "cascade-hammer-banked-reward-test-seeded";
+    if (window.sessionStorage.getItem(seedKey) === "1") return;
+    window.sessionStorage.setItem(seedKey, "1");
     window.localStorage.removeItem(activeRunKey);
     window.localStorage.setItem(stateKey, JSON.stringify({
       level: 151,
