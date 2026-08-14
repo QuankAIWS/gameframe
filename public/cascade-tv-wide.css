@@ -1,14 +1,181 @@
-/* Use TV width for a persistent side status rail instead of a thin top strip. */
-@media(min-width:1180px) and (min-aspect-ratio:3/2){
- .cascade-shell{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,232px);grid-template-areas:"header header" "game status";column-gap:18px;row-gap:16px;width:min(1540px,calc(100% - 36px))}
- .cascade-header{grid-area:header;margin-bottom:0}
- .cascade-game{grid-area:game;grid-template-columns:132px minmax(0,1fr) 190px;min-width:0}
- .cascade-status{grid-area:status;grid-template-columns:1fr;align-self:start;margin:0;position:sticky;top:88px}
- .cascade-status>div{min-height:94px;align-content:center;gap:5px;padding:14px 16px;border-radius:18px}
- .cascade-status small{font-size:clamp(.8rem,.85vw,.94rem)}
- .cascade-status strong{font-size:clamp(1.75rem,2.25vw,2.35rem)}
- .cascade-status>div:nth-child(4){min-height:126px;border-color:rgba(105,216,119,.55);background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(231,255,231,.94));box-shadow:0 12px 26px rgba(70,139,83,.14),inset 0 0 0 2px rgba(105,216,119,.12)}
- .cascade-status>div:nth-child(4) small{color:#347748;font-size:1rem}
- .cascade-status>div:nth-child(4) strong{color:#295f39;font-size:clamp(3rem,4.3vw,4.6rem);font-weight:1000;line-height:.92}
- .cascade-board{width:min(100%,700px)}
+/*
+ * TV-first Cascade layout.
+ *
+ * Browser zoom reduces the CSS viewport width, so a desktop-only min-width
+ * breakpoint defeats the exact accessibility setting this layout exists for.
+ * Key off a wide aspect ratio and a modest usable viewport instead. The shared
+ * GameFrame destination bar already occupies its own document-flow height, so
+ * the game shell must not reserve a second header-sized gap below it.
+ */
+@media (min-width: 760px) and (min-height: 400px) and (min-aspect-ratio: 3/2) {
+  body.cascade-route {
+    overflow-x: hidden;
+  }
+
+  .cascade-shell {
+    /* Leave room for the objective strip, board-wrap padding, and a small
+       bottom safety margin. The 72px GameFrame bar is already above this shell. */
+    --cascade-tv-board-size: min(700px, calc(100dvh - var(--gameframe-destination-height, 72px) - 70px));
+    display: grid;
+    grid-template-columns: clamp(188px, 18vw, 248px) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "header game"
+      "status game";
+    column-gap: clamp(10px, 1.4vw, 20px);
+    row-gap: 7px;
+    align-items: start;
+    width: min(1580px, calc(100% - clamp(16px, 2vw, 32px)));
+    min-height: calc(100dvh - var(--gameframe-destination-height, 72px));
+    padding: 7px 0 6px;
+  }
+
+  /* Keep branding present, but move it out of the board's vertical budget. */
+  .cascade-header {
+    grid-area: header;
+    display: block;
+    align-self: end;
+    margin: 0;
+    padding: 0 6px;
+  }
+
+  .cascade-kicker {
+    display: none;
+  }
+
+  .cascade-header h1 {
+    margin: 0;
+    font-size: clamp(1.55rem, 2.2vw, 2.4rem);
+    line-height: 1;
+    letter-spacing: -.035em;
+  }
+
+  /* Primary play information belongs beside the board, not above it. */
+  .cascade-status {
+    grid-area: status;
+    position: static;
+    display: grid;
+    grid-template-columns: 1fr;
+    align-self: start;
+    gap: clamp(4px, .8vh, 9px);
+    margin: 0;
+  }
+
+  .cascade-status > div {
+    min-height: clamp(48px, 9vh, 88px);
+    align-content: center;
+    gap: 3px;
+    padding: clamp(7px, 1.05vh, 13px) 14px;
+    border-radius: 16px;
+  }
+
+  .cascade-status small {
+    font-size: clamp(.78rem, 1.35vh, .98rem);
+    line-height: 1.1;
+    letter-spacing: .09em;
+  }
+
+  .cascade-status strong {
+    font-size: clamp(1.48rem, 3.15vh, 2.35rem);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* MOVES LEFT is the at-a-glance decision resource and gets visual priority. */
+  .cascade-status > div:nth-child(4) {
+    order: -1;
+    min-height: clamp(76px, 14vh, 132px);
+    border-color: rgba(105, 216, 119, .62);
+    background: linear-gradient(145deg, rgba(255,255,255,.99), rgba(229,255,230,.96));
+    box-shadow:
+      0 12px 26px rgba(70,139,83,.16),
+      inset 0 0 0 2px rgba(105,216,119,.14);
+  }
+
+  .cascade-status > div:nth-child(4) small {
+    color: #347748;
+    font-size: clamp(.9rem, 1.65vh, 1.08rem);
+  }
+
+  .cascade-status > div:nth-child(4) strong {
+    color: #295f39;
+    font-size: clamp(3rem, 7vh, 4.8rem);
+    font-weight: 1000;
+    line-height: .88;
+  }
+
+  /* The chapter map is useful between levels, not worth shrinking active play. */
+  .cascade-game {
+    grid-area: game;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(158px, 15vw, 205px);
+    gap: clamp(7px, 1vw, 12px);
+    align-items: start;
+    min-width: 0;
+  }
+
+  .cascade-map {
+    display: none;
+  }
+
+  .cascade-board-wrap {
+    grid-column: 1;
+    min-width: 0;
+    padding: 7px 9px 6px;
+  }
+
+  .cascade-objective {
+    min-height: 38px;
+    margin-bottom: 5px;
+    padding: 5px 8px;
+  }
+
+  #objective-label {
+    font-size: clamp(.88rem, 1.65vh, 1.04rem);
+    line-height: 1.25;
+  }
+
+  #combo-label {
+    font-size: clamp(.78rem, 1.4vh, .92rem);
+  }
+
+  .cascade-board {
+    width: min(100%, var(--cascade-tv-board-size));
+    max-width: var(--cascade-tv-board-size);
+    margin: 0 auto;
+  }
+
+  .cascade-help {
+    display: none;
+  }
+
+  /* Secondary information stays available without competing with the board. */
+  .cascade-side {
+    grid-column: 2;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 7px;
+  }
+
+  .cascade-card {
+    gap: 7px;
+    padding: 10px;
+  }
+
+  .cascade-card > strong {
+    font-size: clamp(1.65rem, 3.2vh, 2.4rem);
+  }
+
+  .cascade-card > span,
+  #star-progress,
+  #bonus-status {
+    font-size: clamp(.76rem, 1.35vh, .94rem);
+    line-height: 1.35;
+  }
+
+  .cascade-card button {
+    min-height: 44px;
+    font-size: clamp(.86rem, 1.45vh, 1rem);
+  }
 }
