@@ -15,6 +15,7 @@ test("Cascade keeps the full TV cabinet around a board-height playfield under br
 
   await expect(map).toBeVisible();
   await expect(page.locator(".cascade-help")).toBeHidden();
+  await expect(page.locator("#score")).toBeVisible();
 
   // Even at level 1 the run track should fill from the available future
   // levels instead of showing four dots in a mostly-empty sidewall.
@@ -34,8 +35,8 @@ test("Cascade keeps the full TV cabinet around a board-height playfield under br
   for (const box of [headerBox, mapBox, boardWrapBox, boardBox, utilityBox, statusBox]) expect(box).toBeTruthy();
 
   // TV topology: brand/progress | board | one right-side game dock. The dock
-  // puts the compact Moves/Lives HUD above the utility controls instead of
-  // spending a second full-height column on primary readouts.
+  // stacks a compact Score row above the Moves/Lives row and utility controls
+  // instead of spending a second full-height column on primary readouts.
   expect(headerBox.x + headerBox.width).toBeLessThanOrEqual(boardWrapBox.x);
   expect(mapBox.x + mapBox.width).toBeLessThanOrEqual(boardWrapBox.x);
   expect(boardWrapBox.x + boardWrapBox.width).toBeLessThanOrEqual(statusBox.x);
@@ -44,23 +45,21 @@ test("Cascade keeps the full TV cabinet around a board-height playfield under br
   expect(Math.abs(statusBox.width - utilityBox.width)).toBeLessThanOrEqual(1);
   expect(Math.abs((statusBox.y + statusBox.height) - utilityBox.y)).toBeLessThanOrEqual(2);
 
-  // The combined right dock owns the cabinet height while the board remains a
-  // shallow recessed window. It should bracket the board closely without an
-  // empty full-height status trough beside it.
   const boardBottom = boardWrapBox.y + boardWrapBox.height;
   const utilityBottom = utilityBox.y + utilityBox.height;
   expect(statusBox.y).toBeLessThanOrEqual(boardWrapBox.y);
   expect(utilityBottom).toBeGreaterThanOrEqual(boardBottom);
   expect(boardWrapBox.y - statusBox.y).toBeLessThanOrEqual(8);
   expect(utilityBottom - boardBottom).toBeLessThanOrEqual(8);
-  expect(statusBox.height).toBeLessThan(boardWrapBox.height * .3);
+  // Score + Moves/Lives must still consume well under half the board height.
+  expect(statusBox.height).toBeLessThan(boardWrapBox.height * .42);
 
   // The active board remains fully visible and large at aggressive zoom.
   expect(boardBox.y + boardBox.height).toBeLessThanOrEqual(540);
   expect(boardBox.width).toBeGreaterThan(350);
 
-  // MOVES LEFT remains the strongest at-a-glance readout without occupying a
-  // whole side rail.
+  // MOVES LEFT remains a strong at-a-glance readout while Score gets its own
+  // wide counter above it.
   const moves = page.locator("#moves");
   const level = page.locator("#level-number");
   const [movesSize, levelSize] = await Promise.all([
