@@ -153,14 +153,18 @@ async function submitCanonical(canonical) {
 }
 
 function maybeReloadAfterHydration(canonical, stateChanged, preserveLevel) {
-  if (!stateChanged || preserveLevel) return;
+  if (!stateChanged || preserveLevel) return false;
   const marker = JSON.stringify(canonical);
   if (window.sessionStorage.getItem(RELOAD_KEY) === marker) {
     window.sessionStorage.removeItem(RELOAD_KEY);
-    return;
+    return false;
   }
   window.sessionStorage.setItem(RELOAD_KEY, marker);
+  // Reload synchronously after the canonical state write. Yielding to another
+  // network request first lets the already-running Cascade runtime persist its
+  // stale in-memory level back over the newly hydrated localStorage value.
   window.location.reload();
+  return true;
 }
 
 async function synchronize() {
@@ -174,8 +178,8 @@ async function synchronize() {
     const canonical = mergeProgression(current, server);
     const preserveLevel = shouldProtectLoadedRun();
     const changes = applyCanonicalToLocal(canonical, { preserveLevel });
+    if (maybeReloadAfterHydration(canonical, changes.stateChanged, preserveLevel)) return;
     await submitCanonical(canonical);
-    maybeReloadAfterHydration(canonical, changes.stateChanged, preserveLevel);
   } catch {
     // Cascade remains fully playable from its local save while offline or while
     // optional GameFrame progression services are temporarily unavailable.
