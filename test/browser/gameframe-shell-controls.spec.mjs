@@ -13,6 +13,7 @@ async function expectSharedControls(page) {
   await expect(actions).toBeVisible();
   await expect(page.locator("#gameframe-theme-trigger")).toBeVisible();
   await expect(page.locator("#gameframe-alerts-trigger")).toBeVisible();
+  await expect(page.locator("#gameframe-alerts-count")).toBeHidden();
   await expect(page.locator("#gameframe-session-badge")).toBeVisible();
 
   const childIds = await actions.locator(":scope > *").evaluateAll((nodes) => nodes.map((node) => node.id));
