@@ -5,17 +5,20 @@ import { GameFrameMatchObjectRuntime } from "./match-object-runtime.ts";
 import { MatchSocketHub } from "./match-socket-hub.ts";
 import { PlayerPlatformThemeRuntime } from "./player-platform-theme-runtime.ts";
 import { CascadeTelemetryObjectRuntime } from "./cascade-telemetry-object-runtime.ts";
+import { FamilyAuthObjectRuntime } from "./family-auth-object-runtime.ts";
 import { createRpgEdgeGameFrameWorker } from "./rpg-edge-worker.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
 // The class name remains migration-stable for the existing Durable Object binding.
 // Its internal runtime now dispatches every supported GameFrame game, invitation
-// rendezvous, lightweight player-platform indexes, and playtest telemetry.
+// rendezvous, lightweight player-platform indexes, playtest telemetry, and the
+// private family trusted-device registry.
 export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEnv> {
   readonly #runtime: GameFrameMatchObjectRuntime;
   readonly #invitations: InvitationObjectRuntime;
   readonly #players: PlayerPlatformThemeRuntime;
   readonly #telemetry: CascadeTelemetryObjectRuntime;
+  readonly #familyAuth: FamilyAuthObjectRuntime;
   readonly #sockets: MatchSocketHub;
 
   constructor(ctx: DurableObjectState, env: GameFrameWorkerEnv) {
@@ -26,6 +29,7 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
     this.#invitations = new InvitationObjectRuntime(ctx.storage);
     this.#players = new PlayerPlatformThemeRuntime(ctx.storage);
     this.#telemetry = new CascadeTelemetryObjectRuntime(ctx.storage);
+    this.#familyAuth = new FamilyAuthObjectRuntime(ctx.storage);
     this.#sockets = new MatchSocketHub(ctx, (matchId, playerId) => (
       this.#runtime.view(matchId, playerId)
     ));
@@ -41,6 +45,9 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
     }
     if (url.pathname.startsWith("/telemetry/")) {
       return this.#telemetry.fetch(request);
+    }
+    if (url.pathname.startsWith("/family/")) {
+      return this.#familyAuth.fetch(request);
     }
     if (request.method === "GET" && url.pathname === "/events") {
       if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
