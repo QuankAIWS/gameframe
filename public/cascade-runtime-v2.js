@@ -455,7 +455,6 @@ function renderPerformance() {
 }
 
 function renderStatus() {
-  claimPendingHammerRewards();
   levelNumberElement.textContent = mode === "blitz" ? "B" : activeLevel.level;
   scoreElement.textContent = score.toLocaleString();
   targetElement.textContent = mode === "blitz" ? "∞" : activeLevel.target.toLocaleString();
@@ -850,8 +849,10 @@ async function onTileClick(index) {
 
   if (hammerMode && mode === "normal") {
     hammerMode = false;
-    state.hammers -= 1;
+    state.hammers = Math.max(0, state.hammers - 1);
     locked = true;
+    saveState();
+    renderStatus();
     tileAt(index)?.classList.add("is-hammer-hit");
     await sleep(120);
     const result = applySpecialHammer(board, specials, index, boardRng, {
@@ -960,6 +961,7 @@ function startLevel(levelNumber = state.level, { resume = false } = {}) {
     return;
   }
 
+  claimPendingHammerRewards();
   clearActiveRun();
   levelProgress = createLevelProgress(activeLevel);
   score = 0;
@@ -1042,7 +1044,6 @@ window.addEventListener("pagehide", () => {
 });
 
 applyLifeRegen();
-claimPendingHammerRewards();
 startLevel(state.level, { resume: true });
 
 window.cascadeResearch = Object.freeze({
