@@ -1,4 +1,10 @@
-import { SignedCookieSessionAuthenticator, SignedSessionCodec, createWebsiteSessionCookie, readCookie } from "../auth/signed-session.ts";
+import {
+  SignedCookieSessionAuthenticator,
+  SignedSessionCodec,
+  clearWebsiteSessionCookie,
+  createWebsiteSessionCookie,
+  readCookie,
+} from "../auth/signed-session.ts";
 import { requireStagingAdminPrincipal } from "../auth/staging-admin.ts";
 import { errorResponse, json, readJson } from "./http-utils.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
@@ -100,7 +106,7 @@ async function requireAdmin(request: Request, env: GameFrameWorkerEnv) {
 async function requireApprovalSecret(request: Request, env: GameFrameWorkerEnv) {
   const configured = env.GAMEFRAME_FAMILY_APPROVAL_SECRET?.trim() ?? "";
   const supplied = request.headers.get("x-gameframe-family-approval")?.trim() ?? "";
-  if (configured.length < 16 || supplied.length < 16 || await sha256Hex(configured) !== await sha256Hex(supplied)) {
+  if (configured.length < 32 || supplied.length < 32 || await sha256Hex(configured) !== await sha256Hex(supplied)) {
     throw Object.assign(new Error("Family device approval requires the separate approval credential."), { code: "family_approval_required", status: 403 });
   }
 }
@@ -188,11 +194,31 @@ async function refreshTrusted(request: Request, env: GameFrameWorkerEnv) {
   if (!result.authenticated) {
     const response = json(401, { error: "trusted_device_invalid" });
     response.headers.append("Set-Cookie", clearTrustedCookie());
+    response.headers.append("Set-Cookie", clearWebsiteSessionCookie());
     return response;
   }
   const response = json(200, { authenticated: true, playerId: result.playerId });
   response.headers.append("Set-Cookie", await issueSession(env, result.playerId, result.displayName ?? null));
   response.headers.append("Set-Cookie", trustedCookie(token));
+  return response;
+}
+
+async function logoutTrusted(request: Request, env: GameFrameWorkerEnv) {
+  const token = readCookie(request, TRUSTED_COOKIE) ?? "";
+  const separator = token.indexOf(".");
+  if (separator > 0) {
+    const deviceId = token.slice(0, separator);
+    // Possession of the HttpOnly device cookie is sufficient to revoke that same
+    // device. The caller cannot choose another device ID through this route.
+    await internal(env, "/family/device/revoke", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ deviceId }),
+    }).catch(() => null);
+  }
+  const response = json(200, { authenticated: false, trustedDeviceRevoked: separator > 0 });
+  response.headers.append("Set-Cookie", clearTrustedCookie());
+  response.headers.append("Set-Cookie", clearWebsiteSessionCookie());
   return response;
 }
 
@@ -237,6 +263,7 @@ export async function handleFamilyAuthEdge(request: Request, env: GameFrameWorke
     if (request.method === "POST" && url.pathname === "/auth/family/enroll/start") return startEnrollment(request, env);
     if (request.method === "POST" && url.pathname === "/auth/family/enroll/claim") return claimEnrollment(request, env);
     if (request.method === "POST" && url.pathname === "/auth/trusted-device/refresh") return refreshTrusted(request, env);
+    if (request.method === "POST" && url.pathname === "/auth/trusted-device/logout") return logoutTrusted(request, env);
     if (request.method === "GET" && url.pathname === "/api/admin/family/enrollments") return adminEnrollments(request, env);
     if (request.method === "POST" && url.pathname === "/api/admin/family/enrollments/approve") return approveEnrollment(request, env);
     if (request.method === "GET" && url.pathname === "/api/admin/family/devices") return adminDevices(request, env);
