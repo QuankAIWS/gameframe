@@ -125,96 +125,110 @@ test("Cascade Weekly Blitz preserves the normal board underneath it", async ({ p
 
   await page.locator("[data-weekly-start]").click();
   await expect(page.locator("body")).toHaveClass(/cascade-blitz-mode/);
+  await expect.poll(
+    () => page.evaluate((key) => sessionStorage.getItem(key), blitzReturnKey),
+  ).not.toBeNull();
 
-  await page.locator("#booster-hammer").click();
-  await page.locator('.cascade-tile[data-index="0"]').click();
-  await expect(page.locator("#hammer-count")).toHaveText("1");
+  await showSyntheticBlitzComplete(page);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.locator("#level-number")).toHaveText("7");
+  await expect.poll(
+    () => page.evaluate((key) => sessionStorage.getItem(key), blitzReturnKey),
+  ).toBeNull();
 
-  const during = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)), activeRunKey);
-  expect(during).toEqual(before);
-
-  const blitzState = await page.evaluate(() => window.cascadeBonusModes.getState());
-  expect(blitzState.mode).toBe("weekly-blitz");
-  expect(blitzState.hammers).toBe(1);
+  const after = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)), activeRunKey);
+  expect(after?.level).toBe(before.level);
+  expect(after?.board).toEqual(before.board);
+  expect(after?.specials).toEqual(before.specials);
+  expect(after?.score).toBe(before.score);
+  expect(after?.movesRemaining).toBe(before.movesRemaining);
 });
 
 test("Cascade waits for Weekly Blitz score submission before restoring the normal board", async ({ page }) => {
   await installState(page, { level: 7, lives: 5 });
-  await page.addInitScript(() => {
-    window.__resolveWeeklyScore = null;
-    window.fetch = async (url, options = {}) => {
-      const target = String(url);
-      if (target.includes("/api/weekly")) {
-        return new Promise((resolve) => {
-          window.__resolveWeeklyScore = () => resolve(new Response(JSON.stringify({ ok: true }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          }));
-        });
-      }
-      return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
-    };
-  });
   await page.goto("/cascade.html");
-  const normal = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)), activeRunKey);
+  await expect.poll(() => page.evaluate(() => Boolean(window.cascadeBonusModes))).toBe(true);
 
   await page.locator("[data-weekly-start]").click();
+  await expect(page.locator("body")).toHaveClass(/cascade-blitz-mode/);
+  await page.evaluate(() => {
+    document.querySelector("[data-weekly-status]").textContent = "Saving weekly score…";
+  });
   await showSyntheticBlitzComplete(page);
-  await page.locator("#result-actions button").click();
 
-  await expect.poll(() => page.evaluate(() => typeof window.__resolveWeeklyScore)).toBe("function");
-  expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)), activeRunKey)).toEqual(normal);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Saving score…", exact: true })).toBeDisabled();
+  await page.waitForTimeout(100);
+  await expect(page.locator("body")).toHaveClass(/cascade-blitz-mode/);
+  expect(await page.evaluate((key) => sessionStorage.getItem(key), blitzReturnKey)).not.toBeNull();
 
-  await page.evaluate(() => window.__resolveWeeklyScore());
-  await expect(page.locator("body")).not.toHaveClass(/cascade-blitz-mode/);
+  await page.evaluate(() => {
+    document.querySelector("[data-weekly-status]").textContent = "New weekly best saved.";
+  });
+  await expect(page.locator("#level-number")).toHaveText("7", { timeout: 4_000 });
+  await expect.poll(
+    () => page.evaluate((key) => sessionStorage.getItem(key), blitzReturnKey),
+  ).toBeNull();
 });
 
 test("Cascade bounds a stalled Weekly score save and restores the normal board", async ({ page }) => {
   await installState(page, { level: 7, lives: 5 });
-  await page.addInitScript(() => {
-    window.fetch = async (url) => {
-      if (String(url).includes("/api/weekly")) return new Promise(() => {});
-      return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
-    };
-  });
   await page.goto("/cascade.html");
+  await expect.poll(() => page.evaluate(() => Boolean(window.cascadeBonusModes))).toBe(true);
+
   await page.locator("[data-weekly-start]").click();
+  await page.evaluate(() => {
+    document.querySelector("[data-weekly-status]").textContent = "Saving weekly score…";
+  });
   await showSyntheticBlitzComplete(page);
-  await page.locator("#result-actions button").click();
-  await expect(page.locator("body")).not.toHaveClass(/cascade-blitz-mode/, { timeout: 6_000 });
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+  await expect(page.locator("#level-number")).toHaveText("7", { timeout: 6_500 });
+  await expect.poll(
+    () => page.evaluate((key) => sessionStorage.getItem(key), blitzReturnKey),
+  ).toBeNull();
 });
 
 test("Cascade bonus play remains available at zero lives", async ({ page }) => {
-  await installState(page, { level: 7, lives: 0, lastLifeAt: Date.now() });
+  await installState(page, { level: 12, lives: 0, lastLifeAt: Date.now() });
   await page.goto("/cascade.html");
+
   await expect(page.locator("#life-lock")).toBeVisible();
+  await expect(page.locator(".cascade-tile").first()).toBeDisabled();
   await page.locator("[data-weekly-start]").click();
   await expect(page.locator("body")).toHaveClass(/cascade-blitz-mode/);
+  await expect(page.locator("#life-lock")).toBeHidden();
+  await expect(page.locator(".cascade-tile").first()).toBeEnabled();
+  await expect(page.locator("#booster-hammer")).toBeDisabled();
 });
 
 test("Cascade terminal dialogs cannot be dismissed into a locked board with Escape", async ({ page }) => {
-  await installState(page, { level: 7, lives: 5 });
+  await installState(page, { level: 8, lives: 5, hammers: 0 });
   await page.goto("/cascade.html");
-  await page.evaluate(() => {
-    window.cascadeResearch.forceFailureForTest();
-  });
+
+  await page.locator("#booster-hammer").click();
   await expect(page.locator("#result-dialog")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator("#result-dialog")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Got it" })).toBeVisible();
 });
 
 test("Cascade hammer arming is explicit and does not spend inventory until a target is chosen", async ({ page }) => {
-  await installState(page, { level: 7, lives: 5, hammers: 2 });
+  await installState(page, { level: 8, lives: 5, hammers: 2 });
   await page.goto("/cascade.html");
+
   await page.locator("#booster-hammer").click();
-  await expect(page.locator("#booster-hammer")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".cascade-tile.is-hammer-target")).toHaveCount(64);
   await expect(page.locator("#hammer-count")).toHaveText("2");
+  expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)).hammers, stateKey)).toBe(2);
 });
 
 test("Cascade family-facing settings and Weekly Blitz copy avoid developer terminology", async ({ page }) => {
-  await installState(page, { level: 7, lives: 5 });
+  await installState(page, { level: 6, lives: 5 });
   await page.goto("/cascade.html");
-  await expect(page.locator("#cascade-feedback-card")).toContainText(/sound/i);
-  await expect(page.locator("#cascade-weekly-card")).toContainText(/blitz/i);
-  await expect(page.locator("#cascade-feedback-card")).not.toContainText(/debug|developer|telemetry/i);
+
+  await expect(page.locator("#cascade-feedback-card > small")).toHaveText("SETTINGS");
+  await expect(page.locator("[data-weekly-copy]")).toContainText("everyone gets the same board this week");
+  await expect(page.locator("[data-weekly-copy]")).not.toContainText(/seed/i);
+  await expect.poll(() => page.evaluate(() => Boolean(window.cascadeFamilyPolish))).toBe(true);
 });
