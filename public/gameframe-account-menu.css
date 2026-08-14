@@ -306,32 +306,40 @@ html[data-gameframe-shell-theme="deep-space"] {
 }
 
 @media (max-width: 720px) {
-  .gameframe-session-badge.gameframe-account-control,
   .gameframe-shell-actions > .gameframe-session-badge.gameframe-account-control {
-    width: auto;
-    max-width: 112px;
-    height: auto;
-    padding: 0;
+    width: 36px !important;
+    min-width: 36px;
+    max-width: 36px !important;
+    height: 36px;
+    padding: 0 !important;
   }
 
-  .gameframe-session-badge .gameframe-account-trigger {
-    grid-template-columns: 28px minmax(0, auto);
-    gap: 6px;
-    max-width: 112px;
-    height: 38px;
-    min-height: 38px;
-    padding: 4px 7px 4px 4px;
+  .gameframe-shell-actions > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger {
+    display: grid !important;
+    grid-template-columns: 26px;
+    place-items: center;
+    gap: 0;
+    width: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 4px;
+    border-radius: 11px;
   }
 
-  .gameframe-session-badge .gameframe-account-trigger img,
-  .gameframe-session-badge .gameframe-account-trigger .gameframe-session-avatar {
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
+  .gameframe-shell-actions > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger img,
+  .gameframe-shell-actions > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger .gameframe-session-avatar {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    border-radius: 8px;
   }
 
-  .gameframe-session-badge .gameframe-account-trigger strong { font-size: .61rem; }
-  .gameframe-session-badge .gameframe-account-trigger svg { display: none; }
+  .gameframe-shell-actions > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger strong,
+  .gameframe-shell-actions > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger svg {
+    display: none !important;
+  }
 
   .gameframe-account-panel {
     top: calc(var(--gameframe-destination-height, 62px) + 7px);
