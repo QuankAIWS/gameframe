@@ -22,6 +22,12 @@ function readJson(key) {
   }
 }
 
+function normalizedLevel(value, fallback = 1) {
+  const level = Math.floor(Number(value));
+  if (!Number.isFinite(level)) return fallback;
+  return Math.max(1, Math.min(300, level));
+}
+
 function normalizedStars(value) {
   const starsByLevel = {};
   if (!value || typeof value !== "object" || Array.isArray(value)) return starsByLevel;
@@ -35,12 +41,19 @@ function normalizedStars(value) {
   return starsByLevel;
 }
 
+const initialActiveRunLevel = (() => {
+  const activeRun = readJson(ACTIVE_RUN_KEY);
+  if (!activeRun) return null;
+  const level = normalizedLevel(activeRun.level, 0);
+  return level || null;
+})();
+
 function snapshot() {
   const state = readJson(STATE_KEY) || {};
   const performance = readJson(PERFORMANCE_KEY) || {};
   const starsByLevel = normalizedStars(performance.starsByLevel);
   const highestStarLevel = Object.keys(starsByLevel).reduce((highest, rawLevel) => Math.max(highest, Number(rawLevel) || 0), 0);
-  const unlockedLevel = Math.max(1, Math.min(300, Math.floor(Number(state.level) || 1)));
+  const unlockedLevel = normalizedLevel(state.level);
   return {
     highestCompletedLevel: Math.max(highestStarLevel, unlockedLevel - 1),
     starsByLevel,
@@ -92,20 +105,28 @@ function mergeProgression(local, server) {
   };
 }
 
-function applyCanonicalToLocal(canonical) {
+function shouldProtectLoadedRun() {
+  if (!initialActiveRunLevel) return false;
+  const state = readJson(STATE_KEY) || {};
+  const activeRun = readJson(ACTIVE_RUN_KEY);
+  if (!activeRun) return false;
+  return normalizedLevel(state.level) === initialActiveRunLevel
+    && normalizedLevel(activeRun.level, 0) === initialActiveRunLevel;
+}
+
+function applyCanonicalToLocal(canonical, { preserveLevel = false } = {}) {
   const state = readJson(STATE_KEY) || {};
   const performance = readJson(PERFORMANCE_KEY) || {};
-  const nextLevel = Math.max(
-    Math.max(1, Math.min(300, Math.floor(Number(state.level) || 1))),
-    Math.min(300, canonical.highestCompletedLevel + 1),
-  );
+  const currentLevel = normalizedLevel(state.level);
+  const nextLevel = preserveLevel
+    ? currentLevel
+    : Math.max(currentLevel, Math.min(300, canonical.highestCompletedLevel + 1));
   const nextStars = { ...normalizedStars(performance.starsByLevel), ...canonical.starsByLevel };
-  const stateChanged = nextLevel !== Math.max(1, Math.floor(Number(state.level) || 1));
+  const stateChanged = nextLevel !== currentLevel;
   const starsChanged = JSON.stringify(normalizedStars(performance.starsByLevel)) !== JSON.stringify(nextStars);
-  if (!stateChanged && !starsChanged) return false;
-  storage.setItem(STATE_KEY, JSON.stringify({ ...state, level: nextLevel }));
-  storage.setItem(PERFORMANCE_KEY, JSON.stringify({ ...performance, starsByLevel: nextStars }));
-  return true;
+  if (stateChanged) storage.setItem(STATE_KEY, JSON.stringify({ ...state, level: nextLevel }));
+  if (starsChanged) storage.setItem(PERFORMANCE_KEY, JSON.stringify({ ...performance, starsByLevel: nextStars }));
+  return { stateChanged, starsChanged };
 }
 
 async function fetchServerProgression() {
@@ -131,8 +152,8 @@ async function submitCanonical(canonical) {
   if (response.status === 401) identity = null;
 }
 
-function maybeReloadAfterHydration(canonical, localChanged) {
-  if (!localChanged || storage.getItem(ACTIVE_RUN_KEY)) return;
+function maybeReloadAfterHydration(canonical, stateChanged, preserveLevel) {
+  if (!stateChanged || preserveLevel) return;
   const marker = JSON.stringify(canonical);
   if (window.sessionStorage.getItem(RELOAD_KEY) === marker) {
     window.sessionStorage.removeItem(RELOAD_KEY);
@@ -151,9 +172,10 @@ async function synchronize() {
     const server = await fetchServerProgression();
     if (!identity || !server) return;
     const canonical = mergeProgression(current, server);
-    const localChanged = applyCanonicalToLocal(canonical);
+    const preserveLevel = shouldProtectLoadedRun();
+    const changes = applyCanonicalToLocal(canonical, { preserveLevel });
     await submitCanonical(canonical);
-    maybeReloadAfterHydration(canonical, localChanged);
+    maybeReloadAfterHydration(canonical, changes.stateChanged, preserveLevel);
   } catch {
     // Cascade remains fully playable from its local save while offline or while
     // optional GameFrame progression services are temporarily unavailable.
