@@ -81,11 +81,15 @@
     text-shadow: 0 1px 0 rgba(255,255,255,.95);
   }
 
-  #score {
+  /* The benchmark layer intentionally styles every ordinary <strong>. Score
+     is now a primary instrument, so match and beat that selector specificity
+     instead of relying on source order alone. */
+  .cascade-status strong#score {
     position: relative;
     z-index: 1;
     display: grid;
     place-items: center;
+    justify-self: stretch;
     width: 100%;
     min-width: 0;
     min-height: clamp(38px, 6.5vh, 52px);
@@ -113,8 +117,8 @@
     white-space: nowrap;
   }
 
-  #score::before,
-  #score::after {
+  .cascade-status strong#score::before,
+  .cascade-status strong#score::after {
     content: "";
     position: absolute;
     left: 10px;
@@ -124,8 +128,8 @@
     pointer-events: none;
   }
 
-  #score::before { top: 6px; }
-  #score::after { bottom: 6px; opacity: .42; }
+  .cascade-status strong#score::before { top: 6px; }
+  .cascade-status strong#score::after { bottom: 6px; opacity: .42; }
 
   .cascade-score-value {
     position: relative;
@@ -135,7 +139,7 @@
     transform-origin: 50% 72%;
   }
 
-  #score.is-counting {
+  .cascade-status strong#score.is-counting {
     box-shadow:
       inset 0 3px 7px rgba(20,8,36,.24),
       inset 0 1px 0 rgba(255,255,255,.48),
@@ -143,11 +147,11 @@
       0 4px 11px rgba(90,56,124,.19);
   }
 
-  #score.is-counting .cascade-score-value {
+  .cascade-status strong#score.is-counting .cascade-score-value {
     animation: cascade-score-reel .52s cubic-bezier(.15,.85,.2,1) both;
   }
 
-  #score.is-score-jump .cascade-score-value {
+  .cascade-status strong#score.is-score-jump .cascade-score-value {
     filter: drop-shadow(0 0 9px rgba(255,212,64,.62));
   }
 
@@ -256,7 +260,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #score.is-counting .cascade-score-value,
+  .cascade-status strong#score.is-counting .cascade-score-value,
   .cascade-status > div:nth-child(2):has(#score.is-counting)::after {
     animation: none !important;
   }
