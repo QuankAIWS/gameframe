@@ -1,0 +1,337 @@
+/*
+ * Unifies the TV-first Cascade layout into one physical candy cabinet.
+ *
+ * The grid topology still comes from cascade-tv-wide.css: progression rail,
+ * board, utility bay, primary status bay. This layer removes the dashboard
+ * card language and makes those regions read as instruments molded into one
+ * chassis. Mobile/portrait layouts intentionally keep their existing treatment.
+ */
+@media (min-width: 760px) and (min-height: 400px) and (min-aspect-ratio: 3/2) {
+  .cascade-shell {
+    --cascade-tv-gap: 0px;
+    --cascade-cabinet-line: rgba(93, 63, 128, .14);
+    --cascade-cabinet-line-soft: rgba(255, 255, 255, .72);
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    width: min(
+      calc(
+        var(--cascade-tv-map-width)
+        + var(--cascade-tv-board-size)
+        + 18px
+        + var(--cascade-tv-utility-width)
+        + var(--cascade-tv-status-width)
+        + (var(--cascade-tv-gap) * 3)
+        + 6px
+      ),
+      calc(100% - 12px)
+    );
+    border: 3px solid rgba(255, 255, 255, .9);
+    border-radius: 30px;
+    background:
+      radial-gradient(circle at 8% 11%, rgba(255, 118, 181, .16), transparent 23%),
+      radial-gradient(circle at 92% 84%, rgba(84, 211, 235, .16), transparent 27%),
+      linear-gradient(118deg, rgba(255, 249, 253, .96), rgba(247, 239, 255, .94) 47%, rgba(239, 250, 255, .94));
+    box-shadow:
+      0 24px 62px rgba(77, 52, 111, .18),
+      inset 0 1px 0 rgba(255, 255, 255, .96),
+      inset 0 -8px 24px rgba(110, 72, 145, .06);
+  }
+
+  .cascade-shell::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    inset: 0 0 auto;
+    height: 11px;
+    background: linear-gradient(90deg, #ff82bb, #a778ee 33%, #63d7ea 66%, #ffe06b);
+    opacity: .52;
+    pointer-events: none;
+  }
+
+  .cascade-shell::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    inset: 10px 10px auto 10px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.92) 14% 86%, transparent);
+    pointer-events: none;
+  }
+
+  .cascade-header,
+  .cascade-map,
+  .cascade-board-wrap,
+  .cascade-side,
+  .cascade-status {
+    z-index: 1;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  /* Left wall: title and progression are one continuous cabinet sidewall. */
+  .cascade-header,
+  .cascade-map {
+    border-right: 1px solid var(--cascade-cabinet-line);
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.34), rgba(255,255,255,.05)),
+      linear-gradient(180deg, rgba(255,234,246,.34), rgba(244,237,255,.2));
+  }
+
+  .cascade-header {
+    position: relative;
+    padding: 12px 11px 8px;
+    border-bottom: 1px solid var(--cascade-cabinet-line);
+  }
+
+  .cascade-header::after {
+    content: "";
+    position: absolute;
+    right: -1px;
+    top: 22%;
+    width: 4px;
+    height: 56%;
+    border-radius: 999px;
+    background: linear-gradient(#ff72ae, #a56af4, #44c9ee);
+    opacity: .72;
+  }
+
+  .cascade-kicker {
+    color: #9c4e9f;
+  }
+
+  .cascade-header h1 {
+    color: #59377f;
+    text-shadow: 0 2px 0 rgba(255,255,255,.88), 0 9px 20px rgba(87,55,123,.12);
+  }
+
+  .cascade-map {
+    padding: 8px 8px 9px;
+  }
+
+  .cascade-map p {
+    margin-left: 7px;
+    color: #89669f;
+    letter-spacing: .13em;
+  }
+
+  .cascade-map li {
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .cascade-map li::before {
+    border-color: rgba(108, 80, 144, .12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 5px rgba(75,52,106,.05);
+  }
+
+  .cascade-map li.is-complete {
+    background: rgba(226, 255, 231, .18);
+  }
+
+  .cascade-map li.is-current {
+    border: 1px solid rgba(165, 106, 244, .22);
+    background: linear-gradient(90deg, rgba(217, 192, 255, .44), rgba(255,255,255,.26));
+    box-shadow: inset 3px 0 0 rgba(165,106,244,.52);
+  }
+
+  /* The board is the one substantial recessed display in the cabinet. */
+  .cascade-board-wrap {
+    align-self: center;
+    height: calc(100% - 10px);
+    margin: 5px 0;
+    padding: 7px 9px 8px;
+    border: 2px solid rgba(255,255,255,.8);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at 50% -18%, rgba(255,255,255,.82), transparent 48%),
+      linear-gradient(155deg, rgba(222, 205, 241, .72), rgba(248, 244, 255, .72) 52%, rgba(218, 240, 248, .66));
+    box-shadow:
+      inset 0 5px 18px rgba(72, 47, 103, .12),
+      inset 0 -3px 12px rgba(255,255,255,.62),
+      0 0 0 1px rgba(93, 63, 128, .08);
+  }
+
+  .cascade-objective {
+    border: 0;
+    border-radius: 11px;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.58), rgba(255,255,255,.28)),
+      rgba(246,240,252,.56);
+    box-shadow:
+      inset 0 -1px 0 rgba(94,65,131,.08),
+      inset 0 1px 0 rgba(255,255,255,.76);
+  }
+
+  /* Utility bay: one molded instrument column. Individual systems are divided
+     by hairlines instead of living in separate floating cards. */
+  .cascade-side {
+    position: relative;
+    gap: 0;
+    padding: 5px 0;
+    border-left: 1px solid var(--cascade-cabinet-line);
+    border-right: 1px solid var(--cascade-cabinet-line);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.33), rgba(255,255,255,.12)),
+      linear-gradient(180deg, rgba(245,237,253,.32), rgba(235,247,251,.28));
+  }
+
+  .cascade-side::before {
+    content: "";
+    position: absolute;
+    inset: 5px auto 5px 0;
+    width: 3px;
+    border-radius: 999px;
+    background: linear-gradient(#a56af4, #44c9ee 52%, #ffcb4f);
+    opacity: .3;
+  }
+
+  .cascade-card {
+    position: relative;
+    align-content: center;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: clamp(7px, 1.05vh, 11px) clamp(10px, .95vw, 14px);
+  }
+
+  .cascade-card:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(92,67,132,.17) 12% 88%, transparent);
+  }
+
+  .cascade-card small {
+    color: #715b82;
+    letter-spacing: .09em;
+  }
+
+  .cascade-card > strong {
+    color: #5a3e75;
+  }
+
+  .cascade-card > span,
+  #star-progress,
+  [data-weekly-copy],
+  [data-weekly-status] {
+    color: #776b82;
+  }
+
+  .cascade-card button {
+    border: 2px solid rgba(255,255,255,.7);
+    border-radius: 12px;
+    box-shadow:
+      0 5px 10px rgba(57,171,211,.13),
+      inset 0 1px 0 rgba(255,255,255,.5);
+  }
+
+  .cascade-feedback-controls button {
+    border-radius: 10px;
+  }
+
+  /* Primary status bay: one readout bank. Moves remains the hero display;
+     Level/Score/Target/Lives become engraved meter rows rather than cards. */
+  .cascade-status {
+    position: relative;
+    gap: 0;
+    padding: 5px 0;
+    background:
+      radial-gradient(circle at 75% 8%, rgba(121, 230, 158, .12), transparent 26%),
+      linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,.14));
+  }
+
+  .cascade-status::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 5px;
+    bottom: 5px;
+    width: 1px;
+    background: linear-gradient(transparent, rgba(92,67,132,.2) 7% 93%, transparent);
+  }
+
+  .cascade-status > div {
+    position: relative;
+    margin: 0 11px;
+    padding: clamp(8px, 1.15vh, 13px) clamp(4px, .55vw, 8px);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .cascade-status > div::after {
+    display: none;
+  }
+
+  .cascade-status > div:not(:nth-child(4))::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(92,67,132,.17) 10% 90%, transparent);
+  }
+
+  .cascade-status > div:nth-child(5)::before {
+    display: none;
+  }
+
+  .cascade-status > div:nth-child(4) {
+    margin: 5px 9px 7px;
+    padding: clamp(10px, 1.4vh, 15px) clamp(10px, .9vw, 15px);
+    border: 2px solid rgba(93, 207, 108, .52);
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 82% 18%, rgba(255,255,255,.9), transparent 38%),
+      linear-gradient(145deg, rgba(237,255,239,.96), rgba(214,248,220,.9));
+    box-shadow:
+      inset 0 2px 0 rgba(255,255,255,.92),
+      inset 0 -5px 12px rgba(82,180,94,.08),
+      0 6px 13px rgba(72,153,84,.1);
+  }
+
+  .cascade-status > div:nth-child(4)::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border: 1px solid rgba(255,255,255,.66);
+    border-radius: 13px;
+    pointer-events: none;
+  }
+
+  .cascade-status > div:nth-child(4) small {
+    color: #39784b;
+  }
+
+  .cascade-status > div:nth-child(4) strong {
+    color: #215f37;
+    text-shadow: 0 2px 0 rgba(255,255,255,.8);
+  }
+
+  .cascade-status small {
+    color: #735f84;
+  }
+
+  .cascade-status strong {
+    color: #49365f;
+  }
+
+  #lives {
+    color: #ee4f91;
+  }
+
+  /* Keep ambient motion cheap: this file adds only static surfaces. The
+     existing presentation/idle directors remain the only animation owners. */
+}

@@ -1,0 +1,302 @@
+/*
+ * Primary score/lives HUD for Cascade's wide TV cabinet.
+ * Loaded after the cabinet reduction layer so these primary readouts can use
+ * the remaining right-dock space without changing board geometry.
+ */
+@media (min-width: 760px) and (min-height: 400px) and (min-aspect-ratio: 3/2) {
+  .cascade-status {
+    grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr);
+    grid-template-rows: auto auto;
+    gap: clamp(5px, .8vh, 8px);
+    padding: clamp(8px, 1.1vh, 11px) 8px 9px;
+  }
+
+  .cascade-status > div:nth-child(1),
+  .cascade-status > div:nth-child(3) {
+    display: none;
+  }
+
+  .cascade-status > div:nth-child(2) {
+    position: relative;
+    display: grid;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: center;
+    justify-items: stretch;
+    gap: clamp(3px, .5vh, 5px);
+    min-width: 0;
+    min-height: clamp(70px, 12vh, 90px);
+    margin: 0;
+    padding: clamp(7px, 1vh, 10px) clamp(9px, .8vw, 13px) clamp(8px, 1.1vh, 11px);
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,.92);
+    border-radius: clamp(19px, 3vh, 25px);
+    background:
+      radial-gradient(circle at 14% 8%, rgba(255,255,255,.98), transparent 34%),
+      radial-gradient(circle at 88% 94%, rgba(103,220,239,.2), transparent 36%),
+      linear-gradient(135deg, rgba(246,235,255,.99), rgba(221,242,255,.97) 58%, rgba(236,255,245,.95));
+    box-shadow:
+      0 7px 15px rgba(75,44,112,.14),
+      inset 0 2px 0 rgba(255,255,255,1),
+      inset 0 -6px 14px rgba(91,92,164,.08);
+  }
+
+  .cascade-status > div:nth-child(2)::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border: 1px solid rgba(113,78,160,.13);
+    border-radius: clamp(14px, 2.2vh, 19px);
+    pointer-events: none;
+  }
+
+  .cascade-status > div:nth-child(2)::after {
+    content: "";
+    position: absolute;
+    top: 31%;
+    bottom: 9%;
+    width: 34%;
+    left: -45%;
+    opacity: 0;
+    transform: skewX(-18deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.76), transparent);
+    pointer-events: none;
+  }
+
+  .cascade-status > div:nth-child(2):has(#score.is-counting)::after {
+    animation: cascade-score-sweep .66s ease-out both;
+  }
+
+  .cascade-status > div:nth-child(2) small {
+    position: relative;
+    z-index: 2;
+    justify-self: center;
+    color: #78539a;
+    font-size: clamp(.56rem, 1.02vh, .7rem);
+    font-weight: 1000;
+    line-height: 1;
+    letter-spacing: .18em;
+    text-shadow: 0 1px 0 rgba(255,255,255,.95);
+  }
+
+  /* The benchmark layer intentionally styles every ordinary <strong>. Score
+     is now a primary instrument, so match and beat that selector specificity
+     instead of relying on source order alone. */
+  .cascade-status strong#score {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    justify-self: stretch;
+    width: 100%;
+    min-width: 0;
+    min-height: clamp(38px, 6.5vh, 52px);
+    padding: clamp(4px, .55vh, 6px) 7px clamp(5px, .7vh, 7px);
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,.82);
+    border-radius: clamp(13px, 2.1vh, 18px);
+    background:
+      radial-gradient(circle at 50% -40%, rgba(255,255,255,.28), transparent 52%),
+      linear-gradient(180deg, #67458a 0%, #4e316f 52%, #3b2458 100%);
+    box-shadow:
+      inset 0 3px 7px rgba(20,8,36,.26),
+      inset 0 1px 0 rgba(255,255,255,.42),
+      0 3px 7px rgba(63,35,91,.14);
+    color: #fff7c8;
+    font-size: clamp(2.35rem, 5.3vh, 3.65rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: 1000;
+    line-height: .84;
+    letter-spacing: -.045em;
+    text-align: center;
+    text-shadow:
+      0 2px 0 rgba(43,20,66,.48),
+      0 0 10px rgba(255,232,111,.2);
+    white-space: nowrap;
+  }
+
+  .cascade-status strong#score::before,
+  .cascade-status strong#score::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent);
+    pointer-events: none;
+  }
+
+  .cascade-status strong#score::before { top: 6px; }
+  .cascade-status strong#score::after { bottom: 6px; opacity: .42; }
+
+  .cascade-score-value {
+    position: relative;
+    z-index: 1;
+    display: inline-block;
+    min-width: 4.2ch;
+    transform-origin: 50% 72%;
+  }
+
+  .cascade-status strong#score.is-counting {
+    box-shadow:
+      inset 0 3px 7px rgba(20,8,36,.24),
+      inset 0 1px 0 rgba(255,255,255,.48),
+      0 0 0 2px rgba(255,216,73,.18),
+      0 4px 11px rgba(90,56,124,.19);
+  }
+
+  .cascade-status strong#score.is-counting .cascade-score-value {
+    animation: cascade-score-reel .52s cubic-bezier(.15,.85,.2,1) both;
+  }
+
+  .cascade-status strong#score.is-score-jump .cascade-score-value {
+    filter: drop-shadow(0 0 9px rgba(255,212,64,.62));
+  }
+
+  .cascade-status > div:nth-child(4) {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: clamp(66px, 10.5vh, 84px);
+  }
+
+  .cascade-status > div:nth-child(5) {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: clamp(66px, 10.5vh, 84px);
+    gap: clamp(4px, .7vh, 6px);
+    padding: 7px 7px 8px;
+  }
+
+  .cascade-status > div:nth-child(5) small {
+    margin-bottom: 1px;
+  }
+
+  #lives {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: center;
+    justify-items: center;
+    gap: clamp(2px, .24vw, 4px);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    font-size: 1rem;
+    letter-spacing: 0;
+  }
+
+  .cascade-life-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .cascade-life-heart {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    max-width: clamp(18px, 2.95vh, 24px);
+    aspect-ratio: 1;
+    min-width: 0;
+    border: 1px solid rgba(255,255,255,.86);
+    border-radius: 50%;
+    font-size: clamp(.75rem, 1.78vh, 1.08rem);
+    line-height: 1;
+    text-shadow: 0 1px 0 rgba(255,255,255,.84);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.96),
+      0 2px 5px rgba(125,50,88,.1);
+  }
+
+  .cascade-life-heart::before {
+    content: "♥";
+  }
+
+  .cascade-life-heart.is-full {
+    color: #d92d78;
+    background:
+      radial-gradient(circle at 34% 23%, rgba(255,255,255,.88), transparent 24%),
+      linear-gradient(145deg, #fff8fb, #ffd4e6);
+  }
+
+  .cascade-life-heart.is-empty {
+    color: rgba(156,89,121,.25);
+    background: linear-gradient(145deg, rgba(255,255,255,.68), rgba(244,230,239,.6));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.84);
+  }
+
+  #life-timer:not([hidden]) {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* On the 960x540-equivalent TV case the new Score reel should not push the
+   lower controls toward the bottom edge. Preserve the same control hierarchy,
+   just tighten the secondary dock a little on short landscape viewports. */
+@media (min-width: 760px) and (min-height: 400px) and (max-height: 600px) and (min-aspect-ratio: 3/2) {
+  .cascade-side {
+    gap: 3px;
+    padding: 5px 7px 6px;
+  }
+
+  .cascade-side > .cascade-card:nth-child(1),
+  .cascade-performance-card {
+    min-height: 54px;
+    padding-block: 4px;
+  }
+
+  #booster-hammer {
+    min-height: 42px;
+  }
+
+  #cascade-feedback-card,
+  .cascade-weekly-card {
+    padding-block: 2px;
+  }
+
+  .cascade-feedback-controls button {
+    width: 29px;
+    min-width: 29px;
+    height: 29px;
+  }
+
+  .cascade-weekly-card [data-weekly-start] {
+    min-height: 34px;
+  }
+}
+
+@keyframes cascade-score-reel {
+  0% { transform: translateY(.36em) scale(.955); opacity: .62; filter: blur(.7px); }
+  48% { transform: translateY(-.09em) scale(1.035); opacity: 1; filter: blur(0); }
+  100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
+}
+
+@keyframes cascade-score-sweep {
+  0% { left: -45%; opacity: 0; }
+  18% { opacity: .62; }
+  100% { left: 118%; opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade-status strong#score.is-counting .cascade-score-value,
+  .cascade-status > div:nth-child(2):has(#score.is-counting)::after {
+    animation: none !important;
+  }
+}
