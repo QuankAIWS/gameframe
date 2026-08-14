@@ -261,14 +261,14 @@ export async function indexInvitation(
   options: InvitationIndexOptions = {},
 ): Promise<void> {
   const uniquePlayers = [...new Set([...playerIds, invitation.targetPlayerId ?? ""].filter(Boolean))];
-  await Promise.allSettled(uniquePlayers.map((playerId) => {
+  await Promise.all(uniquePlayers.map(async (playerId) => {
     const summary = {
       ...invitation,
       claimToken: options.claimTokenPlayerId === playerId ? options.claimToken ?? null : null,
       updatedAt: Date.now(),
     };
     return internalJson(
-      playerStub(env, playerId).fetch(new Request("https://player.internal/player/invitation", {
+      await playerStub(env, playerId).fetch(new Request("https://player.internal/player/invitation", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(summary),

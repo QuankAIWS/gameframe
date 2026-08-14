@@ -1,7 +1,7 @@
+import "./gameframe-alert-styles.js";
 import { gameFrameFetch, gameFrameOptionalFetch } from "./gameframe-auth.js";
 
-const refreshIntervalMs = 15000;
-const stylesheetUrl = "/gameframe-alerts.css";
+const refreshIntervalMs = 5000;
 
 function gameName(gameId) {
   if (gameId === "othello") return "Othello";
@@ -9,14 +9,6 @@ function gameName(gameId) {
   if (gameId === "tic-tac-toe") return "Tic-Tac-Toe";
   if (gameId === "monster-master-duel") return "Monster Master Arena Battles";
   return gameId || "GameFrame";
-}
-
-function ensureStylesheet() {
-  if (document.querySelector(`link[href="${stylesheetUrl}"]`)) return;
-  const stylesheet = document.createElement("link");
-  stylesheet.rel = "stylesheet";
-  stylesheet.href = stylesheetUrl;
-  document.head.append(stylesheet);
 }
 
 function pendingIncomingInvitations(feed, identity) {
@@ -31,8 +23,6 @@ function installGameFrameAlerts(identity) {
   if (!identity || document.querySelector("#gameframe-alerts")) return;
   const sessionBadge = document.querySelector("#gameframe-session-badge");
   if (!sessionBadge) return;
-
-  ensureStylesheet();
 
   const root = document.createElement("div");
   root.id = "gameframe-alerts";
@@ -58,7 +48,7 @@ function installGameFrameAlerts(identity) {
       <p class="gameframe-alerts-error" data-alert-error hidden></p>
     </section>
   `;
-  sessionBadge.append(root);
+  sessionBadge.prepend(root);
 
   const trigger = root.querySelector("#gameframe-alerts-trigger");
   const panel = root.querySelector("#gameframe-alerts-panel");
@@ -88,6 +78,7 @@ function installGameFrameAlerts(identity) {
     count.textContent = String(pendingCount);
     count.hidden = pendingCount === 0;
     trigger.classList.toggle("has-alerts", pendingCount > 0);
+    trigger.classList.toggle("has-unread", pendingCount > 0);
     trigger.setAttribute(
       "aria-label",
       pendingCount === 0
@@ -210,6 +201,7 @@ function installGameFrameAlerts(identity) {
   }
 
   trigger.addEventListener("click", (event) => {
+    event.preventDefault();
     event.stopPropagation();
     setOpen(panel.hidden);
   });
@@ -222,6 +214,7 @@ function installGameFrameAlerts(identity) {
     }
   });
   window.addEventListener("focus", () => void refresh());
+  window.addEventListener("pageshow", () => void refresh());
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") void refresh();
   });
