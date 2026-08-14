@@ -1,4 +1,4 @@
-const CACHE_VERSION = "gameframe-static-v2";
+const CACHE_VERSION = "gameframe-static-v3";
 const CORE_ASSETS = [
   "/",
   "/cascade.html",
@@ -8,6 +8,7 @@ const CORE_ASSETS = [
   "/gameframe-nav.js",
   "/gameframe-pwa.js",
   "/family-sign-in.js",
+  "/family-admin-link.js",
   "/gameframe-nav.css",
   "/gameframe-nav-integrations.css",
   "/gameframe-final-polish.css",
@@ -59,18 +60,6 @@ function cacheable(requestUrl) {
   return true;
 }
 
-async function sessionWithTrustedRefresh(request) {
-  let response = await fetch(request);
-  if (response.status !== 401) return response;
-  const refreshed = await fetch(new URL("/auth/trusted-device/refresh", self.location.origin), {
-    method: "POST",
-    credentials: "include",
-    cache: "no-store",
-  });
-  if (!refreshed.ok) return response;
-  return fetch(request);
-}
-
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_VERSION);
@@ -94,12 +83,6 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
   const url = new URL(request.url);
-
-  if (url.origin === self.location.origin && url.pathname === "/api/session") {
-    event.respondWith(sessionWithTrustedRefresh(request));
-    return;
-  }
-
   if (!cacheable(url)) return;
 
   if (request.mode === "navigate") {
