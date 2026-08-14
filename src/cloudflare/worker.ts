@@ -3,7 +3,7 @@ import { json } from "./http-utils.ts";
 import { InvitationObjectRuntime } from "./invitation-object-runtime.ts";
 import { GameFrameMatchObjectRuntime } from "./match-object-runtime.ts";
 import { MatchSocketHub } from "./match-socket-hub.ts";
-import { PlayerPlatformObjectRuntime } from "./player-platform-object-runtime.ts";
+import { PlayerPlatformThemeRuntime } from "./player-platform-theme-runtime.ts";
 import { CascadeTelemetryObjectRuntime } from "./cascade-telemetry-object-runtime.ts";
 import { createRpgEdgeGameFrameWorker } from "./rpg-edge-worker.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
@@ -14,7 +14,7 @@ import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEnv> {
   readonly #runtime: GameFrameMatchObjectRuntime;
   readonly #invitations: InvitationObjectRuntime;
-  readonly #players: PlayerPlatformObjectRuntime;
+  readonly #players: PlayerPlatformThemeRuntime;
   readonly #telemetry: CascadeTelemetryObjectRuntime;
   readonly #sockets: MatchSocketHub;
 
@@ -24,7 +24,7 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
       onMatchUpdated: async (matchId) => this.#sockets.broadcast(matchId),
     });
     this.#invitations = new InvitationObjectRuntime(ctx.storage);
-    this.#players = new PlayerPlatformObjectRuntime(ctx.storage);
+    this.#players = new PlayerPlatformThemeRuntime(ctx.storage);
     this.#telemetry = new CascadeTelemetryObjectRuntime(ctx.storage);
     this.#sockets = new MatchSocketHub(ctx, (matchId, playerId) => (
       this.#runtime.view(matchId, playerId)
