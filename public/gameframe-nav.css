@@ -68,31 +68,87 @@
   text-decoration: none;
 }
 .gameframe-destination-mark {
+  position: relative;
   display: grid;
+  grid-template-columns: 1fr 1fr;
   place-items: center;
+  flex: 0 0 auto;
   width: 44px;
   height: 44px;
+  overflow: hidden;
   transform: skew(-7deg) rotate(-3deg);
   border: 1px solid color-mix(in srgb, var(--destination-accent) 56%, transparent);
   border-radius: 13px 5px 13px 5px;
-  background: linear-gradient(135deg, var(--destination-accent-soft), rgba(5, 9, 12, .9));
+  background:
+    linear-gradient(135deg, var(--destination-accent-soft), transparent 60%),
+    rgba(5, 9, 12, .92);
   color: var(--destination-accent);
-  font-size: 1.35rem;
-  font-weight: 950;
   text-shadow: 0 0 16px color-mix(in srgb, var(--destination-accent) 66%, transparent);
-  box-shadow: inset 0 0 16px var(--destination-accent-soft);
+  box-shadow:
+    inset 0 0 16px var(--destination-accent-soft),
+    0 0 0 1px rgba(255,255,255,.018);
 }
-.gameframe-destination-brand > span:last-child { display: grid; gap: 1px; }
-.gameframe-destination-brand small {
+.gameframe-destination-mark::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 50%;
+  width: 1px;
+  transform: rotate(24deg);
+  background: color-mix(in srgb, var(--destination-accent) 52%, transparent);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--destination-accent) 42%, transparent);
+}
+.gameframe-destination-mark::after {
+  content: "";
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 9px;
+  height: 2px;
+  background: var(--destination-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--destination-accent) 70%, transparent);
+}
+.gameframe-destination-mark span {
+  position: relative;
+  z-index: 1;
+  font-size: .9rem;
+  font-weight: 1000;
+  line-height: 1;
+}
+.gameframe-destination-mark span:first-child { transform: translate(1px, -3px); }
+.gameframe-destination-mark span:last-child {
+  transform: translate(-1px, 3px);
+  color: #f4f7f6;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--destination-accent) 58%, transparent);
+}
+.gameframe-destination-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.gameframe-platform-name {
   color: #9ca7ab;
   font-size: .58rem;
-  font-weight: 850;
-  letter-spacing: .18em;
+  font-weight: 900;
+  letter-spacing: .2em;
+  line-height: 1;
 }
-.gameframe-destination-brand strong {
+.gameframe-destination-brand [data-gameframe-destination-title] {
+  overflow: hidden;
   color: #f4f7f6;
   font-size: 1rem;
-  letter-spacing: .1em;
+  font-weight: 900;
+  letter-spacing: .08em;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gameframe-destination-bar:not(.has-destination-title) .gameframe-platform-name {
+  color: #f4f7f6;
+  font-size: .88rem;
+  letter-spacing: .13em;
+  text-shadow: 0 0 14px color-mix(in srgb, var(--destination-accent) 28%, transparent);
 }
 
 .gameframe-destination-links {
@@ -173,9 +229,13 @@ body.tic-tac-toe-noir-running .shell { padding-top: 8px; }
     min-width: 0;
     padding-inline: 12px;
   }
-  .gameframe-destination-brand strong {
-    font-size: .86rem;
-    letter-spacing: .07em;
+  .gameframe-destination-brand [data-gameframe-destination-title] {
+    font-size: .8rem;
+    letter-spacing: .055em;
+  }
+  .gameframe-platform-name { letter-spacing: .15em; }
+  .gameframe-destination-bar:not(.has-destination-title) .gameframe-platform-name {
+    font-size: .8rem;
   }
   .gameframe-destination-links a,
   .gameframe-destination-links button {
@@ -207,10 +267,12 @@ body.tic-tac-toe-noir-running .shell { padding-top: 8px; }
     grid-template-columns: auto minmax(0, 1fr) 112px;
     min-height: var(--gameframe-destination-height);
   }
-  .gameframe-destination-brand { min-width: 0; padding: 8px 10px; }
-  .gameframe-destination-mark { width: 38px; height: 38px; font-size: 1.1rem; }
-  .gameframe-destination-brand small { display: none; }
-  .gameframe-destination-brand strong { font-size: .72rem; letter-spacing: .07em; }
+  .gameframe-destination-brand { min-width: 0; gap: 7px; padding: 8px 9px; }
+  .gameframe-destination-mark { width: 38px; height: 38px; }
+  .gameframe-destination-mark span { font-size: .78rem; }
+  .gameframe-platform-name { font-size: .48rem; letter-spacing: .13em; }
+  .gameframe-destination-brand [data-gameframe-destination-title] { font-size: .64rem; letter-spacing: .035em; }
+  .gameframe-destination-bar:not(.has-destination-title) .gameframe-platform-name { font-size: .7rem; letter-spacing: .08em; }
   .gameframe-destination-links a,
   .gameframe-destination-links button { min-width: 0; flex: 1; padding: 0 5px; font-size: .55rem; letter-spacing: .045em; }
   .gameframe-destination-links button small { font-size: .4rem; }
@@ -239,7 +301,7 @@ body.tic-tac-toe-noir-running .shell { padding-top: 8px; }
 @media (max-width: 480px) {
   .gameframe-destination-bar { grid-template-columns: 54px minmax(0, 1fr) 108px; }
   .gameframe-destination-brand { justify-content: center; padding: 7px; }
-  .gameframe-destination-brand > span:last-child { display: none; }
+  .gameframe-destination-copy { display: none; }
   .gameframe-destination-links a,
   .gameframe-destination-links button {
     min-width: 0;

@@ -41,6 +41,9 @@ function gameLabel() {
   if (menuTheme === "tic") return "TIC-TAC-TOE";
   if (menuTheme === "checkers") return "CLOCKWORK CHECKERS";
   const pathname = window.location.pathname;
+  if (pathname === "/") {
+    return new URLSearchParams(window.location.search).get("catalog") === "1" ? "GAMES" : "";
+  }
   if (pathname === "/matches.html") return "MATCHES";
   if (pathname === "/leaderboard.html") return "LEADERBOARD";
   if (pathname === "/profile.html") return "PROFILE";
@@ -50,7 +53,13 @@ function gameLabel() {
   if (pathname.includes("othello")) return "OTHELLO";
   if (document.body.classList.contains("tic-tac-toe-noir-running")) return "TIC-TAC-TOE";
   if (document.querySelector("#board.board-checkers") && !document.querySelector("#match-panel")?.hidden) return "CLOCKWORK CHECKERS";
-  return "GAMEFRAME";
+  return "";
+}
+
+function removeLegacyProductLabel() {
+  for (const eyebrow of document.querySelectorAll(".eyebrow")) {
+    if (eyebrow.textContent?.trim().toUpperCase() === "SCRIBBLES GAMEFRAME") eyebrow.remove();
+  }
 }
 
 function sharedMatchRunning() {
@@ -65,11 +74,11 @@ function installDestinationBar() {
     bar.id = "gameframe-destination-bar";
     bar.className = "gameframe-destination-bar";
     bar.innerHTML = `
-      <a class="gameframe-destination-brand" href="/" aria-label="Scribbles GameFrame home">
-        <span class="gameframe-destination-mark" aria-hidden="true">S</span>
-        <span>
-          <small>SCRIBBLES</small>
-          <strong data-gameframe-destination-title>GAMEFRAME</strong>
+      <a class="gameframe-destination-brand" href="/" aria-label="GameFrame home">
+        <span class="gameframe-destination-mark" aria-hidden="true"><span>G</span><span>F</span></span>
+        <span class="gameframe-destination-copy">
+          <small class="gameframe-platform-name">GAMEFRAME</small>
+          <strong data-gameframe-destination-title hidden></strong>
         </span>
       </a>
       <nav class="gameframe-destination-links" aria-label="GameFrame destinations">
@@ -116,6 +125,7 @@ function installDestinationBar() {
 }
 
 const bar = installDestinationBar();
+removeLegacyProductLabel();
 window.dispatchEvent(new CustomEvent("gameframe:destination-bar-ready", { detail: { bar } }));
 let updatePending = false;
 function syncDestinationBar() {
@@ -134,7 +144,11 @@ function syncDestinationBar() {
   if (bar.dataset.theme !== theme) bar.dataset.theme = theme;
   const title = bar.querySelector("[data-gameframe-destination-title]");
   const nextTitle = gameLabel();
-  if (title && title.textContent !== nextTitle) title.textContent = nextTitle;
+  if (title) {
+    if (title.textContent !== nextTitle) title.textContent = nextTitle;
+    title.hidden = !nextTitle;
+  }
+  bar.classList.toggle("has-destination-title", Boolean(nextTitle));
 
   const rootLobbyVisible = pathname === "/"
     && !document.body.classList.contains("tic-tac-toe-noir-running")
