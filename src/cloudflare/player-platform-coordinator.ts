@@ -113,7 +113,7 @@ export async function listKnownPlayers(env: GameFrameWorkerEnv, viewerPlayerId: 
 }
 
 export async function readPlayerFeed(env: GameFrameWorkerEnv, playerId: string) {
-  return internalJson<{ matches: unknown[]; invitations: unknown[]; favoriteGameIds: string[] }>(
+  return internalJson<{ matches: unknown[]; invitations: unknown[]; favoriteGameIds: string[]; themeId: string }>(
     await playerStub(env, playerId).fetch(new Request("https://player.internal/player/feed")),
   );
 }
@@ -121,13 +121,13 @@ export async function readPlayerFeed(env: GameFrameWorkerEnv, playerId: string) 
 export async function updatePlayerPreferences(
   env: GameFrameWorkerEnv,
   playerId: string,
-  favoriteGameIds: unknown,
+  preferences: Record<string, unknown>,
 ) {
-  return internalJson<{ favoriteGameIds: string[] }>(
+  return internalJson<{ favoriteGameIds: string[]; themeId: string }>(
     await playerStub(env, playerId).fetch(new Request("https://player.internal/player/preferences", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ favoriteGameIds }),
+      body: JSON.stringify(preferences),
     })),
   );
 }
