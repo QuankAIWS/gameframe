@@ -21,6 +21,27 @@ async function prepare(page) {
   }, { stateKey, soundKey, effectsKey });
 }
 
+async function cabinetSurfaceStats(page) {
+  return page.evaluate(() => {
+    const shell = getComputedStyle(document.querySelector(".cascade-shell"));
+    const card = getComputedStyle(document.querySelector(".cascade-side .cascade-card"));
+    const ordinaryStatus = getComputedStyle(document.querySelector(".cascade-status > div:first-child"));
+    const movesStatus = getComputedStyle(document.querySelector(".cascade-status > div:nth-child(4)"));
+    const side = getComputedStyle(document.querySelector(".cascade-side"));
+    return {
+      shellRadius: Number.parseFloat(shell.borderTopLeftRadius),
+      shellBorder: Number.parseFloat(shell.borderTopWidth),
+      cardRadius: Number.parseFloat(card.borderTopLeftRadius),
+      cardBorder: Number.parseFloat(card.borderTopWidth),
+      cardShadow: card.boxShadow,
+      ordinaryStatusRadius: Number.parseFloat(ordinaryStatus.borderTopLeftRadius),
+      ordinaryStatusBorder: Number.parseFloat(ordinaryStatus.borderTopWidth),
+      movesStatusRadius: Number.parseFloat(movesStatus.borderTopLeftRadius),
+      sideGap: side.rowGap,
+    };
+  });
+}
+
 test("Cascade pastel cabinet uses television width while keeping the board height-first", async ({ page }) => {
   await prepare(page);
   await page.setViewportSize({ width: 960, height: 540 });
@@ -36,6 +57,17 @@ test("Cascade pastel cabinet uses television width while keeping the board heigh
   expect(board).toBeTruthy();
   expect(board.y + board.height).toBeLessThanOrEqual(540);
   expect(board.width).toBeGreaterThan(350);
+
+  const surfaces = await cabinetSurfaceStats(page);
+  expect(surfaces.shellRadius).toBeGreaterThanOrEqual(24);
+  expect(surfaces.shellBorder).toBeGreaterThanOrEqual(2);
+  expect(surfaces.cardRadius).toBe(0);
+  expect(surfaces.cardBorder).toBe(0);
+  expect(surfaces.cardShadow).toBe("none");
+  expect(surfaces.ordinaryStatusRadius).toBe(0);
+  expect(surfaces.ordinaryStatusBorder).toBe(0);
+  expect(surfaces.movesStatusRadius).toBeGreaterThanOrEqual(14);
+  expect(surfaces.sideGap).toBe("0px");
 
   await page.screenshot({ path: `${output}/cascade-tv-cabinet-zoom.png`, fullPage: true });
 });
@@ -54,6 +86,12 @@ test("Cascade pastel cabinet remains composed on a wide desktop television viewp
   expect(status).toBeTruthy();
   expect(map.x + map.width).toBeLessThan(board.x);
   expect(board.x + board.width).toBeLessThan(status.x);
+
+  const surfaces = await cabinetSurfaceStats(page);
+  expect(surfaces.shellRadius).toBeGreaterThanOrEqual(24);
+  expect(surfaces.cardRadius).toBe(0);
+  expect(surfaces.ordinaryStatusRadius).toBe(0);
+  expect(surfaces.movesStatusRadius).toBeGreaterThanOrEqual(14);
 
   await page.screenshot({ path: `${output}/cascade-tv-cabinet-wide.png`, fullPage: true });
 });
