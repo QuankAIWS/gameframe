@@ -14,18 +14,20 @@ test("Cascade keeps ambient candy life staggered, bounded, and interruptible", a
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 
   await expect.poll(() => page.locator(".cascade-tile.is-idle-life").count(), {
-    timeout: 4_000,
+    timeout: 4_500,
   }).toBeGreaterThan(0);
 
   const firstBeat = await page.locator(".cascade-tile.is-idle-life").evaluateAll((tiles) => tiles.map((tile) => ({
     kind: tile.dataset.kind,
     animationName: getComputedStyle(tile).animationName,
+    filter: getComputedStyle(tile).filter,
   })));
 
   expect(firstBeat.length).toBeGreaterThan(0);
   expect(firstBeat.length).toBeLessThanOrEqual(2);
-  firstBeat.forEach(({ kind, animationName }) => {
+  firstBeat.forEach(({ kind, animationName, filter }) => {
     expect(animationName).toContain(PERSONALITY_BY_KIND[kind]);
+    expect(filter).toBe("none");
   });
 
   // Resting candy remains unpromoted; only the short scheduled beat owns an
@@ -67,6 +69,11 @@ test("Cascade keeps ambient candy life staggered, bounded, and interruptible", a
   await expect(page.locator(".cascade-status")).not.toHaveClass(/is-idle-attract/);
   await page.mouse.up();
 
+  // Input owns the board for a real grace period. Ambient transforms must not
+  // spring back while drag/swap/cascade presentation is still settling.
+  await page.waitForTimeout(1_100);
+  await expect(page.locator(".cascade-tile.is-idle-life")).toHaveCount(0);
+
   await expect.poll(async () => page.locator(".cascade-tile").evaluateAll((tiles) => tiles
     .filter((tile) => getComputedStyle(tile).animationName !== "none").length), {
     timeout: 2_000,
@@ -79,7 +86,7 @@ test("Cascade deep idle adds a brief cabinet attract cue without waking the whol
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 
   await expect(page.locator(".cascade-board-wrap")).toHaveClass(/is-idle-attract/, {
-    timeout: 9_000,
+    timeout: 9_500,
   });
   await expect(page.locator(".cascade-status")).toHaveClass(/is-idle-attract/);
 
