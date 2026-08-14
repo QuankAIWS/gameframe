@@ -155,37 +155,112 @@
   --tile-glow-soft: rgba(255,125,59,.10);
 }
 
-/* Idle attract is intentionally sparse: one calm tile briefly catches light.
-   The board never animates an entire color family at rest. */
-.cascade-tile.is-idle-twinkle:not(:hover):not(:active):not(.is-selected):not(.is-drag-origin):not(.is-drag-target):not(.is-hammer-target):not(.is-hammer-hit):not(.is-matched):not(.is-clearing):not(.is-falling):not(.is-landing):not(.is-special-born):not(.is-special-triggered) {
-  animation: cascade-idle-twinkle 720ms cubic-bezier(.2,.72,.24,1) both;
+/* Ambient life is event-style rather than perpetual. The scheduler gives at
+   most one or two calm candies a short beat, then they return to zero active
+   animation timelines. Each color has a slightly different physical accent so
+   the board feels inhabited instead of synchronized. */
+.cascade-tile.is-idle-life:not(:hover):not(:active):not(.is-selected):not(.is-drag-origin):not(.is-drag-target):not(.is-hammer-target):not(.is-hammer-hit):not(.is-matched):not(.is-clearing):not(.is-falling):not(.is-landing):not(.is-special-born):not(.is-special-triggered) {
+  animation-duration: 640ms;
+  animation-delay: var(--cascade-idle-delay, 0ms);
+  animation-timing-function: cubic-bezier(.2,.72,.24,1);
+  animation-fill-mode: both;
 }
 
-@keyframes cascade-idle-twinkle {
-  0%, 100% {
-    transform: translateY(0) scale(1);
-    filter: none;
-  }
-  38% {
-    transform: translateY(-1px) scale(1.035);
-    filter: saturate(1.07) brightness(1.08) drop-shadow(0 0 7px var(--tile-glow));
-  }
-  68% {
-    transform: translateY(0) scale(.995);
-    filter: saturate(1.03) brightness(1.035) drop-shadow(0 0 3px var(--tile-glow-mid));
-  }
+.cascade-tile.is-idle-life[data-kind="0"] { animation-name: cascade-idle-pink-squish; }
+.cascade-tile.is-idle-life[data-kind="1"] { animation-name: cascade-idle-cyan-tilt; }
+.cascade-tile.is-idle-life[data-kind="2"] { animation-name: cascade-idle-yellow-pop; }
+.cascade-tile.is-idle-life[data-kind="3"] { animation-name: cascade-idle-green-jelly; }
+.cascade-tile.is-idle-life[data-kind="4"] { animation-name: cascade-idle-purple-twinkle; }
+.cascade-tile.is-idle-life[data-kind="5"] { animation-name: cascade-idle-orange-pulse; }
+
+.cascade-tile.is-idle-life[data-special] .cascade-special-mark {
+  animation: cascade-special-idle-charge 620ms var(--cascade-idle-delay, 0ms) cubic-bezier(.18,.76,.22,1) both;
+}
+
+.cascade-tile.is-idle-life[data-special="stripe-h"] .cascade-special-mark,
+.cascade-tile.is-idle-life[data-special="stripe-v"] .cascade-special-mark {
+  animation-name: cascade-special-idle-stripe;
+}
+
+.cascade-tile.is-idle-life[data-special="bomb"] .cascade-special-mark {
+  animation-name: cascade-special-idle-bomb;
+}
+
+.cascade-tile.is-idle-life[data-special="color"] .cascade-special-mark {
+  animation-name: cascade-special-idle-color;
+}
+
+@keyframes cascade-idle-pink-squish {
+  0%, 100% { transform: translateY(0) scale(1); filter: none; }
+  34% { transform: translateY(1px) scaleX(1.045) scaleY(.96); filter: brightness(1.035) saturate(1.035); }
+  62% { transform: translateY(-1px) scaleX(.985) scaleY(1.04); filter: brightness(1.055) saturate(1.05); }
+}
+
+@keyframes cascade-idle-cyan-tilt {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); filter: none; }
+  38% { transform: translateY(-1px) rotate(-1deg) scale(1.025); filter: brightness(1.08) saturate(1.05); }
+  70% { transform: rotate(.45deg) scale(1.008); filter: brightness(1.03); }
+}
+
+@keyframes cascade-idle-yellow-pop {
+  0%, 100% { transform: scale(1); filter: none; }
+  42% { transform: translateY(-1px) scale(1.052); filter: brightness(1.1) saturate(1.06) drop-shadow(0 0 5px var(--tile-glow)); }
+  72% { transform: scale(.995); filter: brightness(1.025); }
+}
+
+@keyframes cascade-idle-green-jelly {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); filter: none; }
+  28% { transform: rotate(-.75deg) scaleX(1.025) scaleY(.985); }
+  52% { transform: translateY(-1px) rotate(.75deg) scaleX(.99) scaleY(1.035); filter: brightness(1.055) saturate(1.045); }
+  76% { transform: rotate(-.25deg) scale(1.008); }
+}
+
+@keyframes cascade-idle-purple-twinkle {
+  0%, 100% { transform: rotate(0deg) scale(1); filter: none; }
+  38% { transform: translateY(-1px) rotate(1.25deg) scale(1.035); filter: brightness(1.09) saturate(1.08) drop-shadow(0 0 6px var(--tile-glow)); }
+  68% { transform: rotate(-.35deg) scale(1.006); filter: brightness(1.025); }
+}
+
+@keyframes cascade-idle-orange-pulse {
+  0%, 100% { transform: scale(1); filter: none; }
+  36% { transform: translateY(-1px) scale(1.04); filter: brightness(1.075) saturate(1.06); }
+  58% { transform: scaleX(1.018) scaleY(.99); filter: brightness(1.04); }
+  78% { transform: scale(.998); }
+}
+
+@keyframes cascade-special-idle-charge {
+  0%, 100% { opacity: 1; filter: none; }
+  45% { opacity: .92; filter: brightness(1.18); }
+}
+
+@keyframes cascade-special-idle-stripe {
+  0%, 100% { transform: scale(1); filter: none; background-position: 0 0; }
+  48% { transform: scale(1.035); filter: brightness(1.22); background-position: 0 8px; }
+}
+
+@keyframes cascade-special-idle-bomb {
+  0%, 100% { transform: scale(1); filter: none; }
+  44% { transform: scale(1.08); filter: brightness(1.22) drop-shadow(0 0 5px rgba(255,255,255,.58)); }
+  72% { transform: scale(.99); }
+}
+
+@keyframes cascade-special-idle-color {
+  0%, 100% { transform: rotate(0deg) scale(1); opacity: .44; filter: none; }
+  48% { transform: rotate(8deg) scale(1.055); opacity: .62; filter: brightness(1.2) saturate(1.15); }
 }
 
 body[data-cascade-effects="reduced"] .cascade-cell-coating {
   filter: none;
 }
 
-body[data-cascade-effects="reduced"] .cascade-tile.is-idle-twinkle {
+body[data-cascade-effects="reduced"] .cascade-tile.is-idle-life,
+body[data-cascade-effects="reduced"] .cascade-tile.is-idle-life .cascade-special-mark {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cascade-tile.is-idle-twinkle {
+  .cascade-tile.is-idle-life,
+  .cascade-tile.is-idle-life .cascade-special-mark {
     animation: none;
   }
 }
