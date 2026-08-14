@@ -1,0 +1,346 @@
+:root {
+  --gf-account-bg: rgba(10, 16, 20, .9);
+  --gf-account-bg-hover: rgba(18, 28, 32, .96);
+  --gf-account-panel: rgba(10, 16, 20, .96);
+  --gf-account-line: color-mix(in srgb, var(--gf-shell-accent-2, #6ce7f1) 24%, transparent);
+  --gf-account-text: #f1f6f4;
+  --gf-account-muted: #8d9ba0;
+  --gf-account-action: rgba(255, 255, 255, .035);
+  --gf-account-action-hover: color-mix(in srgb, var(--gf-shell-accent, #b6ef69) 10%, transparent);
+}
+
+html[data-gameframe-shell-theme="cascade-pop"] {
+  --gf-account-bg: rgba(255, 247, 252, .9);
+  --gf-account-bg-hover: rgba(255, 253, 255, .98);
+  --gf-account-panel: rgba(255, 247, 252, .97);
+  --gf-account-line: rgba(174, 65, 130, .2);
+  --gf-account-text: #3f2744;
+  --gf-account-muted: #80667d;
+  --gf-account-action: rgba(255, 112, 174, .055);
+  --gf-account-action-hover: rgba(255, 112, 174, .12);
+}
+
+html[data-gameframe-shell-theme="cyberpunk"] {
+  --gf-account-bg: rgba(8, 13, 34, .92);
+  --gf-account-bg-hover: rgba(13, 21, 48, .98);
+  --gf-account-panel: rgba(8, 12, 31, .97);
+  --gf-account-line: rgba(55, 232, 255, .24);
+  --gf-account-text: #eefcff;
+  --gf-account-muted: #92a4bd;
+  --gf-account-action: rgba(55, 232, 255, .035);
+  --gf-account-action-hover: rgba(141, 92, 255, .13);
+}
+
+html[data-gameframe-shell-theme="clockwork"] {
+  --gf-account-bg: rgba(34, 23, 15, .92);
+  --gf-account-bg-hover: rgba(47, 31, 18, .97);
+  --gf-account-panel: rgba(31, 21, 14, .97);
+  --gf-account-line: rgba(230, 184, 95, .25);
+  --gf-account-text: #f6e8c8;
+  --gf-account-muted: #ad9980;
+  --gf-account-action: rgba(230, 184, 95, .04);
+  --gf-account-action-hover: rgba(215, 120, 56, .13);
+}
+
+html[data-gameframe-shell-theme="deep-space"] {
+  --gf-account-bg: rgba(12, 18, 43, .92);
+  --gf-account-bg-hover: rgba(18, 27, 59, .98);
+  --gf-account-panel: rgba(10, 15, 38, .97);
+  --gf-account-line: rgba(121, 183, 255, .24);
+  --gf-account-text: #eef4ff;
+  --gf-account-muted: #929db9;
+  --gf-account-action: rgba(121, 183, 255, .04);
+  --gf-account-action-hover: rgba(113, 112, 255, .13);
+}
+
+.gameframe-session-badge.gameframe-account-control,
+.gameframe-shell-actions > .gameframe-session-badge.gameframe-account-control {
+  width: auto;
+  min-width: 0;
+  max-width: min(188px, 18vw);
+  height: auto;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.gameframe-account-trigger {
+  display: grid;
+  grid-template-columns: 30px minmax(0, auto) 13px;
+  align-items: center;
+  gap: 7px;
+  width: auto;
+  max-width: 188px;
+  height: 40px;
+  min-height: 40px;
+  margin: 0;
+  padding: 4px 8px 4px 4px;
+  border: 1px solid var(--gf-account-line);
+  border-radius: 13px;
+  background:
+    radial-gradient(circle at 12% 20%, color-mix(in srgb, var(--gf-shell-accent, #b6ef69) 8%, transparent), transparent 42%),
+    var(--gf-account-bg);
+  color: var(--gf-account-text);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .22), inset 0 0 0 1px rgba(255, 255, 255, .018);
+  font: inherit;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.gameframe-account-trigger:hover,
+.gameframe-account-trigger:focus-visible,
+.gameframe-account-control.is-open .gameframe-account-trigger {
+  border-color: var(--gf-shell-accent-2, #6ce7f1);
+  background:
+    radial-gradient(circle at 12% 20%, color-mix(in srgb, var(--gf-shell-accent, #b6ef69) 12%, transparent), transparent 46%),
+    var(--gf-account-bg-hover);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gf-shell-accent-2, #6ce7f1) 10%, transparent), 0 12px 32px rgba(0, 0, 0, .27);
+  outline: none;
+}
+
+.gameframe-account-trigger:focus-visible {
+  outline: 2px solid var(--gf-shell-accent, #b6ef69);
+  outline-offset: 3px;
+}
+
+.gameframe-account-trigger:active { transform: translateY(1px); }
+
+.gameframe-account-trigger img,
+.gameframe-account-trigger .gameframe-session-avatar {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 9px;
+}
+
+.gameframe-account-trigger img { object-fit: cover; }
+
+.gameframe-account-trigger .gameframe-session-avatar {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, var(--gf-shell-accent-2, #6ce7f1), var(--gf-shell-accent, #b6ef69));
+  color: #101418;
+  font-size: .52rem;
+  font-weight: 950;
+}
+
+.gameframe-account-trigger strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--gf-account-text);
+  font-size: .7rem;
+  font-weight: 850;
+  letter-spacing: -.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gameframe-account-trigger svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: var(--gf-account-muted);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .16s ease, stroke .16s ease;
+}
+
+.gameframe-account-control.is-open .gameframe-account-trigger svg {
+  transform: rotate(180deg);
+  stroke: var(--gf-shell-accent-2, #6ce7f1);
+}
+
+.gameframe-account-panel {
+  position: fixed;
+  top: calc(var(--gameframe-destination-height, 68px) + 9px);
+  right: 12px;
+  z-index: 9530;
+  width: min(310px, calc(100vw - 24px));
+  overflow: hidden;
+  border: 1px solid var(--gf-account-line);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 92% 5%, color-mix(in srgb, var(--gf-shell-accent-2, #6ce7f1) 11%, transparent), transparent 34%),
+    radial-gradient(circle at 2% 100%, color-mix(in srgb, var(--gf-shell-accent, #b6ef69) 8%, transparent), transparent 38%),
+    var(--gf-account-panel);
+  box-shadow: 0 26px 72px rgba(0, 0, 0, .42), inset 0 0 0 1px rgba(255, 255, 255, .025);
+  color: var(--gf-account-text);
+  backdrop-filter: blur(18px);
+}
+
+.gameframe-account-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gf-shell-accent-2, #6ce7f1), var(--gf-shell-accent, #b6ef69), var(--gf-shell-accent-3, #ee6bc4));
+  opacity: .9;
+  pointer-events: none;
+}
+
+.gameframe-account-panel[hidden] { display: none; }
+
+.gameframe-account-summary {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  padding: 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--gf-account-line) 70%, transparent);
+}
+
+.gameframe-account-summary-avatar,
+.gameframe-account-summary-avatar img,
+.gameframe-account-summary-avatar .gameframe-session-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+}
+
+.gameframe-account-summary-avatar {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.gameframe-account-summary-avatar img { object-fit: cover; }
+
+.gameframe-account-summary-avatar .gameframe-session-avatar {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, var(--gf-shell-accent-2, #6ce7f1), var(--gf-shell-accent, #b6ef69));
+  color: #101418;
+  font-size: .62rem;
+  font-weight: 950;
+}
+
+.gameframe-account-summary-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.gameframe-account-summary-copy strong {
+  overflow: hidden;
+  color: var(--gf-account-text);
+  font-size: .9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gameframe-account-summary-copy small {
+  color: var(--gf-account-muted);
+  font-size: .62rem;
+  font-weight: 750;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.gameframe-account-menu-actions { padding: 8px; }
+
+.gameframe-account-logout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--gf-account-action);
+  color: var(--gf-account-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gameframe-account-logout > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.gameframe-account-logout strong { font-size: .76rem; }
+.gameframe-account-logout small { color: var(--gf-account-muted); font-size: .61rem; }
+.gameframe-account-logout > span:last-child { color: var(--gf-shell-accent-2, #6ce7f1); }
+
+.gameframe-account-logout:hover,
+.gameframe-account-logout:focus-visible {
+  border-color: var(--gf-account-line);
+  background: var(--gf-account-action-hover);
+  outline: none;
+}
+
+.gameframe-account-logout:focus-visible {
+  outline: 2px solid var(--gf-shell-accent, #b6ef69);
+  outline-offset: 1px;
+}
+
+.gameframe-account-logout:disabled { opacity: .65; cursor: wait; }
+
+.gameframe-account-local-note {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 11px;
+  background: var(--gf-account-action);
+}
+.gameframe-account-local-note small {
+  color: var(--gf-shell-accent-2, #6ce7f1);
+  font-size: .54rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+.gameframe-account-local-note strong {
+  overflow: hidden;
+  color: var(--gf-account-muted);
+  font-size: .63rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .gameframe-session-badge.gameframe-account-control,
+  .gameframe-shell-actions > .gameframe-session-badge.gameframe-account-control {
+    width: auto;
+    max-width: 112px;
+    height: auto;
+    padding: 0;
+  }
+
+  .gameframe-account-trigger {
+    grid-template-columns: 28px minmax(0, auto);
+    gap: 6px;
+    max-width: 112px;
+    height: 38px;
+    min-height: 38px;
+    padding: 4px 7px 4px 4px;
+  }
+
+  .gameframe-account-trigger img,
+  .gameframe-account-trigger .gameframe-session-avatar {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+  }
+
+  .gameframe-account-trigger strong { font-size: .61rem; }
+  .gameframe-account-trigger svg { display: none; }
+
+  .gameframe-account-panel {
+    top: calc(var(--gameframe-destination-height, 62px) + 7px);
+    right: 7px;
+    width: min(292px, calc(100vw - 14px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gameframe-account-trigger,
+  .gameframe-account-trigger svg { transition: none; }
+}
