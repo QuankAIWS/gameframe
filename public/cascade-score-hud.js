@@ -100,10 +100,13 @@ function mountLives(count) {
   if (!livesHost) return;
   const lives = Math.max(0, Math.min(LIFE_MAX, Math.floor(Number(count) || 0)));
   const fragment = document.createDocumentFragment();
+  const textContract = document.createElement("span");
+  textContract.className = "cascade-life-text";
+  textContract.textContent = lives > 0 ? "♥".repeat(lives) : "0";
+  fragment.append(textContract);
   for (let index = 0; index < LIFE_MAX; index += 1) {
     const heart = document.createElement("span");
     heart.className = `cascade-life-heart ${index < lives ? "is-full" : "is-empty"}`;
-    heart.textContent = "♥";
     heart.setAttribute("aria-hidden", "true");
     fragment.append(heart);
   }
