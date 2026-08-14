@@ -3,6 +3,7 @@ const navStylesheetUrls = [
   "/gameframe-nav-integrations.css",
   "/gameframe-final-polish.css",
   "/gameframe-session-override.css",
+  "/gameframe-themes.css",
 ];
 for (const href of navStylesheetUrls) {
   if (document.querySelector(`link[href="${href}"]`)) continue;
@@ -194,6 +195,15 @@ observer.observe(document.body, {
 syncDestinationBar();
 
 window.gameFrameDestinationBar = Object.freeze({ sync: syncDestinationBar });
+
+if (window.gameFrameIdentity) {
+  void import("./gameframe-alerts.js")
+    .then(({ installGameFrameAlerts }) => installGameFrameAlerts(window.gameFrameIdentity))
+    .catch(() => undefined);
+  void import("./gameframe-themes.js")
+    .then(({ installGameFrameThemePicker }) => installGameFrameThemePicker(window.gameFrameIdentity))
+    .catch(() => undefined);
+}
 
 if (window.location.pathname === "/profile.html") {
   document.querySelectorAll(".profile-play-together").forEach((node) => node.remove());
