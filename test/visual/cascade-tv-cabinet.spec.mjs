@@ -47,18 +47,30 @@ async function playHierarchyStats(page) {
     const board = getComputedStyle(document.querySelector("#board"));
     const tile = getComputedStyle(document.querySelector(".cascade-tile"));
     const mapRows = [...document.querySelectorAll("#level-map > li")];
+    const visibleMapRows = mapRows.filter((node) => getComputedStyle(node).display !== "none");
+    const mapRect = document.querySelector("#level-map")?.getBoundingClientRect();
+    const firstMapRect = visibleMapRows.at(0)?.getBoundingClientRect();
+    const lastMapRect = visibleMapRows.at(-1)?.getBoundingClientRect();
     const statusRows = [...document.querySelectorAll(".cascade-status > div")];
+    const statusRect = document.querySelector(".cascade-status")?.getBoundingClientRect();
+    const movesRect = document.querySelector(".cascade-status > div:nth-child(4)")?.getBoundingClientRect();
     const visibleDescriptions = [...document.querySelectorAll(".cascade-side .cascade-card > span:not(#star-progress)")]
       .filter((node) => getComputedStyle(node).display !== "none").length;
     const weeklyCopy = document.querySelector("[data-weekly-copy]");
     const weeklyStandings = document.querySelector("[data-weekly-leaderboard]");
     const starProgress = document.querySelector("#star-progress");
     const bonusStatus = document.querySelector("#bonus-status");
+    const visibleMapCoverage = mapRect && firstMapRect && lastMapRect
+      ? (lastMapRect.bottom - firstMapRect.top) / mapRect.height
+      : 0;
     return {
       boardGap: Number.parseFloat(board.columnGap),
       tileBorder: Number.parseFloat(tile.borderTopWidth),
-      visibleMapRows: mapRows.filter((node) => getComputedStyle(node).display !== "none").length,
+      visibleMapRows: visibleMapRows.length,
+      visibleMapCoverage,
       visibleStatusRows: statusRows.filter((node) => getComputedStyle(node).display !== "none").length,
+      movesHeightRatio: statusRect && movesRect ? movesRect.height / statusRect.height : 1,
+      movesAspectRatio: movesRect?.height ? movesRect.width / movesRect.height : 0,
       visibleDescriptions,
       weeklyCopyDisplay: weeklyCopy ? getComputedStyle(weeklyCopy).display : "missing",
       weeklyStandingsDisplay: weeklyStandings ? getComputedStyle(weeklyStandings).display : "missing",
@@ -86,13 +98,17 @@ async function expectMatch3PlayHierarchy(page) {
   const stats = await playHierarchyStats(page);
 
   // Mature match-3 play screens keep the board dense and put meta systems in
-  // the periphery. Guard against drifting back toward a 30-row dashboard and
-  // 64 individually outlined UI buttons.
+  // the periphery. The progression slice should feel populated, while Moves
+  // stays a compact glanceable token rather than a full-height meter.
   expect(stats.boardGap).toBeLessThanOrEqual(4);
   expect(stats.tileBorder).toBeLessThanOrEqual(1.5);
-  expect(stats.visibleMapRows).toBeGreaterThanOrEqual(4);
-  expect(stats.visibleMapRows).toBeLessThanOrEqual(6);
+  expect(stats.visibleMapRows).toBeGreaterThanOrEqual(9);
+  expect(stats.visibleMapRows).toBeLessThanOrEqual(11);
+  expect(stats.visibleMapCoverage).toBeGreaterThan(.68);
   expect(stats.visibleStatusRows).toBe(2);
+  expect(stats.movesHeightRatio).toBeLessThan(.36);
+  expect(stats.movesAspectRatio).toBeGreaterThan(.72);
+  expect(stats.movesAspectRatio).toBeLessThan(1.4);
   expect(stats.visibleDescriptions).toBe(0);
   expect(stats.weeklyCopyDisplay).toBe("none");
   expect(stats.weeklyStandingsDisplay).toBe("none");
