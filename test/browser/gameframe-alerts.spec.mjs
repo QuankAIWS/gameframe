@@ -39,6 +39,22 @@ async function installRecipientRoutes(page, state) {
   }));
 }
 
+async function expectAlertBesideSession(page, trigger) {
+  const sessionBadge = page.locator("#gameframe-session-badge");
+  const [bellBounds, sessionBounds] = await Promise.all([
+    trigger.boundingBox(),
+    sessionBadge.boundingBox(),
+  ]);
+  expect(bellBounds).not.toBeNull();
+  expect(sessionBounds).not.toBeNull();
+  const gap = sessionBounds.x - (bellBounds.x + bellBounds.width);
+  const bellCenterY = bellBounds.y + (bellBounds.height / 2);
+  const sessionCenterY = sessionBounds.y + (sessionBounds.height / 2);
+  expect(gap).toBeGreaterThanOrEqual(4);
+  expect(gap).toBeLessThanOrEqual(30);
+  expect(Math.abs(bellCenterY - sessionCenterY)).toBeLessThanOrEqual(4);
+}
+
 test("recipient sees a Checkers invite in the game-screen alerts bell and can accept it", async ({ page }) => {
   const state = { pending: true };
   let claimBody = null;
@@ -76,10 +92,12 @@ test("recipient sees a Checkers invite in the game-screen alerts bell and can ac
   const trigger = page.locator("#gameframe-alerts-trigger");
   await expect(trigger).toHaveAttribute("aria-label", "Alerts, 1 pending challenge");
   await expect(trigger.locator("[data-alert-count]")).toHaveText("1");
+  await expectAlertBesideSession(page, trigger);
   await trigger.click();
   const panel = page.locator("#gameframe-alerts-panel");
   await expect(panel).toContainText("Mom challenged you");
   await expect(panel).toContainText("Clockwork Checkers");
+  await expect(panel.getByRole("button", { name: "Accept" })).toHaveCSS("background-color", "rgb(182, 239, 105)");
   await panel.getByRole("button", { name: "Accept" }).click();
 
   expect(claimBody).toEqual({ token: "recipient-claim-token" });
@@ -99,6 +117,7 @@ test("declining from the game-screen alerts bell clears the recipient badge", as
   await page.goto("/?game=american-checkers&menu=1");
   const trigger = page.locator("#gameframe-alerts-trigger");
   await expect(trigger).toHaveAttribute("aria-label", "Alerts, 1 pending challenge");
+  await expectAlertBesideSession(page, trigger);
   await trigger.click();
   const panel = page.locator("#gameframe-alerts-panel");
   await panel.getByRole("button", { name: "Decline" }).click();
