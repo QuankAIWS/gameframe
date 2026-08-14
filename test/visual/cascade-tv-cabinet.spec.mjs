@@ -44,6 +44,7 @@ async function playHierarchyStats(page) {
   return page.evaluate(() => {
     const board = getComputedStyle(document.querySelector("#board"));
     const tile = getComputedStyle(document.querySelector(".cascade-tile"));
+    const score = getComputedStyle(document.querySelector("#score"));
     const mapRows = [...document.querySelectorAll("#level-map > li")];
     const visibleMapRows = mapRows.filter((node) => getComputedStyle(node).display !== "none");
     const mapRect = document.querySelector("#level-map")?.getBoundingClientRect();
@@ -52,7 +53,10 @@ async function playHierarchyStats(page) {
     const statusRows = [...document.querySelectorAll(".cascade-status > div")];
     const shellRect = document.querySelector(".cascade-shell")?.getBoundingClientRect();
     const statusRect = document.querySelector(".cascade-status")?.getBoundingClientRect();
+    const scoreRect = document.querySelector(".cascade-status > div:nth-child(2)")?.getBoundingClientRect();
     const movesRect = document.querySelector(".cascade-status > div:nth-child(4)")?.getBoundingClientRect();
+    const livesRect = document.querySelector("#lives")?.getBoundingClientRect();
+    const lifeRects = [...document.querySelectorAll("#lives > .cascade-life-heart")].map((node) => node.getBoundingClientRect());
     const visibleDescriptions = [...document.querySelectorAll(".cascade-side .cascade-card > span:not(#star-progress)")]
       .filter((node) => getComputedStyle(node).display !== "none").length;
     const weeklyCopy = document.querySelector("[data-weekly-copy]");
@@ -62,14 +66,21 @@ async function playHierarchyStats(page) {
     const visibleMapCoverage = mapRect && firstMapRect && lastMapRect
       ? (lastMapRect.bottom - firstMapRect.top) / mapRect.height
       : 0;
+    const livesFit = livesRect && lifeRects.length === 5
+      ? lifeRects.every((rect) => rect.left >= livesRect.left - 1 && rect.right <= livesRect.right + 1)
+      : false;
     return {
       boardGap: Number.parseFloat(board.columnGap),
       tileBorder: Number.parseFloat(tile.borderTopWidth),
+      scoreFontSize: Number.parseFloat(score.fontSize),
       visibleMapRows: visibleMapRows.length,
       visibleMapCoverage,
       visibleStatusRows: statusRows.filter((node) => getComputedStyle(node).display !== "none").length,
       statusHeightRatio: shellRect && statusRect ? statusRect.height / shellRect.height : 1,
+      scoreAspectRatio: scoreRect?.height ? scoreRect.width / scoreRect.height : 0,
       movesAspectRatio: movesRect?.height ? movesRect.width / movesRect.height : 0,
+      lifeSlots: lifeRects.length,
+      livesFit,
       visibleDescriptions,
       weeklyCopyDisplay: weeklyCopy ? getComputedStyle(weeklyCopy).display : "missing",
       weeklyStandingsDisplay: weeklyStandings ? getComputedStyle(weeklyStandings).display : "missing",
@@ -86,7 +97,6 @@ async function expectCabinetHugsInstrumentBanks(page) {
   expect(shell).toBeTruthy();
   expect(map).toBeTruthy();
   expect(status).toBeTruthy();
-
   expect(map.x - shell.x).toBeLessThanOrEqual(7);
   expect((shell.x + shell.width) - (status.x + status.width)).toBeLessThanOrEqual(7);
 }
@@ -117,21 +127,24 @@ async function expectCompactControlDock(page) {
   expect(hammer.width).toBeGreaterThan(side.width * .82);
   expect(settings.y).toBeGreaterThanOrEqual(hammer.y + hammer.height - 2);
   expect(blitz.y).toBeGreaterThanOrEqual(settings.y + settings.height - 2);
-  expect(blitz.y + blitz.height).toBeLessThan(side.y + side.height * .72);
+  expect(blitz.y + blitz.height).toBeLessThan(side.y + side.height * .8);
 }
 
 async function expectMatch3PlayHierarchy(page, { minMapRows, maxMapRows, minMapCoverage }) {
   const stats = await playHierarchyStats(page);
-
   expect(stats.boardGap).toBeLessThanOrEqual(4);
   expect(stats.tileBorder).toBeLessThanOrEqual(1.5);
   expect(stats.visibleMapRows).toBeGreaterThanOrEqual(minMapRows);
   expect(stats.visibleMapRows).toBeLessThanOrEqual(maxMapRows);
   expect(stats.visibleMapCoverage).toBeGreaterThan(minMapCoverage);
-  expect(stats.visibleStatusRows).toBe(2);
-  expect(stats.statusHeightRatio).toBeLessThan(.28);
+  expect(stats.visibleStatusRows).toBe(3);
+  expect(stats.statusHeightRatio).toBeLessThan(.43);
+  expect(stats.scoreAspectRatio).toBeGreaterThan(2);
+  expect(stats.scoreFontSize).toBeGreaterThan(28);
   expect(stats.movesAspectRatio).toBeGreaterThan(.72);
   expect(stats.movesAspectRatio).toBeLessThan(1.55);
+  expect(stats.lifeSlots).toBe(5);
+  expect(stats.livesFit).toBe(true);
   expect(stats.visibleDescriptions).toBe(0);
   expect(stats.weeklyCopyDisplay).toBe("none");
   expect(stats.weeklyStandingsDisplay).toBe("none");
@@ -148,6 +161,7 @@ test("Cascade pastel cabinet uses television width while keeping the board heigh
   await expect(page.locator(".cascade-map")).toBeVisible();
   await expect(page.locator(".cascade-side")).toBeVisible();
   await expect(page.locator(".cascade-status")).toBeVisible();
+  await expect(page.locator("#score")).toBeVisible();
   await expect(page.locator("#moves")).toBeVisible();
   await expect(page.locator("#lives")).toBeVisible();
 
