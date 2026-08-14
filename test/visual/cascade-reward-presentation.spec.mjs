@@ -38,7 +38,8 @@ test("Cascade reward cash-out stays legible inside a zoomed TV board", async ({ 
   const stage = page.locator(".cascade-reward-stage");
   const panel = page.locator(".cascade-reward-panel");
   await expect(stage).toHaveClass(/is-active/);
-  await expect(stage.locator(".cascade-reward-stars i.is-earned")).toHaveCount(2, { timeout: 5_000 });
+  await expect(stage.locator(".cascade-reward-stars i.is-earned")).toHaveCount(3, { timeout: 5_000 });
+  await expect(stage.locator("[data-reward-hammer]")).toContainText("hammer earned");
   await expect(stage.locator(".cascade-reward-title")).toHaveText("Crushed it.");
   await expect(stage.locator(".cascade-reward-cashout")).toContainText("UNUSED MOVES");
 
