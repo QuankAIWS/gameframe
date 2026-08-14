@@ -75,7 +75,21 @@ function installDestinationBar() {
     bar.className = "gameframe-destination-bar";
     bar.innerHTML = `
       <a class="gameframe-destination-brand" href="/" aria-label="GameFrame home">
-        <span class="gameframe-destination-mark" aria-hidden="true"><span>G</span><span>F</span></span>
+        <span class="gameframe-destination-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="presentation" focusable="false">
+            <path class="gameframe-logo-backplate" d="M15 5H49L59 15V49L49 59H39L32 63L25 59H15L5 49V15Z"></path>
+            <path class="gameframe-logo-rail gameframe-logo-rail-left" d="M30 7H15L8 14V49L15 56H26L32 61"></path>
+            <path class="gameframe-logo-rail gameframe-logo-rail-right" d="M34 7H49L56 14V49L49 56H38L32 61"></path>
+            <path class="gameframe-logo-rail gameframe-logo-rail-inner gameframe-logo-rail-left" d="M28 11H18L12 17V46L18 52H25"></path>
+            <path class="gameframe-logo-rail gameframe-logo-rail-inner gameframe-logo-rail-right" d="M36 11H46L52 17V46L46 52H40"></path>
+            <path class="gameframe-logo-bridge" d="M27 8H37"></path>
+            <text class="gameframe-logo-letter gameframe-logo-g" x="10" y="44">G</text>
+            <text class="gameframe-logo-letter gameframe-logo-f" x="33" y="44">F</text>
+            <path class="gameframe-logo-tail gameframe-logo-tail-left" d="M27 43L32 50V61L26 52Z"></path>
+            <path class="gameframe-logo-tail gameframe-logo-tail-right" d="M37 43L32 50V61L38 52Z"></path>
+            <path class="gameframe-logo-seam" d="M32 17V59"></path>
+          </svg>
+        </span>
         <span class="gameframe-destination-copy">
           <small class="gameframe-platform-name">GAMEFRAME</small>
           <strong data-gameframe-destination-title hidden></strong>
