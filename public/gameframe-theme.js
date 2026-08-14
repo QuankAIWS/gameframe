@@ -1,6 +1,7 @@
 import { gameFrameFetch } from "./gameframe-auth.js";
 
-const themeStorageKey = "scribbles-gameframe.shell-theme:v1";
+const legacyThemeStorageKey = "scribbles-gameframe.shell-theme:v1";
+const playerIdStorageKey = "scribbles-gameframe.player-id";
 
 const themes = Object.freeze([
   {
@@ -41,25 +42,37 @@ function normalizeTheme(themeId) {
   return themeIds.has(normalized) ? normalized : "standard";
 }
 
+function currentPlayerId() {
+  if (window.gameFrameIdentity?.playerId) return String(window.gameFrameIdentity.playerId);
+  try { return window.localStorage.getItem(playerIdStorageKey) || ""; }
+  catch { return ""; }
+}
+
+function playerThemeStorageKey() {
+  const playerId = currentPlayerId();
+  return playerId ? `${legacyThemeStorageKey}:${playerId}` : legacyThemeStorageKey;
+}
+
 function storedTheme() {
   try {
-    return normalizeTheme(window.localStorage.getItem(themeStorageKey));
+    const scoped = window.localStorage.getItem(playerThemeStorageKey());
+    if (scoped !== null) return normalizeTheme(scoped);
+    return normalizeTheme(window.localStorage.getItem(legacyThemeStorageKey));
   } catch {
     return "standard";
   }
+}
+
+function cacheTheme(themeId) {
+  try { window.localStorage.setItem(playerThemeStorageKey(), normalizeTheme(themeId)); }
+  catch { /* Theme cache is cosmetic and must never block the player shell. */ }
 }
 
 function applyTheme(themeId, persist = true) {
   const nextTheme = normalizeTheme(themeId);
   document.documentElement.dataset.gameframeShellTheme = nextTheme;
   document.body.dataset.gameframeShellTheme = nextTheme;
-  if (persist) {
-    try {
-      window.localStorage.setItem(themeStorageKey, nextTheme);
-    } catch {
-      // Theme persistence is cosmetic and must never block the player shell.
-    }
-  }
+  if (persist) cacheTheme(nextTheme);
   window.dispatchEvent(new CustomEvent("gameframe:theme-change", { detail: { themeId: nextTheme } }));
   return nextTheme;
 }
