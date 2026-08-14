@@ -3,6 +3,9 @@ const manifestHref = "/manifest.webmanifest";
 void import("/family-sign-in.js").catch(() => {
   // Assisted family sign-in is optional on pages that never render an auth gate.
 });
+void import("/family-admin-link.js").catch(() => {
+  // The administrator shortcut is convenience only; API authority remains server-side.
+});
 
 if (!document.querySelector(`link[rel="manifest"]`)) {
   const manifest = document.createElement("link");
