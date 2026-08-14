@@ -48,7 +48,7 @@ function installGameFrameAlerts(identity) {
       <p class="gameframe-alerts-error" data-alert-error hidden></p>
     </section>
   `;
-  sessionBadge.prepend(root);
+  sessionBadge.insertAdjacentElement("beforebegin", root);
 
   const trigger = root.querySelector("#gameframe-alerts-trigger");
   const panel = root.querySelector("#gameframe-alerts-panel");
