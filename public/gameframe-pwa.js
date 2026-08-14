@@ -1,5 +1,9 @@
 const manifestHref = "/manifest.webmanifest";
 
+void import("/family-sign-in.js").catch(() => {
+  // Assisted family sign-in is optional on pages that never render an auth gate.
+});
+
 if (!document.querySelector(`link[rel="manifest"]`)) {
   const manifest = document.createElement("link");
   manifest.rel = "manifest";
