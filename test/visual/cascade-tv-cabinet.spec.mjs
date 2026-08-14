@@ -42,6 +42,20 @@ async function cabinetSurfaceStats(page) {
   });
 }
 
+async function expectCabinetHugsInstrumentBanks(page) {
+  const shell = await page.locator(".cascade-shell").boundingBox();
+  const map = await page.locator(".cascade-map").boundingBox();
+  const status = await page.locator(".cascade-status").boundingBox();
+  expect(shell).toBeTruthy();
+  expect(map).toBeTruthy();
+  expect(status).toBeTruthy();
+
+  // The outer chassis should wrap its left/right instrument banks instead of
+  // stretching into large decorative slabs beside the actual game controls.
+  expect(map.x - shell.x).toBeLessThanOrEqual(6);
+  expect((shell.x + shell.width) - (status.x + status.width)).toBeLessThanOrEqual(6);
+}
+
 test("Cascade pastel cabinet uses television width while keeping the board height-first", async ({ page }) => {
   await prepare(page);
   await page.setViewportSize({ width: 960, height: 540 });
@@ -57,6 +71,7 @@ test("Cascade pastel cabinet uses television width while keeping the board heigh
   expect(board).toBeTruthy();
   expect(board.y + board.height).toBeLessThanOrEqual(540);
   expect(board.width).toBeGreaterThan(350);
+  await expectCabinetHugsInstrumentBanks(page);
 
   const surfaces = await cabinetSurfaceStats(page);
   expect(surfaces.shellRadius).toBeGreaterThanOrEqual(24);
@@ -86,6 +101,7 @@ test("Cascade pastel cabinet remains composed on a wide desktop television viewp
   expect(status).toBeTruthy();
   expect(map.x + map.width).toBeLessThan(board.x);
   expect(board.x + board.width).toBeLessThan(status.x);
+  await expectCabinetHugsInstrumentBanks(page);
 
   const surfaces = await cabinetSurfaceStats(page);
   expect(surfaces.shellRadius).toBeGreaterThanOrEqual(24);
