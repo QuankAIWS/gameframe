@@ -56,6 +56,12 @@ function gameLabel() {
   return "";
 }
 
+function removeLegacyProductLabel() {
+  for (const eyebrow of document.querySelectorAll(".eyebrow")) {
+    if (eyebrow.textContent?.trim().toUpperCase() === "SCRIBBLES GAMEFRAME") eyebrow.remove();
+  }
+}
+
 function sharedMatchRunning() {
   const panel = document.querySelector("#match-panel");
   return Boolean(panel && !panel.hidden);
@@ -119,6 +125,7 @@ function installDestinationBar() {
 }
 
 const bar = installDestinationBar();
+removeLegacyProductLabel();
 window.dispatchEvent(new CustomEvent("gameframe:destination-bar-ready", { detail: { bar } }));
 let updatePending = false;
 function syncDestinationBar() {
