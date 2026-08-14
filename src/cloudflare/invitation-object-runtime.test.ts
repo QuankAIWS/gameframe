@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { MatchInvitationClaims } from "../auth/match-invitation.ts";
+import { deliverChallengeBestEffort } from "./challenge-notification-port.ts";
+import { discordChallengeMessage } from "./discord-challenge-message.ts";
 import { InvitationObjectRuntime } from "./invitation-object-runtime.ts";
-import type { DurableStorageLike } from "./runtime-contracts.ts";
+import type { DurableStorageLike, GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
 class FakeStorage implements DurableStorageLike {
   readonly values = new Map<string, unknown>();
@@ -194,4 +196,37 @@ test("target restrictions, expiry, and cancellation fail closed", async () => {
     matchId: "expired-match",
   }));
   assert.equal(expired.status, 410);
+});
+
+test("targeted challenge notification planning keeps private invitation custody out of the message", async () => {
+  const invitation = {
+    invitationId: "notice-1",
+    gameId: "american-checkers" as const,
+    status: "pending" as const,
+    inviter: { playerId: "discord:111", displayName: "Mom", avatarUrl: null },
+    claimant: null,
+    targetPlayerId: "discord:222",
+    targetRestricted: true,
+    issuedAt: 1000,
+    expiresAt: 2000,
+    matchId: null,
+  };
+  const message = discordChallengeMessage({
+    invitationId: invitation.invitationId,
+    targetPlayerId: invitation.targetPlayerId,
+    inviterDisplayName: invitation.inviter.displayName,
+    gameLabel: "Clockwork Checkers",
+    origin: "https://gameframe.cc",
+  });
+  assert.ok(message);
+  assert.equal(message.recipientId, "222");
+  assert.match(message.content, /https:\/\/gameframe\.cc\/matches\.html/);
+  assert.doesNotMatch(message.content, /token|invite\.html/i);
+  assert.deepEqual(message.allowedMentions, { parse: [] });
+
+  const env = { MATCHES: {} } as GameFrameWorkerEnv;
+  const delivered = await deliverChallengeBestEffort(async () => {
+    throw new Error("provider unavailable");
+  }, env, { origin: "https://gameframe.cc", invitation });
+  assert.equal(delivered, false);
 });

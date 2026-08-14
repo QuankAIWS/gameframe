@@ -10,11 +10,13 @@ import {
   SignedCookieSessionAuthenticator,
   SignedSessionCodec,
 } from "../auth/signed-session.ts";
+import type { ChallengeNotifier } from "./challenge-notification-port.ts";
 import { errorResponse, json, readJson } from "./http-utils.ts";
 import {
   exportCascadeTelemetry,
   recordCascadeTelemetry,
 } from "./cascade-telemetry-coordinator.ts";
+import { createNotifyingGameFrameWorker } from "./notifying-gameframe-worker.ts";
 import {
   readLeaderboard,
   readPlayerFeed,
@@ -43,11 +45,11 @@ import {
   type RpgEdgeProxyDependencies,
 } from "./rpg-edge-proxy.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
-import { createGameFrameWorker } from "./worker-router.ts";
 
 export interface RpgEdgeWorkerOptions {
   authenticator?: RequestAuthenticator;
   proxyDependencies?: RpgEdgeProxyDependencies;
+  challengeNotifier?: ChallengeNotifier;
 }
 
 function publicPlayerProfileRoute(pathname: string): string | null {
@@ -72,7 +74,7 @@ function publicPlayerProfileRoute(pathname: string): string | null {
  * HMAC edge envelope before accepting privileged RPG requests.
  */
 export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {}) {
-  const gameFrame = createGameFrameWorker();
+  const gameFrame = createNotifyingGameFrameWorker(options.challengeNotifier);
   let cachedAuthenticator: {
     secret: string;
     authenticator: RequestAuthenticator;

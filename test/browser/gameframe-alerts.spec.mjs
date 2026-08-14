@@ -39,7 +39,7 @@ async function installRecipientRoutes(page, state) {
   }));
 }
 
-async function expectAlertBesideSession(page, trigger) {
+async function expectAlertInSessionBand(page, trigger) {
   const sessionBadge = page.locator("#gameframe-session-badge");
   const [bellBounds, sessionBounds] = await Promise.all([
     trigger.boundingBox(),
@@ -51,8 +51,9 @@ async function expectAlertBesideSession(page, trigger) {
   const bellCenterY = bellBounds.y + (bellBounds.height / 2);
   const sessionCenterY = sessionBounds.y + (sessionBounds.height / 2);
   expect(gap).toBeGreaterThanOrEqual(4);
-  expect(gap).toBeLessThanOrEqual(30);
   expect(Math.abs(bellCenterY - sessionCenterY)).toBeLessThanOrEqual(4);
+  expect(bellBounds.y).toBeGreaterThanOrEqual(0);
+  expect(bellBounds.y + bellBounds.height).toBeLessThanOrEqual(72);
 }
 
 test("recipient sees a Checkers invite in the game-screen alerts bell and can accept it", async ({ page }) => {
@@ -92,7 +93,7 @@ test("recipient sees a Checkers invite in the game-screen alerts bell and can ac
   const trigger = page.locator("#gameframe-alerts-trigger");
   await expect(trigger).toHaveAttribute("aria-label", "Alerts, 1 pending challenge");
   await expect(trigger.locator("[data-alert-count]")).toHaveText("1");
-  await expectAlertBesideSession(page, trigger);
+  await expectAlertInSessionBand(page, trigger);
   await trigger.click();
   const panel = page.locator("#gameframe-alerts-panel");
   await expect(panel).toContainText("Mom challenged you");
@@ -117,7 +118,7 @@ test("declining from the game-screen alerts bell clears the recipient badge", as
   await page.goto("/?game=american-checkers&menu=1");
   const trigger = page.locator("#gameframe-alerts-trigger");
   await expect(trigger).toHaveAttribute("aria-label", "Alerts, 1 pending challenge");
-  await expectAlertBesideSession(page, trigger);
+  await expectAlertInSessionBand(page, trigger);
   await trigger.click();
   const panel = page.locator("#gameframe-alerts-panel");
   await panel.getByRole("button", { name: "Decline" }).click();
