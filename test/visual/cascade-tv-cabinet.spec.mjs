@@ -24,7 +24,7 @@ async function prepare(page) {
 async function cabinetSurfaceStats(page) {
   return page.evaluate(() => {
     const shell = getComputedStyle(document.querySelector(".cascade-shell"));
-    const card = getComputedStyle(document.querySelector(".cascade-side .cascade-card"));
+    const card = getComputedStyle(document.querySelector(".cascade-side .cascade-card:nth-child(2)"));
     const ordinaryStatus = getComputedStyle(document.querySelector(".cascade-status > div:first-child"));
     const movesStatus = getComputedStyle(document.querySelector(".cascade-status > div:nth-child(4)"));
     const side = getComputedStyle(document.querySelector(".cascade-side"));
@@ -103,12 +103,30 @@ async function expectUnifiedRightDock(page) {
   expect(Math.abs((status.y + status.height) - side.y)).toBeLessThanOrEqual(2);
 }
 
+async function expectCompactControlDock(page) {
+  const side = await page.locator(".cascade-side").boundingBox();
+  const streak = await page.locator(".cascade-side > .cascade-card:nth-child(1)").boundingBox();
+  const hammer = await page.locator(".cascade-side > .cascade-card:nth-child(2)").boundingBox();
+  const best = await page.locator(".cascade-side > .cascade-card:nth-child(3)").boundingBox();
+  const settings = await page.locator("#cascade-feedback-card").boundingBox();
+  const blitz = await page.locator("#cascade-weekly-card").boundingBox();
+  for (const box of [side, streak, hammer, best, settings, blitz]) expect(box).toBeTruthy();
+
+  // Streak and Best are paired game tokens rather than two full-width menu
+  // sections. The booster and lower controls then span the shared dock.
+  expect(Math.abs(streak.y - best.y)).toBeLessThanOrEqual(2);
+  expect(streak.width).toBeLessThan(side.width * .56);
+  expect(best.width).toBeLessThan(side.width * .56);
+  expect(hammer.y).toBeGreaterThanOrEqual(streak.y + streak.height - 2);
+  expect(hammer.width).toBeGreaterThan(side.width * .82);
+  expect(settings.y).toBeGreaterThanOrEqual(hammer.y + hammer.height - 2);
+  expect(blitz.y).toBeGreaterThanOrEqual(settings.y + settings.height - 2);
+  expect(blitz.y + blitz.height).toBeLessThan(side.y + side.height * .72);
+}
+
 async function expectMatch3PlayHierarchy(page, { minMapRows, maxMapRows, minMapCoverage }) {
   const stats = await playHierarchyStats(page);
 
-  // Mature match-3 play screens keep the board dense and put meta systems in
-  // the periphery. The run should use available height, while Moves stays a
-  // compact top-HUD counter instead of becoming a full-height side meter.
   expect(stats.boardGap).toBeLessThanOrEqual(4);
   expect(stats.tileBorder).toBeLessThanOrEqual(1.5);
   expect(stats.visibleMapRows).toBeGreaterThanOrEqual(minMapRows);
@@ -143,6 +161,7 @@ test("Cascade pastel cabinet uses television width while keeping the board heigh
   expect(board.width).toBeGreaterThan(350);
   await expectCabinetHugsInstrumentBanks(page);
   await expectUnifiedRightDock(page);
+  await expectCompactControlDock(page);
   await expectMatch3PlayHierarchy(page, { minMapRows: 9, maxMapRows: 11, minMapCoverage: .68 });
 
   const surfaces = await cabinetSurfaceStats(page);
@@ -174,6 +193,7 @@ test("Cascade pastel cabinet remains composed on a wide desktop television viewp
   expect(board.x + board.width).toBeLessThan(status.x);
   await expectCabinetHugsInstrumentBanks(page);
   await expectUnifiedRightDock(page);
+  await expectCompactControlDock(page);
   await expectMatch3PlayHierarchy(page, { minMapRows: 14, maxMapRows: 17, minMapCoverage: .68 });
 
   const surfaces = await cabinetSurfaceStats(page);
