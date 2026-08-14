@@ -47,15 +47,23 @@ async function playHierarchyStats(page) {
     const board = getComputedStyle(document.querySelector("#board"));
     const tile = getComputedStyle(document.querySelector(".cascade-tile"));
     const mapRows = [...document.querySelectorAll("#level-map > li")];
+    const statusRows = [...document.querySelectorAll(".cascade-status > div")];
     const visibleDescriptions = [...document.querySelectorAll(".cascade-side .cascade-card > span:not(#star-progress)")]
       .filter((node) => getComputedStyle(node).display !== "none").length;
     const weeklyCopy = document.querySelector("[data-weekly-copy]");
+    const weeklyStandings = document.querySelector("[data-weekly-leaderboard]");
+    const starProgress = document.querySelector("#star-progress");
+    const bonusStatus = document.querySelector("#bonus-status");
     return {
       boardGap: Number.parseFloat(board.columnGap),
       tileBorder: Number.parseFloat(tile.borderTopWidth),
       visibleMapRows: mapRows.filter((node) => getComputedStyle(node).display !== "none").length,
+      visibleStatusRows: statusRows.filter((node) => getComputedStyle(node).display !== "none").length,
       visibleDescriptions,
       weeklyCopyDisplay: weeklyCopy ? getComputedStyle(weeklyCopy).display : "missing",
+      weeklyStandingsDisplay: weeklyStandings ? getComputedStyle(weeklyStandings).display : "missing",
+      starProgressDisplay: starProgress ? getComputedStyle(starProgress).display : "missing",
+      bonusStatusDisplay: bonusStatus ? getComputedStyle(bonusStatus).display : "missing",
     };
   });
 }
@@ -84,8 +92,12 @@ async function expectMatch3PlayHierarchy(page) {
   expect(stats.tileBorder).toBeLessThanOrEqual(1.5);
   expect(stats.visibleMapRows).toBeGreaterThanOrEqual(4);
   expect(stats.visibleMapRows).toBeLessThanOrEqual(6);
+  expect(stats.visibleStatusRows).toBe(2);
   expect(stats.visibleDescriptions).toBe(0);
   expect(stats.weeklyCopyDisplay).toBe("none");
+  expect(stats.weeklyStandingsDisplay).toBe("none");
+  expect(stats.starProgressDisplay).toBe("none");
+  expect(stats.bonusStatusDisplay).toBe("none");
 }
 
 test("Cascade pastel cabinet uses television width while keeping the board height-first", async ({ page }) => {
@@ -98,6 +110,7 @@ test("Cascade pastel cabinet uses television width while keeping the board heigh
   await expect(page.locator(".cascade-side")).toBeVisible();
   await expect(page.locator(".cascade-status")).toBeVisible();
   await expect(page.locator("#moves")).toBeVisible();
+  await expect(page.locator("#lives")).toBeVisible();
 
   const board = await page.locator("#board").boundingBox();
   expect(board).toBeTruthy();
