@@ -97,7 +97,7 @@
   overflow: visible;
 }
 .gameframe-logo-backplate {
-  fill: rgba(2, 6, 12, .88);
+  fill: rgba(2, 6, 12, .82);
   stroke: color-mix(in srgb, var(--destination-accent) 23%, rgba(130, 161, 178, .24));
   stroke-width: 1.1;
   vector-effect: non-scaling-stroke;
@@ -122,36 +122,38 @@
   stroke-width: 1.6;
   vector-effect: non-scaling-stroke;
 }
-.gameframe-logo-letter {
-  font-family: "Arial Black", "Segoe UI Black", "Segoe UI", sans-serif;
-  font-size: 31px;
-  font-weight: 950;
-  font-style: italic;
-  letter-spacing: -3px;
-  paint-order: stroke fill;
-  stroke-width: 1.15;
+.gameframe-logo-mark-underlay,
+.gameframe-logo-g-mark,
+.gameframe-logo-f-mark {
+  fill: none;
+  stroke-linecap: square;
+  stroke-linejoin: bevel;
   vector-effect: non-scaling-stroke;
 }
-.gameframe-logo-g {
-  fill: #2fcfff;
-  stroke: #197dff;
+.gameframe-logo-mark-underlay {
+  stroke: rgba(1, 5, 10, .96);
+  stroke-width: 8.4;
 }
-.gameframe-logo-f {
-  fill: #c04cff;
-  stroke: #7938ff;
+.gameframe-logo-g-mark {
+  stroke: #2fcfff;
+  stroke-width: 5.15;
+}
+.gameframe-logo-f-mark {
+  stroke: #c04cff;
+  stroke-width: 5.15;
 }
 .gameframe-logo-tail-left { fill: #278dff; }
 .gameframe-logo-tail-right { fill: #9a3dff; }
 .gameframe-logo-tail {
-  opacity: .92;
-  stroke: rgba(239, 247, 255, .24);
+  opacity: .94;
+  stroke: rgba(239, 247, 255, .28);
   stroke-width: .5;
   vector-effect: non-scaling-stroke;
 }
 .gameframe-logo-seam {
   fill: none;
-  stroke: rgba(239, 247, 255, .46);
-  stroke-width: .55;
+  stroke: rgba(239, 247, 255, .42);
+  stroke-width: .5;
   vector-effect: non-scaling-stroke;
 }
 .gameframe-destination-copy {
@@ -301,7 +303,6 @@ body.tic-tac-toe-noir-running .shell { padding-top: 8px; }
   }
   .gameframe-destination-brand { min-width: 0; gap: 7px; padding: 7px 9px; }
   .gameframe-destination-mark { width: 41px; height: 41px; }
-  .gameframe-logo-letter { font-size: 30px; }
   .gameframe-platform-name { font-size: .48rem; letter-spacing: .13em; }
   .gameframe-destination-brand [data-gameframe-destination-title] { font-size: .64rem; letter-spacing: .035em; }
   .gameframe-destination-bar:not(.has-destination-title) .gameframe-platform-name { font-size: .7rem; letter-spacing: .08em; }
