@@ -8,7 +8,6 @@
     inset 0 0 13px rgba(171,233,247,.12),
     0 0 9px rgba(55,178,214,.13);
   filter: drop-shadow(0 2px 2px rgba(31,100,134,.18));
-  backdrop-filter: saturate(.96) brightness(1.03);
 }
 
 .cascade-cell-coating::before {
@@ -90,10 +89,7 @@
     inset 0 -9px 13px rgba(84,46,96,.18),
     0 7px 11px rgba(82,57,113,.18),
     0 2px 0 rgba(91,62,128,.14),
-    0 0 11px var(--tile-glow, rgba(165,106,244,.18)),
-    0 0 22px var(--tile-glow-soft, rgba(165,106,244,.08));
-  animation: cascade-tile-idle 7.4s ease-in-out infinite;
-  will-change: translate, rotate;
+    0 0 12px var(--tile-glow, rgba(165,106,244,.18));
 }
 
 .cascade-tile::before {
@@ -109,7 +105,6 @@
   --tile-mark-accent: #ffb7d8;
   --tile-mark-shadow: rgba(126,27,76,.25);
   --tile-glow: rgba(248,63,152,.26);
-  --tile-glow-soft: rgba(248,63,152,.11);
 }
 
 .cascade-tile[data-kind="1"] {
@@ -117,7 +112,6 @@
   --tile-mark-accent: #bff3fb;
   --tile-mark-shadow: rgba(8,105,145,.24);
   --tile-glow: rgba(40,188,233,.26);
-  --tile-glow-soft: rgba(40,188,233,.11);
 }
 
 .cascade-tile[data-kind="2"] {
@@ -125,7 +119,6 @@
   --tile-mark-accent: #fff0a8;
   --tile-mark-shadow: rgba(145,94,0,.22);
   --tile-glow: rgba(255,200,56,.28);
-  --tile-glow-soft: rgba(255,200,56,.12);
 }
 
 .cascade-tile[data-kind="3"] {
@@ -133,7 +126,6 @@
   --tile-mark-accent: #c8f4c3;
   --tile-mark-shadow: rgba(26,111,57,.22);
   --tile-glow: rgba(80,201,106,.26);
-  --tile-glow-soft: rgba(80,201,106,.11);
 }
 
 .cascade-tile[data-kind="4"] {
@@ -141,7 +133,6 @@
   --tile-mark-accent: #dfc4ff;
   --tile-mark-shadow: rgba(83,35,137,.24);
   --tile-glow: rgba(146,82,227,.27);
-  --tile-glow-soft: rgba(146,82,227,.11);
 }
 
 .cascade-tile[data-kind="5"] {
@@ -149,24 +140,18 @@
   --tile-mark-accent: #ffd0ae;
   --tile-mark-shadow: rgba(145,55,17,.23);
   --tile-glow: rgba(255,125,59,.27);
-  --tile-glow-soft: rgba(255,125,59,.11);
 }
 
-.cascade-tile:nth-child(4n + 1) { animation-delay: -1.2s; }
-.cascade-tile:nth-child(4n + 2) { animation-delay: -3.4s; }
-.cascade-tile:nth-child(4n + 3) { animation-delay: -5.1s; }
-.cascade-tile:nth-child(4n) { animation-delay: -6.3s; }
+/* A few resting cells twitch at a time. Cascades recreate the tile DOM, so the
+   motion naturally moves around the board without animating all 64 cells. */
+.cascade-tile:nth-child(8n + 1) {
+  animation: cascade-tile-idle 9.6s ease-in-out infinite;
+  animation-delay: -1.4s;
+}
 
-.cascade-tile:hover,
-.cascade-tile:active,
-.cascade-tile.is-selected,
-.cascade-tile.is-clearing,
-.cascade-tile.is-hammer-target,
-.cascade-tile.is-matched,
-.cascade-tile.is-special-triggered {
-  animation-play-state: paused;
-  translate: 0 0;
-  rotate: 0deg;
+.cascade-tile:nth-child(8n + 5) {
+  animation: cascade-tile-idle 11.2s ease-in-out infinite;
+  animation-delay: -6.1s;
 }
 
 @keyframes cascade-snowflake-glow {
@@ -175,20 +160,19 @@
 }
 
 @keyframes cascade-tile-idle {
-  0%, 48%, 68%, 100% {
+  0%, 76%, 100% {
     translate: 0 0;
     rotate: 0deg;
   }
-  52% { translate: 0 -1px; rotate: -.28deg; }
-  55% { translate: 0 -3px; rotate: .34deg; }
-  58% { translate: 0 -1px; rotate: -.2deg; }
-  61% { translate: 0 0; rotate: .12deg; }
-  64% { translate: 0 -1px; rotate: 0deg; }
+  80% { translate: 0 -1px; rotate: -.22deg; }
+  83% { translate: 0 -3px; rotate: .28deg; }
+  86% { translate: 0 -1px; rotate: -.16deg; }
+  89% { translate: 0 0; rotate: .1deg; }
+  92% { translate: 0 -1px; rotate: 0deg; }
 }
 
 body[data-cascade-effects="reduced"] .cascade-cell-coating {
   filter: none;
-  backdrop-filter: none;
 }
 
 body[data-cascade-effects="reduced"] .cascade-cell-coating::before,
