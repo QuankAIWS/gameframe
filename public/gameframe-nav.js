@@ -1,8 +1,11 @@
+import { installGameFrameThemePicker } from "./gameframe-theme.js";
+
 const navStylesheetUrls = [
   "/gameframe-nav.css",
   "/gameframe-nav-integrations.css",
   "/gameframe-final-polish.css",
   "/gameframe-session-override.css",
+  "/gameframe-themes.css",
 ];
 for (const href of navStylesheetUrls) {
   if (document.querySelector(`link[href="${href}"]`)) continue;
@@ -104,7 +107,9 @@ function installDestinationBar() {
         <a data-gameframe-leaderboard href="/leaderboard.html" aria-label="Leaderboard"><span class="gameframe-nav-label-full">Leaderboard</span><span class="gameframe-nav-label-compact" aria-hidden="true">Ranks</span></a>
         <a data-gameframe-profile href="/profile.html">Profile</a>
       </nav>
-      <span class="gameframe-destination-session-space" aria-hidden="true"></span>
+      <div class="gameframe-destination-session-space">
+        <div id="gameframe-shell-actions" class="gameframe-shell-actions" aria-label="GameFrame controls"></div>
+      </div>
     `;
     document.body.prepend(bar);
   }
@@ -141,6 +146,7 @@ function installDestinationBar() {
 }
 
 const bar = installDestinationBar();
+installGameFrameThemePicker();
 removeLegacyProductLabel();
 window.dispatchEvent(new CustomEvent("gameframe:destination-bar-ready", { detail: { bar } }));
 let updatePending = false;
