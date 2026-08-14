@@ -36,11 +36,20 @@ test("Cascade keeps the full TV cabinet around a board-height playfield under br
   expect(boardWrapBox.x + boardWrapBox.width).toBeLessThanOrEqual(utilityBox.x);
   expect(utilityBox.x + utilityBox.width).toBeLessThanOrEqual(statusBox.x);
 
-  // Persistent UI consumes width, not extra height beyond the play cabinet.
-  expect(Math.abs(utilityBox.y - boardWrapBox.y)).toBeLessThanOrEqual(2);
-  expect(Math.abs(statusBox.y - boardWrapBox.y)).toBeLessThanOrEqual(2);
-  expect(Math.abs(utilityBox.height - boardWrapBox.height)).toBeLessThanOrEqual(3);
-  expect(Math.abs(statusBox.height - boardWrapBox.height)).toBeLessThanOrEqual(3);
+  // The side instrument banks own the full cabinet height while the board is a
+  // shallow recessed window inside that chassis. They should closely bracket
+  // the board rather than force it flush with their top/bottom edges.
+  const boardBottom = boardWrapBox.y + boardWrapBox.height;
+  const utilityBottom = utilityBox.y + utilityBox.height;
+  const statusBottom = statusBox.y + statusBox.height;
+  expect(utilityBox.y).toBeLessThanOrEqual(boardWrapBox.y);
+  expect(statusBox.y).toBeLessThanOrEqual(boardWrapBox.y);
+  expect(utilityBottom).toBeGreaterThanOrEqual(boardBottom);
+  expect(statusBottom).toBeGreaterThanOrEqual(boardBottom);
+  expect(boardWrapBox.y - utilityBox.y).toBeLessThanOrEqual(8);
+  expect(boardWrapBox.y - statusBox.y).toBeLessThanOrEqual(8);
+  expect(utilityBottom - boardBottom).toBeLessThanOrEqual(8);
+  expect(statusBottom - boardBottom).toBeLessThanOrEqual(8);
 
   // The active board remains fully visible and large at aggressive zoom.
   expect(boardBox.y + boardBox.height).toBeLessThanOrEqual(540);
