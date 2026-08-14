@@ -17,6 +17,7 @@ import {
 } from "./cascade-telemetry-coordinator.ts";
 import {
   readLeaderboard,
+  readPlayerFeed,
   readPlayerProgression,
   readPublicPlayerProfile,
   recordCascadeProgression,
@@ -154,14 +155,21 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
         if (viewedPlayerId) {
           const principal = await authenticatorFor(env).authenticate(request);
           await upsertPlayerDirectory(env, principal);
-          return json(200, await readPublicPlayerProfile(env, viewedPlayerId));
+          const [publicProfile, viewedFeed] = await Promise.all([
+            readPublicPlayerProfile(env, viewedPlayerId),
+            readPlayerFeed(env, viewedPlayerId),
+          ]);
+          return json(200, {
+            ...publicProfile,
+            profile: { ...publicProfile.profile, themeId: viewedFeed.themeId },
+          });
         }
 
         if (request.method === "POST" && url.pathname === "/api/me/preferences") {
           const principal = await authenticatorFor(env).authenticate(request);
           await upsertPlayerDirectory(env, principal);
           const body = await readJson(request);
-          return json(200, await updatePlayerPreferences(env, principal.playerId, body.favoriteGameIds));
+          return json(200, await updatePlayerPreferences(env, principal.playerId, body));
         }
 
         if (request.method === "POST" && url.pathname === "/api/me/cascade/progression") {

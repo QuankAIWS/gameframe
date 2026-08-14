@@ -25,6 +25,9 @@ async function expectSharedControls(page) {
 }
 
 test.beforeEach(async ({ page }) => {
+  let persistedThemeId = "standard";
+  let themeConfigured = false;
+
   await page.addInitScript(() => {
     localStorage.setItem("scribbles-gameframe.boot-seen:v2", "seen");
   });
@@ -33,7 +36,29 @@ test.beforeEach(async ({ page }) => {
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(identity) });
   });
   await page.route("**/api/me/feed", async (route) => {
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ invitations: [] }) });
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        matches: [],
+        invitations: [],
+        favoriteGameIds: [],
+        themeId: persistedThemeId,
+        themeConfigured,
+      }),
+    });
+  });
+  await page.route("**/api/me/preferences", async (route) => {
+    const value = route.request().postDataJSON();
+    if (typeof value?.themeId === "string") {
+      persistedThemeId = value.themeId;
+      themeConfigured = true;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ favoriteGameIds: [], themeId: persistedThemeId, themeConfigured }),
+    });
   });
 });
 
@@ -55,7 +80,7 @@ test("every shared destination exposes Theme, Alerts, and the player session tog
   }
 });
 
-test("theme picker offers five presets and persists the selected shell theme across destinations", async ({ page }) => {
+test("theme picker offers five presets and persists the selected player theme across destinations", async ({ page }) => {
   await page.goto(`/leaderboard.html?player=${playerId}`);
   await expectSharedControls(page);
 
@@ -70,7 +95,11 @@ test("theme picker offers five presets and persists the selected shell theme acr
 
   await page.locator('[data-theme-option="cascade-pop"]').click();
   await expect(page.locator("html")).toHaveAttribute("data-gameframe-shell-theme", "cascade-pop");
-  expect(await page.evaluate(() => localStorage.getItem("scribbles-gameframe.shell-theme:v1"))).toBe("cascade-pop");
+  await expect.poll(() => page.evaluate(async () => {
+    const response = await fetch("/api/me/feed");
+    return (await response.json()).themeId;
+  })).toBe("cascade-pop");
+  expect(await page.evaluate((id) => localStorage.getItem(`scribbles-gameframe.shell-theme:v1:${id}`), playerId)).toBe("cascade-pop");
 
   await page.goto(`/?player=${playerId}`);
   await expect(page.locator("html")).toHaveAttribute("data-gameframe-shell-theme", "cascade-pop");
@@ -79,4 +108,8 @@ test("theme picker offers five presets and persists the selected shell theme acr
   await page.locator("#gameframe-theme-trigger").click();
   await page.locator('[data-theme-option="standard"]').click();
   await expect(page.locator("html")).toHaveAttribute("data-gameframe-shell-theme", "standard");
+  await expect.poll(() => page.evaluate(async () => {
+    const response = await fetch("/api/me/feed");
+    return (await response.json()).themeId;
+  })).toBe("standard");
 });
