@@ -67,7 +67,6 @@ export function installGameFrameThemePicker(identity) {
 
   let currentThemeId = applyGameFrameTheme(readCachedTheme(identity));
   let saving = false;
-  let knownFavoriteGameIds = [];
 
   const root = document.createElement("div");
   root.id = "gameframe-theme-control";
@@ -142,11 +141,10 @@ export function installGameFrameThemePicker(identity) {
       const response = await gameFrameFetch("/api/me/preferences", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ favoriteGameIds: knownFavoriteGameIds, themeId: next }),
+        body: JSON.stringify({ themeId: next }),
       }, identity);
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.message || "Theme could not be saved.");
-      if (Array.isArray(body.favoriteGameIds)) knownFavoriteGameIds = body.favoriteGameIds;
       currentThemeId = applyGameFrameTheme(body.themeId || next);
       cacheTheme(identity, currentThemeId);
       renderChoices();
@@ -166,7 +164,6 @@ export function installGameFrameThemePicker(identity) {
       const response = await gameFrameFetch("/api/me/feed", {}, identity);
       const body = await response.json().catch(() => ({}));
       if (!response.ok) return;
-      knownFavoriteGameIds = Array.isArray(body.favoriteGameIds) ? body.favoriteGameIds : [];
       currentThemeId = applyGameFrameTheme(body.themeId || currentThemeId);
       cacheTheme(identity, currentThemeId);
       renderChoices();
