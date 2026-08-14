@@ -2,7 +2,7 @@ const style = document.createElement("style");
 style.id = "gameframe-alert-styles";
 style.textContent = `
 .gameframe-session-badge{overflow:visible;isolation:isolate;pointer-events:auto}
-.gameframe-session-badge .gameframe-alerts{position:fixed;top:15px;right:calc(20px + min(258px,22vw));z-index:9005;display:grid;place-items:center;pointer-events:auto}
+.gameframe-session-badge .gameframe-alerts{position:absolute;top:50%;right:calc(100% + 8px);z-index:2;display:grid;place-items:center;transform:translateY(-50%);pointer-events:auto}
 .gameframe-has-destination-bar .gameframe-session-badge .gameframe-alerts-trigger{position:relative;z-index:2;display:grid;place-items:center;width:40px!important;min-width:40px;height:40px;padding:0!important;border:1px solid rgba(108,231,241,.2);border-radius:13px;background:linear-gradient(150deg,#101a20,#090e12 72%);color:#cbd7d8;box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.015);font-size:1rem;cursor:pointer;pointer-events:auto!important;touch-action:manipulation;transition:border-color .16s ease,background .16s ease,box-shadow .16s ease,color .16s ease,transform .16s ease}
 .gameframe-has-destination-bar .gameframe-session-badge .gameframe-alerts-trigger:hover,.gameframe-has-destination-bar .gameframe-session-badge .gameframe-alerts-trigger:focus-visible{border-color:#6ce7f1;background:linear-gradient(150deg,#14242b,#0a1115 72%);color:#f4f8f7;box-shadow:0 0 0 3px rgba(108,231,241,.1),0 12px 32px rgba(0,0,0,.34)}
 .gameframe-has-destination-bar .gameframe-session-badge .gameframe-alerts-trigger:focus-visible{outline:2px solid #b6ef69;outline-offset:3px}
@@ -36,8 +36,7 @@ style.textContent = `
 .gameframe-alert-action:disabled{opacity:.5;cursor:wait}
 .gameframe-alerts-empty,.gameframe-alerts-error{margin:0;padding:20px 16px;color:#8d9ba0;font-size:.78rem;line-height:1.45}
 .gameframe-alerts-error{padding-top:0;color:#ff9aaa}
-@media(min-width:721px) and (max-width:1100px){.gameframe-session-badge .gameframe-alerts{right:calc(4px + 22vw)}}
-@media(max-width:720px){.gameframe-session-badge .gameframe-alerts{top:13px;right:115px}.gameframe-has-destination-bar .gameframe-session-badge .gameframe-alerts-trigger{display:grid!important;width:36px!important;min-width:36px;height:36px}.gameframe-alerts-panel{top:calc(var(--gameframe-destination-height,62px) + 7px);right:8px;width:calc(100vw - 16px);border-radius:17px}}
+@media(max-width:720px){.gameframe-has-destination-bar .gameframe-session-badge .gameframe-alerts-trigger{display:grid!important;width:36px!important;min-width:36px;height:36px}.gameframe-alerts-panel{top:calc(var(--gameframe-destination-height,62px) + 7px);right:8px;width:calc(100vw - 16px);border-radius:17px}}
 @media(prefers-reduced-motion:reduce){.gameframe-alerts-trigger{transition:none}}
 `;
 if (!document.querySelector(`#${style.id}`)) document.head.append(style);
