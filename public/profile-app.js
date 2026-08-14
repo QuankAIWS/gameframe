@@ -1,4 +1,12 @@
 import { establishGameFrameIdentity, gameFrameFetch } from "./gameframe-auth.js";
+import { applyProfileTheme } from "./gameframe-theme.js";
+
+if (!document.querySelector('link[href="/profile-themes.css"]')) {
+  const stylesheet = document.createElement("link");
+  stylesheet.rel = "stylesheet";
+  stylesheet.href = "/profile-themes.css";
+  document.head.append(stylesheet);
+}
 
 const query = new URLSearchParams(window.location.search);
 const identity = await establishGameFrameIdentity({
@@ -20,6 +28,7 @@ const FAVORITE_GAMES = [
 ];
 
 const errorBox = document.querySelector("#profile-error");
+const profileShell = document.querySelector(".profile-shell");
 const pageTitle = document.querySelector("#profile-page-title");
 const pageDescription = document.querySelector("#profile-page-description");
 const avatar = document.querySelector("#profile-avatar");
@@ -233,6 +242,7 @@ async function loadOwnProfile() {
   if (!feedResponse.ok) throw new Error(feed.message || "Player record could not be loaded.");
   if (!progressionResponse.ok) throw new Error(progression.message || "Gamer Level could not be loaded.");
   setupIdentity(identity);
+  applyProfileTheme(profileShell, feed.themeId);
   renderProgression(progression);
   renderCascade(progression);
   renderStats(progression.games);
@@ -246,11 +256,18 @@ async function loadPublicProfile() {
   const response = await gameFrameFetch(`/api/players/${encodeURIComponent(viewedPlayerId)}/profile`, {}, identity);
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.message || "Player profile could not be loaded.");
-  setupIdentity(body.profile || { playerId: viewedPlayerId });
+  const viewedProfile = body.profile || { playerId: viewedPlayerId };
+  setupIdentity(viewedProfile);
+  applyProfileTheme(profileShell, viewedProfile.themeId);
   renderProgression(body.progression || {});
   renderCascade(body.progression || {});
   renderStats(body.progression?.games || {});
 }
+
+window.addEventListener("gameframe:theme-change", (event) => {
+  if (!viewingOwnProfile) return;
+  applyProfileTheme(profileShell, event.detail?.themeId);
+});
 
 try {
   if (viewingOwnProfile) await loadOwnProfile();
