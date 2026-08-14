@@ -15,6 +15,7 @@ import {
   emptySpecials,
   objectiveComplete,
 } from "./cascade-special-engine.js";
+import { cascadePresentationDirector as presentation } from "./cascade-presentation-director.js";
 
 const LIFE_MAX = 5;
 const LIFE_REGEN_MS = 10 * 60 * 1000;
@@ -455,7 +456,6 @@ function renderPerformance() {
 }
 
 function renderStatus() {
-  claimPendingHammerRewards();
   levelNumberElement.textContent = mode === "blitz" ? "B" : activeLevel.level;
   scoreElement.textContent = score.toLocaleString();
   targetElement.textContent = mode === "blitz" ? "∞" : activeLevel.target.toLocaleString();
@@ -542,28 +542,13 @@ function spawnScorePop(index, gained, cascade) {
   window.setTimeout(() => pop.remove(), 700);
 }
 
-function setComboPresentation(transition) {
-  comboLabelElement.classList.remove("is-hot", "is-wild");
-  if (transition.combo) {
-    comboLabelElement.textContent = transition.combo.toUpperCase();
-    comboLabelElement.classList.add("is-wild");
-    return;
-  }
-  if (transition.cascade <= 1) {
-    comboLabelElement.textContent = transition.createdSpecials?.length ? "SPECIAL MADE" : "MATCH";
-    return;
-  }
-  comboLabelElement.textContent = `CASCADE ×${transition.cascade}`;
-  if (transition.cascade >= 3) comboLabelElement.classList.add("is-hot");
-  if (transition.cascade >= 5) comboLabelElement.classList.add("is-wild");
-}
-
 async function presentFallTransition(transition) {
   if (mode === "normal") levelProgress.ice = transition.iceAfter.slice();
   board = transition.after.slice();
   specials = transition.specialsAfter.slice();
   renderBoard();
   renderStatus();
+  presentation.transitionAfterFall(transition);
   const duration = PRESENTATION.fallBase + Math.min(4, transition.cascade - 1) * PRESENTATION.fallCascadeStep;
   const landing = [];
   for (const fall of transition.falls) {
@@ -576,6 +561,7 @@ async function presentFallTransition(transition) {
   }
   await sleep(duration);
   animateLanding(landing);
+  presentation.transitionLand(transition, landing);
   await sleep(PRESENTATION.landing);
 }
 
@@ -585,7 +571,7 @@ async function presentResolvedResult(result) {
     board = transition.before.slice();
     specials = transition.specialsBefore.slice();
     renderBoard();
-    setComboPresentation(transition);
+    presentation.transitionStart(transition);
     const tiles = transition.matched.map(tileAt).filter(Boolean);
     tiles.forEach((tile) => tile.classList.add("is-matched"));
     transition.triggeredSpecials?.forEach(({ index }) => tileAt(index)?.classList.add("is-special-triggered"));
@@ -593,6 +579,7 @@ async function presentResolvedResult(result) {
     await sleep(anticipate);
     const anchor = transition.matched[Math.floor(transition.matched.length / 2)] ?? 0;
     spawnScorePop(anchor, transition.gained, transition.cascade);
+    presentation.transitionClear(transition);
     tiles.forEach((tile) => {
       tile.classList.remove("is-matched");
       tile.classList.add("is-clearing");
@@ -706,6 +693,7 @@ async function checkNormalLevelEnd() {
     locked = true;
     clearActiveRun();
     const completedLevel = activeLevel.level;
+    const scoreBeforeBonus = score;
     const bonus = movesRemaining * 100;
     score += bonus;
     state.streak += 1;
@@ -716,6 +704,15 @@ async function checkNormalLevelEnd() {
     renderStatus();
     track("level_win", { bonus, streak: state.streak, stars, bestStars: reward.best, totalStars: reward.total });
     const finalLevel = completedLevel === LEVEL_COUNT;
+    await presentation.presentLevelComplete({
+      moves: movesRemaining,
+      scoreBeforeBonus,
+      scoreAfterBonus: score,
+      stars,
+      reward,
+      finalRun: finalLevel,
+    });
+    renderStatus();
     const rewardCopy = reward.claimed ? ` +${reward.claimed} hammer earned.` : reward.rewards ? ` +${reward.rewards} hammer reward banked.` : "";
     showDialog({
       kicker: finalLevel ? "RUN COMPLETE" : "LEVEL COMPLETE",
@@ -743,6 +740,7 @@ async function checkNormalLevelEnd() {
   saveState();
   renderStatus();
   track("level_failed", { lives: state.lives, objective: describeLevelObjective(activeLevel, levelProgress, score) });
+  presentation.failure();
 
   if (state.lives > 0) {
     showDialog({
@@ -781,7 +779,7 @@ function updateBlitzClock() {
   if (remaining > 0) return;
   blitzExpired = true;
   if (blitzClock) blitzClock.textContent = "0";
-  if (!locked) finishBlitz();
+  if (!locked) void finishBlitz();
 }
 
 async function countdownBlitz() {
@@ -809,7 +807,7 @@ function stopBlitzTimer() {
   blitzEndsAt = 0;
 }
 
-function finishBlitz() {
+async function finishBlitz() {
   if (mode !== "blitz" || finishingBlitz) return;
   finishingBlitz = true;
   locked = true;
@@ -823,6 +821,7 @@ function finishBlitz() {
   savePerformance();
   track("blitz_complete", { id: blitzId, score: finalScore, bestScore, stars, ...blitzStats });
   if (blitzOverlay) blitzOverlay.hidden = true;
+  await presentation.presentBlitzComplete({ score: finalScore, stars, reward });
   const rewardCopy = reward.claimed ? ` +${reward.claimed} hammer earned.` : reward.rewards ? ` +${reward.rewards} hammer reward banked.` : "";
   showDialog({
     kicker: "BLITZ COMPLETE",
@@ -844,15 +843,18 @@ function finishBlitz() {
 async function onTileClick(index) {
   if (locked) return;
   if (mode === "blitz" && blitzExpired) {
-    finishBlitz();
+    void finishBlitz();
     return;
   }
 
   if (hammerMode && mode === "normal") {
     hammerMode = false;
-    state.hammers -= 1;
+    state.hammers = Math.max(0, state.hammers - 1);
     locked = true;
+    saveState();
+    renderStatus();
     tileAt(index)?.classList.add("is-hammer-hit");
+    presentation.hammer(index);
     await sleep(120);
     const result = applySpecialHammer(board, specials, index, boardRng, {
       ice: levelProgress.ice,
@@ -903,10 +905,11 @@ async function onTileClick(index) {
     specials = result.specials.slice();
     renderBoard();
     animateSwap(first, index, presentationMs(PRESENTATION.swap));
+    presentation.invalidSwap();
     track("invalid_swap");
     await sleep(PRESENTATION.swap);
     locked = false;
-    if (mode === "blitz" && blitzExpired) finishBlitz();
+    if (mode === "blitz" && blitzExpired) void finishBlitz();
     return;
   }
 
@@ -922,7 +925,7 @@ async function onTileClick(index) {
   locked = false;
 
   if (mode === "blitz") {
-    if (blitzExpired || (blitzEndsAt && performanceNow() >= blitzEndsAt)) finishBlitz();
+    if (blitzExpired || (blitzEndsAt && performanceNow() >= blitzEndsAt)) void finishBlitz();
   } else {
     saveActiveRun();
     await checkNormalLevelEnd();
@@ -932,6 +935,7 @@ async function onTileClick(index) {
 
 function startLevel(levelNumber = state.level, { resume = false } = {}) {
   stopBlitzTimer();
+  presentation.reset();
   if (blitzOverlay) blitzOverlay.hidden = true;
   document.body.classList.remove("cascade-blitz-mode");
   mode = "normal";
@@ -960,6 +964,7 @@ function startLevel(levelNumber = state.level, { resume = false } = {}) {
     return;
   }
 
+  claimPendingHammerRewards();
   clearActiveRun();
   levelProgress = createLevelProgress(activeLevel);
   score = 0;
@@ -985,6 +990,7 @@ function startLevel(levelNumber = state.level, { resume = false } = {}) {
 
 function startBlitz(completedLevel) {
   stopBlitzTimer();
+  presentation.reset();
   clearActiveRun();
   mode = "blitz";
   finishingBlitz = false;
@@ -1042,7 +1048,6 @@ window.addEventListener("pagehide", () => {
 });
 
 applyLifeRegen();
-claimPendingHammerRewards();
 startLevel(state.level, { resume: true });
 
 window.cascadeResearch = Object.freeze({

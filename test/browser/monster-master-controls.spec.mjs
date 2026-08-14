@@ -67,7 +67,7 @@ test("mobile Monster Master deploys through the authoritative Pixi coordinate bo
   expect(action).not.toBeNull();
   await dispatchBoardCoordinate(page, action.position);
   await expect(page.locator("#monster-master-revision")).toHaveText("Revision 2");
-  await expect(page.locator("#monster-master-status")).toContainText("Stone Bulwark");
+  await expect(page.locator("#monster-master-status")).toContainText("Rootmaw Brute");
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 });
 

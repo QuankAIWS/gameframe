@@ -1,3 +1,5 @@
+await import("./board-surface-init.js");
+
 const stylesheetUrls = ["/tic-tac-toe-noir.css", "/tic-tac-toe-universal.css"];
 for (const stylesheetUrl of stylesheetUrls) {
   if (document.querySelector(`link[href="${stylesheetUrl}"]`)) continue;
@@ -22,6 +24,7 @@ const matchId = document.querySelector("#match-id");
 const invitePanel = document.querySelector("#invite-panel");
 const copyInvite = document.querySelector("#copy-invite");
 const newMatch = document.querySelector("#new-match");
+const matchActions = newMatch?.closest(".actions");
 const players = matchPanel?.querySelector(".players");
 const playerO = document.querySelector("#player-o");
 const gameLayout = matchPanel?.querySelector(".game-layout");
@@ -48,7 +51,7 @@ function installTopbar() {
     </a>
     <nav class="tic-noir-nav" aria-label="Tic-Tac-Toe navigation">
       <a href="/">Games</a>
-      <button class="tic-noir-setup-top" type="button">Match setup</button>
+      <button class="tic-noir-setup-top" type="button">Game menu</button>
     </nav>
     <span class="tic-noir-discord-safe" aria-hidden="true"></span>
   `;
@@ -126,9 +129,11 @@ function installFooter() {
   footer.innerHTML = `
     <a href="/">Back to games</a>
     <span aria-hidden="true"></span>
-    <button type="button">Match setup</button>
   `;
-  footer.querySelector("button")?.addEventListener("click", () => newMatch?.click());
+  if (newMatch) {
+    newMatch.textContent = "Game menu";
+    footer.append(newMatch);
+  }
   matchPanel.append(footer);
 }
 
@@ -148,6 +153,9 @@ function uninstallPresentation() {
 
   matchPanel?.querySelector(".tic-noir-topbar")?.remove();
   matchPanel?.querySelectorAll(".tic-noir-ambient").forEach((node) => node.remove());
+  if (newMatch && matchActions && matchPanel?.querySelector(".tic-noir-footer")?.contains(newMatch)) {
+    matchActions.append(newMatch);
+  }
   matchPanel?.querySelector(".tic-noir-footer")?.remove();
   players?.querySelector(".tic-noir-turn-signal")?.remove();
 
@@ -195,6 +203,8 @@ function mirrorState() {
 function syncPresentation() {
   syncPending = false;
   const active = isTicTacToeMatch();
+  const local = document.body.classList.contains("board-game-local");
+  const boardRoute = document.body.classList.contains("board-game-route");
   document.body.classList.toggle("tic-tac-toe-noir-running", active);
   if (hero) hero.setAttribute("aria-hidden", String(active));
 
@@ -204,9 +214,11 @@ function syncPresentation() {
   }
 
   installPresentation();
-  if (matchLabel) matchLabel.textContent = "LIVE MATCH";
-  if (matchTitle) matchTitle.textContent = "Tic-Tac-Toe";
-  if (newMatch) newMatch.textContent = "Match setup";
+  if (!local) {
+    if (matchLabel) matchLabel.textContent = "LIVE MATCH";
+    if (matchTitle) matchTitle.textContent = "Tic-Tac-Toe";
+  }
+  if (newMatch) newMatch.textContent = boardRoute ? "Game menu" : "Match setup";
   mirrorState();
 }
 

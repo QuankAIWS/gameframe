@@ -1,0 +1,81 @@
+body.family-admin-route {
+  margin: 0;
+  min-height: 100vh;
+  background: #0b0c12;
+  color: #f7f7fb;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.family-admin-shell {
+  width: min(980px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 92px 0 48px;
+}
+
+.family-admin-shell > header p,
+.family-admin-panel small {
+  margin: 0;
+  color: #59e1ef;
+  font-size: .62rem;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.family-admin-shell > header h1 {
+  margin: 4px 0;
+  font-size: clamp(2rem, 6vw, 4rem);
+}
+
+.family-admin-shell > header span { color: #a5abba; }
+.family-admin-panel {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 18px;
+  background: rgba(22,24,35,.94);
+}
+
+.family-admin-heading,
+.family-admin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.family-admin-heading h2 { margin: 3px 0 0; }
+.family-admin-list { display: grid; gap: 8px; margin-top: 14px; }
+.family-admin-row {
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  background: rgba(255,255,255,.03);
+}
+.family-admin-row-copy { display: grid; gap: 3px; min-width: 0; }
+.family-admin-row-copy span,
+.family-admin-row-copy small { color: #a5abba; }
+.family-admin-code { font-size: 1.2rem; letter-spacing: .12em; color: #ffd84d; }
+.family-admin-row button,
+#family-admin-refresh {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid rgba(89,225,239,.35);
+  border-radius: 10px;
+  background: rgba(89,225,239,.08);
+  color: inherit;
+  cursor: pointer;
+}
+.family-admin-row button[data-danger] { border-color: rgba(255,92,168,.4); }
+.family-admin-error {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid rgba(255,92,168,.45);
+  border-radius: 12px;
+  background: rgba(255,92,168,.08);
+}
+
+@media (max-width: 620px) {
+  .family-admin-shell { padding-top: 68px; }
+  .family-admin-row { align-items: stretch; flex-direction: column; }
+  .family-admin-row button { width: 100%; }
+}

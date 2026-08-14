@@ -22,6 +22,10 @@
   display: none !important;
 }
 
+.gameframe-game-hub-lobby.gameframe-game-menu .mode-grid {
+  display: grid !important;
+}
+
 .gameframe-game-hub-lobby .game-grid {
   gap: clamp(12px, 1.15vw, 17px);
 }

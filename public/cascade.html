@@ -2,9 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f7ecff">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>Cascade Crush · Scribbles GameFrame</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/gameframe-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/gameframe-icon.svg">
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/cascade.css">
   <link rel="stylesheet" href="/cascade-input.css">
@@ -20,7 +24,14 @@
   <link rel="stylesheet" href="/cascade-bonus-modes.css">
   <link rel="stylesheet" href="/cascade-cell-objectives.css">
   <link rel="stylesheet" href="/cascade-tutorial.css">
+  <link rel="stylesheet" href="/cascade-juice.css">
+  <link rel="stylesheet" href="/cascade-presentation-director.css">
   <link rel="stylesheet" href="/cascade-build-refresh.css">
+  <link rel="stylesheet" href="/cascade-cabinet-unified.css">
+  <link rel="stylesheet" href="/cascade-match3-benchmark.css">
+  <link rel="stylesheet" href="/cascade-match3-reduction.css">
+  <link rel="stylesheet" href="/cascade-score-hud.css">
+  <link rel="stylesheet" href="/cascade-mobile.css">
 </head>
 <body class="cascade-route">
   <main class="cascade-shell">
@@ -35,7 +46,7 @@
       <div><small>LEVEL</small><strong id="level-number">1</strong></div>
       <div><small>SCORE</small><strong id="score">0</strong></div>
       <div><small>TARGET</small><strong id="target">1200</strong></div>
-      <div><small>MOVES</small><strong id="moves">18</strong></div>
+      <div><small>MOVES LEFT</small><strong id="moves">18</strong></div>
       <div><small>LIVES</small><strong id="lives">♥♥♥♥♥</strong><span id="life-timer" hidden></span></div>
     </section>
 
@@ -95,21 +106,23 @@
     </form>
   </dialog>
 
+  <script type="module" src="/gameframe-pwa.js"></script>
   <script type="module" src="/gameframe-nav.js"></script>
   <script src="/cascade-fresh-run-guard.js"></script>
   <script src="/cascade-family-state-guard.js"></script>
   <script src="/cascade-viewport-guard.js"></script>
   <script type="module" src="/cascade-progression-sync.js"></script>
   <script type="module" src="/cascade-telemetry-sync.js"></script>
+  <script type="module" src="/cascade-presentation-director.js"></script>
   <script type="module" src="/cascade-runtime-v2.js"></script>
+  <script type="module" src="/cascade-score-hud.js"></script>
   <script type="module" src="/cascade-input.js"></script>
   <script type="module" src="/cascade-family-polish.js"></script>
   <script type="module" src="/cascade-bonus-modes.js"></script>
   <script type="module" src="/cascade-life-ui.js"></script>
   <script type="module" src="/cascade-admin.js"></script>
   <script type="module" src="/cascade-admin-telemetry.js"></script>
-  <script type="module" src="/cascade-polish.js"></script>
-  <script type="module" src="/cascade-dopamine-vfx.js"></script>
+  <script type="module" src="/cascade-piece-idle.js"></script>
   <script type="module" src="/cascade-cell-objectives.js"></script>
   <script src="/cascade-tutorial-mode.js"></script>
   <script type="module" src="/cascade-tutorial.js"></script>

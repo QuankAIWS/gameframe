@@ -14,6 +14,15 @@ async function installState(page, { level = 6, lives = 5, lastLifeAt = Date.now(
   });
 }
 
+async function expectFourLivesAfterSafeReload(page) {
+  // Life UI deliberately reloads a settled level when a queued life becomes ready.
+  // Locator assertions survive that navigation; page.evaluate polling does not.
+  // A legal move can generate a long cascade/presentation chain on a busy CI
+  // runner, so keep this bounded but allow the full committed move to settle.
+  await expect(page.locator("#lives")).toHaveText("♥♥♥♥", { timeout: 12_000 });
+  expect(await page.evaluate((key) => Number(JSON.parse(localStorage.getItem(key))?.lives || 0), stateKey)).toBe(4);
+}
+
 async function showSyntheticBlitzComplete(page) {
   await page.evaluate(() => {
     const dialog = document.querySelector("#result-dialog");
@@ -61,10 +70,7 @@ test("Cascade restores a partial life while the page remains open", async ({ pag
   });
   await page.goto("/cascade.html");
 
-  await expect.poll(
-    () => page.evaluate((key) => Number(JSON.parse(localStorage.getItem(key))?.lives || 0), stateKey),
-    { timeout: 8_000 },
-  ).toBe(4);
+  await expectFourLivesAfterSafeReload(page);
   await expect(page.locator("#level-number")).toHaveText("9");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 });
@@ -79,10 +85,7 @@ test("Cascade applies a ready life even when a harmless first tile is selected",
     localStorage.setItem(key, String(Date.now() - (10 * 60 * 1000) - 100));
   }, lifeQueueKey);
 
-  await expect.poll(
-    () => page.evaluate((key) => Number(JSON.parse(localStorage.getItem(key))?.lives || 0), stateKey),
-    { timeout: 8_000 },
-  ).toBe(4);
+  await expectFourLivesAfterSafeReload(page);
   await expect(page.locator("#level-number")).toHaveText("9");
 });
 
@@ -108,10 +111,7 @@ test("Cascade waits for an in-flight move to commit before applying a ready life
   await page.waitForTimeout(120);
   expect(await page.evaluate(() => window.cascadeResearch.exportLevel().movesRemaining)).toBe(move.movesBefore - 1);
 
-  await expect.poll(
-    () => page.evaluate((key) => Number(JSON.parse(localStorage.getItem(key))?.lives || 0), stateKey),
-    { timeout: 8_000 },
-  ).toBe(4);
+  await expectFourLivesAfterSafeReload(page);
   expect(await page.evaluate(() => window.cascadeResearch.exportLevel().movesRemaining)).toBe(move.movesBefore - 1);
 });
 

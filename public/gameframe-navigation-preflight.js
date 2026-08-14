@@ -3,6 +3,10 @@
   const recentMatchStorageKey = "scribbles-gameframe.recent-match";
   const maxAgeMs = 15000;
 
+  void import("/gameframe-pwa.js").catch(() => {
+    // PWA installation is progressive enhancement and must never block startup.
+  });
+
   try {
     // A durable match is now resumed explicitly from its URL or the player's
     // Matches/Home feed. The old single-browser recent-match pointer must not

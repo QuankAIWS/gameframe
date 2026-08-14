@@ -20,6 +20,50 @@ body.gameframe-has-destination-bar.gameframe-monster-route #monster-master-lobby
   margin-top: 0;
 }
 
+/* Othello's standalone composition originally budgeted vertical space for its
+   own product header. Once the universal destination bar replaces that header,
+   give the remaining surface an explicit two-row viewport contract so the board
+   cannot ride underneath the sticky bar or inherit Neon's old 1080px minimum. */
+body.gameframe-has-destination-bar.gameframe-othello-route .othello-app {
+  min-height: calc(100dvh - var(--gameframe-destination-height));
+  padding-top: clamp(16px, 2.2vh, 28px);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+body.gameframe-has-destination-bar.gameframe-othello-route .play-layout {
+  margin-top: 0 !important;
+  align-self: center;
+}
+
+body.gameframe-has-destination-bar.gameframe-othello-route .command-bar {
+  align-self: end;
+}
+
+/* The old fidelity pass promoted every major Othello surface to its own GPU
+   compositing layer. That is counterproductive once the universal shell is
+   present, especially beside the Neon canvas glows. Let the browser choose the
+   layers instead of forcing them with translateZ(0). */
+body.gameframe-has-destination-bar.gameframe-othello-route .board-frame,
+body.gameframe-has-destination-bar.gameframe-othello-route .board-viewport,
+body.gameframe-has-destination-bar.gameframe-othello-route .score-rail,
+body.gameframe-has-destination-bar.gameframe-othello-route .command-bar,
+body.gameframe-has-destination-bar.gameframe-othello-route .match-strip {
+  transform: none;
+}
+
+@media (min-width: 901px) {
+  body.gameframe-has-destination-bar.gameframe-othello-route .play-layout {
+    grid-template-columns:
+      minmax(170px, 226px)
+      minmax(500px, min(810px, calc((100dvh - var(--gameframe-destination-height) - 235px) * 1.115)))
+      minmax(170px, 226px);
+  }
+
+  body.gameframe-has-destination-bar.gameframe-othello-route .score-rail {
+    min-height: clamp(300px, calc(100dvh - var(--gameframe-destination-height) - 300px), 414px);
+  }
+}
+
 /* Tic-Tac-Toe's former local top bar remains in the DOM for graceful fallback,
    but is never shown when the universal destination bar is installed. */
 body.gameframe-has-destination-bar .tic-noir-topbar {
@@ -29,6 +73,10 @@ body.gameframe-has-destination-bar .tic-noir-topbar {
 @media (max-width: 720px) {
   body.gameframe-has-destination-bar.gameframe-shared-match-running:not(.tic-tac-toe-noir-running) .shell,
   body.gameframe-has-destination-bar.gameframe-monster-route .monster-master-shell {
+    padding-top: 10px;
+  }
+
+  body.gameframe-has-destination-bar.gameframe-othello-route .othello-app {
     padding-top: 10px;
   }
 }

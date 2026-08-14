@@ -1,8 +1,11 @@
+import { installGameFrameThemePicker } from "./gameframe-theme.js";
+
 const navStylesheetUrls = [
   "/gameframe-nav.css",
   "/gameframe-nav-integrations.css",
   "/gameframe-final-polish.css",
   "/gameframe-session-override.css",
+  "/gameframe-themes.css",
 ];
 for (const href of navStylesheetUrls) {
   if (document.querySelector(`link[href="${href}"]`)) continue;
@@ -41,6 +44,9 @@ function gameLabel() {
   if (menuTheme === "tic") return "TIC-TAC-TOE";
   if (menuTheme === "checkers") return "CLOCKWORK CHECKERS";
   const pathname = window.location.pathname;
+  if (pathname === "/") {
+    return new URLSearchParams(window.location.search).get("catalog") === "1" ? "GAMES" : "";
+  }
   if (pathname === "/matches.html") return "MATCHES";
   if (pathname === "/leaderboard.html") return "LEADERBOARD";
   if (pathname === "/profile.html") return "PROFILE";
@@ -50,7 +56,13 @@ function gameLabel() {
   if (pathname.includes("othello")) return "OTHELLO";
   if (document.body.classList.contains("tic-tac-toe-noir-running")) return "TIC-TAC-TOE";
   if (document.querySelector("#board.board-checkers") && !document.querySelector("#match-panel")?.hidden) return "CLOCKWORK CHECKERS";
-  return "GAMEFRAME";
+  return "";
+}
+
+function removeLegacyProductLabel() {
+  for (const eyebrow of document.querySelectorAll(".eyebrow")) {
+    if (eyebrow.textContent?.trim().toUpperCase() === "SCRIBBLES GAMEFRAME") eyebrow.remove();
+  }
 }
 
 function sharedMatchRunning() {
@@ -65,11 +77,27 @@ function installDestinationBar() {
     bar.id = "gameframe-destination-bar";
     bar.className = "gameframe-destination-bar";
     bar.innerHTML = `
-      <a class="gameframe-destination-brand" href="/" aria-label="Scribbles GameFrame home">
-        <span class="gameframe-destination-mark" aria-hidden="true">S</span>
-        <span>
-          <small>SCRIBBLES</small>
-          <strong data-gameframe-destination-title>GAMEFRAME</strong>
+      <a class="gameframe-destination-brand" href="/" aria-label="GameFrame home">
+        <span class="gameframe-destination-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="presentation" focusable="false">
+            <path class="gameframe-logo-backplate" fill-rule="evenodd" d="M15 5H49L59 15V49L49 59H39L32 63L25 59H15L5 49V15ZM18 13H46L51 18V45L46 51H39L32 57L25 51H18L12 45V19Z"></path>
+            <path class="gameframe-logo-rail gameframe-logo-rail-left" d="M30 7H15L8 14V49L15 56H26L32 61"></path>
+            <path class="gameframe-logo-rail gameframe-logo-rail-right" d="M34 7H49L56 14V49L49 56H38L32 61"></path>
+            <path class="gameframe-logo-rail gameframe-logo-rail-inner gameframe-logo-rail-left" d="M28 11H18L12 17V46L18 52H25"></path>
+            <path class="gameframe-logo-rail gameframe-logo-rail-inner gameframe-logo-rail-right" d="M36 11H46L52 17V46L46 52H40"></path>
+            <path class="gameframe-logo-bridge" d="M27 8H37"></path>
+            <path class="gameframe-logo-mark-underlay" d="M29 18H21L15 24V40L21 46H30V35H24"></path>
+            <path class="gameframe-logo-mark-underlay" d="M36 47V18H50M36 31H47"></path>
+            <path class="gameframe-logo-g-mark" d="M29 18H21L15 24V40L21 46H30V35H24"></path>
+            <path class="gameframe-logo-f-mark" d="M36 47V18H50M36 31H47"></path>
+            <path class="gameframe-logo-tail gameframe-logo-tail-left" d="M27 43L32 50V61L26 52Z"></path>
+            <path class="gameframe-logo-tail gameframe-logo-tail-right" d="M37 43L32 50V61L38 52Z"></path>
+            <path class="gameframe-logo-seam" d="M32 17V59"></path>
+          </svg>
+        </span>
+        <span class="gameframe-destination-copy">
+          <small class="gameframe-platform-name">GAMEFRAME</small>
+          <strong data-gameframe-destination-title hidden></strong>
         </span>
       </a>
       <nav class="gameframe-destination-links" aria-label="GameFrame destinations">
@@ -79,7 +107,9 @@ function installDestinationBar() {
         <a data-gameframe-leaderboard href="/leaderboard.html" aria-label="Leaderboard"><span class="gameframe-nav-label-full">Leaderboard</span><span class="gameframe-nav-label-compact" aria-hidden="true">Ranks</span></a>
         <a data-gameframe-profile href="/profile.html">Profile</a>
       </nav>
-      <span class="gameframe-destination-session-space" aria-hidden="true"></span>
+      <div class="gameframe-destination-session-space">
+        <div id="gameframe-shell-actions" class="gameframe-shell-actions" aria-label="GameFrame controls"></div>
+      </div>
     `;
     document.body.prepend(bar);
   }
@@ -116,6 +146,8 @@ function installDestinationBar() {
 }
 
 const bar = installDestinationBar();
+installGameFrameThemePicker();
+removeLegacyProductLabel();
 window.dispatchEvent(new CustomEvent("gameframe:destination-bar-ready", { detail: { bar } }));
 let updatePending = false;
 function syncDestinationBar() {
@@ -134,7 +166,11 @@ function syncDestinationBar() {
   if (bar.dataset.theme !== theme) bar.dataset.theme = theme;
   const title = bar.querySelector("[data-gameframe-destination-title]");
   const nextTitle = gameLabel();
-  if (title && title.textContent !== nextTitle) title.textContent = nextTitle;
+  if (title) {
+    if (title.textContent !== nextTitle) title.textContent = nextTitle;
+    title.hidden = !nextTitle;
+  }
+  bar.classList.toggle("has-destination-title", Boolean(nextTitle));
 
   const rootLobbyVisible = pathname === "/"
     && !document.body.classList.contains("tic-tac-toe-noir-running")

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   SPECIAL,
+  applySpecialHammer,
   applySpecialSwap,
   createRng,
   emptySpecials,
@@ -126,4 +127,37 @@ test("color clearer swapped with a normal tile sweeps that tile color", () => {
   assert.equal(result.legal, true);
   assert.equal(result.transitions[0].combo, "color");
   assert.ok(result.transitions[0].matched.length >= countBefore);
+});
+
+test("hammer chips exactly one ice layer without clearing the protected candy", () => {
+  const board = stableBoard();
+  const specials = emptySpecials();
+  const ice = Array(64).fill(0);
+  ice[9] = 2;
+  const protectedKind = board[9];
+  specials[9] = SPECIAL.STRIPE_H;
+
+  const result = applySpecialHammer(board, specials, 9, createRng(17), { ice });
+
+  assert.equal(result.legal, true);
+  assert.equal(result.ice[9], 1);
+  assert.equal(result.board[9], protectedKind);
+  assert.equal(result.specials[9], SPECIAL.STRIPE_H);
+  assert.equal(result.iceHitCount, 1);
+  assert.equal(result.transitions[0].iceHits[0].before, 2);
+  assert.equal(result.transitions[0].iceHits[0].after, 1);
+  assert.deepEqual(result.clearedKindCounts, Array(6).fill(0));
+});
+
+test("hammer clears exposed candy normally once no ice remains", () => {
+  const board = stableBoard();
+  const kind = board[9];
+  const result = applySpecialHammer(board, emptySpecials(), 9, createRng(18), {
+    ice: Array(64).fill(0),
+  });
+
+  assert.equal(result.legal, true);
+  assert.equal(result.iceHitCount, 0);
+  assert.equal(result.clearedKindCounts[kind], 1);
+  assert.equal(result.transitions[0].matched.includes(9), true);
 });

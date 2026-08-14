@@ -12,6 +12,7 @@ const exactShellFiles = new Set([
   "public/auth-launcher.js",
   "public/game-hub.js",
   "public/gameframe-nav.js",
+  "public/gameframe-nav-integrations.css",
   "public/styles.css",
   "test/browser/game-hub-navigation.spec.mjs",
   "test/visual/player-ui-review.spec.mjs",
@@ -76,6 +77,11 @@ function isCascadeProfileFile(file) {
     || file.startsWith("src/games/cascade/");
 }
 
+function isOthelloShellFile(file) {
+  return /^public\/othello[^/]*\.(?:html|css|js)$/.test(file)
+    || /^test\/browser\/othello.*\.spec\.mjs$/.test(file);
+}
+
 function isRpgFile(file) {
   return /^public\/monster-master-rpg[^/]*\.(?:html|css|js)$/.test(file)
     || /^test\/browser\/monster-master-rpg.*\.spec\.mjs$/.test(file)
@@ -126,7 +132,7 @@ export function classifyUiTestScope(paths) {
       continue;
     }
 
-    if (exactShellFiles.has(file)) scope.shell = true;
+    if (exactShellFiles.has(file) || isOthelloShellFile(file)) scope.shell = true;
     if (isCasualFile(file)) scope.casual = true;
     if (isCascadeUiFile(file)) scope.cascadeUi = true;
     if (isCascadeProfileFile(file)) scope.cascadeProfile = true;

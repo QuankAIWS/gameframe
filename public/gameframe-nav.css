@@ -68,31 +68,121 @@
   text-decoration: none;
 }
 .gameframe-destination-mark {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  transform: skew(-7deg) rotate(-3deg);
-  border: 1px solid color-mix(in srgb, var(--destination-accent) 56%, transparent);
-  border-radius: 13px 5px 13px 5px;
-  background: linear-gradient(135deg, var(--destination-accent-soft), rgba(5, 9, 12, .9));
-  color: var(--destination-accent);
-  font-size: 1.35rem;
-  font-weight: 950;
-  text-shadow: 0 0 16px color-mix(in srgb, var(--destination-accent) 66%, transparent);
-  box-shadow: inset 0 0 16px var(--destination-accent-soft);
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  color: inherit;
+  filter:
+    drop-shadow(0 0 3px rgba(35, 222, 255, .48))
+    drop-shadow(0 0 5px rgba(188, 70, 255, .28))
+    drop-shadow(0 0 8px color-mix(in srgb, var(--destination-accent) 22%, transparent));
+  transform: translateZ(0);
+  transition: filter .18s ease, transform .18s ease;
 }
-.gameframe-destination-brand > span:last-child { display: grid; gap: 1px; }
-.gameframe-destination-brand small {
+.gameframe-destination-brand:hover .gameframe-destination-mark,
+.gameframe-destination-brand:focus-visible .gameframe-destination-mark {
+  filter:
+    drop-shadow(0 0 4px rgba(35, 222, 255, .62))
+    drop-shadow(0 0 7px rgba(205, 76, 255, .4))
+    drop-shadow(0 0 10px color-mix(in srgb, var(--destination-accent) 32%, transparent));
+  transform: translateY(-1px) scale(1.025);
+}
+.gameframe-destination-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.gameframe-logo-backplate {
+  fill: rgba(2, 6, 12, .82);
+  stroke: color-mix(in srgb, var(--destination-accent) 23%, rgba(130, 161, 178, .24));
+  stroke-width: 1.1;
+  vector-effect: non-scaling-stroke;
+}
+.gameframe-logo-rail {
+  fill: none;
+  stroke-linecap: square;
+  stroke-linejoin: bevel;
+  stroke-width: 2.25;
+  vector-effect: non-scaling-stroke;
+}
+.gameframe-logo-rail-left { stroke: #27dcff; }
+.gameframe-logo-rail-right { stroke: #d14dff; }
+.gameframe-logo-rail-inner {
+  opacity: .42;
+  stroke-width: .85;
+}
+.gameframe-logo-bridge {
+  fill: none;
+  stroke: #718cff;
+  stroke-linecap: square;
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+}
+.gameframe-logo-mark-underlay,
+.gameframe-logo-g-mark,
+.gameframe-logo-f-mark {
+  fill: none;
+  stroke-linecap: square;
+  stroke-linejoin: bevel;
+  vector-effect: non-scaling-stroke;
+}
+.gameframe-logo-mark-underlay {
+  stroke: rgba(1, 5, 10, .96);
+  stroke-width: 8.4;
+}
+.gameframe-logo-g-mark {
+  stroke: #2fcfff;
+  stroke-width: 5.15;
+}
+.gameframe-logo-f-mark {
+  stroke: #c04cff;
+  stroke-width: 5.15;
+}
+.gameframe-logo-tail-left { fill: #278dff; }
+.gameframe-logo-tail-right { fill: #9a3dff; }
+.gameframe-logo-tail {
+  opacity: .94;
+  stroke: rgba(239, 247, 255, .28);
+  stroke-width: .5;
+  vector-effect: non-scaling-stroke;
+}
+.gameframe-logo-seam {
+  fill: none;
+  stroke: rgba(239, 247, 255, .42);
+  stroke-width: .5;
+  vector-effect: non-scaling-stroke;
+}
+.gameframe-destination-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.gameframe-platform-name {
   color: #9ca7ab;
   font-size: .58rem;
-  font-weight: 850;
-  letter-spacing: .18em;
+  font-weight: 900;
+  letter-spacing: .2em;
+  line-height: 1;
 }
-.gameframe-destination-brand strong {
+.gameframe-destination-brand [data-gameframe-destination-title] {
+  overflow: hidden;
   color: #f4f7f6;
   font-size: 1rem;
-  letter-spacing: .1em;
+  font-weight: 900;
+  letter-spacing: .08em;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gameframe-destination-bar:not(.has-destination-title) .gameframe-platform-name {
+  color: #f4f7f6;
+  font-size: .88rem;
+  letter-spacing: .13em;
+  text-shadow: 0 0 14px color-mix(in srgb, var(--destination-accent) 28%, transparent);
 }
 
 .gameframe-destination-links {
@@ -173,9 +263,13 @@ body.tic-tac-toe-noir-running .shell { padding-top: 8px; }
     min-width: 0;
     padding-inline: 12px;
   }
-  .gameframe-destination-brand strong {
-    font-size: .86rem;
-    letter-spacing: .07em;
+  .gameframe-destination-brand [data-gameframe-destination-title] {
+    font-size: .8rem;
+    letter-spacing: .055em;
+  }
+  .gameframe-platform-name { letter-spacing: .15em; }
+  .gameframe-destination-bar:not(.has-destination-title) .gameframe-platform-name {
+    font-size: .8rem;
   }
   .gameframe-destination-links a,
   .gameframe-destination-links button {
@@ -207,10 +301,11 @@ body.tic-tac-toe-noir-running .shell { padding-top: 8px; }
     grid-template-columns: auto minmax(0, 1fr) 112px;
     min-height: var(--gameframe-destination-height);
   }
-  .gameframe-destination-brand { min-width: 0; padding: 8px 10px; }
-  .gameframe-destination-mark { width: 38px; height: 38px; font-size: 1.1rem; }
-  .gameframe-destination-brand small { display: none; }
-  .gameframe-destination-brand strong { font-size: .72rem; letter-spacing: .07em; }
+  .gameframe-destination-brand { min-width: 0; gap: 7px; padding: 7px 9px; }
+  .gameframe-destination-mark { width: 41px; height: 41px; }
+  .gameframe-platform-name { font-size: .48rem; letter-spacing: .13em; }
+  .gameframe-destination-brand [data-gameframe-destination-title] { font-size: .64rem; letter-spacing: .035em; }
+  .gameframe-destination-bar:not(.has-destination-title) .gameframe-platform-name { font-size: .7rem; letter-spacing: .08em; }
   .gameframe-destination-links a,
   .gameframe-destination-links button { min-width: 0; flex: 1; padding: 0 5px; font-size: .55rem; letter-spacing: .045em; }
   .gameframe-destination-links button small { font-size: .4rem; }
@@ -233,13 +328,15 @@ body.tic-tac-toe-noir-running .shell { padding-top: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gameframe-destination-links a::after { transition: none; }
+  .gameframe-destination-links a::after,
+  .gameframe-destination-mark { transition: none; }
 }
 
 @media (max-width: 480px) {
   .gameframe-destination-bar { grid-template-columns: 54px minmax(0, 1fr) 108px; }
-  .gameframe-destination-brand { justify-content: center; padding: 7px; }
-  .gameframe-destination-brand > span:last-child { display: none; }
+  .gameframe-destination-brand { justify-content: center; padding: 6px; }
+  .gameframe-destination-mark { width: 42px; height: 42px; }
+  .gameframe-destination-copy { display: none; }
   .gameframe-destination-links a,
   .gameframe-destination-links button {
     min-width: 0;

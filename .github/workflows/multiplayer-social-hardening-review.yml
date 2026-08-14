@@ -5,7 +5,14 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - ".github/workflows/multiplayer-social-hardening-review.yml"
+      - "public/gameframe-auth.js"
+      - "public/gameframe-auth.css"
+      - "public/gameframe-account-menu.css"
+      - "public/gameframe-alerts.js"
+      - "public/gameframe-alert-styles.js"
       - "public/gameframe-nav.js"
+      - "public/gameframe-theme.js"
+      - "public/gameframe-themes.css"
       - "public/profile-play-context.js"
       - "public/play-with-context.js"
       - "public/secure-match-invite.js"
@@ -15,8 +22,11 @@ on:
       - "src/cloudflare/player-platform-coordinator.ts"
       - "src/cloudflare/worker-router.ts"
       - "test/browser/authenticated-invitation.spec.mjs"
+      - "test/browser/gameframe-account-menu.spec.mjs"
+      - "test/browser/gameframe-shell-controls.spec.mjs"
       - "test/browser/profile-play-together.spec.mjs"
       - "test/browser/player-platform.spec.mjs"
+      - "test/visual/gameframe-account-menu.spec.mjs"
       - "src/auth/match-invitation.test.ts"
       - "src/cloudflare/invitation-object-runtime.test.ts"
       - "src/cloudflare/invitation-router.test.ts"
@@ -34,7 +44,7 @@ jobs:
   hardening-review:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 16
+    timeout-minutes: 18
     steps:
       - name: Check out candidate
         uses: actions/checkout@v4
@@ -50,7 +60,9 @@ jobs:
 
       - name: Browser syntax
         run: |
+          node --check public/gameframe-auth.js
           node --check public/gameframe-nav.js
+          node --check public/gameframe-theme.js
           node --check public/profile-play-context.js
           node --check public/play-with-context.js
           node --check public/secure-match-invite.js
@@ -69,6 +81,22 @@ jobs:
         run: >-
           npx playwright test
           test/browser/authenticated-invitation.spec.mjs
+          test/browser/gameframe-account-menu.spec.mjs
+          test/browser/gameframe-shell-controls.spec.mjs
           test/browser/profile-play-together.spec.mjs
           test/browser/player-platform.spec.mjs
           --config playwright.config.mjs
+
+      - name: Account menu visual review
+        run: npx playwright test test/visual/gameframe-account-menu.spec.mjs --config playwright.visual.config.mjs
+
+      - name: Upload account menu screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: account-menu-ui-review-${{ github.run_id }}
+          path: |
+            visual-results/player-ui-review/account-menu-*.png
+            test-results/**/*.png
+          if-no-files-found: warn
+          retention-days: 7

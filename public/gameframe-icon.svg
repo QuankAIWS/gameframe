@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="GameFrame">
+  <rect width="512" height="512" rx="104" fill="#11131b"/>
+  <path d="M120 72h272l48 48v272l-48 48H120l-48-48V120z" fill="#1b1f2d" stroke="#59e1ef" stroke-width="18"/>
+  <path d="M244 155h-72l-46 46v112l46 46h80v-78h-50" fill="none" stroke="#ffd84d" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M292 357V155h104M292 246h86" fill="none" stroke="#ff5ca8" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

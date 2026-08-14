@@ -13,6 +13,7 @@ import {
   monsterMasterArenaDefinition,
   ROOTMAW_BRUTE_CONTENT_ID,
 } from "./arena-definition.ts";
+import { createDeterministicMonsterMasterArenaRoster, MONSTER_MASTER_ARENA_MONSTER_CONTENT_IDS, MONSTER_MASTER_ARENA_TRAINER_CONTENT_IDS } from "./arena-roster.ts";
 import {
   createMonsterMasterState,
   monsterMasterUnit,
@@ -199,6 +200,94 @@ test("Vanguard is an unassigned Monster Master trainer asset-library archetype",
   assert.equal(createHash("sha256").update(asset).digest("hex"), vanguard.provenance.runtimeSha256);
 });
 
+test("Commander is an unassigned Monster Master trainer asset-library archetype", async () => {
+  const manifest = JSON.parse(await read("public/assets/monster-master/manifest.json"));
+  const asset = await readBytes("public/assets/monster-master/trainers/commander-trainer-v1-128.webp");
+  const commander = manifest.trainerAssets["commander-trainer-v1"];
+
+  assert.ok(manifest.sources.includes("approved-commander-trainer-isometric-master-v1"));
+  assert.equal(commander.label, "Commander");
+  assert.equal(commander.archetype, "commander");
+  assert.equal(commander.path, "/assets/monster-master/trainers/commander-trainer-v1-128.webp");
+  assert.equal(commander.width, 128);
+  assert.equal(commander.height, 192);
+  assert.equal(commander.alpha, true);
+  assert.equal(commander.usage, "asset-library");
+  assert.equal(commander.assignment, "unassigned");
+  assert.equal(commander.facing, "right");
+  assert.equal(commander.perspective, "three-quarter-down-isometric");
+  assert.deepEqual(commander.anchor, { x: 0.5, y: 0.9 });
+  assert.equal(commander.battlefieldScale, 1.0);
+  assert.equal(Object.hasOwn(commander, "role"), false);
+  assert.equal(commander.provenance.provider, "OpenAI ChatGPT image generation");
+  assert.equal(commander.provenance.sourceArchive, "private-gameframe-asset-masters");
+  assert.equal(commander.provenance.sourceSha256, "ea4ff03a663cf44256c35fc15f1267659e1895e2642317f65ac84e658e8c34df");
+  assert.equal(commander.provenance.runtimeSha256, "d67b548440b55b341540159a835736d789591e0dfa49ab5ec919b118653fd7f7");
+  assert.equal(commander.provenance.attributionRequired, false);
+  assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP");
+  assert.equal(createHash("sha256").update(asset).digest("hex"), commander.provenance.runtimeSha256);
+});
+
+test("Arcanic is an unassigned Monster Master trainer asset-library archetype", async () => {
+  const manifest = JSON.parse(await read("public/assets/monster-master/manifest.json"));
+  const asset = await readBytes("public/assets/monster-master/trainers/arcanic-trainer-v1-128.webp");
+  const arcanic = manifest.trainerAssets["arcanic-trainer-v1"];
+
+  assert.ok(manifest.sources.includes("approved-arcanic-trainer-isometric-master-v1"));
+  assert.equal(arcanic.label, "Arcanic");
+  assert.equal(arcanic.archetype, "arcanic");
+  assert.equal(arcanic.path, "/assets/monster-master/trainers/arcanic-trainer-v1-128.webp");
+  assert.equal(arcanic.width, 128);
+  assert.equal(arcanic.height, 192);
+  assert.equal(arcanic.alpha, true);
+  assert.equal(arcanic.usage, "asset-library");
+  assert.equal(arcanic.assignment, "unassigned");
+  assert.equal(arcanic.facing, "left");
+  assert.equal(arcanic.perspective, "three-quarter-down-isometric");
+  assert.deepEqual(arcanic.anchor, { x: 0.5, y: 0.9 });
+  assert.equal(arcanic.battlefieldScale, 1.0);
+  assert.equal(Object.hasOwn(arcanic, "role"), false);
+  assert.equal(arcanic.provenance.provider, "OpenAI ChatGPT image generation");
+  assert.equal(arcanic.provenance.sourceArchive, "private-gameframe-asset-masters");
+  assert.equal(arcanic.provenance.sourceSha256, "cc4e7e6aad10642b7e1fdb4a28ade13dcca38d713d875602080a60969aa6d16e");
+  assert.equal(arcanic.provenance.runtimeSha256, "346ec328cfc8e66a9097ca0c210d2da8a9f42e8cdd759cdbf6da343236e1079e");
+  assert.equal(arcanic.provenance.attributionRequired, false);
+  assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP");
+  assert.equal(createHash("sha256").update(asset).digest("hex"), arcanic.provenance.runtimeSha256);
+});
+
+test("Medic is an unassigned Monster Master trainer asset-library archetype", async () => {
+  const manifest = JSON.parse(await read("public/assets/monster-master/manifest.json"));
+  const asset = await readBytes("public/assets/monster-master/trainers/medic-trainer-v1-128.webp");
+  const medic = manifest.trainerAssets["medic-trainer-v1"];
+
+  assert.ok(manifest.sources.includes("approved-medic-trainer-isometric-master-v1"));
+  assert.equal(medic.label, "Medic");
+  assert.equal(medic.archetype, "medic");
+  assert.equal(medic.path, "/assets/monster-master/trainers/medic-trainer-v1-128.webp");
+  assert.equal(medic.width, 128);
+  assert.equal(medic.height, 192);
+  assert.equal(medic.alpha, true);
+  assert.equal(medic.usage, "asset-library");
+  assert.equal(medic.assignment, "unassigned");
+  assert.equal(medic.facing, "left");
+  assert.equal(medic.perspective, "three-quarter-down-isometric");
+  assert.deepEqual(medic.anchor, { x: 0.5, y: 0.9 });
+  assert.equal(medic.battlefieldScale, 1.0);
+  assert.equal(Object.hasOwn(medic, "role"), false);
+  assert.equal(medic.provenance.provider, "OpenAI ChatGPT image generation");
+  assert.equal(medic.provenance.sourceArchive, "private-gameframe-asset-masters");
+  assert.equal(medic.provenance.sourceSha256, "295bfb69121120f574f1a31b04640bc928d1c37dabf8ce47d9489251b65353d4");
+  assert.equal(medic.provenance.runtimeSha256, "6203ed729ad291a4ebcbdac88ebc71d7a3295c16d891cfea7138067eaf3f894a");
+  assert.equal(medic.provenance.rights, "generated-for-project; repository-proprietary");
+  assert.equal(medic.provenance.attributionRequired, false);
+  assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP");
+  assert.equal(createHash("sha256").update(asset).digest("hex"), medic.provenance.runtimeSha256);
+});
+
 test("standalone Arena enters combat after all eight combatants deploy", () => {
   const state = deployArena();
   assert.equal(state.phase, "combat");
@@ -252,3 +341,38 @@ test("configured Monster Master states keep the base roster and do not opt into 
   const reloaded = await service.view(created.matchId, "alpha");
   assert.equal(reloaded.observation.undeployedUnitIds.length, 6);
 });
+
+test("Caller is an unassigned Monster Master trainer asset-library archetype", async () => {
+  const manifest = JSON.parse(await read("public/assets/monster-master/manifest.json"));
+  const asset = await readBytes("public/assets/monster-master/trainers/caller-trainer-v1-128.webp");
+  const caller = manifest.trainerAssets["caller-trainer-v1"];
+
+  assert.ok(manifest.sources.includes("approved-caller-trainer-isometric-master-v1"));
+  assert.equal(caller.label, "Caller");
+  assert.equal(caller.archetype, "caller");
+  assert.equal(caller.path, "/assets/monster-master/trainers/caller-trainer-v1-128.webp");
+  assert.equal(caller.width, 128);
+  assert.equal(caller.height, 192);
+  assert.equal(caller.alpha, true);
+  assert.equal(caller.usage, "asset-library");
+  assert.equal(caller.assignment, "unassigned");
+  assert.equal(caller.facing, "left");
+  assert.equal(caller.perspective, "three-quarter-down-isometric");
+  assert.deepEqual(caller.anchor, { x: 0.5, y: 0.9 });
+  assert.equal(caller.battlefieldScale, 1.0);
+  assert.equal(Object.hasOwn(caller, "role"), false);
+  assert.equal(caller.provenance.provider, "OpenAI ChatGPT image generation");
+  assert.equal(caller.provenance.sourceArchive, "private-gameframe-asset-masters");
+  assert.equal(caller.provenance.sourceSha256, "36ae023f67da762947755514b797bce82e51e9e6268bdec83ce621b6bb80490d");
+  assert.equal(caller.provenance.runtimeSha256, "d5e1d9291ac28f6f63e56cd5304ed010ca85b3bc23dae9562d4826051da4dc34");
+  assert.equal(caller.provenance.attributionRequired, false);
+  assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP");
+  assert.equal(createHash("sha256").update(asset).digest("hex"), caller.provenance.runtimeSha256);
+});
+
+
+
+test("selectable Arena roster materializes canonical content",()=>{const s=createMonsterMasterArenaState(["alpha","beta"],{rosterSelections:{alpha:{trainerContentId:"caller-trainer-v1",monsterContentIds:["stormcrest-skitter-v1","voidshard-reaver-v1","mossmaw-colossus-v1"]}}});const r=s.rosters.alpha;assert.deepEqual(r.map(u=>u.contentId),["caller-trainer-v1","stormcrest-skitter-v1","voidshard-reaver-v1","mossmaw-colossus-v1"]);assert.equal(r[0].role,"master");assert.deepEqual(r[0].abilityIds,["mend"]);assert.equal(r[1].initiative,10);assert.equal(r[2].attackDamage,5);assert.equal(r[3].maxHealth,18)});
+
+test("generated Arena bot roster is deterministic and legal",()=>{const a=createDeterministicMonsterMasterArenaRoster("match:gameframe-bot"),b=createDeterministicMonsterMasterArenaRoster("match:gameframe-bot");assert.deepEqual(a,b);assert.ok(MONSTER_MASTER_ARENA_TRAINER_CONTENT_IDS.includes(a.trainerContentId));assert.equal(new Set(a.monsterContentIds).size,3);assert.ok(a.monsterContentIds.every(id=>MONSTER_MASTER_ARENA_MONSTER_CONTENT_IDS.includes(id)))});

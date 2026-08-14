@@ -1,0 +1,161 @@
+@media (max-width: 700px) and (orientation: portrait) {
+  html,
+  body.cascade-route {
+    min-height: 100%;
+    overscroll-behavior: none;
+  }
+
+  body.cascade-route {
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  body.cascade-route .cascade-shell {
+    width: 100%;
+    min-height: 100dvh;
+    padding: 58px 6px 6px;
+  }
+
+  body.cascade-route .cascade-header,
+  body.cascade-route .cascade-map,
+  body.cascade-route .cascade-help,
+  body.cascade-route .cascade-side .cascade-card:first-child,
+  body.cascade-route .cascade-performance-card > span {
+    display: none;
+  }
+
+  body.cascade-route .cascade-status {
+    grid-template-columns: .8fr 1fr 1fr;
+    gap: 4px;
+    margin: 0 0 4px;
+  }
+
+  body.cascade-route .cascade-status > div {
+    min-height: 42px;
+    padding: 5px 8px;
+    border-radius: 10px;
+  }
+
+  body.cascade-route .cascade-status > div:nth-child(2),
+  body.cascade-route .cascade-status > div:nth-child(3) {
+    display: none;
+  }
+
+  body.cascade-route .cascade-status small {
+    font-size: .48rem;
+    letter-spacing: .1em;
+  }
+
+  body.cascade-route .cascade-status strong {
+    font-size: 1rem;
+  }
+
+  body.cascade-route .cascade-game {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: stretch;
+  }
+
+  body.cascade-route .cascade-board-wrap {
+    width: 100%;
+    padding: 4px;
+    border-radius: 14px;
+  }
+
+  body.cascade-route .cascade-objective {
+    min-height: 30px;
+    margin: 0 3px 3px;
+    gap: 6px;
+    font-size: .72rem;
+  }
+
+  body.cascade-route #objective-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.cascade-route .cascade-board {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-rows: repeat(8, minmax(0, 1fr));
+    gap: 3px;
+    width: min(calc(100vw - 20px), calc((100dvh - 190px) * .89));
+    max-width: 100%;
+    aspect-ratio: 8 / 9;
+    padding: 4px;
+    border-radius: 16px;
+  }
+
+  body.cascade-route .cascade-tile {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    border-radius: 22%;
+  }
+
+  body.cascade-route .cascade-tile.is-selected {
+    outline-width: 4px;
+    outline-offset: -4px;
+    filter: brightness(1.18) saturate(1.08);
+  }
+
+  body.cascade-route .cascade-side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    gap: 4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body.cascade-route .cascade-side .cascade-card {
+    min-height: 42px;
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  body.cascade-route .cascade-side .cascade-card:nth-child(2) {
+    grid-column: 1;
+  }
+
+  body.cascade-route .cascade-performance-card {
+    grid-column: 2;
+    align-content: center;
+  }
+
+  body.cascade-route .cascade-side .cascade-card > small,
+  body.cascade-route .cascade-side .cascade-card:nth-child(2) > span {
+    display: none;
+  }
+
+  body.cascade-route .cascade-card button {
+    min-height: 42px;
+    padding: 7px 10px;
+  }
+
+  body.cascade-route .cascade-performance-card > strong {
+    font-size: 1.25rem;
+    text-align: center;
+  }
+
+  body.cascade-route .cascade-dialog {
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow: auto;
+  }
+}
+
+@media (max-width: 370px) and (orientation: portrait) {
+  body.cascade-route .cascade-shell {
+    padding-top: 54px;
+  }
+
+  body.cascade-route .cascade-board {
+    width: min(calc(100vw - 16px), calc((100dvh - 180px) * .89));
+    gap: 2px;
+    padding: 3px;
+  }
+}
