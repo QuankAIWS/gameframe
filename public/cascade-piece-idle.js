@@ -19,9 +19,11 @@ if (board) {
     ".is-special-triggered",
   ].join(",");
 
-  const AMBIENT_MIN_MS = 1_250;
+  const AMBIENT_MIN_MS = 1_350;
   const AMBIENT_STEP_MS = 220;
-  const AMBIENT_DURATION_MS = 760;
+  const AMBIENT_DURATION_MS = 720;
+  const QUIET_AFTER_INPUT_MS = 1_600;
+  const QUIET_AFTER_RENDER_MS = 1_150;
   const DEEP_IDLE_AFTER_MS = 6_000;
   const ATTRACT_EVERY_MS = 11_500;
   const ATTRACT_DURATION_MS = 900;
@@ -32,6 +34,7 @@ if (board) {
   let ambientClearTimer = 0;
   let attractTimer = 0;
   let lastInteractionAt = performance.now();
+  let lastBoardRenderAt = performance.now();
   let lastAttractAt = -Infinity;
 
   const effectsAreReduced = () => (
@@ -67,9 +70,11 @@ if (board) {
     clearAllAmbient();
   };
 
-  const boardIsBusy = () => (
+  const boardIsBusy = (now = performance.now()) => (
     document.hidden
     || effectsAreReduced()
+    || now - lastInteractionAt < QUIET_AFTER_INPUT_MS
+    || now - lastBoardRenderAt < QUIET_AFTER_RENDER_MS
     || Boolean(document.querySelector("dialog[open]"))
     || Boolean(document.querySelector(".cascade-drag-ghost"))
     || Boolean(board.querySelector(activeSelector))
@@ -107,7 +112,8 @@ if (board) {
   };
 
   const runDeepIdleAttract = (now) => {
-    if (now - lastInteractionAt < DEEP_IDLE_AFTER_MS) return;
+    const idleSince = Math.max(lastInteractionAt, lastBoardRenderAt);
+    if (now - idleSince < DEEP_IDLE_AFTER_MS) return;
     if (now - lastAttractAt < ATTRACT_EVERY_MS) return;
 
     lastAttractAt = now;
@@ -120,13 +126,13 @@ if (board) {
 
   const runAmbientBeat = () => {
     clearAmbient();
-    if (boardIsBusy()) return;
+    const now = performance.now();
+    if (boardIsBusy(now)) return;
 
     const tiles = calmTiles();
     if (!tiles.length) return;
 
     beat += 1;
-    const now = performance.now();
     const wideSecondTile = !compactViewport.matches && beat % 3 === 0;
     const count = wideSecondTile ? 2 : 1;
     const used = new Set();
@@ -156,13 +162,25 @@ if (board) {
     }, delay);
   };
 
+  // renderBoard() replaces the board's direct children throughout swap,
+  // cascade, fall, and landing presentation. Treat each replacement as an
+  // explicit busy signal and keep ambient transforms away until the board has
+  // been visually settled for a full grace period.
+  new MutationObserver((records) => {
+    if (!records.some((record) => record.type === "childList")) return;
+    lastBoardRenderAt = performance.now();
+    clearAllAmbient();
+  }).observe(board, { childList: true });
+
   document.addEventListener("pointerdown", noteInteraction, { capture: true, passive: true });
   document.addEventListener("keydown", noteInteraction, true);
 
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) clearAllAmbient();
     else {
-      lastInteractionAt = performance.now();
+      const now = performance.now();
+      lastInteractionAt = now;
+      lastBoardRenderAt = now;
       lastAttractAt = -Infinity;
     }
   });
