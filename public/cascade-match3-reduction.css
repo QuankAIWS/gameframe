@@ -7,14 +7,43 @@
  */
 @media (min-width: 760px) and (min-height: 400px) and (min-aspect-ratio: 3/2) {
   .cascade-shell {
-    --cascade-tv-map-width: clamp(108px, 9vw, 136px);
-    --cascade-tv-utility-width: clamp(118px, 9.5vw, 144px);
-    --cascade-tv-status-width: clamp(112px, 8.8vw, 136px);
+    --cascade-tv-map-width: clamp(120px, 9.5vw, 148px);
+    --cascade-tv-side-width: clamp(180px, 15vw, 214px);
+    --cascade-tv-utility-width: var(--cascade-tv-side-width);
+    --cascade-tv-status-width: 0px;
+    --cascade-tv-board-size: min(
+      760px,
+      calc(100dvh - var(--gameframe-destination-height, 72px) - 72px),
+      calc(
+        100vw
+        - var(--cascade-tv-map-width)
+        - var(--cascade-tv-side-width)
+        - 42px
+      )
+    );
+    grid-template-columns:
+      var(--cascade-tv-map-width)
+      minmax(0, calc(var(--cascade-tv-board-size) + 18px))
+      var(--cascade-tv-side-width);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "brand board status"
+      "progress board utility";
+    width: min(
+      calc(
+        var(--cascade-tv-map-width)
+        + var(--cascade-tv-board-size)
+        + 18px
+        + var(--cascade-tv-side-width)
+        + 6px
+      ),
+      calc(100% - 12px)
+    );
   }
 
   /* The run rail should feel like a game-map slice, not six lonely menu rows.
-     Show a useful window around the current level while keeping every node big
-     enough to read from a couch. */
+     On shorter/zoomed TVs show a useful nearby window; taller displays can
+     spend their extra height on more progression rather than empty panel. */
   .cascade-map {
     padding: 7px 6px 8px;
   }
@@ -65,12 +94,12 @@
     justify-self: start;
     width: clamp(25px, 4.2vh, 30px);
     height: clamp(25px, 4.2vh, 30px);
-    margin-left: 5px;
+    margin-left: 7px;
     font-size: clamp(.58rem, 1.08vh, .7rem);
   }
 
   .cascade-map li:not(.is-current):nth-child(even)::before {
-    transform: translateX(8px);
+    transform: translateX(10px);
   }
 
   .cascade-map li.is-current {
@@ -88,14 +117,31 @@
     display: block;
   }
 
-  /* Level is already highlighted on the run track; score and target are
-     already combined in the objective HUD. Remove the duplicate readouts. */
+  /* Moves + lives are one compact top HUD in the same right-side dock as the
+     power controls. This follows the visual hierarchy of mature match-3s: the
+     counter is emphatic without becoming a full-height meter. */
   .cascade-status {
-    grid-template-rows: auto auto;
-    align-content: start;
-    gap: clamp(8px, 1.4vh, 12px);
-    padding: clamp(12px, 2vh, 18px) 7px 8px;
-    background: linear-gradient(180deg, rgba(255,255,255,.26), transparent 48%);
+    grid-area: status;
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+    grid-template-rows: auto;
+    align-items: stretch;
+    gap: 5px;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    margin: 0;
+    padding: 10px 8px 8px;
+    border-left: 1px solid var(--cascade-cabinet-line);
+    border-bottom: 1px solid var(--cascade-cabinet-line);
+    background:
+      radial-gradient(circle at 24% 8%, rgba(100,225,138,.18), transparent 36%),
+      linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.18));
+  }
+
+  .cascade-status::before {
+    display: none;
   }
 
   .cascade-status > div:nth-child(1),
@@ -104,48 +150,61 @@
     display: none;
   }
 
-  /* Mature match-3 games make the move counter emphatic but compact. Keep the
-     giant readable numeral; remove the full-height green trough. */
-  .cascade-status > div:nth-child(4) {
+  .cascade-status > div:nth-child(4),
+  .cascade-status > div:nth-child(5) {
     display: grid;
     align-content: center;
-    align-self: start;
-    justify-self: stretch;
-    width: 100%;
-    max-width: 132px;
-    aspect-ratio: 1 / .92;
+    justify-items: center;
+    min-width: 0;
+    min-height: clamp(68px, 12vh, 92px);
     margin: 0;
-    min-height: 0;
-    padding: 8px 5px 9px;
-    border-width: 3px;
-    border-radius: clamp(22px, 3.5vh, 29px);
+  }
+
+  .cascade-status > div:nth-child(4) {
+    padding: 7px 4px 8px;
+    border: 3px solid rgba(67, 193, 94, .62);
+    border-radius: clamp(19px, 3.2vh, 25px);
+    background:
+      radial-gradient(circle at 76% 12%, rgba(255,255,255,.96), transparent 36%),
+      linear-gradient(145deg, #eaffea, #bff1ca);
+    box-shadow:
+      0 6px 12px rgba(55,144,73,.13),
+      inset 0 2px 0 rgba(255,255,255,.94),
+      inset 0 -5px 12px rgba(64,153,78,.09);
   }
 
   .cascade-status > div:nth-child(4)::before {
+    content: "";
+    position: absolute;
     inset: 5px;
-    border-radius: clamp(17px, 2.8vh, 23px);
+    border: 1px solid rgba(255,255,255,.68);
+    border-radius: clamp(14px, 2.5vh, 19px);
+    pointer-events: none;
   }
 
   .cascade-status > div:nth-child(4) small {
-    font-size: clamp(.68rem, 1.24vh, .82rem);
+    color: #347346;
+    font-size: clamp(.6rem, 1.08vh, .72rem);
     line-height: 1;
   }
 
   .cascade-status > div:nth-child(4) strong {
-    font-size: clamp(3rem, 7.1vh, 4.45rem);
-    line-height: .82;
+    color: #195c32;
+    font-size: clamp(2.55rem, 5.8vh, 3.75rem);
+    font-weight: 1000;
+    line-height: .8;
+    text-shadow: 0 2px 0 rgba(255,255,255,.76);
   }
 
   .cascade-status > div:nth-child(5) {
-    display: grid;
-    justify-items: center;
     gap: 4px;
-    margin: 0;
-    padding: 8px 3px 9px;
-    border: 0;
-    border-top: 1px solid rgba(91,57,121,.12);
-    background: transparent;
-    box-shadow: none;
+    padding: 7px 3px 8px;
+    border: 2px solid rgba(255,255,255,.78);
+    border-radius: clamp(17px, 2.8vh, 22px);
+    background: linear-gradient(145deg, rgba(255,250,253,.84), rgba(248,222,238,.78));
+    box-shadow:
+      0 4px 9px rgba(141,53,94,.08),
+      inset 0 1px 0 rgba(255,255,255,.96);
   }
 
   .cascade-status > div:nth-child(5)::before {
@@ -153,48 +212,55 @@
   }
 
   .cascade-status > div:nth-child(5) small {
-    font-size: clamp(.6rem, 1.08vh, .72rem);
+    color: #7d4e6c;
+    font-size: clamp(.56rem, 1vh, .66rem);
   }
 
   #lives {
     min-width: 0;
     min-height: 0;
-    padding: 5px 7px;
-    border: 2px solid rgba(255,255,255,.86);
-    border-radius: 999px;
-    background: linear-gradient(145deg, #fff1f8, #ffd9e9);
-    box-shadow:
-      0 4px 9px rgba(159,55,102,.11),
-      inset 0 1px 0 rgba(255,255,255,.98);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
     color: #e83d82;
-    font-size: clamp(.98rem, 2.05vh, 1.38rem);
+    font-size: clamp(.76rem, 1.55vh, 1.02rem);
+    letter-spacing: -.04em;
+    white-space: nowrap;
   }
 
   #life-timer:not([hidden]) {
     display: block;
     color: #875974;
-    font-size: clamp(.52rem, .98vh, .64rem);
+    font-size: clamp(.48rem, .88vh, .58rem);
     font-weight: 900;
   }
 
-  /* Controls should cluster like game controls, not stretch into five equal
-     dashboard rows. Keep Streak/Hammer/Best/Settings/Blitz together as one
-     compact dock with the board still dominating the cabinet. */
+  /* Controls sit directly below the compact HUD, forming one right-side game
+     dock instead of two unrelated full-height rails. */
   .cascade-side {
+    grid-area: utility;
     grid-template-rows: auto auto auto auto auto;
     align-content: center;
-    gap: 0;
-    padding: clamp(7px, 1.1vh, 10px) 0;
+    gap: clamp(2px, .55vh, 5px);
+    height: 100%;
+    padding: clamp(6px, .9vh, 9px) 0;
+    border-left: 1px solid var(--cascade-cabinet-line);
+    border-right: 0;
+    background:
+      radial-gradient(circle at 50% 8%, rgba(255,102,174,.1), transparent 25%),
+      linear-gradient(180deg, rgba(255,255,255,.33), rgba(231,244,252,.18));
   }
 
   .cascade-card {
-    min-height: clamp(52px, 8.5vh, 76px);
-    padding: clamp(6px, .9vh, 9px) clamp(7px, .6vw, 10px);
+    min-height: clamp(48px, 7.7vh, 68px);
+    padding: clamp(5px, .8vh, 8px) clamp(9px, .75vw, 12px);
   }
 
   .cascade-card:not(:last-child)::after {
-    left: 13px;
-    right: 13px;
+    left: 18px;
+    right: 18px;
   }
 
   #star-progress,
@@ -215,7 +281,7 @@
   }
 
   #level-stars {
-    font-size: clamp(1.65rem, 3.5vh, 2.35rem);
+    font-size: clamp(1.6rem, 3.2vh, 2.2rem);
   }
 
   #cascade-feedback-card {
@@ -244,7 +310,7 @@
   }
 
   .cascade-feedback-controls button {
-    min-height: clamp(31px, 4.8vh, 39px);
+    min-height: clamp(29px, 4.4vh, 37px);
     padding: 3px 2px;
   }
 
@@ -258,18 +324,34 @@
   }
 
   .cascade-weekly-card [data-weekly-start] {
-    min-height: clamp(38px, 5.8vh, 47px);
-    padding: 4px 6px;
-    font-size: clamp(.64rem, 1.18vh, .78rem);
+    min-height: clamp(36px, 5.4vh, 45px);
+    padding: 4px 7px;
+    font-size: clamp(.64rem, 1.15vh, .78rem);
   }
 
-  /* With the peripheral columns reduced, let the playfield use the reclaimed
-     width while remaining constrained by the TV-height master calculation. */
   .cascade-board-wrap {
     border-radius: 30px;
   }
 
   .cascade-objective {
     margin-inline: 4px;
+  }
+}
+
+/* A taller display should expose more of the run instead of surrounding the
+   same tiny level slice with empty cabinet. */
+@media (min-width: 760px) and (min-height: 700px) and (min-aspect-ratio: 3/2) {
+  .cascade-map li.is-current + li + li + li + li,
+  .cascade-map li:has(+ li + li + li + li + li + li + li + .is-current),
+  .cascade-map li:has(+ li + li + li + li + li + li + li + li + .is-current),
+  .cascade-map li:has(+ li + li + li + li + li + li + li + li + li + .is-current),
+  .cascade-map li:has(+ li + li + li + li + li + li + li + li + li + li + .is-current),
+  .cascade-map li:has(+ li + li + li + li + li + li + li + li + li + li + li + .is-current),
+  .cascade-map li:has(+ li + li + li + li + li + li + li + li + li + li + li + li + .is-current) {
+    display: grid;
+  }
+
+  .cascade-map li {
+    min-height: clamp(29px, 3.7vh, 33px);
   }
 }
