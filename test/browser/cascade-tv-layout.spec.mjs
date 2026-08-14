@@ -28,10 +28,13 @@ test("Cascade keeps the full TV cabinet around a board-height playfield under br
   for (const box of [headerBox, mapBox, boardWrapBox, boardBox, utilityBox, statusBox]) expect(box).toBeTruthy();
 
   // TV topology: brand/progress | board | utilities | primary readouts.
-  expect(headerBox.x + headerBox.width).toBeLessThan(boardWrapBox.x);
-  expect(mapBox.x + mapBox.width).toBeLessThan(boardWrapBox.x);
-  expect(boardWrapBox.x + boardWrapBox.width).toBeLessThan(utilityBox.x);
-  expect(utilityBox.x + utilityBox.width).toBeLessThan(statusBox.x);
+  // Adjacent cabinet regions may share an exact seam; they must never overlap
+  // or reorder. A mandatory whitespace gap would force the old card-dashboard
+  // treatment back into the unified machine shell.
+  expect(headerBox.x + headerBox.width).toBeLessThanOrEqual(boardWrapBox.x);
+  expect(mapBox.x + mapBox.width).toBeLessThanOrEqual(boardWrapBox.x);
+  expect(boardWrapBox.x + boardWrapBox.width).toBeLessThanOrEqual(utilityBox.x);
+  expect(utilityBox.x + utilityBox.width).toBeLessThanOrEqual(statusBox.x);
 
   // Persistent UI consumes width, not extra height beyond the play cabinet.
   expect(Math.abs(utilityBox.y - boardWrapBox.y)).toBeLessThanOrEqual(2);
