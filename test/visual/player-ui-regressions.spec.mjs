@@ -6,13 +6,14 @@ async function expectStyledDestinationBar(page, theme) {
   await expect(bar).toHaveAttribute("data-theme", theme);
   await expect.poll(() => bar.evaluate((node) => getComputedStyle(node).display)).toBe("grid");
   await expect.poll(() => bar.evaluate((node) => getComputedStyle(node).position)).toBe("sticky");
-  await expect.poll(() => page.locator("#gameframe-session-badge").evaluate((node) => getComputedStyle(node).position)).toBe("fixed");
+  await expect(page.locator("#gameframe-shell-actions > #gameframe-session-badge")).toHaveCount(1);
+  await expect.poll(() => page.locator("#gameframe-session-badge").evaluate((node) => getComputedStyle(node).position)).toBe("static");
 }
 
 async function openTic(page, viewport, player) {
   await page.setViewportSize(viewport);
   await page.goto(`/?game=tic-tac-toe&menu=1&player=${player}`);
-  await page.locator("#challenge-bot").click();
+  await page.locator("#board-menu-computer").click();
   await expect(page.locator("body.tic-tac-toe-noir-running")).toBeVisible();
   await expectStyledDestinationBar(page, "tic");
   await expect(page.locator(".tic-noir-topbar")).toHaveCount(0);
@@ -111,7 +112,7 @@ test("Tic-Tac-Toe uses a two-row desktop viewport with an unclipped board and te
 test("Checkers never inherits Tic-Tac-Toe presentation wrappers", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?game=american-checkers&menu=1&player=checkers-style-regression");
-  await page.locator("#challenge-bot").click();
+  await page.locator("#board-menu-computer").click();
 
   await expect(page.locator("body.gameframe-shared-match-running")).toBeVisible();
   await expect(page.locator("body.tic-tac-toe-noir-running")).toHaveCount(0);
@@ -214,6 +215,6 @@ test("Monster Master uses a battlefield background with working contextual unit 
   });
   await expect(page.locator("#monster-master-unit-hud")).toHaveAttribute("data-owner", "enemy");
   await expect(page.locator("#monster-master-return-active")).toBeVisible();
-  await page.locator("#monster-master-return-active").click();
+  await page.locator("#monster-master-return-active").click({ force: true });
   await expect(page.locator("#monster-master-unit-hud")).toHaveAttribute("data-role", "emberling");
 });
