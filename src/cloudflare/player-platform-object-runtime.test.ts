@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { PlayerPlatformObjectRuntime } from "./player-platform-object-runtime.ts";
+import { PlayerPlatformThemeRuntime } from "./player-platform-theme-runtime.ts";
 import type { DurableStorageLike } from "./runtime-contracts.ts";
 
 class MemoryStorage implements DurableStorageLike {
@@ -128,6 +129,38 @@ test("favorite games persist and older feed records migrate with an empty favori
   assert.deepEqual(saved.favoriteGameIds, ["othello", "cascade"]);
   feed = await body(await runtime.fetch(request("/player/feed")));
   assert.deepEqual(feed.favoriteGameIds, ["othello", "cascade"]);
+});
+
+test("player theme defaults to standard and partial theme updates preserve favorites", async () => {
+  const runtime = new PlayerPlatformThemeRuntime(new MemoryStorage());
+  let feed = await body(await runtime.fetch(request("/player/feed")));
+  assert.equal(feed.themeId, "standard");
+  assert.equal(feed.themeConfigured, false);
+
+  await runtime.fetch(request("/player/preferences", "POST", {
+    favoriteGameIds: ["cascade", "othello"],
+  }));
+  const saved = await body(await runtime.fetch(request("/player/preferences", "POST", {
+    themeId: "cascade-pop",
+  })));
+  assert.deepEqual(saved.favoriteGameIds, ["cascade", "othello"]);
+  assert.equal(saved.themeId, "cascade-pop");
+  assert.equal(saved.themeConfigured, true);
+
+  feed = await body(await runtime.fetch(request("/player/feed")));
+  assert.deepEqual(feed.favoriteGameIds, ["cascade", "othello"]);
+  assert.equal(feed.themeId, "cascade-pop");
+  assert.equal(feed.themeConfigured, true);
+});
+
+test("unsupported player themes are rejected without replacing the saved theme", async () => {
+  const runtime = new PlayerPlatformThemeRuntime(new MemoryStorage());
+  await runtime.fetch(request("/player/preferences", "POST", { themeId: "cyberpunk" }));
+  const rejected = await runtime.fetch(request("/player/preferences", "POST", { themeId: "made-up" }));
+  assert.equal(rejected.status, 400);
+  const feed = await body(await runtime.fetch(request("/player/feed")));
+  assert.equal(feed.themeId, "cyberpunk");
+  assert.equal(feed.themeConfigured, true);
 });
 
 test("leaderboard counts each completed authoritative match once and ranks by points", async () => {
