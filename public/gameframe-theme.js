@@ -48,19 +48,24 @@ function currentPlayerId() {
   catch { return ""; }
 }
 
-function playerThemeStorageKey() {
-  const playerId = currentPlayerId();
-  return playerId ? `${legacyThemeStorageKey}:${playerId}` : legacyThemeStorageKey;
+function playerThemeStorageKey(playerId = currentPlayerId()) {
+  const normalizedPlayerId = String(playerId || "").trim();
+  return normalizedPlayerId ? `${legacyThemeStorageKey}:${normalizedPlayerId}` : legacyThemeStorageKey;
+}
+
+function cachedPlayerTheme(playerId, allowLegacyFallback = false) {
+  try {
+    const scoped = window.localStorage.getItem(playerThemeStorageKey(playerId));
+    if (scoped !== null) return normalizeTheme(scoped);
+    if (allowLegacyFallback) return normalizeTheme(window.localStorage.getItem(legacyThemeStorageKey));
+  } catch {
+    // Local theme cache is cosmetic and may be unavailable in restricted storage contexts.
+  }
+  return "standard";
 }
 
 function storedTheme() {
-  try {
-    const scoped = window.localStorage.getItem(playerThemeStorageKey());
-    if (scoped !== null) return normalizeTheme(scoped);
-    return normalizeTheme(window.localStorage.getItem(legacyThemeStorageKey));
-  } catch {
-    return "standard";
-  }
+  return cachedPlayerTheme(currentPlayerId(), true);
 }
 
 function cacheTheme(themeId) {
@@ -280,4 +285,4 @@ function installGameFrameThemePicker() {
 
 applyTheme(storedTheme(), false);
 
-export { applyProfileTheme, applyTheme, installGameFrameThemePicker, normalizeTheme, themes };
+export { applyProfileTheme, applyTheme, cachedPlayerTheme, installGameFrameThemePicker, normalizeTheme, themes };
