@@ -1,0 +1,201 @@
+/*
+ * Primary score/lives HUD for Cascade's wide TV cabinet.
+ * Loaded after the cabinet reduction layer so these primary readouts can use
+ * the remaining right-dock space without changing board geometry.
+ */
+@media (min-width: 760px) and (min-height: 400px) and (min-aspect-ratio: 3/2) {
+  .cascade-status {
+    grid-template-columns: minmax(0, .86fr) minmax(0, 1.14fr);
+    grid-template-rows: auto auto;
+    gap: clamp(5px, .8vh, 8px);
+    padding: clamp(8px, 1.1vh, 11px) 8px 9px;
+  }
+
+  .cascade-status > div:nth-child(1),
+  .cascade-status > div:nth-child(3) {
+    display: none;
+  }
+
+  .cascade-status > div:nth-child(2) {
+    position: relative;
+    display: grid;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    min-height: clamp(58px, 9.5vh, 76px);
+    margin: 0;
+    padding: clamp(7px, 1.05vh, 10px) clamp(10px, .85vw, 14px);
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,.88);
+    border-radius: clamp(18px, 2.7vh, 23px);
+    background:
+      radial-gradient(circle at 14% 8%, rgba(255,255,255,.95), transparent 33%),
+      linear-gradient(135deg, rgba(242,232,255,.98), rgba(216,244,255,.94) 58%, rgba(235,255,246,.92));
+    box-shadow:
+      0 6px 13px rgba(75,44,112,.12),
+      inset 0 2px 0 rgba(255,255,255,.98),
+      inset 0 -5px 12px rgba(91,92,164,.07);
+  }
+
+  .cascade-status > div:nth-child(2)::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border: 1px solid rgba(113,78,160,.12);
+    border-radius: clamp(13px, 2vh, 18px);
+    pointer-events: none;
+  }
+
+  .cascade-status > div:nth-child(2)::after {
+    content: "";
+    position: absolute;
+    top: -30%;
+    bottom: -30%;
+    width: 34%;
+    left: -45%;
+    opacity: 0;
+    transform: skewX(-18deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent);
+    pointer-events: none;
+  }
+
+  .cascade-status > div:nth-child(2):has(#score.is-counting)::after {
+    animation: cascade-score-sweep .62s ease-out both;
+  }
+
+  .cascade-status > div:nth-child(2) small {
+    position: relative;
+    z-index: 1;
+    color: #765198;
+    font-size: clamp(.58rem, 1.08vh, .74rem);
+    font-weight: 1000;
+    letter-spacing: .13em;
+  }
+
+  #score {
+    position: relative;
+    z-index: 1;
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #4f2f79;
+    font-size: clamp(2rem, 4.5vh, 3.25rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: 1000;
+    line-height: .9;
+    letter-spacing: -.045em;
+    text-align: right;
+    text-shadow: 0 2px 0 rgba(255,255,255,.88), 0 5px 12px rgba(82,48,122,.11);
+    white-space: nowrap;
+  }
+
+  .cascade-score-value {
+    display: inline-block;
+    min-width: 4.2ch;
+    transform-origin: 50% 72%;
+  }
+
+  #score.is-counting .cascade-score-value {
+    animation: cascade-score-reel .5s cubic-bezier(.15,.85,.2,1) both;
+  }
+
+  #score.is-score-jump .cascade-score-value {
+    filter: drop-shadow(0 0 8px rgba(255,201,62,.48));
+  }
+
+  .cascade-status > div:nth-child(4) {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: clamp(66px, 10.5vh, 84px);
+  }
+
+  .cascade-status > div:nth-child(5) {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: clamp(66px, 10.5vh, 84px);
+    gap: clamp(4px, .7vh, 6px);
+    padding: 7px 6px 8px;
+  }
+
+  .cascade-status > div:nth-child(5) small {
+    margin-bottom: 1px;
+  }
+
+  #lives {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: center;
+    justify-items: center;
+    gap: clamp(2px, .28vw, 4px);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    font-size: 1rem;
+    letter-spacing: 0;
+  }
+
+  .cascade-life-heart {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    max-width: clamp(17px, 2.85vh, 23px);
+    aspect-ratio: 1;
+    min-width: 0;
+    border: 1px solid rgba(255,255,255,.82);
+    border-radius: 50%;
+    font-size: clamp(.72rem, 1.7vh, 1.05rem);
+    line-height: 1;
+    text-shadow: 0 1px 0 rgba(255,255,255,.82);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 2px 5px rgba(125,50,88,.09);
+  }
+
+  .cascade-life-heart.is-full {
+    color: #d92d78;
+    background: linear-gradient(145deg, #fff8fb, #ffd7e8);
+  }
+
+  .cascade-life-heart.is-empty {
+    color: rgba(156,89,121,.28);
+    background: linear-gradient(145deg, rgba(255,255,255,.64), rgba(244,230,239,.58));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.82);
+  }
+
+  #life-timer:not([hidden]) {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@keyframes cascade-score-reel {
+  0% { transform: translateY(.28em) scale(.965); opacity: .72; filter: blur(.45px); }
+  56% { transform: translateY(-.065em) scale(1.025); opacity: 1; filter: blur(0); }
+  100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
+}
+
+@keyframes cascade-score-sweep {
+  0% { left: -45%; opacity: 0; }
+  18% { opacity: .62; }
+  100% { left: 118%; opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #score.is-counting .cascade-score-value,
+  .cascade-status > div:nth-child(2):has(#score.is-counting)::after {
+    animation: none !important;
+  }
+}
