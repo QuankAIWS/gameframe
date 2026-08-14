@@ -1,10 +1,11 @@
 const developmentStorageKey = "scribbles-gameframe.player-id";
 let installedIdentity = null;
 
-if (!document.querySelector('link[href="/gameframe-auth.css"]')) {
+for (const href of ["/gameframe-auth.css", "/gameframe-account-menu.css"]) {
+  if (document.querySelector(`link[href="${href}"]`)) continue;
   const stylesheet = document.createElement("link");
   stylesheet.rel = "stylesheet";
-  stylesheet.href = "/gameframe-auth.css";
+  stylesheet.href = href;
   document.head.append(stylesheet);
 }
 
@@ -72,28 +73,102 @@ function renderAuthenticationGate(
   document.documentElement.classList.add("gameframe-auth-blocked");
 }
 
+function accountAvatarMarkup(identity) {
+  if (identity.avatarUrl) {
+    return `<img src="${identity.avatarUrl}" alt="" referrerpolicy="no-referrer">`;
+  }
+  return `<span class="gameframe-session-avatar" aria-hidden="true">${identity.source === "discord" ? "D" : "DEV"}</span>`;
+}
+
 function installIdentityBadge(identity) {
   if (document.querySelector("#gameframe-session-badge")) return;
+
+  const displayName = identity.displayName || identity.playerId;
+  const sourceLabel = identity.source === "discord" ? "Discord account" : "Local development";
+  const avatar = accountAvatarMarkup(identity);
+
   const badge = document.createElement("aside");
   badge.id = "gameframe-session-badge";
-  badge.className = "gameframe-session-badge";
-  const avatar = identity.avatarUrl
-    ? `<img src="${identity.avatarUrl}" alt="" referrerpolicy="no-referrer">`
-    : `<span class="gameframe-session-avatar" aria-hidden="true">${identity.source === "discord" ? "D" : "DEV"}</span>`;
+  badge.className = "gameframe-session-badge gameframe-account-control";
   badge.innerHTML = `
-    ${avatar}
-    <span>
-      <small>${identity.source === "discord" ? "Discord session" : "Local development"}</small>
+    <button id="gameframe-account-trigger" class="gameframe-account-trigger" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="gameframe-account-panel">
+      ${avatar}
       <strong></strong>
-    </span>
-    ${identity.source === "discord" ? '<button type="button">Log out</button>' : ""}
+      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="m4 6 4 4 4-4" /></svg>
+    </button>
   `;
-  badge.querySelector("strong").textContent = identity.displayName || identity.playerId;
-  badge.querySelector("button")?.addEventListener("click", async () => {
-    await fetch("/auth/logout", { method: "POST", credentials: "same-origin" });
-    window.location.reload();
-  });
+  badge.querySelector("strong").textContent = displayName;
   document.body.append(badge);
+
+  const panel = document.createElement("section");
+  panel.id = "gameframe-account-panel";
+  panel.className = "gameframe-account-panel";
+  panel.setAttribute("role", "menu");
+  panel.setAttribute("aria-label", "GameFrame account");
+  panel.hidden = true;
+  panel.innerHTML = `
+    <div class="gameframe-account-summary">
+      <span class="gameframe-account-summary-avatar">${avatar}</span>
+      <span class="gameframe-account-summary-copy">
+        <strong></strong>
+        <small></small>
+      </span>
+    </div>
+    <div class="gameframe-account-menu-actions"></div>
+  `;
+  panel.querySelector(".gameframe-account-summary-copy strong").textContent = displayName;
+  panel.querySelector(".gameframe-account-summary-copy small").textContent = sourceLabel;
+
+  const actions = panel.querySelector(".gameframe-account-menu-actions");
+  if (identity.source === "discord") {
+    const logout = document.createElement("button");
+    logout.type = "button";
+    logout.className = "gameframe-account-logout";
+    logout.setAttribute("role", "menuitem");
+    logout.innerHTML = `
+      <span><strong>Log out</strong><small>End this GameFrame session</small></span>
+      <span aria-hidden="true">↗</span>
+    `;
+    logout.addEventListener("click", async () => {
+      logout.disabled = true;
+      const label = logout.querySelector("strong");
+      if (label) label.textContent = "Logging out…";
+      try {
+        await fetch("/auth/logout", { method: "POST", credentials: "same-origin" });
+      } finally {
+        window.location.reload();
+      }
+    });
+    actions.append(logout);
+  } else {
+    const local = document.createElement("div");
+    local.className = "gameframe-account-local-note";
+    local.innerHTML = "<small>PLAYER ID</small><strong></strong>";
+    local.querySelector("strong").textContent = identity.playerId;
+    actions.append(local);
+  }
+  document.body.append(panel);
+
+  const trigger = badge.querySelector("#gameframe-account-trigger");
+  function setOpen(open) {
+    panel.hidden = !open;
+    trigger.setAttribute("aria-expanded", String(open));
+    badge.classList.toggle("is-open", open);
+    if (open) panel.querySelector('[role="menuitem"]')?.focus();
+  }
+
+  trigger.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen(panel.hidden);
+  });
+  panel.addEventListener("click", (event) => event.stopPropagation());
+  document.addEventListener("click", () => setOpen(false));
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || panel.hidden) return;
+    setOpen(false);
+    trigger.focus();
+  });
 
   // Alerts belong to the authenticated GameFrame shell, not only invite-creation pages.
   // Dynamic import avoids a static auth <-> alerts module cycle while keeping optional pages lightweight.
