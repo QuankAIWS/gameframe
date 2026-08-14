@@ -1,4 +1,4 @@
-import { gameFrameFetch } from "./gameframe-auth.js";
+import { gameFrameFetch, gameFrameOptionalFetch } from "./gameframe-auth.js";
 
 const legacyThemeStorageKey = "scribbles-gameframe.shell-theme:v1";
 const playerIdStorageKey = "scribbles-gameframe.player-id";
@@ -92,7 +92,7 @@ function applyProfileTheme(root, themeId) {
 async function readSavedPlayerTheme() {
   const identity = window.gameFrameIdentity;
   if (!identity) return null;
-  const response = await gameFrameFetch("/api/me/feed", {}, identity);
+  const response = await gameFrameOptionalFetch("/api/me/feed", {}, identity);
   if (!response.ok) return null;
   const body = await response.json().catch(() => ({}));
   return {
