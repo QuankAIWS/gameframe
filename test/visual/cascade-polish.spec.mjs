@@ -125,12 +125,21 @@ test("Cascade Crush big-pop color clear creates a board-wide dopamine hit", asyn
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
 
-  await expect.poll(() => page.evaluate(() => Boolean(window.cascadePolish))).toBe(true);
-  const started = await page.evaluate(() => window.cascadePolish.demo("color"));
-  expect(started).toBe(true);
+  await expect.poll(() => page.evaluate(() => Boolean(window.cascadePresentationDirector))).toBe(true);
+  await page.evaluate(() => {
+    const transition = {
+      cascade: 5,
+      combo: "color+special",
+      matched: [27, 28, 29, 30, 31],
+      createdSpecials: [],
+      triggeredSpecials: [{ index: 27, special: "color" }],
+    };
+    window.cascadePresentationDirector.transitionStart(transition);
+    window.cascadePresentationDirector.transitionClear(transition);
+  });
   await expect(page.locator(".cascade-color-wash")).toBeVisible();
   await expect(page.locator(".cascade-pop-burst .cascade-pop-ring").first()).toBeVisible();
-  await expect(page.locator(".cascade-hype-word")).toContainText("Mega!");
+  await expect(page.locator(".cascade-hype-word")).toContainText("Power Combo!");
   await page.screenshot({ path: `${output}/cascade-crush-big-pop-color-desktop.png`, fullPage: true });
 });
 
