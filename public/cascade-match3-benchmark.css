@@ -1,0 +1,465 @@
+/*
+ * Big-match-3 benchmark pass for the TV cabinet.
+ *
+ * Candy/Soda/Royal-style play screens devote almost all visual attention to the
+ * board, goals, moves and tactile power controls. This layer keeps GameFrame's
+ * landscape cabinet and accessibility sizing, but strips the remaining
+ * dashboard density from active play. No image assets or animation loops.
+ */
+@media (min-width: 760px) and (min-height: 400px) and (min-aspect-ratio: 3/2) {
+  .cascade-shell {
+    --cascade-tv-map-width: clamp(102px, 9vw, 138px);
+    --cascade-tv-utility-width: clamp(126px, 10.5vw, 158px);
+    --cascade-tv-status-width: clamp(140px, 11.5vw, 176px);
+    --cascade-cabinet-line: rgba(85, 45, 132, .19);
+    border-width: 4px;
+    border-color: rgba(255, 255, 255, .96);
+    background:
+      radial-gradient(circle at 5% 10%, rgba(255, 80, 164, .23), transparent 23%),
+      radial-gradient(circle at 94% 90%, rgba(38, 194, 232, .24), transparent 27%),
+      linear-gradient(118deg, rgba(255, 241, 250, .98), rgba(239, 222, 255, .97) 46%, rgba(221, 244, 255, .97));
+    box-shadow:
+      0 27px 70px rgba(69, 35, 105, .22),
+      0 0 0 1px rgba(104, 60, 151, .08),
+      inset 0 2px 0 rgba(255, 255, 255, 1),
+      inset 0 -10px 28px rgba(86, 43, 127, .08);
+  }
+
+  .cascade-shell::before {
+    height: 13px;
+    background: linear-gradient(90deg, #ff4f9a, #a35df3 30%, #25c8ec 64%, #ffd23d);
+    opacity: .72;
+  }
+
+  /* Brand + progression become a small game-world track rather than a list. */
+  .cascade-header,
+  .cascade-map {
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.46), rgba(255,255,255,.08)),
+      linear-gradient(180deg, rgba(255,211,235,.42), rgba(229,215,253,.32));
+  }
+
+  .cascade-header {
+    padding: 13px 9px 8px;
+  }
+
+  .cascade-kicker {
+    font-size: clamp(.48rem, 1vh, .62rem);
+    color: #a13c86;
+  }
+
+  .cascade-header h1 {
+    font-size: clamp(1.35rem, 3vh, 2rem);
+    color: #56307d;
+    text-shadow:
+      0 2px 0 rgba(255,255,255,.95),
+      0 7px 15px rgba(75,38,105,.16);
+  }
+
+  .cascade-map {
+    padding: 9px 7px 10px;
+  }
+
+  .cascade-map p {
+    margin: 0 0 7px 4px;
+    color: #8d4b9c;
+    font-size: clamp(.58rem, 1.15vh, .72rem);
+    letter-spacing: .16em;
+  }
+
+  .cascade-map ol {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    justify-content: center;
+    gap: clamp(5px, .9vh, 8px);
+    overflow: hidden;
+    padding: 4px 0;
+  }
+
+  .cascade-map ol::before {
+    content: "";
+    position: absolute;
+    left: clamp(14px, 2.25vh, 18px);
+    top: 8%;
+    bottom: 8%;
+    width: 4px;
+    border-radius: 999px;
+    background: linear-gradient(#77dfa2, #a76af3 62%, #d6b7ef);
+    opacity: .34;
+  }
+
+  .cascade-map li {
+    display: none;
+    position: relative;
+    z-index: 1;
+    grid-template-columns: clamp(28px, 4.8vh, 34px) minmax(0, 1fr);
+    min-height: clamp(32px, 5vh, 38px);
+    padding: 2px 3px;
+    border-radius: 999px;
+    font-size: clamp(.62rem, 1.18vh, .76rem);
+    line-height: 1.05;
+  }
+
+  .cascade-map li.is-current,
+  .cascade-map li.is-current + li,
+  .cascade-map li.is-current + li + li,
+  .cascade-map li:has(+ .is-current),
+  .cascade-map li:has(+ li + .is-current),
+  .cascade-map li:has(+ li + li + .is-current) {
+    display: grid;
+  }
+
+  .cascade-map li::before {
+    width: clamp(27px, 4.6vh, 33px);
+    height: clamp(27px, 4.6vh, 33px);
+    border: 2px solid rgba(255,255,255,.86);
+    box-shadow:
+      0 3px 8px rgba(67,40,92,.12),
+      inset 0 1px 0 rgba(255,255,255,.95);
+  }
+
+  .cascade-map li.is-complete {
+    color: #23794a;
+    background: transparent;
+  }
+
+  .cascade-map li.is-current {
+    border: 2px solid rgba(160, 86, 236, .3);
+    background: linear-gradient(90deg, rgba(196,145,255,.42), rgba(255,255,255,.48));
+    box-shadow:
+      inset 4px 0 0 #9b5ae7,
+      0 5px 12px rgba(90,50,128,.1);
+    color: #5c298d;
+    font-weight: 950;
+  }
+
+  .cascade-map .cascade-map-stars {
+    font-size: .58em;
+    letter-spacing: -.06em;
+  }
+
+  /* Saturated recessed playfield. The candies should read as pieces, not UI buttons. */
+  .cascade-board-wrap {
+    height: calc(100% - 8px);
+    margin: 4px 0;
+    padding: 8px 9px 9px;
+    border: 3px solid rgba(255,255,255,.93);
+    border-radius: 28px;
+    background:
+      radial-gradient(circle at 50% -10%, rgba(255,255,255,.88), transparent 43%),
+      linear-gradient(155deg, #c8aee8 0%, #e4d8f5 45%, #afddec 100%);
+    box-shadow:
+      inset 0 7px 20px rgba(64,34,94,.2),
+      inset 0 -4px 13px rgba(255,255,255,.72),
+      0 0 0 2px rgba(115,64,158,.11),
+      0 11px 24px rgba(70,39,100,.12);
+  }
+
+  .cascade-objective {
+    min-height: 40px;
+    margin: 0 2px 6px;
+    padding: 5px 9px;
+    border: 2px solid rgba(255,255,255,.84);
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 8% 20%, rgba(255,221,84,.36), transparent 20%),
+      linear-gradient(90deg, rgba(255,255,255,.9), rgba(245,237,255,.78));
+    box-shadow:
+      0 5px 12px rgba(78,46,108,.11),
+      inset 0 1px 0 rgba(255,255,255,1);
+  }
+
+  #objective-label {
+    color: #563b70;
+    font-weight: 950;
+  }
+
+  #objective-label::before {
+    flex-basis: clamp(25px, 4vh, 30px);
+    width: clamp(25px, 4vh, 30px);
+    height: clamp(25px, 4vh, 30px);
+    background: linear-gradient(145deg, #ffe862, #ffb92f);
+    box-shadow:
+      0 4px 9px rgba(204,124,26,.23),
+      inset 0 2px 0 rgba(255,255,255,.72);
+  }
+
+  .cascade-board {
+    gap: clamp(2px, .32vw, 4px);
+    padding: clamp(6px, .65vw, 9px);
+    border-width: 3px;
+    border-color: rgba(255,255,255,.86);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at 22% 8%, rgba(255,255,255,.18), transparent 30%),
+      radial-gradient(circle at 80% 90%, rgba(68,201,238,.18), transparent 32%),
+      linear-gradient(145deg, #9d80c4 0%, #baa0d6 45%, #79b9d3 100%);
+    background-size: auto;
+    box-shadow:
+      inset 0 4px 13px rgba(53,29,78,.28),
+      inset 0 -5px 14px rgba(255,255,255,.16),
+      0 9px 18px rgba(65,36,92,.18);
+  }
+
+  .cascade-tile {
+    border-width: 1px;
+    border-color: rgba(255,255,255,.68);
+    background:
+      radial-gradient(circle at 28% 18%, rgba(255,255,255,.98) 0 4%, rgba(255,255,255,.42) 5% 16%, transparent 17%),
+      radial-gradient(circle at 68% 82%, rgba(80,35,100,.14), transparent 46%),
+      linear-gradient(145deg, var(--tile-a), var(--tile-b));
+    box-shadow:
+      inset 0 3px 5px rgba(255,255,255,.42),
+      inset 0 -8px 12px rgba(73,34,91,.2),
+      0 4px 7px rgba(51,27,72,.27),
+      0 1px 0 rgba(255,255,255,.48);
+  }
+
+  .cascade-tile[data-kind="0"] { border-radius: 52% 48% 54% 46%; }
+  .cascade-tile[data-kind="1"] { border-radius: 28% 48% 28% 48%; }
+  .cascade-tile[data-kind="2"] { border-radius: 20% 28% 20% 28%; }
+  .cascade-tile[data-kind="3"] { border-radius: 50% 50% 39% 39%; }
+  .cascade-tile[data-kind="4"] { border-radius: 42% 25% 42% 25%; }
+  .cascade-tile[data-kind="5"] { border-radius: 48% 33% 48% 33%; }
+
+  /* Utility bay becomes a compact control dock. Descriptions belong in tips,
+     not in the player's peripheral vision on every move. */
+  .cascade-side {
+    grid-template-rows: .72fr 1.08fr .78fr .74fr 1.08fr;
+    padding: 4px 0;
+    background:
+      radial-gradient(circle at 50% 8%, rgba(255,102,174,.12), transparent 20%),
+      linear-gradient(180deg, rgba(255,255,255,.48), rgba(231,244,252,.28));
+  }
+
+  .cascade-card {
+    justify-items: stretch;
+    gap: clamp(4px, .65vh, 7px);
+    padding: clamp(7px, 1vh, 10px) clamp(8px, .7vw, 11px);
+    text-align: center;
+  }
+
+  .cascade-card > span:not(#star-progress),
+  [data-weekly-copy] {
+    display: none;
+  }
+
+  .cascade-card small {
+    color: #6f4f83;
+    font-size: clamp(.58rem, 1.1vh, .72rem);
+    letter-spacing: .11em;
+  }
+
+  .cascade-card > strong {
+    justify-self: center;
+    min-width: 2.1ch;
+    color: #532f72;
+    font-size: clamp(1.6rem, 3.7vh, 2.65rem);
+    line-height: .9;
+    text-shadow: 0 2px 0 rgba(255,255,255,.9);
+  }
+
+  .cascade-card:first-child > strong {
+    display: grid;
+    place-items: center;
+    width: clamp(44px, 7.6vh, 58px);
+    height: clamp(44px, 7.6vh, 58px);
+    border: 2px solid rgba(255,255,255,.86);
+    border-radius: 50%;
+    background: linear-gradient(145deg, #ffd967, #ffb73f);
+    color: #7c441d;
+    box-shadow:
+      0 5px 11px rgba(184,104,37,.18),
+      inset 0 2px 0 rgba(255,255,255,.78);
+  }
+
+  #booster-hammer {
+    min-height: clamp(48px, 7.8vh, 62px);
+    border: 2px solid rgba(255,255,255,.9);
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 20% 18%, rgba(255,255,255,.5), transparent 25%),
+      linear-gradient(145deg, #53d9f3, #24add8);
+    color: #fff;
+    font-size: clamp(.76rem, 1.4vh, .92rem);
+    font-weight: 1000;
+    text-shadow: 0 1px 2px rgba(23,92,118,.24);
+    box-shadow:
+      0 6px 12px rgba(31,151,190,.2),
+      inset 0 2px 0 rgba(255,255,255,.56);
+  }
+
+  #booster-hammer b {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.7em;
+    min-height: 1.7em;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.9);
+    color: #178baa;
+    text-shadow: none;
+  }
+
+  #level-stars {
+    color: #f5aa24;
+    font-size: clamp(1.6rem, 3.5vh, 2.35rem);
+    letter-spacing: .02em;
+  }
+
+  #star-progress {
+    display: -webkit-box;
+    overflow: hidden;
+    color: #776482;
+    font-size: clamp(.55rem, 1.05vh, .68rem);
+    line-height: 1.15;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .cascade-feedback-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .cascade-feedback-controls button {
+    min-height: clamp(38px, 6vh, 46px);
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(255,255,255,.92), rgba(232,222,248,.88));
+    color: #694c7f;
+    font-size: clamp(.52rem, .98vh, .65rem);
+    font-weight: 950;
+    line-height: 1.05;
+    box-shadow:
+      0 4px 8px rgba(77,47,105,.1),
+      inset 0 1px 0 rgba(255,255,255,1);
+  }
+
+  .cascade-weekly-card > strong {
+    font-size: clamp(1.2rem, 2.5vh, 1.7rem);
+  }
+
+  .cascade-weekly-card [data-weekly-start] {
+    min-height: clamp(44px, 7vh, 54px);
+    border-radius: 999px;
+    background: linear-gradient(145deg, #ae6cf5, #7b4bd1);
+    color: white;
+    font-weight: 1000;
+    box-shadow:
+      0 6px 12px rgba(102,64,170,.2),
+      inset 0 2px 0 rgba(255,255,255,.46);
+  }
+
+  .cascade-weekly-card [data-weekly-leaderboard] {
+    color: #278eb1;
+    font-size: clamp(.56rem, 1.05vh, .68rem);
+    font-weight: 900;
+  }
+
+  [data-weekly-status]:empty {
+    display: none;
+  }
+
+  [data-weekly-status]:not(:empty) {
+    font-size: clamp(.52rem, .95vh, .64rem);
+    line-height: 1.1;
+  }
+
+  /* The status bank remains physically integrated into the chassis, but each
+     value gets the kind of chunky, glanceable token used by mature match-3s. */
+  .cascade-status {
+    grid-template-rows: 1.62fr repeat(4, minmax(0, 1fr));
+    padding: 5px 5px 6px;
+    background:
+      radial-gradient(circle at 56% 6%, rgba(104,227,142,.2), transparent 25%),
+      linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,248,253,.2));
+  }
+
+  .cascade-status > div {
+    margin: 0 5px;
+    padding: clamp(6px, 1vh, 10px) clamp(6px, .55vw, 9px);
+    text-align: center;
+  }
+
+  .cascade-status > div:not(:nth-child(4))::before {
+    left: 8px;
+    right: 8px;
+  }
+
+  .cascade-status small {
+    color: #6f4f80;
+    font-size: clamp(.65rem, 1.2vh, .8rem);
+    letter-spacing: .1em;
+  }
+
+  .cascade-status strong:not(#moves) {
+    display: inline-grid;
+    place-items: center;
+    justify-self: center;
+    min-width: clamp(72px, 8.2vw, 108px);
+    min-height: clamp(38px, 5.5vh, 48px);
+    padding: 4px 9px;
+    border: 2px solid rgba(255,255,255,.82);
+    border-radius: 999px;
+    color: #523667;
+    background: linear-gradient(145deg, rgba(255,255,255,.86), rgba(235,225,248,.78));
+    box-shadow:
+      0 4px 9px rgba(73,43,99,.1),
+      inset 0 1px 0 rgba(255,255,255,1);
+    font-size: clamp(1.25rem, 2.8vh, 1.9rem);
+  }
+
+  .cascade-status > div:nth-child(2) strong {
+    background: linear-gradient(145deg, #effcff, #d6f3fb);
+    color: #285e78;
+  }
+
+  .cascade-status > div:nth-child(3) strong {
+    background: linear-gradient(145deg, #fff9df, #fff0bb);
+    color: #765c23;
+  }
+
+  .cascade-status > div:nth-child(5) strong {
+    background: linear-gradient(145deg, #fff0f7, #ffddea);
+  }
+
+  .cascade-status > div:nth-child(4) {
+    margin: 5px 4px 8px;
+    padding: clamp(10px, 1.5vh, 15px) 6px;
+    border: 3px solid rgba(67, 193, 94, .62);
+    border-radius: 28px;
+    background:
+      radial-gradient(circle at 76% 12%, rgba(255,255,255,.96), transparent 36%),
+      linear-gradient(145deg, #eaffea, #bff1ca);
+    box-shadow:
+      0 8px 15px rgba(55,144,73,.15),
+      inset 0 3px 0 rgba(255,255,255,.94),
+      inset 0 -7px 15px rgba(64,153,78,.1);
+  }
+
+  .cascade-status > div:nth-child(4)::before {
+    inset: 6px;
+    border-radius: 20px;
+  }
+
+  .cascade-status > div:nth-child(4) small {
+    color: #347346;
+    font-size: clamp(.76rem, 1.42vh, .92rem);
+  }
+
+  .cascade-status > div:nth-child(4) strong {
+    font-size: clamp(3.2rem, 7.8vh, 5.1rem);
+    color: #195c32;
+  }
+
+  #lives {
+    min-width: 0;
+    padding-inline: 7px;
+    color: #ee3f86;
+    font-size: clamp(1.12rem, 2.5vh, 1.62rem);
+    letter-spacing: .01em;
+    white-space: nowrap;
+  }
+}

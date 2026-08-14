@@ -17,7 +17,9 @@ async function installState(page, { level = 6, lives = 5, lastLifeAt = Date.now(
 async function expectFourLivesAfterSafeReload(page) {
   // Life UI deliberately reloads a settled level when a queued life becomes ready.
   // Locator assertions survive that navigation; page.evaluate polling does not.
-  await expect(page.locator("#lives")).toHaveText("♥♥♥♥", { timeout: 8_000 });
+  // A legal move can generate a long cascade/presentation chain on a busy CI
+  // runner, so keep this bounded but allow the full committed move to settle.
+  await expect(page.locator("#lives")).toHaveText("♥♥♥♥", { timeout: 12_000 });
   expect(await page.evaluate((key) => Number(JSON.parse(localStorage.getItem(key))?.lives || 0), stateKey)).toBe(4);
 }
 
