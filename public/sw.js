@@ -1,4 +1,4 @@
-const CACHE_VERSION = "gameframe-static-v3";
+const CACHE_VERSION = "gameframe-static-v4";
 const CORE_ASSETS = [
   "/",
   "/cascade.html",
@@ -6,6 +6,7 @@ const CORE_ASSETS = [
   "/gameframe-icon.svg",
   "/manifest.webmanifest",
   "/gameframe-nav.js",
+  "/gameframe-theme.js",
   "/gameframe-pwa.js",
   "/family-sign-in.js",
   "/family-admin-link.js",
@@ -14,6 +15,7 @@ const CORE_ASSETS = [
   "/gameframe-final-polish.css",
   "/gameframe-session-override.css",
   "/gameframe-themes.css",
+  "/gameframe-theme-environments.css",
   "/cascade.css",
   "/cascade-input.css",
   "/cascade-vfx.css",
@@ -49,6 +51,7 @@ const CORE_ASSETS = [
   "/cascade-tutorial.js",
   "/cascade-build-refresh.js",
   "/cascade-special-engine.js",
+  "/cascade-engine.js",
   "/gameframe-auth.js",
   "/gameframe-auth.css",
   "/gameframe-account-menu.css"
