@@ -6,6 +6,7 @@ import { MatchSocketHub } from "./match-socket-hub.ts";
 import { PlayerPlatformThemeRuntime } from "./player-platform-theme-runtime.ts";
 import { CascadeTelemetryObjectRuntime } from "./cascade-telemetry-object-runtime.ts";
 import { FamilyAuthObjectRuntime } from "./family-auth-object-runtime.ts";
+import { familyAuthEdgeRoute, handleFamilyAuthEdge } from "./family-auth-edge.ts";
 import { createRpgEdgeGameFrameWorker } from "./rpg-edge-worker.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
@@ -37,36 +38,20 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    if (url.pathname.startsWith("/invitation/")) {
-      return this.#invitations.fetch(request);
-    }
-    if (url.pathname.startsWith("/directory/") || url.pathname.startsWith("/player/")) {
-      return this.#players.fetch(request);
-    }
-    if (url.pathname.startsWith("/telemetry/")) {
-      return this.#telemetry.fetch(request);
-    }
-    if (url.pathname.startsWith("/family/")) {
-      return this.#familyAuth.fetch(request);
-    }
+    if (url.pathname.startsWith("/invitation/")) return this.#invitations.fetch(request);
+    if (url.pathname.startsWith("/directory/") || url.pathname.startsWith("/player/")) return this.#players.fetch(request);
+    if (url.pathname.startsWith("/telemetry/")) return this.#telemetry.fetch(request);
+    if (url.pathname.startsWith("/family/")) return this.#familyAuth.fetch(request);
     if (request.method === "GET" && url.pathname === "/events") {
       if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
-        return json(426, {
-          error: "upgrade_required",
-          message: "This endpoint requires a WebSocket upgrade.",
-        });
+        return json(426, { error: "upgrade_required", message: "This endpoint requires a WebSocket upgrade." });
       }
-
       const matchId = String(url.searchParams.get("matchId") ?? "");
       const playerId = String(url.searchParams.get("playerId") ?? "");
       const pair = new WebSocketPair();
       await this.#sockets.attach(pair[1], matchId, playerId);
-      return new Response(null, {
-        status: 101,
-        webSocket: pair[0],
-      });
+      return new Response(null, { status: 101, webSocket: pair[0] });
     }
-
     return this.#runtime.fetch(request);
   }
 
@@ -74,13 +59,16 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
     return this.#sockets.handleMessage(socket, message);
   }
 
-  webSocketClose(): void {
-    // Cloudflare removes disconnected sockets from getWebSockets automatically.
-  }
-
-  webSocketError(): void {
-    // A later observability slice will record transport failures without mutating match state.
-  }
+  webSocketClose(): void {}
+  webSocketError(): void {}
 }
 
-export default createRpgEdgeGameFrameWorker();
+const gameFrameWorker = createRpgEdgeGameFrameWorker();
+
+export default {
+  async fetch(request: Request, env: GameFrameWorkerEnv): Promise<Response> {
+    const pathname = new URL(request.url).pathname;
+    if (familyAuthEdgeRoute(pathname)) return handleFamilyAuthEdge(request, env);
+    return gameFrameWorker.fetch(request, env);
+  },
+};
