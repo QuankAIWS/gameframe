@@ -81,9 +81,10 @@ test("Cascade visibly picks up a dragged tile, supports cancellation, and preser
   await expect(page.locator(".is-drag-origin, .is-drag-target")).toHaveCount(0);
   await expect(page.locator(".cascade-drag-ghost")).toHaveCount(0, { timeout: 1_000 });
 
-  // The score/move counters update before cascade presentation finishes. Wait for
-  // the normal unlocked UI signal, then prove click-then-click remains available.
-  await expect(page.locator("#booster-hammer")).toBeEnabled({ timeout: 8_000 });
+  // The score/move counters update before cascade presentation finishes. The
+  // unified cabinet deliberately allows a longer reward presentation, so wait for
+  // the real unlocked control state before proving click-then-click still works.
+  await expect(page.locator("#booster-hammer")).toBeEnabled({ timeout: 15_000 });
   await page.locator(".cascade-tile").first().click();
   await expect(page.locator(".cascade-tile").first()).toHaveClass(/is-selected/);
 });
