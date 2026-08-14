@@ -1,3 +1,5 @@
+import { gameFrameFetch } from "./gameframe-auth.js";
+
 const themeStorageKey = "scribbles-gameframe.shell-theme:v1";
 
 const themes = Object.freeze([
@@ -32,18 +34,23 @@ const themes = Object.freeze([
     colors: ["#79b7ff", "#7170ff", "#10172c"],
   },
 ]);
+const themeIds = new Set(themes.map((theme) => theme.id));
+
+function normalizeTheme(themeId) {
+  const normalized = String(themeId || "").trim().toLowerCase();
+  return themeIds.has(normalized) ? normalized : "standard";
+}
 
 function storedTheme() {
   try {
-    const value = window.localStorage.getItem(themeStorageKey);
-    return themes.some((theme) => theme.id === value) ? value : "standard";
+    return normalizeTheme(window.localStorage.getItem(themeStorageKey));
   } catch {
     return "standard";
   }
 }
 
 function applyTheme(themeId, persist = true) {
-  const nextTheme = themes.some((theme) => theme.id === themeId) ? themeId : "standard";
+  const nextTheme = normalizeTheme(themeId);
   document.documentElement.dataset.gameframeShellTheme = nextTheme;
   document.body.dataset.gameframeShellTheme = nextTheme;
   if (persist) {
@@ -55,6 +62,38 @@ function applyTheme(themeId, persist = true) {
   }
   window.dispatchEvent(new CustomEvent("gameframe:theme-change", { detail: { themeId: nextTheme } }));
   return nextTheme;
+}
+
+function applyProfileTheme(root, themeId) {
+  if (!(root instanceof Element)) return "standard";
+  const nextTheme = normalizeTheme(themeId);
+  root.dataset.profileTheme = nextTheme;
+  return nextTheme;
+}
+
+async function readSavedPlayerTheme() {
+  const identity = window.gameFrameIdentity;
+  if (!identity) return null;
+  const response = await gameFrameFetch("/api/me/feed", {}, identity);
+  if (!response.ok) return null;
+  const body = await response.json().catch(() => ({}));
+  return {
+    themeId: normalizeTheme(body.themeId),
+    themeConfigured: body.themeConfigured === true,
+  };
+}
+
+async function persistPlayerTheme(themeId) {
+  const identity = window.gameFrameIdentity;
+  if (!identity) return null;
+  const response = await gameFrameFetch("/api/me/preferences", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ themeId: normalizeTheme(themeId) }),
+  }, identity);
+  if (!response.ok) return null;
+  const body = await response.json().catch(() => ({}));
+  return normalizeTheme(body.themeId);
 }
 
 function ensureShellActions() {
@@ -117,6 +156,29 @@ function installGameFrameThemePicker() {
   const trigger = root.querySelector("#gameframe-theme-trigger");
   const list = panel.querySelector(".gameframe-theme-list");
   const closeButton = panel.querySelector("[data-theme-close]");
+  let selectionRevision = 0;
+  let persistQueue = Promise.resolve();
+
+  function renderSelection() {
+    const selected = document.documentElement.dataset.gameframeShellTheme || "standard";
+    for (const option of list.querySelectorAll("[data-theme-option]")) {
+      const active = option.dataset.themeOption === selected;
+      option.classList.toggle("is-selected", active);
+      option.setAttribute("aria-pressed", String(active));
+    }
+    root.dataset.theme = selected;
+  }
+
+  function queuePlayerThemeSave(themeId, revision) {
+    persistQueue = persistQueue
+      .catch(() => null)
+      .then(() => persistPlayerTheme(themeId))
+      .then((savedThemeId) => {
+        if (!savedThemeId || revision !== selectionRevision) return;
+        applyTheme(savedThemeId);
+        renderSelection();
+      });
+  }
 
   for (const theme of themes) {
     const option = document.createElement("button");
@@ -137,20 +199,13 @@ function installGameFrameThemePicker() {
     option.querySelector("strong").textContent = theme.name;
     option.querySelector("small").textContent = theme.description;
     option.addEventListener("click", () => {
-      applyTheme(theme.id);
+      selectionRevision += 1;
+      const revision = selectionRevision;
+      const selectedThemeId = applyTheme(theme.id);
       renderSelection();
+      queuePlayerThemeSave(selectedThemeId, revision);
     });
     list.append(option);
-  }
-
-  function renderSelection() {
-    const selected = document.documentElement.dataset.gameframeShellTheme || "standard";
-    for (const option of list.querySelectorAll("[data-theme-option]")) {
-      const active = option.dataset.themeOption === selected;
-      option.classList.toggle("is-selected", active);
-      option.setAttribute("aria-pressed", String(active));
-    }
-    root.dataset.theme = selected;
   }
 
   function setOpen(open) {
@@ -185,6 +240,20 @@ function installGameFrameThemePicker() {
   renderSelection();
   ensureShellActions();
 
+  const syncRevision = selectionRevision;
+  void readSavedPlayerTheme().then((saved) => {
+    if (!saved || syncRevision !== selectionRevision) return;
+    const localThemeId = storedTheme();
+    if (!saved.themeConfigured && localThemeId !== "standard") {
+      selectionRevision += 1;
+      const revision = selectionRevision;
+      queuePlayerThemeSave(localThemeId, revision);
+      return;
+    }
+    applyTheme(saved.themeId);
+    renderSelection();
+  }).catch(() => undefined);
+
   window.gameFrameThemes = Object.freeze({
     themes,
     apply: (themeId) => {
@@ -198,4 +267,4 @@ function installGameFrameThemePicker() {
 
 applyTheme(storedTheme(), false);
 
-export { applyTheme, installGameFrameThemePicker, themes };
+export { applyProfileTheme, applyTheme, installGameFrameThemePicker, normalizeTheme, themes };
