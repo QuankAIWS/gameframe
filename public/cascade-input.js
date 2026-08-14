@@ -1,6 +1,4 @@
 const board = document.querySelector("#board");
-const hammerButton = document.querySelector("#booster-hammer");
-const hammerCount = document.querySelector("#hammer-count");
 
 let drag = null;
 
@@ -205,9 +203,8 @@ if (board) {
     if (!fromTile || !toTile || fromTile.disabled || toTile.disabled) return;
     if (fromTile.classList.contains("is-hammer-target") || toTile.classList.contains("is-hammer-target")) return;
 
-    // A real drag owns pointer capture, so the browser's synthetic post-pointer click
-    // targets the board rather than either tile. Programmatic tile clicks therefore
-    // reuse the canonical swap path without a blanket post-drag click suppression window.
+    // Pointer capture makes the post-drag synthetic click target the board. Reuse the
+    // canonical click-to-swap path rather than maintaining a second mutation path.
     fromTile.click();
     toTile.click();
   });
@@ -219,19 +216,4 @@ if (board) {
   board.addEventListener("lostpointercapture", () => {
     if (drag?.didDrag) finishDrag();
   });
-
-  board.addEventListener("click", (event) => {
-    const tile = tileFromTarget(event.target);
-    if (!tile) return;
-
-    // The runtime commits the hammer decrement before resolving the hammer animation,
-    // but its next status repaint can occur noticeably later. Mirror that committed
-    // inventory change immediately and disable the booster during the same resolution
-    // window so a rapid second press cannot be swallowed while the runtime is locked.
-    if (event.isTrusted && tile.classList.contains("is-hammer-target") && hammerCount) {
-      const current = Math.max(0, Number(hammerCount.textContent) || 0);
-      if (current > 0) hammerCount.textContent = String(current - 1);
-      if (hammerButton) hammerButton.disabled = true;
-    }
-  }, true);
 }
