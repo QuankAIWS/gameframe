@@ -30,9 +30,13 @@ export class PlayerPlatformThemeRuntime {
     this.#base = new PlayerPlatformObjectRuntime(storage);
   }
 
-  async #storedTheme(): Promise<string> {
+  async #themePreference(): Promise<{ themeId: string; themeConfigured: boolean }> {
     const stored = await this.#storage.get<string>(THEME_KEY);
-    return THEME_IDS.has(String(stored)) ? String(stored) : DEFAULT_THEME_ID;
+    const configured = THEME_IDS.has(String(stored));
+    return {
+      themeId: configured ? String(stored) : DEFAULT_THEME_ID,
+      themeConfigured: configured,
+    };
   }
 
   async #baseFeed(): Promise<{ response: Response; body: Record<string, unknown> }> {
@@ -47,7 +51,7 @@ export class PlayerPlatformThemeRuntime {
         const response = await this.#base.fetch(request);
         const body = await responseBody(response);
         if (!response.ok) return json(response.status, body);
-        return json(200, { ...body, themeId: await this.#storedTheme() });
+        return json(200, { ...body, ...await this.#themePreference() });
       }
 
       if (request.method === "POST" && url.pathname === "/player/preferences") {
@@ -69,12 +73,14 @@ export class PlayerPlatformThemeRuntime {
           favoriteGameIds = Array.isArray(feed.body.favoriteGameIds) ? feed.body.favoriteGameIds : [];
         }
 
-        const nextThemeId = preferences.themeId === undefined
-          ? await this.#storedTheme()
-          : themeId(preferences.themeId);
-        if (preferences.themeId !== undefined) await this.#storage.put(THEME_KEY, nextThemeId);
+        let preference = await this.#themePreference();
+        if (preferences.themeId !== undefined) {
+          const nextThemeId = themeId(preferences.themeId);
+          await this.#storage.put(THEME_KEY, nextThemeId);
+          preference = { themeId: nextThemeId, themeConfigured: true };
+        }
 
-        return json(200, { favoriteGameIds, themeId: nextThemeId });
+        return json(200, { favoriteGameIds, ...preference });
       }
 
       return this.#base.fetch(request);
