@@ -128,6 +128,7 @@
   }
 
   #lives {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: center;
@@ -147,6 +148,17 @@
     letter-spacing: 0;
   }
 
+  .cascade-life-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   .cascade-life-heart {
     display: grid;
     place-items: center;
@@ -160,6 +172,10 @@
     line-height: 1;
     text-shadow: 0 1px 0 rgba(255,255,255,.82);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 2px 5px rgba(125,50,88,.09);
+  }
+
+  .cascade-life-heart::before {
+    content: "♥";
   }
 
   .cascade-life-heart.is-full {
