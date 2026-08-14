@@ -27,7 +27,6 @@ async function cabinetSurfaceStats(page) {
     const card = getComputedStyle(document.querySelector(".cascade-side .cascade-card:nth-child(2)"));
     const ordinaryStatus = getComputedStyle(document.querySelector(".cascade-status > div:first-child"));
     const movesStatus = getComputedStyle(document.querySelector(".cascade-status > div:nth-child(4)"));
-    const side = getComputedStyle(document.querySelector(".cascade-side"));
     return {
       shellRadius: Number.parseFloat(shell.borderTopLeftRadius),
       shellBorder: Number.parseFloat(shell.borderTopWidth),
@@ -37,7 +36,6 @@ async function cabinetSurfaceStats(page) {
       ordinaryStatusRadius: Number.parseFloat(ordinaryStatus.borderTopLeftRadius),
       ordinaryStatusBorder: Number.parseFloat(ordinaryStatus.borderTopWidth),
       movesStatusRadius: Number.parseFloat(movesStatus.borderTopLeftRadius),
-      sideGap: side.rowGap,
     };
   });
 }
@@ -112,8 +110,6 @@ async function expectCompactControlDock(page) {
   const blitz = await page.locator("#cascade-weekly-card").boundingBox();
   for (const box of [side, streak, hammer, best, settings, blitz]) expect(box).toBeTruthy();
 
-  // Streak and Best are paired game tokens rather than two full-width menu
-  // sections. The booster and lower controls then span the shared dock.
   expect(Math.abs(streak.y - best.y)).toBeLessThanOrEqual(2);
   expect(streak.width).toBeLessThan(side.width * .56);
   expect(best.width).toBeLessThan(side.width * .56);
