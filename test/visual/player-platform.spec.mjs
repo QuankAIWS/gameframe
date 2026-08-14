@@ -9,7 +9,9 @@ const cascadeStateKey = "scribbles-gameframe.cascade-state:v1";
 const cascadePerformanceKey = "scribbles-gameframe.cascade-performance:v1";
 const cascadeOwnerKey = "scribbles-gameframe.cascade-progression-owner:v1";
 const playerId = "visual-player-platform";
+const viewerPlayerId = "visual-theme-viewer";
 const playerHeader = { "x-gameframe-player-id": playerId };
+const viewerHeader = { "x-gameframe-player-id": viewerPlayerId };
 const visualStarsByLevel = Object.fromEntries(Array.from({ length: 180 }, (_, index) => [String(index + 1), index % 5 === 0 ? 2 : 3]));
 
 async function seedPlayerProgression(page) {
@@ -32,6 +34,17 @@ async function seedPlayerProgression(page) {
     },
   });
   expect(blitz.ok()).toBe(true);
+  const ownerTheme = await page.request.post("/api/me/preferences", {
+    headers: playerHeader,
+    data: { themeId: "cascade-pop" },
+  });
+  expect(ownerTheme.ok()).toBe(true);
+  expect((await ownerTheme.json()).themeId).toBe("cascade-pop");
+  const viewerTheme = await page.request.post("/api/me/preferences", {
+    headers: viewerHeader,
+    data: { themeId: "standard" },
+  });
+  expect(viewerTheme.ok()).toBe(true);
 }
 
 async function expectPlatformBar(page, active) {
@@ -44,6 +57,8 @@ async function expectPlatformBar(page, active) {
   await expect(bar.locator('[data-gameframe-profile][href="/profile.html"]')).toHaveCount(1);
   await expect(bar.locator(active)).toHaveClass(/is-active/);
   await expect(page.locator("#gameframe-session-badge")).toBeVisible();
+  await expect(page.locator("#gameframe-alerts-trigger")).toBeVisible();
+  await expect(page.locator("#gameframe-theme-trigger")).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 }
 
@@ -57,6 +72,8 @@ async function openProfile(page, viewport) {
   await page.goto(`/profile.html?player=${playerId}`);
   await expectPlatformBar(page, "[data-gameframe-profile]");
   await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
+  await expect(page.locator("body")).toHaveAttribute("data-gameframe-shell-theme", "cascade-pop");
+  await expect(page.locator(".profile-shell")).toHaveAttribute("data-profile-theme", "cascade-pop");
   await expect(page.locator("#profile-level-number")).not.toHaveText("1");
   await expect(page.locator("#profile-cascade")).toContainText("180");
   const favorite = page.locator('[data-favorite-game-id="othello"]');
@@ -65,6 +82,17 @@ async function openProfile(page, viewport) {
     await expect(favorite).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator("#profile-favorites-status")).toHaveText("Favorites saved.");
   }
+  await returnToTop(page);
+}
+
+async function openViewedProfile(page, viewport) {
+  await page.setViewportSize(viewport);
+  await page.goto(`/profile.html?player=${viewerPlayerId}&view=${encodeURIComponent(playerId)}`);
+  await expectPlatformBar(page, "[data-gameframe-profile]");
+  await expect(page.locator("body")).toHaveAttribute("data-gameframe-shell-theme", "standard");
+  await expect(page.locator(".profile-shell")).toHaveAttribute("data-profile-theme", "cascade-pop");
+  await expect(page.locator("#profile-level-number")).not.toHaveText("1");
+  await expect(page.locator("#profile-cascade")).toContainText("180");
   await returnToTop(page);
 }
 
@@ -92,6 +120,7 @@ async function openHome(page, viewport) {
   await page.goto(`/?player=${playerId}`);
   await expect(page.locator("#gameframe-boot")).toBeHidden({ timeout: 5_000 });
   await expectPlatformBar(page, "[data-gameframe-home]");
+  await expect(page.locator("body")).toHaveAttribute("data-gameframe-shell-theme", "cascade-pop");
   await expect(page.locator(".gameframe-home-dashboard")).toBeVisible();
   await expect(page.locator(".home-continue-card")).toContainText("CONTINUE PLAYING");
   await expect(page.locator(".home-continue-card")).toContainText("Level 181");
@@ -105,6 +134,7 @@ async function openLeaderboard(page, viewport) {
   await page.setViewportSize(viewport);
   await page.goto(`/leaderboard.html?player=${playerId}`);
   await expectPlatformBar(page, "[data-gameframe-leaderboard]");
+  await expect(page.locator("body")).toHaveAttribute("data-gameframe-shell-theme", "cascade-pop");
   await expect(page.getByRole("heading", { name: "Leaderboard" })).toBeVisible();
   await expect(page.locator(`#hall-podium a[href="/profile.html?view=${playerId}"]`)).toHaveCount(1);
   await expect(page.locator("#hall-categories .hall-category-card")).toHaveCount(3);
@@ -122,6 +152,8 @@ test("capture the player platform at desktop and mobile sizes", async ({ page })
 
   await openProfile(page, desktop);
   await page.screenshot({ path: `${output}/profile-favorites-desktop.png`, fullPage: true });
+  await openViewedProfile(page, desktop);
+  await page.screenshot({ path: `${output}/profile-viewed-theme-desktop.png`, fullPage: true });
   await openHome(page, desktop);
   await page.screenshot({ path: `${output}/home-dashboard-desktop.png`, fullPage: true });
   await openLeaderboard(page, desktop);
@@ -129,6 +161,8 @@ test("capture the player platform at desktop and mobile sizes", async ({ page })
 
   await openProfile(page, mobile);
   await page.screenshot({ path: `${output}/profile-favorites-mobile.png`, fullPage: true });
+  await openViewedProfile(page, mobile);
+  await page.screenshot({ path: `${output}/profile-viewed-theme-mobile.png`, fullPage: true });
   await openHome(page, mobile);
   await page.screenshot({ path: `${output}/home-dashboard-mobile.png`, fullPage: true });
   await openLeaderboard(page, mobile);
