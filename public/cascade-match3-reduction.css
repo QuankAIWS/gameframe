@@ -41,9 +41,6 @@
     );
   }
 
-  /* The run rail should feel like a game-map slice, not six lonely menu rows.
-     On shorter/zoomed TVs show an eleven-node chapter slice. Near the chapter
-     edges, fill the unavailable past/future slots from the other direction. */
   .cascade-map {
     padding: 7px 6px 8px;
   }
@@ -122,8 +119,6 @@
     display: block;
   }
 
-  /* Moves + lives form a compact top HUD in the same right-side dock as the
-     power controls. The move counter stays emphatic without becoming a meter. */
   .cascade-status {
     grid-area: status;
     position: relative;
@@ -237,8 +232,6 @@
     font-weight: 900;
   }
 
-  /* The lower dock is arranged like a compact game controller: glanceable
-     Streak/Best tokens, a full-width Hammer, three icon settings, and Blitz. */
   .cascade-side {
     grid-area: utility;
     display: grid;
@@ -308,7 +301,9 @@
     white-space: nowrap;
   }
 
-  .cascade-side > .cascade-card:nth-child(2) > small {
+  .cascade-side > .cascade-card:nth-child(2) > small,
+  #cascade-feedback-card > small,
+  .cascade-weekly-card small {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -325,17 +320,6 @@
     min-height: 0;
     gap: 3px;
     padding-block: clamp(3px, .5vh, 5px);
-  }
-
-  #cascade-feedback-card > small {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 
   .cascade-feedback-controls {
@@ -377,17 +361,6 @@
     align-content: center;
     gap: 3px;
     padding-block: clamp(3px, .5vh, 5px);
-  }
-
-  .cascade-weekly-card small {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 
   .cascade-weekly-card [data-weekly-start] {
