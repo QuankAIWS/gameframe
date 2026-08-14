@@ -290,6 +290,10 @@
       inset 0 0 0 2px rgba(120,216,137,.11);
   }
 
+  .cascade-status.is-idle-attract > div:nth-child(4) {
+    animation: cascade-moves-attract 860ms cubic-bezier(.2,.72,.24,1) both;
+  }
+
   .cascade-status > div:nth-child(4) small {
     color: #397c4c;
   }
@@ -309,12 +313,32 @@
     18% { opacity: .7; }
     100% { opacity: 0; transform: skewX(-12deg) translateX(520%); }
   }
+
+  @keyframes cascade-moves-attract {
+    0%, 100% {
+      transform: scale(1);
+      filter: none;
+    }
+    42% {
+      transform: scale(1.012);
+      filter: brightness(1.035) saturate(1.025);
+      box-shadow:
+        0 11px 24px rgba(63,145,81,.18),
+        0 0 18px rgba(120,216,137,.18),
+        inset 0 -4px 0 rgba(99,205,120,.78),
+        inset 0 0 0 2px rgba(120,216,137,.16);
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cascade-board-wrap.is-idle-attract::after { animation: none; }
+  .cascade-board-wrap.is-idle-attract::after,
+  .cascade-status.is-idle-attract > div:nth-child(4) {
+    animation: none;
+  }
 }
 
-body[data-cascade-effects="reduced"] .cascade-board-wrap.is-idle-attract::after {
+body[data-cascade-effects="reduced"] .cascade-board-wrap.is-idle-attract::after,
+body[data-cascade-effects="reduced"] .cascade-status.is-idle-attract > div:nth-child(4) {
   animation: none;
 }
