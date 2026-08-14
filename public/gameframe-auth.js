@@ -94,6 +94,12 @@ function installIdentityBadge(identity) {
     window.location.reload();
   });
   document.body.append(badge);
+
+  // Alerts belong to the authenticated GameFrame shell, not only invite-creation pages.
+  // Dynamic import avoids a static auth <-> alerts module cycle while keeping optional pages lightweight.
+  void import("./gameframe-alerts.js")
+    .then(({ installGameFrameAlerts }) => installGameFrameAlerts(identity))
+    .catch(() => {});
 }
 
 async function readSession(preferredDevelopmentPlayerId) {
