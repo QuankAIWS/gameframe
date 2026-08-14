@@ -1,35 +1,35 @@
 /* Secondary profile materials that are owned by player-social.css in the base skin. */
 
 body.gameframe-platform-page:has(.profile-shell[data-profile-theme="cascade-pop"]) {
+  background-color: #f6d8ef;
   background:
     radial-gradient(circle at 9% 11%, rgba(255,255,255,.96) 0 7rem, transparent 18rem),
     radial-gradient(circle at 88% 15%, rgba(104,222,218,.72), transparent 24rem),
     radial-gradient(circle at 76% 87%, rgba(255,215,103,.68), transparent 25rem),
     radial-gradient(circle at 16% 82%, rgba(255,117,178,.62), transparent 27rem),
     linear-gradient(145deg,#ffd9eb 0%,#f6d8ef 38%,#d9f5f0 70%,#fff1c1 100%);
-  background-attachment: fixed;
 }
 body.gameframe-platform-page:has(.profile-shell[data-profile-theme="cyberpunk"]) {
+  background-color: #070817;
   background:
     radial-gradient(circle at 14% 10%, rgba(55,232,255,.18), transparent 27rem),
     radial-gradient(circle at 88% 24%, rgba(255,79,216,.14), transparent 30rem),
     linear-gradient(180deg,#090d24,#070817 62%,#0a0716);
-  background-attachment: fixed;
 }
 body.gameframe-platform-page:has(.profile-shell[data-profile-theme="clockwork"]) {
+  background-color: #18110c;
   background:
     radial-gradient(circle at 15% 8%, rgba(230,184,95,.2), transparent 25rem),
     radial-gradient(circle at 88% 70%, rgba(215,120,56,.13), transparent 30rem),
     linear-gradient(160deg,#2b1c11 0%,#18110c 56%,#100c09 100%);
-  background-attachment: fixed;
 }
 body.gameframe-platform-page:has(.profile-shell[data-profile-theme="deep-space"]) {
+  background-color: #080d21;
   background:
     radial-gradient(circle at 18% 12%, rgba(113,112,255,.22), transparent 28rem),
     radial-gradient(circle at 80% 24%, rgba(121,183,255,.16), transparent 25rem),
     radial-gradient(circle at 55% 100%, rgba(183,156,255,.12), transparent 32rem),
     linear-gradient(180deg,#0b1230,#080d21 58%,#060914);
-  background-attachment: fixed;
 }
 
 .profile-shell[data-profile-theme="cascade-pop"] .profile-level {
