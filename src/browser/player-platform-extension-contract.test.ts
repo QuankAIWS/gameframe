@@ -54,10 +54,14 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   assert.doesNotMatch(leaderboard, /Hall of Fame/);
   assert.match(leaderboardHtml, /<h1>Leaderboard<\/h1>/);
   assert.doesNotMatch(leaderboardHtml, /Hall of Fame/);
+  assert.match(cascadeSync, /\/api\/me\/progression/);
   assert.match(cascadeSync, /\/api\/me\/cascade\/progression/);
   assert.match(cascadeSync, /cascade-progression-owner/);
   assert.match(cascadeSync, /cascade-progression-candidate/);
-  assert.match(cascadeSync, /candidate !== identity\.playerId/);
+  assert.match(cascadeSync, /candidate === identity\.playerId/);
+  assert.match(cascadeSync, /storage\.setItem\(CANDIDATE_KEY, identity\.playerId\)/);
+  assert.match(cascadeSync, /Math\.max\([\s\S]*server\?\.highestCompletedLevel/);
+  assert.match(cascadeSync, /starsByLevel\[level\] = Math\.max/);
 
   for (const runtime of [edgeWorker, nodeServer]) {
     assert.match(runtime, /\/api\/me\/preferences/);
@@ -82,4 +86,42 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   assert.match(progression, /Math\.pow\(normalized - 1, 1\.65\)/);
 
   assert.match(packageJson.scripts["check:browser"], /public\/leaderboard-app\.js/);
+});
+
+test("trusted family devices preserve human authorization and PWA auth/cache boundaries", async () => {
+  const gameFrameAuth = await read("public/gameframe-auth.js");
+  const serviceWorker = await read("public/sw.js");
+  const familyEdge = await read("src/cloudflare/family-auth-edge.ts");
+  const familyRuntime = await read("src/cloudflare/family-auth-object-runtime.ts");
+  const worker = await read("src/cloudflare/worker.ts");
+  const wrangler = await read("wrangler.jsonc");
+
+  assert.match(gameFrameAuth, /\/auth\/trusted-device\/refresh/);
+  assert.match(gameFrameAuth, /\/auth\/trusted-device\/logout/);
+  assert.match(gameFrameAuth, /await refreshTrustedSession\(\)/);
+
+  assert.match(serviceWorker, /pathname\.startsWith\("\/api\/"\)/);
+  assert.match(serviceWorker, /pathname\.startsWith\("\/auth\/"\)/);
+  assert.doesNotMatch(serviceWorker, /trusted-device\/refresh/);
+  assert.doesNotMatch(serviceWorker, /gameframe_session/);
+
+  assert.match(familyEdge, /GAMEFRAME_FAMILY_AUTH_PEPPER/);
+  assert.match(familyEdge, /GAMEFRAME_FAMILY_APPROVAL_SECRET/);
+  assert.match(familyEdge, /configured\.length < 32/);
+  assert.match(familyEdge, /source: "discord"/);
+  assert.match(familyEdge, /secretHash: await sha256Hex\(deviceSecret\)/);
+  assert.match(familyEdge, /clearTrustedCookie\(\)/);
+  assert.match(familyEdge, /clearWebsiteSessionCookie\(\)/);
+  assert.match(familyRuntime, /revokedAt/);
+  assert.match(familyRuntime, /secretHash/);
+  assert.match(worker, /familyAuthEdgeRoute/);
+  assert.match(worker, /FamilyAuthObjectRuntime/);
+
+  for (const name of [
+    "GAMEFRAME_FAMILY_ACCOUNTS",
+    "GAMEFRAME_FAMILY_AUTH_PEPPER",
+    "GAMEFRAME_FAMILY_APPROVAL_SECRET",
+  ]) {
+    assert.match(wrangler, new RegExp(name));
+  }
 });

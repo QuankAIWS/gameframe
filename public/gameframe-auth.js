@@ -42,7 +42,7 @@ function loginUrl() {
 }
 
 function renderAuthenticationGate(
-  message = "Sign in with Discord to use this hosted GameFrame deployment.",
+  message = "Sign in with Discord or use Family sign-in to use this hosted GameFrame deployment.",
   options = {},
 ) {
   let gate = document.querySelector("#gameframe-auth-gate");
@@ -54,11 +54,11 @@ function renderAuthenticationGate(
     gate.innerHTML = `
       <div class="gameframe-auth-card">
         <p class="gameframe-auth-eyebrow">SECURE GAMEFRAME SESSION</p>
-        <h1>Discord sign-in required</h1>
+        <h1>GameFrame sign-in required</h1>
         <p data-auth-message></p>
         <a class="gameframe-auth-button" data-auth-login>Sign in with Discord</a>
         <button class="gameframe-auth-button" type="button" data-auth-retry hidden>Retry Activity authentication</button>
-        <small>Game commands use the signed GameFrame session. Discord does not control game rules or match state.</small>
+        <small>Game commands use the signed GameFrame session. Authentication does not control game rules or match state.</small>
       </div>
     `;
     document.body.append(gate);
@@ -77,14 +77,14 @@ function accountAvatarMarkup(identity) {
   if (identity.avatarUrl) {
     return `<img src="${identity.avatarUrl}" alt="" referrerpolicy="no-referrer">`;
   }
-  return `<span class="gameframe-session-avatar" aria-hidden="true">${identity.source === "discord" ? "D" : "DEV"}</span>`;
+  return `<span class="gameframe-session-avatar" aria-hidden="true">${identity.source === "discord" ? "G" : "DEV"}</span>`;
 }
 
 function installIdentityBadge(identity) {
   if (document.querySelector("#gameframe-session-badge")) return;
 
   const displayName = identity.displayName || identity.playerId;
-  const sourceLabel = identity.source === "discord" ? "Discord account" : "Local development";
+  const sourceLabel = identity.source === "discord" ? "GameFrame account" : "Local development";
   const avatar = accountAvatarMarkup(identity);
 
   const badge = document.createElement("aside");
@@ -126,7 +126,7 @@ function installIdentityBadge(identity) {
     logout.className = "gameframe-account-logout";
     logout.setAttribute("role", "menuitem");
     logout.innerHTML = `
-      <span><strong>Log out</strong><small>End this GameFrame session</small></span>
+      <span><strong>Log out</strong><small>End this GameFrame session and forget this trusted device</small></span>
       <span aria-hidden="true">↗</span>
     `;
     logout.addEventListener("click", async () => {
@@ -134,8 +134,10 @@ function installIdentityBadge(identity) {
       const label = logout.querySelector("strong");
       if (label) label.textContent = "Logging out…";
       try {
-        await fetch("/auth/logout", { method: "POST", credentials: "same-origin" });
+        await fetch("/auth/trusted-device/logout", { method: "POST", credentials: "same-origin" }).catch(() => null);
+        await fetch("/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => null);
       } finally {
+        installedIdentity = null;
         window.location.reload();
       }
     });
@@ -177,12 +179,35 @@ function installIdentityBadge(identity) {
     .catch(() => {});
 }
 
-async function readSession(preferredDevelopmentPlayerId) {
-  const candidate = developmentIdentity(preferredDevelopmentPlayerId);
+async function refreshTrustedSession() {
+  if (isDiscordActivity()) return false;
+  try {
+    const response = await fetch("/auth/trusted-device/refresh", {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+function sessionRequest(candidate) {
   return fetch("/api/session", {
     credentials: "same-origin",
+    cache: "no-store",
     headers: { "x-gameframe-player-id": candidate },
   });
+}
+
+async function readSession(preferredDevelopmentPlayerId) {
+  const candidate = developmentIdentity(preferredDevelopmentPlayerId);
+  let response = await sessionRequest(candidate);
+  if (response.status === 401 && await refreshTrustedSession()) {
+    response = await sessionRequest(candidate);
+  }
+  return response;
 }
 
 async function identityFromResponse(response) {
@@ -207,11 +232,16 @@ async function authenticatedFetch(url, options, identity) {
   if (identity.source === "development") {
     headers.set("x-gameframe-player-id", identity.playerId);
   }
-  return fetch(url, {
+  const execute = () => fetch(url, {
     ...options,
     headers,
     credentials: "same-origin",
   });
+  let response = await execute();
+  if (response.status === 401 && identity.source !== "development" && await refreshTrustedSession()) {
+    response = await execute();
+  }
+  return response;
 }
 
 /**
@@ -258,9 +288,9 @@ export async function establishGameFrameIdentity(options = {}) {
 }
 
 /**
- * Authenticated request for optional metadata. A missing/expired Discord session
+ * Authenticated request for optional metadata. A missing/expired GameFrame session
  * is returned to the caller as a normal 401 instead of blocking the page with the
- * global sign-in gate.
+ * global sign-in gate. Trusted family devices get one silent session refresh first.
  */
 export async function gameFrameOptionalFetch(url, options = {}, identity = installedIdentity) {
   return authenticatedFetch(url, options, identity);

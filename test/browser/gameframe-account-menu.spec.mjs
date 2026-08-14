@@ -57,7 +57,7 @@ async function installAccountFixtures(page) {
   return { logoutCount: () => logoutRequests };
 }
 
-test("Discord session renders as a compact themed account chip with logout in its menu", async ({ page }) => {
+test("authenticated GameFrame session renders as a compact themed account chip with logout in its menu", async ({ page }) => {
   const state = await installAccountFixtures(page);
   await page.goto(`/?player=${playerId}`);
 
@@ -85,7 +85,7 @@ test("Discord session renders as a compact themed account chip with logout in it
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
   await expect(panel).toBeVisible();
   await expect(panel).toContainText("Discord Player");
-  await expect(panel).toContainText("Discord account");
+  await expect(panel).toContainText("GameFrame account");
 
   const logout = panel.getByRole("menuitem", { name: /Log out/ });
   await expect(logout).toBeVisible();
