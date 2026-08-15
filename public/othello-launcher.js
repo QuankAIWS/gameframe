@@ -43,3 +43,4 @@ if (identity.source === "discord" && !identity.offline && parameters.has("player
 }
 
 await import("./gameframe-nav.js");
+if (window.gameFrameOffline) await import("./othello-offline-mode.js");
