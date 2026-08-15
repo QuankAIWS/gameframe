@@ -12,7 +12,10 @@ async function expectStyledDestinationBar(page, theme) {
 async function openTic(page, viewport, player) {
   await page.setViewportSize(viewport);
   await page.goto(`/?game=tic-tac-toe&menu=1&player=${player}`);
-  await page.locator("#challenge-bot").click();
+  const menu = page.locator("#board-game-menu");
+  await expect(menu).toBeVisible();
+  await menu.getByRole("button", { name: /Play the computer/ }).click();
+  await expect(menu).toBeHidden();
   await expect(page.locator("body.tic-tac-toe-noir-running")).toBeVisible();
   await expectStyledDestinationBar(page, "tic");
   await expect(page.locator(".tic-noir-topbar")).toHaveCount(0);
@@ -111,7 +114,10 @@ test("Tic-Tac-Toe uses a two-row desktop viewport with an unclipped board and te
 test("Checkers never inherits Tic-Tac-Toe presentation wrappers", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?game=american-checkers&menu=1&player=checkers-style-regression");
-  await page.locator("#challenge-bot").click();
+  const menu = page.locator("#board-game-menu");
+  await expect(menu).toBeVisible();
+  await menu.getByRole("button", { name: /Play the computer/ }).click();
+  await expect(menu).toBeHidden();
 
   await expect(page.locator("body.gameframe-shared-match-running")).toBeVisible();
   await expect(page.locator("body.tic-tac-toe-noir-running")).toHaveCount(0);
