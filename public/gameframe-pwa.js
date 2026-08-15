@@ -1,5 +1,19 @@
 const manifestHref = "/manifest.webmanifest";
 
+function syncConnectivity() {
+  const offline = navigator.onLine === false;
+  window.gameFrameOffline = offline || Boolean(window.gameFrameIdentity?.offline);
+  document.documentElement.dataset.gameframeConnectivity = window.gameFrameOffline ? "offline" : "online";
+  document.body?.setAttribute("data-gameframe-connectivity", window.gameFrameOffline ? "offline" : "online");
+  window.dispatchEvent(new CustomEvent("gameframe:connectivity", {
+    detail: { offline: window.gameFrameOffline },
+  }));
+}
+
+syncConnectivity();
+window.addEventListener("online", syncConnectivity);
+window.addEventListener("offline", syncConnectivity);
+
 void import("/family-sign-in.js").catch(() => {
   // Assisted family sign-in is optional on pages that never render an auth gate.
 });
