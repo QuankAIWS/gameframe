@@ -245,6 +245,29 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  /* The board and its recess share one height budget. Keep the cabinet's total
+     viewport footprint unchanged while reserving enough of that footprint for
+     the objective row, its gap, recess padding and borders before sizing the
+     square board. This prevents playable rows from being cropped by the bezel. */
+  .cascade-shell {
+    --cascade-tv-board-stack-overhead: 90px;
+    --cascade-tv-board-size: min(
+      760px,
+      calc(
+        100dvh
+        - var(--gameframe-destination-height, 72px)
+        - var(--cascade-tv-board-stack-overhead)
+      ),
+      calc(
+        100vw
+        - var(--cascade-tv-map-width)
+        - var(--cascade-tv-side-width)
+        - 42px
+      )
+    );
+    height: calc(var(--cascade-tv-board-size) + var(--cascade-tv-board-stack-overhead));
+  }
 }
 
 /* On the 960x540-equivalent TV case the new Score reel should not push the
