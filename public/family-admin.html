@@ -18,6 +18,20 @@
     </header>
 
     <div id="family-admin-error" class="family-admin-error" role="alert" hidden></div>
+    <div id="family-admin-status" class="family-admin-status" role="status" aria-live="polite" hidden></div>
+
+    <section class="family-admin-credential" aria-labelledby="approval-credential-title">
+      <div>
+        <small>APPROVAL CREDENTIAL</small>
+        <h2 id="approval-credential-title">Family Device Approval</h2>
+        <p>Paste the separate approval credential here when you need to approve a new device. It stays only in this page for this visit.</p>
+      </div>
+      <div class="family-admin-credential-controls">
+        <label for="family-approval-credential">Approval credential</label>
+        <input id="family-approval-credential" type="password" autocomplete="current-password" spellcheck="false">
+        <button id="family-approval-forget" type="button">Forget</button>
+      </div>
+    </section>
 
     <section class="family-admin-panel" aria-labelledby="pending-title">
       <div class="family-admin-heading">
