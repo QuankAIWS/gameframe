@@ -65,11 +65,13 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Cold offline GameFrame journey
         run: npx playwright test test/browser/gameframe-offline-shell.spec.mjs --config playwright.config.mjs
-      - name: Upload failure screenshots
-        if: failure()
+      - name: Upload offline review screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gameframe-offline-review-${{ github.run_id }}
-          path: test-results/**/*.png
-          if-no-files-found: ignore
+          path: |
+            visual-results/gameframe-offline/*.png
+            test-results/**/*.png
+          if-no-files-found: warn
           retention-days: 7
