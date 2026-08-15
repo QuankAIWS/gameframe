@@ -228,6 +228,24 @@
     mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iYmxhY2siIGQ9Im0xMiAyIDEuNSA1LjFMMTguNiA5bC01LjEgMS45TDEyIDE2bC0xLjUtNS4xTDUuNCA5bDUuMS0xLjlMMTIgMlptNiAxMiAuOCAyLjJMMjEgMTdsLTIuMi44TDE4IDIwbC0uOC0yLjJMMTUgMTdsMi4yLS44TDE4IDE0WiIvPjwvc3ZnPg==");
   }
 
+  /* The effects control uses the same centered vector treatment but preserves
+     a visible full/reduced state instead of hiding that distinction with the
+     old text. The pressed state deliberately switches to one compact sparkle. */
+  #cascade-effects-toggle[aria-pressed="true"] {
+    border-color: rgba(167, 106, 244, .48);
+    background: linear-gradient(145deg, rgba(241,232,255,.98), rgba(220,242,255,.92));
+    box-shadow:
+      0 4px 9px rgba(77,47,105,.12),
+      inset 0 0 0 2px rgba(167,106,244,.12),
+      inset 0 1px 0 rgba(255,255,255,.94);
+  }
+
+  #cascade-effects-toggle[aria-pressed="true"]::before {
+    -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iYmxhY2siIGQ9Im0xMiAzIDEuOSA2LjFMMjAgMTJsLTYuMSAxLjlMMTIgMjBsLTEuOS02LjFMNCAxMmw2LjEtMS45TDEyIDNaIi8+PC9zdmc+");
+    mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iYmxhY2siIGQ9Im0xMiAzIDEuOSA2LjFMMjAgMTJsLTYuMSAxLjlMMTIgMjBsLTEuOS02LjFMNCAxMmw2LjEtMS45TDEyIDNaIi8+PC9zdmc+");
+    transform: scale(.88);
+  }
+
   #cascade-tutorial-toggle::before {
     -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iYmxhY2siIGQ9Ik05IDIxaDZ2LTFIOXYxWm0zLTE5YTcgNyAwIDAgMC00IDEyLjc0VjE3YTIgMiAwIDAgMCAyIDJoNGEyIDIgMCAwIDAgMi0ydi0yLjI2QTcgNyAwIDAgMCAxMiAyWm0yLjkgMTEuNDUtLjkuNjdWMTdoLTR2LTIuODhsLS45LS42N2E1IDUgMCAxIDEgNS44IDBaIi8+PC9zdmc+");
     mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iYmxhY2siIGQ9Ik05IDIxaDZ2LTFIOXYxWm0zLTE5YTcgNyAwIDAgMC00IDEyLjc0VjE3YTIgMiAwIDAgMCAyIDJoNGEyIDIgMCAwIDAgMi0ydi0yLjI2QTcgNyAwIDAgMCAxMiAyWm0yLjkgMTEuNDUtLjkuNjdWMTdoLTR2LTIuODhsLS45LS42N2E1IDUgMCAxIDEgNS44IDBaIi8+PC9zdmc+");
@@ -312,6 +330,80 @@
     height: 20px;
   }
 
+  .cascade-weekly-card [data-weekly-start] {
+    min-height: 40px;
+  }
+}
+
+/* Very short landscape is a separate compression regime. Preserve 40px
+   settings controls, but reclaim height from the score bank and decorative
+   stat cards so the bottom Blitz action remains fully visible and clickable. */
+@media (min-width: 760px) and (min-height: 400px) and (max-height: 480px) and (min-aspect-ratio: 3/2) {
+  .cascade-status {
+    gap: 4px;
+    padding: 5px 7px 6px;
+  }
+
+  .cascade-status > div:nth-child(2) {
+    min-height: 56px;
+    padding: 5px 7px 6px;
+  }
+
+  .cascade-status strong#score {
+    min-height: 32px;
+    padding-block: 3px;
+    font-size: clamp(1.85rem, 7.5vh, 2.25rem);
+  }
+
+  .cascade-status > div:nth-child(4),
+  .cascade-status > div:nth-child(5) {
+    min-height: 50px;
+    padding-block: 4px;
+  }
+
+  .cascade-status > div:nth-child(4) strong {
+    font-size: 2rem;
+  }
+
+  .cascade-status > div:nth-child(5) {
+    gap: 2px;
+  }
+
+  #lives {
+    grid-template-columns: repeat(5, 20px);
+    gap: 3px;
+  }
+
+  .cascade-side {
+    grid-template-rows: 46px 44px minmax(44px, 1fr) 44px;
+    gap: 4px;
+    padding: 5px 8px 6px;
+  }
+
+  .cascade-side > .cascade-card:nth-child(1),
+  .cascade-performance-card {
+    min-height: 46px;
+    padding-block: 2px;
+  }
+
+  .cascade-side > .cascade-card:nth-child(1) > strong {
+    width: 30px;
+    height: 30px;
+    font-size: 1.05rem;
+  }
+
+  #level-stars {
+    font-size: 1.05rem;
+  }
+
+  .cascade-side > .cascade-card:nth-child(2),
+  #cascade-feedback-card,
+  .cascade-weekly-card {
+    min-height: 0;
+    padding-block: 2px;
+  }
+
+  #booster-hammer,
   .cascade-weekly-card [data-weekly-start] {
     min-height: 40px;
   }
