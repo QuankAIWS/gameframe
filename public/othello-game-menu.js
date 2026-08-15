@@ -123,7 +123,10 @@
       if (button) button.disabled = disabled;
     });
     const cancel = menu.querySelector("#othello-cancel-challenge");
-    if (cancel) cancel.hidden = !disabled;
+    if (cancel) {
+      cancel.hidden = !disabled;
+      cancel.style.display = disabled ? "" : "none";
+    }
   }
 
   function resetInvitationControls() {
@@ -637,7 +640,7 @@
           <small>Start a persistent game and take turns whenever you are available.</small>
         </button>
         <div class="othello-player-picker" data-othello-player-picker hidden></div>
-        <button id="othello-cancel-challenge" type="button" hidden>
+        <button id="othello-cancel-challenge" type="button" hidden style="display:none">
           <strong>Cancel challenge</strong>
           <small>Withdraw this invitation before the other player accepts.</small>
         </button>
