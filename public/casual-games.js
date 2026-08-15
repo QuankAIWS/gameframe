@@ -1,3 +1,4 @@
+import "./gameframe-pwa.js";
 import { tryGameFrameIdentity } from "./gameframe-auth.js";
 import "./gameframe-nav.js";
 
