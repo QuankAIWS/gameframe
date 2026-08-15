@@ -299,9 +299,14 @@ export function presentCampaignEvent(eventValue) {
     ?? readableText(payload.speakerName, 120)
     ?? readableText(payload.speaker, 120)
     ?? readableText(payload.actorName, 120);
-  const heading = speaker
-    ?? readableText(payload.title, 160)
-    ?? headingForKind(event.kind);
+  const submittedAction = event.kind === "campaign.action_submitted"
+    ? readableText(payload.text, 4_000)
+    : null;
+  const heading = submittedAction
+    ? `Submitted: ${summarize(submittedAction, 88)}`
+    : speaker
+      ?? readableText(payload.title, 160)
+      ?? headingForKind(event.kind);
   const narration = readableText(payload.narration, 4_000);
   const body = dialogue
     ? [narration, dialogue.text].filter(Boolean).join("\n\n")
@@ -419,6 +424,11 @@ function readableText(value, maximumLength) {
   if (typeof value !== "string") return null;
   const text = value.trim();
   return text && text.length <= maximumLength ? text : null;
+}
+
+function summarize(value, maximumLength) {
+  if (value.length <= maximumLength) return value;
+  return `${value.slice(0, Math.max(1, maximumLength - 1)).trimEnd()}…`;
 }
 
 function compactPayload(payload) {
