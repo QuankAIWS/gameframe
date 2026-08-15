@@ -1,29 +1,88 @@
 const manifestHref = "/manifest.webmanifest";
-let reconnectingCachedIdentity = false;
+const cachedIdentityProbeDelayMs = 5000;
+let lastIdentity = window.gameFrameIdentity || null;
+let cachedIdentityProbeTimer = null;
+let cachedIdentityProbeInFlight = false;
+let reloadingForSessionRevalidation = false;
 
-function syncConnectivity() {
-  const offline = navigator.onLine === false;
-  window.gameFrameOffline = offline || Boolean(window.gameFrameIdentity?.offline);
-  document.documentElement.dataset.gameframeConnectivity = window.gameFrameOffline ? "offline" : "online";
-  document.body?.setAttribute("data-gameframe-connectivity", window.gameFrameOffline ? "offline" : "online");
-  window.dispatchEvent(new CustomEvent("gameframe:connectivity", {
-    detail: { offline: window.gameFrameOffline },
-  }));
+function currentIdentity() {
+  return window.gameFrameIdentity || lastIdentity || null;
 }
 
-function reconnect() {
-  // A cached identity is deliberately display-only. Once the browser has a
-  // network again, reload through the normal auth launcher so the trusted
-  // device/session is revalidated before Matches/Profile or server APIs return.
-  if (window.gameFrameIdentity?.offline && !reconnectingCachedIdentity) {
-    reconnectingCachedIdentity = true;
-    window.location.reload();
-    return;
+function clearCachedIdentityProbe() {
+  if (cachedIdentityProbeTimer !== null) window.clearTimeout(cachedIdentityProbeTimer);
+  cachedIdentityProbeTimer = null;
+}
+
+function scheduleCachedIdentityProbe(delay = cachedIdentityProbeDelayMs) {
+  clearCachedIdentityProbe();
+  const identity = currentIdentity();
+  if (!identity?.offline || navigator.onLine === false || reloadingForSessionRevalidation) return;
+  cachedIdentityProbeTimer = window.setTimeout(() => {
+    cachedIdentityProbeTimer = null;
+    void probeCachedIdentitySession();
+  }, delay);
+}
+
+async function probeCachedIdentitySession() {
+  const identity = currentIdentity();
+  if (!identity?.offline || navigator.onLine === false || cachedIdentityProbeInFlight || reloadingForSessionRevalidation) return;
+  cachedIdentityProbeInFlight = true;
+  try {
+    const headers = new Headers();
+    if (identity.source === "development") headers.set("x-gameframe-player-id", identity.playerId);
+    const response = await fetch("/api/session", {
+      credentials: "same-origin",
+      cache: "no-store",
+      headers,
+    });
+
+    // Any authoritative session response below the transient-server-error range
+    // proves that the request path is reachable again. Reload through the normal
+    // auth launcher so trusted-device refresh, 401 handling, and server authority
+    // are re-established instead of promoting the display-only cached identity.
+    if (response.status < 500) {
+      reloadingForSessionRevalidation = true;
+      clearCachedIdentityProbe();
+      window.location.reload();
+      return;
+    }
+  } catch {
+    // A DNS/proxy/server outage can leave navigator.onLine === true. Keep the
+    // local GameFrame shell usable and probe again instead of waiting for an
+    // online event that may never fire.
+  } finally {
+    cachedIdentityProbeInFlight = false;
   }
+  scheduleCachedIdentityProbe();
+}
+
+function syncConnectivity() {
+  const identity = currentIdentity();
+  const offline = navigator.onLine === false || Boolean(identity?.offline);
+  window.gameFrameOffline = offline;
+  document.documentElement.dataset.gameframeConnectivity = offline ? "offline" : "online";
+  document.body?.setAttribute("data-gameframe-connectivity", offline ? "offline" : "online");
+  window.dispatchEvent(new CustomEvent("gameframe:connectivity", {
+    detail: { offline },
+  }));
+
+  if (identity?.offline && navigator.onLine !== false) scheduleCachedIdentityProbe(250);
+  else clearCachedIdentityProbe();
+}
+
+function handleIdentity(event) {
+  if (event?.detail?.identity) lastIdentity = event.detail.identity;
   syncConnectivity();
 }
 
+function reconnect() {
+  syncConnectivity();
+  if (currentIdentity()?.offline) scheduleCachedIdentityProbe(0);
+}
+
 syncConnectivity();
+window.addEventListener("gameframe:identity", handleIdentity);
 window.addEventListener("online", reconnect);
 window.addEventListener("offline", syncConnectivity);
 
