@@ -66,6 +66,45 @@ test("family enrollment requires approval and can only be claimed once", async (
   assert.equal(replay.status, "unavailable");
 });
 
+test("pending enrollment requests can be removed without affecting other requests", async () => {
+  const runtime = new FamilyAuthObjectRuntime(new MemoryStorage());
+  const now = Date.now();
+  const first = {
+    requestId: "request-remove",
+    claimHash: "e".repeat(64),
+    playerId: "discord:mother",
+    displayName: "Mom",
+    deviceLabel: "Duplicate browser",
+    code: "123456",
+    createdAt: now,
+    expiresAt: now + 600_000,
+  };
+  const second = {
+    ...first,
+    requestId: "request-keep",
+    claimHash: "f".repeat(64),
+    deviceLabel: "Keep browser",
+    code: "654321",
+  };
+
+  await runtime.fetch(request("/family/enroll", "POST", first));
+  await runtime.fetch(request("/family/enroll", "POST", second));
+
+  const removal = await body(await runtime.fetch(request("/family/enrollment/remove", "POST", {
+    requestId: first.requestId,
+  })));
+  assert.equal(removal.removed, true);
+
+  const listed = await body(await runtime.fetch(request("/family/enrollments")));
+  assert.deepEqual(listed.requests.map((item: any) => item.requestId), [second.requestId]);
+
+  const removedClaim = await body(await runtime.fetch(request("/family/claim", "POST", {
+    requestId: first.requestId,
+    claimHash: first.claimHash,
+  })));
+  assert.equal(removedClaim.status, "unavailable");
+});
+
 test("trusted devices verify by hashed secret and can be revoked independently", async () => {
   const runtime = new FamilyAuthObjectRuntime(new MemoryStorage());
   const now = Date.now();
