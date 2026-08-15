@@ -25,6 +25,9 @@ async function waitForOfflinePack(page) {
       "/othello-game-menu.js",
       "/othello-offline-mode.js",
       "/othello-garden-delicacy.css",
+      "/othello-garden-ornament-cleanup.css",
+      "/othello-garden-lily-pad.svg",
+      "/othello-garden-lotus.svg",
     ];
     const matches = await Promise.all(required.map((path) => cache.match(path)));
     return matches.every(Boolean);
@@ -108,10 +111,35 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   );
   await expect(offlinePage.locator("#move-number")).not.toHaveText("0 / 60", { timeout: 3_000 });
 
+  // Garden's transitive CSS/image dependencies must work on the same fresh
+  // offline install; they cannot rely on Othello having been opened online first.
+  await offlinePage.locator('.theme-button[data-theme="garden"]').click();
+  await expect(offlinePage.locator("body")).toHaveAttribute("data-theme", "garden");
+  const gardenAssetsAvailable = await offlinePage.evaluate(async () => {
+    const [pad, lotus] = await Promise.all([
+      fetch("/othello-garden-lily-pad.svg"),
+      fetch("/othello-garden-lotus.svg"),
+    ]);
+    return pad.ok && lotus.ok;
+  });
+  expect(gardenAssetsAvailable).toBe(true);
+  await offlinePage.screenshot({ path: "visual-results/gameframe-offline/othello-offline-garden.png", fullPage: true });
+
   // Cached standings remain visibly stale rather than masquerading as live data.
   await offlinePage.locator("[data-gameframe-leaderboard]").click();
   await expect(offlinePage).toHaveURL(/\/leaderboard\.html$/);
   await expect(offlinePage.locator("#leaderboard-error")).toContainText("Offline · showing the last leaderboard");
   await expect(offlinePage.locator("#leaderboard-game option").first()).toHaveText(/Gamer Level/);
   await offlinePage.screenshot({ path: "visual-results/gameframe-offline/leaderboard-offline.png", fullPage: true });
+
+  // Reconnection must not leave the stale cached identity holding the application
+  // in offline mode. The PWA reloads through normal auth before online nav returns.
+  await context.setOffline(false);
+  await expect.poll(() => offlinePage.evaluate(() => ({
+    online: navigator.onLine,
+    offlineIdentity: window.gameFrameIdentity?.offline === true,
+    offlineShell: window.gameFrameOffline === true,
+  })), { timeout: 8_000 }).toEqual({ online: true, offlineIdentity: false, offlineShell: false });
+  await expect(offlinePage.locator("[data-gameframe-matches]")).toHaveAttribute("href", "/matches.html");
+  await expect(offlinePage.locator("[data-gameframe-profile]")).toHaveAttribute("href", "/profile.html");
 });
