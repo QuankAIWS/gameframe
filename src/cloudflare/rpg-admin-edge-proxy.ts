@@ -3,7 +3,9 @@ import { createRpgEdgeProxyHeaders } from "./rpg-edge-proxy.ts";
 import { json } from "./http-utils.ts";
 
 const ADMIN_RESET_PATH = "/api/rpg/admin/reset-staging";
+const ADMIN_DIAGNOSTICS_PATH = "/api/rpg/admin/staging-diagnostics";
 const MAX_REQUEST_BODY_BYTES = 16_384;
+const MAX_RESPONSE_BODY_BYTES = 4_194_304;
 const DEFAULT_REQUEST_TIMEOUT_MS = 15_000;
 
 export interface RpgAdminEdgeEnvironment {
@@ -12,7 +14,7 @@ export interface RpgAdminEdgeEnvironment {
 }
 
 export function isPublicRpgAdminRoute(pathname: string): boolean {
-  return pathname === ADMIN_RESET_PATH;
+  return pathname === ADMIN_RESET_PATH || pathname === ADMIN_DIAGNOSTICS_PATH;
 }
 
 /**
@@ -31,26 +33,32 @@ export async function proxyPublicRpgAdminRequest(
     if (!isPublicRpgAdminRoute(requestUrl.pathname)) {
       return json(404, { error: "not_found" });
     }
-    if (request.method !== "POST") {
-      return json(405, { error: "method_not_allowed" }, { allow: "POST" });
+    const diagnostics = requestUrl.pathname === ADMIN_DIAGNOSTICS_PATH;
+    const expectedMethod = diagnostics ? "GET" : "POST";
+    if (request.method !== expectedMethod) {
+      return json(405, { error: "method_not_allowed" }, { allow: expectedMethod });
     }
-    const origin = request.headers.get("origin")?.trim() ?? "";
-    if (origin !== requestUrl.origin) {
-      return json(403, {
-        error: "cross_origin_forbidden",
-        message: "Staging administrator mutations require an exact same-origin request.",
-      });
-    }
-    const contentType = request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
-    if (contentType !== "application/json") {
-      return json(415, {
-        error: "unsupported_media_type",
-        message: "Staging administrator requests require application/json.",
-      });
-    }
-    const body = new Uint8Array(await request.arrayBuffer());
-    if (body.byteLength > MAX_REQUEST_BODY_BYTES) {
-      return json(413, { error: "request_too_large" });
+
+    let body = new Uint8Array();
+    if (!diagnostics) {
+      const origin = request.headers.get("origin")?.trim() ?? "";
+      if (origin !== requestUrl.origin) {
+        return json(403, {
+          error: "cross_origin_forbidden",
+          message: "Staging administrator mutations require an exact same-origin request.",
+        });
+      }
+      const contentType = request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
+      if (contentType !== "application/json") {
+        return json(415, {
+          error: "unsupported_media_type",
+          message: "Staging administrator requests require application/json.",
+        });
+      }
+      body = new Uint8Array(await request.arrayBuffer());
+      if (body.byteLength > MAX_REQUEST_BODY_BYTES) {
+        return json(413, { error: "request_too_large" });
+      }
     }
 
     const originValue = env.GAMEFRAME_RPG_ORIGIN_URL?.trim() ?? "";
@@ -70,7 +78,7 @@ export async function proxyPublicRpgAdminRequest(
     const nonce = btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
     const headers = await createRpgEdgeProxyHeaders({
       proxySecret,
-      method: "POST",
+      method: expectedMethod,
       url: upstreamUrl,
       body,
       playerId: principal.playerId,
@@ -80,19 +88,32 @@ export async function proxyPublicRpgAdminRequest(
       ...(principal.avatarUrl ? { avatarUrl: principal.avatarUrl } : {}),
     });
     headers.set("accept", "application/json");
-    headers.set("content-type", "application/json");
+    if (!diagnostics) headers.set("content-type", "application/json");
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), DEFAULT_REQUEST_TIMEOUT_MS);
     try {
       const upstream = await fetch(upstreamUrl, {
-        method: "POST",
+        method: expectedMethod,
         headers,
-        body,
+        ...(body.byteLength > 0 ? { body } : {}),
         redirect: "manual",
         signal: controller.signal,
       });
+      const contentLength = Number(upstream.headers.get("content-length"));
+      if (Number.isFinite(contentLength) && contentLength > MAX_RESPONSE_BODY_BYTES) {
+        return json(502, {
+          error: "admin_upstream_response_too_large",
+          message: "The staging administrator response exceeded the support-bundle limit.",
+        });
+      }
       const bytes = new Uint8Array(await upstream.arrayBuffer());
+      if (bytes.byteLength > MAX_RESPONSE_BODY_BYTES) {
+        return json(502, {
+          error: "admin_upstream_response_too_large",
+          message: "The staging administrator response exceeded the support-bundle limit.",
+        });
+      }
       return new Response(bytes, {
         status: upstream.status,
         headers: {
