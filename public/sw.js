@@ -118,6 +118,7 @@ const REQUIRED_ASSETS = [
   "/othello-fidelity-app-3.js",
   "/othello-fidelity-app-4.js",
   "/othello-launcher.js",
+  "/othello-offline-mode.js",
   "/othello-game-menu.js",
 ];
 
