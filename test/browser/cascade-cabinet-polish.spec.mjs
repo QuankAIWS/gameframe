@@ -23,6 +23,17 @@ function centerY(box) {
   return box.y + (box.height / 2);
 }
 
+async function expectUtilityContained(page, viewportHeight) {
+  const utilityBox = await page.locator(".cascade-side").boundingBox();
+  const weeklyBox = await page.locator(".cascade-weekly-card").boundingBox();
+  const blitzBox = await page.locator("[data-weekly-start]").boundingBox();
+  for (const box of [utilityBox, weeklyBox, blitzBox]) expect(box).toBeTruthy();
+
+  expect(weeklyBox.y + weeklyBox.height).toBeLessThanOrEqual(utilityBox.y + utilityBox.height + 1);
+  expect(blitzBox.y + blitzBox.height).toBeLessThanOrEqual(viewportHeight);
+  return utilityBox;
+}
+
 test("Cascade keeps readable rails and mechanically centered controls at TV zoom", async ({ page }) => {
   await openCabinet(page, { width: 960, height: 540 });
 
@@ -142,21 +153,9 @@ test("Cascade spends roomy 16:9 width on the cabinet without shrinking the board
 test("Cascade short landscape keeps the utility dock usable and effects state visible", async ({ page }) => {
   await openCabinet(page, { width: 800, height: 450 });
 
-  const utility = page.locator(".cascade-side");
-  const weekly = page.locator(".cascade-weekly-card");
-  const blitz = page.locator("[data-weekly-start]");
   const settings = page.locator(".cascade-feedback-controls button");
   const effects = page.locator("#cascade-effects-toggle");
-
-  const [utilityBox, weeklyBox, blitzBox] = await Promise.all([
-    utility.boundingBox(),
-    weekly.boundingBox(),
-    blitz.boundingBox(),
-  ]);
-  for (const box of [utilityBox, weeklyBox, blitzBox]) expect(box).toBeTruthy();
-
-  expect(weeklyBox.y + weeklyBox.height).toBeLessThanOrEqual(utilityBox.y + utilityBox.height + 1);
-  expect(blitzBox.y + blitzBox.height).toBeLessThanOrEqual(450);
+  let utilityBox = await expectUtilityContained(page, 450);
 
   await expect(settings).toHaveCount(3);
   for (const button of await settings.all()) {
@@ -164,6 +163,17 @@ test("Cascade short landscape keeps the utility dock usable and effects state vi
     expect(box).toBeTruthy();
     expect(box.width).toBeGreaterThanOrEqual(39.5);
     expect(box.height).toBeGreaterThanOrEqual(39.5);
+    expect(box.y).toBeGreaterThanOrEqual(utilityBox.y - 1);
+    expect(box.y + box.height).toBeLessThanOrEqual(utilityBox.y + utilityBox.height + 1);
+  }
+
+  // Exercise the exact transition that previously clipped Blitz one pixel past
+  // the old 480px compression breakpoint.
+  await page.setViewportSize({ width: 800, height: 481 });
+  utilityBox = await expectUtilityContained(page, 481);
+  for (const button of await settings.all()) {
+    const box = await button.boundingBox();
+    expect(box).toBeTruthy();
     expect(box.y).toBeGreaterThanOrEqual(utilityBox.y - 1);
     expect(box.y + box.height).toBeLessThanOrEqual(utilityBox.y + utilityBox.height + 1);
   }
