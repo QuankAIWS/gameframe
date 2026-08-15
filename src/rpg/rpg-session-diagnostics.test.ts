@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
 import { readRpgSessionDiagnostics } from "./rpg-session-diagnostics.ts";
@@ -13,7 +14,7 @@ const CAMPAIGN_ID = "campaign-observability-test";
 const PLAYER_ID = "discord:observer";
 const ISSUED_AT = "2026-08-15T15:00:00.000Z";
 
-test("diagnostics correlate campaign events, commands, Runtime delivery state, and failures", () => {
+test("diagnostics correlate canonical evidence and redact credential-like data", () => {
   const directory = mkdtempSync(join(tmpdir(), "gameframe-rpg-diagnostics-"));
   const filePath = join(directory, "rpg.sqlite");
   const campaigns = new SqliteRpgCampaignStore({ filePath });
@@ -38,11 +39,36 @@ test("diagnostics correlate campaign events, commands, Runtime delivery state, a
         eventId: "event:intro",
         kind: "scene.presented",
         audience: { kind: "public" },
-        payload: { text: "A covered cart knocks from inside." },
+        payload: {
+          text: "A covered cart knocks from inside.",
+          debug: {
+            serviceToken: "hidden-service-token",
+            apiKey: "hidden-api-key",
+            hmacSecret: "hidden-hmac-secret",
+          },
+        },
         createdAt: "2026-08-15T14:59:00.000Z",
       }],
       initializedAt: "2026-08-15T14:58:00.000Z",
     });
+
+    // The SQLite presentation sequence is authoritative. Even if a stored JSON
+    // document is corrupted to claim another sequence, support output must not
+    // let that duplicate field override the row's canonical ordering key.
+    const corruption = new DatabaseSync(filePath);
+    try {
+      const row = corruption.prepare(`
+        SELECT event_json FROM rpg_presentation_events_v1
+        WHERE campaign_id = ? AND presentation_sequence = 1
+      `).get(CAMPAIGN_ID) as { event_json: string };
+      const event = JSON.parse(row.event_json) as Record<string, unknown>;
+      corruption.prepare(`
+        UPDATE rpg_presentation_events_v1 SET event_json = ?
+        WHERE campaign_id = ? AND presentation_sequence = 1
+      `).run(JSON.stringify({ ...event, presentationSequence: 999 }), CAMPAIGN_ID);
+    } finally {
+      corruption.close();
+    }
 
     const receipt = commands.acceptCommand({
       campaignId: CAMPAIGN_ID,
@@ -90,7 +116,15 @@ test("diagnostics correlate campaign events, commands, Runtime delivery state, a
     assert.equal(diagnostics.campaign.campaignId, CAMPAIGN_ID);
     assert.equal(diagnostics.campaign.coordination.gameframeCoordinationRevision, 1);
     assert.equal(diagnostics.events.length, 2);
+    assert.equal((diagnostics.events[0] as Record<string, any>).presentationSequence, 1);
     assert.equal(diagnostics.commands.length, 1);
+
+    const serialized = JSON.stringify(diagnostics);
+    assert.doesNotMatch(serialized, /hidden-service-token|hidden-api-key|hidden-hmac-secret/);
+    const debug = (diagnostics.events[0] as Record<string, any>).payload.debug;
+    assert.equal(debug.serviceToken, "[REDACTED]");
+    assert.equal(debug.apiKey, "[REDACTED]");
+    assert.equal(debug.hmacSecret, "[REDACTED]");
 
     const command = diagnostics.commands[0] as Record<string, any>;
     assert.equal(command.commandId, "command:diagnostic-cart-01");
@@ -99,7 +133,7 @@ test("diagnostics correlate campaign events, commands, Runtime delivery state, a
     assert.equal(command.runtime.attemptCount, 1);
     assert.equal(command.runtime.lastFailure.code, "runtime-rejected");
     assert.match(command.runtime.lastFailure.message, /Bearer \[REDACTED\]/);
-    assert.doesNotMatch(JSON.stringify(diagnostics), /very-secret-token/);
+    assert.doesNotMatch(serialized, /very-secret-token/);
     assert.equal("lease" in command.runtime, false);
   } finally {
     outbox.close();
