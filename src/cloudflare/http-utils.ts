@@ -1,6 +1,7 @@
 export interface ApiError extends Error {
   code?: string;
   revision?: number;
+  status?: number;
 }
 
 export function json(status: number, value: unknown, headers: HeadersInit = {}): Response {
@@ -25,7 +26,10 @@ export async function readJson(request: Request): Promise<Record<string, unknown
 
 export function errorResponse(caught: unknown): Response {
   const error = caught as ApiError;
-  const status = error.code === "authentication_required"
+  const explicitStatus = Number.isInteger(error.status) && Number(error.status) >= 400 && Number(error.status) <= 599
+    ? Number(error.status)
+    : null;
+  const status = explicitStatus ?? (error.code === "authentication_required"
     ? 401
     : error.code === "forbidden"
       || error.code === "identity_mismatch"
@@ -46,7 +50,7 @@ export function errorResponse(caught: unknown): Response {
               ? 502
               : error.code === "oauth_configuration_error"
                 ? 503
-                : 400;
+                : 400);
   return json(status, {
     error: error.code ?? "bad_request",
     message: error.message,
