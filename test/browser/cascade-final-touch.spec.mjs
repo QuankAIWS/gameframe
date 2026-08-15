@@ -64,6 +64,49 @@ test("Cascade final touch enlarges utility labels, centers icons, and removes ca
   await page.screenshot({ path: `${output}/cascade-final-touch-controls.png`, fullPage: true });
 });
 
+test("Cascade settings circles stay inside a narrow tall utility rail", async ({ page }) => {
+  await openCascade(page, { width: 960, height: 640 });
+
+  const rail = await page.locator(".cascade-side").boundingBox();
+  expect(rail).toBeTruthy();
+  const buttons = page.locator(".cascade-feedback-controls button");
+  await expect(buttons).toHaveCount(3);
+
+  for (const button of await buttons.all()) {
+    const box = await button.boundingBox();
+    expect(box).toBeTruthy();
+    expect(box.left).toBeGreaterThanOrEqual(rail.left - 0.5);
+    expect(box.left + box.width).toBeLessThanOrEqual(rail.left + rail.width + 0.5);
+    expect(box.width).toBeGreaterThanOrEqual(40);
+    expect(Math.abs(box.width - box.height)).toBeLessThanOrEqual(1);
+  }
+});
+
+test("Cascade result-dialog polish leaves tutorial dialog surfaces intact", async ({ page }) => {
+  await openCascade(page);
+
+  const tutorialSurface = await page.evaluate(() => {
+    const dialog = document.createElement("dialog");
+    dialog.className = "cascade-dialog cascade-tutorial-dialog";
+    dialog.innerHTML = `
+      <section class="cascade-tutorial-card">
+        <small>TIP</small>
+        <h2>Tutorial surface</h2>
+        <p>This should keep the tutorial dialog's own opaque surface.</p>
+      </section>
+    `;
+    document.body.append(dialog);
+    const style = getComputedStyle(dialog);
+    return {
+      backgroundColor: style.backgroundColor,
+      backgroundImage: style.backgroundImage,
+    };
+  });
+
+  expect(tutorialSurface.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+  expect(tutorialSurface.backgroundColor).not.toBe("transparent");
+});
+
 test("Cascade completion handoff keeps the reward panel visual language", async ({ page }) => {
   await openCascade(page);
 
