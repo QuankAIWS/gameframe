@@ -1,13 +1,21 @@
 import { mkdir } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
+const offlineCatalogAssets = [
+  "/assets/checkers/clockwork-eclipse/board-surface.svg",
+  "/assets/checkers/clockwork-eclipse/piece-lunar.svg",
+  "/assets/checkers/clockwork-eclipse/piece-solar.svg",
+  "/assets/gameframe/cards/role-playing-games-card.svg",
+  "/assets/gameframe/cards/battle-simulator-card.svg",
+];
+
 async function waitForOfflinePack(page) {
   await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) throw new Error("Service workers are unavailable in this browser.");
     await navigator.serviceWorker.ready;
   });
 
-  await expect.poll(() => page.evaluate(async () => {
+  await expect.poll(() => page.evaluate(async (catalogAssets) => {
     const cacheNames = await caches.keys();
     const cacheName = cacheNames.find((name) => name === "gameframe-static-v5");
     if (!cacheName) return false;
@@ -28,10 +36,11 @@ async function waitForOfflinePack(page) {
       "/othello-garden-ornament-cleanup.css",
       "/othello-garden-lily-pad.svg",
       "/othello-garden-lotus.svg",
+      ...catalogAssets,
     ];
     const matches = await Promise.all(required.map((path) => cache.match(path)));
     return matches.every(Boolean);
-  }), { timeout: 15_000 }).toBe(true);
+  }, offlineCatalogAssets), { timeout: 15_000 }).toBe(true);
 }
 
 test("installed GameFrame cold-launches offline with Cascade, local Othello, and cached leaderboard", async ({ page, context }) => {
@@ -67,6 +76,11 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   await expect(offlinePage.locator("#game-card-american-checkers")).toHaveAttribute("aria-disabled", "true");
   await expect(offlinePage.locator("[data-gameframe-matches]")).toHaveAttribute("aria-disabled", "true");
   await expect(offlinePage.locator("[data-gameframe-profile]")).toHaveAttribute("aria-disabled", "true");
+  const catalogAssetsAvailable = await offlinePage.evaluate(async (paths) => {
+    const responses = await Promise.all(paths.map((path) => fetch(path)));
+    return responses.every((response) => response.ok);
+  }, offlineCatalogAssets);
+  expect(catalogAssetsAvailable).toBe(true);
   await offlinePage.screenshot({ path: "visual-results/gameframe-offline/gameframe-offline-catalog.png", fullPage: true });
 
   await offlinePage.locator("#game-card-casual-games").click();
@@ -118,7 +132,7 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   await expect(offlinePage.locator("#leaderboard-game option").first()).toHaveText(/Gamer Level/);
   await offlinePage.screenshot({ path: "visual-results/gameframe-offline/leaderboard-offline.png", fullPage: true });
 
-  const revalidationNavigation = offlinePage.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 8_000 });
+  const revalidationNavigation = offlinePage.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 10_000 });
   await context.setOffline(false);
   await revalidationNavigation;
   await expect.poll(() => offlinePage.evaluate(() => ({
@@ -128,4 +142,30 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   })), { timeout: 8_000 }).toEqual({ online: true, offlineIdentity: false, offlineShell: false });
   await expect(offlinePage.locator("[data-gameframe-matches]")).toHaveAttribute("href", "/matches.html");
   await expect(offlinePage.locator("[data-gameframe-profile]")).toHaveAttribute("href", "/profile.html");
+});
+
+test("cached identity revalidates after a session request outage even when navigator stays online", async ({ page }) => {
+  const playerId = "gameframe-online-flag-recovery";
+  await page.goto(`/?catalog=1&player=${playerId}`);
+  await expect(page.locator("#game-card-othello")).toBeVisible();
+
+  await page.route("**/api/session", (route) => route.abort("failed"));
+  await page.goto("/?catalog=1");
+  await expect(page.locator(".gameframe-offline-summary")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => ({
+    online: navigator.onLine,
+    offlineIdentity: window.gameFrameIdentity?.offline === true,
+    offlineShell: window.gameFrameOffline === true,
+  }))).toEqual({ online: true, offlineIdentity: true, offlineShell: true });
+
+  const revalidationNavigation = page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 10_000 });
+  await page.unroute("**/api/session");
+  await revalidationNavigation;
+  await expect.poll(() => page.evaluate(() => ({
+    online: navigator.onLine,
+    offlineIdentity: window.gameFrameIdentity?.offline === true,
+    offlineShell: window.gameFrameOffline === true,
+  })), { timeout: 8_000 }).toEqual({ online: true, offlineIdentity: false, offlineShell: false });
+  await expect(page.locator(".gameframe-offline-summary")).toHaveCount(0);
+  await expect(page.locator("[data-gameframe-matches]")).toHaveAttribute("href", "/matches.html");
 });
