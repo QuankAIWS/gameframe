@@ -13,7 +13,8 @@ body.family-admin-route {
 }
 
 .family-admin-shell > header p,
-.family-admin-panel small {
+.family-admin-panel small,
+.family-admin-credential small {
   margin: 0;
   color: #59e1ef;
   font-size: .62rem;
@@ -27,12 +28,56 @@ body.family-admin-route {
 }
 
 .family-admin-shell > header span { color: #a5abba; }
-.family-admin-panel {
+.family-admin-panel,
+.family-admin-credential {
   margin-top: 18px;
   padding: 16px;
   border: 1px solid rgba(255,255,255,.1);
   border-radius: 18px;
   background: rgba(22,24,35,.94);
+}
+
+.family-admin-credential {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .7fr);
+  gap: 18px;
+  align-items: end;
+}
+
+.family-admin-credential h2 {
+  margin: 3px 0 6px;
+}
+
+.family-admin-credential p {
+  margin: 0;
+  color: #a5abba;
+  line-height: 1.45;
+}
+
+.family-admin-credential-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.family-admin-credential-controls label {
+  grid-column: 1 / -1;
+  color: #a5abba;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.family-admin-credential-controls input {
+  min-width: 0;
+  min-height: 42px;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 10px;
+  background: #0d1018;
+  color: #f7f7fb;
+  font: inherit;
 }
 
 .family-admin-heading,
@@ -55,8 +100,14 @@ body.family-admin-route {
 .family-admin-row-copy span,
 .family-admin-row-copy small { color: #a5abba; }
 .family-admin-code { font-size: 1.2rem; letter-spacing: .12em; color: #ffd84d; }
+.family-admin-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
 .family-admin-row button,
-#family-admin-refresh {
+#family-admin-refresh,
+#family-approval-forget {
   min-height: 40px;
   padding: 8px 12px;
   border: 1px solid rgba(89,225,239,.35);
@@ -65,17 +116,36 @@ body.family-admin-route {
   color: inherit;
   cursor: pointer;
 }
-.family-admin-row button[data-danger] { border-color: rgba(255,92,168,.4); }
-.family-admin-error {
+.family-admin-row button[data-danger],
+#family-approval-forget {
+  border-color: rgba(255,92,168,.4);
+}
+.family-admin-row button:disabled,
+#family-admin-refresh:disabled,
+#family-approval-forget:disabled {
+  cursor: wait;
+  opacity: .58;
+}
+.family-admin-error,
+.family-admin-status {
   margin-top: 16px;
   padding: 12px;
-  border: 1px solid rgba(255,92,168,.45);
   border-radius: 12px;
+}
+.family-admin-error {
+  border: 1px solid rgba(255,92,168,.45);
   background: rgba(255,92,168,.08);
+}
+.family-admin-status {
+  border: 1px solid rgba(89,225,239,.35);
+  background: rgba(89,225,239,.08);
 }
 
 @media (max-width: 620px) {
   .family-admin-shell { padding-top: 68px; }
+  .family-admin-credential { grid-template-columns: 1fr; }
   .family-admin-row { align-items: stretch; flex-direction: column; }
-  .family-admin-row button { width: 100%; }
+  .family-admin-actions { width: 100%; }
+  .family-admin-actions button { flex: 1 1 0; }
+  .family-admin-row > button { width: 100%; }
 }

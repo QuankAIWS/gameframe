@@ -80,6 +80,7 @@ export class FamilyAuthObjectRuntime {
       if (request.method === "POST" && url.pathname === "/family/enroll") return json(200, await this.#enroll(await readJson(request)));
       if (request.method === "GET" && url.pathname === "/family/enrollments") return json(200, await this.#listEnrollments());
       if (request.method === "POST" && url.pathname === "/family/approve") return json(200, await this.#approve(await readJson(request)));
+      if (request.method === "POST" && url.pathname === "/family/enrollment/remove") return json(200, await this.#removeEnrollment(await readJson(request)));
       if (request.method === "POST" && url.pathname === "/family/claim") return json(200, await this.#claim(await readJson(request)));
       if (request.method === "POST" && url.pathname === "/family/device/issue") return json(200, await this.#issueDevice(await readJson(request)));
       if (request.method === "POST" && url.pathname === "/family/device/verify") return json(200, await this.#verifyDevice(await readJson(request)));
@@ -131,6 +132,18 @@ export class FamilyAuthObjectRuntime {
     existing.approvedBy = approvedBy;
     await this.#storage.put(PENDING_KEY, store);
     return { approved: true, requestId };
+  }
+
+  async #removeEnrollment(body: Record<string, unknown>) {
+    const requestId = text(body.requestId, 120);
+    const store = await this.#pending();
+    const existing = store.requests.find((item) => item.requestId === requestId);
+    if (!existing) throw Object.assign(new Error("Enrollment request was not found."), { code: "family_enrollment_unavailable", status: 404 });
+    await this.#storage.put(PENDING_KEY, {
+      ...store,
+      requests: store.requests.filter((item) => item.requestId !== requestId),
+    });
+    return { removed: true, requestId };
   }
 
   async #claim(body: Record<string, unknown>) {

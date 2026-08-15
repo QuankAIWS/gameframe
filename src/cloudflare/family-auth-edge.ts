@@ -66,8 +66,12 @@ function randomToken(bytes = 32): string {
 }
 
 function enrollmentCode(): string {
-  const value = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000;
-  return String(value).padStart(6, "0");
+  const limit = Math.floor(0x1_0000_0000 / 1_000_000) * 1_000_000;
+  let value: number;
+  do {
+    value = crypto.getRandomValues(new Uint32Array(1))[0];
+  } while (value >= limit);
+  return String(value % 1_000_000).padStart(6, "0");
 }
 
 function trustedCookie(value: string, maxAgeSeconds = DEVICE_TTL_SECONDS): string {
@@ -238,6 +242,16 @@ async function approveEnrollment(request: Request, env: GameFrameWorkerEnv) {
   });
 }
 
+async function removeEnrollment(request: Request, env: GameFrameWorkerEnv) {
+  await requireAdmin(request, env);
+  const input = await readJson(request);
+  return internal(env, "/family/enrollment/remove", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ requestId: input.requestId }),
+  });
+}
+
 async function adminDevices(request: Request, env: GameFrameWorkerEnv) {
   await requireAdmin(request, env);
   return internal(env, "/family/devices");
@@ -260,14 +274,15 @@ export function familyAuthEdgeRoute(pathname: string): boolean {
 export async function handleFamilyAuthEdge(request: Request, env: GameFrameWorkerEnv): Promise<Response> {
   try {
     const url = new URL(request.url);
-    if (request.method === "POST" && url.pathname === "/auth/family/enroll/start") return startEnrollment(request, env);
-    if (request.method === "POST" && url.pathname === "/auth/family/enroll/claim") return claimEnrollment(request, env);
-    if (request.method === "POST" && url.pathname === "/auth/trusted-device/refresh") return refreshTrusted(request, env);
-    if (request.method === "POST" && url.pathname === "/auth/trusted-device/logout") return logoutTrusted(request, env);
-    if (request.method === "GET" && url.pathname === "/api/admin/family/enrollments") return adminEnrollments(request, env);
-    if (request.method === "POST" && url.pathname === "/api/admin/family/enrollments/approve") return approveEnrollment(request, env);
-    if (request.method === "GET" && url.pathname === "/api/admin/family/devices") return adminDevices(request, env);
-    if (request.method === "POST" && url.pathname === "/api/admin/family/devices/revoke") return revokeDevice(request, env);
+    if (request.method === "POST" && url.pathname === "/auth/family/enroll/start") return await startEnrollment(request, env);
+    if (request.method === "POST" && url.pathname === "/auth/family/enroll/claim") return await claimEnrollment(request, env);
+    if (request.method === "POST" && url.pathname === "/auth/trusted-device/refresh") return await refreshTrusted(request, env);
+    if (request.method === "POST" && url.pathname === "/auth/trusted-device/logout") return await logoutTrusted(request, env);
+    if (request.method === "GET" && url.pathname === "/api/admin/family/enrollments") return await adminEnrollments(request, env);
+    if (request.method === "POST" && url.pathname === "/api/admin/family/enrollments/approve") return await approveEnrollment(request, env);
+    if (request.method === "POST" && url.pathname === "/api/admin/family/enrollments/remove") return await removeEnrollment(request, env);
+    if (request.method === "GET" && url.pathname === "/api/admin/family/devices") return await adminDevices(request, env);
+    if (request.method === "POST" && url.pathname === "/api/admin/family/devices/revoke") return await revokeDevice(request, env);
     return json(404, { error: "not_found" });
   } catch (error) {
     return errorResponse(error);

@@ -54,6 +54,12 @@ function normalize(path) {
   return String(path || "").trim().replaceAll("\\", "/");
 }
 
+function isFamilyAuthFile(file) {
+  return /^public\/family-(?:admin|sign-in|admin-link)(?:[^/]*)\.(?:html|css|js)$/.test(file)
+    || /^src\/cloudflare\/family-auth-.*\.ts$/.test(file)
+    || file === "test/browser/family-admin.spec.mjs";
+}
+
 function isCascadeTelemetryFile(file) {
   return file === "public/cascade-admin-telemetry.js"
     || file === "public/cascade-telemetry-sync.js"
@@ -132,7 +138,7 @@ export function classifyUiTestScope(paths) {
       continue;
     }
 
-    if (exactShellFiles.has(file) || isOthelloShellFile(file)) scope.shell = true;
+    if (exactShellFiles.has(file) || isOthelloShellFile(file) || isFamilyAuthFile(file)) scope.shell = true;
     if (isCasualFile(file)) scope.casual = true;
     if (isCascadeUiFile(file)) scope.cascadeUi = true;
     if (isCascadeProfileFile(file)) scope.cascadeProfile = true;
