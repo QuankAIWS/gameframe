@@ -21,7 +21,8 @@ test("installed Cascade reloads and remains playable with the browser offline", 
       && await cache.match("/cascade-runtime-v2.js")
       && await cache.match("/cascade-special-engine.js")
       && await cache.match("/cascade-engine.js")
-      && await cache.match("/gameframe-theme.js"),
+      && await cache.match("/gameframe-theme.js")
+      && await cache.match("/cascade-cabinet-polish.css"),
     );
   }), { timeout: 10_000 }).toBe(true);
 
@@ -30,6 +31,13 @@ test("installed Cascade reloads and remains playable with the browser offline", 
 
   await expect(page.locator("#board .cascade-tile")).toHaveCount(64, { timeout: 8_000 });
   await expect(page.locator("#moves")).not.toHaveText("");
+
+  // The cabinet stylesheet is part of the first-install precache, not merely a
+  // runtime cache side effect from a prior controlled page visit.
+  const cabinetMapWidth = await page.locator(".cascade-shell").evaluate((node) => (
+    getComputedStyle(node).getPropertyValue("--cascade-tv-map-width").trim()
+  ));
+  expect(cabinetMapWidth).toContain("156px");
 
   // Local interactions remain available; no server round trip is required to
   // select a candy or persist the local Cascade save.

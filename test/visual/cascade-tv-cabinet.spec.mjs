@@ -127,7 +127,13 @@ async function expectCompactControlDock(page) {
   expect(hammer.width).toBeGreaterThan(side.width * .82);
   expect(settings.y).toBeGreaterThanOrEqual(hammer.y + hammer.height - 2);
   expect(blitz.y).toBeGreaterThanOrEqual(settings.y + settings.height - 2);
-  expect(blitz.y + blitz.height).toBeLessThan(side.y + side.height * .8);
+
+  // The current cabinet deliberately uses the full utility rail: settings sit
+  // in the flexible middle and Blitz anchors the bottom action position. The
+  // old "finish before 80%" assertion encoded the dead space this pass removes.
+  const bottomInset = (side.y + side.height) - (blitz.y + blitz.height);
+  expect(bottomInset).toBeGreaterThanOrEqual(-1);
+  expect(bottomInset).toBeLessThanOrEqual(18);
 }
 
 async function expectMatch3PlayHierarchy(page, { minMapRows, maxMapRows, minMapCoverage }) {

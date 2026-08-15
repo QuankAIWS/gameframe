@@ -34,6 +34,7 @@ const CORE_ASSETS = [
   "/cascade-presentation-director.css",
   "/cascade-build-refresh.css",
   "/cascade-mobile.css",
+  "/cascade-cabinet-polish.css",
   "/cascade-fresh-run-guard.js",
   "/cascade-family-state-guard.js",
   "/cascade-viewport-guard.js",
