@@ -1,21 +1,57 @@
-const CACHE_VERSION = "gameframe-static-v4";
-const CORE_ASSETS = [
+const CACHE_VERSION = "gameframe-static-v5";
+
+// This is the first intentionally complete GameFrame offline pack. Keep it
+// limited to the lightweight shell plus experiences that can genuinely execute
+// without server authority: Cascade Crush and local Othello. API/auth responses
+// remain outside the service-worker cache.
+const REQUIRED_ASSETS = [
+  // Installed GameFrame shell.
   "/",
-  "/cascade.html",
-  "/styles.css",
-  "/gameframe-icon.svg",
   "/manifest.webmanifest",
+  "/gameframe-icon.svg",
+  "/gameframe-pwa.js",
+  "/gameframe-navigation-preflight.js",
+  "/gameframe-navigation-preflight.css",
+  "/gameframe-boot.css",
+  "/styles.css",
+  "/game-polish.css",
+  "/clockwork-eclipse.css",
+  "/game-polish.js",
+  "/checkers-premium.js",
+  "/checkers-premium-layout.js",
+  "/checkers-premium.css",
+  "/auth-launcher.js",
+  "/gameframe-auth.js",
+  "/gameframe-auth.css",
+  "/gameframe-account-menu.css",
   "/gameframe-nav.js",
   "/gameframe-theme.js",
-  "/gameframe-pwa.js",
-  "/family-sign-in.js",
-  "/family-admin-link.js",
   "/gameframe-nav.css",
   "/gameframe-nav-integrations.css",
   "/gameframe-final-polish.css",
   "/gameframe-session-override.css",
   "/gameframe-themes.css",
   "/gameframe-theme-environments.css",
+  "/gameframe-offline-shell.js",
+  "/game-hub.css",
+  "/game-hub-shell.css",
+  "/game-hub-cards.css",
+  "/game-hub-flow.css",
+  "/game-hub-rpg.css",
+  "/family-sign-in.js",
+  "/family-admin-link.js",
+
+  // Lightweight GameFrame destinations.
+  "/casual-games.html",
+  "/casual-games.css",
+  "/casual-games.js",
+  "/leaderboard.html",
+  "/leaderboard-app.js",
+  "/player-platform.css",
+  "/player-social.css",
+
+  // Cascade Crush.
+  "/cascade.html",
   "/cascade.css",
   "/cascade-input.css",
   "/cascade-vfx.css",
@@ -33,8 +69,12 @@ const CORE_ASSETS = [
   "/cascade-juice.css",
   "/cascade-presentation-director.css",
   "/cascade-build-refresh.css",
-  "/cascade-mobile.css",
+  "/cascade-cabinet-unified.css",
+  "/cascade-match3-benchmark.css",
+  "/cascade-match3-reduction.css",
+  "/cascade-score-hud.css",
   "/cascade-cabinet-polish.css",
+  "/cascade-mobile.css",
   "/cascade-final-touch.css",
   "/cascade-fresh-run-guard.js",
   "/cascade-family-state-guard.js",
@@ -43,10 +83,13 @@ const CORE_ASSETS = [
   "/cascade-telemetry-sync.js",
   "/cascade-presentation-director.js",
   "/cascade-runtime-v2.js",
+  "/cascade-score-hud.js",
   "/cascade-input.js",
   "/cascade-family-polish.js",
   "/cascade-bonus-modes.js",
   "/cascade-life-ui.js",
+  "/cascade-admin.js",
+  "/cascade-admin-telemetry.js",
   "/cascade-piece-idle.js",
   "/cascade-cell-objectives.js",
   "/cascade-tutorial-mode.js",
@@ -54,9 +97,28 @@ const CORE_ASSETS = [
   "/cascade-build-refresh.js",
   "/cascade-special-engine.js",
   "/cascade-engine.js",
-  "/gameframe-auth.js",
-  "/gameframe-auth.css",
-  "/gameframe-account-menu.css"
+
+  // Othello local/bot play and all three visual themes.
+  "/othello.html",
+  "/othello.css",
+  "/othello-reference-core.css",
+  "/othello-reference-neon.css",
+  "/othello-reference-garden.css",
+  "/othello-reference-responsive.css",
+  "/othello-fidelity-neon.css",
+  "/othello-fidelity-garden.css",
+  "/othello-bake3-neon.css",
+  "/othello-bake3-garden.css",
+  "/othello-bake4-neon.css",
+  "/othello-bake4-garden.css",
+  "/othello-bake4-responsive.css",
+  "/othello-game-menu.css",
+  "/othello-fidelity-app-1.js",
+  "/othello-fidelity-app-2.js",
+  "/othello-fidelity-app-3.js",
+  "/othello-fidelity-app-4.js",
+  "/othello-launcher.js",
+  "/othello-game-menu.js",
 ];
 
 function cacheable(requestUrl) {
@@ -65,13 +127,20 @@ function cacheable(requestUrl) {
   return true;
 }
 
+async function precacheRequiredAssets(cache) {
+  await Promise.all(REQUIRED_ASSETS.map(async (path) => {
+    const response = await fetch(path, { cache: "reload" });
+    if (!response.ok) throw new Error(`GameFrame offline asset ${path} returned HTTP ${response.status}.`);
+    await cache.put(path, response);
+  }));
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_VERSION);
-    await Promise.allSettled(CORE_ASSETS.map(async (path) => {
-      const response = await fetch(path, { cache: "reload" });
-      if (response.ok) await cache.put(path, response);
-    }));
+    // Required offline assets are atomic now. A partially populated new worker
+    // must not activate and advertise an offline GameFrame that cannot boot.
+    await precacheRequiredAssets(cache);
     await self.skipWaiting();
   })());
 });
@@ -100,8 +169,11 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       } catch {
+        // Ignore query strings for installed navigation. The HTML shell still
+        // sees the original URL, so /?catalog=1 and /othello.html?theme=neon
+        // can reuse their precached pathname documents without falling home.
         return (await caches.match(request))
-          || (url.pathname === "/cascade.html" ? await caches.match("/cascade.html") : null)
+          || (await caches.match(url.pathname))
           || await caches.match("/")
           || Response.error();
       }
