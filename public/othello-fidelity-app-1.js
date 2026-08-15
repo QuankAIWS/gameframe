@@ -5,8 +5,6 @@ const referenceStyles = [
   "/othello-reference-responsive.css",
   "/othello-fidelity-neon.css",
   "/othello-fidelity-garden.css",
-  "/othello-bake3-neon.css",
-  "/othello-bake3-garden.css",
   "/othello-bake4-neon.css",
   "/othello-bake4-garden.css",
   "/othello-bake4-responsive.css",
