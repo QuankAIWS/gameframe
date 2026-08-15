@@ -107,6 +107,31 @@ const games = [
 ];
 
 function artwork(game) {
+  if (game.accent === "rpg") {
+    return `
+      <span class="game-card-visual game-card-visual-rpg" aria-hidden="true">
+        <span class="game-card-rpg-grid"></span>
+        <i class="game-card-rpg-node rpg-node-a"></i>
+        <i class="game-card-rpg-node rpg-node-b"></i>
+        <i class="game-card-rpg-node rpg-node-c"></i>
+        <i class="game-card-rpg-route rpg-route-a"></i>
+        <i class="game-card-rpg-route rpg-route-b"></i>
+        <span class="game-card-visual-mark">RPG</span>
+      </span>
+    `;
+  }
+  if (game.accent === "simulator") {
+    return `
+      <span class="game-card-visual game-card-visual-simulator" aria-hidden="true">
+        <span class="game-card-simulator-grid"></span>
+        <i class="game-card-simulator-zone simulator-zone-a"></i>
+        <i class="game-card-simulator-zone simulator-zone-b"></i>
+        <i class="game-card-simulator-unit simulator-unit-a"></i>
+        <i class="game-card-simulator-unit simulator-unit-b"></i>
+        <span class="game-card-visual-mark">SIM</span>
+      </span>
+    `;
+  }
   if (game.accent === "casual") {
     return `
       <span class="game-card-visual" aria-hidden="true" style="background:radial-gradient(circle at 50% 38%,rgba(255,216,77,.2),transparent 34%),linear-gradient(145deg,#28162d,#0b1b24 74%);">
@@ -142,19 +167,12 @@ function artwork(game) {
       </span>
     `;
   }
-  if (game.accent === "tic") {
-    return `
-      <span class="game-card-visual game-card-visual-tic" aria-hidden="true">
-        <span class="hub-tic-grid"></span>
-        <i class="hub-tic-mark hub-tic-x hub-tic-a"></i>
-        <i class="hub-tic-mark hub-tic-o hub-tic-b"></i>
-        <i class="hub-tic-mark hub-tic-x hub-tic-c"></i>
-      </span>
-    `;
-  }
   return `
-    <span class="game-card-visual" aria-hidden="true">
-      <span class="game-card-visual-mark">${game.accent === "rpg" ? "RPG" : "SIM"}</span>
+    <span class="game-card-visual game-card-visual-tic" aria-hidden="true">
+      <span class="hub-tic-grid"></span>
+      <i class="hub-tic-mark hub-tic-x hub-tic-a"></i>
+      <i class="hub-tic-mark hub-tic-o hub-tic-b"></i>
+      <i class="hub-tic-mark hub-tic-x hub-tic-c"></i>
     </span>
   `;
 }
