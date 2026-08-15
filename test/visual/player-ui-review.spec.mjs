@@ -121,11 +121,12 @@ async function openSharedGameMenu(page, viewport, game, theme) {
   await page.goto(`/?game=${game}&menu=1&player=${game}-menu-review-player`);
   await expect(page.locator("body.gameframe-game-menu")).toBeVisible();
   await expectDestinationBar(page, theme);
-  await expect(page.locator(".game-menu-hero")).toBeVisible();
+  await expect(page.locator("#board-game-menu")).toBeVisible();
   await expect(page.locator(".game-grid")).toBeHidden();
-  await expect(page.locator(".mode-grid")).toBeVisible();
-  await expect(page.locator("#challenge-bot")).toBeVisible();
+  await expect(page.locator("#board-menu-computer")).toBeVisible();
   await expect(page.locator("#create-human-match")).toBeVisible();
+  await expect(page.locator("#board-menu-local")).toBeVisible();
+  await expect(page.locator("#challenge-bot")).toBeHidden();
 }
 
 async function openTicTacToeMenu(page, viewport) {
@@ -138,7 +139,7 @@ async function openCheckersMenu(page, viewport) {
 
 async function openTicTacToe(page, viewport) {
   await openTicTacToeMenu(page, viewport);
-  await page.locator("#challenge-bot").click();
+  await page.locator("#board-menu-computer").click();
   await expect(page.locator("body.tic-tac-toe-noir-running")).toBeVisible();
   await expectDestinationBar(page, "tic");
   await expect(page.locator(".tic-noir-topbar")).toBeHidden();
@@ -152,7 +153,7 @@ async function openTicTacToe(page, viewport) {
 
 async function openCheckers(page, viewport) {
   await openCheckersMenu(page, viewport);
-  await page.locator("#challenge-bot").click();
+  await page.locator("#board-menu-computer").click();
   await expect(page.locator("body.gameframe-shared-match-running")).toBeVisible();
   await expectDestinationBar(page, "checkers");
   await expect(page.locator("#board.board-checkers")).toBeVisible();
