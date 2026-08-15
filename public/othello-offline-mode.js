@@ -3,6 +3,29 @@ function applyOfflineOthelloMenu() {
   const menu = document.querySelector("#othello-game-menu");
   if (!menu) return;
 
+  if (!document.querySelector("#othello-offline-mode-style")) {
+    const style = document.createElement("style");
+    style.id = "othello-offline-mode-style";
+    style.textContent = `
+      #othello-game-menu #othello-challenge-player:disabled {
+        opacity: .5;
+        cursor: not-allowed;
+        filter: saturate(.55);
+      }
+      #othello-game-menu .othello-all-matches[aria-disabled="true"] {
+        opacity: .62;
+        cursor: not-allowed;
+        text-decoration: none;
+      }
+    `;
+    document.head.append(style);
+  }
+
+  const intro = menu.querySelector(".othello-game-menu-card > p:not(.othello-menu-kicker):not(.othello-online-status)");
+  if (intro) {
+    intro.textContent = "Play OthelloBot, share the board locally, or resume a saved local match. Online challenges return when GameFrame reconnects.";
+  }
+
   const challenge = menu.querySelector("#othello-challenge-player");
   if (challenge) {
     challenge.disabled = true;
