@@ -58,8 +58,11 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   assert.match(cascadeSync, /\/api\/me\/cascade\/progression/);
   assert.match(cascadeSync, /cascade-progression-owner/);
   assert.match(cascadeSync, /cascade-progression-candidate/);
-  assert.match(cascadeSync, /candidate === identity\.playerId/);
-  assert.match(cascadeSync, /storage\.setItem\(CANDIDATE_KEY, identity\.playerId\)/);
+  assert.match(cascadeSync, /cascade-progression-visit/);
+  assert.match(cascadeSync, /sessionStorage\.getItem\(VISIT_KEY\)/);
+  assert.match(cascadeSync, /candidate\?\.playerId === identity\.playerId/);
+  assert.match(cascadeSync, /candidate\.visitId !== currentVisitId/);
+  assert.match(cascadeSync, /JSON\.stringify\(\{ playerId, visitId: currentVisitId \}\)/);
   assert.match(cascadeSync, /Math\.max\([\s\S]*server\?\.highestCompletedLevel/);
   assert.match(cascadeSync, /starsByLevel\[level\] = Math\.max/);
 
