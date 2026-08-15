@@ -5,6 +5,7 @@ const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
 const OWNER_KEY = "scribbles-gameframe.cascade-progression-owner:v1";
 const CANDIDATE_KEY = "scribbles-gameframe.cascade-progression-candidate:v1";
+const VISIT_KEY = "scribbles-gameframe.cascade-progression-visit:v1";
 const RELOAD_KEY = "scribbles-gameframe.cascade-progression-reload:v1";
 const SYNC_INTERVAL_MS = 750;
 const storage = window.localStorage;
@@ -20,6 +21,35 @@ function readJson(key) {
   } catch {
     return null;
   }
+}
+
+function visitId() {
+  const existing = window.sessionStorage.getItem(VISIT_KEY)?.trim();
+  if (existing) return existing;
+  const created = crypto.randomUUID();
+  window.sessionStorage.setItem(VISIT_KEY, created);
+  return created;
+}
+
+const currentVisitId = visitId();
+
+function readCandidate() {
+  const candidate = readJson(CANDIDATE_KEY);
+  if (
+    !candidate
+    || typeof candidate.playerId !== "string"
+    || !candidate.playerId.trim()
+    || typeof candidate.visitId !== "string"
+    || !candidate.visitId.trim()
+  ) return null;
+  return {
+    playerId: candidate.playerId.trim(),
+    visitId: candidate.visitId.trim(),
+  };
+}
+
+function writeCandidate(playerId) {
+  storage.setItem(CANDIDATE_KEY, JSON.stringify({ playerId, visitId: currentVisitId }));
 }
 
 function normalizedLevel(value, fallback = 1) {
@@ -73,20 +103,28 @@ function resolveOwner(current) {
 
   // A blank browser can safely bind immediately. Existing anonymous progress is
   // intentionally a two-visit migration so a one-off login cannot silently claim
-  // another household member's local save.
+  // another household member's local save. The candidate records the current
+  // sessionStorage visit ID so the 750ms sync loop and same-tab reloads cannot
+  // accidentally satisfy that second-visit requirement.
   if (!hasProgress(current)) {
     storage.setItem(OWNER_KEY, identity.playerId);
     storage.removeItem(CANDIDATE_KEY);
     return identity.playerId;
   }
 
-  const candidate = storage.getItem(CANDIDATE_KEY);
-  if (candidate === identity.playerId) {
+  const candidate = readCandidate();
+  if (
+    candidate?.playerId === identity.playerId
+    && candidate.visitId !== currentVisitId
+  ) {
     storage.setItem(OWNER_KEY, identity.playerId);
     storage.removeItem(CANDIDATE_KEY);
     return identity.playerId;
   }
-  storage.setItem(CANDIDATE_KEY, identity.playerId);
+
+  // Legacy raw-string candidates and candidates for another identity are both
+  // rewritten for this visit instead of being trusted as proof of a prior visit.
+  writeCandidate(identity.playerId);
   return null;
 }
 
