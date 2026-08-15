@@ -193,8 +193,6 @@
     background: rgba(255,255,255,.16);
   }
 
-  /* Flexible tracks prevent the three circles from spilling out of narrow but
-     tall 16:9 rails. Each button tops out at 54px and shrinks with its track. */
   .cascade-feedback-controls {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: center;
@@ -228,8 +226,8 @@
     left: 50% !important;
     top: 50% !important;
     display: block !important;
-    width: 50% !important;
-    height: 50% !important;
+    width: 55% !important;
+    height: 55% !important;
     margin: 0 !important;
     transform: translate(-50%, -50%);
     transform-origin: center;
@@ -282,13 +280,8 @@
 
   #cascade-feedback-card { padding-block: 3px; }
 
-  .cascade-feedback-controls {
-    gap: 5px;
-  }
-
-  .cascade-feedback-controls button {
-    width: min(46px, 100%);
-  }
+  .cascade-feedback-controls { gap: 5px; }
+  .cascade-feedback-controls button { width: min(46px, 100%); }
 
   .cascade-weekly-card [data-weekly-start]::before { font-size: 1rem; }
   .cascade-weekly-card [data-weekly-start] b { font-size: .86rem; }
@@ -306,13 +299,8 @@
     font-size: .92rem;
   }
 
-  .cascade-feedback-controls {
-    gap: 4px;
-  }
-
-  .cascade-feedback-controls button {
-    width: min(40px, 100%);
-  }
+  .cascade-feedback-controls { gap: 4px; }
+  .cascade-feedback-controls button { width: min(40px, 100%); }
 
   .cascade-weekly-card [data-weekly-start] { min-height: 40px; }
   .cascade-weekly-card [data-weekly-start]::before { font-size: .92rem; }
@@ -320,13 +308,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #result-dialog[open] form {
-    animation-duration: 1ms !important;
-  }
-
-  #result-dialog .cascade-dialog-actions button {
-    transition: none;
-  }
+  #result-dialog[open] form { animation-duration: 1ms !important; }
+  #result-dialog .cascade-dialog-actions button { transition: none; }
 }
 
 @media (max-width: 650px) {
@@ -340,7 +323,5 @@
     border-radius: 21px;
   }
 
-  #result-dialog .cascade-dialog-actions {
-    grid-template-columns: 1fr;
-  }
+  #result-dialog .cascade-dialog-actions { grid-template-columns: 1fr; }
 }
