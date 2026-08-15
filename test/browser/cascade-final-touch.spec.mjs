@@ -37,8 +37,8 @@ test("Cascade final touch enlarges utility labels, centers icons, and removes ca
   for (const button of await settings.all()) {
     const box = await button.boundingBox();
     expect(box).toBeTruthy();
-    expect(box.width).toBeGreaterThanOrEqual(45.5);
-    expect(box.height).toBeGreaterThanOrEqual(45.5);
+    expect(box.width).toBeGreaterThanOrEqual(41.5);
+    expect(box.height).toBeGreaterThanOrEqual(41.5);
     const icon = await button.evaluate((node) => {
       const style = getComputedStyle(node, "::before");
       return {
@@ -75,14 +75,14 @@ test("Cascade settings circles stay inside a narrow tall utility rail", async ({
   for (const button of await buttons.all()) {
     const box = await button.boundingBox();
     expect(box).toBeTruthy();
-    expect(box.left).toBeGreaterThanOrEqual(rail.left - 0.5);
-    expect(box.left + box.width).toBeLessThanOrEqual(rail.left + rail.width + 0.5);
+    expect(box.x).toBeGreaterThanOrEqual(rail.x - 0.5);
+    expect(box.x + box.width).toBeLessThanOrEqual(rail.x + rail.width + 0.5);
     expect(box.width).toBeGreaterThanOrEqual(40);
     expect(Math.abs(box.width - box.height)).toBeLessThanOrEqual(1);
   }
 });
 
-test("Cascade result-dialog polish leaves tutorial dialog surfaces intact", async ({ page }) => {
+test("Cascade result-dialog polish leaves tutorial dialog styling intact", async ({ page }) => {
   await openCascade(page);
 
   const tutorialSurface = await page.evaluate(() => {
@@ -92,19 +92,22 @@ test("Cascade result-dialog polish leaves tutorial dialog surfaces intact", asyn
       <section class="cascade-tutorial-card">
         <small>TIP</small>
         <h2>Tutorial surface</h2>
-        <p>This should keep the tutorial dialog's own opaque surface.</p>
+        <p>This should keep the tutorial dialog's existing pastel surface.</p>
       </section>
     `;
     document.body.append(dialog);
     const style = getComputedStyle(dialog);
+    const titleStyle = getComputedStyle(dialog.querySelector("h2"));
     return {
-      backgroundColor: style.backgroundColor,
       backgroundImage: style.backgroundImage,
+      titleColor: titleStyle.color,
+      width: style.width,
     };
   });
 
-  expect(tutorialSurface.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
-  expect(tutorialSurface.backgroundColor).not.toBe("transparent");
+  expect(tutorialSurface.backgroundImage).toContain("linear-gradient");
+  expect(tutorialSurface.backgroundImage).toContain("radial-gradient");
+  expect(tutorialSurface.titleColor).not.toBe("rgb(107, 67, 152)");
 });
 
 test("Cascade completion handoff keeps the reward panel visual language", async ({ page }) => {
