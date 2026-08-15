@@ -229,11 +229,12 @@ async function performRefresh() {
       api("/api/admin/family/enrollments"),
       api("/api/admin/family/devices"),
     ]);
+    if (mutationActive) return;
     renderEnrollments(Array.isArray(enrollments.requests) ? enrollments.requests : []);
     renderDevices(Array.isArray(devices.devices) ? devices.devices : []);
     showError("");
   } catch (error) {
-    showError(error instanceof Error ? error.message : "Family device administration is unavailable.");
+    if (!mutationActive) showError(error instanceof Error ? error.message : "Family device administration is unavailable.");
   } finally {
     refreshButton.disabled = mutationActive;
   }
