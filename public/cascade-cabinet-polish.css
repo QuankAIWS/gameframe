@@ -1,0 +1,318 @@
+/*
+ * Final wide/TV cabinet composition polish.
+ *
+ * Keep the board and score reel geometry established by the preceding Cascade
+ * layers. On roomy 16:9 screens, spend otherwise-unused horizontal space on
+ * readable side rails, a proper five-life tray, and mechanically centered
+ * controls. Portrait/mobile remains owned by cascade-mobile.css.
+ */
+@media (min-width: 760px) and (min-height: 400px) and (min-aspect-ratio: 3/2) {
+  .cascade-shell {
+    --cascade-tv-map-width: clamp(156px, 11vw, 190px);
+    --cascade-tv-side-width: clamp(228px, 15vw, 280px);
+    --cascade-tv-utility-width: var(--cascade-tv-side-width);
+  }
+
+  /* Give the game identity enough room to read as a cabinet marquee instead of
+     text squeezed beside the board. The illuminated edge remains decorative
+     and is kept clear of the title. */
+  .cascade-header {
+    align-items: center;
+    min-width: 0;
+    padding: clamp(15px, 2.1vh, 22px) 32px clamp(13px, 1.8vh, 18px) 18px;
+    background:
+      radial-gradient(circle at 20% 8%, rgba(255,255,255,.72), transparent 34%),
+      radial-gradient(circle at 82% 86%, rgba(170,108,242,.15), transparent 38%),
+      linear-gradient(180deg, rgba(255,226,242,.48), rgba(238,226,255,.32));
+  }
+
+  .cascade-header > div {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .cascade-kicker {
+    margin-bottom: 6px;
+    font-size: clamp(.56rem, 1.04vh, .7rem);
+    line-height: 1.05;
+    letter-spacing: .14em;
+  }
+
+  .cascade-header h1 {
+    max-width: 7ch;
+    margin: 0;
+    font-size: clamp(1.55rem, 3.15vh, 2.18rem);
+    line-height: .9;
+    letter-spacing: -.04em;
+    text-wrap: balance;
+  }
+
+  .cascade-header::after {
+    right: 12px;
+    top: 18px;
+    width: 7px;
+    height: clamp(48px, 8.5vh, 66px);
+    border-radius: 999px;
+    background: linear-gradient(#ff69ab, #a66cf4 52%, #42c9e7);
+    box-shadow:
+      0 0 0 2px rgba(255,255,255,.54),
+      0 0 16px rgba(167,98,236,.2);
+    opacity: .78;
+  }
+
+  .cascade-map {
+    padding-inline: 11px 10px;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.42), rgba(255,255,255,.06)),
+      linear-gradient(180deg, rgba(255,227,242,.34), rgba(233,224,252,.28));
+  }
+
+  .cascade-map p {
+    margin-left: 8px;
+    font-size: clamp(.62rem, 1.12vh, .76rem);
+  }
+
+  .cascade-map li {
+    padding-inline: 5px 8px;
+  }
+
+  .cascade-map li.is-current {
+    padding-inline: 5px 10px;
+  }
+
+  .cascade-map .cascade-map-stars {
+    justify-self: end;
+    font-size: .68em;
+    letter-spacing: .01em;
+  }
+
+  /* Keep the score reel exactly as the primary display, but give Moves and
+     Lives explicit minimum territory underneath it. */
+  .cascade-status {
+    grid-template-columns: minmax(72px, .72fr) minmax(132px, 1.28fr);
+    column-gap: 6px;
+    padding-inline: 9px;
+  }
+
+  .cascade-status > div:nth-child(2) {
+    width: 100%;
+    max-width: 240px;
+    justify-self: center;
+  }
+
+  .cascade-status > div:nth-child(4) {
+    min-width: 72px;
+    padding-inline: 5px;
+  }
+
+  .cascade-status > div:nth-child(5) {
+    min-width: 132px;
+    padding-inline: 7px;
+  }
+
+  #moves {
+    display: block;
+    width: 100%;
+    line-height: .82;
+    text-align: center;
+  }
+
+  #lives {
+    grid-template-columns: repeat(5, clamp(20px, 1.3vw, 24px));
+    justify-content: center;
+    justify-items: center;
+    gap: 4px;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .cascade-life-heart {
+    width: 100%;
+    min-width: 20px;
+    max-width: 24px;
+  }
+
+  /* Treat the lower dock as top stats / booster / centered utilities / bottom
+     action instead of stacking every control against the top edge. */
+  .cascade-side {
+    grid-template-rows: auto auto minmax(72px, 1fr) auto;
+    align-content: stretch;
+    gap: clamp(7px, 1vh, 11px);
+    padding: clamp(10px, 1.35vh, 14px) 10px 11px;
+  }
+
+  .cascade-side > .cascade-card:nth-child(1),
+  .cascade-performance-card {
+    min-height: clamp(68px, 9.5vh, 80px);
+  }
+
+  #booster-hammer {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: clamp(48px, 7vh, 56px);
+    padding: 0 46px;
+    line-height: 1;
+    text-align: center;
+  }
+
+  #booster-hammer b {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    min-height: 30px;
+    margin: 0;
+    transform: translateY(-50%);
+    line-height: 1;
+  }
+
+  #cascade-feedback-card {
+    align-self: center;
+    width: 100%;
+    min-height: 0;
+    padding-block: 4px;
+  }
+
+  .cascade-feedback-controls {
+    grid-template-columns: repeat(3, 44px);
+    align-items: center;
+    justify-content: center;
+    justify-items: center;
+    gap: clamp(9px, .8vw, 13px);
+    width: 100%;
+  }
+
+  .cascade-feedback-controls button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .cascade-feedback-controls button::before {
+    content: "" !important;
+    display: block !important;
+    width: 22px;
+    height: 22px;
+    margin: 0 !important;
+    background: currentColor;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    -webkit-mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+  }
+
+  #cascade-sound-toggle::before {
+    -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iYmxhY2siIGQ9Ik0zIDl2Nmg0bDUgNFY1TDcgOUgzem0xMS41IDNhMi41IDIuNSAwIDAgMC0xLjUtMi4yOXY0LjU4QTIuNSAyLjUgMCAwIDAgMTQuNSAxMnptMC03LjI1djIuMDZhNiA2IDAgMCAxIDAgMTAuMzh2Mi4wNmE4IDggMCAwIDAgMC0xNC41eiIvPjwvc3ZnPg==");
+    mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iYmxhY2siIGQ9Ik0zIDl2Nmg0bDUgNFY1TDcgOUgzem0xMS41IDNhMi41IDIuNSAwIDAgMC0xLjUtMi4yOXY0LjU4QTIuNSAyLjUgMCAwIDAgMTQuNSAxMnptMC03LjI1djIuMDZhNiA2IDAgMCAxIDAgMTAuMzh2Mi4wNmE4IDggMCAwIDAgMC0xNC41eiIvPjwvc3ZnPg==");
+  }
+
+  #cascade-effects-toggle::before {
+    -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iYmxhY2siIGQ9Im0xMiAyIDEuNSA1LjFMMTguNiA5bC01LjEgMS45TDEyIDE2bC0xLjUtNS4xTDUuNCA5bDUuMS0xLjlMMTIgMlptNiAxMiAuOCAyLjJMMjEgMTdsLTIuMi44TDE4IDIwbC0uOC0yLjJMMTUgMTdsMi4yLS44TDE4IDE0WiIvPjwvc3ZnPg==");
+    mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iYmxhY2siIGQ9Im0xMiAyIDEuNSA1LjFMMTguNiA5bC01LjEgMS45TDEyIDE2bC0xLjUtNS4xTDUuNCA5bDUuMS0xLjlMMTIgMlptNiAxMiAuOCAyLjJMMjEgMTdsLTIuMi44TDE4IDIwbC0uOC0yLjJMMTUgMTdsMi4yLS44TDE4IDE0WiIvPjwvc3ZnPg==");
+  }
+
+  #cascade-tutorial-toggle::before {
+    -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iYmxhY2siIGQ9Ik05IDIxaDZ2LTFIOXYxWm0zLTE5YTcgNyAwIDAgMC00IDEyLjc0VjE3YTIgMiAwIDAgMCAyIDJoNGEyIDIgMCAwIDAgMi0ydi0yLjI2QTcgNyAwIDAgMCAxMiAyWm0yLjkgMTEuNDUtLjkuNjdWMTdoLTR2LTIuODhsLS45LS42N2E1IDUgMCAxIDEgNS44IDBaIi8+PC9zdmc+");
+    mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iYmxhY2siIGQ9Ik05IDIxaDZ2LTFIOXYxWm0zLTE5YTcgNyAwIDAgMC00IDEyLjc0VjE3YTIgMiAwIDAgMCAyIDJoNGEyIDIgMCAwIDAgMi0ydi0yLjI2QTcgNyAwIDAgMCAxMiAyWm0yLjkgMTEuNDUtLjkuNjdWMTdoLTR2LTIuODhsLS45LS42N2E1IDUgMCAxIDEgNS44IDBaIi8+PC9zdmc+");
+  }
+
+  #cascade-sound-toggle[aria-pressed="false"]::before,
+  #cascade-tutorial-toggle[aria-pressed="false"]::before {
+    opacity: .42;
+  }
+
+  .cascade-weekly-card {
+    align-self: end;
+    width: 100%;
+    padding-block: 4px;
+  }
+
+  .cascade-weekly-card [data-weekly-start] {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: 46px;
+    padding: 0 50px;
+    line-height: 1;
+    text-align: center;
+  }
+
+  .cascade-weekly-card [data-weekly-start]::before {
+    display: block;
+    margin: 0;
+    line-height: 1;
+  }
+
+  .cascade-weekly-card [data-weekly-start] b {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    margin: 0;
+    transform: translateY(-50%);
+    line-height: 1;
+  }
+}
+
+/* The aggressive TV-zoom case still gets real touch-sized controls. Tighten
+   spacing rather than collapsing settings back to the old 29px circles. */
+@media (min-width: 760px) and (min-height: 400px) and (max-height: 600px) and (min-aspect-ratio: 3/2) {
+  .cascade-side {
+    gap: 5px;
+    padding: 6px 9px 7px;
+  }
+
+  .cascade-side > .cascade-card:nth-child(1),
+  .cascade-performance-card {
+    min-height: 54px;
+  }
+
+  #booster-hammer {
+    min-height: 42px;
+  }
+
+  #booster-hammer b {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+  }
+
+  .cascade-feedback-controls {
+    grid-template-columns: repeat(3, 40px);
+    gap: 8px;
+  }
+
+  .cascade-feedback-controls button {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+  }
+
+  .cascade-feedback-controls button::before {
+    width: 20px;
+    height: 20px;
+  }
+
+  .cascade-weekly-card [data-weekly-start] {
+    min-height: 40px;
+  }
+}
