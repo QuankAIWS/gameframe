@@ -104,7 +104,11 @@ test("Cascade completion handoff keeps the reward panel visual language", async 
 
   const dialog = page.locator("#result-dialog");
   await expect(dialog).toBeVisible();
-  const dialogSurface = await dialog.locator("form").evaluate((node) => ({
+  const dialogForm = dialog.locator("form");
+  await dialogForm.evaluate(async (node) => {
+    await Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {})));
+  });
+  const dialogSurface = await dialogForm.evaluate((node) => ({
     backgroundImage: getComputedStyle(node).backgroundImage,
     radius: Number.parseFloat(getComputedStyle(node).borderRadius),
   }));
