@@ -2,11 +2,23 @@ import { test, expect } from "@playwright/test";
 
 async function expectStyledDestinationBar(page, theme) {
   const bar = page.locator("#gameframe-destination-bar");
+  const actions = page.locator("#gameframe-shell-actions");
+  const badge = page.locator("#gameframe-session-badge");
   await expect(bar).toBeVisible();
   await expect(bar).toHaveAttribute("data-theme", theme);
   await expect.poll(() => bar.evaluate((node) => getComputedStyle(node).display)).toBe("grid");
   await expect.poll(() => bar.evaluate((node) => getComputedStyle(node).position)).toBe("sticky");
-  await expect.poll(() => page.locator("#gameframe-session-badge").evaluate((node) => getComputedStyle(node).position)).toBe("fixed");
+  await expect(actions).toBeVisible();
+  await expect(actions.locator(":scope > #gameframe-session-badge")).toHaveCount(1);
+  await expect(badge).toBeVisible();
+
+  const bounds = await badge.boundingBox();
+  const viewport = page.viewportSize();
+  if (!bounds || !viewport) throw new Error("GameFrame account chip did not produce viewport bounds.");
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.y).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width + 1);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height + 1);
 }
 
 async function openTic(page, viewport, player) {
