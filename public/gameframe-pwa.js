@@ -1,4 +1,5 @@
 const manifestHref = "/manifest.webmanifest";
+let reconnectingCachedIdentity = false;
 
 function syncConnectivity() {
   const offline = navigator.onLine === false;
@@ -10,8 +11,20 @@ function syncConnectivity() {
   }));
 }
 
+function reconnect() {
+  // A cached identity is deliberately display-only. Once the browser has a
+  // network again, reload through the normal auth launcher so the trusted
+  // device/session is revalidated before Matches/Profile or server APIs return.
+  if (window.gameFrameIdentity?.offline && !reconnectingCachedIdentity) {
+    reconnectingCachedIdentity = true;
+    window.location.reload();
+    return;
+  }
+  syncConnectivity();
+}
+
 syncConnectivity();
-window.addEventListener("online", syncConnectivity);
+window.addEventListener("online", reconnect);
 window.addEventListener("offline", syncConnectivity);
 
 void import("/family-sign-in.js").catch(() => {
