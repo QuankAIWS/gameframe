@@ -12,6 +12,9 @@
   let remoteTimer = null;
   let remoteView = null;
   let remoteBusy = false;
+  let rematchBusy = false;
+  let rematchSentForMatchId = null;
+  let rematchButton = null;
 
   function validBoard(board) {
     return Array.isArray(board)
@@ -67,6 +70,7 @@
     stopRemoteRefresh();
     mode = saved.mode;
     remoteView = null;
+    rematchSentForMatchId = null;
     state = {
       board: saved.state.board.map((row) => [...row]),
       player: saved.state.player === LIGHT ? LIGHT : DARK,
@@ -83,6 +87,7 @@
     updateUi();
     closeMenu();
     updateModeLabels();
+    updateRematchControl();
     scheduleBotTurn();
   }
 
@@ -90,12 +95,39 @@
     return window.gameFrameIdentity || null;
   }
 
-  function remoteOpponentName() {
+  function remoteOpponentPlayerId() {
+    const playerIds = remoteView?.playerIds;
+    if (!Array.isArray(playerIds) || playerIds.length !== 2) return null;
     const identity = currentIdentity();
-    const opponentId = remoteView?.playerIds?.find((playerId) => playerId !== identity?.playerId);
+    if (identity?.playerId && playerIds.includes(identity.playerId)) {
+      return playerIds.find((playerId) => playerId !== identity.playerId) || null;
+    }
+    const yourDisc = remoteView?.observation?.yourDisc;
+    if (yourDisc === DARK) return playerIds[1] || null;
+    if (yourDisc === LIGHT) return playerIds[0] || null;
+    return null;
+  }
+
+  function remoteOpponentName() {
+    const opponentId = remoteOpponentPlayerId();
     if (!opponentId) return "Opponent";
     const directory = window.gameFrameKnownPlayers || [];
     return directory.find((player) => player.playerId === opponentId)?.displayName || "Opponent";
+  }
+
+  function updateRematchControl() {
+    if (!rematchButton) return;
+    const finishedRemoteMatch = mode === "remote" && state.complete && remoteView?.matchId;
+    const opponentId = finishedRemoteMatch ? remoteOpponentPlayerId() : null;
+    rematchButton.hidden = !finishedRemoteMatch || !opponentId;
+    if (rematchButton.hidden) return;
+    const alreadySent = rematchSentForMatchId === remoteView.matchId;
+    rematchButton.disabled = rematchBusy || alreadySent;
+    rematchButton.querySelector("span").textContent = rematchBusy
+      ? "Sending rematch…"
+      : alreadySent
+        ? "Rematch sent"
+        : "Rematch";
   }
 
   function updateModeLabels() {
@@ -109,6 +141,7 @@
       if (darkName) darkName.textContent = mode === "bot" ? "You" : "Dark";
       if (lightName) lightName.textContent = mode === "bot" ? "OthelloBot" : "Light";
     }
+    updateRematchControl();
     window.gameFrameDestinationBar?.sync?.();
   }
 
@@ -136,6 +169,7 @@
     clearTimeout(botTimer);
     mode = nextMode;
     remoteView = null;
+    rematchSentForMatchId = null;
     state = createState();
     flipAnimation = null;
     hover = null;
@@ -232,6 +266,32 @@
       await loadRemoteMatch();
     } finally {
       remoteBusy = false;
+    }
+  }
+
+  async function sendRematch() {
+    if (!remoteView || !state.complete || rematchBusy || rematchSentForMatchId === remoteView.matchId) return;
+    const opponentId = remoteOpponentPlayerId();
+    if (!opponentId) return;
+    rematchBusy = true;
+    updateRematchControl();
+    try {
+      await responseJson(await fetch("/api/invitations", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ gameId: "othello", targetPlayerId: opponentId }),
+      }), "Othello rematch");
+      rematchSentForMatchId = remoteView.matchId;
+      const opponent = remoteOpponentName();
+      announcement.textContent = `Rematch challenge sent to ${opponent}.`;
+      announcement.hidden = false;
+    } catch (error) {
+      announcement.textContent = error instanceof Error ? error.message : "The rematch challenge could not be sent.";
+      announcement.hidden = false;
+    } finally {
+      rematchBusy = false;
+      updateRematchControl();
     }
   }
 
@@ -412,6 +472,18 @@
     menuButton.addEventListener("click", showMenu);
     controls.prepend(menuButton);
   }
+  if (controls && remoteMatchId && !document.querySelector("#othello-rematch")) {
+    rematchButton = document.createElement("button");
+    rematchButton.id = "othello-rematch";
+    rematchButton.className = "control-button";
+    rematchButton.type = "button";
+    rematchButton.hidden = true;
+    rematchButton.innerHTML = "<span>Rematch</span>";
+    rematchButton.addEventListener("click", () => void sendRematch());
+    controls.prepend(rematchButton);
+  } else {
+    rematchButton = document.querySelector("#othello-rematch");
+  }
 
   canvas.addEventListener("pointerdown", (event) => {
     const remoteWaiting = mode === "remote" && (!remoteView?.observation?.legalActions?.length || remoteBusy);
@@ -449,6 +521,7 @@
     updateUi();
     mode = "remote";
     closeMenu();
+    updateModeLabels();
     void loadRemoteMatch();
   } else {
     state = createState();
@@ -462,6 +535,7 @@
     startBot: () => startNew("bot"),
     startLocal: () => startNew("local"),
     loadRemote: loadRemoteMatch,
+    rematch: sendRematch,
     resume: () => {
       const saved = readSave();
       if (saved) restore(saved);
