@@ -119,26 +119,33 @@ async function openBattleSimulator(page, viewport) {
 async function openSharedGameMenu(page, viewport, game, theme) {
   await page.setViewportSize(viewport);
   await page.goto(`/?game=${game}&menu=1&player=${game}-menu-review-player`);
-  await expect(page.locator("body.gameframe-game-menu")).toBeVisible();
   await expectDestinationBar(page, theme);
-  await expect(page.locator(".game-menu-hero")).toBeVisible();
+  const menu = page.locator("#board-game-menu");
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole("heading", { name: "Start a game" })).toBeVisible();
+  await expect(page.locator("#match-panel")).toBeVisible();
+  await expect(page.locator("#board")).toBeVisible();
+  await expect(page.locator(".game-menu-hero")).toHaveCount(0);
   await expect(page.locator(".game-grid")).toBeHidden();
-  await expect(page.locator(".mode-grid")).toBeVisible();
-  await expect(page.locator("#challenge-bot")).toBeVisible();
-  await expect(page.locator("#create-human-match")).toBeVisible();
+  await expect(page.locator(".mode-grid")).toBeHidden();
+  await expect(menu.getByRole("button", { name: /Challenge a player/ })).toBeVisible();
+  await expect(menu.getByRole("button", { name: /Play the computer/ })).toBeVisible();
+  await expect(menu.getByRole("button", { name: /Two players here/ })).toBeVisible();
+  return menu;
 }
 
 async function openTicTacToeMenu(page, viewport) {
-  await openSharedGameMenu(page, viewport, "tic-tac-toe", "tic");
+  return openSharedGameMenu(page, viewport, "tic-tac-toe", "tic");
 }
 
 async function openCheckersMenu(page, viewport) {
-  await openSharedGameMenu(page, viewport, "american-checkers", "checkers");
+  return openSharedGameMenu(page, viewport, "american-checkers", "checkers");
 }
 
 async function openTicTacToe(page, viewport) {
-  await openTicTacToeMenu(page, viewport);
-  await page.locator("#challenge-bot").click();
+  const menu = await openTicTacToeMenu(page, viewport);
+  await menu.getByRole("button", { name: /Play the computer/ }).click();
+  await expect(menu).toBeHidden();
   await expect(page.locator("body.tic-tac-toe-noir-running")).toBeVisible();
   await expectDestinationBar(page, "tic");
   await expect(page.locator(".tic-noir-topbar")).toBeHidden();
@@ -151,8 +158,9 @@ async function openTicTacToe(page, viewport) {
 }
 
 async function openCheckers(page, viewport) {
-  await openCheckersMenu(page, viewport);
-  await page.locator("#challenge-bot").click();
+  const menu = await openCheckersMenu(page, viewport);
+  await menu.getByRole("button", { name: /Play the computer/ }).click();
+  await expect(menu).toBeHidden();
   await expect(page.locator("body.gameframe-shared-match-running")).toBeVisible();
   await expectDestinationBar(page, "checkers");
   await expect(page.locator("#board.board-checkers")).toBeVisible();
