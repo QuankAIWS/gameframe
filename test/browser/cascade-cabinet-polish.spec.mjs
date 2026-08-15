@@ -138,3 +138,49 @@ test("Cascade spends roomy 16:9 width on the cabinet without shrinking the board
   expect(feedbackBox.y + feedbackBox.height).toBeLessThan(weeklyBox.y);
   expect(Math.abs((weeklyBox.y + weeklyBox.height) - (utilityBox.y + utilityBox.height))).toBeLessThanOrEqual(16);
 });
+
+test("Cascade short landscape keeps the utility dock usable and effects state visible", async ({ page }) => {
+  await openCabinet(page, { width: 800, height: 450 });
+
+  const utility = page.locator(".cascade-side");
+  const weekly = page.locator(".cascade-weekly-card");
+  const blitz = page.locator("[data-weekly-start]");
+  const settings = page.locator(".cascade-feedback-controls button");
+  const effects = page.locator("#cascade-effects-toggle");
+
+  const [utilityBox, weeklyBox, blitzBox] = await Promise.all([
+    utility.boundingBox(),
+    weekly.boundingBox(),
+    blitz.boundingBox(),
+  ]);
+  for (const box of [utilityBox, weeklyBox, blitzBox]) expect(box).toBeTruthy();
+
+  expect(weeklyBox.y + weeklyBox.height).toBeLessThanOrEqual(utilityBox.y + utilityBox.height + 1);
+  expect(blitzBox.y + blitzBox.height).toBeLessThanOrEqual(450);
+
+  await expect(settings).toHaveCount(3);
+  for (const button of await settings.all()) {
+    const box = await button.boundingBox();
+    expect(box).toBeTruthy();
+    expect(box.width).toBeGreaterThanOrEqual(39.5);
+    expect(box.height).toBeGreaterThanOrEqual(39.5);
+    expect(box.y).toBeGreaterThanOrEqual(utilityBox.y - 1);
+    expect(box.y + box.height).toBeLessThanOrEqual(utilityBox.y + utilityBox.height + 1);
+  }
+
+  const initialPressed = await effects.getAttribute("aria-pressed");
+  expect(["true", "false"]).toContain(initialPressed);
+  const initialMask = await effects.evaluate((node) => {
+    const style = getComputedStyle(node, "::before");
+    return style.webkitMaskImage || style.maskImage;
+  });
+
+  await effects.click();
+  const nextPressed = initialPressed === "true" ? "false" : "true";
+  await expect(effects).toHaveAttribute("aria-pressed", nextPressed);
+  const nextMask = await effects.evaluate((node) => {
+    const style = getComputedStyle(node, "::before");
+    return style.webkitMaskImage || style.maskImage;
+  });
+  expect(nextMask).not.toBe(initialMask);
+});
