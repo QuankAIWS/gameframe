@@ -50,6 +50,14 @@ function installAdminControls() {
         <div><dt>Authority</dt><dd>Discord staging administrator</dd></div>
       </dl>
 
+      <section class="mm-rpg-admin-diagnostics">
+        <p class="mm-rpg-label">SESSION SUPPORT</p>
+        <h3>Download session diagnostics</h3>
+        <p>Exports the canonical campaign event history and GameFrame → Runtime command delivery evidence for this staging session. Credentials, signing material, cookies, and delivery lease tokens are excluded.</p>
+        <button type="button" data-admin-diagnostics>Download session diagnostics</button>
+        <p data-admin-diagnostics-status role="status">No diagnostics bundle has been generated.</p>
+      </section>
+
       <section class="mm-rpg-admin-danger">
         <p class="mm-rpg-label">DESTRUCTIVE TEST CONTROL</p>
         <h3>Reset Monster Master staging</h3>
@@ -74,6 +82,8 @@ function installAdminControls() {
   overlay.querySelector("[data-admin-principal]").textContent = identity.playerId;
   overlay.querySelector("[data-admin-campaign]").textContent = STAGING_CAMPAIGN_ID;
   const close = overlay.querySelector(".mm-rpg-admin-close");
+  const diagnostics = overlay.querySelector("[data-admin-diagnostics]");
+  const diagnosticsStatus = overlay.querySelector("[data-admin-diagnostics-status]");
   const reset = overlay.querySelector("[data-admin-reset]");
   const status = overlay.querySelector("[data-admin-status]");
   let confirmationExpiresAt = 0;
@@ -98,7 +108,7 @@ function installAdminControls() {
   open.addEventListener("click", () => {
     clearConfirmation();
     overlay.hidden = false;
-    reset.focus();
+    diagnostics.focus();
   });
   close.addEventListener("click", () => {
     clearConfirmation();
@@ -119,6 +129,68 @@ function installAdminControls() {
       open.focus();
     }
   });
+
+  async function downloadDiagnostics() {
+    diagnostics.disabled = true;
+    diagnostics.textContent = "Collecting diagnostics…";
+    diagnosticsStatus.textContent = "Reading canonical campaign and Runtime delivery evidence…";
+    try {
+      const response = await gameFrameFetch("/api/rpg/admin/staging-diagnostics", {
+        method: "GET",
+        headers: { accept: "application/json" },
+        cache: "no-store",
+      }, identity);
+      const sessionDiagnostics = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(
+          sessionDiagnostics.message || `Session diagnostics failed (${response.status}).`,
+        );
+      }
+
+      const [clientBuild, edgeHealth] = await Promise.all([
+        optionalJson("/api/client-build"),
+        optionalJson("/api/rpg/edge/health"),
+      ]);
+      const projection = window.gameFrameMonsterRpgApp?.getProjection?.() ?? null;
+      const bundle = {
+        schemaVersion: "gameframe.rpg.support-bundle.v1",
+        generatedAt: new Date().toISOString(),
+        stagingCampaignId: STAGING_CAMPAIGN_ID,
+        deployment: {
+          clientBuild,
+          edgeHealth,
+        },
+        browser: {
+          origin: window.location.origin,
+          pathname: window.location.pathname,
+          campaignId: window.gameFrameMonsterRpgApp?.getCampaignId?.() ?? null,
+          projection: projection
+            ? {
+                gameframeCoordinationRevision: projection.gameframeCoordinationRevision,
+                presentationSequence: projection.presentationSequence,
+                linkedNarrativeRevision: projection.linkedNarrativeRevision,
+                eventCount: Array.isArray(projection.events) ? projection.events.length : null,
+              }
+            : null,
+        },
+        sessionDiagnostics,
+      };
+      saveJson(bundle, diagnosticsFilename(bundle.generatedAt));
+      const commandCount = Array.isArray(sessionDiagnostics.commands)
+        ? sessionDiagnostics.commands.length
+        : 0;
+      diagnosticsStatus.textContent = `Downloaded diagnostics for ${STAGING_CAMPAIGN_ID} with ${commandCount} accepted command${commandCount === 1 ? "" : "s"}.`;
+    } catch (error) {
+      diagnosticsStatus.textContent = error instanceof Error
+        ? error.message
+        : "Session diagnostics could not be generated.";
+    } finally {
+      diagnostics.disabled = false;
+      diagnostics.textContent = "Download session diagnostics";
+    }
+  }
+
+  diagnostics.addEventListener("click", downloadDiagnostics);
 
   reset.addEventListener("click", async () => {
     const now = Date.now();
@@ -171,6 +243,44 @@ function installAdminControls() {
   window.gameFrameMonsterRpgAdmin = Object.freeze({
     open: () => open.click(),
     close: () => close.click(),
+    downloadDiagnostics,
     stagingCampaignId: STAGING_CAMPAIGN_ID,
   });
+}
+
+async function optionalJson(path) {
+  try {
+    const response = await gameFrameFetch(path, {
+      method: "GET",
+      headers: { accept: "application/json" },
+      cache: "no-store",
+    }, identity);
+    if (!response.ok) return { available: false, status: response.status };
+    return await response.json();
+  } catch (error) {
+    return {
+      available: false,
+      error: error instanceof Error ? error.message : "request failed",
+    };
+  }
+}
+
+function saveJson(value, filename) {
+  const blob = new Blob([`${JSON.stringify(value, null, 2)}\n`], {
+    type: "application/json;charset=utf-8",
+  });
+  const href = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = href;
+  anchor.download = filename;
+  anchor.hidden = true;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(href), 0);
+}
+
+function diagnosticsFilename(generatedAt) {
+  const timestamp = generatedAt.replace(/[:.]/g, "-");
+  return `monster-master-rpg-diagnostics-${STAGING_CAMPAIGN_ID}-${timestamp}.json`;
 }
