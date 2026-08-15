@@ -60,6 +60,15 @@ test("Othello and its shared-nav integration route through the shell lane", () =
   ]), { ...none, shell: true });
 });
 
+test("family authentication UI and edge changes route through the shell lane", () => {
+  assert.deepEqual(classifyUiTestScope([
+    "public/family-admin.js",
+    "public/family-sign-in.js",
+    "src/cloudflare/family-auth-edge.ts",
+    "test/browser/family-admin.spec.mjs",
+  ]), { ...none, shell: true });
+});
+
 test("Monster Master changes stay in the Monster Master lane", () => {
   assert.deepEqual(classifyUiTestScope([
     "src/browser/monster-master-pixi-entry.js",
