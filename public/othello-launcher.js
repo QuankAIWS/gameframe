@@ -1,3 +1,4 @@
+import "./gameframe-pwa.js";
 import { establishGameFrameIdentity } from "./gameframe-auth.js";
 
 const parameters = new URLSearchParams(window.location.search);
