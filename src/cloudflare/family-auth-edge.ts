@@ -274,15 +274,15 @@ export function familyAuthEdgeRoute(pathname: string): boolean {
 export async function handleFamilyAuthEdge(request: Request, env: GameFrameWorkerEnv): Promise<Response> {
   try {
     const url = new URL(request.url);
-    if (request.method === "POST" && url.pathname === "/auth/family/enroll/start") return startEnrollment(request, env);
-    if (request.method === "POST" && url.pathname === "/auth/family/enroll/claim") return claimEnrollment(request, env);
-    if (request.method === "POST" && url.pathname === "/auth/trusted-device/refresh") return refreshTrusted(request, env);
-    if (request.method === "POST" && url.pathname === "/auth/trusted-device/logout") return logoutTrusted(request, env);
-    if (request.method === "GET" && url.pathname === "/api/admin/family/enrollments") return adminEnrollments(request, env);
-    if (request.method === "POST" && url.pathname === "/api/admin/family/enrollments/approve") return approveEnrollment(request, env);
-    if (request.method === "POST" && url.pathname === "/api/admin/family/enrollments/remove") return removeEnrollment(request, env);
-    if (request.method === "GET" && url.pathname === "/api/admin/family/devices") return adminDevices(request, env);
-    if (request.method === "POST" && url.pathname === "/api/admin/family/devices/revoke") return revokeDevice(request, env);
+    if (request.method === "POST" && url.pathname === "/auth/family/enroll/start") return await startEnrollment(request, env);
+    if (request.method === "POST" && url.pathname === "/auth/family/enroll/claim") return await claimEnrollment(request, env);
+    if (request.method === "POST" && url.pathname === "/auth/trusted-device/refresh") return await refreshTrusted(request, env);
+    if (request.method === "POST" && url.pathname === "/auth/trusted-device/logout") return await logoutTrusted(request, env);
+    if (request.method === "GET" && url.pathname === "/api/admin/family/enrollments") return await adminEnrollments(request, env);
+    if (request.method === "POST" && url.pathname === "/api/admin/family/enrollments/approve") return await approveEnrollment(request, env);
+    if (request.method === "POST" && url.pathname === "/api/admin/family/enrollments/remove") return await removeEnrollment(request, env);
+    if (request.method === "GET" && url.pathname === "/api/admin/family/devices") return await adminDevices(request, env);
+    if (request.method === "POST" && url.pathname === "/api/admin/family/devices/revoke") return await revokeDevice(request, env);
     return json(404, { error: "not_found" });
   } catch (error) {
     return errorResponse(error);
