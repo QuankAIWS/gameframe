@@ -7,7 +7,9 @@ const refreshButton = document.querySelector("#family-admin-refresh");
 const approvalInput = document.querySelector("#family-approval-credential");
 const forgetButton = document.querySelector("#family-approval-forget");
 let mutationActive = false;
+let refreshVersion = 0;
 let refreshInFlight = null;
+let refreshInFlightVersion = -1;
 
 function showError(message) {
   errorBox.textContent = message;
@@ -62,6 +64,7 @@ function approvalCredential() {
 
 function setMutation(active) {
   mutationActive = active;
+  if (active) refreshVersion += 1;
   refreshButton.disabled = active;
   forgetButton.disabled = active;
 }
@@ -221,7 +224,7 @@ function renderDevices(devices) {
   }
 }
 
-async function performRefresh() {
+async function performRefresh(version) {
   refreshButton.disabled = true;
   try {
     const session = await api("/api/session");
@@ -230,24 +233,32 @@ async function performRefresh() {
       api("/api/admin/family/enrollments"),
       api("/api/admin/family/devices"),
     ]);
-    if (mutationActive) return;
+    if (mutationActive || version !== refreshVersion) return;
     renderEnrollments(Array.isArray(enrollments.requests) ? enrollments.requests : []);
     renderDevices(Array.isArray(devices.devices) ? devices.devices : []);
     showError("");
   } catch (error) {
-    if (!mutationActive) showError(error instanceof Error ? error.message : "Family device administration is unavailable.");
+    if (!mutationActive && version === refreshVersion) {
+      showError(error instanceof Error ? error.message : "Family device administration is unavailable.");
+    }
   } finally {
-    refreshButton.disabled = mutationActive;
+    if (version === refreshVersion) refreshButton.disabled = mutationActive;
   }
 }
 
 function refresh() {
   if (mutationActive) return Promise.resolve();
-  if (refreshInFlight) return refreshInFlight;
-  refreshInFlight = performRefresh().finally(() => {
-    refreshInFlight = null;
+  const version = refreshVersion;
+  if (refreshInFlight && refreshInFlightVersion === version) return refreshInFlight;
+  const promise = performRefresh(version).finally(() => {
+    if (refreshInFlight === promise) {
+      refreshInFlight = null;
+      refreshInFlightVersion = -1;
+    }
   });
-  return refreshInFlight;
+  refreshInFlight = promise;
+  refreshInFlightVersion = version;
+  return promise;
 }
 
 forgetButton.addEventListener("click", () => {
