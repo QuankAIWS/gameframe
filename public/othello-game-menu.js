@@ -472,7 +472,7 @@
     menuButton.addEventListener("click", showMenu);
     controls.prepend(menuButton);
   }
-  if (controls && !document.querySelector("#othello-rematch")) {
+  if (controls && remoteMatchId && !document.querySelector("#othello-rematch")) {
     rematchButton = document.createElement("button");
     rematchButton.id = "othello-rematch";
     rematchButton.className = "control-button";
