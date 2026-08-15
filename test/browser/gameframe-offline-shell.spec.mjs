@@ -38,14 +38,10 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   const playerId = "gameframe-offline-shell-player";
   await mkdir("visual-results/gameframe-offline", { recursive: true });
 
-  // Prime the trusted/cached display identity and install the complete offline pack
-  // from the actual GameFrame launcher rather than from a Cascade-only route.
   await page.goto(`/?catalog=1&player=${playerId}`);
   await expect(page.locator("#game-card-othello")).toBeVisible();
   await waitForOfflinePack(page);
 
-  // The leaderboard snapshot is application data, not an authenticated HTTP cache.
-  // Load it once online so the offline route has an explicit last-known payload.
   await page.goto(`/leaderboard.html?player=${playerId}`);
   await expect(page.locator("#leaderboard-game option").first()).toHaveText(/Gamer Level/);
   await expect.poll(() => page.evaluate(() => {
@@ -57,8 +53,6 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
     }
   })).toBe(true);
 
-  // Make sure the active worker controls a normal GameFrame navigation before the
-  // simulated device is disconnected, then launch a fresh page while offline.
   await page.goto("/?catalog=1");
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
   await context.setOffline(true);
@@ -75,8 +69,6 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   await expect(offlinePage.locator("[data-gameframe-profile]")).toHaveAttribute("aria-disabled", "true");
   await offlinePage.screenshot({ path: "visual-results/gameframe-offline/gameframe-offline-catalog.png", fullPage: true });
 
-  // Navigate through the normal Casual Games surface and prove Cascade is not
-  // merely viewable: its local board still accepts player interaction offline.
   await offlinePage.locator("#game-card-casual-games").click();
   await expect(offlinePage).toHaveURL(/\/casual-games\.html$/);
   await expect(offlinePage.locator(".casual-card-cascade")).toBeVisible();
@@ -86,7 +78,6 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   await offlinePage.locator("#board .cascade-tile").first().click();
   await expect(offlinePage.locator("#board .cascade-tile").first()).toHaveClass(/is-selected/);
 
-  // Return through the GameFrame bar and launch Othello without ever reconnecting.
   await offlinePage.locator("[data-gameframe-games]").click();
   await expect(offlinePage.locator(".gameframe-offline-summary")).toBeVisible();
   await offlinePage.locator("#game-card-othello").click();
@@ -101,8 +92,6 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
 
   const boardBox = await offlinePage.locator("#othello-board").boundingBox();
   expect(boardBox).not.toBeNull();
-  // Initial Obsidian legal move: row 2, column 3. Convert the 960px canvas
-  // coordinate into the current responsive display box.
   const canvasX = 72 + (3.5 * 102);
   const canvasY = 72 + (2.5 * 102);
   await offlinePage.mouse.click(
@@ -111,8 +100,6 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   );
   await expect(offlinePage.locator("#move-number")).not.toHaveText("0 / 60", { timeout: 3_000 });
 
-  // Garden's transitive CSS/image dependencies must work on the same fresh
-  // offline install; they cannot rely on Othello having been opened online first.
   await offlinePage.locator('.theme-button[data-theme="garden"]').click();
   await expect(offlinePage.locator("body")).toHaveAttribute("data-theme", "garden");
   const gardenAssetsAvailable = await offlinePage.evaluate(async () => {
@@ -125,16 +112,15 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   expect(gardenAssetsAvailable).toBe(true);
   await offlinePage.screenshot({ path: "visual-results/gameframe-offline/othello-offline-garden.png", fullPage: true });
 
-  // Cached standings remain visibly stale rather than masquerading as live data.
   await offlinePage.locator("[data-gameframe-leaderboard]").click();
   await expect(offlinePage).toHaveURL(/\/leaderboard\.html$/);
   await expect(offlinePage.locator("#leaderboard-error")).toContainText("Offline · showing the last leaderboard");
   await expect(offlinePage.locator("#leaderboard-game option").first()).toHaveText(/Gamer Level/);
   await offlinePage.screenshot({ path: "visual-results/gameframe-offline/leaderboard-offline.png", fullPage: true });
 
-  // Reconnection must not leave the stale cached identity holding the application
-  // in offline mode. The PWA reloads through normal auth before online nav returns.
+  const revalidationNavigation = offlinePage.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 8_000 });
   await context.setOffline(false);
+  await revalidationNavigation;
   await expect.poll(() => offlinePage.evaluate(() => ({
     online: navigator.onLine,
     offlineIdentity: window.gameFrameIdentity?.offline === true,
