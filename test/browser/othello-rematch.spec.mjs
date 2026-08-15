@@ -102,3 +102,8 @@ test("active online Othello does not expose rematch early", async ({ page }) => 
   await expect(page.locator("#othello-rematch")).toBeHidden();
   expect(invitationBodies).toHaveLength(0);
 });
+
+test("non-remote Othello pages do not create a rematch control", async ({ page }) => {
+  await page.goto("/othello.html?theme=obsidian&state=opening");
+  await expect(page.locator("#othello-rematch")).toHaveCount(0);
+});
