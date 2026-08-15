@@ -40,7 +40,7 @@ test("RPG edge surfaces the server-derived staging admin capability in the sessi
   assert.equal(session.admin, true);
 });
 
-test("RPG edge rejects a normal allowed player before privileged requests reach the VM", async () => {
+test("RPG edge rejects a normal allowed player before privileged reset requests reach the VM", async () => {
   const worker = createRpgEdgeGameFrameWorker({ authenticator: authenticator("discord:5678") });
   const response = await worker.fetch(
     new Request("https://staging.gameframe.cc/api/rpg/admin/reset-staging", {
@@ -54,6 +54,17 @@ test("RPG edge rejects a normal allowed player before privileged requests reach 
         confirmation: "RESET MONSTER MASTER STAGING",
       }),
     }),
+    environment("1234"),
+  );
+  assert.equal(response.status, 403);
+  const body = await response.json() as Record<string, unknown>;
+  assert.equal(body.error, "forbidden");
+});
+
+test("RPG edge rejects a normal allowed player before diagnostics reach the VM", async () => {
+  const worker = createRpgEdgeGameFrameWorker({ authenticator: authenticator("discord:5678") });
+  const response = await worker.fetch(
+    new Request("https://staging.gameframe.cc/api/rpg/admin/staging-diagnostics"),
     environment("1234"),
   );
   assert.equal(response.status, 403);
