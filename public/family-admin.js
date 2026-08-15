@@ -192,6 +192,7 @@ function renderDevices(devices) {
     const button = row.querySelector("button");
     button.disabled = Boolean(device.revokedAt);
     button.addEventListener("click", async () => {
+      if (!window.confirm(`Revoke ${device.deviceLabel || "this device"}? It will no longer be able to refresh its GameFrame session.`)) return;
       setMutation(true);
       setRowBusy(row, true);
       button.textContent = "Revoking…";
