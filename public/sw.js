@@ -38,6 +38,11 @@ const REQUIRED_ASSETS = [
   "/game-hub-cards.css",
   "/game-hub-flow.css",
   "/game-hub-rpg.css",
+  "/assets/checkers/clockwork-eclipse/board-surface.svg",
+  "/assets/checkers/clockwork-eclipse/piece-lunar.svg",
+  "/assets/checkers/clockwork-eclipse/piece-solar.svg",
+  "/assets/gameframe/cards/role-playing-games-card.svg",
+  "/assets/gameframe/cards/battle-simulator-card.svg",
   "/family-sign-in.js",
   "/family-admin-link.js",
 
