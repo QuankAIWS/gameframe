@@ -335,10 +335,11 @@
   }
 }
 
-/* Very short landscape is a separate compression regime. Preserve 40px
-   settings controls, but reclaim height from the score bank and decorative
-   stat cards so the bottom Blitz action remains fully visible and clickable. */
-@media (min-width: 760px) and (min-height: 400px) and (max-height: 480px) and (min-aspect-ratio: 3/2) {
+/* Short landscape is a separate compression regime. Preserve 40px settings
+   controls, but reclaim height from the score bank and decorative stat cards
+   until the regular dock has enough room to take over without a clipping
+   discontinuity. */
+@media (min-width: 760px) and (min-height: 400px) and (max-height: 520px) and (min-aspect-ratio: 3/2) {
   .cascade-status {
     gap: 4px;
     padding: 5px 7px 6px;
