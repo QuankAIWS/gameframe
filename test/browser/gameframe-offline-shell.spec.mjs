@@ -1,3 +1,4 @@
+import { mkdir } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
 async function waitForOfflinePack(page) {
@@ -32,6 +33,7 @@ async function waitForOfflinePack(page) {
 
 test("installed GameFrame cold-launches offline with Cascade, local Othello, and cached leaderboard", async ({ page, context }) => {
   const playerId = "gameframe-offline-shell-player";
+  await mkdir("visual-results/gameframe-offline", { recursive: true });
 
   // Prime the trusted/cached display identity and install the complete offline pack
   // from the actual GameFrame launcher rather than from a Cascade-only route.
@@ -68,6 +70,7 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   await expect(offlinePage.locator("#game-card-american-checkers")).toHaveAttribute("aria-disabled", "true");
   await expect(offlinePage.locator("[data-gameframe-matches]")).toHaveAttribute("aria-disabled", "true");
   await expect(offlinePage.locator("[data-gameframe-profile]")).toHaveAttribute("aria-disabled", "true");
+  await offlinePage.screenshot({ path: "visual-results/gameframe-offline/gameframe-offline-catalog.png", fullPage: true });
 
   // Navigate through the normal Casual Games surface and prove Cascade is not
   // merely viewable: its local board still accepts player interaction offline.
@@ -88,6 +91,7 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   await expect(offlinePage.locator("#othello-game-menu")).toBeVisible({ timeout: 8_000 });
   await expect(offlinePage.locator("#othello-challenge-player")).toBeDisabled();
   await expect(offlinePage.locator("[data-othello-online-status]")).toContainText("Offline mode");
+  await offlinePage.screenshot({ path: "visual-results/gameframe-offline/othello-offline-menu.png", fullPage: true });
   await offlinePage.locator("#othello-play-bot").click();
   await expect(offlinePage.locator("#othello-game-menu")).toBeHidden();
   await expect(offlinePage.locator("body")).toHaveAttribute("data-othello-mode", "bot");
@@ -109,4 +113,5 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   await expect(offlinePage).toHaveURL(/\/leaderboard\.html$/);
   await expect(offlinePage.locator("#leaderboard-error")).toContainText("Offline · showing the last leaderboard");
   await expect(offlinePage.locator("#leaderboard-game option").first()).toHaveText(/Gamer Level/);
+  await offlinePage.screenshot({ path: "visual-results/gameframe-offline/leaderboard-offline.png", fullPage: true });
 });
