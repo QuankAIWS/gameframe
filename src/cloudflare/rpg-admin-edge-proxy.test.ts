@@ -26,7 +26,7 @@ test("admin diagnostics proxy signs an authenticated GET without requiring a mut
     const headers = new Headers(init?.headers);
     assert.equal(headers.get("accept"), "application/json");
     assert.ok(headers.get("x-gameframe-signature"));
-    assert.equal(headers.get("x-gameframe-player-id"), principal.playerId);
+    assert.equal(headers.get("x-gameframe-principal-id"), principal.playerId);
     return new Response(JSON.stringify({
       schemaVersion: "gameframe.rpg.session-diagnostics.v1",
       commands: [],
