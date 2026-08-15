@@ -3,6 +3,8 @@ import { DatabaseSync } from "node:sqlite";
 import {
   normalizeRuntimeCommandDelivery,
   normalizeRuntimeCommandInboxReceipt,
+  type RuntimeCommandDeliveryV1,
+  type RuntimeCommandInboxReceiptV1,
 } from "./runtime-command-outbox.ts";
 
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
@@ -152,8 +154,8 @@ export function readRpgSessionDiagnostics(input: {
     const events = eventRows.slice(0, MAX_EVENTS).map((row) => {
       const event = parseJsonRecord(row.event_json, "campaign presentation event");
       return sanitize({
-        presentationSequence: row.presentation_sequence,
         ...event,
+        presentationSequence: row.presentation_sequence,
       });
     });
 
@@ -164,22 +166,29 @@ export function readRpgSessionDiagnostics(input: {
       ORDER BY committed_at ASC, command_id ASC
       LIMIT ?
     `).all(campaignId, MAX_COMMANDS + 1) as CommandRow[];
+    const selectOutboxByCommand = database.prepare(`
+      SELECT delivery_id, command_id, payload_json, status, accepted_at, updated_at,
+             attempt_count, runtime_receipt_json, last_failure_code,
+             last_failure_message, last_failure_at
+      FROM ${OUTBOX_TABLE}
+      WHERE campaign_id = ? AND command_id = ?
+    `);
     const commandsTruncated = commandRows.length > MAX_COMMANDS;
     const commands = commandRows.slice(0, MAX_COMMANDS).map((commandRow) => {
-      const outbox = database.prepare(`
-        SELECT delivery_id, command_id, payload_json, status, accepted_at, updated_at,
-               attempt_count, runtime_receipt_json, last_failure_code,
-               last_failure_message, last_failure_at
-        FROM ${OUTBOX_TABLE}
-        WHERE campaign_id = ? AND command_id = ?
-      `).get(campaignId, commandRow.command_id) as OutboxRow | undefined;
+      const outbox = selectOutboxByCommand.get(
+        campaignId,
+        commandRow.command_id,
+      ) as OutboxRow | undefined;
       if (!outbox) {
         throw new RpgSessionDiagnosticsError(
           "corrupt-store",
           `Command ${campaignId}/${commandRow.command_id} has no Runtime outbox record.`,
         );
       }
-      const delivery = normalizeRuntimeCommandDelivery(JSON.parse(outbox.payload_json));
+      const delivery = parseRuntimeDelivery(
+        outbox.payload_json,
+        `Runtime delivery ${outbox.delivery_id}`,
+      );
       if (
         delivery.campaignId !== campaignId
         || delivery.commandId !== commandRow.command_id
@@ -194,7 +203,10 @@ export function readRpgSessionDiagnostics(input: {
       }
       const runtimeReceipt = outbox.runtime_receipt_json === null
         ? undefined
-        : normalizeRuntimeCommandInboxReceipt(JSON.parse(outbox.runtime_receipt_json));
+        : parseRuntimeReceipt(
+            outbox.runtime_receipt_json,
+            `Runtime receipt ${outbox.delivery_id}`,
+          );
       const failure = failureFromRow(outbox);
       return sanitize({
         commandId: commandRow.command_id,
@@ -286,12 +298,32 @@ function parseJsonRecord(value: string, label: string): JsonRecord {
     }
     return parsed as JsonRecord;
   } catch (error) {
-    throw new RpgSessionDiagnosticsError(
-      "corrupt-store",
-      `${label} is not valid JSON.`,
-      { cause: error },
-    );
+    throw corruptJson(label, error);
   }
+}
+
+function parseRuntimeDelivery(value: string, label: string): RuntimeCommandDeliveryV1 {
+  try {
+    return normalizeRuntimeCommandDelivery(JSON.parse(value));
+  } catch (error) {
+    throw corruptJson(label, error);
+  }
+}
+
+function parseRuntimeReceipt(value: string, label: string): RuntimeCommandInboxReceiptV1 {
+  try {
+    return normalizeRuntimeCommandInboxReceipt(JSON.parse(value));
+  } catch (error) {
+    throw corruptJson(label, error);
+  }
+}
+
+function corruptJson(label: string, cause: unknown): RpgSessionDiagnosticsError {
+  return new RpgSessionDiagnosticsError(
+    "corrupt-store",
+    `${label} is not valid canonical JSON.`,
+    { cause },
+  );
 }
 
 function sanitize<T>(value: T): T {
@@ -318,7 +350,7 @@ function sanitizeValue(value: unknown, key = ""): unknown {
 }
 
 function secretKey(value: string): boolean {
-  return /(^|[-_])(authorization|cookie|password|secret|token|api[-_]?key|hmac)([-_]|$)/i.test(value);
+  return /(authorization|cookie|password|secret|token|api[-_]?key|hmac)/i.test(value);
 }
 
 function identifier(value: unknown, label: string): string {
