@@ -1,5 +1,55 @@
 import { expect, test } from "@playwright/test";
 
+async function expectBoardFullyContained(page) {
+  const geometry = await page.locator(".cascade-board-wrap").evaluate((wrap) => {
+    const board = wrap.querySelector(".cascade-board");
+    const tiles = board ? [...board.querySelectorAll(".cascade-tile")] : [];
+    const rect = (node) => {
+      const box = node.getBoundingClientRect();
+      return {
+        left: box.left,
+        top: box.top,
+        right: box.right,
+        bottom: box.bottom,
+        width: box.width,
+        height: box.height,
+      };
+    };
+
+    const wrapRect = rect(wrap);
+    const boardRect = board ? rect(board) : null;
+    const tileRects = tiles.map((tile) => rect(tile));
+    const blockedTileIndexes = tiles.flatMap((tile, index) => {
+      const box = tile.getBoundingClientRect();
+      const x = box.left + (box.width / 2);
+      const y = box.top + (box.height / 2);
+      const hit = document.elementFromPoint(x, y);
+      return hit && (hit === tile || tile.contains(hit)) ? [] : [index];
+    });
+
+    return { wrapRect, boardRect, tileRects, blockedTileIndexes };
+  });
+
+  expect(geometry.boardRect).toBeTruthy();
+  expect(geometry.tileRects).toHaveLength(64);
+  expect(geometry.blockedTileIndexes).toEqual([]);
+
+  const epsilon = 1;
+  expect(geometry.boardRect.left).toBeGreaterThanOrEqual(geometry.wrapRect.left - epsilon);
+  expect(geometry.boardRect.top).toBeGreaterThanOrEqual(geometry.wrapRect.top - epsilon);
+  expect(geometry.boardRect.right).toBeLessThanOrEqual(geometry.wrapRect.right + epsilon);
+  expect(geometry.boardRect.bottom).toBeLessThanOrEqual(geometry.wrapRect.bottom + epsilon);
+
+  for (const tileRect of geometry.tileRects) {
+    expect(tileRect.left).toBeGreaterThanOrEqual(geometry.wrapRect.left - epsilon);
+    expect(tileRect.top).toBeGreaterThanOrEqual(geometry.wrapRect.top - epsilon);
+    expect(tileRect.right).toBeLessThanOrEqual(geometry.wrapRect.right + epsilon);
+    expect(tileRect.bottom).toBeLessThanOrEqual(geometry.wrapRect.bottom + epsilon);
+    expect(tileRect.width).toBeGreaterThan(0);
+    expect(tileRect.height).toBeGreaterThan(0);
+  }
+}
+
 test("Cascade keeps the full TV cabinet around a board-height playfield under browser zoom", async ({ page }) => {
   // 960x540 approximates a 1920x1080 television viewed at 200% browser zoom.
   await page.setViewportSize({ width: 960, height: 540 });
@@ -54,9 +104,11 @@ test("Cascade keeps the full TV cabinet around a board-height playfield under br
   // Score + Moves/Lives must still consume well under half the board height.
   expect(statusBox.height).toBeLessThan(boardWrapBox.height * .42);
 
-  // The active board remains fully visible and large at aggressive zoom.
+  // The active board remains fully visible, fully contained by its recess,
+  // and every tile center stays hittable at aggressive zoom.
   expect(boardBox.y + boardBox.height).toBeLessThanOrEqual(540);
   expect(boardBox.width).toBeGreaterThan(350);
+  await expectBoardFullyContained(page);
 
   // MOVES LEFT remains a strong at-a-glance readout while Score gets its own
   // wide counter above it.
@@ -67,6 +119,13 @@ test("Cascade keeps the full TV cabinet around a board-height playfield under br
     level.evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
   ]);
   expect(movesSize).toBeGreaterThan(levelSize * 1.5);
+});
+
+test("Cascade keeps every tile contained in the wide TV cabinet", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.goto("/cascade.html?player=cascade-tv-layout-wide-containment-test");
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
+  await expectBoardFullyContained(page);
 });
 
 test("Cascade keeps the compact mobile layout in portrait", async ({ page }) => {

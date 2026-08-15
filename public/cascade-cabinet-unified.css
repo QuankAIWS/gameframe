@@ -26,6 +26,7 @@
       ),
       calc(100% - 12px)
     );
+    height: calc(var(--cascade-tv-board-size) + 72px);
     border: 3px solid rgba(255, 255, 255, .9);
     border-radius: 30px;
     background:
@@ -142,9 +143,10 @@
 
   /* The board is the one substantial recessed display in the cabinet. */
   .cascade-board-wrap {
-    align-self: center;
-    height: calc(100% - 10px);
-    margin: 5px 0;
+    align-self: stretch;
+    box-sizing: border-box;
+    height: 100%;
+    margin: 0;
     padding: 7px 9px 8px;
     border: 2px solid rgba(255,255,255,.8);
     border-radius: 24px;
