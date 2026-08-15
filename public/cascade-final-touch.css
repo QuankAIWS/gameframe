@@ -1,0 +1,327 @@
+/*
+ * Cascade final-touch presentation corrections.
+ *
+ * Keep the candy faces clean, use the utility rail for readable controls,
+ * mechanically center settings icons, and let the functional result dialog
+ * continue the pastel reward-stage language without touching tutorial dialogs.
+ */
+
+.cascade-tile {
+  background: linear-gradient(
+    145deg,
+    var(--tile-a, var(--tile)),
+    var(--tile-b, var(--tile))
+  );
+}
+
+/* Scope the reward/result treatment to the actual terminal dialog. Tutorial
+   dialogs also carry .cascade-dialog but own a separate surface and layout. */
+#result-dialog {
+  width: min(540px, calc(100% - 28px));
+  padding: 0;
+  border: 3px solid rgba(255,255,255,.94);
+  border-radius: clamp(24px, 4vw, 34px);
+  background: transparent;
+  color: #5b3f82;
+  box-shadow:
+    0 28px 78px rgba(76,45,108,.34),
+    0 0 0 1px rgba(120,72,158,.08),
+    0 0 42px rgba(255,216,77,.16);
+  overflow: visible;
+}
+
+#result-dialog::backdrop {
+  background: rgba(58,38,79,.32);
+  backdrop-filter: blur(8px) saturate(1.14);
+}
+
+#result-dialog form {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: clamp(10px, 1.7vh, 15px);
+  margin: 0;
+  padding: clamp(24px, 4vh, 34px) clamp(22px, 3vw, 34px) clamp(22px, 3.7vh, 32px);
+  border-radius: calc(clamp(24px, 4vw, 34px) - 3px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% -18%, rgba(255,255,255,.98) 0 18%, rgba(255,238,168,.5) 34%, transparent 58%),
+    linear-gradient(155deg, rgba(255,255,255,.99), rgba(255,247,224,.97) 48%, rgba(243,234,255,.98));
+  box-shadow:
+    inset 0 -9px 24px rgba(165,106,244,.08),
+    inset 0 1px 0 rgba(255,255,255,1);
+  text-align: center;
+}
+
+#result-dialog form::before,
+#result-dialog form::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+#result-dialog form::before {
+  width: 150px;
+  height: 150px;
+  left: -82px;
+  top: 28%;
+  background: rgba(255,92,168,.08);
+}
+
+#result-dialog form::after {
+  width: 180px;
+  height: 180px;
+  right: -108px;
+  bottom: -76px;
+  background: rgba(89,225,239,.09);
+}
+
+#result-dialog form > * {
+  position: relative;
+  z-index: 1;
+}
+
+#result-dialog[open] form {
+  animation: cascade-final-dialog-in 320ms cubic-bezier(.12,.78,.2,1) both;
+}
+
+#result-dialog small {
+  color: #9a5ac8;
+  font-size: clamp(.7rem, 1.5vh, .86rem);
+  font-weight: 1000;
+  line-height: 1;
+  letter-spacing: .15em;
+}
+
+#result-dialog h2 {
+  margin: 0;
+  color: #6b4398;
+  font-size: clamp(2rem, 5.2vh, 3.25rem);
+  font-weight: 1000;
+  line-height: .94;
+  letter-spacing: -.045em;
+  text-wrap: balance;
+  text-shadow: 0 3px 0 rgba(255,255,255,.88), 0 0 24px rgba(165,106,244,.17);
+}
+
+#result-dialog p {
+  max-width: 44ch;
+  margin: 0;
+  color: #715d80;
+  font-size: clamp(.9rem, 1.8vh, 1.06rem);
+  font-weight: 700;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+#result-dialog .cascade-dialog-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 9px;
+  width: min(100%, 420px);
+  margin-top: 3px;
+}
+
+#result-dialog .cascade-dialog-actions button {
+  min-height: 52px;
+  padding: 10px 18px;
+  border: 2px solid rgba(126,83,161,.14);
+  border-radius: 999px;
+  background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(239,230,250,.95));
+  color: #68447f;
+  font-size: clamp(.92rem, 1.7vh, 1.04rem);
+  font-weight: 950;
+  line-height: 1;
+  box-shadow:
+    0 6px 14px rgba(77,47,105,.11),
+    inset 0 1px 0 rgba(255,255,255,1);
+  cursor: pointer;
+}
+
+#result-dialog .cascade-dialog-actions button.primary {
+  border-color: rgba(255,255,255,.9);
+  background: linear-gradient(145deg, #b76cf5, #8c55df 58%, #7045c8);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(74,39,113,.28);
+  box-shadow:
+    0 8px 18px rgba(119,71,191,.22),
+    inset 0 2px 0 rgba(255,255,255,.38);
+}
+
+#result-dialog .cascade-dialog-actions button:hover:not(:disabled),
+#result-dialog .cascade-dialog-actions button:focus-visible:not(:disabled) {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+@keyframes cascade-final-dialog-in {
+  0% { transform: translateY(14px) scale(.93); opacity: 0; }
+  62% { transform: translateY(-2px) scale(1.015); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@media (min-width: 760px) and (min-height: 400px) and (min-aspect-ratio: 3/2) {
+  .cascade-side {
+    grid-template-rows: auto auto auto auto;
+    align-content: space-between;
+    row-gap: clamp(8px, 1.25vh, 13px);
+  }
+
+  #booster-hammer {
+    min-height: clamp(52px, 7.3vh, 60px);
+    padding-inline: 48px;
+    font-size: clamp(1.04rem, 2.15vh, 1.24rem);
+    font-weight: 1000;
+    letter-spacing: .005em;
+  }
+
+  #booster-hammer b {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    font-size: .98rem;
+  }
+
+  #cascade-feedback-card {
+    align-self: auto;
+    min-height: 0;
+    padding: 7px 5px;
+    border-color: rgba(255,255,255,.58);
+    background: rgba(255,255,255,.16);
+  }
+
+  .cascade-feedback-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+    justify-items: center;
+    gap: clamp(4px, .65vw, 8px);
+    width: 100%;
+  }
+
+  .cascade-feedback-controls button {
+    position: relative;
+    display: block;
+    width: min(54px, 100%);
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 2px solid rgba(255,255,255,.84);
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(231,222,248,.94));
+    box-shadow:
+      0 5px 11px rgba(77,47,105,.13),
+      inset 0 1px 0 rgba(255,255,255,1);
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .cascade-feedback-controls button::before {
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    display: block !important;
+    width: 55% !important;
+    height: 55% !important;
+    margin: 0 !important;
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+  }
+
+  #cascade-effects-toggle[aria-pressed="true"]::before {
+    transform: translate(-50%, -50%) scale(.88);
+  }
+
+  .cascade-weekly-card [data-weekly-start] {
+    min-height: clamp(52px, 7.2vh, 58px);
+    padding-inline: 52px;
+    border-width: 2px;
+    border-color: rgba(255,255,255,.9);
+    box-shadow:
+      0 7px 15px rgba(102,64,170,.22),
+      inset 0 2px 0 rgba(255,255,255,.46);
+  }
+
+  .cascade-weekly-card [data-weekly-start]::before {
+    margin: 0;
+    font-size: clamp(1.05rem, 2.15vh, 1.25rem);
+    line-height: 1;
+    letter-spacing: .09em;
+  }
+
+  .cascade-weekly-card [data-weekly-start] b {
+    font-size: clamp(.88rem, 1.75vh, 1rem);
+    font-weight: 1000;
+  }
+}
+
+@media (min-width: 760px) and (min-height: 521px) and (max-height: 600px) and (min-aspect-ratio: 3/2) {
+  .cascade-side { row-gap: 5px; }
+
+  #booster-hammer,
+  .cascade-weekly-card [data-weekly-start] {
+    min-height: 46px;
+  }
+
+  #booster-hammer { font-size: 1rem; }
+
+  #booster-hammer b {
+    width: 29px;
+    min-width: 29px;
+    height: 29px;
+    min-height: 29px;
+    font-size: .9rem;
+  }
+
+  #cascade-feedback-card { padding-block: 3px; }
+
+  .cascade-feedback-controls { gap: 5px; }
+  .cascade-feedback-controls button { width: min(46px, 100%); }
+
+  .cascade-weekly-card [data-weekly-start]::before { font-size: 1rem; }
+  .cascade-weekly-card [data-weekly-start] b { font-size: .86rem; }
+}
+
+@media (min-width: 760px) and (min-height: 400px) and (max-height: 520px) and (min-aspect-ratio: 3/2) {
+  .cascade-side {
+    grid-template-rows: 46px 44px minmax(44px, 1fr) 44px;
+    align-content: stretch;
+    row-gap: 4px;
+  }
+
+  #booster-hammer {
+    min-height: 40px;
+    font-size: .92rem;
+  }
+
+  .cascade-feedback-controls { gap: 4px; }
+  .cascade-feedback-controls button { width: min(40px, 100%); }
+
+  .cascade-weekly-card [data-weekly-start] { min-height: 40px; }
+  .cascade-weekly-card [data-weekly-start]::before { font-size: .92rem; }
+  .cascade-weekly-card [data-weekly-start] b { font-size: .8rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #result-dialog[open] form { animation-duration: 1ms !important; }
+  #result-dialog .cascade-dialog-actions button { transition: none; }
+}
+
+@media (max-width: 650px) {
+  #result-dialog {
+    width: min(94vw, 520px);
+    border-radius: 24px;
+  }
+
+  #result-dialog form {
+    padding: 22px 18px 20px;
+    border-radius: 21px;
+  }
+
+  #result-dialog .cascade-dialog-actions { grid-template-columns: 1fr; }
+}
