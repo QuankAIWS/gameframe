@@ -22,6 +22,7 @@ async function waitForOfflinePack(page) {
       "/othello.html",
       "/othello-fidelity-app-4.js",
       "/othello-game-menu.js",
+      "/othello-offline-mode.js",
       "/othello-garden-delicacy.css",
     ];
     const matches = await Promise.all(required.map((path) => cache.match(path)));
@@ -85,6 +86,8 @@ test("installed GameFrame cold-launches offline with Cascade, local Othello, and
   await offlinePage.locator("#game-card-othello").click();
   await expect(offlinePage).toHaveURL(/\/othello\.html$/);
   await expect(offlinePage.locator("#othello-game-menu")).toBeVisible({ timeout: 8_000 });
+  await expect(offlinePage.locator("#othello-challenge-player")).toBeDisabled();
+  await expect(offlinePage.locator("[data-othello-online-status]")).toContainText("Offline mode");
   await offlinePage.locator("#othello-play-bot").click();
   await expect(offlinePage.locator("#othello-game-menu")).toBeHidden();
   await expect(offlinePage.locator("body")).toHaveAttribute("data-othello-mode", "bot");
