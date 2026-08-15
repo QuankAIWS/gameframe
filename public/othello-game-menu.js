@@ -1,5 +1,6 @@
 (() => {
   const storageKey = "scribbles-gameframe.othello.local-match.v1";
+  const invitationPollDelayMs = 1200;
   const app = document.querySelector(".othello-app");
   const controls = document.querySelector(".command-bar .controls");
   const demoMove = document.querySelector("#demo-move");
@@ -15,6 +16,9 @@
   let rematchBusy = false;
   let rematchSentForMatchId = null;
   let rematchButton = null;
+  let invitationTimer = null;
+  let pendingInvitation = null;
+  let invitationBusy = false;
 
   function validBoard(board) {
     return Array.isArray(board)
@@ -95,6 +99,191 @@
     return window.gameFrameIdentity || null;
   }
 
+  function invitationStatusElement() {
+    return menu.querySelector("[data-othello-online-status]");
+  }
+
+  function invitationPickerElement() {
+    return menu.querySelector("[data-othello-player-picker]");
+  }
+
+  function stopInvitationFollow() {
+    if (invitationTimer !== null) window.clearTimeout(invitationTimer);
+    invitationTimer = null;
+  }
+
+  function setInvitationControlsDisabled(disabled) {
+    [
+      "#othello-challenge-player",
+      "#othello-play-bot",
+      "#othello-play-local",
+      "#othello-resume",
+    ].forEach((selector) => {
+      const button = menu.querySelector(selector);
+      if (button) button.disabled = disabled;
+    });
+    const cancel = menu.querySelector("#othello-cancel-challenge");
+    if (cancel) cancel.hidden = !disabled;
+  }
+
+  function resetInvitationControls() {
+    setInvitationControlsDisabled(false);
+    const picker = invitationPickerElement();
+    if (picker) {
+      picker.replaceChildren();
+      picker.hidden = true;
+    }
+    delete document.body.dataset.othelloInvitationStatus;
+  }
+
+  function updateInvitationWaitingUi() {
+    if (!pendingInvitation) return;
+    const status = invitationStatusElement();
+    const picker = invitationPickerElement();
+    const { playerName, source } = pendingInvitation;
+    setInvitationControlsDisabled(true);
+    document.body.dataset.othelloInvitationStatus = "pending";
+    if (picker) {
+      picker.replaceChildren();
+      const heading = document.createElement("strong");
+      heading.textContent = `Waiting for ${playerName}`;
+      const detail = document.createElement("small");
+      detail.textContent = "The board will open automatically as soon as they accept.";
+      picker.append(heading, detail);
+      picker.hidden = false;
+    }
+    if (status) {
+      status.textContent = source === "rematch"
+        ? `Rematch sent to ${playerName}. Waiting for them to accept…`
+        : `Challenge sent to ${playerName}. Waiting for them to accept…`;
+    }
+    if (source === "rematch") {
+      announcement.textContent = `Rematch challenge sent to ${playerName}. Waiting for them to accept.`;
+      announcement.hidden = false;
+    }
+    updateRematchControl();
+  }
+
+  function scheduleInvitationPoll(delay = invitationPollDelayMs) {
+    stopInvitationFollow();
+    if (!pendingInvitation) return;
+    invitationTimer = window.setTimeout(() => void pollPendingInvitation(), delay);
+  }
+
+  function invitationTerminalMessage(invitationStatus, playerName) {
+    if (invitationStatus === "declined") return `${playerName} declined the Othello challenge.`;
+    if (invitationStatus === "expired") return `The Othello challenge to ${playerName} expired.`;
+    return `The Othello challenge to ${playerName} was cancelled.`;
+  }
+
+  function finishPendingInvitation(invitationStatus, message = null) {
+    const completed = pendingInvitation;
+    if (!completed) return;
+    stopInvitationFollow();
+    pendingInvitation = null;
+    invitationBusy = false;
+    if (completed.source === "rematch" && rematchSentForMatchId === completed.originMatchId) {
+      rematchSentForMatchId = null;
+    }
+    resetInvitationControls();
+    const finalMessage = message || invitationTerminalMessage(invitationStatus, completed.playerName);
+    const status = invitationStatusElement();
+    if (status) status.textContent = finalMessage;
+    if (completed.source === "rematch") {
+      announcement.textContent = finalMessage;
+      announcement.hidden = false;
+    }
+    updateRematchControl();
+    void renderOpenGames();
+  }
+
+  async function pollPendingInvitation() {
+    if (!pendingInvitation || invitationBusy) return;
+    const expectedInvitationId = pendingInvitation.invitationId;
+    invitationBusy = true;
+    try {
+      const body = await responseJson(
+        await fetch(`/api/invitations/${encodeURIComponent(expectedInvitationId)}`, {
+          credentials: "same-origin",
+        }),
+        "Othello invitation",
+      );
+      if (pendingInvitation?.invitationId !== expectedInvitationId) return;
+      const invitationStatus = body.invitation?.status;
+      if (invitationStatus === "claimed" && body.resumePath) {
+        const accepted = pendingInvitation;
+        stopInvitationFollow();
+        pendingInvitation = null;
+        resetInvitationControls();
+        document.body.dataset.othelloInvitationStatus = "claimed";
+        const status = invitationStatusElement();
+        const acceptedMessage = `${accepted.playerName} accepted. Opening the Othello board…`;
+        if (status) status.textContent = acceptedMessage;
+        if (accepted.source === "rematch") {
+          announcement.textContent = acceptedMessage;
+          announcement.hidden = false;
+        }
+        window.location.assign(body.resumePath);
+        return;
+      }
+      if (["declined", "cancelled", "expired"].includes(invitationStatus)) {
+        finishPendingInvitation(invitationStatus);
+        return;
+      }
+      scheduleInvitationPoll();
+    } catch {
+      if (pendingInvitation?.invitationId !== expectedInvitationId) return;
+      const status = invitationStatusElement();
+      if (status) status.textContent = `Still waiting for ${pendingInvitation.playerName}. Reconnecting…`;
+      if (pendingInvitation.source === "rematch") {
+        announcement.textContent = `Still waiting for ${pendingInvitation.playerName}. Reconnecting…`;
+        announcement.hidden = false;
+      }
+      scheduleInvitationPoll(invitationPollDelayMs * 2);
+    } finally {
+      if (pendingInvitation?.invitationId === expectedInvitationId) invitationBusy = false;
+    }
+  }
+
+  function beginInvitationFollow(created, { playerName, source, originMatchId = null }) {
+    const invitationId = created?.invitation?.invitationId;
+    if (!invitationId) throw new Error("The Othello challenge did not return an invitation ID.");
+    stopInvitationFollow();
+    pendingInvitation = {
+      invitationId,
+      playerName,
+      source,
+      originMatchId,
+    };
+    invitationBusy = false;
+    updateInvitationWaitingUi();
+    scheduleInvitationPoll();
+  }
+
+  async function cancelPendingInvitation() {
+    if (!pendingInvitation || invitationBusy) return;
+    const expectedInvitationId = pendingInvitation.invitationId;
+    const playerName = pendingInvitation.playerName;
+    stopInvitationFollow();
+    invitationBusy = true;
+    const status = invitationStatusElement();
+    if (status) status.textContent = `Cancelling challenge to ${playerName}…`;
+    try {
+      await responseJson(await fetch(`/api/invitations/${encodeURIComponent(expectedInvitationId)}/cancel`, {
+        method: "POST",
+        credentials: "same-origin",
+      }), "Cancel Othello challenge");
+      if (pendingInvitation?.invitationId === expectedInvitationId) {
+        finishPendingInvitation("cancelled", `Challenge to ${playerName} cancelled.`);
+      }
+    } catch {
+      if (pendingInvitation?.invitationId !== expectedInvitationId) return;
+      invitationBusy = false;
+      if (status) status.textContent = `Could not cancel the challenge to ${playerName}. Checking its status…`;
+      scheduleInvitationPoll(0);
+    }
+  }
+
   function remoteOpponentPlayerId() {
     const playerIds = remoteView?.playerIds;
     if (!Array.isArray(playerIds) || playerIds.length !== 2) return null;
@@ -121,13 +310,17 @@
     const opponentId = finishedRemoteMatch ? remoteOpponentPlayerId() : null;
     rematchButton.hidden = !finishedRemoteMatch || !opponentId;
     if (rematchButton.hidden) return;
+    const waiting = pendingInvitation?.source === "rematch"
+      && pendingInvitation.originMatchId === remoteView.matchId;
     const alreadySent = rematchSentForMatchId === remoteView.matchId;
-    rematchButton.disabled = rematchBusy || alreadySent;
+    rematchButton.disabled = rematchBusy || waiting || alreadySent;
     rematchButton.querySelector("span").textContent = rematchBusy
       ? "Sending rematch…"
-      : alreadySent
-        ? "Rematch sent"
-        : "Rematch";
+      : waiting
+        ? `Waiting for ${pendingInvitation.playerName}…`
+        : alreadySent
+          ? "Rematch sent"
+          : "Rematch";
   }
 
   function updateModeLabels() {
@@ -161,10 +354,12 @@
       resumeButton.querySelector("small").textContent = `Continue ${savedMode} from move ${saved.state.move}.`;
     }
     updateModeLabels();
+    if (pendingInvitation) updateInvitationWaitingUi();
     void renderOpenGames();
   }
 
   function startNew(nextMode) {
+    if (pendingInvitation) return;
     stopRemoteRefresh();
     clearTimeout(botTimer);
     mode = nextMode;
@@ -232,7 +427,7 @@
       updateModeLabels();
     } catch (error) {
       showMenu();
-      const status = menu.querySelector("[data-othello-online-status]");
+      const status = invitationStatusElement();
       if (status) status.textContent = error instanceof Error ? error.message : "The online match could not be loaded.";
     } finally {
       remoteBusy = false;
@@ -276,16 +471,18 @@
     rematchBusy = true;
     updateRematchControl();
     try {
-      await responseJson(await fetch("/api/invitations", {
+      const created = await responseJson(await fetch("/api/invitations", {
         method: "POST",
         credentials: "same-origin",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ gameId: "othello", targetPlayerId: opponentId }),
       }), "Othello rematch");
       rematchSentForMatchId = remoteView.matchId;
-      const opponent = remoteOpponentName();
-      announcement.textContent = `Rematch challenge sent to ${opponent}.`;
-      announcement.hidden = false;
+      beginInvitationFollow(created, {
+        playerName: remoteOpponentName(),
+        source: "rematch",
+        originMatchId: remoteView.matchId,
+      });
     } catch (error) {
       announcement.textContent = error instanceof Error ? error.message : "The rematch challenge could not be sent.";
       announcement.hidden = false;
@@ -326,26 +523,32 @@
   }
 
   async function sendChallenge(player) {
-    const status = menu.querySelector("[data-othello-online-status]");
+    const status = invitationStatusElement();
     const discordId = playerDiscordId(player.playerId);
-    if (!discordId) return;
+    if (!discordId || pendingInvitation) return;
     if (status) status.textContent = `Sending Othello challenge to ${player.displayName || "player"}…`;
     try {
-      await responseJson(await fetch("/api/invitations", {
+      const created = await responseJson(await fetch("/api/invitations", {
         method: "POST",
         credentials: "same-origin",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ gameId: "othello", targetDiscordUserId: discordId }),
       }), "Othello challenge");
-      if (status) status.textContent = `Challenge sent to ${player.displayName || "player"}. It will appear in their Matches screen.`;
-      await renderOpenGames();
+      beginInvitationFollow(created, {
+        playerName: player.displayName || "player",
+        source: "challenge",
+      });
     } catch (error) {
       if (status) status.textContent = error instanceof Error ? error.message : "The challenge could not be sent.";
     }
   }
 
   async function openPlayerPicker() {
-    const picker = menu.querySelector("[data-othello-player-picker]");
+    if (pendingInvitation) {
+      updateInvitationWaitingUi();
+      return;
+    }
+    const picker = invitationPickerElement();
     const players = await loadKnownPlayers();
     picker.replaceChildren();
     if (!players.length) {
@@ -434,6 +637,10 @@
           <small>Start a persistent game and take turns whenever you are available.</small>
         </button>
         <div class="othello-player-picker" data-othello-player-picker hidden></div>
+        <button id="othello-cancel-challenge" type="button" hidden>
+          <strong>Cancel challenge</strong>
+          <small>Withdraw this invitation before the other player accepts.</small>
+        </button>
         <button id="othello-play-bot" type="button">
           <strong>Challenge OthelloBot</strong>
           <small>Play Dark against a deterministic local opponent.</small>
@@ -455,6 +662,7 @@
 
   const resumeButton = menu.querySelector("#othello-resume");
   menu.querySelector("#othello-challenge-player")?.addEventListener("click", () => void openPlayerPicker());
+  menu.querySelector("#othello-cancel-challenge")?.addEventListener("click", () => void cancelPendingInvitation());
   menu.querySelector("#othello-play-bot")?.addEventListener("click", () => startNew("bot"));
   menu.querySelector("#othello-play-local")?.addEventListener("click", () => startNew("local"));
   resumeButton?.addEventListener("click", () => {
@@ -508,7 +716,9 @@
   hintButton.addEventListener("click", persist);
   document.addEventListener("gameframe:before-home", persist);
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && mode === "remote") void loadRemoteMatch();
+    if (document.visibilityState !== "visible") return;
+    if (pendingInvitation) void pollPendingInvitation();
+    if (mode === "remote") void loadRemoteMatch();
   });
 
   if (snapshotMode) {
@@ -536,6 +746,8 @@
     startLocal: () => startNew("local"),
     loadRemote: loadRemoteMatch,
     rematch: sendRematch,
+    pollInvitation: pollPendingInvitation,
+    cancelInvitation: cancelPendingInvitation,
     resume: () => {
       const saved = readSave();
       if (saved) restore(saved);
