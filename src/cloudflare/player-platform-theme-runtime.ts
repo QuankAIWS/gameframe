@@ -1,10 +1,15 @@
 import { errorResponse, json, readJson } from "./http-utils.ts";
+import type { PlayerEventTopic } from "./player-event-socket-hub.ts";
 import { PlayerPlatformObjectRuntime } from "./player-platform-object-runtime.ts";
 import type { DurableStorageLike } from "./runtime-contracts.ts";
 
 const THEME_KEY = "gameframe:player-theme:v1";
 const DEFAULT_THEME_ID = "standard";
 const THEME_IDS = new Set(["standard", "cascade-pop", "cyberpunk", "clockwork", "deep-space"]);
+
+export interface PlayerPlatformThemeRuntimeOptions {
+  onUpdated?: (topics: readonly PlayerEventTopic[]) => void | Promise<void>;
+}
 
 function themeId(value: unknown): string {
   const normalized = String(value ?? DEFAULT_THEME_ID).trim().toLowerCase();
@@ -21,13 +26,31 @@ async function responseBody(response: Response): Promise<Record<string, unknown>
   return response.json().catch(() => ({})) as Promise<Record<string, unknown>>;
 }
 
+function mutationTopics(pathname: string): PlayerEventTopic[] {
+  if (pathname === "/player/match" || pathname === "/player/invitation") return ["feed"];
+  if (pathname.startsWith("/player/progression/")) return ["progression"];
+  return [];
+}
+
 export class PlayerPlatformThemeRuntime {
   readonly #storage: DurableStorageLike;
   readonly #base: PlayerPlatformObjectRuntime;
+  readonly #onUpdated: PlayerPlatformThemeRuntimeOptions["onUpdated"];
 
-  constructor(storage: DurableStorageLike) {
+  constructor(storage: DurableStorageLike, options: PlayerPlatformThemeRuntimeOptions = {}) {
     this.#storage = storage;
     this.#base = new PlayerPlatformObjectRuntime(storage);
+    this.#onUpdated = options.onUpdated;
+  }
+
+  async #notify(topics: readonly PlayerEventTopic[]): Promise<void> {
+    if (!topics.length || !this.#onUpdated) return;
+    try {
+      await this.#onUpdated(topics);
+    } catch {
+      // Player event delivery is a reconstructable projection. A socket failure
+      // must never roll back an already committed preference/feed/progression write.
+    }
   }
 
   async #themePreference(): Promise<{ themeId: string; themeConfigured: boolean }> {
@@ -80,10 +103,16 @@ export class PlayerPlatformThemeRuntime {
           preference = { themeId: nextThemeId, themeConfigured: true };
         }
 
-        return json(200, { favoriteGameIds, ...preference });
+        const result = { favoriteGameIds, ...preference };
+        await this.#notify(["preferences", "feed"]);
+        return json(200, result);
       }
 
-      return this.#base.fetch(request);
+      const response = await this.#base.fetch(request);
+      if (response.ok && request.method === "POST") {
+        await this.#notify(mutationTopics(url.pathname));
+      }
+      return response;
     } catch (error) {
       return errorResponse(error);
     }
