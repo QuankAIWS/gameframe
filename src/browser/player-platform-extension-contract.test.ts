@@ -13,6 +13,8 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   const leaderboard = await read("public/leaderboard-app.js");
   const leaderboardHtml = await read("public/leaderboard.html");
   const cascadeSync = await read("public/cascade-progression-sync.js");
+  const cascadeTelemetry = await read("public/cascade-telemetry-sync.js");
+  const alerts = await read("public/gameframe-alerts.js");
   const edgeWorker = await read("src/cloudflare/rpg-edge-worker.ts");
   const playerCoordinator = await read("src/cloudflare/player-platform-coordinator.ts");
   const playerRuntime = await read("src/cloudflare/player-platform-object-runtime.ts");
@@ -54,14 +56,30 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   assert.doesNotMatch(leaderboard, /Hall of Fame/);
   assert.match(leaderboardHtml, /<h1>Leaderboard<\/h1>/);
   assert.doesNotMatch(leaderboardHtml, /Hall of Fame/);
+
   assert.match(cascadeSync, /\/api\/me\/progression/);
   assert.match(cascadeSync, /\/api\/me\/cascade\/progression/);
   assert.match(cascadeSync, /cascade-progression-owner/);
   assert.match(cascadeSync, /cascade-progression-candidate/);
-  assert.match(cascadeSync, /candidate === identity\.playerId/);
-  assert.match(cascadeSync, /storage\.setItem\(CANDIDATE_KEY, identity\.playerId\)/);
+  assert.match(cascadeSync, /cascade-progression-visit/);
+  assert.match(cascadeSync, /sessionStorage\.getItem\(VISIT_KEY\)/);
+  assert.match(cascadeSync, /candidate\?\.playerId === identity\.playerId/);
+  assert.match(cascadeSync, /candidate\.visitId !== currentVisitId/);
+  assert.match(cascadeSync, /JSON\.stringify\(\{ playerId, visitId: currentVisitId \}\)/);
   assert.match(cascadeSync, /Math\.max\([\s\S]*server\?\.highestCompletedLevel/);
   assert.match(cascadeSync, /starsByLevel\[level\] = Math\.max/);
+  assert.match(cascadeSync, /LOCAL_CHANGE_INTERVAL_MS = 1_000/);
+  assert.match(cascadeSync, /SERVER_RECONCILE_INTERVAL_MS = 5 \* 60 \* 1_000/);
+  assert.match(cascadeSync, /body\?\.cascade \?\? body\?\.progression\?\.cascade/);
+  assert.match(cascadeSync, /JSON\.stringify\(current\) === lastSubmitted/);
+  assert.doesNotMatch(cascadeSync, /SYNC_INTERVAL_MS = 750/);
+
+  assert.match(alerts, /const refreshIntervalMs = 60_000/);
+  assert.match(alerts, /document\.visibilityState === "visible"/);
+  assert.doesNotMatch(alerts, /const refreshIntervalMs = 5000/);
+  assert.match(cascadeTelemetry, /HEARTBEAT_INTERVAL_MS = 5 \* 60 \* 1_000/);
+  assert.match(cascadeTelemetry, /document\.hidden \|\| Date\.now\(\) - lastInputAt > IDLE_AFTER_MS/);
+  assert.doesNotMatch(cascadeTelemetry, /HEARTBEAT_INTERVAL_MS = 30_000/);
 
   for (const runtime of [edgeWorker, nodeServer]) {
     assert.match(runtime, /\/api\/me\/preferences/);
