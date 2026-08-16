@@ -1,5 +1,5 @@
 @media (max-width: 640px) {
-  body.gameframe-has-destination-bar > .gameframe-session-badge.gameframe-account-control {
+  body.gameframe-has-destination-bar.monster-master-match-active > .gameframe-session-badge.gameframe-account-control {
     position: fixed !important;
     top: 13px !important;
     right: 12px !important;
@@ -13,7 +13,7 @@
     overflow: visible;
   }
 
-  body.gameframe-has-destination-bar > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger {
+  body.gameframe-has-destination-bar.monster-master-match-active > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger {
     display: grid !important;
     grid-template-columns: 26px !important;
     place-items: center;
@@ -28,16 +28,16 @@
     border-radius: 11px;
   }
 
-  body.gameframe-has-destination-bar > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger img,
-  body.gameframe-has-destination-bar > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger .gameframe-session-avatar {
+  body.gameframe-has-destination-bar.monster-master-match-active > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger img,
+  body.gameframe-has-destination-bar.monster-master-match-active > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger .gameframe-session-avatar {
     width: 26px !important;
     min-width: 26px !important;
     height: 26px !important;
     border-radius: 8px;
   }
 
-  body.gameframe-has-destination-bar > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger strong,
-  body.gameframe-has-destination-bar > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger svg {
+  body.gameframe-has-destination-bar.monster-master-match-active > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger strong,
+  body.gameframe-has-destination-bar.monster-master-match-active > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger svg {
     display: none !important;
   }
 }
