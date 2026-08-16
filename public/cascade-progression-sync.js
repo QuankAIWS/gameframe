@@ -296,7 +296,13 @@ async function reconcileServer({ force = false } = {}) {
     const canonical = mergeProgression(current, server);
     const preserveLevel = shouldProtectLoadedRun();
     const changes = applyCanonicalToLocal(canonical, { preserveLevel });
-    if (maybeReloadAfterHydration(canonical, changes.stateChanged, preserveLevel)) return;
+    if (maybeReloadAfterHydration(canonical, changes.stateChanged, preserveLevel)) {
+      // establishAndSynchronize continues into the local publisher before the
+      // browser commits navigation. Mark this exact canonical snapshot as
+      // satisfied so hydration cannot race itself into a redundant write.
+      lastSubmitted = JSON.stringify(canonical);
+      return;
+    }
 
     const canonicalSerialized = JSON.stringify(canonical);
     const serverSerialized = JSON.stringify(normalizedProgression(server));
