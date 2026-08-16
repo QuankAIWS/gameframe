@@ -1,5 +1,6 @@
 (() => {
   const storageKey = "scribbles-gameframe.othello.local-match.v1";
+  const remoteRefreshFallbackMs = 60_000;
   const app = document.querySelector(".othello-app");
   const controls = document.querySelector(".command-bar .controls");
   const demoMove = document.querySelector("#demo-move");
@@ -12,6 +13,7 @@
   let remoteTimer = null;
   let remoteView = null;
   let remoteBusy = false;
+  let playerEventsConnected = Boolean(window.gameFrameAlerts?.playerEventsConnected?.());
   let rematchBusy = false;
   let rematchSentForMatchId = null;
   let rematchButton = null;
@@ -302,11 +304,17 @@
 
   function scheduleRemoteRefresh() {
     stopRemoteRefresh();
-    if (mode !== "remote" || state.complete) return;
+    if (
+      mode !== "remote"
+      || state.complete
+      || playerEventsConnected
+      || document.visibilityState !== "visible"
+    ) return;
     remoteTimer = window.setTimeout(async () => {
+      remoteTimer = null;
       await loadRemoteMatch();
       scheduleRemoteRefresh();
-    }, 12000);
+    }, remoteRefreshFallbackMs);
   }
 
   async function loadKnownPlayers() {
@@ -507,8 +515,40 @@
   document.querySelectorAll(".theme-button").forEach((button) => button.addEventListener("click", persist));
   hintButton.addEventListener("click", persist);
   document.addEventListener("gameframe:before-home", persist);
+
+  window.addEventListener("gameframe:player-events-ready", () => {
+    playerEventsConnected = true;
+    stopRemoteRefresh();
+    if (mode === "remote" && !state.complete && document.visibilityState === "visible") {
+      void loadRemoteMatch();
+    }
+  });
+  window.addEventListener("gameframe:player-events-disconnected", () => {
+    playerEventsConnected = false;
+    scheduleRemoteRefresh();
+  });
+  window.addEventListener("gameframe:player-event", (event) => {
+    const topics = Array.isArray(event.detail?.topics) ? event.detail.topics : [];
+    if (
+      topics.includes("matches")
+      && mode === "remote"
+      && !state.complete
+      && document.visibilityState === "visible"
+    ) {
+      void loadRemoteMatch();
+    }
+  });
+  window.addEventListener("focus", () => {
+    if (mode === "remote" && !state.complete) void loadRemoteMatch();
+  });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && mode === "remote") void loadRemoteMatch();
+    if (document.visibilityState === "visible" && mode === "remote") {
+      playerEventsConnected = Boolean(window.gameFrameAlerts?.playerEventsConnected?.());
+      void loadRemoteMatch();
+      scheduleRemoteRefresh();
+      return;
+    }
+    stopRemoteRefresh();
   });
 
   if (snapshotMode) {
