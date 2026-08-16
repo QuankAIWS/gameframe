@@ -49,10 +49,54 @@
 }
 
 @media (max-width: 480px) {
+  body.gameframe-has-destination-bar.gameframe-monster-route #gameframe-destination-bar {
+    grid-template-columns: 54px minmax(0, 1fr) 108px;
+  }
+
   body.gameframe-has-destination-bar.gameframe-monster-route
     #gameframe-destination-bar .monster-master-nav-setup {
     flex: 0 0 54px;
     min-width: 54px;
     padding-inline: 4px;
+  }
+
+  body.gameframe-has-destination-bar.gameframe-monster-route
+    #gameframe-destination-bar .gameframe-destination-session-space {
+    width: 108px;
+    padding: 0 2px;
+  }
+
+  body.gameframe-has-destination-bar.gameframe-monster-route
+    #gameframe-destination-bar .gameframe-shell-actions {
+    gap: 0;
+  }
+
+  body.gameframe-has-destination-bar.gameframe-monster-route
+    #gameframe-destination-bar .gameframe-shell-icon-button,
+  body.gameframe-has-destination-bar.gameframe-monster-route
+    #gameframe-destination-bar .gameframe-alerts-trigger {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  body.gameframe-has-destination-bar.gameframe-monster-route
+    #gameframe-destination-bar .gameframe-shell-actions > .gameframe-session-badge.gameframe-account-control {
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+  }
+
+  body.gameframe-has-destination-bar.gameframe-monster-route
+    #gameframe-destination-bar .gameframe-shell-actions > .gameframe-session-badge.gameframe-account-control > .gameframe-account-trigger {
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 4px !important;
   }
 }
