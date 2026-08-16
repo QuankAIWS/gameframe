@@ -83,9 +83,9 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
 
   assert.match(alerts, /const refreshIntervalMs = 60_000/);
   assert.match(alerts, /\/api\/me\/events/);
-  assert.match(alerts, /new WebSocket\(playerEventUrl\(\)\)/);
+  assert.match(alerts, /new window\.WebSocket\(playerEventUrl\(\)\)/);
   assert.match(alerts, /message\?\.type === "player_event"/);
-  assert.match(alerts, /message\.topics\.includes\("feed"\)/);
+  assert.match(alerts, /message\.topics\.includes\("invitations"\)/);
   assert.match(alerts, /document\.visibilityState === "visible" && !eventSocketOpen\(\)/);
   assert.doesNotMatch(alerts, /const refreshIntervalMs = 5000/);
   assert.match(cascadeTelemetry, /HEARTBEAT_INTERVAL_MS = 5 \* 60 \* 1_000/);
@@ -102,7 +102,10 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   assert.match(workerRouter, /\/api\/me\/events/);
   assert.match(workerRouter, /openPlayerEventStream/);
   assert.match(workerRouter, /touchPlayerDirectory/);
-  assert.doesNotMatch(workerRouter, /await indexMatchView\(env, view\);\n          return json\(200, view\);/);
+  assert.match(
+    workerRouter,
+    /route && request\.method === "GET" && route\.operation === "view"[\s\S]*?const view = await internalMatchView[\s\S]*?return json\(200, view\);[\s\S]*?route && request\.method === "POST"/,
+  );
 
   assert.match(playerCoordinator, /touchPlayerDirectory/);
   assert.match(playerCoordinator, /openPlayerEventStream/);
@@ -118,7 +121,7 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   assert.match(playerEvents, /acceptWebSocket/);
   assert.match(playerEvents, /player_events_ready/);
   assert.match(playerEvents, /type: "player_event"/);
-  assert.match(playerEvents, /PlayerEventTopic/);
+  assert.match(playerEvents, /"invitations" \| "matches" \| "progression" \| "preferences"/);
   assert.match(playerThemeRuntime, /onUpdated/);
   assert.match(playerThemeRuntime, /pathname === "\/player\/match"/);
   assert.match(playerThemeRuntime, /pathname === "\/player\/invitation"/);
