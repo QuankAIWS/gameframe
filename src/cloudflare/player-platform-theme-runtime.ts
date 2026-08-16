@@ -27,7 +27,8 @@ async function responseBody(response: Response): Promise<Record<string, unknown>
 }
 
 function mutationTopics(pathname: string): PlayerEventTopic[] {
-  if (pathname === "/player/match" || pathname === "/player/invitation") return ["feed"];
+  if (pathname === "/player/match") return ["matches"];
+  if (pathname === "/player/invitation") return ["invitations"];
   if (pathname.startsWith("/player/progression/")) return ["progression"];
   return [];
 }
@@ -104,7 +105,7 @@ export class PlayerPlatformThemeRuntime {
         }
 
         const result = { favoriteGameIds, ...preference };
-        await this.#notify(["preferences", "feed"]);
+        await this.#notify(["preferences"]);
         return json(200, result);
       }
 
