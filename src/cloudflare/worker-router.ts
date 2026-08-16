@@ -31,8 +31,9 @@ import {
   indexInvitation,
   indexMatchView,
   listKnownPlayers,
+  openPlayerEventStream,
   readPlayerFeed,
-  upsertPlayerDirectory,
+  touchPlayerDirectory,
   type IndexedMatchView,
 } from "./player-platform-coordinator.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
@@ -168,6 +169,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
             service: "scribbles-gameframe",
             runtime: "cloudflare",
             realtime: "websocket-hibernation",
+            playerEvents: "websocket-hibernation",
             authentication: "discord-oauth-session",
             discordActivity: true,
             authenticatedInvitations: true,
@@ -255,19 +257,22 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
 
         if (request.method === "GET" && url.pathname === "/api/session") {
           const principal = await authenticator.authenticate(request);
-          await upsertPlayerDirectory(env, principal);
+          await touchPlayerDirectory(env, principal);
           return json(200, sessionResponse(principal));
+        }
+
+        if (request.method === "GET" && url.pathname === "/api/me/events") {
+          const principal = await authenticator.authenticate(request);
+          return openPlayerEventStream(env, principal.playerId, request);
         }
 
         if (request.method === "GET" && url.pathname === "/api/players") {
           const principal = await authenticator.authenticate(request);
-          await upsertPlayerDirectory(env, principal);
           return json(200, await listKnownPlayers(env, principal.playerId));
         }
 
         if (request.method === "GET" && url.pathname === "/api/me/feed") {
           const principal = await authenticator.authenticate(request);
-          await upsertPlayerDirectory(env, principal);
           return json(200, await readPlayerFeed(env, principal.playerId));
         }
 
@@ -281,7 +286,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
 
         if (request.method === "POST" && url.pathname === "/api/invitations") {
           const principal = await authenticator.authenticate(request);
-          await upsertPlayerDirectory(env, principal);
+          await touchPlayerDirectory(env, principal);
           const body = await readJson(request);
           const created = await invitationsFor(env).create(url.origin, principal, body);
           const targetPlayerId = invitationTargetPlayerId(body.targetPlayerId, body.targetDiscordUserId);
@@ -296,7 +301,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
 
         if (request.method === "POST" && url.pathname === "/api/invitations/claim") {
           const principal = await authenticator.authenticate(request);
-          await upsertPlayerDirectory(env, principal);
+          await touchPlayerDirectory(env, principal);
           const body = await readJson(request);
           const claimed = await invitationsFor(env).claim(principal, String(body.token ?? ""));
           const invitation = claimed.invitation;
@@ -310,18 +315,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
         const inviteRoute = invitationRoute(url.pathname);
         if (inviteRoute && request.method === "GET" && inviteRoute.operation === "view") {
           const principal = await authenticator.authenticate(request);
-          const viewed = await invitationsFor(env).view(inviteRoute.invitationId, principal);
-          const feedInvitation = viewed.invitation.status === "declined"
-            ? { ...viewed.invitation, status: "cancelled" as const }
-            : viewed.invitation;
-          await indexInvitation(env, feedInvitation, [
-            viewed.invitation.inviter.playerId,
-            viewed.invitation.claimant?.playerId ?? principal.playerId,
-          ]);
-          if (viewed.invitation.matchId && viewed.invitation.status === "claimed") {
-            await loadMatchForIndex(env, viewed.invitation.matchId, principal.playerId);
-          }
-          return json(200, viewed);
+          return json(200, await invitationsFor(env).view(inviteRoute.invitationId, principal));
         }
         if (inviteRoute && request.method === "POST" && inviteRoute.operation === "cancel") {
           const principal = await authenticator.authenticate(request);
@@ -339,7 +333,7 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
 
         if (request.method === "POST" && url.pathname === "/api/matches") {
           const principal = await authenticator.authenticate(request);
-          await upsertPlayerDirectory(env, principal);
+          await touchPlayerDirectory(env, principal);
           const body = await readJson(request);
           const playerIds = Array.isArray(body.playerIds)
             ? body.playerIds.map((playerId) => String(playerId))
@@ -370,7 +364,6 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
           internal.searchParams.set("matchId", route.matchId);
           internal.searchParams.set("playerId", principal.playerId);
           const view = await internalMatchView(await stubFor(env, route.matchId).fetch(new Request(internal)));
-          await indexMatchView(env, view);
           return json(200, view);
         }
 
