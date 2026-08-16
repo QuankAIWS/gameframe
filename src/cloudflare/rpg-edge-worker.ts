@@ -24,8 +24,8 @@ import {
   readPublicPlayerProfile,
   recordCascadeProgression,
   submitScoredResult,
+  touchPlayerDirectory,
   updatePlayerPreferences,
-  upsertPlayerDirectory,
 } from "./player-platform-coordinator.ts";
 import {
   isPublicRpgAdminRoute,
@@ -136,7 +136,7 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
 
         if (request.method === "GET" && url.pathname === "/api/session") {
           const principal = await authenticatorFor(env).authenticate(request);
-          await upsertPlayerDirectory(env, principal);
+          await touchPlayerDirectory(env, principal);
           return json(200, {
             authenticated: true,
             playerId: principal.playerId,
@@ -149,14 +149,12 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
 
         if (request.method === "GET" && url.pathname === "/api/me/progression") {
           const principal = await authenticatorFor(env).authenticate(request);
-          await upsertPlayerDirectory(env, principal);
           return json(200, await readPlayerProgression(env, principal.playerId));
         }
 
         const viewedPlayerId = request.method === "GET" ? publicPlayerProfileRoute(url.pathname) : null;
         if (viewedPlayerId) {
-          const principal = await authenticatorFor(env).authenticate(request);
-          await upsertPlayerDirectory(env, principal);
+          await authenticatorFor(env).authenticate(request);
           const [publicProfile, viewedFeed] = await Promise.all([
             readPublicPlayerProfile(env, viewedPlayerId),
             readPlayerFeed(env, viewedPlayerId),
@@ -169,21 +167,18 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
 
         if (request.method === "POST" && url.pathname === "/api/me/preferences") {
           const principal = await authenticatorFor(env).authenticate(request);
-          await upsertPlayerDirectory(env, principal);
           const body = await readJson(request);
           return json(200, await updatePlayerPreferences(env, principal.playerId, body));
         }
 
         if (request.method === "POST" && url.pathname === "/api/me/cascade/progression") {
           const principal = await authenticatorFor(env).authenticate(request);
-          await upsertPlayerDirectory(env, principal);
           const body = await readJson(request);
           return json(200, await recordCascadeProgression(env, principal.playerId, body));
         }
 
         if (request.method === "POST" && url.pathname === "/api/me/cascade/telemetry") {
           const principal = await authenticatorFor(env).authenticate(request);
-          await upsertPlayerDirectory(env, principal);
           const body = await readJson(request);
           return json(200, await recordCascadeTelemetry(env, principal.playerId, body));
         }
@@ -191,20 +186,17 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
         if (request.method === "GET" && url.pathname === "/api/admin/cascade/telemetry/export") {
           const principal = await authenticatorFor(env).authenticate(request);
           const admin = requireStagingAdminPrincipal(env, principal);
-          await upsertPlayerDirectory(env, admin);
           return json(200, await exportCascadeTelemetry(env, admin));
         }
 
         if (request.method === "POST" && url.pathname === "/api/scores") {
           const principal = await authenticatorFor(env).authenticate(request);
-          await upsertPlayerDirectory(env, principal);
           const body = await readJson(request);
           return json(200, await submitScoredResult(env, principal.playerId, body));
         }
 
         if (request.method === "GET" && url.pathname === "/api/leaderboard") {
-          const principal = await authenticatorFor(env).authenticate(request);
-          await upsertPlayerDirectory(env, principal);
+          await authenticatorFor(env).authenticate(request);
           return json(200, await readLeaderboard(env));
         }
 

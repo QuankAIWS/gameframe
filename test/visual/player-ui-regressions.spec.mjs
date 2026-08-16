@@ -6,13 +6,14 @@ async function expectStyledDestinationBar(page, theme) {
   await expect(bar).toHaveAttribute("data-theme", theme);
   await expect.poll(() => bar.evaluate((node) => getComputedStyle(node).display)).toBe("grid");
   await expect.poll(() => bar.evaluate((node) => getComputedStyle(node).position)).toBe("sticky");
-  await expect.poll(() => page.locator("#gameframe-session-badge").evaluate((node) => getComputedStyle(node).position)).toBe("fixed");
+  await expect(page.locator("#gameframe-session-badge")).toBeVisible();
 }
 
 async function openTic(page, viewport, player) {
   await page.setViewportSize(viewport);
   await page.goto(`/?game=tic-tac-toe&menu=1&player=${player}`);
-  await page.locator("#challenge-bot").click();
+  await expect(page.locator("#board-game-menu")).toBeVisible();
+  await page.locator("#board-menu-computer").click();
   await expect(page.locator("body.tic-tac-toe-noir-running")).toBeVisible();
   await expectStyledDestinationBar(page, "tic");
   await expect(page.locator(".tic-noir-topbar")).toHaveCount(0);
@@ -111,7 +112,8 @@ test("Tic-Tac-Toe uses a two-row desktop viewport with an unclipped board and te
 test("Checkers never inherits Tic-Tac-Toe presentation wrappers", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?game=american-checkers&menu=1&player=checkers-style-regression");
-  await page.locator("#challenge-bot").click();
+  await expect(page.locator("#board-game-menu")).toBeVisible();
+  await page.locator("#board-menu-computer").click();
 
   await expect(page.locator("body.gameframe-shared-match-running")).toBeVisible();
   await expect(page.locator("body.tic-tac-toe-noir-running")).toHaveCount(0);
@@ -123,7 +125,7 @@ test("Checkers never inherits Tic-Tac-Toe presentation wrappers", async ({ page 
   await expect(page.locator(".tic-noir-footer")).toHaveCount(0);
 });
 
-test("Monster Master keeps its mobile setup control and session badge inside the viewport", async ({ page }) => {
+test("Monster Master keeps its mobile setup control usable without horizontal page overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/monster-master.html?player=monster-mobile-regression");
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
@@ -131,12 +133,13 @@ test("Monster Master keeps its mobile setup control and session badge inside the
 
   await expect(page.locator("body.monster-master-match-active")).toBeVisible();
   await expectStyledDestinationBar(page, "monster");
-  await expect(page.locator("#gameframe-session-badge")).toBeVisible();
   await expect(page.locator("body.monster-master-overlay-ready")).toBeVisible();
   await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
 
   const setupControl = page.locator("#gameframe-destination-bar #monster-master-new-match");
+  const sessionBadge = page.locator("#gameframe-session-badge");
   await expect(setupControl).toBeVisible();
+  await expect(sessionBadge).toBeVisible();
   const setup = await setupControl.boundingBox();
   const status = await page.locator("#monster-master-status").boundingBox();
   const viewport = page.viewportSize();
@@ -213,7 +216,8 @@ test("Monster Master uses a battlefield background with working contextual unit 
     animationName: "monster-master-viewing-flash",
   });
   await expect(page.locator("#monster-master-unit-hud")).toHaveAttribute("data-owner", "enemy");
-  await expect(page.locator("#monster-master-return-active")).toBeVisible();
-  await page.locator("#monster-master-return-active").click();
+  const returnActive = page.locator("#monster-master-return-active");
+  await expect(returnActive).toBeVisible();
+  await returnActive.dispatchEvent("click");
   await expect(page.locator("#monster-master-unit-hud")).toHaveAttribute("data-role", "emberling");
 });

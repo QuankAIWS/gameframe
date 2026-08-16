@@ -38,6 +38,7 @@ const recentMatchStorageKey = "scribbles-gameframe.recent-match";
 const gameFrameBotPlayerId = "gameframe-bot";
 const ticTacToeGameId = "tic-tac-toe";
 const checkersGameId = "american-checkers";
+const httpPollingIntervalMs = 15_000;
 
 const games = {
   [ticTacToeGameId]: {
@@ -565,10 +566,24 @@ async function refreshCurrent({ quiet = false } = {}) {
 function startHttpPolling(matchId) {
   if (pollTimer || !current || current.matchId !== matchId) return;
   pollTimer = setInterval(() => {
-    if (!requestPending && current?.observation.status.lifecycle === "active") {
+    if (
+      document.visibilityState === "visible"
+      && !requestPending
+      && current?.observation.status.lifecycle === "active"
+    ) {
       void refreshCurrent({ quiet: true });
     }
-  }, 900);
+  }, httpPollingIntervalMs);
+}
+
+function refreshHttpFallbackNow() {
+  if (
+    realtimeEnabled
+    || document.visibilityState !== "visible"
+    || requestPending
+    || current?.observation.status.lifecycle !== "active"
+  ) return;
+  void refreshCurrent({ quiet: true });
 }
 
 function startProjection(matchId) {
@@ -714,6 +729,8 @@ challengeBot.addEventListener("click", () => createMatch(gameFrameBotPlayerId));
 createHumanMatch.addEventListener("click", () => createMatch(`guest-${crypto.randomUUID()}`));
 newMatch.addEventListener("click", leaveMatch);
 copyInvite.addEventListener("click", copyInviteLink);
+window.addEventListener("focus", refreshHttpFallbackNow);
+document.addEventListener("visibilitychange", refreshHttpFallbackNow);
 window.addEventListener("beforeunload", stopProjection);
 
 updateGamePresentation();

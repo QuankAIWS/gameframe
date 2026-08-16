@@ -83,7 +83,7 @@ export async function readPublicPlayerProfile(env: GameFrameWorkerEnv, playerId:
   }>(await directoryStub(env).fetch(new Request(url)));
 }
 
-export async function upsertPlayerDirectory(
+export async function touchPlayerDirectory(
   env: GameFrameWorkerEnv,
   principal: AuthenticatedPrincipal,
 ): Promise<void> {
@@ -99,11 +99,23 @@ export async function upsertPlayerDirectory(
         lastSeenAt: Date.now(),
       }),
     })));
-    await publishPlayerProgression(env, await readPlayerProgression(env, principal.playerId));
   } catch {
-    // Directory presence and public progression are reconstructable read models.
-    // Authentication must not fail because either read model is unavailable.
+    // Directory presence is a reconstructable read model. Authentication and
+    // authoritative game commands must not fail because presence indexing is unavailable.
   }
+}
+
+export function openPlayerEventStream(
+  env: GameFrameWorkerEnv,
+  playerId: string,
+  request: Request,
+): Promise<Response> {
+  const internal = new URL("https://player.internal/player/events");
+  internal.searchParams.set("playerId", playerId);
+  return playerStub(env, playerId).fetch(new Request(internal, {
+    method: "GET",
+    headers: request.headers,
+  }));
 }
 
 export async function listKnownPlayers(env: GameFrameWorkerEnv, viewerPlayerId: string) {

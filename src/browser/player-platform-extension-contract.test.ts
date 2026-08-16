@@ -15,8 +15,13 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   const cascadeSync = await read("public/cascade-progression-sync.js");
   const cascadeTelemetry = await read("public/cascade-telemetry-sync.js");
   const alerts = await read("public/gameframe-alerts.js");
+  const legacyMatchApp = await read("public/app.js");
+  const othelloMenu = await read("public/othello-game-menu.js");
   const edgeWorker = await read("src/cloudflare/rpg-edge-worker.ts");
+  const workerRouter = await read("src/cloudflare/worker-router.ts");
   const playerCoordinator = await read("src/cloudflare/player-platform-coordinator.ts");
+  const playerEvents = await read("src/cloudflare/player-event-socket-hub.ts");
+  const playerThemeRuntime = await read("src/cloudflare/player-platform-theme-runtime.ts");
   const playerRuntime = await read("src/cloudflare/player-platform-object-runtime.ts");
   const localPlatform = await read("src/server/in-memory-player-platform.ts");
   const nodeServer = await read("src/server/http-server.ts");
@@ -79,8 +84,30 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   assert.doesNotMatch(cascadeSync, /SYNC_INTERVAL_MS = 750/);
 
   assert.match(alerts, /const refreshIntervalMs = 60_000/);
-  assert.match(alerts, /document\.visibilityState === "visible"/);
+  assert.match(alerts, /\/api\/me\/events/);
+  assert.match(alerts, /new window\.WebSocket\(playerEventUrl\(\)\)/);
+  assert.match(alerts, /message\?\.type !== "player_event"/);
+  assert.match(alerts, /message\.topics\.includes\("invitations"\)/);
+  assert.match(alerts, /gameframe:player-events-ready/);
+  assert.match(alerts, /gameframe:player-events-disconnected/);
+  assert.match(alerts, /gameframe:player-event/);
+  assert.match(alerts, /playerEventsConnected: \(\) => eventStreamConnected && eventSocketOpen\(\)/);
+  assert.match(alerts, /document\.visibilityState === "visible" && !eventSocketOpen\(\)/);
   assert.doesNotMatch(alerts, /const refreshIntervalMs = 5000/);
+
+  assert.match(legacyMatchApp, /const httpPollingIntervalMs = 15_000/);
+  assert.match(legacyMatchApp, /document\.visibilityState === "visible"[\s\S]*?refreshCurrent\(\{ quiet: true \}\)/);
+  assert.match(legacyMatchApp, /window\.addEventListener\("focus", refreshHttpFallbackNow\)/);
+  assert.doesNotMatch(legacyMatchApp, /}, 900\);/);
+
+  assert.match(othelloMenu, /const remoteRefreshFallbackMs = 60_000/);
+  assert.match(othelloMenu, /gameframe:player-events-ready/);
+  assert.match(othelloMenu, /gameframe:player-events-disconnected/);
+  assert.match(othelloMenu, /topics\.includes\("matches"\)/);
+  assert.match(othelloMenu, /\|\| playerEventsConnected/);
+  assert.match(othelloMenu, /document\.visibilityState !== "visible"/);
+  assert.doesNotMatch(othelloMenu, /}, 12000\);/);
+
   assert.match(cascadeTelemetry, /HEARTBEAT_INTERVAL_MS = 5 \* 60 \* 1_000/);
   assert.match(cascadeTelemetry, /document\.hidden \|\| Date\.now\(\) - lastInputAt > IDLE_AFTER_MS/);
   assert.doesNotMatch(cascadeTelemetry, /HEARTBEAT_INTERVAL_MS = 30_000/);
@@ -92,6 +119,16 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
     assert.match(runtime, /publicPlayerProfileRoute/);
     assert.match(runtime, /\/api\/leaderboard/);
   }
+  assert.match(workerRouter, /\/api\/me\/events/);
+  assert.match(workerRouter, /openPlayerEventStream/);
+  assert.match(workerRouter, /touchPlayerDirectory/);
+  assert.match(
+    workerRouter,
+    /route && request\.method === "GET" && route\.operation === "view"[\s\S]*?const view = await internalMatchView[\s\S]*?return json\(200, view\);[\s\S]*?route && request\.method === "POST"/,
+  );
+
+  assert.match(playerCoordinator, /touchPlayerDirectory/);
+  assert.match(playerCoordinator, /openPlayerEventStream/);
   assert.match(playerCoordinator, /updatePlayerPreferences/);
   assert.match(playerCoordinator, /readPlayerProgression/);
   assert.match(playerCoordinator, /readPublicPlayerProfile/);
@@ -99,6 +136,17 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   assert.match(playerCoordinator, /readLeaderboard/);
   assert.match(playerCoordinator, /summary\.status\.lifecycle === "completed"/);
   assert.match(playerCoordinator, /Promise\.allSettled/);
+  assert.doesNotMatch(playerCoordinator, /publishPlayerProgression\(env, await readPlayerProgression/);
+
+  assert.match(playerEvents, /acceptWebSocket/);
+  assert.match(playerEvents, /player_events_ready/);
+  assert.match(playerEvents, /type: "player_event"/);
+  assert.match(playerEvents, /"invitations" \| "matches" \| "progression" \| "preferences"/);
+  assert.match(playerThemeRuntime, /onUpdated/);
+  assert.match(playerThemeRuntime, /pathname === "\/player\/match"/);
+  assert.match(playerThemeRuntime, /pathname === "\/player\/invitation"/);
+  assert.match(playerThemeRuntime, /pathname\.startsWith\("\/player\/progression\/"\)/);
+
   assert.match(playerRuntime, /gameframe:player-progression:v1/);
   assert.match(playerRuntime, /match:\$\{summary\.matchId\}/);
   assert.match(localPlatform, /#processedMatches/);
@@ -108,6 +156,7 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   assert.match(progression, /Math\.pow\(normalized - 1, 1\.65\)/);
 
   assert.match(packageJson.scripts["check:browser"], /public\/leaderboard-app\.js/);
+  assert.match(packageJson.scripts["check:browser"], /public\/gameframe-alerts\.js/);
 });
 
 test("trusted family devices preserve human authorization and PWA auth/cache boundaries", async () => {
@@ -138,6 +187,8 @@ test("trusted family devices preserve human authorization and PWA auth/cache bou
   assert.match(familyRuntime, /secretHash/);
   assert.match(worker, /familyAuthEdgeRoute/);
   assert.match(worker, /FamilyAuthObjectRuntime/);
+  assert.match(worker, /PlayerEventSocketHub/);
+  assert.match(worker, /\/player\/events/);
 
   for (const name of [
     "GAMEFRAME_FAMILY_ACCOUNTS",
