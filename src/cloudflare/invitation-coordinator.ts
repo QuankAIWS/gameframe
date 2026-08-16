@@ -140,6 +140,9 @@ export class InvitationCoordinator {
         },
       )),
     );
+    // Claim is the explicit recovery boundary. The invitation object makes a
+    // same-claimant retry idempotent, so a retry can safely repair a partial
+    // failure between committing the claim and initializing its match.
     await this.#ensureMatch(claim.invitation);
     return {
       invitation: claim.invitation,
@@ -158,7 +161,6 @@ export class InvitationCoordinator {
       await invitationStub(this.#env, invitationId).fetch(new Request(url)),
     );
     if (invitation.status === "claimed" && invitation.matchId) {
-      await this.#ensureMatch(invitation);
       return {
         invitation,
         resumePath: resumePathForGame(invitation.gameId, invitation.matchId),
