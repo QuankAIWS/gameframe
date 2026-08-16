@@ -3,6 +3,7 @@ import { json } from "./http-utils.ts";
 import { InvitationObjectRuntime } from "./invitation-object-runtime.ts";
 import { GameFrameMatchObjectRuntime } from "./match-object-runtime.ts";
 import { MatchSocketHub } from "./match-socket-hub.ts";
+import { PlayerEventSocketHub } from "./player-event-socket-hub.ts";
 import { PlayerPlatformThemeRuntime } from "./player-platform-theme-runtime.ts";
 import { CascadeTelemetryObjectRuntime } from "./cascade-telemetry-object-runtime.ts";
 import { FamilyAuthObjectRuntime } from "./family-auth-object-runtime.ts";
@@ -18,6 +19,7 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
   readonly #runtime: GameFrameMatchObjectRuntime;
   readonly #invitations: InvitationObjectRuntime;
   readonly #players: PlayerPlatformThemeRuntime;
+  readonly #playerEvents: PlayerEventSocketHub;
   readonly #telemetry: CascadeTelemetryObjectRuntime;
   readonly #familyAuth: FamilyAuthObjectRuntime;
   readonly #sockets: MatchSocketHub;
@@ -28,7 +30,10 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
       onMatchUpdated: async (matchId) => this.#sockets.broadcast(matchId),
     });
     this.#invitations = new InvitationObjectRuntime(ctx.storage);
-    this.#players = new PlayerPlatformThemeRuntime(ctx.storage);
+    this.#playerEvents = new PlayerEventSocketHub(ctx);
+    this.#players = new PlayerPlatformThemeRuntime(ctx.storage, {
+      onUpdated: (topics) => this.#playerEvents.broadcast(topics),
+    });
     this.#telemetry = new CascadeTelemetryObjectRuntime(ctx.storage);
     this.#familyAuth = new FamilyAuthObjectRuntime(ctx.storage);
     this.#sockets = new MatchSocketHub(ctx, (matchId, playerId) => (
@@ -39,6 +44,18 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/invitation/")) return this.#invitations.fetch(request);
+    if (request.method === "GET" && url.pathname === "/player/events") {
+      if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
+        return json(426, { error: "upgrade_required", message: "This endpoint requires a WebSocket upgrade." });
+      }
+      const playerId = String(url.searchParams.get("playerId") ?? "").trim();
+      if (!playerId) {
+        return json(400, { error: "player_platform_invalid", message: "A player ID is required for player events." });
+      }
+      const pair = new WebSocketPair();
+      this.#playerEvents.attach(pair[1], playerId);
+      return new Response(null, { status: 101, webSocket: pair[0] });
+    }
     if (url.pathname.startsWith("/directory/") || url.pathname.startsWith("/player/")) return this.#players.fetch(request);
     if (url.pathname.startsWith("/telemetry/")) return this.#telemetry.fetch(request);
     if (url.pathname.startsWith("/family/")) return this.#familyAuth.fetch(request);
@@ -55,7 +72,11 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
     return this.#runtime.fetch(request);
   }
 
-  webSocketMessage(socket: WebSocket, message: string | ArrayBuffer): Promise<void> {
+  webSocketMessage(socket: WebSocket, message: string | ArrayBuffer): Promise<void> | void {
+    if (this.#playerEvents.owns(socket)) {
+      this.#playerEvents.handleMessage(socket, message);
+      return;
+    }
     return this.#sockets.handleMessage(socket, message);
   }
 
