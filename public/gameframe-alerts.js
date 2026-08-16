@@ -1,10 +1,12 @@
 import "./gameframe-alert-styles.js";
 import { gameFrameFetch, gameFrameOptionalFetch } from "./gameframe-auth.js";
 
-// Player alerts are a fallback read path until the player event WebSocket lands.
-// Keep idle traffic bounded: explicit panel opens/focus/visibility refresh promptly,
-// while the periodic safety net runs at most once per minute on a visible page.
+// The hibernating player event socket is the normal notification path. This
+// interval is only a disconnected safety net, so a healthy idle page performs
+// no periodic feed reads.
 const refreshIntervalMs = 60_000;
+const reconnectInitialMs = 1_000;
+const reconnectMaximumMs = 60_000;
 
 function gameName(gameId) {
   if (gameId === "othello") return "Othello";
@@ -68,6 +70,79 @@ function installGameFrameAlerts(identity) {
   let invitations = [];
   let refreshInFlight = null;
   let mutationInFlight = false;
+  let eventSocket = null;
+  let reconnectTimer = null;
+  let reconnectDelayMs = reconnectInitialMs;
+
+  function eventSocketOpen() {
+    return Boolean(eventSocket && eventSocket.readyState === WebSocket.OPEN);
+  }
+
+  function clearReconnectTimer() {
+    if (reconnectTimer !== null) window.clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+
+  function scheduleReconnect() {
+    clearReconnectTimer();
+    if (document.visibilityState !== "visible" || eventSocketOpen()) return;
+    reconnectTimer = window.setTimeout(() => {
+      reconnectTimer = null;
+      connectPlayerEvents();
+    }, reconnectDelayMs);
+    reconnectDelayMs = Math.min(reconnectMaximumMs, reconnectDelayMs * 2);
+  }
+
+  function playerEventUrl() {
+    const url = new URL("/api/me/events", window.location.href);
+    url.protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return url.toString();
+  }
+
+  function connectPlayerEvents() {
+    if (!("WebSocket" in window) || document.visibilityState !== "visible") return;
+    if (eventSocket && [WebSocket.CONNECTING, WebSocket.OPEN].includes(eventSocket.readyState)) return;
+
+    clearReconnectTimer();
+    const socket = new WebSocket(playerEventUrl());
+    eventSocket = socket;
+
+    socket.addEventListener("open", () => {
+      if (eventSocket !== socket) return;
+      reconnectDelayMs = reconnectInitialMs;
+    });
+
+    socket.addEventListener("message", (event) => {
+      if (eventSocket !== socket) return;
+      let message;
+      try {
+        message = JSON.parse(String(event.data));
+      } catch {
+        return;
+      }
+      if (message?.type === "player_events_ready") {
+        void refresh();
+        return;
+      }
+      if (
+        message?.type === "player_event"
+        && Array.isArray(message.topics)
+        && message.topics.includes("feed")
+      ) {
+        void refresh();
+      }
+    });
+
+    socket.addEventListener("close", () => {
+      if (eventSocket === socket) eventSocket = null;
+      scheduleReconnect();
+    });
+
+    socket.addEventListener("error", () => {
+      // close drives bounded reconnect. The one-minute HTTP fallback remains
+      // available while the socket transport is unavailable.
+    });
+  }
 
   function setOpen(open) {
     panel.hidden = !open;
@@ -216,18 +291,27 @@ function installGameFrameAlerts(identity) {
       trigger.focus();
     }
   });
-  window.addEventListener("focus", () => void refresh());
-  window.addEventListener("pageshow", () => void refresh());
+  window.addEventListener("focus", () => {
+    connectPlayerEvents();
+    void refresh();
+  });
+  window.addEventListener("pageshow", () => {
+    connectPlayerEvents();
+    void refresh();
+  });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") void refresh();
+    if (document.visibilityState !== "visible") return;
+    connectPlayerEvents();
+    void refresh();
   });
 
   window.setInterval(() => {
-    if (document.visibilityState === "visible") void refresh();
+    if (document.visibilityState === "visible" && !eventSocketOpen()) void refresh();
   }, refreshIntervalMs);
 
   window.gameFrameAlerts = Object.freeze({ refresh, open: () => setOpen(true) });
   render();
+  connectPlayerEvents();
   void refresh();
 }
 
