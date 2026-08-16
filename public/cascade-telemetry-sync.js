@@ -4,7 +4,7 @@ const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
 const CURSOR_KEY = "scribbles-gameframe.cascade-telemetry-cursor:v1";
 const SESSION_KEY = "scribbles-gameframe.cascade-play-session:v1";
 const FLUSH_INTERVAL_MS = 2_000;
-const HEARTBEAT_INTERVAL_MS = 30_000;
+const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1_000;
 const ACTIVE_TICK_MS = 1_000;
 const IDLE_AFTER_MS = 2 * 60 * 1000;
 const NEW_BLOCK_AFTER_MS = 30 * 60 * 1000;
@@ -266,9 +266,13 @@ async function start() {
   window.setInterval(tickActiveTime, ACTIVE_TICK_MS);
   window.setInterval(() => void flushRawEvents(), FLUSH_INTERVAL_MS);
   window.setInterval(() => {
+    // A hidden or idle tab is not active play. Visibility transitions and
+    // pagehide already checkpoint those boundaries, so background heartbeats
+    // would add quota load without adding useful telemetry.
+    if (document.hidden || Date.now() - lastInputAt > IDLE_AFTER_MS) return;
     void sendSessionEvent("telemetry_session_heartbeat", {
-      visible: !document.hidden,
-      idle: Date.now() - lastInputAt > IDLE_AFTER_MS,
+      visible: true,
+      idle: false,
     });
   }, HEARTBEAT_INTERVAL_MS);
 

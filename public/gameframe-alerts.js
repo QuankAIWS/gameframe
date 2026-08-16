@@ -1,7 +1,10 @@
 import "./gameframe-alert-styles.js";
 import { gameFrameFetch, gameFrameOptionalFetch } from "./gameframe-auth.js";
 
-const refreshIntervalMs = 5000;
+// Player alerts are a fallback read path until the player event WebSocket lands.
+// Keep idle traffic bounded: explicit panel opens/focus/visibility refresh promptly,
+// while the periodic safety net runs at most once per minute on a visible page.
+const refreshIntervalMs = 60_000;
 
 function gameName(gameId) {
   if (gameId === "othello") return "Othello";
