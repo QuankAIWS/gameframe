@@ -70,6 +70,10 @@ test("GameFrame exposes Leaderboard, Gamer Level, public profiles, and server-ba
   assert.match(cascadeSync, /starsByLevel\[level\] = Math\.max/);
   assert.match(cascadeSync, /LOCAL_CHANGE_INTERVAL_MS = 1_000/);
   assert.match(cascadeSync, /SERVER_RECONCILE_INTERVAL_MS = 5 \* 60 \* 1_000/);
+  assert.match(cascadeSync, /BASE_RETRY_MS = 15_000/);
+  assert.match(cascadeSync, /MAX_RETRY_MS = 5 \* 60 \* 1_000/);
+  assert.match(cascadeSync, /networkRetryMs \* 2/);
+  assert.match(cascadeSync, /Date\.now\(\) >= nextNetworkAttemptAt/);
   assert.match(cascadeSync, /body\?\.cascade \?\? body\?\.progression\?\.cascade/);
   assert.match(cascadeSync, /JSON\.stringify\(current\) === lastSubmitted/);
   assert.doesNotMatch(cascadeSync, /SYNC_INTERVAL_MS = 750/);
