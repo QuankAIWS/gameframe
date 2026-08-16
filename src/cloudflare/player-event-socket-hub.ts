@@ -3,7 +3,7 @@ import type {
   HibernationWebSocketLike,
 } from "./runtime-contracts.ts";
 
-export type PlayerEventTopic = "feed" | "progression" | "preferences";
+export type PlayerEventTopic = "invitations" | "matches" | "progression" | "preferences";
 
 interface PlayerEventSocketAttachment {
   channel: "player-events";
@@ -61,7 +61,10 @@ function sendJson(socket: HibernationWebSocketLike, value: unknown): boolean {
 
 function normalizedTopics(topics: readonly PlayerEventTopic[]): PlayerEventTopic[] {
   return [...new Set(topics)].filter((topic): topic is PlayerEventTopic => (
-    topic === "feed" || topic === "progression" || topic === "preferences"
+    topic === "invitations"
+    || topic === "matches"
+    || topic === "progression"
+    || topic === "preferences"
   ));
 }
 
