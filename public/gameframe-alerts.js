@@ -75,7 +75,11 @@ function installGameFrameAlerts(identity) {
   let reconnectDelayMs = reconnectInitialMs;
 
   function eventSocketOpen() {
-    return Boolean(eventSocket && eventSocket.readyState === WebSocket.OPEN);
+    return Boolean(
+      eventSocket
+      && window.WebSocket
+      && eventSocket.readyState === window.WebSocket.OPEN
+    );
   }
 
   function clearReconnectTimer() {
@@ -100,11 +104,14 @@ function installGameFrameAlerts(identity) {
   }
 
   function connectPlayerEvents() {
-    if (!("WebSocket" in window) || document.visibilityState !== "visible") return;
-    if (eventSocket && [WebSocket.CONNECTING, WebSocket.OPEN].includes(eventSocket.readyState)) return;
+    if (!window.WebSocket || document.visibilityState !== "visible") return;
+    if (
+      eventSocket
+      && [window.WebSocket.CONNECTING, window.WebSocket.OPEN].includes(eventSocket.readyState)
+    ) return;
 
     clearReconnectTimer();
-    const socket = new WebSocket(playerEventUrl());
+    const socket = new window.WebSocket(playerEventUrl());
     eventSocket = socket;
 
     socket.addEventListener("open", () => {
@@ -127,7 +134,7 @@ function installGameFrameAlerts(identity) {
       if (
         message?.type === "player_event"
         && Array.isArray(message.topics)
-        && message.topics.includes("feed")
+        && message.topics.includes("invitations")
       ) {
         void refresh();
       }
