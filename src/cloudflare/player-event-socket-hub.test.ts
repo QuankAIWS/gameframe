@@ -52,10 +52,10 @@ test("player event sockets attach once and receive compact invalidations", () =>
   assert.equal(hub.owns(socket), true);
   assert.deepEqual(socket.sent, [{ type: "player_events_ready", playerId: "discord:123" }]);
 
-  hub.broadcast(["feed", "feed", "progression"]);
+  hub.broadcast(["invitations", "invitations", "progression"]);
   assert.deepEqual(socket.sent.at(-1), {
     type: "player_event",
-    topics: ["feed", "progression"],
+    topics: ["invitations", "progression"],
   });
 });
 
