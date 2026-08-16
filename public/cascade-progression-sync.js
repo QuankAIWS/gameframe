@@ -5,13 +5,17 @@ const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
 const OWNER_KEY = "scribbles-gameframe.cascade-progression-owner:v1";
 const CANDIDATE_KEY = "scribbles-gameframe.cascade-progression-candidate:v1";
+const VISIT_KEY = "scribbles-gameframe.cascade-progression-visit:v1";
 const RELOAD_KEY = "scribbles-gameframe.cascade-progression-reload:v1";
-const SYNC_INTERVAL_MS = 750;
+const LOCAL_CHANGE_INTERVAL_MS = 1_000;
+const SERVER_RECONCILE_INTERVAL_MS = 5 * 60 * 1_000;
+const MIN_EVENT_RECONCILE_GAP_MS = 60_000;
 const storage = window.localStorage;
 const query = new URLSearchParams(window.location.search);
 let lastSubmitted = "";
 let syncPending = false;
 let identity = null;
+let lastServerReconcileAt = 0;
 
 function readJson(key) {
   try {
@@ -20,6 +24,35 @@ function readJson(key) {
   } catch {
     return null;
   }
+}
+
+function visitId() {
+  const existing = window.sessionStorage.getItem(VISIT_KEY)?.trim();
+  if (existing) return existing;
+  const created = crypto.randomUUID();
+  window.sessionStorage.setItem(VISIT_KEY, created);
+  return created;
+}
+
+const currentVisitId = visitId();
+
+function readCandidate() {
+  const candidate = readJson(CANDIDATE_KEY);
+  if (
+    !candidate
+    || typeof candidate.playerId !== "string"
+    || !candidate.playerId.trim()
+    || typeof candidate.visitId !== "string"
+    || !candidate.visitId.trim()
+  ) return null;
+  return {
+    playerId: candidate.playerId.trim(),
+    visitId: candidate.visitId.trim(),
+  };
+}
+
+function writeCandidate(playerId) {
+  storage.setItem(CANDIDATE_KEY, JSON.stringify({ playerId, visitId: currentVisitId }));
 }
 
 function normalizedLevel(value, fallback = 1) {
@@ -39,6 +72,18 @@ function normalizedStars(value) {
     if (best) starsByLevel[String(level)] = best;
   }
   return starsByLevel;
+}
+
+function normalizedProgression(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return {
+    highestCompletedLevel: Math.max(0, Math.min(300, Math.floor(Number(value.highestCompletedLevel) || 0))),
+    starsByLevel: normalizedStars(value.starsByLevel),
+  };
+}
+
+function progressionFromResponse(body) {
+  return normalizedProgression(body?.cascade ?? body?.progression?.cascade ?? null);
 }
 
 const initialActiveRunLevel = (() => {
@@ -68,25 +113,34 @@ function resolveOwner(current) {
   const owner = storage.getItem(OWNER_KEY);
   if (owner) {
     storage.removeItem(CANDIDATE_KEY);
-    return owner === identity.playerId ? owner : null;
+    return owner === identity?.playerId ? owner : null;
   }
+
+  if (!identity) return null;
 
   // A blank browser can safely bind immediately. Existing anonymous progress is
   // intentionally a two-visit migration so a one-off login cannot silently claim
-  // another household member's local save.
+  // another household member's local save. The visit marker keeps background
+  // synchronization and same-tab reloads from satisfying the second visit.
   if (!hasProgress(current)) {
     storage.setItem(OWNER_KEY, identity.playerId);
     storage.removeItem(CANDIDATE_KEY);
     return identity.playerId;
   }
 
-  const candidate = storage.getItem(CANDIDATE_KEY);
-  if (candidate === identity.playerId) {
+  const candidate = readCandidate();
+  if (
+    candidate?.playerId === identity.playerId
+    && candidate.visitId !== currentVisitId
+  ) {
     storage.setItem(OWNER_KEY, identity.playerId);
     storage.removeItem(CANDIDATE_KEY);
     return identity.playerId;
   }
-  storage.setItem(CANDIDATE_KEY, identity.playerId);
+
+  // Legacy raw-string candidates and candidates for another identity are both
+  // rewritten for this visit instead of being trusted as proof of a prior visit.
+  writeCandidate(identity.playerId);
   return null;
 }
 
@@ -137,19 +191,27 @@ async function fetchServerProgression() {
   }
   if (!response.ok) return null;
   const body = await response.json().catch(() => null);
-  return body?.progression?.cascade ?? null;
+  return progressionFromResponse(body);
 }
 
 async function submitCanonical(canonical) {
   const serialized = JSON.stringify(canonical);
-  if (serialized === lastSubmitted) return;
+  if (serialized === lastSubmitted) return true;
   const response = await gameFrameOptionalFetch("/api/me/cascade/progression", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: serialized,
   }, identity);
-  if (response.ok) lastSubmitted = serialized;
-  if (response.status === 401) identity = null;
+  if (response.status === 401) {
+    identity = null;
+    return false;
+  }
+  if (!response.ok) return false;
+
+  const body = await response.json().catch(() => null);
+  const server = progressionFromResponse(body);
+  lastSubmitted = JSON.stringify(server ? mergeProgression(canonical, server) : canonical);
+  return true;
 }
 
 function maybeReloadAfterHydration(canonical, stateChanged, preserveLevel) {
@@ -167,18 +229,30 @@ function maybeReloadAfterHydration(canonical, stateChanged, preserveLevel) {
   return true;
 }
 
-async function synchronize() {
-  if (!identity || syncPending || !navigator.onLine) return;
+async function reconcileServer({ force = false } = {}) {
+  if (!identity || syncPending || !navigator.onLine || document.hidden) return;
   const current = snapshot();
   if (resolveOwner(current) !== identity.playerId) return;
+
+  const now = Date.now();
+  if (!force && now - lastServerReconcileAt < MIN_EVENT_RECONCILE_GAP_MS) return;
   syncPending = true;
   try {
     const server = await fetchServerProgression();
     if (!identity || !server) return;
+    lastServerReconcileAt = Date.now();
+
     const canonical = mergeProgression(current, server);
     const preserveLevel = shouldProtectLoadedRun();
     const changes = applyCanonicalToLocal(canonical, { preserveLevel });
     if (maybeReloadAfterHydration(canonical, changes.stateChanged, preserveLevel)) return;
+
+    const canonicalSerialized = JSON.stringify(canonical);
+    const serverSerialized = JSON.stringify(normalizedProgression(server));
+    if (canonicalSerialized === serverSerialized) {
+      lastSubmitted = canonicalSerialized;
+      return;
+    }
     await submitCanonical(canonical);
   } catch {
     // Cascade remains fully playable from its local save while offline or while
@@ -188,18 +262,42 @@ async function synchronize() {
   }
 }
 
-async function establishAndSynchronize() {
-  if (!identity) {
-    identity = await tryGameFrameIdentity({
-      preferredDevelopmentPlayerId: query.get("player"),
-    });
+async function publishLocalChanges() {
+  if (!identity || syncPending || !navigator.onLine || document.hidden) return;
+  const current = snapshot();
+  if (resolveOwner(current) !== identity.playerId) return;
+  if (JSON.stringify(current) === lastSubmitted) return;
+
+  syncPending = true;
+  try {
+    await submitCanonical(current);
+  } catch {
+    // Leave lastSubmitted unchanged so the next local check retries the same
+    // progression after a transient failure instead of losing the update.
+  } finally {
+    syncPending = false;
   }
-  if (identity) await synchronize();
 }
 
-void establishAndSynchronize();
-window.setInterval(() => void synchronize(), SYNC_INTERVAL_MS);
-window.addEventListener("online", () => void establishAndSynchronize());
+async function establishIdentity() {
+  if (identity) return identity;
+  identity = await tryGameFrameIdentity({
+    preferredDevelopmentPlayerId: query.get("player"),
+  });
+  return identity;
+}
+
+async function establishAndSynchronize({ force = false } = {}) {
+  if (!await establishIdentity()) return;
+  await reconcileServer({ force });
+  await publishLocalChanges();
+}
+
+void establishAndSynchronize({ force: true });
+window.setInterval(() => void publishLocalChanges(), LOCAL_CHANGE_INTERVAL_MS);
+window.setInterval(() => void reconcileServer(), SERVER_RECONCILE_INTERVAL_MS);
+window.addEventListener("online", () => void establishAndSynchronize({ force: true }));
+window.addEventListener("focus", () => void establishAndSynchronize());
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) void establishAndSynchronize();
 });
