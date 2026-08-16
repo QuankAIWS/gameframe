@@ -29,7 +29,7 @@ test("committed player writes emit only reconstructable invalidation topics", as
     themeId: "cascade-pop",
   }));
   assert.equal(preferences.status, 200);
-  assert.deepEqual(notifications, [["preferences", "feed"]]);
+  assert.deepEqual(notifications, [["preferences"]]);
 
   const invitation = await runtime.fetch(request("/player/invitation", {
     invitationId: "invite-events",
@@ -45,7 +45,7 @@ test("committed player writes emit only reconstructable invalidation topics", as
     updatedAt: 1000,
   }));
   assert.equal(invitation.status, 200);
-  assert.deepEqual(notifications.at(-1), ["feed"]);
+  assert.deepEqual(notifications.at(-1), ["invitations"]);
 
   const progression = await runtime.fetch(request("/player/progression/cascade", {
     playerId: "discord:1",
