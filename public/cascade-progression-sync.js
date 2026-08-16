@@ -10,12 +10,16 @@ const RELOAD_KEY = "scribbles-gameframe.cascade-progression-reload:v1";
 const LOCAL_CHANGE_INTERVAL_MS = 1_000;
 const SERVER_RECONCILE_INTERVAL_MS = 5 * 60 * 1_000;
 const MIN_EVENT_RECONCILE_GAP_MS = 60_000;
+const BASE_RETRY_MS = 15_000;
+const MAX_RETRY_MS = 5 * 60 * 1_000;
 const storage = window.localStorage;
 const query = new URLSearchParams(window.location.search);
 let lastSubmitted = "";
 let syncPending = false;
 let identity = null;
 let lastServerReconcileAt = 0;
+let networkRetryMs = 0;
+let nextNetworkAttemptAt = 0;
 
 function readJson(key) {
   try {
@@ -24,6 +28,27 @@ function readJson(key) {
   } catch {
     return null;
   }
+}
+
+function networkAttemptAllowed() {
+  return Date.now() >= nextNetworkAttemptAt;
+}
+
+function noteNetworkSuccess() {
+  networkRetryMs = 0;
+  nextNetworkAttemptAt = 0;
+}
+
+function noteNetworkFailure() {
+  networkRetryMs = networkRetryMs
+    ? Math.min(MAX_RETRY_MS, networkRetryMs * 2)
+    : BASE_RETRY_MS;
+  nextNetworkAttemptAt = Date.now() + networkRetryMs;
+}
+
+function resetNetworkBackoff() {
+  networkRetryMs = 0;
+  nextNetworkAttemptAt = 0;
 }
 
 function visitId() {
@@ -184,34 +209,59 @@ function applyCanonicalToLocal(canonical, { preserveLevel = false } = {}) {
 }
 
 async function fetchServerProgression() {
-  const response = await gameFrameOptionalFetch("/api/me/progression", { method: "GET" }, identity);
-  if (response.status === 401) {
-    identity = null;
+  try {
+    const response = await gameFrameOptionalFetch("/api/me/progression", { method: "GET" }, identity);
+    if (response.status === 401) {
+      identity = null;
+      resetNetworkBackoff();
+      return null;
+    }
+    if (!response.ok) {
+      noteNetworkFailure();
+      return null;
+    }
+    const body = await response.json().catch(() => null);
+    const progression = progressionFromResponse(body);
+    if (!progression) {
+      noteNetworkFailure();
+      return null;
+    }
+    noteNetworkSuccess();
+    return progression;
+  } catch {
+    noteNetworkFailure();
     return null;
   }
-  if (!response.ok) return null;
-  const body = await response.json().catch(() => null);
-  return progressionFromResponse(body);
 }
 
 async function submitCanonical(canonical) {
   const serialized = JSON.stringify(canonical);
   if (serialized === lastSubmitted) return true;
-  const response = await gameFrameOptionalFetch("/api/me/cascade/progression", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: serialized,
-  }, identity);
-  if (response.status === 401) {
-    identity = null;
+  try {
+    const response = await gameFrameOptionalFetch("/api/me/cascade/progression", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: serialized,
+    }, identity);
+    if (response.status === 401) {
+      identity = null;
+      resetNetworkBackoff();
+      return false;
+    }
+    if (!response.ok) {
+      noteNetworkFailure();
+      return false;
+    }
+
+    const body = await response.json().catch(() => null);
+    const server = progressionFromResponse(body);
+    lastSubmitted = JSON.stringify(server ? mergeProgression(canonical, server) : canonical);
+    noteNetworkSuccess();
+    return true;
+  } catch {
+    noteNetworkFailure();
     return false;
   }
-  if (!response.ok) return false;
-
-  const body = await response.json().catch(() => null);
-  const server = progressionFromResponse(body);
-  lastSubmitted = JSON.stringify(server ? mergeProgression(canonical, server) : canonical);
-  return true;
 }
 
 function maybeReloadAfterHydration(canonical, stateChanged, preserveLevel) {
@@ -231,6 +281,7 @@ function maybeReloadAfterHydration(canonical, stateChanged, preserveLevel) {
 
 async function reconcileServer({ force = false } = {}) {
   if (!identity || syncPending || !navigator.onLine || document.hidden) return;
+  if (!networkAttemptAllowed()) return;
   const current = snapshot();
   if (resolveOwner(current) !== identity.playerId) return;
 
@@ -254,16 +305,13 @@ async function reconcileServer({ force = false } = {}) {
       return;
     }
     await submitCanonical(canonical);
-  } catch {
-    // Cascade remains fully playable from its local save while offline or while
-    // optional GameFrame progression services are temporarily unavailable.
   } finally {
     syncPending = false;
   }
 }
 
 async function publishLocalChanges() {
-  if (!identity || syncPending || !navigator.onLine || document.hidden) return;
+  if (!identity || syncPending || !navigator.onLine || document.hidden || !networkAttemptAllowed()) return;
   const current = snapshot();
   if (resolveOwner(current) !== identity.playerId) return;
   if (JSON.stringify(current) === lastSubmitted) return;
@@ -271,9 +319,6 @@ async function publishLocalChanges() {
   syncPending = true;
   try {
     await submitCanonical(current);
-  } catch {
-    // Leave lastSubmitted unchanged so the next local check retries the same
-    // progression after a transient failure instead of losing the update.
   } finally {
     syncPending = false;
   }
@@ -296,7 +341,10 @@ async function establishAndSynchronize({ force = false } = {}) {
 void establishAndSynchronize({ force: true });
 window.setInterval(() => void publishLocalChanges(), LOCAL_CHANGE_INTERVAL_MS);
 window.setInterval(() => void reconcileServer(), SERVER_RECONCILE_INTERVAL_MS);
-window.addEventListener("online", () => void establishAndSynchronize({ force: true }));
+window.addEventListener("online", () => {
+  resetNetworkBackoff();
+  void establishAndSynchronize({ force: true });
+});
 window.addEventListener("focus", () => void establishAndSynchronize());
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) void establishAndSynchronize();
