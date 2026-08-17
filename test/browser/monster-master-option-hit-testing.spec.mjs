@@ -30,7 +30,12 @@ async function deploySelectedUnit(page) {
 async function enterCombat(page, player, viewport) {
   await page.setViewportSize(viewport);
   await page.goto(`/monster-master.html?player=${encodeURIComponent(player)}`);
-  await page.locator("#monster-master-bot").click();
+  await expect(page.locator("#monster-master-lobby")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
+  const battleBot = page.locator("#monster-master-bot");
+  await expect(battleBot).toBeVisible();
+  await expect(battleBot).toBeEnabled();
+  await battleBot.click();
   await waitForPixi(page);
   for (let deployment = 1; deployment <= 4; deployment += 1) {
     await deploySelectedUnit(page);
