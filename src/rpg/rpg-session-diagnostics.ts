@@ -138,7 +138,14 @@ export function readRpgSessionDiagnostics(input: {
   const generatedAt = timestamp(input.generatedAt ?? new Date().toISOString(), "generatedAt");
   const database = new DatabaseSync(input.filePath.trim());
   database.exec("PRAGMA busy_timeout = 5000");
+  let transactionOpen = false;
   try {
+    // Keep metadata, counts, events, commands, and Runtime delivery evidence on
+    // one SQLite read snapshot so a concurrent command commit cannot produce a
+    // support bundle assembled from different points in campaign history.
+    database.exec("BEGIN");
+    transactionOpen = true;
+
     const metadata = database.prepare(`
       SELECT campaign_id, title, status, initialized_at, updated_at
       FROM ${METADATA_TABLE}
@@ -256,7 +263,7 @@ export function readRpgSessionDiagnostics(input: {
       },
     });
 
-    return fitPayloadBudget({
+    const diagnostics = fitPayloadBudget({
       base,
       events,
       commands,
@@ -264,6 +271,19 @@ export function readRpgSessionDiagnostics(input: {
       eventCount,
       commandCount,
     });
+    database.exec("COMMIT");
+    transactionOpen = false;
+    return diagnostics;
+  } catch (error) {
+    if (transactionOpen) {
+      try {
+        database.exec("ROLLBACK");
+      } catch {
+        // Preserve the original diagnostics failure.
+      }
+      transactionOpen = false;
+    }
+    throw error;
   } finally {
     database.close();
   }
@@ -579,6 +599,10 @@ function sanitizeValue(value: unknown, key = ""): unknown {
 
 function sanitizeString(value: string): string {
   return value
+    .replace(
+      /\b(Set-Cookie|Cookie)\s*[:=]\s*[^\r\n]*/gi,
+      "$1: [REDACTED]",
+    )
     .replace(
       /\bAuthorization\s*[:=]\s*(Bearer|Basic)\s+[A-Za-z0-9._~+\/-]+=*/gi,
       "Authorization: $1 [REDACTED]",
