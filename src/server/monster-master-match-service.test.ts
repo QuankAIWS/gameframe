@@ -78,7 +78,7 @@ test("Monster Master BattleBot deploys after each human deployment and Arena com
   assert.equal(view.observation.board.units.length, 8);
   assert.equal(view.observation.undeployedUnitIds.length, 0);
   assert.equal(view.observation.activePlayerId, "human");
-  assert.equal(view.observation.activeUnitId, "alpha-emberling");
+  assert.equal(view.observation.activeUnitId, "alpha-stormcrest");
   assert.equal(view.eventCount, 8);
 });
 
@@ -97,7 +97,7 @@ test("Monster Master BattleBot can own the opening deployment seat", async () =>
   assert.equal(created.observation.undeployedUnitIds.length, 7);
 });
 
-test("Monster Master Arena supports same-side initiative ties before bounded BattleBot resolution", async () => {
+test("Monster Master Arena advances initiative ties through bounded BattleBot resolution", async () => {
   const service = createService();
   let view = await service.createMatch(
     ["human", GAMEFRAME_BOT_PLAYER_ID],
@@ -113,29 +113,30 @@ test("Monster Master Arena supports same-side initiative ties before bounded Bat
     });
   }
   assert.equal(view.revision, 8);
-  assert.equal(view.observation.activeUnitId, "alpha-emberling");
+  assert.equal(view.observation.activeUnitId, "alpha-stormcrest");
 
   view = await service.submitAction({
     matchId: view.matchId,
     playerId: "human",
-    actionId: "human-end-emberling",
+    actionId: "human-end-stormcrest",
     expectedRevision: view.revision,
     action: actionOfType(view.observation, "end-activation"),
   });
 
-  assert.equal(view.revision, 9);
+  assert.ok(view.revision > 9);
   assert.equal(view.observation.activePlayerId, "human");
-  assert.equal(view.observation.activeUnitId, "alpha-emberling-2");
+  assert.equal(view.observation.activeUnitId, "alpha-gloamspore");
 
+  const revisionBeforeGloamspore = view.revision;
   view = await service.submitAction({
     matchId: view.matchId,
     playerId: "human",
-    actionId: "human-end-emberling-2",
+    actionId: "human-end-gloamspore",
     expectedRevision: view.revision,
     action: actionOfType(view.observation, "end-activation"),
   });
 
-  assert.ok(view.revision > 10);
+  assert.ok(view.revision > revisionBeforeGloamspore + 1);
   assert.equal(view.observation.activePlayerId, "human");
   assert.equal(view.observation.activeUnitId, "alpha-master");
   assert.deepEqual(await service.replay(view.matchId), (await service.snapshot(view.matchId)).state);
