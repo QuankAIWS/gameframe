@@ -26,11 +26,19 @@ jobs:
       - run: npm ci
       - name: Apply staged corrections
         run: python scripts/monster-master-grounding-review-fix.py
-      - name: Recover and normalize illustrated WebP assets
+      - name: Recover and decode illustrated WebP assets
         run: |
           git fetch origin d8a057bb9efeb25058faa491f82cf59d3b2e42ac 38afc67ac63c6e05a0d8e995eeef66a91026e9f1
-          git show d8a057bb9efeb25058faa491f82cf59d3b2e42ac:public/assets/monster-master/creatures/voidshard-reaver-v1-128.webp > public/assets/monster-master/creatures/voidshard-reaver-v1-128.webp
-          git show 38afc67ac63c6e05a0d8e995eeef66a91026e9f1:public/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp > public/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp
+          for spec in \
+            d8a057bb9efeb25058faa491f82cf59d3b2e42ac:public/assets/monster-master/creatures/voidshard-reaver-v1-128.webp \
+            38afc67ac63c6e05a0d8e995eeef66a91026e9f1:public/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp
+          do
+            commit="${spec%%:*}"
+            path="${spec#*:}"
+            git show "$commit:$path" > "$path.b64"
+            base64 --decode "$path.b64" > "$path"
+            rm "$path.b64"
+          done
           node --input-type=module <<'NODE'
           import fs from 'node:fs/promises';
           import sharp from 'sharp';
@@ -38,13 +46,14 @@ jobs:
             'public/assets/monster-master/creatures/voidshard-reaver-v1-128.webp',
             'public/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp',
           ]) {
-            const image = sharp(path, { failOn: 'error' });
-            const before = await image.metadata();
-            if (before.format !== 'webp' || !before.width || !before.height) throw new Error(`Invalid source asset: ${path}`);
-            const normalized = await image.webp({ lossless: true, effort: 6 }).toBuffer();
-            await fs.writeFile(path, normalized);
-            const after = await sharp(normalized).metadata();
-            if (after.format !== 'webp' || !after.width || !after.height) throw new Error(`Invalid normalized asset: ${path}`);
+            const bytes = await fs.readFile(path);
+            if (bytes.subarray(0, 4).toString('ascii') !== 'RIFF' || bytes.subarray(8, 12).toString('ascii') !== 'WEBP') {
+              throw new Error(`Decoded file is not WebP: ${path}`);
+            }
+            const meta = await sharp(bytes, { failOn: 'error' }).metadata();
+            if (meta.format !== 'webp' || meta.width !== 128 || meta.height !== 192 || !meta.hasAlpha) {
+              throw new Error(`Unexpected decoded metadata for ${path}: ${JSON.stringify(meta)}`);
+            }
           }
           NODE
       - name: Focused static proof
