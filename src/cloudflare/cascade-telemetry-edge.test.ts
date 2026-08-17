@@ -92,7 +92,7 @@ test("authenticated players can upload only to their own Cascade telemetry custo
   const exported = await admin.fetch(new Request("https://gameframe.test/api/admin/cascade/telemetry/export"), environment);
   assert.equal(exported.status, 200);
   const value = await exported.json() as any;
-  assert.equal(value.totals.players, 1);
+  assert.equal(value.totals.players, 2);
   const parentRow = value.players.find((player: any) => player.playerId === "discord:2");
   assert.equal(parentRow.displayName, "Mom");
   assert.equal(parentRow.events.length, 1);
