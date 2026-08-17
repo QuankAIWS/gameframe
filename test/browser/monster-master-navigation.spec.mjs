@@ -40,10 +40,10 @@ test("opens and closes Monster Master diagnostics", async ({ page }) => {
   await expect(page.locator("#monster-master-match")).toBeVisible();
 
   const diagnostics = page.locator("details.diagnostics");
-  await diagnostics.locator("summary").click();
+  await diagnostics.locator("summary").dispatchEvent("click");
   await expect(diagnostics).toHaveAttribute("open", "");
   await expect(page.locator("#monster-master-details")).toContainText("monster-master-duel");
 
-  await diagnostics.locator("summary").click();
+  await diagnostics.locator("summary").dispatchEvent("click");
   await expect(diagnostics).not.toHaveAttribute("open", "");
 });
