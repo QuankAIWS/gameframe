@@ -60,3 +60,37 @@ test("admin diagnostics proxy rejects mutation methods before contacting the ori
   assert.equal(response.status, 405);
   assert.equal(response.headers.get("allow"), "GET");
 });
+
+test("admin diagnostics proxy cancels an oversized streaming response without Content-Length", async () => {
+  const originalFetch = globalThis.fetch;
+  let pullCount = 0;
+  let cancelled = false;
+  const chunk = new Uint8Array(1024 * 1024);
+  globalThis.fetch = (async () => new Response(new ReadableStream<Uint8Array>({
+    pull(controller) {
+      pullCount += 1;
+      controller.enqueue(chunk);
+      if (pullCount >= 8) controller.close();
+    },
+    cancel() {
+      cancelled = true;
+    },
+  }), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  })) as typeof fetch;
+  try {
+    const response = await proxyPublicRpgAdminRequest(
+      new Request("https://gameframe.cc/api/rpg/admin/staging-diagnostics"),
+      env,
+      principal,
+    );
+    assert.equal(response.status, 502);
+    assert.equal(cancelled, true);
+    assert.ok(pullCount < 8, `stream was fully consumed (${pullCount} pulls)`);
+    const body = await response.json() as Record<string, unknown>;
+    assert.equal(body.error, "admin_upstream_response_too_large");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
