@@ -1,57 +1,53 @@
-const TRAINER_ASSET = "/assets/monster-master/trainers/master-trainer-v1-128.webp";
-const ROOTMAW_ASSET = "/assets/monster-master/creatures/rootmaw-brute-v1-128.webp";
-const GLOAMSPORE_ASSET = "/assets/monster-master/creatures/gloamspore-stalker-v1-128.svg";
-const ROOTMAW_CONTENT_ID = "rootmaw-brute-v1";
-const GLOAMSPORE_CONTENT_ID = "gloamspore-stalker-v1";
 const LAYER_ID = "monster-master-trainer-asset-layer";
 const STYLE_ID = "monster-master-trainer-asset-style";
+const BASE_BATTLEFIELD_HEIGHT = 96;
+const TRAINER_ASSET = "/assets/monster-master/trainers/master-trainer-v1-128.webp";
+const ROOTMAW_CONTENT_ID = "rootmaw-brute-v1";
+const ROOTMAW_ASSET = "/assets/monster-master/creatures/rootmaw-brute-v1-128.webp";
+const GLOAMSPORE_CONTENT_ID = "gloamspore-stalker-v1";
+const GLOAMSPORE_ASSET = "/assets/monster-master/creatures/gloamspore-stalker-v1-128.svg";
 const tokens = new Map();
 
-const SPECIAL_CREATURES = {
-  [ROOTMAW_CONTENT_ID]: Object.freeze({
-    kind: "rootmaw",
-    asset: ROOTMAW_ASSET,
-    label: "Rootmaw Brute",
-    glyph: "R",
-    summary: "Mossbound heavy monster · slow, durable, and built for brutal close pressure.",
-    prototypeLabel: "Stone Bulwark",
-  }),
-  [GLOAMSPORE_CONTENT_ID]: Object.freeze({
-    kind: "gloamspore",
-    asset: GLOAMSPORE_ASSET,
-    label: "Gloamspore Stalker",
-    glyph: "G",
-    summary: "Arcane skirmisher · quick, fragile, and built to threaten from the flank.",
-    prototypeLabel: "Emberling Skirmisher",
-  }),
-};
-
-const ARENA_LIBRARY_ASSETS = Object.freeze({
-  "vanguard-trainer-v1": { kind: "vanguard", asset: "/assets/monster-master/trainers/vanguard-trainer-v1-128.webp", label: "Vanguard", glyph: "V", summary: "Field-ready Master archetype.", prototypeLabel: "Warden Master" },
-  "commander-trainer-v1": { kind: "commander", asset: "/assets/monster-master/trainers/commander-trainer-v1-128.webp", label: "Commander", glyph: "C", summary: "Tactical command Master archetype.", prototypeLabel: "Warden Master" },
-  "arcanic-trainer-v1": { kind: "arcanic", asset: "/assets/monster-master/trainers/arcanic-trainer-v1-128.webp", label: "Arcanic", glyph: "A", summary: "Arcane-tech Master archetype.", prototypeLabel: "Warden Master" },
-  "medic-trainer-v1": { kind: "medic", asset: "/assets/monster-master/trainers/medic-trainer-v1-128.webp", label: "Medic", glyph: "M", summary: "Creature-care Master archetype.", prototypeLabel: "Warden Master" },
-  "caller-trainer-v1": { kind: "caller", asset: "/assets/monster-master/trainers/caller-trainer-v1-128.webp", label: "Caller", glyph: "C", summary: "Roster-management Master archetype.", prototypeLabel: "Warden Master" },
-  "voidshard-reaver-v1": { kind: "voidshard", asset: "/assets/monster-master/creatures/voidshard-reaver-v1-128.webp", label: "Voidshard Reaver", glyph: "V", summary: "Mobile melee striker.", prototypeLabel: "Emberling" },
-  "stormcrest-skitter-v1": { kind: "stormcrest", asset: "/assets/monster-master/creatures/stormcrest-skitter-v1-128.webp", label: "Stormcrest Skitter", glyph: "S", summary: "Fast harassment monster.", prototypeLabel: "Emberling" },
-  "mossmaw-colossus-v1": { kind: "mossmaw", asset: "/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp", label: "Mossmaw Colossus", glyph: "M", summary: "Slow durable anchor.", prototypeLabel: "Stone Bulwark" },
+const GENERIC_TRAINER = Object.freeze({
+  kind: "trainer",
+  asset: TRAINER_ASSET,
+  label: "Master",
+  glyph: "M",
+  prototypeLabel: "Warden Master",
+  anchorY: 0.9,
+  battlefieldScale: 1,
 });
 
-function specialCreature(unit) {
+// Keep these battlefield values synchronized with assets/monster-master/manifest.json.
+// The artwork files have different transparent padding and silhouettes, so a shared
+// CSS height/translate is not sufficient to make them read as standing on a tile.
+const ILLUSTRATED_ASSETS = Object.freeze({
+  "vanguard-trainer-v1": Object.freeze({ kind: "vanguard", asset: "/assets/monster-master/trainers/vanguard-trainer-v1-128.webp", label: "Vanguard", glyph: "V", prototypeLabel: "Warden Master", anchorY: 0.9, battlefieldScale: 1 }),
+  "commander-trainer-v1": Object.freeze({ kind: "commander", asset: "/assets/monster-master/trainers/commander-trainer-v1-128.webp", label: "Commander", glyph: "C", prototypeLabel: "Warden Master", anchorY: 0.9, battlefieldScale: 1 }),
+  "arcanic-trainer-v1": Object.freeze({ kind: "arcanic", asset: "/assets/monster-master/trainers/arcanic-trainer-v1-128.webp", label: "Arcanic", glyph: "A", prototypeLabel: "Warden Master", anchorY: 0.9, battlefieldScale: 1 }),
+  "medic-trainer-v1": Object.freeze({ kind: "medic", asset: "/assets/monster-master/trainers/medic-trainer-v1-128.webp", label: "Medic", glyph: "M", prototypeLabel: "Warden Master", anchorY: 0.9, battlefieldScale: 1 }),
+  "caller-trainer-v1": Object.freeze({ kind: "caller", asset: "/assets/monster-master/trainers/caller-trainer-v1-128.webp", label: "Caller", glyph: "C", prototypeLabel: "Warden Master", anchorY: 0.9, battlefieldScale: 1 }),
+  [ROOTMAW_CONTENT_ID]: Object.freeze({ kind: "rootmaw", asset: ROOTMAW_ASSET, label: "Rootmaw Brute", glyph: "R", prototypeLabel: "Stone Bulwark", anchorY: 0.88, battlefieldScale: 1.58 }),
+  [GLOAMSPORE_CONTENT_ID]: Object.freeze({ kind: "gloamspore", asset: GLOAMSPORE_ASSET, label: "Gloamspore Stalker", glyph: "G", prototypeLabel: "Emberling Skirmisher", anchorY: 0.9, battlefieldScale: 1.36 }),
+  "voidshard-reaver-v1": Object.freeze({ kind: "voidshard", asset: "/assets/monster-master/creatures/voidshard-reaver-v1-128.webp", label: "Voidshard Reaver", glyph: "V", prototypeLabel: "Emberling", anchorY: 0.9, battlefieldScale: 1.42 }),
+  "stormcrest-skitter-v1": Object.freeze({ kind: "stormcrest", asset: "/assets/monster-master/creatures/stormcrest-skitter-v1-128.webp", label: "Stormcrest Skitter", glyph: "S", prototypeLabel: "Emberling", anchorY: 0.9, battlefieldScale: 1.18 }),
+  "mossmaw-colossus-v1": Object.freeze({ kind: "mossmaw", asset: "/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp", label: "Mossmaw Colossus", glyph: "M", prototypeLabel: "Stone Bulwark", anchorY: 0.9, battlefieldScale: 1.5 }),
+});
+
+function catalogPresentation(unit) {
   if (!unit?.contentId) return null;
-  return SPECIAL_CREATURES[unit.contentId] ?? ARENA_LIBRARY_ASSETS[unit.contentId] ?? null;
+  return ILLUSTRATED_ASSETS[unit.contentId] ?? null;
 }
 
-function assetKind(unit) {
-  const presentation = specialCreature(unit);
-  if (presentation) return presentation.kind;
-  if (unit && unit.role === "master") return "trainer";
-  return null;
+function presentationFor(unit) {
+  if (!unit) return null;
+  return catalogPresentation(unit) ?? (unit.role === "master" ? GENERIC_TRAINER : null);
 }
 
-function assetPath(kind) {
-  return Object.values({ ...SPECIAL_CREATURES, ...ARENA_LIBRARY_ASSETS }).find((item) => item.kind === kind)?.asset ?? TRAINER_ASSET;
-}
+window.gameFrameMonsterIllustratedAssets = Object.freeze({
+  hasAsset: (unit) => Boolean(presentationFor(unit)),
+  presentationFor: (unit) => presentationFor(unit),
+});
 
 function installStyles() {
   if (document.getElementById(STYLE_ID)) return;
@@ -67,85 +63,42 @@ function installStyles() {
     }
 
     .monster-master-trainer-token {
+      --monster-master-contact-shadow-width: 72px;
+      --monster-master-contact-shadow-height: 16px;
       position: absolute;
-      width: 94px;
-      height: 104px;
-      transform-origin: 50% 100%;
+      width: 0;
+      height: 0;
+      transform-origin: 0 0;
+      pointer-events: none;
       will-change: transform, opacity;
-    }
-
-    .monster-master-trainer-token[data-asset-kind="rootmaw"] {
-      width: 118px;
-      height: 118px;
-    }
-
-    .monster-master-trainer-token[data-asset-kind="gloamspore"] {
-      width: 112px;
-      height: 112px;
     }
 
     .monster-master-trainer-token::before {
       content: "";
       position: absolute;
-      left: 50%;
-      bottom: 5px;
-      width: 88px;
-      height: 88px;
-      transform: translateX(-50%);
+      z-index: 0;
+      left: 0;
+      top: 0;
+      width: var(--monster-master-contact-shadow-width);
+      height: var(--monster-master-contact-shadow-height);
+      transform: translate(-50%, -50%);
       border-radius: 50%;
-      background: radial-gradient(circle at 50% 60%, rgba(7, 13, 22, .98) 0 50%, rgba(14, 30, 43, .9) 51% 61%, rgba(71, 176, 216, .32) 62% 68%, transparent 69%);
-      filter: drop-shadow(0 8px 8px rgba(0, 0, 0, .42));
-    }
-
-    .monster-master-trainer-token[data-team="beta"]::before {
-      background: radial-gradient(circle at 50% 60%, rgba(15, 8, 16, .98) 0 50%, rgba(45, 18, 28, .9) 51% 61%, rgba(226, 94, 103, .32) 62% 68%, transparent 69%);
-    }
-
-    .monster-master-trainer-token[data-asset-kind="rootmaw"]::before,
-    .monster-master-trainer-token[data-asset-kind="gloamspore"]::before {
-      width: 102px;
-      height: 74px;
-      bottom: 4px;
-    }
-
-    .monster-master-trainer-token[data-asset-kind="rootmaw"]::before {
-      background: radial-gradient(ellipse at 50% 68%, rgba(7, 13, 12, .96) 0 48%, rgba(55, 82, 42, .82) 49% 61%, rgba(213, 135, 44, .24) 62% 68%, transparent 69%);
-    }
-
-    .monster-master-trainer-token[data-asset-kind="rootmaw"][data-team="beta"]::before {
-      background: radial-gradient(ellipse at 50% 68%, rgba(15, 8, 16, .96) 0 48%, rgba(63, 35, 30, .84) 49% 61%, rgba(226, 94, 103, .24) 62% 68%, transparent 69%);
-    }
-
-    .monster-master-trainer-token[data-asset-kind="gloamspore"]::before {
-      background: radial-gradient(ellipse at 50% 68%, rgba(12, 8, 20, .96) 0 48%, rgba(45, 28, 74, .84) 49% 61%, rgba(161, 88, 218, .3) 62% 68%, transparent 69%);
-    }
-
-    .monster-master-trainer-token[data-asset-kind="gloamspore"][data-team="beta"]::before {
-      background: radial-gradient(ellipse at 50% 68%, rgba(15, 8, 16, .96) 0 48%, rgba(69, 25, 61, .84) 49% 61%, rgba(226, 94, 166, .28) 62% 68%, transparent 69%);
+      background: radial-gradient(ellipse at center, rgba(0, 0, 0, .30) 0 30%, rgba(0, 0, 0, .15) 52%, transparent 76%);
+      filter: blur(1.5px);
     }
 
     .monster-master-trainer-token img {
       position: absolute;
-      left: 50%;
-      bottom: 3px;
+      z-index: 1;
+      left: 0;
       display: block;
       width: auto;
-      height: 100px;
+      max-width: none;
       transform: translateX(-50%);
       transform-origin: 50% 100%;
       user-select: none;
       -webkit-user-drag: none;
-      filter: drop-shadow(0 7px 5px rgba(0, 0, 0, .55));
-    }
-
-    .monster-master-trainer-token[data-asset-kind="rootmaw"] img {
-      height: 116px;
-      bottom: 0;
-    }
-
-    .monster-master-trainer-token[data-asset-kind="gloamspore"] img {
-      height: 110px;
-      bottom: 0;
+      filter: drop-shadow(0 6px 5px rgba(0, 0, 0, .50));
     }
 
     .monster-master-trainer-token[data-facing="left"] img {
@@ -153,32 +106,75 @@ function installStyles() {
     }
 
     .monster-master-trainer-token[data-defeated="true"] {
-      opacity: .48;
-      filter: grayscale(.75);
+      opacity: .46;
+      filter: grayscale(.7);
     }
 
-    body.monster-master-pixi-ready .monster-master-turn-portrait[data-role="master"],
-    body.monster-master-pixi-ready .monster-master-unit-hud[data-role="master"] .monster-master-unit-portrait {
-      background-image: url("${TRAINER_ASSET}") !important;
+    .monster-master-unit-portrait[data-illustrated-content-id],
+    .monster-master-turn-portrait[data-role="master"],
+    .monster-master-turn-portrait[data-illustrated-content-id] {
+      background-color: rgba(8, 15, 26, .78) !important;
       background-size: contain !important;
       background-position: 50% 50% !important;
       background-repeat: no-repeat !important;
     }
 
-    body.monster-master-pixi-ready .monster-master-turn-unit[data-content-id="${ROOTMAW_CONTENT_ID}"] .monster-master-turn-portrait,
-    body.monster-master-pixi-ready .monster-master-unit-hud[data-content-id="${ROOTMAW_CONTENT_ID}"] .monster-master-unit-portrait {
-      background-image: url("${ROOTMAW_ASSET}") !important;
-      background-size: contain !important;
-      background-position: 50% 50% !important;
-      background-repeat: no-repeat !important;
+    /* Monster Master adds Setup to the shared destination row. Compact the
+       standard desktop navigation before that sixth destination gets squeezed
+       into the session controls at 1280px-class widths. */
+    @media (min-width: 721px) and (max-width: 1360px) {
+      body.gameframe-monster-route #gameframe-destination-bar {
+        grid-template-columns: minmax(176px, 20vw) minmax(0, 1fr) minmax(188px, 21vw);
+      }
+      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-brand {
+        min-width: 0;
+        padding-inline: 11px;
+      }
+      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-mark {
+        width: 42px;
+        height: 42px;
+      }
+      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-brand [data-gameframe-destination-title] {
+        font-size: .78rem;
+        letter-spacing: .045em;
+      }
+      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-links a,
+      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-links button {
+        min-width: 0;
+        flex: 1 1 0;
+        padding-inline: 6px;
+        font-size: .61rem;
+        letter-spacing: .035em;
+        white-space: nowrap;
+      }
+      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-links .monster-master-nav-setup {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        flex: 0 1 84px;
+        min-width: 70px;
+      }
+      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-session-space {
+        min-width: 0;
+      }
+      body.gameframe-monster-route.gameframe-has-destination-bar > .gameframe-session-badge {
+        max-width: calc(21vw - 14px);
+        padding: .46rem .52rem;
+        gap: .42rem;
+      }
+      body.gameframe-monster-route.gameframe-has-destination-bar > .gameframe-session-badge small {
+        display: none;
+      }
     }
 
-    body.monster-master-pixi-ready .monster-master-turn-unit[data-content-id="${GLOAMSPORE_CONTENT_ID}"] .monster-master-turn-portrait,
-    body.monster-master-pixi-ready .monster-master-unit-hud[data-content-id="${GLOAMSPORE_CONTENT_ID}"] .monster-master-unit-portrait {
-      background-image: url("${GLOAMSPORE_ASSET}") !important;
-      background-size: contain !important;
-      background-position: 50% 50% !important;
-      background-repeat: no-repeat !important;
+    @media (max-width: 480px) {
+      body.gameframe-monster-route #gameframe-destination-bar {
+        grid-template-columns: 54px minmax(0, 1fr) 126px;
+      }
+      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-session-space {
+        width: 126px;
+        min-width: 126px;
+      }
     }
   `;
   document.head.append(style);
@@ -197,29 +193,44 @@ function ensureLayer() {
   return layer;
 }
 
+function configureToken(token, unit) {
+  const presentation = presentationFor(unit);
+  const image = token?.querySelector("img");
+  if (!presentation || !image) return false;
+
+  const artHeight = Math.round(BASE_BATTLEFIELD_HEIGHT * presentation.battlefieldScale);
+  const shadowWidth = Math.max(62, Math.min(100, Math.round(artHeight * 0.66)));
+  const shadowHeight = Math.max(13, Math.min(20, Math.round(artHeight * 0.12)));
+  const expectedSrc = new URL(presentation.asset, window.location.href).href;
+  if (image.src !== expectedSrc) image.src = presentation.asset;
+
+  image.style.height = `${artHeight}px`;
+  image.style.top = `${-(artHeight * presentation.anchorY)}px`;
+  token.dataset.assetKind = presentation.kind;
+  token.dataset.contentId = unit.contentId ?? "";
+  token.dataset.anchorY = String(presentation.anchorY);
+  token.dataset.artHeight = String(artHeight);
+  token.style.setProperty("--monster-master-contact-shadow-width", `${shadowWidth}px`);
+  token.style.setProperty("--monster-master-contact-shadow-height", `${shadowHeight}px`);
+  return true;
+}
+
 function tokenFor(unit, layer) {
+  if (!presentationFor(unit)) return null;
   let token = tokens.get(unit.id);
-  const kind = assetKind(unit);
-  if (!kind) return null;
-  if (token) {
-    token.dataset.assetKind = kind;
-    const image = token.querySelector("img");
-    if (image && image.src !== new URL(assetPath(kind), window.location.href).href) image.src = assetPath(kind);
-    return token;
+  if (!token) {
+    token = document.createElement("div");
+    token.className = "monster-master-trainer-token";
+    token.dataset.unitId = unit.id;
+    const image = document.createElement("img");
+    image.alt = "";
+    image.decoding = "async";
+    image.draggable = false;
+    token.append(image);
+    layer.append(token);
+    tokens.set(unit.id, token);
   }
-  token = document.createElement("div");
-  token.className = "monster-master-trainer-token";
-  token.dataset.unitId = unit.id;
-  token.dataset.assetKind = kind;
-  const image = document.createElement("img");
-  image.src = assetPath(kind);
-  image.alt = "";
-  image.decoding = "async";
-  image.draggable = false;
-  token.append(image);
-  layer.append(token);
-  tokens.set(unit.id, token);
-  return token;
+  return configureToken(token, unit) ? token : null;
 }
 
 function clearMissing(validIds) {
@@ -234,72 +245,85 @@ function rosterUnits(view) {
   return Object.values(view?.observation?.rosters ?? {}).flat();
 }
 
-function specialCreatureUnit(view, unitId) {
+function unitById(view, unitId) {
   if (!unitId) return null;
-  const unit = rosterUnits(view).find((candidate) => candidate.id === unitId) ?? null;
-  return specialCreature(unit) ? unit : null;
+  return rosterUnits(view).find((unit) => unit.id === unitId) ?? null;
 }
 
-function selectedDeploymentId(view) {
-  if (view?.observation?.phase !== "deployment") return null;
+function diagnostics() {
   try {
-    return JSON.parse(document.querySelector("#monster-master-details")?.textContent || "{}").selectedUnitId ?? null;
+    return JSON.parse(document.querySelector("#monster-master-details")?.textContent || "{}");
   } catch {
-    return null;
+    return {};
   }
 }
 
-function syncArenaCreaturePresentation(view) {
+function selectedPresentationUnit(view) {
+  if (!view?.observation) return null;
+  const state = diagnostics();
+  const selectedId = view.observation.phase === "deployment"
+    ? state.selectedUnitId ?? view.observation.activeUnitId
+    : view.observation.activeUnitId ?? state.selectedUnitId;
+  return unitById(view, selectedId);
+}
+
+function setPortraitArt(node, unit) {
+  const presentation = presentationFor(unit);
+  if (!node || !presentation) return;
+  node.dataset.illustratedContentId = unit.contentId ?? presentation.kind;
+  node.style.setProperty("background-image", `url("${presentation.asset}")`, "important");
+  node.style.setProperty("background-size", "contain", "important");
+  node.style.setProperty("background-position", "50% 50%", "important");
+  node.style.setProperty("background-repeat", "no-repeat", "important");
+  node.textContent = "";
+}
+
+function clearPortraitArt(node) {
+  if (!node?.dataset.illustratedContentId) return;
+  delete node.dataset.illustratedContentId;
+  for (const property of ["background-image", "background-size", "background-position", "background-repeat"]) {
+    node.style.removeProperty(property);
+  }
+}
+
+function teamLabel(view, unit) {
+  if (!unit) return "";
+  return unit.ownerId === view.playerIds?.[0] ? "Alpha" : "Beta";
+}
+
+function syncPortraits(view) {
   if (!view) return;
   const allUnits = rosterUnits(view);
   const byId = new Map(allUnits.map((unit) => [unit.id, unit]));
 
   for (const item of document.querySelectorAll("[data-turn-unit-id]")) {
     const unit = byId.get(item.dataset.turnUnitId);
-    const presentation = specialCreature(unit);
-    if (presentation) {
-      item.dataset.contentId = unit.contentId;
-      const name = item.querySelector("strong");
-      if (name) name.textContent = presentation.label;
-    } else if (SPECIAL_CREATURES[item.dataset.contentId]) {
-      delete item.dataset.contentId;
+    const presentation = presentationFor(unit);
+    const portrait = item.querySelector(".monster-master-turn-portrait");
+    if (!unit || !presentation) {
+      clearPortraitArt(portrait);
+      continue;
     }
+    item.dataset.contentId = unit.contentId ?? "";
+    const name = item.querySelector("strong");
+    if (name) name.textContent = presentation.label;
+    setPortraitArt(portrait, unit);
   }
 
-  const inspectedId = document.querySelector("[data-turn-unit-id].is-inspected")?.dataset.turnUnitId;
-  const referenceId = inspectedId
-    ?? view.observation.activeUnitId
-    ?? selectedDeploymentId(view);
-  const specialUnit = specialCreatureUnit(view, referenceId);
-  const presentation = specialCreature(specialUnit);
+  const selectedUnit = selectedPresentationUnit(view);
+  const selectedPresentation = presentationFor(selectedUnit);
   const hud = document.querySelector("#monster-master-unit-hud");
-  if (hud) {
-    if (specialUnit && presentation) {
-      hud.dataset.contentId = specialUnit.contentId;
-      const name = document.querySelector("#monster-master-hud-name");
-      const glyph = document.querySelector("#monster-master-hud-glyph");
-      const summary = document.querySelector("#monster-master-unit-summary");
-      const abilityOwner = document.querySelector("#monster-master-ability-owner");
-      if (name) name.textContent = presentation.label;
-      if (glyph) glyph.textContent = presentation.glyph;
-      if (summary) summary.textContent = presentation.summary;
-      if (abilityOwner) abilityOwner.textContent = presentation.label;
-    } else if (SPECIAL_CREATURES[hud.dataset.contentId]) {
-      delete hud.dataset.contentId;
-    }
-  }
-
-  const activeLabel = document.querySelector("#monster-master-active-unit");
-  const activeOrSelected = specialCreatureUnit(view, view.observation.activeUnitId ?? selectedDeploymentId(view));
-  const activePresentation = specialCreature(activeOrSelected);
-  if (activeLabel && activeOrSelected && activePresentation) {
-    const team = activeOrSelected.id.startsWith("alpha-") ? "Alpha" : "Beta";
-    activeLabel.textContent = `${team} ${activePresentation.label}`;
-  }
-
-  const status = document.querySelector("#monster-master-status");
-  if (status && activeOrSelected && activePresentation && status.textContent?.includes(activePresentation.prototypeLabel)) {
-    status.textContent = status.textContent.replace(activePresentation.prototypeLabel, activePresentation.label);
+  const hudPortrait = document.querySelector("#monster-master-hud-glyph");
+  if (hud && selectedUnit && selectedPresentation) {
+    hud.dataset.contentId = selectedUnit.contentId ?? "";
+    hud.dataset.role = selectedUnit.role ?? selectedPresentation.kind;
+    hud.dataset.owner = selectedUnit.ownerId === view.playerIds?.[0] ? "alpha" : "beta";
+    setPortraitArt(hudPortrait, selectedUnit);
+    const name = document.querySelector("#monster-master-hud-name");
+    if (name) name.textContent = `${teamLabel(view, selectedUnit)} ${selectedPresentation.label}`;
+  } else {
+    delete hud?.dataset.contentId;
+    clearPortraitArt(hudPortrait);
   }
 
   const yourPlayerId = view.observation.yourPlayerId ?? window.gameFrameIdentity?.playerId;
@@ -308,31 +332,33 @@ function syncArenaCreaturePresentation(view) {
   const deployButtons = [...document.querySelectorAll('#monster-master-options button[data-action-kind="deploy-unit"]')];
   deployButtons.forEach((button, index) => {
     const unit = undeployed[index];
-    const deployPresentation = specialCreature(unit);
-    if (!deployPresentation) return;
+    const presentation = presentationFor(unit);
+    if (!unit || !presentation) return;
+    button.dataset.contentId = unit.contentId ?? "";
     const parts = button.textContent.split("·");
-    parts[0] = `${deployPresentation.label} `;
+    parts[0] = `${presentation.label} `;
     button.textContent = parts.join("·");
   });
 }
 
-function renderTrainerAssets() {
+function renderIllustratedAssets() {
   const layer = ensureLayer();
   const pixi = window.gameFrameMonsterPixi;
-  const controller = window.gameFrameMonsterController;
-  const view = controller?.getView?.();
+  const view = window.gameFrameMonsterController?.getView?.();
   if (!layer || !pixi?.worldToScreen || !view?.observation?.board?.units) {
     if (layer) layer.hidden = true;
-    requestAnimationFrame(renderTrainerAssets);
+    requestAnimationFrame(renderIllustratedAssets);
     return;
   }
 
-  syncArenaCreaturePresentation(view);
+  syncPortraits(view);
+
   const camera = pixi.getCamera?.() ?? { zoom: 1 };
   const zoom = Number.isFinite(camera.zoom) ? camera.zoom : 1;
   const playerIds = view.playerIds ?? [];
+  const defeatedIds = new Set(view.observation.defeatedUnitIds ?? []);
   const visibleAssets = view.observation.board.units.filter((unit) =>
-    assetKind(unit)
+    presentationFor(unit)
     && Number.isFinite(unit.position?.x)
     && Number.isFinite(unit.position?.y)
     && unit.position.x >= 0
@@ -345,22 +371,21 @@ function renderTrainerAssets() {
   for (const unit of visibleAssets) {
     const point = pixi.worldToScreen(unit.position);
     const token = tokenFor(unit, layer);
-    if (!token) continue;
+    if (!token || !Number.isFinite(point?.x) || !Number.isFinite(point?.y)) continue;
     const alphaTeam = unit.ownerId === playerIds[0];
-    const kind = assetKind(unit);
     token.dataset.team = alphaTeam ? "alpha" : "beta";
-    token.dataset.facing = alphaTeam ? "left" : "right";
-    token.dataset.defeated = String((unit.health ?? 1) <= 0);
-    const verticalOffset = kind === "rootmaw" ? 4 : kind === "gloamspore" ? 5 : 7;
-    token.style.transform = `translate3d(${point.x}px, ${point.y - (verticalOffset * zoom)}px, 0) translate(-50%, -100%) scale(${zoom})`;
+    token.dataset.facing = alphaTeam ? "right" : "left";
+    token.dataset.defeated = String(defeatedIds.has(unit.id) || (unit.health ?? 1) <= 0);
+    token.style.zIndex = String(Math.max(1, Math.round(point.y * 10)));
+    token.style.transform = `translate3d(${point.x}px, ${point.y}px, 0) scale(${zoom})`;
   }
 
-  requestAnimationFrame(renderTrainerAssets);
+  requestAnimationFrame(renderIllustratedAssets);
 }
 
 installStyles();
-for (const path of [TRAINER_ASSET, ROOTMAW_ASSET, GLOAMSPORE_ASSET, ...Object.values(ARENA_LIBRARY_ASSETS).map((item) => item.asset)]) {
+for (const path of new Set([GENERIC_TRAINER.asset, ...Object.values(ILLUSTRATED_ASSETS).map((item) => item.asset)])) {
   const preload = new Image();
   preload.src = path;
 }
-requestAnimationFrame(renderTrainerAssets);
+requestAnimationFrame(renderIllustratedAssets);
