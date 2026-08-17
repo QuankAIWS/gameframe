@@ -25,6 +25,21 @@ jobs:
       - run: npm ci
       - name: Apply staged corrections
         run: python scripts/monster-master-grounding-review-fix.py
+      - name: Normalize illustrated WebP decoding
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          import sharp from 'sharp';
+          for (const path of [
+            'public/assets/monster-master/creatures/voidshard-reaver-v1-128.webp',
+            'public/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp',
+          ]) {
+            const normalized = await sharp(path).webp({ lossless: true, effort: 6 }).toBuffer();
+            await fs.writeFile(path, normalized);
+            const meta = await sharp(normalized).metadata();
+            if (meta.format !== 'webp' || !meta.width || !meta.height) throw new Error(`Invalid normalized asset: ${path}`);
+          }
+          NODE
       - name: Focused static proof
         run: |
           node --check public/monster-master-trainer-asset.js
