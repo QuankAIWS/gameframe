@@ -18,6 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: fix/monster-master-arena-grounding
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22.16.0
@@ -25,8 +26,11 @@ jobs:
       - run: npm ci
       - name: Apply staged corrections
         run: python scripts/monster-master-grounding-review-fix.py
-      - name: Normalize illustrated WebP decoding
+      - name: Recover and normalize illustrated WebP assets
         run: |
+          git fetch origin d8a057bb9efeb25058faa491f82cf59d3b2e42ac 38afc67ac63c6e05a0d8e995eeef66a91026e9f1
+          git show d8a057bb9efeb25058faa491f82cf59d3b2e42ac:public/assets/monster-master/creatures/voidshard-reaver-v1-128.webp > public/assets/monster-master/creatures/voidshard-reaver-v1-128.webp
+          git show 38afc67ac63c6e05a0d8e995eeef66a91026e9f1:public/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp > public/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp
           node --input-type=module <<'NODE'
           import fs from 'node:fs/promises';
           import sharp from 'sharp';
@@ -34,10 +38,13 @@ jobs:
             'public/assets/monster-master/creatures/voidshard-reaver-v1-128.webp',
             'public/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp',
           ]) {
-            const normalized = await sharp(path).webp({ lossless: true, effort: 6 }).toBuffer();
+            const image = sharp(path, { failOn: 'error' });
+            const before = await image.metadata();
+            if (before.format !== 'webp' || !before.width || !before.height) throw new Error(`Invalid source asset: ${path}`);
+            const normalized = await image.webp({ lossless: true, effort: 6 }).toBuffer();
             await fs.writeFile(path, normalized);
-            const meta = await sharp(normalized).metadata();
-            if (meta.format !== 'webp' || !meta.width || !meta.height) throw new Error(`Invalid normalized asset: ${path}`);
+            const after = await sharp(normalized).metadata();
+            if (after.format !== 'webp' || !after.width || !after.height) throw new Error(`Invalid normalized asset: ${path}`);
           }
           NODE
       - name: Focused static proof
