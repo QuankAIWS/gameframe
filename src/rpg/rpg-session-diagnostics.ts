@@ -579,9 +579,17 @@ function sanitizeValue(value: unknown, key = ""): unknown {
 
 function sanitizeString(value: string): string {
   return value
+    .replace(
+      /\bAuthorization\s*[:=]\s*(Bearer|Basic)\s+[A-Za-z0-9._~+\/-]+=*/gi,
+      "Authorization: $1 [REDACTED]",
+    )
+    .replace(
+      /\bAuthorization\s*[:=]\s*(?!(?:Bearer|Basic)\b)[^\s,;]+/gi,
+      "Authorization=[REDACTED]",
+    )
     .replace(/\b(Bearer|Basic)\s+[A-Za-z0-9._~+\/-]+=*/gi, "$1 [REDACTED]")
     .replace(
-      /\b(authorization|password|passwd|secret|token|api[-_]?key|hmac|credential|client[-_]?secret|private[-_]?key|access[-_]?key|signing[-_]?key)\s*[:=]\s*[^\s,;]+/gi,
+      /\b(password|passwd|secret|token|api[-_]?key|hmac|credential|client[-_]?secret|private[-_]?key|access[-_]?key|signing[-_]?key)\s*[:=]\s*[^\s,;]+/gi,
       "$1=[REDACTED]",
     );
 }
