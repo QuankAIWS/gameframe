@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -25,7 +26,16 @@ test("Leafwhisk Runner is a Class One unassigned asset-library creature", async 
   assert.equal(leafwhisk.facing, "left");
   assert.equal(leafwhisk.perspective, "three-quarter-down-isometric");
   assert.equal(Object.hasOwn(leafwhisk, "role"), false);
+  assert.equal(leafwhisk.provenance.provider, "OpenAI ChatGPT image generation");
+  assert.equal(leafwhisk.provenance.sourceArchive, "private-gameframe-asset-masters");
+  assert.equal(leafwhisk.provenance.sourceFileId, "10wdo21FF7RsVn9L7KxNM6how-GuxF4JA");
+  assert.match(leafwhisk.provenance.sourceSha256, /^[a-f0-9]{64}$/);
+  assert.equal(leafwhisk.provenance.rights, "generated-for-project; repository-proprietary");
+  assert.equal(leafwhisk.provenance.attributionRequired, false);
   assert.match(asset, /^<svg/);
   assert.match(asset, /width="128" height="192"/);
   assert.match(asset, /data:image\/webp;base64,/);
+
+  const runtimeSha256 = createHash("sha256").update(asset, "utf8").digest("hex");
+  assert.equal(leafwhisk.provenance.runtimeSha256, runtimeSha256);
 });
