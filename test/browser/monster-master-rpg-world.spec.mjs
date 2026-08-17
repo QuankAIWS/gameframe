@@ -260,7 +260,7 @@ test("Monster Master RPG uses click for the Master and WASD for the camera", asy
 
   const revisionBeforeRefresh = position.positionRevision;
   await page.locator("#mm-rpg-refresh").click();
-  await expect.poll(() => explorationAttachCount).toBe(2);
+  await expect.poll(() => explorationAttachCount).toBe(3);
   await expect(page.locator("#mm-rpg-world-materialization")).toContainText(materializationId);
   expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().positionRevision)).toBe(revisionBeforeRefresh);
   expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({ x: 10, y: 6, facing: "east" });
