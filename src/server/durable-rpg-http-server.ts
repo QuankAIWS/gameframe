@@ -46,6 +46,10 @@ import {
   RpgExplorationMovementService,
 } from "../rpg/rpg-exploration-movement-service.ts";
 import {
+  readRpgSessionDiagnostics,
+  RpgSessionDiagnosticsError,
+} from "../rpg/rpg-session-diagnostics.ts";
+import {
   RuntimeExplorationTransportError,
   type RuntimeExplorationHttpTransport,
 } from "../rpg/runtime-exploration-transport.ts";
@@ -71,6 +75,7 @@ import {
 
 const MAX_REQUEST_BODY_BYTES = 131_072;
 const STAGING_ADMIN_RESET_PATH = "/api/rpg/admin/reset-staging";
+const STAGING_ADMIN_DIAGNOSTICS_PATH = "/api/rpg/admin/staging-diagnostics";
 const STAGING_ADMIN_RESET_CONFIRMATION = "RESET MONSTER MASTER STAGING";
 const RPG_RUNTIME_SERVICE_ID = "rpg-gm-runtime";
 
@@ -174,6 +179,36 @@ export function createDurableRpgHttpServer(
         requirePlayerPrincipal(principal);
         rejectIdentityClaim(principal, url.searchParams.get("playerId"));
         return sendJson(response, 200, campaignIndex.listForPlayer(principal.playerId));
+      }
+
+      if (url.pathname === STAGING_ADMIN_DIAGNOSTICS_PATH) {
+        if (!options.stagingAdminReset) {
+          return sendJson(response, 404, {
+            error: "not-found",
+            message: "Staging administrator controls are not configured.",
+            retryable: false,
+          });
+        }
+        if (request.method !== "GET") {
+          response.setHeader("allow", "GET");
+          return sendJson(response, 405, {
+            error: "method-not-allowed",
+            message: "The staging diagnostics route accepts GET only.",
+            retryable: false,
+          });
+        }
+        const principal = await authenticate(authenticator, request, url, Buffer.alloc(0));
+        if (principal.source !== "discord") {
+          throw new AuthenticationError(
+            "forbidden",
+            "Staging administrator controls require a Discord-authenticated edge principal.",
+          );
+        }
+        return sendJson(response, 200, readRpgSessionDiagnostics({
+          filePath: options.filePath,
+          campaignId: options.stagingAdminReset.campaignId,
+          generatedAt: clock(),
+        }));
       }
 
       if (url.pathname === STAGING_ADMIN_RESET_PATH) {
@@ -713,6 +748,14 @@ function normalizeError(error: unknown): { status: number; body: Record<string, 
   if (error instanceof HttpBoundaryError) return failure(error.status, error.code, error.message, false);
   if (error instanceof AuthenticationError) {
     return failure(error.code === "authentication_required" ? 401 : 403, error.code, error.message, false);
+  }
+  if (error instanceof RpgSessionDiagnosticsError) {
+    return failure(
+      error.code === "campaign-not-found" ? 404 : 500,
+      error.code,
+      error.message,
+      false,
+    );
   }
   if (error instanceof RuntimeExplorationTransportError) {
     return failure(
