@@ -14,6 +14,8 @@ const GENERIC_TRAINER = Object.freeze({
   label: "Master",
   glyph: "M",
   prototypeLabel: "Warden Master",
+  authoredFacing: "left",
+  summary: "Command-focused Master unit.",
   anchorY: 0.9,
   battlefieldScale: 1,
 });
@@ -22,16 +24,14 @@ const GENERIC_TRAINER = Object.freeze({
 // The artwork files have different transparent padding and silhouettes, so a shared
 // CSS height/translate is not sufficient to make them read as standing on a tile.
 const ILLUSTRATED_ASSETS = Object.freeze({
-  "vanguard-trainer-v1": Object.freeze({ kind: "vanguard", asset: "/assets/monster-master/trainers/vanguard-trainer-v1-128.webp", label: "Vanguard", glyph: "V", prototypeLabel: "Warden Master", anchorY: 0.9, battlefieldScale: 1 }),
-  "commander-trainer-v1": Object.freeze({ kind: "commander", asset: "/assets/monster-master/trainers/commander-trainer-v1-128.webp", label: "Commander", glyph: "C", prototypeLabel: "Warden Master", anchorY: 0.9, battlefieldScale: 1 }),
-  "arcanic-trainer-v1": Object.freeze({ kind: "arcanic", asset: "/assets/monster-master/trainers/arcanic-trainer-v1-128.webp", label: "Arcanic", glyph: "A", prototypeLabel: "Warden Master", anchorY: 0.9, battlefieldScale: 1 }),
-  "medic-trainer-v1": Object.freeze({ kind: "medic", asset: "/assets/monster-master/trainers/medic-trainer-v1-128.webp", label: "Medic", glyph: "M", prototypeLabel: "Warden Master", anchorY: 0.9, battlefieldScale: 1 }),
-  "caller-trainer-v1": Object.freeze({ kind: "caller", asset: "/assets/monster-master/trainers/caller-trainer-v1-128.webp", label: "Caller", glyph: "C", prototypeLabel: "Warden Master", anchorY: 0.9, battlefieldScale: 1 }),
-  [ROOTMAW_CONTENT_ID]: Object.freeze({ kind: "rootmaw", asset: ROOTMAW_ASSET, label: "Rootmaw Brute", glyph: "R", prototypeLabel: "Stone Bulwark", anchorY: 0.88, battlefieldScale: 1.58 }),
-  [GLOAMSPORE_CONTENT_ID]: Object.freeze({ kind: "gloamspore", asset: GLOAMSPORE_ASSET, label: "Gloamspore Stalker", glyph: "G", prototypeLabel: "Emberling Skirmisher", anchorY: 0.9, battlefieldScale: 1.36 }),
-  "voidshard-reaver-v1": Object.freeze({ kind: "voidshard", asset: "/assets/monster-master/creatures/voidshard-reaver-v1-128.webp", label: "Voidshard Reaver", glyph: "V", prototypeLabel: "Emberling", anchorY: 0.9, battlefieldScale: 1.42 }),
-  "stormcrest-skitter-v1": Object.freeze({ kind: "stormcrest", asset: "/assets/monster-master/creatures/stormcrest-skitter-v1-128.webp", label: "Stormcrest Skitter", glyph: "S", prototypeLabel: "Emberling", anchorY: 0.9, battlefieldScale: 1.18 }),
-  "mossmaw-colossus-v1": Object.freeze({ kind: "mossmaw", asset: "/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp", label: "Mossmaw Colossus", glyph: "M", prototypeLabel: "Stone Bulwark", anchorY: 0.9, battlefieldScale: 1.5 }),
+  "vanguard-trainer-v1": Object.freeze({ kind: "vanguard", asset: "/assets/monster-master/trainers/vanguard-trainer-v1-128.webp", label: "Vanguard", glyph: "V", prototypeLabel: "Warden Master", authoredFacing: "left", summary: "Field-ready Master archetype.", anchorY: 0.9, battlefieldScale: 1 }),
+  "commander-trainer-v1": Object.freeze({ kind: "commander", asset: "/assets/monster-master/trainers/commander-trainer-v1-128.webp", label: "Commander", glyph: "C", prototypeLabel: "Warden Master", authoredFacing: "right", summary: "Tactical command Master archetype.", anchorY: 0.9, battlefieldScale: 1 }),
+  "arcanic-trainer-v1": Object.freeze({ kind: "arcanic", asset: "/assets/monster-master/trainers/arcanic-trainer-v1-128.webp", label: "Arcanic", glyph: "A", prototypeLabel: "Warden Master", authoredFacing: "left", summary: "Arcane-tech Master archetype.", anchorY: 0.9, battlefieldScale: 1 }),
+  "medic-trainer-v1": Object.freeze({ kind: "medic", asset: "/assets/monster-master/trainers/medic-trainer-v1-128.webp", label: "Medic", glyph: "M", prototypeLabel: "Warden Master", authoredFacing: "left", summary: "Creature-care Master archetype.", anchorY: 0.9, battlefieldScale: 1 }),
+  "caller-trainer-v1": Object.freeze({ kind: "caller", asset: "/assets/monster-master/trainers/caller-trainer-v1-128.webp", label: "Caller", glyph: "C", prototypeLabel: "Warden Master", authoredFacing: "left", summary: "Roster-management Master archetype.", anchorY: 0.9, battlefieldScale: 1 }),
+  [ROOTMAW_CONTENT_ID]: Object.freeze({ kind: "rootmaw", asset: ROOTMAW_ASSET, label: "Rootmaw Brute", glyph: "R", prototypeLabel: "Stone Bulwark", authoredFacing: "left", summary: "Mossbound heavy monster · slow, durable, and built for brutal close pressure.", anchorY: 0.88, battlefieldScale: 1.58 }),
+  [GLOAMSPORE_CONTENT_ID]: Object.freeze({ kind: "gloamspore", asset: GLOAMSPORE_ASSET, label: "Gloamspore Stalker", glyph: "G", prototypeLabel: "Emberling Skirmisher", authoredFacing: "left", summary: "Arcane skirmisher · quick, fragile, and built to threaten from the flank.", anchorY: 0.9, battlefieldScale: 1.36 }),
+  "stormcrest-skitter-v1": Object.freeze({ kind: "stormcrest", asset: "/assets/monster-master/creatures/stormcrest-skitter-v1-128.webp", label: "Stormcrest Skitter", glyph: "S", prototypeLabel: "Emberling", authoredFacing: "left", summary: "Fast harassment monster.", anchorY: 0.9, battlefieldScale: 1.18 }),
 });
 
 function catalogPresentation(unit) {
@@ -101,7 +101,7 @@ function installStyles() {
       filter: drop-shadow(0 6px 5px rgba(0, 0, 0, .50));
     }
 
-    .monster-master-trainer-token[data-facing="left"] img {
+    .monster-master-trainer-token[data-flipped="true"] img {
       transform: translateX(-50%) scaleX(-1);
     }
 
@@ -119,63 +119,7 @@ function installStyles() {
       background-repeat: no-repeat !important;
     }
 
-    /* Monster Master adds Setup to the shared destination row. Compact the
-       standard desktop navigation before that sixth destination gets squeezed
-       into the session controls at 1280px-class widths. */
-    @media (min-width: 721px) and (max-width: 1360px) {
-      body.gameframe-monster-route #gameframe-destination-bar {
-        grid-template-columns: minmax(176px, 20vw) minmax(0, 1fr) minmax(188px, 21vw);
-      }
-      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-brand {
-        min-width: 0;
-        padding-inline: 11px;
-      }
-      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-mark {
-        width: 42px;
-        height: 42px;
-      }
-      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-brand [data-gameframe-destination-title] {
-        font-size: .78rem;
-        letter-spacing: .045em;
-      }
-      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-links a,
-      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-links button {
-        min-width: 0;
-        flex: 1 1 0;
-        padding-inline: 6px;
-        font-size: .61rem;
-        letter-spacing: .035em;
-        white-space: nowrap;
-      }
-      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-links .monster-master-nav-setup {
-        display: inline-flex !important;
-        align-items: center;
-        justify-content: center;
-        flex: 0 1 84px;
-        min-width: 70px;
-      }
-      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-session-space {
-        min-width: 0;
-      }
-      body.gameframe-monster-route.gameframe-has-destination-bar > .gameframe-session-badge {
-        max-width: calc(21vw - 14px);
-        padding: .46rem .52rem;
-        gap: .42rem;
-      }
-      body.gameframe-monster-route.gameframe-has-destination-bar > .gameframe-session-badge small {
-        display: none;
-      }
-    }
 
-    @media (max-width: 480px) {
-      body.gameframe-monster-route #gameframe-destination-bar {
-        grid-template-columns: 54px minmax(0, 1fr) 126px;
-      }
-      body.gameframe-monster-route #gameframe-destination-bar .gameframe-destination-session-space {
-        width: 126px;
-        min-width: 126px;
-      }
-    }
   `;
   document.head.append(style);
 }
@@ -261,9 +205,10 @@ function diagnostics() {
 function selectedPresentationUnit(view) {
   if (!view?.observation) return null;
   const state = diagnostics();
-  const selectedId = view.observation.phase === "deployment"
+  const inspectedId = document.querySelector("[data-turn-unit-id].is-inspected")?.dataset.turnUnitId;
+  const selectedId = inspectedId ?? (view.observation.phase === "deployment"
     ? state.selectedUnitId ?? view.observation.activeUnitId
-    : view.observation.activeUnitId ?? state.selectedUnitId;
+    : view.observation.activeUnitId ?? state.selectedUnitId);
   return unitById(view, selectedId);
 }
 
@@ -320,7 +265,19 @@ function syncPortraits(view) {
     hud.dataset.owner = selectedUnit.ownerId === view.playerIds?.[0] ? "alpha" : "beta";
     setPortraitArt(hudPortrait, selectedUnit);
     const name = document.querySelector("#monster-master-hud-name");
+    const summary = document.querySelector("#monster-master-unit-summary");
+    const abilityOwner = document.querySelector("#monster-master-ability-owner");
     if (name) name.textContent = `${teamLabel(view, selectedUnit)} ${selectedPresentation.label}`;
+    if (summary && selectedPresentation.summary) summary.textContent = selectedPresentation.summary;
+    if (abilityOwner) abilityOwner.textContent = selectedPresentation.label;
+    const heavyFrameCopy = document.querySelector('[data-ability-id="heavy-frame"] span');
+    if (heavyFrameCopy && selectedUnit.role === "bulwark") {
+      heavyFrameCopy.textContent = `Durable ${selectedUnit.maxHealth}-health body built to hold space.`;
+    }
+    const quickstepCopy = document.querySelector('[data-ability-id="quickstep"] span');
+    if (quickstepCopy && selectedUnit.role === "emberling") {
+      quickstepCopy.textContent = `Movement ${selectedUnit.movement} and initiative ${selectedUnit.initiative}.`;
+    }
   } else {
     delete hud?.dataset.contentId;
     clearPortraitArt(hudPortrait);
@@ -373,8 +330,11 @@ function renderIllustratedAssets() {
     const token = tokenFor(unit, layer);
     if (!token || !Number.isFinite(point?.x) || !Number.isFinite(point?.y)) continue;
     const alphaTeam = unit.ownerId === playerIds[0];
+    const presentation = presentationFor(unit);
+    const targetFacing = alphaTeam ? "right" : "left";
     token.dataset.team = alphaTeam ? "alpha" : "beta";
-    token.dataset.facing = alphaTeam ? "right" : "left";
+    token.dataset.facing = targetFacing;
+    token.dataset.flipped = String((presentation?.authoredFacing ?? "left") !== targetFacing);
     token.dataset.defeated = String(defeatedIds.has(unit.id) || (unit.health ?? 1) <= 0);
     token.style.zIndex = String(Math.max(1, Math.round(point.y * 10)));
     token.style.transform = `translate3d(${point.x}px, ${point.y}px, 0) scale(${zoom})`;

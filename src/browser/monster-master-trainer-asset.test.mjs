@@ -15,9 +15,7 @@ const contentIds = [
   "caller-trainer-v1",
   "rootmaw-brute-v1",
   "gloamspore-stalker-v1",
-  "voidshard-reaver-v1",
   "stormcrest-skitter-v1",
-  "mossmaw-colossus-v1",
 ];
 
 test("illustrated Monster Master units use a shallow contact shadow instead of an opaque token disc", () => {
@@ -46,12 +44,7 @@ test("battlefield art consumes canonical scale and anchors in Pixi canvas-local 
   assert.doesNotMatch(source, /point\.y - layerRect\.top/);
 });
 
-test("Monster Master keeps its Setup destination usable at compact desktop widths", () => {
-  assert.match(source, /@media \(min-width: 721px\) and \(max-width: 1360px\)/);
-  assert.match(source, /\.gameframe-destination-links \.monster-master-nav-setup\s*\{[^}]*display:\s*inline-flex !important[^}]*min-width:\s*70px/s);
-});
-
-test("every approved Arena illustration is available to world sprites and portraits", () => {
+test("every enabled Arena illustration is available to world sprites and portraits", () => {
   for (const contentId of contentIds) {
     assert.ok(source.includes(`"${contentId}"`), `missing illustrated catalog entry: ${contentId}`);
   }
@@ -63,4 +56,17 @@ test("every approved Arena illustration is available to world sprites and portra
 test("the illustration layer exposes one authoritative asset-ownership helper for the Pixi renderer", () => {
   assert.match(source, /window\.gameFrameMonsterIllustratedAssets\s*=\s*Object\.freeze\(\{/);
   assert.match(source, /hasAsset:\s*\(unit\)\s*=>\s*Boolean\(presentationFor\(unit\)\)/);
+});
+
+
+test("illustrated HUD synchronization respects inspection, authored facing, and authoritative stats", () => {
+  assert.match(source, /\[data-turn-unit-id\]\.is-inspected/);
+  assert.match(source, /authoredFacing:\s*"right"/);
+  assert.match(source, /token\.dataset\.flipped = String/);
+  assert.match(source, /selectedPresentation\.summary/);
+  assert.match(source, /selectedUnit\.maxHealth/);
+  assert.match(source, /selectedUnit\.movement/);
+  assert.match(source, /selectedUnit\.initiative/);
+  assert.doesNotMatch(source, /"voidshard-reaver-v1": Object\.freeze/);
+  assert.doesNotMatch(source, /"mossmaw-colossus-v1": Object\.freeze/);
 });

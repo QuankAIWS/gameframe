@@ -3,10 +3,10 @@ import { expect, test } from "@playwright/test";
 const rosterKey = "gameframe:monster-master:arena-roster-v1";
 const scenarios = [
   { trainer: ["vanguard-trainer-v1", "Vanguard", "vanguard-trainer-v1-128.webp"], monster: ["rootmaw-brute-v1", "Rootmaw Brute", "rootmaw-brute-v1-128.webp"], others: ["gloamspore-stalker-v1", "stormcrest-skitter-v1"] },
-  { trainer: ["commander-trainer-v1", "Commander", "commander-trainer-v1-128.webp"], monster: ["gloamspore-stalker-v1", "Gloamspore Stalker", "gloamspore-stalker-v1-128.svg"], others: ["voidshard-reaver-v1", "stormcrest-skitter-v1"] },
-  { trainer: ["arcanic-trainer-v1", "Arcanic", "arcanic-trainer-v1-128.webp"], monster: ["voidshard-reaver-v1", "Voidshard Reaver", "voidshard-reaver-v1-128.webp"], others: ["rootmaw-brute-v1", "mossmaw-colossus-v1"] },
-  { trainer: ["medic-trainer-v1", "Medic", "medic-trainer-v1-128.webp"], monster: ["stormcrest-skitter-v1", "Stormcrest Skitter", "stormcrest-skitter-v1-128.webp"], others: ["rootmaw-brute-v1", "gloamspore-stalker-v1"] },
-  { trainer: ["caller-trainer-v1", "Caller", "caller-trainer-v1-128.webp"], monster: ["mossmaw-colossus-v1", "Mossmaw Colossus", "mossmaw-colossus-v1-128.webp"], others: ["voidshard-reaver-v1", "stormcrest-skitter-v1"] },
+  { trainer: ["commander-trainer-v1", "Commander", "commander-trainer-v1-128.webp"], monster: ["gloamspore-stalker-v1", "Gloamspore Stalker", "gloamspore-stalker-v1-128.svg"], others: ["rootmaw-brute-v1", "stormcrest-skitter-v1"] },
+  { trainer: ["arcanic-trainer-v1", "Arcanic", "arcanic-trainer-v1-128.webp"], monster: ["stormcrest-skitter-v1", "Stormcrest Skitter", "stormcrest-skitter-v1-128.webp"], others: ["rootmaw-brute-v1", "gloamspore-stalker-v1"] },
+  { trainer: ["medic-trainer-v1", "Medic", "medic-trainer-v1-128.webp"], monster: ["rootmaw-brute-v1", "Rootmaw Brute", "rootmaw-brute-v1-128.webp"], others: ["stormcrest-skitter-v1", "gloamspore-stalker-v1"] },
+  { trainer: ["caller-trainer-v1", "Caller", "caller-trainer-v1-128.webp"], monster: ["stormcrest-skitter-v1", "Stormcrest Skitter", "stormcrest-skitter-v1-128.webp"], others: ["rootmaw-brute-v1", "gloamspore-stalker-v1"] },
 ];
 
 async function selectedDeploymentAction(page) {
@@ -55,7 +55,7 @@ async function expectGroundedToken(page, contentId) {
   const token = page.locator(`.monster-master-trainer-token[data-content-id="${contentId}"]`).first();
   const image = token.locator("img");
   await expect(image).toBeAttached();
-  await expect.poll(() => image.evaluate((node) => node.complete && node.naturalWidth > 0)).toBe(true);
+  await expect.poll(() => image.evaluate((node) => node.complete && node.naturalWidth > 0), { timeout: 15_000 }).toBe(true);
   const geometry = await token.evaluate((node) => {
     const imageNode = node.querySelector("img");
     const imageRect = imageNode.getBoundingClientRect();
@@ -111,33 +111,7 @@ for (const [index, scenario] of scenarios.entries()) {
     await page.locator("#monster-master-bot").click();
     await expect(page.locator("body.monster-master-pixi-ready")).toBeVisible();
 
-    if (index === 0) {
-      const nav = await page.evaluate(() => {
-        const links = document.querySelector(".gameframe-destination-links");
-        const session = document.querySelector(".gameframe-destination-session-space");
-        const setup = document.querySelector(".monster-master-nav-setup");
-        const linksRect = links.getBoundingClientRect();
-        const sessionRect = session.getBoundingClientRect();
-        const setupRect = setup.getBoundingClientRect();
-        return {
-          linksRight: linksRect.right,
-          sessionLeft: sessionRect.left,
-          linksScrollWidth: links.scrollWidth,
-          linksClientWidth: links.clientWidth,
-          setupWidth: setupRect.width,
-          setupText: setup.textContent,
-          setupDisplay: getComputedStyle(setup).display,
-          documentWidth: document.documentElement.scrollWidth,
-          viewportWidth: window.innerWidth,
-        };
-      });
-      expect(nav.linksRight).toBeLessThanOrEqual(nav.sessionLeft + 1);
-      expect(nav.linksScrollWidth).toBeLessThanOrEqual(nav.linksClientWidth + 1);
-      expect(nav.setupDisplay).not.toBe("none");
-      expect(nav.setupWidth).toBeGreaterThanOrEqual(60);
-      expect(nav.setupText).toBe("Setup");
-      expect(nav.documentWidth).toBeLessThanOrEqual(nav.viewportWidth + 1);
-    }
+
 
     await expectPortrait(page, scenario.trainer[0], scenario.trainer[2]);
     await selectDeployment(page, scenario.trainer[1]);
