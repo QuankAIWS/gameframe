@@ -48,7 +48,7 @@ test("Monster Master uses one idle-on-demand Pixi WebGL battlefield", async ({ p
 
   const turnPortrait = page.locator(".monster-master-turn-portrait").first();
   await expect(turnPortrait).toBeVisible();
-  await expect.poll(() => turnPortrait.evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("creature-atlas-v1.svg");
+  await expect.poll(() => turnPortrait.evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("stormcrest-skitter-v1-128.webp");
   const masterPortrait = page.locator('.monster-master-unit-hud[data-role="master"] .monster-master-unit-portrait');
   await expect(masterPortrait).toBeVisible();
   await expect.poll(() => masterPortrait.evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("master-trainer-v1-128.webp");
@@ -238,7 +238,6 @@ test("Monster Master Pixi battlefield stays inside the mobile viewport", async (
   expect(overlayGeometry.hintToggle.right).toBeLessThanOrEqual(overlayGeometry.viewportWidth);
   expect(overlayGeometry.status).not.toBeNull();
   expect(overlayGeometry.status.height).toBeGreaterThanOrEqual(20);
-  expect(overlayGeometry.status.whiteSpace).toBe("normal");
-
+  expect(overlayGeometry.status.whiteSpace).toBe("nowrap");
   await page.screenshot({ path: testInfo.outputPath("monster-master-pixi-mobile.png"), fullPage: true });
 });
