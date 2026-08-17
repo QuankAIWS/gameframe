@@ -48,7 +48,7 @@ test("Monster Master uses one idle-on-demand Pixi WebGL battlefield", async ({ p
 
   const turnPortrait = page.locator(".monster-master-turn-portrait").first();
   await expect(turnPortrait).toBeVisible();
-  await expect.poll(() => turnPortrait.evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("creature-atlas-v1.svg");
+  await expect.poll(() => turnPortrait.evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("stormcrest-skitter-v1-128.webp");
   const masterPortrait = page.locator('.monster-master-unit-hud[data-role="master"] .monster-master-unit-portrait');
   await expect(masterPortrait).toBeVisible();
   await expect.poll(() => masterPortrait.evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("master-trainer-v1-128.webp");
@@ -207,18 +207,14 @@ test("Monster Master Pixi battlefield stays inside the mobile viewport", async (
     const comingSoon = document.querySelector(".gameframe-destination-links button[disabled]")?.getBoundingClientRect();
     const toast = document.querySelector("#monster-master-status-toast")?.getBoundingClientRect();
     const hintToggle = document.querySelector(".monster-master-hints-toggle")?.getBoundingClientRect();
-    const status = document.querySelector("#monster-master-status");
-    const statusStyle = status ? getComputedStyle(status) : null;
+    const status = document.querySelector("#monster-master-status")?.getBoundingClientRect();
     return {
       camera: camera ? { top: camera.top, bottom: camera.bottom, right: camera.right } : null,
       command: command ? { top: command.top, bottom: command.bottom, right: command.right } : null,
       comingSoonWidth: comingSoon?.width ?? 0,
       toast: toast ? { left: toast.left, right: toast.right, top: toast.top, height: toast.height } : null,
       hintToggle: hintToggle ? { left: hintToggle.left, right: hintToggle.right, top: hintToggle.top } : null,
-      status: status ? {
-        height: status.getBoundingClientRect().height,
-        whiteSpace: statusStyle.whiteSpace,
-      } : null,
+      status: status ? { left: status.left, right: status.right, height: status.height } : null,
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
     };
@@ -237,8 +233,8 @@ test("Monster Master Pixi battlefield stays inside the mobile viewport", async (
   expect(overlayGeometry.hintToggle.left).toBeGreaterThanOrEqual(0);
   expect(overlayGeometry.hintToggle.right).toBeLessThanOrEqual(overlayGeometry.viewportWidth);
   expect(overlayGeometry.status).not.toBeNull();
+  expect(overlayGeometry.status.left).toBeGreaterThanOrEqual(0);
+  expect(overlayGeometry.status.right).toBeLessThanOrEqual(overlayGeometry.viewportWidth);
   expect(overlayGeometry.status.height).toBeGreaterThanOrEqual(20);
-  expect(overlayGeometry.status.whiteSpace).toBe("normal");
-
   await page.screenshot({ path: testInfo.outputPath("monster-master-pixi-mobile.png"), fullPage: true });
 });

@@ -239,6 +239,7 @@ test("captures Monster Master Mend targeting and result", async ({ page, request
   const prepared = await prepareAuthoritativeState(
     request,
     (view) => view.observation.legalActions.some((action) => action.type === "use-ability"),
+    { avoidMasterAttacks: true },
   );
   const mend = prepared.observation.legalActions.find((action) => action.type === "use-ability");
   await openPreparedState(page, prepared);

@@ -24,8 +24,9 @@ test("Casual Games keeps the player session visible and launches Cascade Crush",
 
   const session = page.locator("#gameframe-session-badge");
   await expect(session).toBeVisible();
-  await expect(session).toContainText("Discord session");
   await expect(session).toContainText("Casual Player");
+  await session.locator("#gameframe-account-trigger").click();
+  await expect(page.locator("#gameframe-account-panel")).toContainText("GameFrame account");
 
   await expect(page.getByRole("heading", { name: "Casual Games", exact: true })).toBeAttached();
   await expect(page.locator(".casual-card")).toHaveCount(1);

@@ -78,6 +78,9 @@ function rawEvent(id: string) {
 test("authenticated players can upload only to their own Cascade telemetry custody and admins can export known players", async () => {
   const environment = env();
   const parent = workerFor({ playerId: "discord:2", source: "discord", displayName: "Mom" });
+  const session = await parent.fetch(new Request("https://gameframe.test/api/session"), environment);
+  assert.equal(session.status, 200);
+
   const upload = await parent.fetch(new Request("https://gameframe.test/api/me/cascade/telemetry", {
     method: "POST",
     headers: { "content-type": "application/json" },

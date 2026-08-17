@@ -233,10 +233,9 @@ test("Monster Master RPG uses click for the Master and WASD for the camera", asy
   expect(explorationRequest).toEqual({ protocolVersion: 1, kind: "campaign.exploration.attach", campaignId });
   expect(explorationRequest.authenticatedPlayerId).toBeUndefined();
 
-  const stats = await page.evaluate(() => window.gameFrameMonsterPixi?.getTerrainStats?.());
-  expect(stats.groundObjects).toBe(1);
-  expect(stats.wallCount).toBeGreaterThan(0);
-  expect(stats.unitObjects).toBe(2);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi?.getTerrainStats?.()?.groundObjects ?? 0)).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi?.getTerrainStats?.()?.wallCount ?? 0)).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => window.gameFrameMonsterPixi?.getTerrainStats?.()?.unitObjects ?? 0)).toBe(2);
 
   const target = await page.evaluate(() => window.gameFrameMonsterPixi?.worldToScreen?.({ x: 10, y: 6 }));
   expect(target).toBeTruthy();
@@ -260,7 +259,7 @@ test("Monster Master RPG uses click for the Master and WASD for the camera", asy
 
   const revisionBeforeRefresh = position.positionRevision;
   await page.locator("#mm-rpg-refresh").click();
-  await expect.poll(() => explorationAttachCount).toBe(2);
+  await expect.poll(() => explorationAttachCount).toBe(3);
   await expect(page.locator("#mm-rpg-world-materialization")).toContainText(materializationId);
   expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().positionRevision)).toBe(revisionBeforeRefresh);
   expect(await page.evaluate(() => window.gameFrameMonsterRpgWorld?.getPlayerPosition?.().transform)).toEqual({ x: 10, y: 6, facing: "east" });

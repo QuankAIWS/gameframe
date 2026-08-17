@@ -1,5 +1,4 @@
 import { establishGameFrameIdentity } from "./gameframe-auth.js";
-import { installAuthenticatedInvitationFlow } from "./secure-match-invite.js";
 
 const launcher = [...document.querySelectorAll('script[type="module"][src="/auth-launcher.js"]')].at(-1);
 const entry = launcher?.dataset.entry;
@@ -151,13 +150,15 @@ async function finishBoot() {
   shell?.setAttribute("aria-busy", "false");
 
   if (bootMode === "cold") {
-    setBootMessage("PLAYER ENVIRONMENT READY // WELCOME TO GAMEFRAME");
-    await paceColdBoot(3000, 100, "GAMEFRAME SYSTEM READY");
+    setBootMessage(window.gameFrameOffline
+      ? "OFFLINE PLAYER ENVIRONMENT READY // LOCAL GAMEFRAME AVAILABLE"
+      : "PLAYER ENVIRONMENT READY // WELCOME TO GAMEFRAME");
+    await paceColdBoot(3000, 100, window.gameFrameOffline ? "GAMEFRAME OFFLINE READY" : "GAMEFRAME SYSTEM READY");
   } else {
-    setBootMessage("GAMEFRAME ONLINE");
+    setBootMessage(window.gameFrameOffline ? "GAMEFRAME OFFLINE" : "GAMEFRAME ONLINE");
     const minimumVisibleMs = reducedMotion ? 0 : 900;
     const remaining = Math.max(0, minimumVisibleMs - (performance.now() - bootStartedAt));
-    await animateBootProgress(100, remaining, "GAMEFRAME ONLINE");
+    await animateBootProgress(100, remaining, window.gameFrameOffline ? "GAMEFRAME OFFLINE READY" : "GAMEFRAME ONLINE");
   }
 
   rememberColdBoot();
@@ -199,12 +200,17 @@ async function launch() {
 
   setBootStage("session", "active");
   setBootMessage(bootMode === "cold" ? "NEGOTIATING PLAYER HANDSHAKE" : "VERIFYING PLAYER SESSION");
-  const identity = await establishGameFrameIdentity({ preferredDevelopmentPlayerId });
+  const identity = await establishGameFrameIdentity({
+    preferredDevelopmentPlayerId,
+    allowOfflineCachedIdentity: true,
+  });
+  const offlineMode = identity?.offline === true;
+  window.gameFrameOffline = offlineMode;
   setBootStage("session", "ok");
-  await paceColdBoot(700, 30, "PLAYER SESSION VERIFIED");
+  await paceColdBoot(700, 30, offlineMode ? "CACHED PLAYER RESTORED" : "PLAYER SESSION VERIFIED");
 
   window.gameFrameIdentity = identity;
-  if (identity.source === "discord") {
+  if (identity.source === "discord" && !offlineMode) {
     window.localStorage.setItem("scribbles-gameframe.player-id", identity.playerId);
     if (parameters.has("player")) {
       const url = new URL(window.location.href);
@@ -223,18 +229,21 @@ async function launch() {
   if (entry === "/app.js") {
     setBootStage("library", "active");
     setBootProgress(55, "INDEXING DESTINATION REGISTRY");
-    setBootMessage("LOADING DESTINATION REGISTRY");
-    await import("./game-hub.js");
+    setBootMessage(offlineMode ? "LOADING OFFLINE DESTINATIONS" : "LOADING DESTINATION REGISTRY");
+    if (offlineMode) await import("./gameframe-offline-shell.js");
+    else await import("./game-hub.js");
     setBootStage("library", "ok");
-    await paceColdBoot(1900, 72, "DESTINATION REGISTRY INDEXED");
+    await paceColdBoot(1900, 72, offlineMode ? "OFFLINE DESTINATIONS READY" : "DESTINATION REGISTRY INDEXED");
 
     setBootStage("runtime", "active");
-    setBootProgress(78, "STARTING GAME CLIENT");
-    setBootMessage("STARTING GAME CLIENT");
-    await import("./tic-tac-toe-noir.js");
-    await import(entry);
+    setBootProgress(78, offlineMode ? "STARTING LOCAL GAMEFRAME" : "STARTING GAME CLIENT");
+    setBootMessage(offlineMode ? "STARTING LOCAL GAMEFRAME" : "STARTING GAME CLIENT");
+    if (!offlineMode) {
+      await import("./tic-tac-toe-noir.js");
+      await import(entry);
+    }
     setBootStage("runtime", "ok");
-    await paceColdBoot(2500, 92, "GAME CLIENT READY");
+    await paceColdBoot(2500, 92, offlineMode ? "LOCAL GAMEFRAME READY" : "GAME CLIENT READY");
   } else if (entry === "/monster-master-app.js") {
     const pixiFallbackKey = "gameframe:monster-master:legacy-renderer-fallback";
     const useLegacyRenderer = sessionStorage.getItem(pixiFallbackKey) === "true";
@@ -294,7 +303,10 @@ async function launch() {
     await import(entry);
   }
 
-  installAuthenticatedInvitationFlow({ identity, entry });
+  if (!offlineMode) {
+    const { installAuthenticatedInvitationFlow } = await import("./secure-match-invite.js");
+    installAuthenticatedInvitationFlow({ identity, entry });
+  }
   await finishBoot();
 }
 

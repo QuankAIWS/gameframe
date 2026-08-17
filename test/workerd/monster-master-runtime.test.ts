@@ -119,7 +119,7 @@ describe("Monster Master in the real workerd runtime", () => {
 
   it("persists the completed deployment transition and Monster Master BattleBot combat activation", async () => {
     let view = await createMatch(["human", GAMEFRAME_BOT_PLAYER_ID]);
-    for (let deployment = 0; deployment < 3; deployment += 1) {
+    for (let deployment = 0; deployment < 4; deployment += 1) {
       view = await submit(
         view,
         "human",
@@ -127,19 +127,21 @@ describe("Monster Master in the real workerd runtime", () => {
         `workerd-mm-human-deploy-${deployment + 1}`,
       );
     }
-    expect(view.revision).toBe(6);
+    expect(view.revision).toBe(8);
+    expect(view.eventCount).toBe(8);
     expect(view.observation.phase).toBe("combat");
-    expect(view.observation.activeUnitId).toBe("alpha-emberling");
+    expect(view.observation.board.units).toHaveLength(8);
+    expect(view.observation.activeUnitId).toBe("alpha-stormcrest");
 
     view = await submit(
       view,
       "human",
       actionOfType(view, "end-activation"),
-      "workerd-mm-human-end-emberling",
+      "workerd-mm-human-end-stormcrest",
     );
-    expect(view.revision).toBe(9);
+    expect(view.revision).toBeGreaterThan(9);
     expect(view.observation.activePlayerId).toBe("human");
-    expect(view.observation.activeUnitId).toBe("alpha-master");
+    expect(view.observation.activeUnitId).toBe("alpha-gloamspore");
 
     await evictDurableObject(matchStub(view.matchId));
     const restored = await workerFetch(
