@@ -458,23 +458,29 @@ function rebuildUnits() {
     group.gameFrameKind = "unit";
     group.eventMode = "none";
 
-    const shadow = new Graphics().ellipse(0, TILE_HEIGHT * 0.75, TILE_WIDTH * 0.28, TILE_HEIGHT * 0.24).fill({ color: 0x02060d, alpha: 0.45 });
+    const illustrated = Boolean(window.gameFrameMonsterIllustratedAssets?.hasAsset?.(unit));
     const ringColor = unit.ownerId === firstPlayer ? 0x4badff : 0xff5b8f;
     const ring = new Graphics().ellipse(0, TILE_HEIGHT * 0.65, TILE_WIDTH * 0.32, TILE_HEIGHT * 0.27)
       .stroke({ color: ringColor, width: unit.id === state.view.observation.activeUnitId ? 4 : 2, alpha: 0.88 });
-    const sprite = new Sprite(textureFromFrame(state.textures.creatureBase, creatureFrame(unit)));
-    sprite.anchor.set(0.5, 0.86);
-    const size = unit.role === "bulwark" ? 104 : unit.role === "master" ? 94 : 82;
-    sprite.width = size;
-    sprite.height = size;
-    if (unit.ownerId === firstPlayer) sprite.scale.x *= -1;
+    group.addChild(ring);
+
+    if (!illustrated) {
+      const shadow = new Graphics().ellipse(0, TILE_HEIGHT * 0.75, TILE_WIDTH * 0.28, TILE_HEIGHT * 0.24).fill({ color: 0x02060d, alpha: 0.45 });
+      const sprite = new Sprite(textureFromFrame(state.textures.creatureBase, creatureFrame(unit)));
+      sprite.anchor.set(0.5, 0.86);
+      const size = unit.role === "bulwark" ? 104 : unit.role === "master" ? 94 : 82;
+      sprite.width = size;
+      sprite.height = size;
+      if (unit.ownerId === firstPlayer) sprite.scale.x *= -1;
+      group.addChildAt(shadow, 0);
+      group.addChild(sprite);
+    }
 
     const healthBack = new Graphics().roundRect(-34, 8, 68, 6, 3).fill({ color: 0x050910, alpha: 0.9 });
     const healthWidth = 68 * clamp(unit.health / Math.max(1, unit.maxHealth), 0, 1);
     const health = new Graphics().roundRect(-34, 8, healthWidth, 6, 3)
       .fill({ color: unit.health / unit.maxHealth > 0.45 ? 0x6ee0a5 : 0xff9a75, alpha: 1 });
-
-    group.addChild(shadow, ring, sprite, healthBack, health);
+    group.addChild(healthBack, health);
     state.layers.worldObjects.addChild(group);
   }
   state.layers.worldObjects.sortChildren();
