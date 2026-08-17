@@ -60,12 +60,12 @@ jobs:
       playerPlatform: ${{ steps.classify.outputs.playerPlatform }}
     steps:
       - name: Check out candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
 
@@ -103,9 +103,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
           cache: npm
@@ -125,7 +125,7 @@ jobs:
         run: npx playwright test test/visual/player-ui-review.spec.mjs test/visual/player-ui-regressions.spec.mjs --config playwright.visual.config.mjs
       - name: Upload shared shell screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: shared-shell-ui-review-${{ github.run_id }}
           path: |
@@ -141,9 +141,9 @@ jobs:
     timeout-minutes: 12
     steps:
       - name: Check out candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
           cache: npm
@@ -157,7 +157,7 @@ jobs:
         run: npx playwright test test/visual/casual-games-destination.spec.mjs --config playwright.visual.config.mjs
       - name: Upload Casual Games screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: casual-games-ui-review-${{ github.run_id }}
           path: |
@@ -173,9 +173,9 @@ jobs:
     timeout-minutes: 18
     steps:
       - name: Check out candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
           cache: npm
@@ -194,7 +194,7 @@ jobs:
         run: npx playwright test test/visual/cascade*.spec.mjs --config playwright.visual.config.mjs
       - name: Upload Cascade screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cascade-ui-review-${{ github.run_id }}
           path: |
@@ -210,9 +210,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
           cache: npm
@@ -232,9 +232,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
           cache: npm
@@ -254,9 +254,9 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Check out candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
           cache: npm
@@ -290,7 +290,7 @@ jobs:
         run: npx playwright test test/visual/monster-master*.spec.mjs --config playwright.visual.config.mjs
       - name: Upload Monster Master screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: monster-master-ui-review-${{ github.run_id }}
           path: |
@@ -306,9 +306,9 @@ jobs:
     timeout-minutes: 16
     steps:
       - name: Check out candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
           cache: npm
@@ -337,7 +337,7 @@ jobs:
         run: npx playwright test test/visual/player-platform.spec.mjs --config playwright.visual.config.mjs
       - name: Upload player platform screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: player-platform-ui-review-${{ github.run_id }}
           path: |
