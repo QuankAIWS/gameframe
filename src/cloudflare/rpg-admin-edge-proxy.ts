@@ -100,15 +100,8 @@ export async function proxyPublicRpgAdminRequest(
         redirect: "manual",
         signal: controller.signal,
       });
-      const contentLength = Number(upstream.headers.get("content-length"));
-      if (Number.isFinite(contentLength) && contentLength > MAX_RESPONSE_BODY_BYTES) {
-        return json(502, {
-          error: "admin_upstream_response_too_large",
-          message: "The staging administrator response exceeded the support-bundle limit.",
-        });
-      }
-      const bytes = new Uint8Array(await upstream.arrayBuffer());
-      if (bytes.byteLength > MAX_RESPONSE_BODY_BYTES) {
+      const bytes = await readBoundedResponseBody(upstream);
+      if (!bytes) {
         return json(502, {
           error: "admin_upstream_response_too_large",
           message: "The staging administrator response exceeded the support-bundle limit.",
@@ -132,4 +125,52 @@ export async function proxyPublicRpgAdminRequest(
       message: error instanceof Error ? error.message : "The staging administrator request failed.",
     });
   }
+}
+
+async function readBoundedResponseBody(upstream: Response): Promise<Uint8Array | null> {
+  const contentLength = Number(upstream.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_RESPONSE_BODY_BYTES) {
+    try {
+      await upstream.body?.cancel("admin response exceeds support-bundle limit");
+    } catch {
+      // The bounded 502 remains authoritative even if cancellation fails.
+    }
+    return null;
+  }
+  if (!upstream.body) return new Uint8Array();
+
+  const reader = upstream.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value || value.byteLength === 0) continue;
+      if (totalBytes + value.byteLength > MAX_RESPONSE_BODY_BYTES) {
+        try {
+          await reader.cancel("admin response exceeds support-bundle limit");
+        } catch {
+          // The bounded 502 remains authoritative even if cancellation fails.
+        }
+        return null;
+      }
+      chunks.push(value);
+      totalBytes += value.byteLength;
+    }
+  } finally {
+    try {
+      reader.releaseLock();
+    } catch {
+      // A cancelled stream may already have released its lock in some runtimes.
+    }
+  }
+
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
 }
