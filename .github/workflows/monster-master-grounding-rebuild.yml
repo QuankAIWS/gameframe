@@ -1,0 +1,103 @@
+name: Monster Master Grounding Rebuild
+
+on:
+  push:
+    branches:
+      - fix/monster-master-arena-grounding
+    paths:
+      - .github/workflows/monster-master-grounding-rebuild.yml
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/monster-master-arena-grounding
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - run: npm ci
+      - name: Recover reviewed grounding implementation and focused proof
+        run: |
+          git fetch origin bf3cdeaccaef07623226a12c137fecd0e420a7c9
+          git show bf3cdeaccaef07623226a12c137fecd0e420a7c9:public/monster-master-trainer-asset.js > public/monster-master-trainer-asset.js
+          git show bf3cdeaccaef07623226a12c137fecd0e420a7c9:src/browser/monster-master-trainer-asset.test.mjs > src/browser/monster-master-trainer-asset.test.mjs
+          git show bf3cdeaccaef07623226a12c137fecd0e420a7c9:src/browser/monster-master-pixi-illustrated-assets.test.mjs > src/browser/monster-master-pixi-illustrated-assets.test.mjs
+          git show bf3cdeaccaef07623226a12c137fecd0e420a7c9:test/visual/monster-master-illustrated-grounding.spec.mjs > test/visual/monster-master-illustrated-grounding.spec.mjs
+      - name: Remove duplicate Pixi creature body beneath illustrated art
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('src/browser/monster-master-pixi-entry.js')
+          text = path.read_text()
+          old = '''    const shadow = new Graphics().ellipse(0, TILE_HEIGHT * 0.75, TILE_WIDTH * 0.28, TILE_HEIGHT * 0.24).fill({ color: 0x02060d, alpha: 0.45 });
+              const ringColor = unit.ownerId === firstPlayer ? 0x4badff : 0xff5b8f;
+              const ring = new Graphics().ellipse(0, TILE_HEIGHT * 0.65, TILE_WIDTH * 0.32, TILE_HEIGHT * 0.27)
+                .stroke({ color: ringColor, width: unit.id === state.view.observation.activeUnitId ? 4 : 2, alpha: 0.88 });
+              const sprite = new Sprite(textureFromFrame(state.textures.creatureBase, creatureFrame(unit)));
+              sprite.anchor.set(0.5, 0.86);
+              const size = unit.role === "bulwark" ? 104 : unit.role === "master" ? 94 : 82;
+              sprite.width = size;
+              sprite.height = size;
+              if (unit.ownerId === firstPlayer) sprite.scale.x *= -1;
+
+              const healthBack = new Graphics().roundRect(-34, 8, 68, 6, 3).fill({ color: 0x050910, alpha: 0.9 });
+              const healthWidth = 68 * clamp(unit.health / Math.max(1, unit.maxHealth), 0, 1);
+              const health = new Graphics().roundRect(-34, 8, healthWidth, 6, 3)
+                .fill({ color: unit.health / unit.maxHealth > 0.45 ? 0x6ee0a5 : 0xff9a75, alpha: 1 });
+
+              group.addChild(shadow, ring, sprite, healthBack, health);'''
+          new = '''    const illustrated = Boolean(window.gameFrameMonsterIllustratedAssets?.hasAsset?.(unit));
+              const ringColor = unit.ownerId === firstPlayer ? 0x4badff : 0xff5b8f;
+              const ring = new Graphics().ellipse(0, TILE_HEIGHT * 0.65, TILE_WIDTH * 0.32, TILE_HEIGHT * 0.27)
+                .stroke({ color: ringColor, width: unit.id === state.view.observation.activeUnitId ? 4 : 2, alpha: 0.88 });
+              group.addChild(ring);
+
+              if (!illustrated) {
+                const shadow = new Graphics().ellipse(0, TILE_HEIGHT * 0.75, TILE_WIDTH * 0.28, TILE_HEIGHT * 0.24).fill({ color: 0x02060d, alpha: 0.45 });
+                const sprite = new Sprite(textureFromFrame(state.textures.creatureBase, creatureFrame(unit)));
+                sprite.anchor.set(0.5, 0.86);
+                const size = unit.role === "bulwark" ? 104 : unit.role === "master" ? 94 : 82;
+                sprite.width = size;
+                sprite.height = size;
+                if (unit.ownerId === firstPlayer) sprite.scale.x *= -1;
+                group.addChildAt(shadow, 0);
+                group.addChild(sprite);
+              }
+
+              const healthBack = new Graphics().roundRect(-34, 8, 68, 6, 3).fill({ color: 0x050910, alpha: 0.9 });
+              const healthWidth = 68 * clamp(unit.health / Math.max(1, unit.maxHealth), 0, 1);
+              const health = new Graphics().roundRect(-34, 8, healthWidth, 6, 3)
+                .fill({ color: unit.health / unit.maxHealth > 0.45 ? 0x6ee0a5 : 0xff9a75, alpha: 1 });
+              group.addChild(healthBack, health);'''
+          assert text.count(old) == 1, 'current rebuildUnits body changed'
+          path.write_text(text.replace(old, new, 1))
+      - name: Build committed Pixi bundle
+        run: npm run build:monster-master-pixi
+      - name: Focused contracts
+        run: |
+          node --check public/monster-master-trainer-asset.js
+          node --check src/browser/monster-master-pixi-entry.js
+          npm run check:monster-master-pixi
+          node --test src/browser/monster-master-trainer-asset.test.mjs src/browser/monster-master-pixi-illustrated-assets.test.mjs
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Grounding visual proof
+        run: npx playwright test test/visual/monster-master-illustrated-grounding.spec.mjs --config playwright.visual.config.mjs
+      - name: Commit clean rebuilt candidate
+        if: success()
+        run: |
+          rm .github/workflows/monster-master-grounding-rebuild.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix(monster-master): ground illustrated arena units"
+          git push origin HEAD:fix/monster-master-arena-grounding
