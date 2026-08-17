@@ -1,3 +1,17 @@
+body.gameframe-has-destination-bar.gameframe-monster-route
+  #gameframe-destination-bar .gameframe-destination-links a {
+  min-width: 0;
+  flex: 1 1 0;
+  padding-inline: 8px;
+}
+
+body.gameframe-has-destination-bar.gameframe-monster-route
+  #gameframe-destination-bar .monster-master-nav-setup {
+  flex: 0 0 76px;
+  min-width: 76px;
+  padding-inline: 8px;
+}
+
 @media (max-width: 900px) {
   body.monster-master-match-active .monster-master-game-grid {
     overflow: clip;
