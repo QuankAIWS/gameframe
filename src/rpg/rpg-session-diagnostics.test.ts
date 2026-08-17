@@ -17,17 +17,8 @@ const ISSUED_AT = "2026-08-15T15:00:00.000Z";
 const MAX_DIAGNOSTICS_BYTES = 3_500_000;
 
 test("diagnostics correlate canonical evidence and redact credential-like data", () => {
-  const directory = mkdtempSync(join(tmpdir(), "gameframe-rpg-diagnostics-"));
-  const filePath = join(directory, "rpg.sqlite");
-  const campaigns = new SqliteRpgCampaignStore({ filePath });
-  const commands = new SqliteRpgCommandAcceptanceRepository({ filePath });
-  const outbox = new SqliteRuntimeCommandOutbox({ filePath });
+  const { directory, filePath, campaigns, commands, outbox } = fixture();
   try {
-    bootstrap(campaigns);
-
-    // The SQLite presentation sequence is authoritative. Even if a stored JSON
-    // document is corrupted to claim another sequence, support output must not
-    // let that duplicate field override the row's canonical ordering key.
     const corruption = new DatabaseSync(filePath);
     try {
       const row = corruption.prepare(`
@@ -53,29 +44,7 @@ test("diagnostics correlate canonical evidence and redact credential-like data",
       corruption.close();
     }
 
-    const receipt = commands.acceptCommand({
-      campaignId: CAMPAIGN_ID,
-      commandId: "command:diagnostic-cart-01",
-      authenticatedPlayerId: PLAYER_ID,
-      expectedGameframeCoordinationRevision: 0,
-      issuedAt: ISSUED_AT,
-      command: {
-        kind: "campaign.submit_action",
-        visibility: "public",
-        text: "Uncover the checkpoint cart.",
-      },
-      presentationEvents: [{
-        eventId: "event:cart-action",
-        kind: "campaign.action_submitted",
-        audience: { kind: "public" },
-        payload: {
-          commandId: "command:diagnostic-cart-01",
-          actorId: PLAYER_ID,
-          text: "Uncover the checkpoint cart.",
-        },
-      }],
-    });
-
+    const receipt = acceptAction(commands, "command:diagnostic-cart-01");
     const claim = outbox.claimNext({
       now: "2026-08-15T15:00:01.000Z",
       leaseDurationMs: 30_000,
@@ -94,7 +63,6 @@ test("diagnostics correlate canonical evidence and redact credential-like data",
       campaignId: CAMPAIGN_ID,
       generatedAt: "2026-08-15T15:01:00.000Z",
     });
-
     assert.equal(diagnostics.schemaVersion, "gameframe.rpg.session-diagnostics.v1");
     assert.equal(diagnostics.campaign.campaignId, CAMPAIGN_ID);
     assert.equal(diagnostics.campaign.coordination.gameframeCoordinationRevision, 1);
@@ -127,21 +95,13 @@ test("diagnostics correlate canonical evidence and redact credential-like data",
     assert.equal("lease" in command.runtime, false);
     assert.equal(serialized.includes("fingerprint"), false);
   } finally {
-    outbox.close();
-    commands.close();
-    campaigns.close();
-    rmSync(directory, { recursive: true, force: true });
+    closeFixture({ directory, campaigns, commands, outbox });
   }
 });
 
 test("diagnostics retain the newest 2048 events and commands in chronological order", () => {
-  const directory = mkdtempSync(join(tmpdir(), "gameframe-rpg-diagnostics-window-"));
-  const filePath = join(directory, "rpg.sqlite");
-  const campaigns = new SqliteRpgCampaignStore({ filePath });
-  const commands = new SqliteRpgCommandAcceptanceRepository({ filePath });
-  const outbox = new SqliteRuntimeCommandOutbox({ filePath });
+  const { directory, filePath, campaigns, commands, outbox } = fixture();
   try {
-    bootstrap(campaigns);
     commands.close();
     outbox.close();
     const database = new DatabaseSync(filePath);
@@ -174,13 +134,8 @@ test("diagnostics retain the newest 2048 events and commands in chronological or
 });
 
 test("diagnostics enforce a transport-safe byte budget while retaining newest evidence", () => {
-  const directory = mkdtempSync(join(tmpdir(), "gameframe-rpg-diagnostics-budget-"));
-  const filePath = join(directory, "rpg.sqlite");
-  const campaigns = new SqliteRpgCampaignStore({ filePath });
-  const commands = new SqliteRpgCommandAcceptanceRepository({ filePath });
-  const outbox = new SqliteRuntimeCommandOutbox({ filePath });
+  const { directory, filePath, campaigns, commands, outbox } = fixture();
   try {
-    bootstrap(campaigns);
     commands.close();
     outbox.close();
     const database = new DatabaseSync(filePath);
@@ -215,14 +170,10 @@ test("diagnostics enforce a transport-safe byte budget while retaining newest ev
   }
 });
 
-test("diagnostics fail closed when a Runtime receipt identity does not match its delivery", () => {
-  const directory = mkdtempSync(join(tmpdir(), "gameframe-rpg-diagnostics-receipt-"));
-  const filePath = join(directory, "rpg.sqlite");
-  const campaigns = new SqliteRpgCampaignStore({ filePath });
-  const commands = new SqliteRpgCommandAcceptanceRepository({ filePath });
-  const outbox = new SqliteRuntimeCommandOutbox({ filePath });
+test("diagnostics fail closed when a persisted Runtime receipt identity is corrupt", () => {
+  const { directory, filePath, campaigns, commands, outbox } = fixture();
+  let outboxClosed = false;
   try {
-    bootstrap(campaigns);
     const receipt = commands.acceptCommand({
       campaignId: CAMPAIGN_ID,
       commandId: "command:receipt-mismatch",
@@ -241,6 +192,7 @@ test("diagnostics fail closed when a Runtime receipt identity does not match its
       leaseDurationMs: 30_000,
     });
     assert.ok(claim);
+    const acceptedAt = "2026-08-15T15:00:02.000Z";
     outbox.markRuntimeAccepted({
       deliveryId: receipt.deliveryId,
       leaseToken: claim.leaseToken,
@@ -248,19 +200,39 @@ test("diagnostics fail closed when a Runtime receipt identity does not match its
         protocolVersion: 1,
         kind: "runtime.command_accepted",
         deliveryId: receipt.deliveryId,
+        campaignId: CAMPAIGN_ID,
+        commandId: "command:receipt-mismatch",
+        acceptedAt,
+      },
+      now: acceptedAt,
+    });
+    outbox.close();
+    outboxClosed = true;
+
+    const corruption = new DatabaseSync(filePath);
+    try {
+      corruption.prepare(`
+        UPDATE rpg_runtime_command_outbox_v1
+        SET runtime_receipt_json = ?
+        WHERE delivery_id = ?
+      `).run(JSON.stringify({
+        protocolVersion: 1,
+        kind: "runtime.command_accepted",
+        deliveryId: receipt.deliveryId,
         campaignId: "campaign-wrong",
         commandId: "command-wrong",
-        acceptedAt: "2026-08-15T15:00:02.000Z",
-      },
-      now: "2026-08-15T15:00:02.000Z",
-    });
+        acceptedAt,
+      }), receipt.deliveryId);
+    } finally {
+      corruption.close();
+    }
 
     assert.throws(
       () => readRpgSessionDiagnostics({ filePath, campaignId: CAMPAIGN_ID }),
       /inconsistent Runtime receipt identity/,
     );
   } finally {
-    outbox.close();
+    if (!outboxClosed) outbox.close();
     commands.close();
     campaigns.close();
     rmSync(directory, { recursive: true, force: true });
@@ -268,15 +240,12 @@ test("diagnostics fail closed when a Runtime receipt identity does not match its
 });
 
 test("diagnostics fail closed for an unknown campaign", () => {
-  const directory = mkdtempSync(join(tmpdir(), "gameframe-rpg-diagnostics-"));
+  const directory = mkdtempSync(join(tmpdir(), "gameframe-rpg-diagnostics-unknown-"));
   const filePath = join(directory, "rpg.sqlite");
   const campaigns = new SqliteRpgCampaignStore({ filePath });
   try {
     assert.throws(
-      () => readRpgSessionDiagnostics({
-        filePath,
-        campaignId: "campaign-does-not-exist",
-      }),
+      () => readRpgSessionDiagnostics({ filePath, campaignId: "campaign-does-not-exist" }),
       /does not exist/,
     );
   } finally {
@@ -285,7 +254,12 @@ test("diagnostics fail closed for an unknown campaign", () => {
   }
 });
 
-function bootstrap(campaigns: SqliteRpgCampaignStore): void {
+function fixture() {
+  const directory = mkdtempSync(join(tmpdir(), "gameframe-rpg-diagnostics-"));
+  const filePath = join(directory, "rpg.sqlite");
+  const campaigns = new SqliteRpgCampaignStore({ filePath });
+  const commands = new SqliteRpgCommandAcceptanceRepository({ filePath });
+  const outbox = new SqliteRuntimeCommandOutbox({ filePath });
   campaigns.bootstrap({
     campaignId: CAMPAIGN_ID,
     title: "Observability Test",
@@ -309,6 +283,44 @@ function bootstrap(campaigns: SqliteRpgCampaignStore): void {
     }],
     initializedAt: "2026-08-15T14:58:00.000Z",
   });
+  return { directory, filePath, campaigns, commands, outbox };
+}
+
+function acceptAction(commands: SqliteRpgCommandAcceptanceRepository, commandId: string) {
+  return commands.acceptCommand({
+    campaignId: CAMPAIGN_ID,
+    commandId,
+    authenticatedPlayerId: PLAYER_ID,
+    expectedGameframeCoordinationRevision: 0,
+    issuedAt: ISSUED_AT,
+    command: {
+      kind: "campaign.submit_action",
+      visibility: "public",
+      text: "Uncover the checkpoint cart.",
+    },
+    presentationEvents: [{
+      eventId: "event:cart-action",
+      kind: "campaign.action_submitted",
+      audience: { kind: "public" },
+      payload: {
+        commandId,
+        actorId: PLAYER_ID,
+        text: "Uncover the checkpoint cart.",
+      },
+    }],
+  });
+}
+
+function closeFixture(input: {
+  directory: string;
+  campaigns: SqliteRpgCampaignStore;
+  commands: SqliteRpgCommandAcceptanceRepository;
+  outbox: SqliteRuntimeCommandOutbox;
+}): void {
+  input.outbox.close();
+  input.commands.close();
+  input.campaigns.close();
+  rmSync(input.directory, { recursive: true, force: true });
 }
 
 function insertSyntheticEvidence(database: DatabaseSync, input: {
@@ -342,12 +354,13 @@ function insertSyntheticEvidence(database: DatabaseSync, input: {
     for (let index = 0; index < input.eventCount; index += 1) {
       const sequence = index + 2;
       const createdAt = new Date(base + index * 1_000).toISOString();
+      const eventId = `event:synthetic:${String(index).padStart(4, "0")}`;
       insertEvent.run(
         CAMPAIGN_ID,
         sequence,
-        `event:synthetic:${String(index).padStart(4, "0")}`,
+        eventId,
         JSON.stringify({
-          eventId: `event:synthetic:${String(index).padStart(4, "0")}`,
+          eventId,
           kind: "diagnostic.synthetic",
           audience: { kind: "public" },
           payload: { text: eventText, index },
