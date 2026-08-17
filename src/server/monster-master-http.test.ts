@@ -61,7 +61,7 @@ test("HTTP boundary alternates human and Monster Master BattleBot deployments", 
   assert.equal(view.observation.phase, "combat");
   assert.equal(view.observation.board.units.length, 8);
   assert.equal(view.observation.activePlayerId, "human");
-  assert.equal(view.observation.activeUnitId, "alpha-emberling");
+  assert.equal(view.observation.activeUnitId, "alpha-stormcrest");
 });
 
 test("HTTP boundary preserves player-specific Monster Master legal actions", async (context) => {
