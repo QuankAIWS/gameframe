@@ -13,7 +13,8 @@
     "approved-gloamspore-stalker-isometric-master-v1",
     "approved-voidshard-reaver-isometric-master-v1",
     "approved-stormcrest-skitter-class-one-isometric-master-v1",
-    "approved-mossmaw-colossus-isometric-master-v1"
+    "approved-mossmaw-colossus-isometric-master-v1",
+    "approved-leafwhisk-runner-class-one-isometric-master-v1"
   ],
   "creatureAtlas": "/assets/monster-master/creature-atlas-v1.svg",
   "creatureCell": { "width": 96, "height": 96 },
@@ -219,6 +220,21 @@
       "perspective": "three-quarter-down-isometric",
       "anchor": { "x": 0.5, "y": 0.9 },
       "battlefieldScale": 1.5
+    },
+    "leafwhisk-runner-v1": {
+      "label": "Leafwhisk Runner",
+      "class": 1,
+      "classLabel": "Class One",
+      "path": "/assets/monster-master/creatures/leafwhisk-runner-v1-128.svg",
+      "width": 128,
+      "height": 192,
+      "alpha": true,
+      "usage": "asset-library",
+      "assignment": "unassigned",
+      "facing": "left",
+      "perspective": "three-quarter-down-isometric",
+      "anchor": { "x": 0.5, "y": 0.9 },
+      "battlefieldScale": 1.2
     }
   },
   "terrain": {
