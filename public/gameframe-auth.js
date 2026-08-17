@@ -1,4 +1,5 @@
 const developmentStorageKey = "scribbles-gameframe.player-id";
+const cachedIdentityStorageKey = "scribbles-gameframe.identity-snapshot:v1";
 let installedIdentity = null;
 
 for (const href of ["/gameframe-auth.css", "/gameframe-account-menu.css"]) {
@@ -73,6 +74,88 @@ function renderAuthenticationGate(
   document.documentElement.classList.add("gameframe-auth-blocked");
 }
 
+function snapshotIdentity(identity) {
+  const playerId = normalizeIdentity(identity?.playerId);
+  if (!playerId) return null;
+  return {
+    version: 1,
+    playerId,
+    displayName: normalizeIdentity(identity.displayName) || playerId,
+    avatarUrl: typeof identity.avatarUrl === "string" && identity.avatarUrl.length <= 2048 ? identity.avatarUrl : null,
+    source: identity.source === "development" ? "development" : "discord",
+    cachedAt: Date.now(),
+  };
+}
+
+function cacheIdentity(identity) {
+  const snapshot = snapshotIdentity(identity);
+  if (!snapshot) return;
+  try {
+    window.localStorage.setItem(cachedIdentityStorageKey, JSON.stringify(snapshot));
+  } catch {
+    // Offline identity display is a convenience layer and must never block sign-in.
+  }
+}
+
+export function cachedGameFrameIdentity() {
+  try {
+    const snapshot = JSON.parse(window.localStorage.getItem(cachedIdentityStorageKey) || "null");
+    if (!snapshot || snapshot.version !== 1 || !normalizeIdentity(snapshot.playerId)) return null;
+    return {
+      playerId: snapshot.playerId,
+      displayName: normalizeIdentity(snapshot.displayName) || snapshot.playerId,
+      avatarUrl: typeof snapshot.avatarUrl === "string" ? snapshot.avatarUrl : null,
+      source: snapshot.source === "development" ? "development" : "discord",
+      cachedAt: Number(snapshot.cachedAt) || 0,
+      offline: true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function syncOfflineNavigationGuard() {
+  const bar = document.querySelector("#gameframe-destination-bar");
+  if (!bar) return;
+  const offline = Boolean(window.gameFrameOffline || navigator.onLine === false || installedIdentity?.offline);
+  bar.classList.toggle("is-offline", offline);
+  for (const selector of ["[data-gameframe-matches]", "[data-gameframe-profile]"]) {
+    const link = bar.querySelector(selector);
+    if (!link) continue;
+    if (!link.dataset.gameframeOnlineHref) link.dataset.gameframeOnlineHref = link.getAttribute("href") || "";
+    if (!link.dataset.gameframeOfflineGuard) {
+      link.dataset.gameframeOfflineGuard = "true";
+      link.addEventListener("click", (event) => {
+        if (!window.gameFrameOffline && navigator.onLine !== false && !installedIdentity?.offline) return;
+        event.preventDefault();
+      });
+    }
+    if (offline) {
+      link.removeAttribute("href");
+      link.setAttribute("aria-disabled", "true");
+      link.title = "Internet connection required";
+    } else {
+      const href = link.dataset.gameframeOnlineHref;
+      if (href) link.setAttribute("href", href);
+      link.removeAttribute("aria-disabled");
+      if (link.title === "Internet connection required") link.removeAttribute("title");
+    }
+  }
+}
+
+function installOfflineNavigationGuard() {
+  syncOfflineNavigationGuard();
+  if (!document.querySelector("#gameframe-destination-bar")) {
+    window.addEventListener("gameframe:destination-bar-ready", syncOfflineNavigationGuard, { once: true });
+  }
+  if (!window.__gameFrameOfflineNavigationListenersInstalled) {
+    window.__gameFrameOfflineNavigationListenersInstalled = true;
+    window.addEventListener("online", syncOfflineNavigationGuard);
+    window.addEventListener("offline", syncOfflineNavigationGuard);
+    window.addEventListener("gameframe:connectivity", syncOfflineNavigationGuard);
+  }
+}
+
 function accountAvatarMarkup(identity) {
   if (identity.avatarUrl) {
     return `<img src="${identity.avatarUrl}" alt="" referrerpolicy="no-referrer">`;
@@ -84,7 +167,11 @@ function installIdentityBadge(identity) {
   if (document.querySelector("#gameframe-session-badge")) return;
 
   const displayName = identity.displayName || identity.playerId;
-  const sourceLabel = identity.source === "discord" ? "GameFrame account" : "Local development";
+  const sourceLabel = identity.offline
+    ? "Offline · last verified player"
+    : identity.source === "discord"
+      ? "GameFrame account"
+      : "Local development";
   const avatar = accountAvatarMarkup(identity);
 
   const badge = document.createElement("aside");
@@ -120,7 +207,7 @@ function installIdentityBadge(identity) {
   panel.querySelector(".gameframe-account-summary-copy small").textContent = sourceLabel;
 
   const actions = panel.querySelector(".gameframe-account-menu-actions");
-  if (identity.source === "discord") {
+  if (identity.source === "discord" && !identity.offline) {
     const logout = document.createElement("button");
     logout.type = "button";
     logout.className = "gameframe-account-logout";
@@ -138,6 +225,7 @@ function installIdentityBadge(identity) {
         await fetch("/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => null);
       } finally {
         installedIdentity = null;
+        try { window.localStorage.removeItem(cachedIdentityStorageKey); } catch { /* best effort */ }
         window.location.reload();
       }
     });
@@ -145,8 +233,10 @@ function installIdentityBadge(identity) {
   } else {
     const local = document.createElement("div");
     local.className = "gameframe-account-local-note";
-    local.innerHTML = "<small>PLAYER ID</small><strong></strong>";
-    local.querySelector("strong").textContent = identity.playerId;
+    local.innerHTML = identity.offline
+      ? "<small>OFFLINE MODE</small><strong>Last verified player</strong>"
+      : "<small>PLAYER ID</small><strong></strong>";
+    if (!identity.offline) local.querySelector("strong").textContent = identity.playerId;
     actions.append(local);
   }
   document.body.append(panel);
@@ -172,11 +262,26 @@ function installIdentityBadge(identity) {
     trigger.focus();
   });
 
-  // Alerts belong to the authenticated GameFrame shell, not only invite-creation pages.
-  // Dynamic import avoids a static auth <-> alerts module cycle while keeping optional pages lightweight.
-  void import("./gameframe-alerts.js")
-    .then(({ installGameFrameAlerts }) => installGameFrameAlerts(identity))
-    .catch(() => {});
+  if (!identity.offline) {
+    // Alerts belong to the authenticated GameFrame shell, not only invite-creation pages.
+    // Dynamic import avoids a static auth <-> alerts module cycle while keeping optional pages lightweight.
+    void import("./gameframe-alerts.js")
+      .then(({ installGameFrameAlerts }) => installGameFrameAlerts(identity))
+      .catch(() => {});
+  }
+}
+
+function installCachedIdentity() {
+  const identity = cachedGameFrameIdentity();
+  if (!identity) return null;
+  installedIdentity = identity;
+  window.gameFrameOffline = true;
+  document.documentElement.dataset.gameframeConnectivity = "offline";
+  document.body?.setAttribute("data-gameframe-connectivity", "offline");
+  installIdentityBadge(identity);
+  installOfflineNavigationGuard();
+  window.dispatchEvent(new CustomEvent("gameframe:identity", { detail: { identity, offline: true } }));
+  return identity;
 }
 
 async function refreshTrustedSession() {
@@ -216,8 +321,14 @@ async function identityFromResponse(response) {
   if (!normalizeIdentity(identity.playerId)) {
     throw new Error("The server returned an invalid GameFrame identity.");
   }
-  installedIdentity = identity;
+  installedIdentity = { ...identity, offline: false };
+  window.gameFrameOffline = false;
+  document.documentElement.dataset.gameframeConnectivity = "online";
+  document.body?.setAttribute("data-gameframe-connectivity", "online");
+  cacheIdentity(installedIdentity);
   installIdentityBadge(installedIdentity);
+  installOfflineNavigationGuard();
+  window.dispatchEvent(new CustomEvent("gameframe:identity", { detail: { identity: installedIdentity, offline: false } }));
   return installedIdentity;
 }
 
@@ -252,39 +363,53 @@ async function authenticatedFetch(url, options, identity) {
  */
 export async function tryGameFrameIdentity(options = {}) {
   if (installedIdentity) return installedIdentity;
+  if (navigator.onLine === false) return installCachedIdentity();
   try {
     const response = await readSession(options.preferredDevelopmentPlayerId);
     if (!response.ok) return null;
     return await identityFromResponse(response);
   } catch {
-    return null;
+    return installCachedIdentity();
   }
 }
 
 export async function establishGameFrameIdentity(options = {}) {
   if (installedIdentity) return installedIdentity;
-  let response = await readSession(options.preferredDevelopmentPlayerId);
-  if (response.status === 401 && isDiscordActivity()) {
-    try {
-      await establishActivitySession();
-      response = await readSession(options.preferredDevelopmentPlayerId);
-    } catch (error) {
-      renderAuthenticationGate(
-        error instanceof Error ? error.message : "Discord Activity authentication failed.",
-        { activity: true },
-      );
+  if (options.allowOfflineCachedIdentity && navigator.onLine === false) {
+    const cached = installCachedIdentity();
+    if (cached) return cached;
+  }
+
+  try {
+    let response = await readSession(options.preferredDevelopmentPlayerId);
+    if (response.status === 401 && isDiscordActivity()) {
+      try {
+        await establishActivitySession();
+        response = await readSession(options.preferredDevelopmentPlayerId);
+      } catch (error) {
+        renderAuthenticationGate(
+          error instanceof Error ? error.message : "Discord Activity authentication failed.",
+          { activity: true },
+        );
+        return new Promise(() => {});
+      }
+    }
+    if (response.status === 401) {
+      renderAuthenticationGate();
       return new Promise(() => {});
     }
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.message || `Session initialization failed with ${response.status}.`);
+    }
+    return identityFromResponse(response);
+  } catch (error) {
+    if (options.allowOfflineCachedIdentity) {
+      const cached = installCachedIdentity();
+      if (cached && (navigator.onLine === false || error instanceof TypeError)) return cached;
+    }
+    throw error;
   }
-  if (response.status === 401) {
-    renderAuthenticationGate();
-    return new Promise(() => {});
-  }
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.message || `Session initialization failed with ${response.status}.`);
-  }
-  return identityFromResponse(response);
 }
 
 /**

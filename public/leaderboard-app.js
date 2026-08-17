@@ -3,10 +3,13 @@ import { establishGameFrameIdentity, gameFrameFetch } from "./gameframe-auth.js"
 const query = new URLSearchParams(window.location.search);
 const identity = await establishGameFrameIdentity({
   preferredDevelopmentPlayerId: query.get("player"),
+  allowOfflineCachedIdentity: true,
 });
 window.gameFrameIdentity = identity;
+window.gameFrameOffline = identity?.offline === true || navigator.onLine === false;
 await import("./gameframe-nav.js");
 
+const LEADERBOARD_SNAPSHOT_KEY = "scribbles-gameframe.leaderboard-snapshot:v1";
 const errorBox = document.querySelector("#leaderboard-error");
 const gameSelect = document.querySelector("#leaderboard-game");
 const rule = document.querySelector("#leaderboard-rule");
@@ -61,7 +64,7 @@ function profileHref(playerId) {
 }
 
 function avatarFor(entry, className = "leaderboard-avatar-fallback") {
-  if (entry.avatarUrl) {
+  if (entry.avatarUrl && !window.gameFrameOffline) {
     const avatar = document.createElement("img");
     avatar.src = entry.avatarUrl;
     avatar.alt = "";
@@ -74,10 +77,11 @@ function avatarFor(entry, className = "leaderboard-avatar-fallback") {
 }
 
 function playerCell(entry) {
-  const player = document.createElement("a");
+  const player = document.createElement(window.gameFrameOffline ? "div" : "a");
   player.className = "leaderboard-player";
-  player.href = profileHref(entry.playerId);
-  player.append(avatarFor(entry));
+  if (!window.gameFrameOffline) player.href = profileHref(entry.playerId);
+  const avatar = avatarFor(entry);
+  player.append(avatar);
   const copy = document.createElement("div");
   const name = document.createElement("strong");
   name.textContent = entry.playerId === identity.playerId ? `${entry.displayName || "You"} · You` : entry.displayName || "GameFrame Player";
@@ -178,8 +182,8 @@ function render() {
 }
 
 function podiumCard(entry, rank) {
-  const link = document.createElement("a");
-  link.href = profileHref(entry.playerId);
+  const link = document.createElement(window.gameFrameOffline ? "article" : "a");
+  if (!window.gameFrameOffline) link.href = profileHref(entry.playerId);
   link.className = `hall-podium-card hall-rank-${rank}${entry.playerId === identity.playerId ? " is-you" : ""}`;
   link.append(avatarFor(entry, "hall-avatar-fallback"));
   const copy = document.createElement("div");
@@ -199,9 +203,9 @@ function categoryCard(title, entries, valueFor, detailFor) {
   const winner = entries[0];
   const value = valueFor(winner);
   if (!Number.isFinite(Number(value)) || Number(value) <= 0) return null;
-  const card = document.createElement("a");
+  const card = document.createElement(window.gameFrameOffline ? "article" : "a");
   card.className = "hall-category-card";
-  card.href = profileHref(winner.playerId);
+  if (!window.gameFrameOffline) card.href = profileHref(winner.playerId);
   card.innerHTML = `
     <small>${title}</small>
     <strong>${Number(value).toLocaleString()}</strong>
@@ -277,35 +281,103 @@ function preferredBoardValue() {
   return "gamer|level";
 }
 
+function readSnapshot() {
+  try {
+    const snapshot = JSON.parse(localStorage.getItem(LEADERBOARD_SNAPSHOT_KEY) || "null");
+    if (!snapshot || snapshot.version !== 1 || !snapshot.body || typeof snapshot.body !== "object") return null;
+    if (snapshot.playerId && snapshot.playerId !== identity.playerId) return null;
+    return snapshot;
+  } catch {
+    return null;
+  }
+}
+
+function writeSnapshot(body) {
+  try {
+    localStorage.setItem(LEADERBOARD_SNAPSHOT_KEY, JSON.stringify({
+      version: 1,
+      playerId: identity.playerId,
+      updatedAt: Date.now(),
+      body,
+    }));
+  } catch {
+    // The live leaderboard is still usable if local snapshot storage is unavailable.
+  }
+}
+
+function applyLeaderboardBody(body) {
+  gamerLevels = Array.isArray(body.gamerLevels) ? body.gamerLevels : [];
+  const boardGames = Array.isArray(body.games) ? body.games.map((game) => ({ ...game, kind: "board" })) : [];
+  const scoredGames = Array.isArray(body.scoredGames) ? body.scoredGames.map((game) => ({ ...game, kind: "score" })) : [];
+  const requestedWeekly = requestedWeeklyEventBoard();
+  if (requestedWeekly && !scoredGames.some((game) => (
+    game.gameId === requestedWeekly.gameId
+    && game.modeId === requestedWeekly.modeId
+    && game.eventId === requestedWeekly.eventId
+  ))) {
+    scoredGames.unshift(requestedWeekly);
+  }
+  boards = [{ kind: "gamer", entries: gamerLevels }, ...scoredGames, ...boardGames];
+  gameSelect.replaceChildren();
+  for (const board of boards) {
+    const option = document.createElement("option");
+    option.value = boardValue(board);
+    option.textContent = boardLabel(board);
+    gameSelect.append(option);
+  }
+  const preferred = preferredBoardValue();
+  if (boards.some((board) => boardValue(board) === preferred)) gameSelect.value = preferred;
+  renderHallOverview();
+  render();
+}
+
+function showSnapshotNotice(updatedAt) {
+  window.gameFrameOffline = true;
+  document.body.dataset.gameframeConnectivity = "offline";
+  const date = new Date(Number(updatedAt) || 0);
+  const stamp = Number.isNaN(date.getTime()) || !Number(updatedAt)
+    ? "an earlier session"
+    : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  errorBox.hidden = false;
+  errorBox.dataset.offlineSnapshot = "true";
+  errorBox.textContent = `Offline · showing the last leaderboard saved ${stamp}.`;
+}
+
 async function refresh() {
+  const snapshot = readSnapshot();
+  if (identity.offline || navigator.onLine === false) {
+    if (snapshot) {
+      applyLeaderboardBody(snapshot.body);
+      showSnapshotNotice(snapshot.updatedAt);
+      return;
+    }
+    errorBox.hidden = false;
+    errorBox.textContent = "Leaderboard unavailable offline until it has been loaded online at least once.";
+    podium.replaceChildren();
+    categories.replaceChildren();
+    list.replaceChildren();
+    const empty = document.createElement("p");
+    empty.className = "platform-empty";
+    empty.textContent = "No cached standings are available on this device.";
+    list.append(empty);
+    return;
+  }
+
   try {
     const response = await gameFrameFetch("/api/leaderboard", {}, identity);
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(body.message || "Leaderboard could not be loaded.");
-    gamerLevels = Array.isArray(body.gamerLevels) ? body.gamerLevels : [];
-    const boardGames = Array.isArray(body.games) ? body.games.map((game) => ({ ...game, kind: "board" })) : [];
-    const scoredGames = Array.isArray(body.scoredGames) ? body.scoredGames.map((game) => ({ ...game, kind: "score" })) : [];
-    const requestedWeekly = requestedWeeklyEventBoard();
-    if (requestedWeekly && !scoredGames.some((game) => (
-      game.gameId === requestedWeekly.gameId
-      && game.modeId === requestedWeekly.modeId
-      && game.eventId === requestedWeekly.eventId
-    ))) {
-      scoredGames.unshift(requestedWeekly);
-    }
-    boards = [{ kind: "gamer", entries: gamerLevels }, ...scoredGames, ...boardGames];
-    gameSelect.replaceChildren();
-    for (const board of boards) {
-      const option = document.createElement("option");
-      option.value = boardValue(board);
-      option.textContent = boardLabel(board);
-      gameSelect.append(option);
-    }
-    const preferred = preferredBoardValue();
-    if (boards.some((board) => boardValue(board) === preferred)) gameSelect.value = preferred;
-    renderHallOverview();
-    render();
+    window.gameFrameOffline = false;
+    delete errorBox.dataset.offlineSnapshot;
+    errorBox.hidden = true;
+    applyLeaderboardBody(body);
+    writeSnapshot(body);
   } catch (error) {
+    if (snapshot) {
+      applyLeaderboardBody(snapshot.body);
+      showSnapshotNotice(snapshot.updatedAt);
+      return;
+    }
     errorBox.hidden = false;
     errorBox.textContent = error instanceof Error ? error.message : "Leaderboard could not be loaded.";
     podium.replaceChildren();
