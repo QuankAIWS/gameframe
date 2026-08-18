@@ -3,7 +3,7 @@ title: RPG Platform Delivery Plan
 status: active
 document_type: repository-plan
 owner: Scribbles GameFrame
-last_updated: 2026-08-09
+last_updated: 2026-08-18
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime-integration
@@ -12,6 +12,7 @@ depends_on:
   - shared/rpg-agent-architecture-and-campaign-package.md
   - shared/rpg-scene-entity-and-knowledge-contract.md
   - shared/rpg-embodied-exploration-and-character-performance-contract.md
+  - shared/rpg-living-world-and-resolution-contract.md
   - shared/rpg-platform-roadmap.md
   - rpg-gm-runtime-boundary.md
   - rpg-gameframe-interface-contract.md
@@ -26,190 +27,153 @@ related:
 
 ## Authority
 
-`shared/rpg-platform-roadmap.md` controls cross-repository milestone order. This file defines the current GameFrame delivery posture.
+The shared roadmap and living-world contract control cross-repository implementation order. This file defines the current GameFrame side of that work.
 
 Campaign combat never launches Battle Simulator. HTTP owns RPG commands/mutations; campaign WebSockets remain projection/notification-only.
 
-## Delivery posture
+## Product posture
+
+The physical world is the primary product surface. Direct controls are convenience, not the player's complete vocabulary. The target is a rendered videogame that retains free-form tabletop-scale agency, not a transcript-first adventure with a map attached.
+
+GameFrame should execute directly whatever a normal videogame system can execute correctly. Missing bespoke presentation should degrade to generic embodied representation and readable text/UI rather than automatically make a plausible action unavailable.
+
+## Preserved GameFrame foundation
+
+Keep/reuse the current physical and integration substrate:
+
+- Pixi campaign scene materialization;
+- desktop/mobile movement, collision, camera, facing, and durable physical recovery;
+- authenticated player/session authority;
+- HTTP mutation boundary;
+- viewer-safe Runtime exploration projection;
+- physical interaction targeting/adjacency;
+- deterministic control/rules/tactical primitives;
+- durable command ingress/retry/publication;
+- scene/object/route materialization bindings;
+- observer-safe presentation guards;
+- same-map tactical direction.
+
+Do not replace working physical systems merely to match new terminology.
+
+## G1 — Attempted Operation integration — ACTIVE
+
+GameFrame needs a clean way to express/consume the shared `AttemptedOperation` boundary without surrendering physical/rules authority.
+
+### Player direct controls
+
+Existing direct controls should progressively map to typed attempted operations with stable provenance rather than each becoming a permanent bespoke cross-repository protocol.
+
+### Freeform parity
+
+When Runtime interprets a player's freeform request as the same underlying capability, direct control and freeform must converge on the same validation/resolution path.
+
+### NPC/system operations
+
+An actor-origin or scheduled attempted operation does **not** bypass GameFrame physical authority. If an NPC intends to approach, flee, inspect, use an object, or otherwise perform a physical action, GameFrame still validates/executes the physical portion using current materialization, pathing, collision, range, and deterministic mechanics.
+
+### First integration proof
+
+Use two materially different existing capabilities—prefer actor inspection plus travel/object control—to prove the shared operation envelope can cross or be reconstructed at the seam while preserving current retry/recovery.
+
+## G2 — video-game-first Rules / Resolution integration
+
+GameFrame should answer first:
+
+> Can the actual videogame mechanic resolve this action directly?
+
+If yes, use that mechanic instead of an abstract check.
+
+If not, Runtime/Ruleset may request bounded abstract resolution using verified GameFrame/semantic facts. The active RPG Ruleset maps validated difficulty/circumstance concepts to mechanics. The model does not supply arbitrary final numbers or outcomes.
+
+GameFrame should expose the narrow deterministic capability/state needed by the shared rules resolution rather than export raw renderer internals or hidden data.
+
+## G3 — actor physical execution
+
+Living NPCs need the same physical world to matter for them that matters for players.
+
+GameFrame should support bounded server-authorized actor operations such as:
+
+- approach/follow/flee/path to semantic target;
+- interact with supported object/entity;
+- use existing videogame mechanic;
+- enter tactical authority when required.
+
+These operations need stable actor/scene/materialization identity, legal path/range checks, recovery, and no browser ability to forge hidden actors.
+
+Do not create one custom endpoint per NPC personality.
+
+## G4 — bounded scene/world reaction presentation
+
+Runtime may resolve several semantic reactions before returning control. GameFrame must be able to receive/apply the resulting committed physical operations/presentations in order without treating every intermediate line as a new player command.
+
+Keep strict budgets and allow interruption/transition to tactical mode where the shared orchestrator requires it.
+
+One semantic event may still fan out into world bubbles/subtitles and Campaign Chronicle without becoming multiple truths.
+
+## G5 — scheduled/background consequence materialization
+
+When Runtime reports a due off-screen consequence, GameFrame materializes only the physical state that belongs to its authority.
+
+On revisit/reconnect, accepted materialization + Runtime semantic projection must agree on the changed world without replaying the event twice.
+
+## G6 — Campaign Architect live expansion materialization
+
+Campaign Architect expansion may introduce a new durable location, venue, organization/cast, or branch.
+
+GameFrame receives only player-safe semantic materialization requirements and resolves them through:
 
 ```text
-SEE      ✅ COMPLETE
-MOVE     ✅ COMPLETE
-MOBILE   ✅ COMPLETE
-TALK     ✅ COMPLETE
-CHANGE   ← ACTIVE
-TRAVEL
-FIGHT
-PROVE
+accepted prepared asset/world kit
+→ deterministic composition/procedural materialization
+→ bounded generated presentation asset
+→ readable generic/text fallback
 ```
 
-The physical world is the primary product surface. Narrative/history remains useful for opening narration, dialogue, arbitrary intent, Ask Game Master, fallback/accessibility, and the eventual Campaign Chronicle, but Chronicle UI polish is not the active milestone.
+The Architect does not provide Pixi coordinates or collision meshes as truth. GameFrame creates/validates the physical realization and persists materialization identity for revisit.
 
-### Reuse-first rule
+First proof should be one meaningful expansion that did not exist as a sufficiently defined Crooked Checkpoint WorldGraph scene beforehand.
 
-- reuse the existing Pixi renderer and terrain/materialization infrastructure;
-- use authenticated HTTP for all RPG commands/mutations;
-- keep WebSockets projection/notification-only;
-- reuse deterministic tactical primitives and authenticated player/control infrastructure;
-- reuse Runtime semantic authorities instead of creating GameFrame copies;
-- add abstractions only when the next player action proves they are needed.
+## G7 — same-map tactical + complete generalized proof
 
-## Completed — SEE + MOVE + mobile
-
-Deployed staging proves authenticated Runtime exploration attach → deterministic Crooked Checkpoint materialization → existing Pixi world rendering, plus desktop/touch movement, collision, facing, camera rotation/follow, optimistic physical revisions, SQLite recovery, and refresh/restart continuity without Runtime movement traffic.
-
-The West Woods route remains a projected/physical affordance only. It does not yet transfer the player.
-
-## Completed — TALK
-
-Merged Runtime #112 and GameFrame #200 complete the first physically authorized conversation slice.
-
-### GameFrame evidence
-
-- nearby supported actors become viewer-safe Talk candidates;
-- adjacency is derived from current GameFrame physical state;
-- mobile and desktop use the same interaction path;
-- multiple adjacent actors require explicit selection;
-- browser submits only `interactionTargetId` and never canonical `targetEntityId`;
-- GameFrame resolves the canonical entity only after current materialization/position/adjacency checks;
-- generic command ingress cannot manufacture typed Talk authority;
-- Talk delivery is durable/idempotent and an exact committed retry is recovered before another physical reauthorization;
-- the shared composer preserves an uncertain Talk retry through campaign rerenders.
-
-### Runtime evidence
-
-- typed Talk becomes a distinct `entity-interaction` trigger;
-- Dungeon Master performs Pell through perspective-bounded entity-performance context;
-- Pell receives Pell's identity/goals/secrets/limits, recent explicit Observer Knowledge, current public location material, and viewer-safe known people;
-- unrelated hidden campaign/referee truth is structurally absent;
-- the referee-only sentinel canary remains visible to referee context but absent from Pell context;
-- entity-performance output is dialogue-only in this first slice: no mechanics, semantic mutation, transition, or tactical activation;
-- non-TALK semantic triggers continue through their normal planner path.
-
-### Current speech scope
-
-The first slice deliberately publishes Talk to the initiating player only. Real nearby audibility, overhearing, whispers, split-party propagation, and presentation fan-out are **not** claimed complete. This fails closed while the underlying observer/audience model is expanded later.
-
-The first slice also limits Talk to actor targets that Runtime can currently perform. Do not expose roster-monster Talk until the performer contract supports that entity class.
-
-## Bounded content cleanup
-
-Continue only where it affects correctness or current play:
-
-- unlearned canonical names must not leak into narration/dialogue/history;
-- ordinary handheld capture cubes cannot physically shake a cart without another credible cause;
-- opening narration should orient the player and return control rather than repeatedly forcing option funnels;
-- do not create a separate Chronicle-polish milestone before the world is functional.
-
-## CHANGE — ACTIVE: controls and arbitrary intent reach the same world
-
-This is the next vertical target. It proves the graphics do not limit tabletop agency and that model prose does not bypass deterministic/semantic authority.
-
-### Primary player acceptance
+After the living-world foundation is working, prove the full single-player Monster Master path using the same current-world tactical model:
 
 ```text
-Cinder is recalled
-→ player chooses Deploy from a direct control
-  OR types: "I pull out Cinder's cube and release her beside me."
-→ both paths resolve to the same deploy operation
-→ ownership/ruleset/deployment constraints validate it
-→ semantic deployment commits
-→ GameFrame chooses a legal physical placement
-→ Cinder appears in the current scene
-→ narration/history reflects the committed result
-→ refresh/restart preserves deployment
+embodied exploration
+→ direct/freeform operation
+→ actor intention/reaction
+→ ruleset uncertainty
+→ persistent consequence
+→ travel/revisit
+→ scheduled/off-screen change
+→ Tactical Activation on current map
+→ deterministic result
+→ exploration resume
+→ Architect-expanded location/revisit
+→ restart/reconnect
 ```
 
-### Required architecture
+## Compatibility posture for existing canaries
 
-- direct UI and **Do Something Else** converge on the same underlying world/mechanic operation;
-- natural language expresses attempted intent, not authoritative state;
-- illegal or impossible intent stays uncommitted even if a model proposes it;
-- Runtime owns semantic presence/deployment consequence; GameFrame owns physical placement and deterministic control/rules checks appropriate to its authority;
-- retries are idempotent and recover from lost responses;
-- deployment/control relationships come from the Monster Master ruleset/profile rather than generic-engine assumptions;
-- the resulting exploration projection/materialization reflects the committed deployment without parallel shadow state.
+Current deploy/recall, actor inspection, cart/object, and travel paths are useful compatibility tests while the generalized seam lands.
 
-### Follow-on CHANGE operations
-
-Promote only what the chapter proves necessary after deploy/recall:
-
-- inspect/use/open/take/change important objects;
-- knowledge reveal/correction;
-- deterministic checks;
-- objective/event transitions;
-- relationship/memory consequences.
-
-The text itself never creates state. Commit first, then presentation/history.
-
-## TRAVEL — make West Woods real
-
-```text
-Crooked Checkpoint route affordance
-→ validate current available semantic exit
-→ authoritative semantic scene transfer
-→ materialize scene.west-woods
-→ establish valid physical arrival state
-→ explore
-→ return
-→ same Crooked Checkpoint materialization/state
-```
-
-Do not infer travel solely from client coordinates. Physical arrival enables the command; semantic transfer is durable authority.
-
-## FIGHT — same-map tactical authority
-
-Promote only current-scene Monster Master rules/control requirements: Master/trainer participation, ruleset-authorized deployed monsters, initiative/action economy/legal actions, current positions/geometry, resources/conditions/objectives, structured non-elimination outcomes, semantic reconciliation, and same-map exploration resume.
-
-No campaign Arena handoff or replacement battle map.
-
-## PROVE
-
-Complete the bounded chapter before broadening architecture:
-
-1. human playthrough with multiple plausible actions;
-2. restart/reconnect;
-3. deterministic/machine-play;
-4. live-provider proof;
-5. deployed staging proof.
-
-Only after that: richer two-human local speech semantics, second handcrafted Game Family, Campaign Architect, dynamic Battle Packs/Battle Simulator, split-party later.
+Do not delete them before the shared operation path has equivalent authority/retry/recovery evidence. Do not add more exact-text or actor-pair special cases unless they are explicitly temporary canaries for a missing general primitive.
 
 ## Campaign Chronicle posture
 
-The feed should mature into an observer-authorized **Campaign Chronicle**, not a tiny combat log and not the permanent primary controller. It should retain meaningful narration, dialogue the observer was authorized to hear, discoveries, consequential actions, mechanics, world changes, travel, and appropriate GM material.
+Campaign Chronicle remains supporting observer-authorized history, not the primary controller. Preserve meaningful dialogue, discoveries, consequential actions, deterministic outcomes, world changes, travel, actor/world consequences, and appropriate GM interventions.
 
-One semantic event may have several authorized presentations. Origin, audience, audibility, Observer Knowledge, and presentation style remain distinct.
-
-## Development workflow
-
-```text
-pick next player action
-→ inspect existing authorities/code for reuse
-→ state one concrete acceptance proof
-→ implement smallest complete vertical slice
-→ focused iteration tests
-→ claim-appropriate gates
-→ docs/evidence update
-→ merge
-→ play it
-→ next action
-```
-
-Use focused Node/browser tests for GameFrame behavior, Fast Check for Runtime behavior, exact shared-doc drift/hygiene for shared contracts, cross-repo integration for seam changes, durable recovery tests for persistence, and hidden-fact/Observer-Knowledge canaries for context custody.
+Do not log every movement step or internal orchestration transient.
 
 ## Immediate order
 
-1. **CHANGE — deploy/recall as the first persistent direct-control + freeform-parity world mutation.**
-2. **TRAVEL — Crooked Checkpoint ↔ West Woods.**
-3. **FIGHT — Monster Master control/rules + same-map Tactical Activation.**
-4. **PROVE — complete single-player chapter/restart/provider/staging.**
-5. richer multiplayer audibility/whispers + two-human one-scene.
-6. second handcrafted Game Family.
-7. Campaign Architect + dynamic Role-Playing Games/Battle Packs.
-8. dynamic Battle Simulator convergence.
-9. split-party later.
+1. **Attempted Operation seam** — first GameFrame adapters/transport shape.
+2. **Rules / Resolution seam** — direct videogame mechanic first, abstract rules only where needed.
+3. **Actor physical execution** — generalized bounded actor operations.
+4. **Scene reaction application** — ordered bounded multi-actor consequences.
+5. **Scheduled consequence recovery.**
+6. **Architect expansion materialization/revisit.**
+7. **Same-map tactical + complete generalized single-player proof.**
 
 ## Governing rule
 
-> Deliver the game by completing the next player action. Keep the world primary, keep freeform intent legal, require authoritative commits before narration claims consequences, and defer Campaign Chronicle presentation polish until ordinary play can be performed directly in the world.
+> GameFrame remains the actual videogame: it owns physical and deterministic reality, executes player and NPC operations through the same bounded world, and materializes continuity-safe campaign expansion without letting either model prose or missing bespoke animation define what the player is allowed to attempt.
