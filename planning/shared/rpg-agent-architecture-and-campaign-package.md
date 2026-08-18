@@ -3,7 +3,7 @@ title: RPG Agent Architecture and Campaign Package Contract
 status: accepted
 document_type: architecture
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-08
+last_updated: 2026-08-18
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
@@ -12,7 +12,7 @@ applies_to:
   - handcrafted campaigns
   - generated campaigns
 shared_document_id: rpg-agent-architecture-and-campaign-package-v1
-shared_document_version: 6
+shared_document_version: 7
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-agent-architecture-and-campaign-package.md
 mirrors:
@@ -22,6 +22,7 @@ related:
   - rpg-platform-product-goals.md
   - rpg-scene-entity-and-knowledge-contract.md
   - rpg-embodied-exploration-and-character-performance-contract.md
+  - rpg-living-world-and-resolution-contract.md
   - rpg-campaign-architect-contract.md
   - rpg-event-and-plot-pool-contract.md
   - rpg-monster-master-reference-campaign.md
@@ -33,34 +34,42 @@ related:
 
 ## Decision
 
-The RPG platform uses two specialized campaign agents connected by one durable CampaignPackage boundary.
+The RPG platform currently requires two distinct specialized generative responsibilities, but **does not freeze the architecture to exactly two agents forever**.
 
-1. **Campaign Architect** — creates a complete validated CampaignPackage before ordinary play and, later, may coordinate reusable game-family/Battle-Pack authoring for generated combat-capable RPGs.
-2. **Dungeon Master** — conducts live play from that committed package and durable campaign state.
+1. **Campaign Architect** — constructs/validates the initial CampaignPackage and later performs continuity-safe campaign-instance expansion when play requires substantial new campaign substrate.
+2. **Dungeon Master** — conducts live play inside established reality: referee/world adjudication, narration, Ask-GM, perspective-bounded entity performance, unusual intent interpretation, immediate pacing/consequences, and aftermath/intervention.
+
+Future specialized generative capabilities may be introduced only when a materially different job requires different context, authority, cadence, evaluation, or cost controls. Do not create an agent merely because a deterministic service can be anthropomorphized.
 
 The platform also contains deterministic/runtime substrate that is **not another campaign agent**:
 
-- CampaignPackage validator and immutable package commitment;
+- CampaignPackage validator and protected package commitment;
 - campaign journal;
 - Entity Registry;
 - Character Factory;
 - Scene Registry;
 - semantic Observer Knowledge / player projections;
+- World State / actor intention projections as they are proven;
 - Dungeon Master Context Compiler;
 - semantic WorldGraph/location services;
+- attempted-operation normalization/validation;
+- bounded scene/world orchestration;
+- world scheduling/event processing;
 - GameFrame RPG Engine materialization/exploration interfaces;
 - RPG Ruleset and Game Family interfaces;
 - Tactical Activation Coordinator;
 - Battle Pack/BattleScenario contracts;
 - deterministic mechanic coordinators/adapters.
 
-The Campaign Architect determines what campaign/game-family definition exists before play. The Dungeon Master interprets/referees how a committed campaign unfolds. Runtime/GameFrame substrate owns facts that must not depend on model recollection.
+Runtime/GameFrame substrate owns facts and outcomes that must not depend on model recollection.
+
+`rpg-living-world-and-resolution-contract.md` controls the shared execution model for attempted operations, rules resolution, actor intentions, bounded consequence propagation, and live campaign expansion.
 
 ## Engine/ruleset/game-family relationship
 
 The agents do not constitute the whole RPG engine.
 
-**GameFrame RPG Engine** is the campaign-agnostic embodied player/mechanics/world engine. **RPG Rulesets** plug deterministic game-specific behavior into it. A **Game Family** binds reusable rules/content/assets shared by related campaign and simulator experiences. CampaignPackages provide campaign-specific semantic content/world truth. Battle Packs provide simulator-safe tactical content for Battle Simulator.
+**GameFrame RPG Engine** is the campaign-agnostic embodied player/mechanics/world engine. **RPG Rulesets** plug deterministic game-specific behavior into it. A **Game Family** binds reusable rules/content/assets shared by related campaign and simulator experiences. CampaignPackages provide protected campaign foundation. Durable campaign-instance state records what grows and changes through play. Battle Packs provide simulator-safe tactical content for Battle Simulator.
 
 Conceptually:
 
@@ -73,11 +82,14 @@ Conceptually:
                   \         |
                   CampaignPackage
                         |
-GameFrame RPG Engine ←→ RPG GM Runtime durable semantic world
+             campaign-instance world
+                        |
+GameFrame RPG Engine ←→ RPG GM Runtime semantic world
         ↑                        ↑
-        └──── player actions ────┘
+        └── attempted operations ┘
                  +
-         Dungeon Master
+      Dungeon Master / Architect
+       at different boundaries
 ```
 
 For Monster Master:
@@ -87,6 +99,7 @@ Monster Master RPG
 = GameFrame RPG Engine
 + Monster Master Ruleset / game-family content
 + Monster Master CampaignPackage
++ durable campaign-instance world
 
 Monster Master Arena Battles
 = Battle Simulator
@@ -99,9 +112,10 @@ The two surfaces share rules/content where compatible but do not share lifecycle
 
 ## Official terminology
 
-- **Campaign Architect** — campaign-authoring agent.
-- **Dungeon Master** — live campaign-running/referee/character-performance agent capability.
-- **CampaignPackage** — durable semantic campaign handoff artifact.
+- **Campaign Architect** — campaign construction and continuity-safe expansion generative capability.
+- **Dungeon Master** — live campaign-running/referee/character-performance capability.
+- **CampaignPackage** — protected durable semantic campaign foundation.
+- **campaign-instance world** — durable mutable/expandable semantic state established through play and validated expansion.
 - **GameFrame RPG Engine** — reusable campaign-agnostic embodied RPG engine; internal architecture terminology.
 - **Games** — top-level player-facing GameFrame destination.
 - **Role-Playing Games** — player-facing generic campaign library/creation/resume surface.
@@ -111,17 +125,21 @@ The two surfaces share rules/content where compatible but do not share lifecycle
 - **Monster Master Ruleset / Game Family** — first major rules/content family shared by Monster Master RPG and Monster Master Arena Battles.
 - **Battle Pack** — simulator-safe tactical content/configuration for one Game Family; never a second ruleset.
 - **BattleScenario** — standalone battle setup instance selecting pack/ruleset/map/teams/objectives/deployment.
-- **WorldGraph** — semantic location/route relationship model owned by CampaignPackage/runtime meaning, not Pixi geometry.
+- **WorldGraph** — semantic location/route relationship model owned by campaign/runtime meaning, not Pixi geometry.
 - **Character Factory** — deterministic/schema-first bounded incidental-character materialization substrate.
-- **Scene Registry** — semantic authority for zero-or-more active scenes and physical membership.
+- **Scene Registry** — semantic authority for zero-or-more active scenes and membership.
 - **Observer Knowledge** — sparse semantic knowledge/belief state for players/NPCs/other bounded observers.
+- **Attempted Operation** — typed proposal that an actor/system is trying to perform something; never success by itself.
 - **Tactical Activation** — transition of the current materialized GameFrame scene into turn-based tactical authority without changing maps.
 - **Tactical Activation Coordinator** — semantic/runtime coordination replacing the old destination concept of an Encounter Scene Compiler.
-- campaign compiler, plot agent, campaign-generation agent, and intro agent are retired as separate agents/interfaces.
+
+Campaign compiler and plot agent remain retired aliases where Campaign Architect covers the job. This does not prohibit a future specialized agent whose responsibility is genuinely different from Campaign Architect or Dungeon Master.
 
 ## Campaign Architect responsibilities
 
-Campaign Architect receives a campaign brief/source and produces one playable campaign package.
+Campaign Architect has two operating responsibilities using explicit context/lifecycle boundaries.
+
+### Initial campaign construction
 
 It owns:
 
@@ -141,34 +159,55 @@ It owns:
 - semantic materialization/media requirements;
 - provenance/version/hash/validation/migrations.
 
-After the generic ruleset/game-family schema is proven across multiple handcrafted families, Campaign Architect may also coordinate/select/create bounded reusable game-family material needed by a generated concept, including:
+### Live continuity-safe expansion
 
-- compatible validated ruleset/profile definition;
-- reusable character/archetype/creature/equipment/ability content;
-- world/materialization themes/kits/assets;
-- simulator-safe Battle Pack for combat-capable families;
-- Battle Pack visibility/unlock classification that prevents campaign-secret leakage.
+When play materially outruns established campaign substrate, Campaign Architect may propose new durable campaign-instance material such as:
 
-Campaign Architect completes campaign foundation before ordinary play. It does not silently rewrite an active campaign because players behave unexpectedly.
+- a newly pursued destination/region/district;
+- a substantial venue/business/organization;
+- a new durable faction or cast required by player choices;
+- a side thread or consequence branch requiring coherent structure;
+- relationships, routes, locations, supporting actors, and causal material required to make that branch playable;
+- materialization/media requirements for the new semantic world.
 
-### Draft lifecycle
+The Architect receives relevant protected foundation + current committed campaign-instance truth + the expansion need. It does **not** silently retcon existing truth. Its output remains a proposal until validation/commitment.
+
+Small incidental details do not require Architect invocation. Character Factory, deterministic world systems, and bounded Dungeon Master local interpretation remain appropriate when a full campaign expansion would be wasteful.
+
+After the generic ruleset/game-family schema is proven across multiple handcrafted families, Campaign Architect may also coordinate/select/create bounded reusable game-family material needed by a generated concept, including compatible validated ruleset/profile definition, reusable content, world/materialization themes, and simulator-safe Battle Packs.
+
+## Campaign construction lifecycle
 
 ```text
 brief/source
 → select/create compatible validated game-family/ruleset profile as needed
 → draft CampaignPackage
-→ optional draft Battle Pack when combat-capable/appropriate
+→ optional draft Battle Pack when appropriate
 → optional owner refinement
 → validation/bounded repair
 → player-safe preview
-→ explicit commitment
+→ explicit foundation commitment
 ```
 
 Handcrafted/generated/imported origin is provenance, not an execution-mode switch.
 
+## Live expansion lifecycle
+
+```text
+committed foundation + current campaign-instance world
+→ expansion need caused by player/world behavior
+→ Campaign Architect expansion proposal
+→ continuity/authority/visibility/materialization validation
+→ idempotent campaign-instance expansion commit
+→ GameFrame materialization/fallback
+→ Dungeon Master conducts ordinary live play in expanded world
+```
+
+The expansion commit is not package recompilation. Protected foundational truth remains protected.
+
 ## Dungeon Master responsibilities
 
-Dungeon Master receives committed package truth plus typed durable current state compiled for the current trigger/context mode.
+Dungeon Master receives protected package truth plus typed durable current state compiled for the current trigger/context mode.
 
 It owns/proposes:
 
@@ -177,55 +216,60 @@ It owns/proposes:
 - arbitrary plausible freeform intent interpretation;
 - entity/NPC dialogue and performance;
 - Ask-GM rules/character-knowledge responses;
-- pacing and eligible event selection;
-- package-compatible consequences;
-- compatible local improvisation;
-- incidental-person requests through Character Factory;
-- checks/mechanic requests;
+- immediate pacing and eligible event realization;
+- bounded immediate consequences;
+- local interpretation compatible with current world truth;
+- Character Factory requests for bounded incidentals;
+- supported mechanic/rules requests;
 - reasons/objectives for Tactical Activation;
-- aftermath/GM intervention.
+- aftermath/GM intervention;
+- requests for Campaign Architect expansion when live play requires durable substrate beyond ordinary local improvisation.
+
+Dungeon Master is **not** the campaign-expansion authority. It should not silently create an entire district, faction, campaign branch, or other substantial world structure simply because the player left the expected route.
 
 Dungeon Master may not replace:
 
-- committed campaign premise/setting rules;
+- protected campaign premise/setting rules;
 - established causes/motives/relationships;
 - committed clue logic;
 - revealed facts/previous consequences;
 - stable entity identity;
 - semantic physical presence;
 - observer/player knowledge authorization;
-- deterministic GameFrame mechanic/tactical outcomes;
+- deterministic GameFrame/RPG Ruleset mechanic outcomes;
 - accepted scene materialization identity/geometry as if it were prose-only fiction.
 
 Model output becomes campaign truth only after validation/commitment in the appropriate authority domain.
 
 ## Dungeon Master context modes
 
-The same Dungeon Master capability may operate under different structurally compiled contexts.
+The same Dungeon Master capability may operate under different structurally compiled contexts. These are context-custody modes, not a claim that no future separate agent may ever exist.
 
 ### Referee/world adjudication
 
-Receives broad hidden context required to interpret unusual player intent, event eligibility, consequences, checks, hidden causality, and world reactions.
+Receives broad hidden context required to interpret unusual immediate intent, event eligibility, consequences, supported check/rules requests, hidden causality, and world reactions.
 
 ### Game Master communication
 
 Answers player Ask-GM requests from committed rules and **player-authorized** character knowledge. It does not reveal hidden runtime truth merely because referee mode knows it.
 
-### Entity performance
+### Entity performance/cognition
 
-Portrays one bound durable entity using only that entity's authorized knowledge/beliefs/memories/goals/relationships/current observations plus bounded portrayal constraints.
+Portrays or reasons for one bound durable entity using only that entity's authorized knowledge/beliefs/memories/goals/relationships/current observations plus bounded portrayal/cognition constraints.
 
-A Pell performance call is not an omniscient referee call with “pretend to be Pell” instructions.
+A Pell call is not an omniscient referee call with “pretend to be Pell” instructions. A durable NPC also does not require a permanently running LLM session.
+
+### Bounded scene/ensemble adjudication
+
+When multiple actors must react within one local consequence chain, the Runtime may coordinate a bounded scene-resolution cycle. Referee truth may adjudicate the scene, but individual actor claims/actions must remain consistent with each actor's authorized knowledge and actual capabilities.
 
 ### Aftermath/intervention
 
 Frames results of deterministic mechanics/world transitions or proactively presents GM narration/intervention after required semantic truth is committed/authorized.
 
-These are context-custody modes, not new agents.
-
 ## CampaignPackage boundary
 
-A CampaignPackage is executable semantic campaign material, not a prose pitch.
+A CampaignPackage is executable semantic campaign foundation, not a prose pitch and not a complete enumeration of everything that may ever exist during play.
 
 It contains at least, as campaign needs require:
 
@@ -247,15 +291,16 @@ It contains at least, as campaign needs require:
 - prohibited retcons;
 - audience/knowledge classifications.
 
-### Semantic world
+### Semantic world foundation
 
-- WorldGraph/regions/locations/routes;
+- WorldGraph/regions/locations/routes that must exist initially;
 - important location semantics;
 - traversability/route constraints;
 - initial scene/presence state;
 - required landmarks/objects/entities;
 - materialization intents/constraints;
-- meaningful alternate approaches.
+- meaningful alternate approaches;
+- rules/constraints governing compatible on-demand expansion.
 
 The package does **not** own Pixi coordinates, texture paths, generated map pixels, per-frame movement transforms, or collision meshes.
 
@@ -270,6 +315,8 @@ The package does **not** own Pixi coordinates, texture paths, generated map pixe
 - consequence/resolution conditions;
 - complete starter/engineering resolution;
 - continuation seeds where relevant.
+
+A starter resolution proves package quality; it does not mean continued campaign play becomes illegal when players abandon or transform that intended spine.
 
 ### Entities/knowledge
 
@@ -302,56 +349,52 @@ The package does **not** own Pixi coordinates, texture paths, generated map pixe
 - validation evidence;
 - amendments/migrations.
 
+## Campaign foundation versus campaign-instance world
+
+Protected CampaignPackage foundation and mutable campaign-instance world are separate concepts.
+
+The campaign-instance world may durably add/change, through validated ordinary play or Architect expansion:
+
+- incidental and recurring people;
+- local locations/businesses/organizations;
+- compatible routes and materializations;
+- relationships/commitments;
+- world/object state;
+- current goals/intentions;
+- side situations and emergent threads;
+- consequences and new opportunities.
+
+Once committed, these are real campaign truth and survive restart/revisit. They cannot be discarded merely because they were not present in the initial package.
+
 ## Battle Pack boundary
 
 Battle Pack is distinct from CampaignPackage.
 
 It may reference the same Game Family, RPG Ruleset, assets, characters, creatures, equipment, map kits, and tactical definitions, but its purpose is standalone simulator setup rather than durable campaign truth.
 
-A Battle Pack may expose/reference:
-
-- playable character/archetype/creature templates;
-- opponents/factions;
-- equipment/loadouts/abilities available in standalone setup;
-- map themes/world kits/materialization constraints;
-- deployment/objective options;
-- bot profiles;
-- scenario presets;
-- asset references/provenance;
-- ruleset/profile/version requirements;
-- visibility/unlock policy.
+A Battle Pack may expose/reference playable templates, opponents/factions, equipment/loadouts/abilities, map themes/world kits, deployment/objective options, bot profiles, scenario presets, asset references/provenance, ruleset/profile/version requirements, and visibility/unlock policy.
 
 A Battle Pack must not duplicate combat rules or expose hidden campaign facts by default.
 
 ## WorldGraph versus materialized scene
 
-CampaignPackage/runtime may say:
+Campaign semantics may establish a checkpoint district, road, woods route, venue, organization, or newly Architect-expanded destination without prescribing Pixi geometry.
 
-```text
-checkpoint-district
-- road
-- west woods route
-- creek-bank route
-- inspection post
-- confiscation cart
-- barrier
-```
-
-GameFrame RPG Engine may materialize that into a validated playable Pixi scene with exact geometry/assets/anchors.
+GameFrame RPG Engine materializes accepted semantic truth into validated playable scenes with exact geometry/assets/anchors.
 
 Once accepted for the campaign instance, GameFrame preserves materialization identity/version and meaningful world changes so revisiting returns to the same place.
 
-If players choose an allowed/plausible route whose scene has not been materialized yet, runtime/DM may establish the semantic destination and GameFrame materializes it from the same package/theme/ruleset capabilities.
+If players choose a plausible route whose world is not sufficiently established, the Campaign Architect may expand the semantic campaign-instance world before GameFrame materializes it. Small already-permitted incidental spaces may use bounded existing world/materialization policy without an Architect call.
 
-Battle Simulator may use the same materialization systems with Battle Pack constraints to create/select standalone battlefields without creating campaign semantic history.
+Battle Simulator may use the same materialization systems with Battle Pack constraints without creating campaign semantic history.
 
 ## Character Factory
 
-Dungeon Master may request a plausible incidental person but does not mint unconstrained durable entities through prose.
+Character Factory creates bounded incidental people when a full Campaign Architect expansion is unnecessary.
 
-Character Factory creates one stable bounded identity consistent with package/world rules. If immediate presence is intended, entity creation + semantic scene admission + initial authorized awareness should commit atomically/idempotently.
+It creates one stable identity consistent with package/current-world rules. If immediate presence is intended, entity creation + semantic scene admission + initial authorized awareness should commit atomically/idempotently.
 
-Incidental entities may become recurring without changing identity. They cannot retroactively replace fixed culprits, decisive witnesses, clue owners, or other package-bearing functions unless the package explicitly left the role open.
+Incidental entities may become recurring without changing identity. They cannot retroactively replace protected culprits, decisive witnesses, clue owners, or other package-bearing functions unless the foundation explicitly left the role open or an explicit valid amendment changes that foundation.
 
 ## Observer knowledge
 
@@ -359,27 +402,13 @@ Canonical world truth and observer knowledge are separate.
 
 A player/NPC may progress from descriptor → role → proper name while the durable entity ID stays constant.
 
-Entity-performance context uses observer-authorized facts. Player-facing GameFrame projections use viewer-authorized facts. Unknown entity existence is omitted when required rather than leaked through redacted IDs/counts.
-
-Battle Pack visibility is a separate public/simulator exposure surface and cannot be inferred merely from hidden CampaignPackage existence.
+Entity-performance/cognition context uses observer-authorized facts. Player-facing GameFrame projections use viewer-authorized facts. Multi-actor orchestration does not permit one actor to inherit another actor's secrets merely because the referee knows both.
 
 ## Same-map Tactical Activation
 
 Campaign tactical combat is a stricter deterministic control mode for the **current materialized scene**, not a separate match location.
 
-The boundary must validate, as applicable:
-
-- semantic scene/revision;
-- GameFrame materialization/version;
-- current tactically relevant entity transforms;
-- participants/roles/factions;
-- player/control authority;
-- health/resources/conditions;
-- ruleset/profile/version;
-- existing map geometry/objects/hazards/exits;
-- objectives/alternate terminal conditions.
-
-Then:
+The boundary must validate, as applicable, semantic scene/revision, GameFrame materialization/version, current transforms, participants/roles/factions, player/control authority, resources/conditions, ruleset/profile/version, existing geometry/objects/hazards/exits, and objectives/alternate terminal conditions.
 
 ```text
 exploration scene
@@ -392,31 +421,19 @@ exploration scene
 
 No replacement battlefield is compiled. No campaign `Return to Campaign` button is required.
 
-**Battle Simulator** remains the standalone tactical product surface and may use Battle Pack + BattleScenario setup to create/select/generate a scene before tactical play.
-
 ## Ruleset-defined control authority
 
 The generic engine must not assume one principal controls exactly one unit.
 
-An RPG Ruleset defines legal command/control relationships.
-
-Monster Master must be able to express one human principal controlling:
-
-- their own Master/trainer character;
-- deployed monster(s) according to class/ruleset limits;
-- additional entities only when explicit mechanics grant authority.
-
-This lets different Monster Master classes vary deployment counts/action patterns without creating campaign-specific engine branches.
+An RPG Ruleset defines legal command/control relationships. Monster Master must be able to express one human principal controlling their own Master/trainer, deployed monster(s) according to ruleset limits, and additional entities only when explicit mechanics grant authority.
 
 ## Handcrafted and generated equivalence
 
-The Dungeon Master/GameFrame engine must not require separate code paths based on handcrafted versus generated origin.
+Dungeon Master/GameFrame execution must not require separate code paths based on handcrafted versus generated origin.
 
-Monster Master is the first handcrafted reference package/game family and quality bar. A materially different second handcrafted package/game family is required before Campaign Architect generation becomes an active dependency.
+Monster Master remains the first handcrafted reference package/game family and quality bar. A materially different second handcrafted family remains important evidence that generic engine/rules boundaries are not Monster Master accidents.
 
-Generated CampaignPackages must later use the same validator, world/entity/scene/knowledge architecture, ruleset/game-family interface, materialization engine, and Dungeon Master context-mode path.
-
-Combat-capable generated families should be able to produce validated simulator-safe Battle Packs using the same reusable rules/content/assets. The presence of a generated CampaignPackage must not itself expose hidden campaign material to Battle Simulator.
+Campaign Architect development no longer needs to be artificially absent from all live-expansion architecture until that second family exists. Initial live expansion may be proved narrowly in Monster Master as an architecture canary while broad generated-campaign productization remains gated by stronger generality evidence.
 
 ## Testing requirements
 
@@ -425,31 +442,32 @@ Required evidence eventually includes:
 - package validation/hash/persistence/reload;
 - stable Entity Registry/Character Factory;
 - semantic Scene Registry/Observer Knowledge;
+- generalized attempted-operation identity/provenance/retry;
+- deterministic/ruleset resolution without model-owned final outcomes;
+- actor goals/intentions and bounded non-player action;
+- bounded multi-actor consequence chains with perspective custody;
+- background/scheduled intent recovery;
+- Campaign Architect live expansion validation/commit/revisit;
 - descriptor→role→name knowledge progression;
-- hidden secret/name absence from unauthorized renderer/entity-performance context;
-- Pell perspective-custody proof;
-- direct embodied interaction;
+- hidden secret/name absence from unauthorized renderer/entity context;
+- direct embodied interaction and freeform parity;
 - WorldGraph route + second-scene materialization/revisit;
-- Do Something Else and Ask-GM distinction;
-- ruleset/game-family capability validation;
 - principal/player-character/controlled-entity authority;
 - same-map Tactical Activation using current positions/geometry;
-- escape/withdrawal/alternate outcome where supported;
-- tactical → exploration resume on the same scene;
-- restart/reconnect;
+- restart/reconnect and exact retry without duplicate operations/rerolls;
 - at least two materially different CampaignPackages/game families;
-- Battle Pack schema/exposure validation;
-- campaign-versus-Battle-Simulator equivalence tests for matching ruleset profiles;
-- generated Battle Pack discovery without bespoke simulator code later.
+- Battle Pack schema/exposure validation.
 
 ## Prohibited designs
 
 Do not:
 
 - send a raw premise directly to Dungeon Master and call that campaign creation;
-- let model prose be sole identity/presence/knowledge authority;
-- create a third intro/NPC campaign agent;
-- give NPC performance omniscient referee context;
+- make the Dungeon Master silently perform substantial campaign-expansion work that belongs to Campaign Architect;
+- treat the initial CampaignPackage as a closed list of every place/person/thread players may ever reach;
+- let model prose be sole identity/presence/knowledge/mechanical authority;
+- require one permanent language-model session per NPC;
+- give NPC performance/cognition omniscient referee context;
 - expose hidden canonical identity because referee mode knows it;
 - make generated media campaign authority;
 - encode Pixi geometry/per-frame movement into CampaignPackage truth;
@@ -459,9 +477,9 @@ Do not:
 - copy rules into Battle Packs;
 - expose campaign secrets automatically through Battle Simulator;
 - hardcode one-player-one-unit control into GameFrame RPG Engine;
-- create separate Monster Master/generated-campaign Dungeon Masters;
+- freeze the architecture to an exact agent count regardless of future responsibility boundaries;
 - let either repository read the other's database.
 
 ## Governing rule
 
-> Campaign Architect defines durable semantic worlds and, later, reusable generated game-family outputs; GameFrame RPG Engine materializes campaigns; RPG Rulesets define deterministic behavior; Dungeon Master referees through bounded contexts; Role-Playing Games hosts campaigns; Battle Simulator consumes simulator-safe Battle Packs; and tactical activation changes control rules on the current campaign scene instead of replacing it.
+> Campaign Architect builds and expands durable campaign possibility; Dungeon Master conducts live play inside established reality; durable software owns world truth, attempted operations, rules resolution, actor state, and recovery; GameFrame materializes the videogame; and new generative responsibilities are added only when a real distinct job demands them.

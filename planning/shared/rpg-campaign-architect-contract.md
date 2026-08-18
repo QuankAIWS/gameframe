@@ -3,13 +3,13 @@ title: RPG Campaign Architect and Package Construction Contract
 status: accepted
 document_type: decision
 owner: Scribbles GameFrame and RPG GM Runtime
-last_updated: 2026-08-08
+last_updated: 2026-08-18
 applies_to:
   - scribbles-gameframe
   - rpg-gm-runtime
   - handcrafted and player-inspired RPG campaigns
 shared_document_id: rpg-campaign-architect-contract-v1
-shared_document_version: 3
+shared_document_version: 4
 canonical_repository: QuankAIWS/scribbles-gameframe
 canonical_path: planning/shared/rpg-campaign-architect-contract.md
 mirrors:
@@ -20,6 +20,7 @@ related:
   - rpg-agent-architecture-and-campaign-package.md
   - rpg-scene-entity-and-knowledge-contract.md
   - rpg-embodied-exploration-and-character-performance-contract.md
+  - rpg-living-world-and-resolution-contract.md
   - rpg-platform-roadmap.md
   - rpg-event-and-plot-pool-contract.md
   - rpg-monster-master-reference-campaign.md
@@ -31,29 +32,38 @@ related:
 
 ## Decision
 
-RPG GM Runtime will contain a specialized **Campaign Architect** that converts a campaign brief into a validated CampaignPackage before ordinary campaign play begins.
+RPG GM Runtime contains a specialized **Campaign Architect** with two related responsibilities:
 
-The CampaignPackage is not only a narrative/event package. For the embodied RPG product it also defines a **semantic campaign world**: stable locations/regions, meaningful routes/adjacency, traversal assumptions, package-bearing landmarks/entities, materialization requirements, alternate approaches, and world rules sufficient for GameFrame to realize persistent explorable scenes without embedding renderer-specific geometry in runtime truth.
+1. construct and validate the protected CampaignPackage foundation before ordinary campaign play begins;
+2. perform **continuity-safe live campaign expansion** when player/world behavior requires substantial durable campaign substrate that is not already established.
 
-Campaign compiler, plot agent, and campaign-generation agent are retired aliases for capabilities inside the Campaign Architect. They do not define separate agents or compatibility surfaces.
+The Dungeon Master does not absorb this campaign-construction responsibility simply because expansion is needed during play.
 
-The Campaign Architect remains distinct from the Dungeon Master and deterministic substrate such as Character Factory, Entity Registry, Scene Registry, semantic observer knowledge, exploration materialization, and Encounter Scene Compiler.
+The CampaignPackage defines a protected semantic campaign foundation: stable setting rules, important pre-established locations/regions/routes, package-bearing actors/functions, materialization requirements, important causal truth, and world rules sufficient for GameFrame to begin persistent embodied play without renderer-specific geometry in Runtime truth.
+
+The active campaign instance may then grow durable semantic world/story material through validated ordinary play and Campaign Architect expansion while preserving the protected foundation and already committed history.
+
+Campaign compiler, plot agent, and campaign-generation agent remain aliases for capabilities that belong to Campaign Architect unless a later materially different responsibility justifies a separate specialized agent.
+
+The Campaign Architect remains distinct from the Dungeon Master and deterministic substrate such as Character Factory, Entity Registry, Scene Registry, Observer Knowledge, attempted-operation/rules resolution, living-world scheduling/orchestration, and GameFrame materialization.
 
 ## Input modes
 
-The Campaign Architect must eventually support:
+Initial campaign construction must eventually support:
 
 - one-line or short freeform concepts;
 - detailed player/owner specifications;
 - structured campaign sheets;
 - guided GameFrame creation;
-- interactive Discord interviews;
+- interactive interviews;
 - prepared campaign families;
 - imported packages that pass validation/migration.
 
-All inputs normalize into the same versioned campaign brief contract. Unknowns, assumptions, and required repairs remain explicit.
+Live expansion receives a different bounded input: the protected campaign foundation, relevant current committed campaign-instance truth, the concrete expansion need, GameFrame/rules/materialization capabilities, and explicit continuity/visibility constraints.
 
-## Draft, refinement, and commitment lifecycle
+Unknowns, assumptions, and required repairs remain explicit.
+
+## Initial draft, refinement, and commitment lifecycle
 
 Campaign generation produces a **draft**, not automatically committed campaign truth.
 
@@ -64,16 +74,16 @@ campaign brief / source material
 → deterministic validation
 → bounded repair when necessary
 → player-safe preview
-→ explicit package commitment
+→ explicit foundation commitment
 ```
 
-This supports both a highly polished handcrafted Monster Master package and a generated bespoke campaign created from a short request. Both become the same kind of committed artifact.
+This supports both a handcrafted Monster Master package and a generated bespoke campaign. Both become the same kind of protected committed foundation.
 
 Owner editing before commitment is first-class. The validation boundary—not authoring origin—determines whether a package is executable.
 
-## Active-package amendment rule
+## Protected foundation amendment rule
 
-Ordinary play never silently rewrites the committed campaign foundation.
+Ordinary play and live expansion never silently rewrite protected foundational truth.
 
 If an owner wants to alter active foundational truth, use an explicit lifecycle:
 
@@ -86,46 +96,87 @@ committed package version N
 → package version N+1 or explicit amendment record
 ```
 
-The Dungeon Master may adapt campaign events/consequences through ordinary play; that is mutable campaign-instance state, not package recompilation.
+Player/world actions may still create consequences that materially change the **campaign instance**. Destroying a building, killing or recruiting an actor where rules permit, exposing a secret, abandoning an objective, or creating a new organization is mutable campaign history rather than silent package rewriting.
+
+## Live campaign expansion lifecycle
+
+A live expansion is not a new package compile and is not Dungeon Master prose becoming truth.
+
+```text
+protected foundation + current campaign-instance state
+→ play establishes a durable expansion need
+→ Campaign Architect expansion proposal
+→ continuity + authority + visibility + ruleset + materialization validation
+→ idempotent campaign-instance expansion commit
+→ GameFrame resolves/materializes supported presentation
+→ Dungeon Master conducts play in expanded world
+```
+
+The expansion request and result need stable provenance/retry identity so an uncertain retry cannot create two versions of the same district, organization, or important actor set.
 
 ## Campaign Architect responsibilities
+
+### Initial foundation construction
 
 The Campaign Architect owns:
 
 - interpreting/normalizing the brief;
 - preserving requested player fantasy while creating an original campaign identity;
 - selecting compatible prepared mechanics, themes, world kits, and content packs;
-- setting tone, genre, boundaries, and campaign length;
+- setting tone, genre, boundaries, and campaign shape;
 - producing campaign bible and continuity invariants;
 - defining important factions, actors, motives, secrets, relationships, and package-bearing functions;
 - producing a semantic WorldGraph and important location relationships;
-- defining credible routes, alternate approaches, travel assumptions, and bounded exploration affordances;
+- defining credible routes, alternate approaches, travel assumptions, and exploration affordances;
 - defining important landmarks/objects/exits and materialization requirements without prescribing Pixi geometry;
-- producing starter spine and at least one complete resolution;
+- producing a starter spine and at least one complete resolution;
 - creating/selecting plot structure, clue graph, event pools, escalation, recovery paths, and consequences;
 - declaring checks/tactical opportunities compatible with GameFrame authority;
 - declaring semantic presentation, world-kit, asset, narration, audio, and cinematic intents;
 - validating that the package remains playable with deterministic/text fallbacks;
 - recording package version, seed where applicable, hash, provenance, warnings, and migrations.
 
-It does not conduct ordinary player turns, perform live NPC dialogue, or rewrite an active campaign because players behave unexpectedly.
+### Live continuity-safe expansion
+
+The Campaign Architect owns substantial new semantic substrate required by play, including when appropriate:
+
+- new regions/districts/settlements or substantial destinations;
+- durable businesses/venues/organizations/factions;
+- important supporting casts or new recurring role groups;
+- new side threads or consequence branches requiring coherent structure;
+- new routes/geography that are compatible with established world facts;
+- causal/supporting material required to make an emergent branch playable;
+- materialization/media requirements for that expansion;
+- expansion-specific protected facts/visibility/forbidden-retcon constraints where needed.
+
+Expansion is triggered by **need**, not every improvisational detail. The Architect is not called merely because an NPC needs a name, the player looks inside an ordinary cupboard, or a generic street needs a passerby.
+
+It does not conduct ordinary player turns, perform live NPC dialogue, choose routine actor actions, resolve mechanics, or become the live narrator.
+
+## Campaign Architect versus Dungeon Master
+
+Use this separation:
+
+```text
+Campaign Architect
+What durable campaign/world/story substrate must exist or be added?
+
+Dungeon Master
+What is happening now, what does this unusual intent mean, and how is established reality conducted/presented?
+
+Living-world/rules/GameFrame substrate
+What actors attempt, what mechanically happens, what persists, and what is physically rendered?
+```
+
+The Dungeon Master may request Architect expansion. It may not silently replace Architect by inventing substantial campaign structure inside an ordinary live turn.
 
 ## Campaign-bearing actors versus incidental characters
 
-The Campaign Architect concretely binds actors that own package truth, including when applicable:
+The Campaign Architect concretely binds actors that own protected package truth, including when applicable responsible actors, important allies/rivals, decisive witnesses, required clue owners, secret authorities, mandatory access roles, invariant relationships/obligations, and recurring characters needed by the foundation.
 
-- responsible actors;
-- important allies/rivals;
-- decisive witnesses;
-- required clue owners;
-- secret authorities;
-- mandatory access roles;
-- invariant relationships/obligations;
-- recurring characters needed by the package.
+Live expansion may similarly introduce new durable actors/functions required by a new branch, provided they do not retroactively seize an already protected function.
 
-The CampaignPackage stores those actors as stable durable entities with explicit hidden/public facts and forbidden retcons.
-
-Ordinary incidental people needed only during live play are not a reason to re-run Campaign Architect. The Dungeon Master requests them through Character Factory.
+Ordinary incidental people needed only during local live play are not a reason to invoke Campaign Architect. Character Factory materializes bounded incidental NPCs; those NPCs may later become important through play without changing their stable identity.
 
 ## Campaign brief
 
@@ -190,6 +241,7 @@ The package should declare as needed:
 - exploration/materialization profile;
 - materialization seed/recipe intent where applicable;
 - prepared world-kit/theme references;
+- **live expansion policy and constraints**;
 - on-demand incidental-area policy where allowed;
 - semantic fallback when enhanced world rendering is unavailable.
 
@@ -208,6 +260,8 @@ The package must not include renderer-specific coordinates, Pixi classes, atlas 
 - failure-forward/recovery paths;
 - one complete starter/one-shot resolution;
 - optional continuation seeds.
+
+This structure is a coherent playable foundation, not an obligation that players complete every authored objective before the campaign is allowed to continue.
 
 ### Entities and observer knowledge
 
@@ -251,23 +305,52 @@ A canonical entity name does not imply that players or other NPCs know it at cam
 - authoring timestamp;
 - explicit amendments/migrations.
 
+## Campaign-instance expansion output
+
+A live expansion should be narrower than a complete CampaignPackage and represent only the durable additions necessary for the expansion need.
+
+Depending on the case it may add:
+
+- semantic regions/locations/routes and materialization intent;
+- durable actors/organizations and bounded private/public facts;
+- relationships/affiliations;
+- event/situation/pressure seeds;
+- goals/opportunities/objectives where useful;
+- new presentation roles/fallbacks;
+- continuity guards/provenance;
+- links to the exact triggering campaign state/revision.
+
+It must not restate or duplicate the full package merely to add one branch.
+
 ## World generation posture
 
-The Campaign Architect generates/defines the **semantic world**, not final pixels.
+The Campaign Architect generates/defines **semantic world**, not final pixels.
 
-Preferred relationship:
+Initial relationship:
 
 ```text
 campaign brief
 → semantic world graph + location requirements
-→ committed package
+→ committed foundation
 → GameFrame scene materialization
 → accepted persistent playable scene
 ```
 
+Live relationship:
+
+```text
+player/world creates expansion need
+→ Architect semantic expansion
+→ validation/commit
+→ GameFrame materialization/fallback
+→ persistent revisitable campaign-instance world
+```
+
 GameFrame may use authored prefabs, reusable world kits, deterministic composition, seeded procedural generation, and bounded generated media to realize the world.
 
-A location that was not pre-materialized may be realized on demand when committed world semantics make that route/place plausible. Once accepted for a campaign instance, revisiting it should return to that materialization identity rather than silently generating a replacement.
+A location that was not pre-materialized may be realized on demand when existing semantics already make it sufficiently defined. When substantial semantic definition is missing, use the Architect expansion path rather than asking the Dungeon Master to improvise a disposable paragraph-world.
+
+Once accepted for a campaign instance, revisiting should return to that materialization identity/state rather than silently generating a replacement.
 
 ## Handcrafted package rule
 
@@ -285,25 +368,20 @@ The system does not claim automatic legal safety. Transformation, validation, an
 
 ## Visibility and security
 
-Packages use at least:
+Packages and expansions use explicit visibility such as `public`, `party`, `player_private`, and `runtime_only` as appropriate.
 
-- `public`;
-- `party`;
-- `player_private`;
-- `runtime_only`.
+GameFrame receives player-safe previews and viewer-authorized semantic projections required for play. It never receives the full hidden package/expansion truth in browser-accessible fields.
 
-GameFrame receives player-safe previews and viewer-authorized semantic projections required for play. It never receives the full hidden package in browser-accessible fields.
+Canonical runtime entity names, motives, hidden relationships, and secret location/event facts are not automatically Observer Knowledge.
 
-Canonical runtime entity names, motives, hidden relationships, and secret location/event facts are not automatically observer knowledge.
+Raw Campaign Architect prompts/deliberation, hidden campaign truth, provider credentials, and internal evaluation material remain private to RPG GM Runtime.
 
-Raw Campaign Architect prompts, private deliberation, hidden campaign truth, provider credentials, and internal evaluation material remain private to RPG GM Runtime.
-
-## Package acceptance gates
+## Foundation acceptance gates
 
 A package is accepted only when it:
 
 - preserves intended player concept after originality transformation;
-- defines a playable group role/reason to act together;
+- defines a playable group role/reason to begin together;
 - contains a complete starter experience/resolution;
 - supports meaningful choice and more than one viable approach;
 - separates hidden truth from player-safe information;
@@ -314,45 +392,60 @@ A package is accepted only when it:
 - provides coherent causality and redundant/recoverable evidence where investigation exists;
 - avoids unsupported mechanics or maps them to available primitives;
 - declares required presentation/materialization resources through an asset/world-kit/fallback;
-- fits session-length/content boundaries;
 - serializes, hashes, persists, reloads, and resumes without semantic loss;
 - survives exact retry/process restart;
 - remains playable without live media generation after acceptance;
-- can be consumed by the ordinary Dungeon Master/entity/scene/knowledge/exploration path.
+- can be consumed by the ordinary world/DM/entity/scene/knowledge path.
+
+## Live expansion acceptance gates
+
+An expansion is accepted only when it:
+
+- has a concrete expansion need and source campaign revision/trigger;
+- is compatible with protected setting/rules/causal truth;
+- does not retcon known history or steal protected actor functions;
+- uses stable identities and explicit visibility;
+- fits existing WorldGraph/geography or explicitly adds compatible relationships;
+- declares materialization/fallback requirements where relevant;
+- is bounded to the requested branch rather than rewriting the full campaign;
+- commits idempotently and reconstructs after restart;
+- can be consumed by the ordinary Dungeon Master/world systems after commitment.
 
 ## Campaign media preparation
 
 The Campaign Architect declares semantic media/world-kit requirements and priorities. GameFrame owns media resolution, composition, generation, validation, provenance, storage, delivery, replacement, and scene materialization.
 
-Generated media does not own collision, location truth, or campaign authority and does not block package validation.
+Generated media does not own collision, location truth, or campaign authority and does not block semantic commitment when an approved readable fallback is available.
 
 ## Implementation sequence
 
 1. maintain executable CampaignPackage validation/commitment;
-2. complete the handcrafted Monster Master semantic package/world;
-3. implement durable entity/scene/observer-knowledge substrate;
-4. prove GameFrame embodied materialization and one connected-world slice;
-5. secure Dungeon Master referee/entity-performance context custody;
-6. prove complete embodied Monster Master behavior and scene-faithful tactical return;
-7. prove a materially different second handcrafted world;
-8. implement versioned campaign brief and deterministic Campaign Architect port;
-9. add hosted Campaign Architect generation;
-10. add owner-facing draft editing/review;
-11. add richer forms/interviews/media/world-kit workflows.
+2. preserve the existing durable entity/scene/observer/world foundation;
+3. implement the generalized attempted-operation and rules/resolution seams;
+4. add durable actor intentions/decision policy and bounded scene/world orchestration;
+5. prove Monster Master living-world behavior without permanent actor-specific pipelines;
+6. implement a bounded live Campaign Architect expansion contract and one Monster Master expansion canary;
+7. prove complete embodied Monster Master behavior and same-map tactical return;
+8. prove a materially different second handcrafted world;
+9. expand Campaign Architect initial-generation/product workflows;
+10. add owner-facing draft editing/review and richer creation/media workflows.
+
+Broad generated-campaign productization remains gated by generality evidence. The **architecture** for live expansion is not postponed until after every other campaign feature because it is required for the free-form product itself.
 
 ## Non-goals of the first implementation
 
-- unrestricted infinite open-world generation;
+- unrestricted high-frequency infinite-world generation;
+- continuously running model agents for every NPC;
 - a multi-year campaign authored in full in advance;
 - generated images/music/animation/speech as a validation requirement;
 - generated final map screenshots as gameplay geometry authority;
 - direct recreation of protected commercial settings;
-- Campaign Architect creation of mechanics GameFrame cannot execute;
-- Dungeon Master completion of missing package fundamentals during ordinary play;
-- re-running Campaign Architect for every incidental NPC/scene decoration;
+- Campaign Architect creation of mechanics GameFrame/RPG Rulesets cannot execute;
+- Dungeon Master completion of substantial missing campaign substrate during an ordinary live turn;
+- invoking Campaign Architect for every incidental NPC/scene decoration;
 - separate package formats for Monster Master and generated campaigns;
-- split-party world generation before one-scene embodied play is proven.
+- split-party world generation before one-scene living-world behavior is proven.
 
 ## Governing rule
 
-> The Campaign Architect produces a draftable, owner-refinable semantic CampaignPackage and world; commitment makes the foundation immutable for ordinary play; GameFrame materializes supported world semantics into persistent playable scenes; and every handcrafted or generated campaign crosses the same validator, world, and Dungeon Master boundary.
+> The Campaign Architect owns both protected campaign construction and continuity-safe expansion; the Dungeon Master conducts live established reality; commitment protects foundation truth without turning it into a closed world; and GameFrame materializes every accepted handcrafted or generated semantic world through the same durable engine boundary.
