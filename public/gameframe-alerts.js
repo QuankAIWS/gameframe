@@ -1,9 +1,10 @@
 import "./gameframe-alert-styles.js";
 import { gameFrameFetch, gameFrameOptionalFetch } from "./gameframe-auth.js";
 
-// The hibernating player event socket is the normal notification path. This
-// interval is only a disconnected safety net, so a healthy idle page performs
-// no periodic feed reads.
+// The hibernating player event socket is the normal notification path for
+// hosted authenticated sessions. Development-header identities cannot attach
+// their required auth header from the browser WebSocket API, so they stay on
+// the bounded HTTP recovery path instead of opening a socket that cannot work.
 const refreshIntervalMs = 60_000;
 const reconnectInitialMs = 1_000;
 const reconnectMaximumMs = 60_000;
@@ -75,6 +76,10 @@ function installGameFrameAlerts(identity) {
   let reconnectTimer = null;
   let reconnectDelayMs = reconnectInitialMs;
 
+  function playerEventSocketSupported() {
+    return identity.source === "discord" && !identity.offline;
+  }
+
   function eventSocketOpen() {
     return Boolean(
       eventSocket
@@ -100,6 +105,7 @@ function installGameFrameAlerts(identity) {
 
   function scheduleReconnect() {
     clearReconnectTimer();
+    if (!playerEventSocketSupported()) return;
     if (document.visibilityState !== "visible" || eventSocketOpen()) return;
     reconnectTimer = window.setTimeout(() => {
       reconnectTimer = null;
@@ -115,6 +121,7 @@ function installGameFrameAlerts(identity) {
   }
 
   function connectPlayerEvents() {
+    if (!playerEventSocketSupported()) return;
     if (!window.WebSocket || document.visibilityState !== "visible") return;
     if (
       eventSocket
