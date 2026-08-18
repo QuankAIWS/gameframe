@@ -114,16 +114,19 @@ jobs:
           && node --experimental-strip-types --check src/rpg/rpg-exploration-interaction-service.ts
           && node --experimental-strip-types --check src/rpg/sqlite-rpg-exploration-position-store.ts
           && node --experimental-strip-types --check src/rpg/sqlite-rpg-command-acceptance.ts
+          && node --experimental-strip-types --check src/rpg/rpg-session-diagnostics.ts
           && node --experimental-strip-types --check src/rpg/runtime-exploration-transport.ts
           && node --experimental-strip-types --check src/rpg/in-memory-rpg-encounter-match-coordinator.ts
           && node --experimental-strip-types --check src/rpg/monster-master-rpg-encounter-materializer.ts
           && node --experimental-strip-types --check src/rpg/sqlite-rpg-encounter-match-binding-store.ts
           && node --experimental-strip-types --check src/rpg/sqlite-rpg-encounter-match-coordinator.ts
           && node --experimental-strip-types --check src/platform/sqlite-match-store.ts
+          && node --experimental-strip-types --check src/cloudflare/rpg-admin-edge-proxy.ts
           && node --experimental-strip-types --check src/cloudflare/rpg-match-edge-proxy.ts
           && node --experimental-strip-types --check src/cloudflare/rpg-realtime-edge-proxy.ts
           && node --check public/gameframe-auth.js
           && node --check public/monster-master-pixi-bridge.js
+          && node --check public/monster-master-rpg-admin.js
           && node --check public/monster-master-rpg-model.js
           && node --check public/monster-master-rpg-app.js
           && node --check public/monster-master-rpg-world.js
@@ -136,7 +139,9 @@ jobs:
           src/browser/monster-master-rpg-model.test.ts
           src/browser/monster-master-rpg-choice-model.test.ts
           src/browser/monster-master-rpg-encounter-model.test.ts
+          src/cloudflare/rpg-admin-edge-proxy.test.ts
           src/cloudflare/rpg-edge-proxy.test.ts
+          src/cloudflare/rpg-edge-worker-admin.test.ts
           src/cloudflare/rpg-edge-worker-match-routing.test.ts
           src/cloudflare/rpg-match-edge-proxy.test.ts
           src/cloudflare/rpg-realtime-edge-proxy.test.ts
@@ -146,6 +151,7 @@ jobs:
           src/rpg/rpg-exploration-materializer.test.ts
           src/rpg/rpg-exploration-movement-service.test.ts
           src/rpg/rpg-exploration-interaction-service.test.ts
+          src/rpg/rpg-session-diagnostics.test.ts
           src/rpg/runtime-exploration-transport.test.ts
           src/rpg/rpg-shared-fixtures.test.ts
           src/rpg/rpg-dual-revision-contract.test.ts
@@ -162,6 +168,7 @@ jobs:
           src/rpg/in-memory-rpg-encounter-match-coordinator.test.ts
           src/rpg/structured-choice-flow.test.ts
           src/server/durable-rpg-http-server.test.ts
+          src/server/durable-rpg-staging-diagnostics.test.ts
           src/server/durable-rpg-exploration-http.test.ts
           src/server/durable-rpg-exploration-talk.test.ts
           src/server/durable-rpg-exploration-realtime.test.ts
