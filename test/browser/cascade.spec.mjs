@@ -48,28 +48,20 @@ test("Cascade Crush resolves a legal move through the animated presentation laye
   await expect(page.locator(".cascade-score-pop")).toHaveCount(0, { timeout: 8_000 });
 });
 
-test("Cascade teaches persistent specials in the opening five levels", async ({ page }) => {
-  await installLevelFixture(page, 2);
+test("Cascade no longer gates special teaching to fixed opening levels", async ({ page }) => {
+  await installLevelFixture(page, 1);
 
-  await page.goto("/cascade.html?cascadeTestLevel=2");
-  await expect(page.locator("#level-number")).toHaveText("2");
-  await expect(page.locator(".cascade-help")).toContainText("Match four to make a striped piece");
-  await expect(page.locator('#level-map > li[data-level="2"]')).toContainText("Stripes");
+  await page.goto("/cascade.html?cascadeTestLevel=1");
+  await expect(page.locator("#level-number")).toHaveText("1");
+  await expect(page.locator(".cascade-help")).toContainText("Bigger shapes make specials");
+  await expect(page.locator('#level-map > li[data-level="1"] > span')).toHaveText("Start");
 
-  await page.goto("/cascade.html?cascadeTestLevel=3");
-  await expect(page.locator("#level-number")).toHaveText("3");
-  await expect(page.locator(".cascade-help")).toContainText("T or L match");
-  await expect(page.locator('#level-map > li[data-level="3"]')).toContainText("Bombs");
-
-  await page.goto("/cascade.html?cascadeTestLevel=4");
-  await expect(page.locator("#level-number")).toHaveText("4");
-  await expect(page.locator(".cascade-help")).toContainText("two specials next to each other");
-  await expect(page.locator('#level-map > li[data-level="4"]')).toContainText("Combos");
-
-  await page.goto("/cascade.html?cascadeTestLevel=5");
-  await expect(page.locator("#level-number")).toHaveText("5");
-  await expect(page.locator(".cascade-help")).toContainText("Match five to make a color clearer");
-  await expect(page.locator('#level-map > li[data-level="5"]')).toContainText("Color");
+  for (const level of [2, 3, 4, 5]) {
+    await page.goto(`/cascade.html?cascadeTestLevel=${level}`);
+    await expect(page.locator("#level-number")).toHaveText(String(level));
+    await expect(page.locator(".cascade-help")).toContainText("Bigger shapes make specials");
+    await expect(page.locator(`#level-map > li[data-level="${level}"] > span`)).toHaveText("Level");
+  }
 });
 
 test("Cascade spreads objective families across the 300-level campaign", async ({ page }) => {
