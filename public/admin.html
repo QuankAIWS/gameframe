@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070a0d">
+  <title>Admin · Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/player-platform.css">
+  <link rel="stylesheet" href="/gameframe-admin.css">
+</head>
+<body class="gameframe-platform-page">
+  <main class="platform-shell admin-shell">
+    <header class="platform-heading">
+      <small>GAMEFRAME ADMIN</small>
+      <h1>Player cleanup</h1>
+      <p>Inspect player progression and remove test matches without turning resign into a record-erasing shortcut.</p>
+    </header>
+
+    <div id="admin-error" class="platform-error" hidden></div>
+    <p id="admin-status" class="admin-status" role="status"></p>
+
+    <section class="platform-section" aria-labelledby="admin-player-title">
+      <header class="platform-section-header">
+        <div>
+          <h2 id="admin-player-title">Player</h2>
+          <span class="platform-count">Administrator only</span>
+        </div>
+        <label class="admin-player-picker">Account <select id="admin-player"></select></label>
+      </header>
+      <div id="admin-player-summary" class="admin-summary"><p class="platform-empty">Loading player data…</p></div>
+    </section>
+
+    <section class="platform-section" aria-labelledby="admin-record-title">
+      <header class="platform-section-header">
+        <div>
+          <h2 id="admin-record-title">Game record</h2>
+          <span id="admin-record-count" class="platform-count">0 completed</span>
+        </div>
+      </header>
+      <div id="admin-records" class="admin-record-grid"></div>
+    </section>
+
+    <section class="platform-section" aria-labelledby="admin-match-title">
+      <header class="platform-section-header">
+        <div>
+          <h2 id="admin-match-title">Matches</h2>
+          <span id="admin-match-count" class="platform-count">0 indexed</span>
+        </div>
+      </header>
+      <p class="admin-warning">Void is for test/data correction. It removes the match from both players and, if the match had already completed, reverses that match's W/L and Gamer XP contribution.</p>
+      <div id="admin-matches" class="platform-list"><p class="platform-empty">Loading matches…</p></div>
+    </section>
+  </main>
+  <script type="module" src="/gameframe-pwa.js"></script>
+  <script type="module" src="/admin-app.js"></script>
+</body>
+</html>
