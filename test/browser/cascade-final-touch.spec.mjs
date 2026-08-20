@@ -149,20 +149,17 @@ test("Cascade completion handoff keeps the reward panel visual language", async 
   });
 
   const dialog = page.locator("#result-dialog");
-  await expect(dialog).toBeVisible();
-  const dialogForm = dialog.locator("form");
-  await dialogForm.evaluate(async (node) => {
-    await Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {})));
-  });
-  const dialogSurface = await dialogForm.evaluate((node) => ({
+  await expect(dialog).toBeHidden();
+  await expect(rewardStage).toHaveClass(/is-active/);
+  await expect(rewardStage).toHaveClass(/is-awaiting-choice/);
+  const handoffSurface = await rewardPanel.evaluate((node) => ({
     backgroundImage: getComputedStyle(node).backgroundImage,
     radius: Number.parseFloat(getComputedStyle(node).borderRadius),
   }));
-  expect(dialogSurface.backgroundImage).toContain("linear-gradient");
-  expect(dialogSurface.backgroundImage).toContain("radial-gradient");
-  expect(Math.abs(dialogSurface.radius - rewardSurface.radius)).toBeLessThanOrEqual(14);
+  expect(handoffSurface.backgroundImage).toBe(rewardSurface.backgroundImage);
+  expect(Math.abs(handoffSurface.radius - rewardSurface.radius)).toBeLessThanOrEqual(0.5);
 
-  const primary = page.locator("#result-actions button.primary");
+  const primary = rewardStage.locator(".cascade-reward-actions button.primary");
   const primaryStyle = await primary.evaluate((node) => ({
     height: node.getBoundingClientRect().height,
     backgroundImage: getComputedStyle(node).backgroundImage,
