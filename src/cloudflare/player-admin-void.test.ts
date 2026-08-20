@@ -176,6 +176,29 @@ test("match feed projection never regresses from completed back to active at the
   assert.equal(feed.matches[0].winnerPlayerId, "discord:2");
 });
 
+test("concurrent same-revision projections preserve the terminal match state", async () => {
+  const runtime = new PlayerPlatformThemeRuntime(new MemoryStorage());
+  const matchId = "test-concurrent-projection-order";
+  const completed = {
+    ...completedMatch(matchId, "discord:2"),
+    revision: 8,
+  };
+
+  const [completedResponse, lateActiveResponse] = await Promise.all([
+    runtime.fetch(request("/player/match", "POST", completed)),
+    runtime.fetch(request("/player/match", "POST", activeMatch(matchId, 8))),
+  ]);
+  assert.equal(completedResponse.status, 200);
+  const lateActive = await jsonBody(lateActiveResponse);
+  assert.equal(lateActive.ignored, true);
+  assert.equal(lateActive.stale, true);
+
+  const feed = await jsonBody(await runtime.fetch(request("/player/feed")));
+  assert.equal(feed.matches.length, 1);
+  assert.equal(feed.matches[0].lifecycle, "completed");
+  assert.equal(feed.matches[0].winnerPlayerId, "discord:2");
+});
+
 test("admin void tombstone blocks later match and progression re-indexing", async () => {
   const runtime = new PlayerPlatformThemeRuntime(new MemoryStorage());
   const match = completedMatch("test-void-tombstone", "discord:2");
