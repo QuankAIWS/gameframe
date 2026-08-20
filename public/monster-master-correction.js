@@ -71,6 +71,11 @@ function roleFromUnit(unit) {
   return "master";
 }
 
+function unitLabel(unit) {
+  return window.gameFrameMonsterMasterRosterBuilder?.labelForContentId?.(unit?.contentId)
+    ?? roleLabel(roleFromUnit(unit));
+}
+
 function turnOrder(view) {
   const observation = view.observation;
   const defeated = new Set(observation.defeatedUnitIds ?? []);
@@ -137,6 +142,7 @@ function renderTurnOrder() {
     item.dataset.role = role;
     item.dataset.owner = friendly ? "friendly" : "enemy";
     item.dataset.unitState = isDefeated ? "defeated" : "active";
+    if (unit.contentId) item.dataset.contentId = unit.contentId;
 
     const slot = document.createElement("span");
     slot.className = "monster-master-turn-slot";
@@ -153,7 +159,7 @@ function renderTurnOrder() {
     const copy = document.createElement("span");
     copy.className = "monster-master-turn-copy";
     const name = document.createElement("strong");
-    name.textContent = roleLabel(role);
+    name.textContent = unitLabel(unit);
     const meta = document.createElement("small");
     const health = Number.isFinite(state.health) ? `${state.health}/${state.maxHealth}` : "undeployed";
     meta.textContent = isDefeated

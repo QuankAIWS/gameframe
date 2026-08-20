@@ -49,9 +49,11 @@ test("Monster Master uses one idle-on-demand Pixi WebGL battlefield", async ({ p
   const turnPortrait = page.locator(".monster-master-turn-portrait").first();
   await expect(turnPortrait).toBeVisible();
   await expect.poll(() => turnPortrait.evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("stormcrest-skitter-v1-128.webp");
-  const masterPortrait = page.locator('.monster-master-unit-hud[data-role="master"] .monster-master-unit-portrait');
+  const masterHud = page.locator('.monster-master-unit-hud[data-role="master"]');
+  await expect(masterHud).toHaveAttribute("data-content-id", "vanguard-trainer-v1");
+  const masterPortrait = masterHud.locator(".monster-master-unit-portrait");
   await expect(masterPortrait).toBeVisible();
-  await expect.poll(() => masterPortrait.evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("master-trainer-v1-128.webp");
+  await expect.poll(() => masterPortrait.evaluate((node) => getComputedStyle(node).backgroundImage)).toContain("vanguard-trainer-v1-128.webp");
 
   const webgl = await pixiCanvas.evaluate((canvas) => Boolean(
     canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl"),
