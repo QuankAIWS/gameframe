@@ -49,6 +49,8 @@ function installDrawer() {
   menuToggle.id = "cascade-mobile-menu-toggle";
   menuToggle.type = "button";
   menuToggle.hidden = !mobileQuery.matches;
+  menuToggle.style.minWidth = "48px";
+  menuToggle.style.minHeight = "48px";
   menuToggle.setAttribute("aria-controls", "cascade-mobile-menu");
   menuToggle.setAttribute("aria-expanded", "false");
   menuToggle.innerHTML = '<span aria-hidden="true">☰</span><strong>Menu</strong>';
@@ -74,6 +76,12 @@ function installDrawer() {
     </section>
   `;
   drawerContent = drawer.querySelector("#cascade-mobile-menu-content");
+  const closeButton = drawer.querySelector("[data-cascade-mobile-close]");
+  if (closeButton) {
+    closeButton.style.minWidth = "48px";
+    closeButton.style.minHeight = "48px";
+    closeButton.addEventListener("click", closeDrawer);
+  }
 
   document.body.append(menuToggle, drawer);
 
@@ -82,7 +90,6 @@ function installDrawer() {
     menuToggle.setAttribute("aria-expanded", "true");
     drawer.showModal();
   });
-  drawer.querySelector("[data-cascade-mobile-close]")?.addEventListener("click", closeDrawer);
   drawer.addEventListener("click", (event) => {
     if (event.target === drawer) closeDrawer();
   });
