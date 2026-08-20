@@ -245,8 +245,6 @@ function syncPortraits(view) {
       continue;
     }
     item.dataset.contentId = unit.contentId ?? "";
-    const name = item.querySelector("strong");
-    if (name) name.textContent = presentation.label;
     setPortraitArt(portrait, unit);
   }
 
