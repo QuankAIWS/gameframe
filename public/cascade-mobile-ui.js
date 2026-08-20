@@ -32,14 +32,18 @@ function mobileUtilityCards() {
 }
 
 function syncCompactPlaySurface() {
+  const destinationBar = document.querySelector("#gameframe-destination-bar");
+  const destinationBrand = destinationBar?.querySelector(".gameframe-destination-brand");
   const shell = document.querySelector(".cascade-shell");
   const objective = document.querySelector(".cascade-objective");
   const objectiveLabel = document.querySelector("#objective-label");
   const weeklyLeaderboard = document.querySelector("[data-weekly-leaderboard]");
   if (mobileQuery.matches) {
-    // The portrait shell uses a viewport-derived height plus small safe-area
-    // padding. Count that padding inside the declared height so the document
-    // itself never gains a meaningless few pixels of vertical scrolling.
+    // The compact header and portrait shell both use explicit viewport-derived
+    // heights. Count their padding inside those heights so the document never
+    // grows a few meaningless pixels of vertical scrolling.
+    destinationBar?.style.setProperty("box-sizing", "border-box");
+    destinationBrand?.style.setProperty("box-sizing", "border-box");
     shell?.style.setProperty("box-sizing", "border-box");
     // Cascade inherits a slightly reduced root font size on phone widths. Keep
     // both the objective container and its label comfortably above the
@@ -48,6 +52,8 @@ function syncCompactPlaySurface() {
     objectiveLabel?.style.setProperty("font-size", "1.08rem");
     weeklyLeaderboard?.style.setProperty("display", "none");
   } else {
+    destinationBar?.style.removeProperty("box-sizing");
+    destinationBrand?.style.removeProperty("box-sizing");
     shell?.style.removeProperty("box-sizing");
     objective?.style.removeProperty("font-size");
     objectiveLabel?.style.removeProperty("font-size");
