@@ -44,6 +44,19 @@ function completedMatch(matchId: string, winnerPlayerId: string | null, draw = f
   };
 }
 
+function activeMatch(matchId: string, revision = 60) {
+  return {
+    matchId,
+    gameId: "othello",
+    playerIds: ["discord:1", "discord:2"],
+    revision,
+    activePlayerId: "discord:1",
+    status: { lifecycle: "active", winnerPlayerId: null, draw: false },
+    updatedAt: 900,
+    resumePath: `/othello.html?match=${matchId}`,
+  };
+}
+
 test("voiding a completed loss removes it from the player feed and reverses its exact XP/stat award once", async () => {
   const runtime = new PlayerPlatformObjectRuntime(new MemoryStorage());
   const match = completedMatch("test-loss", "discord:2");
@@ -143,4 +156,72 @@ test("player admin void emits matches and progression invalidations", async () =
   }));
   assert.equal(response.status, 200);
   assert.deepEqual(notifications, [["matches", "progression"]]);
+});
+
+test("match feed projection never regresses from completed back to active at the same revision", async () => {
+  const runtime = new PlayerPlatformThemeRuntime(new MemoryStorage());
+  const matchId = "test-projection-order";
+  await runtime.fetch(request("/player/match", "POST", activeMatch(matchId, 8)));
+  await runtime.fetch(request("/player/match", "POST", {
+    ...completedMatch(matchId, "discord:2"),
+    revision: 8,
+  }));
+  const stale = await jsonBody(await runtime.fetch(request("/player/match", "POST", activeMatch(matchId, 8))));
+  assert.equal(stale.ignored, true);
+  assert.equal(stale.stale, true);
+
+  const feed = await jsonBody(await runtime.fetch(request("/player/feed")));
+  assert.equal(feed.matches.length, 1);
+  assert.equal(feed.matches[0].lifecycle, "completed");
+  assert.equal(feed.matches[0].winnerPlayerId, "discord:2");
+});
+
+test("admin void tombstone blocks later match and progression re-indexing", async () => {
+  const runtime = new PlayerPlatformThemeRuntime(new MemoryStorage());
+  const match = completedMatch("test-void-tombstone", "discord:2");
+
+  await runtime.fetch(request("/player/match", "POST", match));
+  await runtime.fetch(request("/player/progression/match", "POST", {
+    ...match,
+    playerId: "discord:1",
+  }));
+  await runtime.fetch(request("/player/admin/match/void", "POST", {
+    playerId: "discord:1",
+    matchId: match.matchId,
+  }));
+
+  const lateMatch = await jsonBody(await runtime.fetch(request("/player/match", "POST", match)));
+  assert.equal(lateMatch.ignored, true);
+  assert.equal(lateMatch.voided, true);
+  const lateProgression = await jsonBody(await runtime.fetch(request("/player/progression/match", "POST", {
+    ...match,
+    playerId: "discord:1",
+  })));
+  assert.equal(lateProgression.awarded, false);
+  assert.equal(lateProgression.voided, true);
+  assert.equal(lateProgression.progression.gamerXp, 0);
+
+  const feed = await jsonBody(await runtime.fetch(request("/player/feed")));
+  assert.deepEqual(feed.matches, []);
+});
+
+test("directory void tombstone prevents a late completed projection from restoring the leaderboard result", async () => {
+  const runtime = new PlayerPlatformThemeRuntime(new MemoryStorage());
+  for (const [playerId, displayName] of [["discord:1", "Alice"], ["discord:2", "Bob"]]) {
+    await runtime.fetch(request("/directory/upsert", "POST", {
+      playerId,
+      displayName,
+      source: "discord",
+      lastSeenAt: 1000,
+    }));
+  }
+  const match = completedMatch("test-directory-tombstone", "discord:2");
+  await runtime.fetch(request("/directory/match", "POST", match));
+  await runtime.fetch(request("/directory/admin/match/void", "POST", { matchId: match.matchId }));
+  const late = await jsonBody(await runtime.fetch(request("/directory/match", "POST", match)));
+  assert.equal(late.ignored, true);
+  assert.equal(late.voided, true);
+
+  const leaderboard = await jsonBody(await runtime.fetch(request("/directory/leaderboard")));
+  assert.equal(leaderboard.games.length, 0);
 });
