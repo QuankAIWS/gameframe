@@ -50,6 +50,7 @@ function gameLabel() {
   if (pathname === "/matches.html") return "MATCHES";
   if (pathname === "/leaderboard.html") return "LEADERBOARD";
   if (pathname === "/profile.html") return "PROFILE";
+  if (pathname === "/admin.html") return "ADMIN";
   if (pathname === "/casual-games.html") return "CASUAL GAMES";
   if (pathname.includes("monster-master-rpg")) return "MONSTER MASTER RPG";
   if (pathname.includes("monster-master")) return "MONSTER MASTER";
@@ -106,6 +107,7 @@ function installDestinationBar() {
         <a data-gameframe-matches href="/matches.html">Matches</a>
         <a data-gameframe-leaderboard href="/leaderboard.html" aria-label="Leaderboard"><span class="gameframe-nav-label-full">Leaderboard</span><span class="gameframe-nav-label-compact" aria-hidden="true">Ranks</span></a>
         <a data-gameframe-profile href="/profile.html">Profile</a>
+        <a data-gameframe-admin href="/admin.html" hidden>Admin</a>
       </nav>
       <div class="gameframe-destination-session-space">
         <div id="gameframe-shell-actions" class="gameframe-shell-actions" aria-label="GameFrame controls"></div>
@@ -150,6 +152,13 @@ installGameFrameThemePicker();
 removeLegacyProductLabel();
 window.dispatchEvent(new CustomEvent("gameframe:destination-bar-ready", { detail: { bar } }));
 let updatePending = false;
+
+function syncAdminVisibility(identity = window.gameFrameIdentity) {
+  const admin = bar.querySelector("[data-gameframe-admin]");
+  if (!admin) return;
+  admin.hidden = !identity?.admin;
+}
+
 function syncDestinationBar() {
   updatePending = false;
 
@@ -183,6 +192,8 @@ function syncDestinationBar() {
   bar.querySelector("[data-gameframe-matches]")?.classList.toggle("is-active", pathname === "/matches.html");
   bar.querySelector("[data-gameframe-leaderboard]")?.classList.toggle("is-active", pathname === "/leaderboard.html");
   bar.querySelector("[data-gameframe-profile]")?.classList.toggle("is-active", pathname === "/profile.html");
+  bar.querySelector("[data-gameframe-admin]")?.classList.toggle("is-active", pathname === "/admin.html");
+  syncAdminVisibility();
 }
 function scheduleDestinationSync() {
   if (updatePending) return;
@@ -197,6 +208,7 @@ observer.observe(document.body, {
   childList: true,
   subtree: true,
 });
+window.addEventListener("gameframe:identity", (event) => syncAdminVisibility(event.detail?.identity));
 syncDestinationBar();
 
 window.gameFrameDestinationBar = Object.freeze({ sync: syncDestinationBar });

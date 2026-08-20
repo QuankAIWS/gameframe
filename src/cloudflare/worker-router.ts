@@ -43,12 +43,12 @@ interface WorkerRouterOptions {
   authenticator?: RequestAuthenticator;
 }
 
-type MatchOperation = "view" | "actions" | "events";
+type MatchOperation = "view" | "actions" | "events" | "resign";
 type InvitationOperation = "view" | "cancel" | "decline";
 const SESSION_TTL_SECONDS = 60 * 60 * 12;
 
 function publicMatchRoute(pathname: string): { matchId: string; operation: MatchOperation } | null {
-  const match = /^\/api\/matches\/([^/]+)(?:\/(actions|events))?$/.exec(pathname);
+  const match = /^\/api\/matches\/([^/]+)(?:\/(actions|events|resign))?$/.exec(pathname);
   if (!match) return null;
   return {
     matchId: decodeURIComponent(match[1]),
@@ -109,6 +109,7 @@ async function internalMatchView(response: Response): Promise<IndexedMatchView> 
   if (!response.ok) {
     throw Object.assign(new Error(body.message ?? `Internal match request failed with ${response.status}.`), {
       code: body.error ?? "match_internal_error",
+      status: response.status,
     });
   }
   return body;
@@ -375,6 +376,17 @@ export function createGameFrameWorker(options: WorkerRouterOptions = {}) {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ ...body, matchId: route.matchId, playerId: principal.playerId }),
+          })));
+          await indexMatchView(env, view);
+          return json(200, view);
+        }
+
+        if (route && request.method === "POST" && route.operation === "resign") {
+          const principal = await authenticator.authenticate(request);
+          const view = await internalMatchView(await stubFor(env, route.matchId).fetch(new Request("https://match.internal/resign", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ matchId: route.matchId, playerId: principal.playerId }),
           })));
           await indexMatchView(env, view);
           return json(200, view);

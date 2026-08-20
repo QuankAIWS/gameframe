@@ -329,14 +329,10 @@ function scanMechanics() {
   const level = levelData();
 
   if (levelNumber === 1) requestTip("match");
-  if (levelNumber === 2) requestTip("stripe");
-  if (levelNumber === 3) requestTip("bomb");
-  if (levelNumber === 4) requestTip("combo");
-  if (levelNumber === 5) requestTip("color");
-  if (levelNumber === 31) requestTip("ice");
-  if (levelNumber === 61) requestTip("collect");
-  if (levelNumber === 151) requestTip("layered-ice");
 
+  // Specials and objectives are taught when the player actually encounters them.
+  // This keeps every special available from level one without front-loading rules
+  // the player has not yet discovered through play.
   if (board?.querySelector('[data-special="stripe-h"], [data-special="stripe-v"]')) requestTip("stripe");
   if (board?.querySelector('[data-special="bomb"]')) requestTip("bomb");
   if (board?.querySelector('[data-special="color"]')) requestTip("color");

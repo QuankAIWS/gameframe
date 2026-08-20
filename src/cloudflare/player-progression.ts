@@ -214,6 +214,16 @@ function withXp(record: PlayerProgressionRecord, xpGain: number, now: number): P
   };
 }
 
+function withoutXp(record: PlayerProgressionRecord, xpLoss: number, now: number): PlayerProgressionRecord {
+  const loss = whole(xpLoss);
+  return {
+    ...record,
+    gamerXp: Math.max(0, whole(record.gamerXp) - loss),
+    xpUpdatedAt: loss > 0 ? now : positiveTimestamp(record.xpUpdatedAt, 0),
+    updatedAt: now,
+  };
+}
+
 export function applyCompletedMatch(
   record: PlayerProgressionRecord,
   input: CompletedMatchProgressionInput,
@@ -235,6 +245,30 @@ export function applyCompletedMatch(
     ...record,
     games: { ...record.games, [input.gameId]: current },
   }, xpGain, now);
+}
+
+export function revertCompletedMatch(
+  record: PlayerProgressionRecord,
+  input: CompletedMatchProgressionInput,
+): PlayerProgressionRecord {
+  const now = positiveTimestamp(input.updatedAt, Date.now());
+  const current = cloneGameRecord(record.games[input.gameId]);
+  current.played = Math.max(0, current.played - 1);
+  let xpLoss = GAMER_XP_RULES.completedMatch;
+  if (input.draw) {
+    current.draws = Math.max(0, current.draws - 1);
+    xpLoss += GAMER_XP_RULES.drawnMatch;
+  } else if (input.winnerPlayerId === input.playerId) {
+    current.wins = Math.max(0, current.wins - 1);
+    xpLoss += GAMER_XP_RULES.wonMatch;
+  } else {
+    current.losses = Math.max(0, current.losses - 1);
+  }
+  const games = { ...record.games, [input.gameId]: current };
+  if (current.played === 0 && current.wins === 0 && current.losses === 0 && current.draws === 0) {
+    delete games[input.gameId];
+  }
+  return withoutXp({ ...record, games }, xpLoss, now);
 }
 
 function normalizedCascadeInput(input: CascadeProgressionInput) {

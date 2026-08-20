@@ -5,6 +5,7 @@ import {
   applyScoredProgression,
   emptyPlayerProgression,
   publicPlayerProgression,
+  revertCompletedMatch,
   type PlayerProgressionRecord,
   type PublicPlayerProgression,
 } from "./player-progression.ts";
@@ -298,6 +299,9 @@ export class PlayerPlatformObjectRuntime {
       if (request.method === "POST" && url.pathname === "/directory/match") {
         return json(200, await this.#upsertLeaderboardMatch(await readJson(request)));
       }
+      if (request.method === "POST" && url.pathname === "/directory/admin/match/void") {
+        return json(200, await this.#voidDirectoryMatch(await readJson(request)));
+      }
       if (request.method === "POST" && url.pathname === "/directory/score") {
         return json(200, await this.#upsertScoredResult(await readJson(request)));
       }
@@ -312,6 +316,9 @@ export class PlayerPlatformObjectRuntime {
       }
       if (request.method === "POST" && url.pathname === "/player/match") {
         return json(200, await this.#upsertMatch(await readJson(request)));
+      }
+      if (request.method === "POST" && url.pathname === "/player/admin/match/void") {
+        return json(200, await this.#voidPlayerMatch(await readJson(request)));
       }
       if (request.method === "POST" && url.pathname === "/player/invitation") {
         return json(200, await this.#upsertInvitation(await readJson(request)));
@@ -401,6 +408,15 @@ export class PlayerPlatformObjectRuntime {
       .slice(0, MAX_LEADERBOARD_MATCHES);
     await this.#storage.put(LEADERBOARD_KEY, { version: 1, matches });
     return summary;
+  }
+
+  async #voidDirectoryMatch(body: Record<string, unknown>) {
+    const matchId = boundedText(body.matchId, "Match ID", 160);
+    const record = await this.#storage.get<LeaderboardRecord>(LEADERBOARD_KEY) ?? { version: 1, matches: [] };
+    const matches = record.matches.filter((match) => match.matchId !== matchId);
+    const removed = matches.length !== record.matches.length;
+    if (removed) await this.#storage.put(LEADERBOARD_KEY, { version: 1, matches });
+    return { matchId, removed };
   }
 
   async #upsertScoredResult(body: Record<string, unknown>) {
@@ -611,6 +627,46 @@ export class PlayerPlatformObjectRuntime {
     next.recentAccomplishments = recentAccomplishments(record);
     await this.#storage.put(PROGRESSION_KEY, next);
     return publicPlayerProgression(next);
+  }
+
+  async #voidPlayerMatch(body: Record<string, unknown>) {
+    const playerId = boundedText(body.playerId, "Progression player ID", 160);
+    const matchId = boundedText(body.matchId, "Match ID", 160);
+    const feed = await this.#storage.get<PlayerFeedRecord>(FEED_KEY) ?? emptyFeed();
+    const summary = feed.matches.find((match) => match.matchId === matchId) ?? null;
+    const matches = feed.matches.filter((match) => match.matchId !== matchId);
+    const removed = matches.length !== feed.matches.length;
+    if (removed) await this.#storage.put(FEED_KEY, { ...feed, matches });
+
+    let record = await this.#readStoredProgression(playerId);
+    let reversed = false;
+    if (summary?.lifecycle === "completed" && summary.playerIds.includes(playerId)) {
+      const accomplishmentId = `match:${matchId}`;
+      const key = markerKey(accomplishmentId);
+      const marker = await this.#storage.get<boolean>(key);
+      const recent = recentAccomplishments(record);
+      if (marker || recent.includes(accomplishmentId)) {
+        const next = revertCompletedMatch(record, {
+          playerId,
+          gameId: summary.gameId,
+          winnerPlayerId: summary.winnerPlayerId,
+          draw: summary.draw,
+          updatedAt: Date.now(),
+        }) as StoredPlayerProgression;
+        next.recentAccomplishments = recent.filter((id) => id !== accomplishmentId);
+        await this.#storage.put(PROGRESSION_KEY, next);
+        await this.#storage.put(key, false);
+        record = next;
+        reversed = true;
+      }
+    }
+
+    return {
+      matchId,
+      removed,
+      reversed,
+      progression: publicPlayerProgression(record),
+    };
   }
 
   async #upsertMatch(body: Record<string, unknown>) {

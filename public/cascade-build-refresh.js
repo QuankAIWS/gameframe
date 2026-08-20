@@ -2,28 +2,11 @@ import { gameFrameBuildRefresh } from "./gameframe-build-refresh.js";
 
 const CHECK_EVERY_LEVELS = 5;
 const resultDialog = document.querySelector("#result-dialog");
-const resultKicker = document.querySelector("#result-kicker");
-const resultTitle = document.querySelector("#result-title");
 const levelNumber = document.querySelector("#level-number");
 
 let lastCompleted = null;
 let lastCheckpointChecked = 0;
 let refreshAttempt = null;
-
-function completedLevelFromDialog() {
-  if (!resultDialog?.open) return null;
-  const kicker = resultKicker?.textContent?.trim() || "";
-  if (kicker === "LEVEL COMPLETE") {
-    const match = /Level\s+(\d+)\s+cleared\./i.exec(resultTitle?.textContent || "");
-    const level = Number(match?.[1]);
-    return Number.isInteger(level) && level > 0 ? { level, final: false } : null;
-  }
-  if (kicker === "RUN COMPLETE") {
-    const level = Number(levelNumber?.textContent);
-    return Number.isInteger(level) && level > 0 ? { level, final: true } : null;
-  }
-  return null;
-}
 
 function cascadeSnapshot() {
   try {
@@ -83,15 +66,20 @@ async function checkCheckpoint(completed) {
   return pending;
 }
 
-function inspectResultDialog() {
-  const completed = completedLevelFromDialog();
-  if (!completed) return;
+function recordCompletedLevel(event) {
+  const detail = event?.detail;
+  if (!detail || detail.replay) return;
+  const level = Number(detail.level);
+  if (!Number.isInteger(level) || level < 1) return;
+  const completed = {
+    level,
+    final: Boolean(detail.final),
+  };
   lastCompleted = completed;
   void checkCheckpoint(completed);
 }
 
 function inspectPossibleSafeBoundary() {
-  inspectResultDialog();
   void maybeRefreshAtSafeBoundary();
 }
 
@@ -99,9 +87,6 @@ if (resultDialog) {
   new MutationObserver(inspectPossibleSafeBoundary).observe(resultDialog, {
     attributes: true,
     attributeFilter: ["open"],
-    childList: true,
-    subtree: true,
-    characterData: true,
   });
 }
 
@@ -118,6 +103,7 @@ new MutationObserver(inspectPossibleSafeBoundary).observe(document.body, {
   attributeFilter: ["class"],
 });
 
+window.addEventListener("gameframe:cascade-level-complete", recordCompletedLevel);
 window.addEventListener("gameframe:build-update-pending", () => {
   void maybeRefreshAtSafeBoundary();
 });

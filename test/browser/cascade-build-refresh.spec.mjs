@@ -114,13 +114,13 @@ test("level 5 update waits through the Blitz offer, then reloads into level 6 ex
   await page.locator("#booster-hammer").click();
   await page.locator(".cascade-tile").first().click();
 
-  const result = page.locator("#result-dialog");
-  await expect(result).toBeVisible();
-  await expect(page.locator("#result-kicker")).toHaveText("LEVEL COMPLETE");
-  await expect(page.locator("#result-title")).toHaveText("Level 5 cleared.");
+  const rewardStage = page.locator(".cascade-reward-stage");
+  await expect(page.locator("#result-dialog")).toBeHidden();
+  await expect(rewardStage).toHaveClass(/is-awaiting-choice/, { timeout: 8_000 });
+  await expect(rewardStage.getByRole("button", { name: "Continue" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.gameFrameBuildRefresh.isUpdatePending())).toBe(true);
 
-  await page.getByRole("button", { name: "Continue" }).click();
+  await rewardStage.getByRole("button", { name: "Continue" }).click();
   await expect(page.locator("#result-kicker")).toHaveText("BONUS ROUND");
   await expect(page.locator("#result-title")).toHaveText("BLITZ!");
   await expect(page.getByRole("button", { name: "PLAY BLITZ" })).toBeVisible();

@@ -26,6 +26,7 @@ let knownPlayers = [];
 let acceptingInvitationId = null;
 let cancellingInvitationId = null;
 let decliningInvitationId = null;
+let resigningMatchId = null;
 
 function challengeMutationPending() {
   return acceptingInvitationId !== null || cancellingInvitationId !== null || decliningInvitationId !== null;
@@ -95,6 +96,15 @@ function matchRow(match, mode) {
   open.href = match.resumePath;
   open.textContent = mode === "turn" ? "Play move" : mode === "completed" ? "View" : "Open";
   actions.append(open);
+  if (mode !== "completed") {
+    const leave = document.createElement("button");
+    leave.className = "platform-button danger";
+    leave.type = "button";
+    leave.textContent = resigningMatchId === match.matchId ? "Leaving…" : "Leave match";
+    leave.disabled = resigningMatchId !== null;
+    leave.addEventListener("click", () => void resignMatch(match));
+    actions.append(leave);
+  }
   row.append(copy, actions);
   return row;
 }
@@ -157,6 +167,27 @@ function renderList(key, items, emptyText, rowFactory) {
     return;
   }
   lists[key].replaceChildren(...items.map(rowFactory));
+}
+
+async function resignMatch(match) {
+  if (resigningMatchId) return;
+  const opponent = playerName(opponentFor(match));
+  if (!window.confirm(`Leave this ${gameName(match.gameId)} match against ${opponent}? This counts as a loss for you and a win for your opponent.`)) return;
+  resigningMatchId = match.matchId;
+  try {
+    const response = await gameFrameFetch(`/api/matches/${encodeURIComponent(match.matchId)}/resign`, {
+      method: "POST",
+    }, identity);
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.message || `Leaving the match failed with ${response.status}.`);
+    resigningMatchId = null;
+    await refresh();
+  } catch (error) {
+    resigningMatchId = null;
+    errorBox.hidden = false;
+    errorBox.textContent = error instanceof Error ? error.message : "The match could not be left.";
+    await refresh();
+  }
 }
 
 async function acceptChallenge(invitation) {

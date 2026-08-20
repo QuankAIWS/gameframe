@@ -123,8 +123,10 @@ test("Cascade labels progression stars as best ratings and distinguishes a lower
   await page.locator("#booster-hammer").click();
   await page.locator('.cascade-tile[data-index="0"]').click();
 
-  await expect(page.locator("#result-dialog")).toBeVisible({ timeout: 8_000 });
-  await expect(page.locator("#result-copy")).toContainText("★☆☆ this run · best ★★★");
+  const rewardStage = page.locator(".cascade-reward-stage");
+  await expect(page.locator("#result-dialog")).toBeHidden();
+  await expect(rewardStage).toHaveClass(/is-awaiting-choice/, { timeout: 8_000 });
+  await expect(rewardStage.locator(".cascade-reward-summary")).toContainText("★☆☆ this run · best ★★★");
 });
 
 test("Cascade admin same-level jump explicitly starts a fresh run", async ({ page }) => {

@@ -1,0 +1,85 @@
+.admin-shell {
+  max-width: 1180px;
+}
+
+.admin-status,
+.admin-warning {
+  color: var(--platform-muted, #a9b3c4);
+  line-height: 1.5;
+}
+
+.admin-warning {
+  margin: 0 0 1rem;
+  padding: .8rem 1rem;
+  border: 1px solid rgba(255, 190, 90, .28);
+  border-radius: 12px;
+  background: rgba(255, 190, 90, .07);
+}
+
+.admin-player-picker {
+  display: grid;
+  gap: .35rem;
+  color: var(--platform-muted, #a9b3c4);
+  font-size: .8rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.admin-player-picker select {
+  min-width: min(320px, 72vw);
+  padding: .72rem .85rem;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 10px;
+  background: rgba(0,0,0,.28);
+  color: inherit;
+  font: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.admin-summary,
+.admin-record-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: .85rem;
+}
+
+.admin-summary-card,
+.admin-record-card {
+  display: grid;
+  gap: .35rem;
+  min-height: 108px;
+  padding: 1rem;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px;
+  background: rgba(255,255,255,.035);
+}
+
+.admin-summary-card small,
+.admin-record-card small {
+  color: var(--platform-muted, #a9b3c4);
+  font-weight: 850;
+  letter-spacing: .08em;
+}
+
+.admin-summary-card strong,
+.admin-record-card strong {
+  font-size: 1.45rem;
+}
+
+.admin-summary-card span,
+.admin-record-card span {
+  color: var(--platform-muted, #a9b3c4);
+}
+
+.platform-button.admin-danger,
+.platform-button.danger {
+  border-color: rgba(255, 100, 100, .42);
+  background: rgba(150, 34, 42, .16);
+}
+
+.platform-button.admin-danger:hover:not(:disabled),
+.platform-button.danger:hover:not(:disabled) {
+  background: rgba(180, 42, 50, .26);
+}

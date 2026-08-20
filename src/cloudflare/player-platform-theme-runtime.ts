@@ -4,8 +4,18 @@ import { PlayerPlatformObjectRuntime } from "./player-platform-object-runtime.ts
 import type { DurableStorageLike } from "./runtime-contracts.ts";
 
 const THEME_KEY = "gameframe:player-theme:v1";
+const MATCH_PROJECTION_PREFIX = "gameframe:player-match-projection:v1:";
+const VOIDED_MATCH_PREFIX = "gameframe:voided-match:v1:";
 const DEFAULT_THEME_ID = "standard";
 const THEME_IDS = new Set(["standard", "cascade-pop", "cyberpunk", "clockwork", "deep-space"]);
+
+type ProjectedLifecycle = "waiting" | "active" | "completed";
+
+interface MatchProjectionMarker {
+  version: 1;
+  revision: number;
+  lifecycle: ProjectedLifecycle;
+}
 
 export interface PlayerPlatformThemeRuntimeOptions {
   onUpdated?: (topics: readonly PlayerEventTopic[]) => void | Promise<void>;
@@ -28,15 +38,58 @@ async function responseBody(response: Response): Promise<Record<string, unknown>
 
 function mutationTopics(pathname: string): PlayerEventTopic[] {
   if (pathname === "/player/match") return ["matches"];
+  if (pathname === "/player/admin/match/void") return ["matches", "progression"];
   if (pathname === "/player/invitation") return ["invitations"];
   if (pathname.startsWith("/player/progression/")) return ["progression"];
   return [];
+}
+
+function matchIdFrom(body: Record<string, unknown>): string | null {
+  const matchId = String(body.matchId ?? "").trim();
+  return matchId && matchId.length <= 160 ? matchId : null;
+}
+
+function voidedMatchKey(matchId: string): string {
+  return `${VOIDED_MATCH_PREFIX}${matchId}`;
+}
+
+function projectionKey(matchId: string): string {
+  return `${MATCH_PROJECTION_PREFIX}${matchId}`;
+}
+
+function projectedLifecycle(body: Record<string, unknown>): ProjectedLifecycle {
+  const status = body.status && typeof body.status === "object" && !Array.isArray(body.status)
+    ? body.status as Record<string, unknown>
+    : {};
+  if (status.lifecycle === "completed") return "completed";
+  if (status.lifecycle === "waiting") return "waiting";
+  return "active";
+}
+
+function lifecycleRank(lifecycle: ProjectedLifecycle): number {
+  if (lifecycle === "completed") return 2;
+  if (lifecycle === "active") return 1;
+  return 0;
+}
+
+function projectionFrom(body: Record<string, unknown>): MatchProjectionMarker {
+  return {
+    version: 1,
+    revision: Math.max(0, Math.floor(Number(body.revision) || 0)),
+    lifecycle: projectedLifecycle(body),
+  };
+}
+
+function projectionIsStale(previous: MatchProjectionMarker, next: MatchProjectionMarker): boolean {
+  return next.revision < previous.revision
+    || (next.revision === previous.revision && lifecycleRank(next.lifecycle) < lifecycleRank(previous.lifecycle));
 }
 
 export class PlayerPlatformThemeRuntime {
   readonly #storage: DurableStorageLike;
   readonly #base: PlayerPlatformObjectRuntime;
   readonly #onUpdated: PlayerPlatformThemeRuntimeOptions["onUpdated"];
+  #tail: Promise<void> = Promise.resolve();
 
   constructor(storage: DurableStorageLike, options: PlayerPlatformThemeRuntimeOptions = {}) {
     this.#storage = storage;
@@ -68,7 +121,23 @@ export class PlayerPlatformThemeRuntime {
     return { response, body: await responseBody(response) };
   }
 
-  async fetch(request: Request): Promise<Response> {
+  async #currentProgression(playerId: string): Promise<Record<string, unknown>> {
+    const url = new URL("https://player.internal/player/progression");
+    url.searchParams.set("playerId", playerId);
+    const response = await this.#base.fetch(new Request(url));
+    const body = await responseBody(response);
+    if (!response.ok) throw Object.assign(new Error("Player progression could not be read."), { status: response.status });
+    return body;
+  }
+
+  fetch(request: Request): Promise<Response> {
+    const execute = async () => this.#handle(request);
+    const result = this.#tail.then(execute, execute);
+    this.#tail = result.then(() => undefined, () => undefined);
+    return result;
+  }
+
+  async #handle(request: Request): Promise<Response> {
     try {
       const url = new URL(request.url);
       if (request.method === "GET" && url.pathname === "/player/feed") {
@@ -107,6 +176,60 @@ export class PlayerPlatformThemeRuntime {
         const result = { favoriteGameIds, ...preference };
         await this.#notify(["preferences"]);
         return json(200, result);
+      }
+
+      if (request.method === "POST" && url.pathname === "/player/match") {
+        const body = await readJson(request.clone());
+        const matchId = matchIdFrom(body);
+        if (matchId && await this.#storage.get<boolean>(voidedMatchKey(matchId))) {
+          return json(200, { matchId, ignored: true, voided: true });
+        }
+        const next = projectionFrom(body);
+        const previous = matchId
+          ? await this.#storage.get<MatchProjectionMarker>(projectionKey(matchId))
+          : undefined;
+        if (previous?.version === 1 && projectionIsStale(previous, next)) {
+          return json(200, { matchId, ignored: true, stale: true });
+        }
+        const response = await this.#base.fetch(request);
+        if (response.ok && matchId) await this.#storage.put(projectionKey(matchId), next);
+        if (response.ok) await this.#notify(["matches"]);
+        return response;
+      }
+
+      if (request.method === "POST" && url.pathname === "/player/progression/match") {
+        const body = await readJson(request.clone());
+        const matchId = matchIdFrom(body);
+        if (matchId && await this.#storage.get<boolean>(voidedMatchKey(matchId))) {
+          const playerId = String(body.playerId ?? "").trim();
+          return json(200, {
+            progression: await this.#currentProgression(playerId),
+            awarded: false,
+            voided: true,
+          });
+        }
+      }
+
+      if (
+        request.method === "POST"
+        && (url.pathname === "/player/admin/match/void" || url.pathname === "/directory/admin/match/void")
+      ) {
+        const body = await readJson(request.clone());
+        const matchId = matchIdFrom(body);
+        const response = await this.#base.fetch(request);
+        if (response.ok && matchId) await this.#storage.put(voidedMatchKey(matchId), true);
+        if (response.ok && url.pathname.startsWith("/player/")) {
+          await this.#notify(["matches", "progression"]);
+        }
+        return response;
+      }
+
+      if (request.method === "POST" && url.pathname === "/directory/match") {
+        const body = await readJson(request.clone());
+        const matchId = matchIdFrom(body);
+        if (matchId && await this.#storage.get<boolean>(voidedMatchKey(matchId))) {
+          return json(200, { matchId, ignored: true, voided: true });
+        }
       }
 
       const response = await this.#base.fetch(request);

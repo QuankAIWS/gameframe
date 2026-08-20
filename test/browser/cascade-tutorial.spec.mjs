@@ -52,7 +52,7 @@ test("Cascade shows a themed first tip once and the checkbox disables future tip
   await expect(page.locator("#cascade-tutorial-toggle")).toHaveAttribute("aria-pressed", "false");
 });
 
-test("Cascade introduces the striped special with the same tile and special mark used on the board", async ({ page }) => {
+test("Cascade does not gate the striped special to level two and keeps the live-tile tutorial visual", async ({ page }) => {
   await page.addInitScript(({ tutorialKey, stateKey }) => {
     localStorage.setItem(tutorialKey, JSON.stringify({ enabled: true, seen: { match: true } }));
     localStorage.setItem(stateKey, JSON.stringify({ level: 2, lives: 5, lastLifeAt: Date.now(), streak: 0, hammers: 2 }));
@@ -61,6 +61,12 @@ test("Cascade introduces the striped special with the same tile and special mark
   await page.goto("/cascade.html?player=tutorial-stripe&tutorials=force");
   await expect(page.locator("#level-number")).toHaveText("2");
   const dialog = page.locator("#cascade-tutorial-dialog");
+  await page.waitForTimeout(500);
+  await expect(dialog).not.toBeVisible();
+
+  // Discovery behavior is covered by cascade-replay-discovery.spec.mjs. Here
+  // retain the visual contract without reintroducing fixed-level gating.
+  await page.evaluate(() => window.cascadeTutorial.show("stripe"));
   await expect(dialog).toBeVisible();
   await expect(dialog.locator("[data-tutorial-kicker]")).toHaveText("NEW SPECIAL");
   await expect(dialog.locator("[data-tutorial-title]")).toHaveText("Four in a row makes a stripe.");

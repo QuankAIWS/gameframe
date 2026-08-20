@@ -16,6 +16,10 @@ import {
   exportCascadeTelemetry,
   recordCascadeTelemetry,
 } from "./cascade-telemetry-coordinator.ts";
+import {
+  adminVoidMatch,
+  readAdminPlayer,
+} from "./gameframe-admin-coordinator.ts";
 import { createNotifyingGameFrameWorker } from "./notifying-gameframe-worker.ts";
 import {
   readLeaderboard,
@@ -59,6 +63,36 @@ function publicPlayerProfileRoute(pathname: string): string | null {
     return decodeURIComponent(match[1]);
   } catch {
     return null;
+  }
+}
+
+function adminPlayerRoute(pathname: string): string | null {
+  const match = /^\/api\/admin\/players\/([^/]+)$/.exec(pathname);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
+}
+
+function adminVoidMatchRoute(pathname: string): string | null {
+  const match = /^\/api\/admin\/matches\/([^/]+)\/void$/.exec(pathname);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
+}
+
+function requireSameOriginMutation(request: Request, url: URL): void {
+  const origin = request.headers.get("origin")?.trim() ?? "";
+  if (origin !== url.origin) {
+    throw Object.assign(new Error("Administrator mutations require an exact same-origin request."), {
+      code: "forbidden",
+      status: 403,
+    });
   }
 }
 
@@ -163,6 +197,21 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
             ...publicProfile,
             profile: { ...publicProfile.profile, themeId: viewedFeed.themeId },
           });
+        }
+
+        const adminPlayerId = request.method === "GET" ? adminPlayerRoute(url.pathname) : null;
+        if (adminPlayerId) {
+          const principal = await authenticatorFor(env).authenticate(request);
+          requireStagingAdminPrincipal(env, principal);
+          return json(200, await readAdminPlayer(env, adminPlayerId));
+        }
+
+        const voidMatchId = request.method === "POST" ? adminVoidMatchRoute(url.pathname) : null;
+        if (voidMatchId) {
+          const principal = await authenticatorFor(env).authenticate(request);
+          requireStagingAdminPrincipal(env, principal);
+          requireSameOriginMutation(request, url);
+          return json(200, await adminVoidMatch(env, voidMatchId));
         }
 
         if (request.method === "POST" && url.pathname === "/api/me/preferences") {

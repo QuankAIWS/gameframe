@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { RequestAuthenticator } from "../auth/request-authenticator.ts";
+import type { PrincipalSource, RequestAuthenticator } from "../auth/request-authenticator.ts";
 import { createRpgEdgeGameFrameWorker } from "./rpg-edge-worker.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
@@ -15,12 +15,12 @@ function environment(adminIds: string): GameFrameWorkerEnv {
   };
 }
 
-function authenticator(playerId: string): RequestAuthenticator {
+function authenticator(playerId: string, source: PrincipalSource = "discord"): RequestAuthenticator {
   return {
     async authenticate() {
       return {
         playerId,
-        source: "discord",
+        source,
         displayName: "Tester",
       };
     },
@@ -70,4 +70,44 @@ test("RPG edge rejects a normal allowed player before diagnostics reach the VM",
   assert.equal(response.status, 403);
   const body = await response.json() as Record<string, unknown>;
   assert.equal(body.error, "forbidden");
+});
+
+test("GameFrame player administration rejects non-admin Discord users before reading player state", async () => {
+  const worker = createRpgEdgeGameFrameWorker({ authenticator: authenticator("discord:5678") });
+  const response = await worker.fetch(
+    new Request("https://staging.gameframe.cc/api/admin/players/discord%3A1234"),
+    environment("1234"),
+  );
+  assert.equal(response.status, 403);
+  const body = await response.json() as Record<string, unknown>;
+  assert.equal(body.error, "forbidden");
+});
+
+test("GameFrame player administration does not grant admin authority to a non-Discord identity with the same ID", async () => {
+  const worker = createRpgEdgeGameFrameWorker({ authenticator: authenticator("discord:1234", "service") });
+  const response = await worker.fetch(
+    new Request("https://staging.gameframe.cc/api/admin/players/discord%3A1234"),
+    environment("1234"),
+  );
+  assert.equal(response.status, 403);
+  const body = await response.json() as Record<string, unknown>;
+  assert.equal(body.error, "forbidden");
+});
+
+test("GameFrame match void requires an exact same-origin mutation even for an administrator", async () => {
+  const worker = createRpgEdgeGameFrameWorker({ authenticator: authenticator("discord:1234") });
+  for (const origin of [null, "https://evil.example"]) {
+    const headers = new Headers();
+    if (origin) headers.set("origin", origin);
+    const response = await worker.fetch(
+      new Request("https://staging.gameframe.cc/api/admin/matches/test-match/void", {
+        method: "POST",
+        headers,
+      }),
+      environment("1234"),
+    );
+    assert.equal(response.status, 403);
+    const body = await response.json() as Record<string, unknown>;
+    assert.equal(body.error, "forbidden");
+  }
 });

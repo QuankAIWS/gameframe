@@ -38,7 +38,21 @@ export interface GameFrameMatchObjectRuntimeOptions {
 interface StoredMatchHeader {
   matchId: string;
   gameId: string;
+  playerIds: readonly string[];
 }
+
+type MatchTerminationKind = "resignation" | "void";
+
+interface StoredMatchTermination {
+  version: 1;
+  matchId: string;
+  kind: MatchTerminationKind;
+  resignedPlayerId: string | null;
+  winnerPlayerId: string | null;
+  occurredAt: number;
+}
+
+const MATCH_TERMINATION_KEY = "gameframe:match-termination:v1";
 
 export class GameFrameMatchObjectRuntime {
   readonly #storage: DurableStorageLike;
@@ -92,6 +106,11 @@ export class GameFrameMatchObjectRuntime {
   }
 
   async view(matchId: string, playerId: string) {
+    const base = await this.#baseView(matchId, playerId);
+    return this.#applyTermination(base, await this.#termination(matchId));
+  }
+
+  async #baseView(matchId: string, playerId: string) {
     const gameId = await this.#gameFor(matchId);
     const view = gameId === "tic-tac-toe"
       ? await this.#ticTacToe.view(matchId, playerId)
@@ -144,9 +163,67 @@ export class GameFrameMatchObjectRuntime {
         ));
       }
 
+      if (request.method === "POST" && url.pathname === "/resign") {
+        const body = await readJson(request);
+        const matchId = String(body.matchId ?? "").trim();
+        const playerId = String(body.playerId ?? "").trim();
+        const snapshot = await this.#snapshotHeader(matchId);
+        if (!snapshot.playerIds.includes(playerId)) {
+          throw Object.assign(new Error("Only a seated player may resign this match."), { code: "forbidden", status: 403 });
+        }
+        if (await this.#termination(matchId)) {
+          throw Object.assign(new Error("The match is already complete."), { code: "match_completed", status: 409 });
+        }
+        const base = await this.#baseView(matchId, playerId);
+        const status = observationStatus(base);
+        if (status.lifecycle === "completed") {
+          throw Object.assign(new Error("The match is already complete."), { code: "match_completed", status: 409 });
+        }
+        const opponents = snapshot.playerIds.filter((candidate) => candidate !== playerId);
+        if (opponents.length !== 1) {
+          throw Object.assign(new Error("Resignation requires exactly one opposing player."), { code: "invalid_players", status: 409 });
+        }
+        const termination: StoredMatchTermination = {
+          version: 1,
+          matchId,
+          kind: "resignation",
+          resignedPlayerId: playerId,
+          winnerPlayerId: opponents[0]!,
+          occurredAt: Date.now(),
+        };
+        await this.#storage.put(MATCH_TERMINATION_KEY, termination);
+        await this.#notify(matchId);
+        return json(200, this.#applyTermination(base, termination));
+      }
+
+      if (request.method === "POST" && url.pathname === "/admin/void") {
+        const body = await readJson(request);
+        const matchId = String(body.matchId ?? "").trim();
+        const snapshot = await this.#snapshotHeader(matchId);
+        const viewerPlayerId = snapshot.playerIds[0];
+        if (!viewerPlayerId) {
+          throw Object.assign(new Error("The match has no seated players."), { code: "invalid_players", status: 409 });
+        }
+        const base = await this.#baseView(matchId, viewerPlayerId);
+        const termination: StoredMatchTermination = {
+          version: 1,
+          matchId,
+          kind: "void",
+          resignedPlayerId: null,
+          winnerPlayerId: null,
+          occurredAt: Date.now(),
+        };
+        await this.#storage.put(MATCH_TERMINATION_KEY, termination);
+        await this.#notify(matchId);
+        return json(200, this.#applyTermination(base, termination));
+      }
+
       if (request.method === "POST" && url.pathname === "/actions") {
         const body = await readJson(request);
         const matchId = String(body.matchId ?? "");
+        if (await this.#termination(matchId)) {
+          throw Object.assign(new Error("The match is already complete."), { code: "match_completed", status: 409 });
+        }
         const gameId = await this.#gameFor(matchId);
         const common = {
           matchId,
@@ -193,14 +270,45 @@ export class GameFrameMatchObjectRuntime {
     }
   }
 
-  async #gameFor(matchId: string): Promise<DurableGameId> {
+  async #snapshotHeader(matchId: string): Promise<StoredMatchHeader> {
     const snapshot = await this.#storage.get<StoredMatchHeader>(MATCH_SNAPSHOT_KEY);
     if (!snapshot || snapshot.matchId !== matchId) {
       const error = new Error(`Unknown match: ${matchId}`);
       Object.assign(error, { code: "match_not_found" });
       throw error;
     }
-    return this.#normalizeGameId(snapshot.gameId);
+    return snapshot;
+  }
+
+  async #gameFor(matchId: string): Promise<DurableGameId> {
+    return this.#normalizeGameId((await this.#snapshotHeader(matchId)).gameId);
+  }
+
+  async #termination(matchId: string): Promise<StoredMatchTermination | null> {
+    const termination = await this.#storage.get<StoredMatchTermination>(MATCH_TERMINATION_KEY);
+    return termination?.version === 1 && termination.matchId === matchId ? termination : null;
+  }
+
+  #applyTermination<T extends { observation: unknown }>(view: T, termination: StoredMatchTermination | null): T {
+    if (!termination) return view;
+    const observation = record(view.observation);
+    const status = record(observation.status);
+    const nextObservation: Record<string, unknown> = {
+      ...observation,
+      status: {
+        ...status,
+        lifecycle: "completed",
+        winnerPlayerId: termination.kind === "resignation" ? termination.winnerPlayerId : null,
+        draw: false,
+        termination: termination.kind,
+        voided: termination.kind === "void",
+        resignedPlayerId: termination.resignedPlayerId,
+      },
+    };
+    if ("activePlayerId" in nextObservation) nextObservation.activePlayerId = null;
+    if ("nextPlayerId" in nextObservation) nextObservation.nextPlayerId = null;
+    if ("legalActions" in nextObservation) nextObservation.legalActions = [];
+    return { ...view, observation: nextObservation } as T;
   }
 
   #normalizeGameId(gameId: string): DurableGameId {
@@ -232,6 +340,10 @@ function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {};
+}
+
+function observationStatus(view: { observation: unknown }): Record<string, unknown> {
+  return record(record(view.observation).status);
 }
 
 function coordinate(value: unknown): { x: number; y: number } {
