@@ -14,6 +14,10 @@ const BASE_RETRY_MS = 15_000;
 const MAX_RETRY_MS = 5 * 60 * 1_000;
 const storage = window.localStorage;
 const query = new URLSearchParams(window.location.search);
+const requestedReplayLevel = (() => {
+  const value = Math.floor(Number(query.get("replay")));
+  return Number.isInteger(value) && value >= 1 && value <= 300 ? value : 0;
+})();
 let lastSubmitted = "";
 let syncPending = false;
 let identity = null;
@@ -294,7 +298,7 @@ async function reconcileServer({ force = false } = {}) {
     lastServerReconcileAt = Date.now();
 
     const canonical = mergeProgression(current, server);
-    const preserveLevel = shouldProtectLoadedRun();
+    const preserveLevel = shouldProtectLoadedRun() || requestedReplayLevel > 0;
     const changes = applyCanonicalToLocal(canonical, { preserveLevel });
     if (maybeReloadAfterHydration(canonical, changes.stateChanged, preserveLevel)) {
       // establishAndSynchronize continues into the local publisher before the
