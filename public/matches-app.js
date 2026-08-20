@@ -175,7 +175,6 @@ async function resignMatch(match) {
   if (!window.confirm(`Leave this ${gameName(match.gameId)} match against ${opponent}? This counts as a loss for you and a win for your opponent.`)) return;
   resigningMatchId = match.matchId;
   try {
-    await refresh();
     const response = await gameFrameFetch(`/api/matches/${encodeURIComponent(match.matchId)}/resign`, {
       method: "POST",
     }, identity);
