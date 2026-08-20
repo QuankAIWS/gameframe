@@ -1,6 +1,7 @@
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const FAILURE_KEY = "scribbles-gameframe.cascade-failures:v1";
+const OPENING_HELP = "Match three or more. Bigger shapes make specials, and adjacent specials can be combined for stronger clears.";
 
 const levelMap = document.querySelector("#level-map");
 const help = document.querySelector(".cascade-help");
@@ -69,7 +70,8 @@ function decorateMap() {
       item.classList.toggle("is-replayable", cleared && level !== active);
       if (level <= 5) {
         const label = item.querySelector("span");
-        if (label) label.textContent = level === 1 ? "Start" : "Level";
+        const expectedLabel = level === 1 ? "Start" : "Level";
+        if (label && label.textContent !== expectedLabel) label.textContent = expectedLabel;
       }
       if (cleared && level !== active) {
         item.tabIndex = 0;
@@ -91,7 +93,7 @@ function normalizeHelp() {
   if (!help) return;
   const level = activeLevelNumber();
   if (level < 1 || level > 5) return;
-  help.textContent = "Match three or more. Bigger shapes make specials, and adjacent specials can be combined for stronger clears.";
+  if (help.textContent !== OPENING_HELP) help.textContent = OPENING_HELP;
 }
 
 function failureState() {
