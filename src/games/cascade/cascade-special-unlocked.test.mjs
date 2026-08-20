@@ -42,5 +42,7 @@ test("Cascade unlocked adapter enables every special rule from the first level",
   );
 
   assert.ok(result.specialCreatedCount >= 1);
-  assert.ok(result.specials.some((value) => value === SPECIAL.STRIPE_H || value === SPECIAL.STRIPE_V));
+  assert.ok(result.transitions.some((transition) => transition.createdSpecials.some(
+    (creation) => creation.special === SPECIAL.STRIPE_H || creation.special === SPECIAL.STRIPE_V,
+  )));
 });
