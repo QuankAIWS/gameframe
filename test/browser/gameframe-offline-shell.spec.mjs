@@ -16,7 +16,7 @@ async function waitForOfflinePack(page) {
 
   await expect.poll(() => page.evaluate(async (catalogAssets) => {
     const cacheNames = await caches.keys();
-    const cacheName = cacheNames.find((name) => name === "gameframe-static-v6");
+    const cacheName = cacheNames.find((name) => name === "gameframe-static-v7");
     if (!cacheName) return false;
     const cache = await caches.open(cacheName);
     const required = [
