@@ -89,6 +89,7 @@ export class PlayerPlatformThemeRuntime {
   readonly #storage: DurableStorageLike;
   readonly #base: PlayerPlatformObjectRuntime;
   readonly #onUpdated: PlayerPlatformThemeRuntimeOptions["onUpdated"];
+  #tail: Promise<void> = Promise.resolve();
 
   constructor(storage: DurableStorageLike, options: PlayerPlatformThemeRuntimeOptions = {}) {
     this.#storage = storage;
@@ -129,7 +130,14 @@ export class PlayerPlatformThemeRuntime {
     return body;
   }
 
-  async fetch(request: Request): Promise<Response> {
+  fetch(request: Request): Promise<Response> {
+    const execute = async () => this.#handle(request);
+    const result = this.#tail.then(execute, execute);
+    this.#tail = result.then(() => undefined, () => undefined);
+    return result;
+  }
+
+  async #handle(request: Request): Promise<Response> {
     try {
       const url = new URL(request.url);
       if (request.method === "GET" && url.pathname === "/player/feed") {
