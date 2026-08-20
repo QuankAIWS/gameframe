@@ -115,17 +115,20 @@ function renderMatches(feed) {
 
     const actions = document.createElement("div");
     actions.className = "platform-actions";
-    const open = document.createElement("a");
-    open.className = "platform-button";
-    open.href = match.resumePath;
-    open.textContent = "Inspect";
+    if (Array.isArray(match.playerIds) && match.playerIds.includes(identity.playerId)) {
+      const open = document.createElement("a");
+      open.className = "platform-button";
+      open.href = match.resumePath;
+      open.textContent = "Inspect";
+      actions.append(open);
+    }
     const voidButton = document.createElement("button");
     voidButton.type = "button";
     voidButton.className = "platform-button admin-danger";
     voidButton.disabled = voidingMatchId !== null;
     voidButton.textContent = voidingMatchId === match.matchId ? "Voiding…" : "Void test match";
     voidButton.addEventListener("click", () => void voidMatch(match));
-    actions.append(open, voidButton);
+    actions.append(voidButton);
     row.append(copy, actions);
     matches.append(row);
   }
