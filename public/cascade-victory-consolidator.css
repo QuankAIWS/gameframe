@@ -4,6 +4,9 @@
 
 .cascade-reward-stage.is-awaiting-choice .cascade-reward-panel {
   pointer-events: auto;
+  animation: none;
+  transform: none;
+  opacity: 1;
 }
 
 .cascade-reward-summary {
