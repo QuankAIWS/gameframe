@@ -33,15 +33,18 @@ function mobileUtilityCards() {
 
 function syncCompactPlaySurface() {
   const objective = document.querySelector(".cascade-objective");
+  const objectiveLabel = document.querySelector("#objective-label");
   const weeklyLeaderboard = document.querySelector("[data-weekly-leaderboard]");
   if (mobileQuery.matches) {
     // Cascade inherits a slightly reduced root font size on phone widths. Keep
-    // the objective comfortably above the older-eye readability floor rather
-    // than letting the 1rem mobile rule compute below 15px.
+    // both the objective container and its label comfortably above the
+    // older-eye readability floor; the label has its own inherited CSS rule.
     objective?.style.setProperty("font-size", "1.08rem");
+    objectiveLabel?.style.setProperty("font-size", "1.08rem");
     weeklyLeaderboard?.style.setProperty("display", "none");
   } else {
     objective?.style.removeProperty("font-size");
+    objectiveLabel?.style.removeProperty("font-size");
     weeklyLeaderboard?.style.removeProperty("display");
   }
 }
