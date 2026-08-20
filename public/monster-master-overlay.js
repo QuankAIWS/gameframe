@@ -127,6 +127,28 @@ function roleFor(unit) {
   return rolePresentation[unit?.role] ?? rolePresentation.master;
 }
 
+function identityFor(unit) {
+  const mechanics = roleFor(unit);
+  const catalog = window.gameFrameMonsterIllustratedAssets?.presentationFor?.(unit);
+  if (!catalog) return mechanics;
+  return {
+    ...mechanics,
+    label: catalog.label ?? mechanics.label,
+    glyph: catalog.glyph ?? mechanics.glyph,
+    summary: catalog.summary ?? mechanics.summary,
+  };
+}
+
+function traitCopyFor(trait, unit) {
+  if (trait.id === "heavy-frame" && unit?.role === "bulwark") {
+    return `Durable ${unit.maxHealth}-health body built to hold space.`;
+  }
+  if (trait.id === "quickstep" && unit?.role === "emberling") {
+    return `Movement ${unit.movement} and initiative ${unit.initiative}.`;
+  }
+  return trait.copy;
+}
+
 function abilityAvailable(unit, abilityId) {
   return Boolean(unit?.abilityIds?.includes(abilityId));
 }
@@ -222,7 +244,7 @@ function ensureAbilityList() {
   return section;
 }
 
-function abilityActionButton(trait, inspectedIsActive) {
+function abilityActionButton(trait, inspectedIsActive, unit) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = `monster-master-ability-chip is-${trait.kind}`;
@@ -230,7 +252,7 @@ function abilityActionButton(trait, inspectedIsActive) {
   const label = document.createElement("strong");
   label.textContent = trait.label;
   const copy = document.createElement("span");
-  copy.textContent = trait.copy;
+  copy.textContent = traitCopyFor(trait, unit);
   button.append(label, copy);
 
   const target = trait.id === "mend"
@@ -254,7 +276,8 @@ function renderUnitCard() {
   const deploymentId = deploymentSelectedUnitId();
   const referenceId = activeId ?? deploymentId;
   const unit = unitById(inspectedUnitId ?? referenceId) ?? activeUnit();
-  const presentation = roleFor(unit);
+  const mechanics = roleFor(unit);
+  const identity = identityFor(unit);
   const friendly = unit?.ownerId === friendlyPlayerId();
   const inspectedIsActive = Boolean(unit && unit.id === referenceId);
   const command = unit ? latestView.observation.commandByPlayer?.[unit.ownerId] ?? 0 : 0;
@@ -266,10 +289,12 @@ function renderUnitCard() {
 
   ui.hud.dataset.role = unit?.role ?? "unknown";
   ui.hud.dataset.owner = unit ? (friendly ? "friendly" : "enemy") : "none";
+  if (unit?.contentId) ui.hud.dataset.contentId = unit.contentId;
+  else delete ui.hud.dataset.contentId;
   ui.hud.dataset.inspected = String(!inspectedIsActive);
   setText(ui.hudLabel, activeId ? "ACTIVE UNIT" : "DEPLOYING UNIT");
-  setText(ui.hudGlyph, presentation.glyph);
-  setText(ui.hudName, unit ? presentation.label : "No active unit");
+  setText(ui.hudGlyph, identity.glyph);
+  setText(ui.hudName, unit ? identity.label : "No active unit");
   setText(ui.hudHealth, health);
   setText(ui.hudInitiative, unit ? `Initiative ${unit.initiative}` : "Initiative —");
   setText(ui.hudPhase, phase);
@@ -286,7 +311,7 @@ function renderUnitCard() {
   }
 
   const inspection = ensureInspectionControls();
-  setText(inspection?.querySelector("#monster-master-unit-summary"), presentation.summary);
+  setText(inspection?.querySelector("#monster-master-unit-summary"), identity.summary);
   const returnButton = inspection?.querySelector("#monster-master-return-active");
   if (returnButton) {
     returnButton.hidden = inspectedIsActive || !referenceId;
@@ -294,12 +319,12 @@ function renderUnitCard() {
   }
 
   const kit = ensureAbilityList();
-  setText(kit?.querySelector("#monster-master-ability-owner"), unit ? presentation.label : "—");
+  setText(kit?.querySelector("#monster-master-ability-owner"), unit ? identity.label : "—");
   const list = kit?.querySelector("#monster-master-ability-list");
   if (list) {
     list.replaceChildren();
-    const visibleTraits = presentation.traits.filter((trait) => trait.id !== "mend" || abilityAvailable(unit, "mend"));
-    for (const trait of visibleTraits) list.append(abilityActionButton(trait, inspectedIsActive));
+    const visibleTraits = mechanics.traits.filter((trait) => trait.id !== "mend" || abilityAvailable(unit, "mend"));
+    for (const trait of visibleTraits) list.append(abilityActionButton(trait, inspectedIsActive, unit));
   }
 
   document.querySelectorAll("[data-turn-unit-id]").forEach((item) => {
