@@ -24,8 +24,10 @@ test("Cascade routes gameplay spectacle through one explicit presentation direct
   await expect.poll(() => page.evaluate(() => window.cascadePresentationDirector?.getStats().transitions || 0), {
     timeout: 6_000,
   }).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => window.cascadePresentationDirector?.getStats().clears || 0), {
+    timeout: 6_000,
+  }).toBeGreaterThan(0);
   const stats = await page.evaluate(() => window.cascadePresentationDirector.getStats());
-  expect(stats.clears).toBeGreaterThan(0);
   expect(stats.canvasCount).toBe(1);
   expect(stats.peakParticles).toBeLessThanOrEqual(stats.particleBudget);
 });
