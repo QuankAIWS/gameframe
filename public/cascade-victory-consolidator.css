@@ -1,0 +1,54 @@
+.cascade-reward-stage.is-awaiting-choice {
+  pointer-events: auto;
+}
+
+.cascade-reward-stage.is-awaiting-choice .cascade-reward-panel {
+  pointer-events: auto;
+}
+
+.cascade-reward-summary {
+  max-width: 34rem;
+  margin: .75rem auto 0;
+  color: rgba(255, 255, 255, .84);
+  font-size: clamp(.82rem, 1.4vw, 1rem);
+  line-height: 1.45;
+  text-align: center;
+}
+
+.cascade-reward-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .65rem;
+  margin-top: 1rem;
+}
+
+.cascade-reward-actions button {
+  min-width: 9.5rem;
+  min-height: 2.75rem;
+  padding: .7rem 1rem;
+  border: 1px solid rgba(255, 255, 255, .28);
+  border-radius: 999px;
+  background: rgba(18, 20, 34, .72);
+  color: #fff;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.cascade-reward-actions button.primary {
+  border-color: rgba(255, 255, 255, .7);
+  background: rgba(255, 255, 255, .94);
+  color: #291d3b;
+}
+
+#level-map li.is-replayable {
+  cursor: pointer;
+}
+
+#level-map li.is-replayable:hover,
+#level-map li.is-replayable:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  transform: translateX(2px);
+}
