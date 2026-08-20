@@ -28,6 +28,7 @@ async function responseBody(response: Response): Promise<Record<string, unknown>
 
 function mutationTopics(pathname: string): PlayerEventTopic[] {
   if (pathname === "/player/match") return ["matches"];
+  if (pathname === "/player/admin/match/void") return ["matches", "progression"];
   if (pathname === "/player/invitation") return ["invitations"];
   if (pathname.startsWith("/player/progression/")) return ["progression"];
   return [];
