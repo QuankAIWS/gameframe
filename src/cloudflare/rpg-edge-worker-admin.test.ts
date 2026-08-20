@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { RequestAuthenticator } from "../auth/request-authenticator.ts";
+import type { PrincipalSource, RequestAuthenticator } from "../auth/request-authenticator.ts";
 import { createRpgEdgeGameFrameWorker } from "./rpg-edge-worker.ts";
 import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
@@ -15,7 +15,7 @@ function environment(adminIds: string): GameFrameWorkerEnv {
   };
 }
 
-function authenticator(playerId: string, source = "discord"): RequestAuthenticator {
+function authenticator(playerId: string, source: PrincipalSource = "discord"): RequestAuthenticator {
   return {
     async authenticate() {
       return {
@@ -84,7 +84,7 @@ test("GameFrame player administration rejects non-admin Discord users before rea
 });
 
 test("GameFrame player administration does not grant admin authority to a non-Discord identity with the same ID", async () => {
-  const worker = createRpgEdgeGameFrameWorker({ authenticator: authenticator("discord:1234", "family") });
+  const worker = createRpgEdgeGameFrameWorker({ authenticator: authenticator("discord:1234", "service") });
   const response = await worker.fetch(
     new Request("https://staging.gameframe.cc/api/admin/players/discord%3A1234"),
     environment("1234"),
