@@ -33,18 +33,18 @@ function mobileUtilityCards() {
 
 function syncCompactPlaySurface() {
   const destinationBar = document.querySelector("#gameframe-destination-bar");
-  const destinationBrand = destinationBar?.querySelector(".gameframe-destination-brand");
-  const shell = document.querySelector(".cascade-shell");
   const objective = document.querySelector(".cascade-objective");
   const objectiveLabel = document.querySelector("#objective-label");
   const weeklyLeaderboard = document.querySelector("[data-weekly-leaderboard]");
   if (mobileQuery.matches) {
-    // The compact header and portrait shell both use explicit viewport-derived
-    // heights. Count their padding inside those heights so the document never
-    // grows a few meaningless pixels of vertical scrolling.
-    destinationBar?.style.setProperty("box-sizing", "border-box");
-    destinationBrand?.style.setProperty("box-sizing", "border-box");
-    shell?.style.setProperty("box-sizing", "border-box");
+    // The shared navigation layer defines 62px for generic mobile pages. Cascade
+    // deliberately budgets a 50px in-game header so the full board and gameplay
+    // tools fit without scrolling; keep the shared variable and actual bar in
+    // agreement with that Cascade-specific viewport contract.
+    document.documentElement.style.setProperty("--gameframe-destination-height", "50px");
+    destinationBar?.style.setProperty("height", "50px");
+    destinationBar?.style.setProperty("min-height", "50px");
+    destinationBar?.style.setProperty("max-height", "50px");
     // Cascade inherits a slightly reduced root font size on phone widths. Keep
     // both the objective container and its label comfortably above the
     // older-eye readability floor; the label has its own inherited CSS rule.
@@ -52,9 +52,10 @@ function syncCompactPlaySurface() {
     objectiveLabel?.style.setProperty("font-size", "1.08rem");
     weeklyLeaderboard?.style.setProperty("display", "none");
   } else {
-    destinationBar?.style.removeProperty("box-sizing");
-    destinationBrand?.style.removeProperty("box-sizing");
-    shell?.style.removeProperty("box-sizing");
+    document.documentElement.style.removeProperty("--gameframe-destination-height");
+    destinationBar?.style.removeProperty("height");
+    destinationBar?.style.removeProperty("min-height");
+    destinationBar?.style.removeProperty("max-height");
     objective?.style.removeProperty("font-size");
     objectiveLabel?.style.removeProperty("font-size");
     weeklyLeaderboard?.style.removeProperty("display");
