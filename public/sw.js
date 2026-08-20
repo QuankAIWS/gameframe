@@ -1,4 +1,4 @@
-const CACHE_VERSION = "gameframe-static-v6";
+const CACHE_VERSION = "gameframe-static-v7";
 
 // This is the first intentionally complete GameFrame offline pack. Keep it
 // limited to the lightweight shell plus experiences that can genuinely execute
@@ -73,6 +73,7 @@ const REQUIRED_ASSETS = [
   "/cascade-tutorial.css",
   "/cascade-juice.css",
   "/cascade-presentation-director.css",
+  "/cascade-victory-consolidator.css",
   "/cascade-build-refresh.css",
   "/cascade-snowflake-ice.css",
   "/cascade-tv-accessibility.css",
@@ -83,6 +84,7 @@ const REQUIRED_ASSETS = [
   "/cascade-cabinet-polish.css",
   "/cascade-mobile.css",
   "/cascade-final-touch.css",
+  "/cascade-replay-bootstrap.js",
   "/cascade-fresh-run-guard.js",
   "/cascade-family-state-guard.js",
   "/cascade-viewport-guard.js",
@@ -90,6 +92,8 @@ const REQUIRED_ASSETS = [
   "/cascade-telemetry-sync.js",
   "/cascade-presentation-director.js",
   "/cascade-runtime-v2.js",
+  "/cascade-replay-ui.js",
+  "/cascade-victory-consolidator.js",
   "/cascade-score-hud.js",
   "/cascade-input.js",
   "/cascade-family-polish.js",
@@ -103,6 +107,7 @@ const REQUIRED_ASSETS = [
   "/cascade-tutorial.js",
   "/cascade-build-refresh.js",
   "/gameframe-build-refresh.js",
+  "/cascade-special-engine-unlocked.js",
   "/cascade-special-engine.js",
   "/cascade-engine.js",
 
@@ -194,7 +199,11 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith((async () => {
-    const cached = await caches.match(request);
+    // Static module variants may carry a query string to bypass an import-map
+    // alias while still referring to the same immutable asset. Reuse the
+    // precached pathname offline instead of requiring every query variant to be
+    // listed separately.
+    const cached = (await caches.match(request)) || (await caches.match(url.pathname));
     const network = fetch(request).then(async (response) => {
       if (response.ok) {
         const cache = await caches.open(CACHE_VERSION);
