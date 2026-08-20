@@ -3,8 +3,10 @@ import test from "node:test";
 
 import {
   BOARD_SIZE,
+  CASCADE_LEVELS,
   FULL_SPECIAL_RULES,
   SPECIAL,
+  UNIVERSAL_SPECIAL_MECHANICS,
   createRng,
   emptySpecials,
   resolveSpecialCascades,
@@ -29,6 +31,16 @@ test("Cascade unlocked adapter enables every special rule from the first level",
     bomb: true,
     color: true,
   });
+  assert.deepEqual(UNIVERSAL_SPECIAL_MECHANICS, [
+    "power-match",
+    "cross-blast",
+    "color-sweep",
+  ]);
+  for (const level of CASCADE_LEVELS) {
+    for (const mechanic of UNIVERSAL_SPECIAL_MECHANICS) {
+      assert.ok(level.mechanics.includes(mechanic), `level ${level.level} is missing ${mechanic}`);
+    }
+  }
 
   const result = resolveSpecialCascades(
     boardWithSingleFourMatch(),
