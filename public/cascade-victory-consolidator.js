@@ -58,6 +58,16 @@ function hideStage(stage) {
   stage.setAttribute("aria-hidden", "true");
 }
 
+function publishCompletion(level, final, replay) {
+  window.dispatchEvent(new CustomEvent("gameframe:cascade-level-complete", {
+    detail: {
+      level,
+      final,
+      replay,
+    },
+  }));
+}
+
 function consolidateVictory() {
   if (consolidating || !resultDialog?.open || !resultKicker || !resultActions) return;
   const kicker = resultKicker.textContent?.trim().toUpperCase();
@@ -70,6 +80,7 @@ function consolidateVictory() {
   consolidating = true;
   try {
     const completedLevel = activeLevelNumber();
+    const final = kicker === "RUN COMPLETE";
     const replay = Boolean(window.cascadeReplay?.isReplay?.());
     choice.summary.textContent = resultCopy?.textContent?.trim() || "";
     choice.actions.replaceChildren();
@@ -90,6 +101,7 @@ function consolidateVictory() {
       }
     }
 
+    publishCompletion(completedLevel, final, replay);
     resultDialog.close();
     stage.setAttribute("aria-hidden", "false");
     stage.classList.add("is-active", "is-awaiting-choice");
