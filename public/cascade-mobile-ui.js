@@ -31,7 +31,23 @@ function mobileUtilityCards() {
   ].filter(Boolean);
 }
 
+function syncCompactPlaySurface() {
+  const objective = document.querySelector(".cascade-objective");
+  const weeklyLeaderboard = document.querySelector("[data-weekly-leaderboard]");
+  if (mobileQuery.matches) {
+    // Cascade inherits a slightly reduced root font size on phone widths. Keep
+    // the objective comfortably above the older-eye readability floor rather
+    // than letting the 1rem mobile rule compute below 15px.
+    objective?.style.setProperty("font-size", "1.08rem");
+    weeklyLeaderboard?.style.setProperty("display", "none");
+  } else {
+    objective?.style.removeProperty("font-size");
+    weeklyLeaderboard?.style.removeProperty("display");
+  }
+}
+
 function syncUtilityCards() {
+  syncCompactPlaySurface();
   if (!mobileQuery.matches) {
     restoreCards();
     return;
@@ -99,7 +115,7 @@ function installDrawer() {
   const side = document.querySelector(".cascade-side");
   if (side) {
     sideObserver = new MutationObserver(syncUtilityCards);
-    sideObserver.observe(side, { childList: true });
+    sideObserver.observe(side, { childList: true, subtree: true });
   }
   syncUtilityCards();
 }
