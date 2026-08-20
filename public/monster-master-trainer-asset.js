@@ -231,11 +231,6 @@ function clearPortraitArt(node) {
   }
 }
 
-function teamLabel(view, unit) {
-  if (!unit) return "";
-  return unit.ownerId === view.playerIds?.[0] ? "Alpha" : "Beta";
-}
-
 function syncPortraits(view) {
   if (!view) return;
   const allUnits = rosterUnits(view);
@@ -250,8 +245,6 @@ function syncPortraits(view) {
       continue;
     }
     item.dataset.contentId = unit.contentId ?? "";
-    const name = item.querySelector("strong");
-    if (name) name.textContent = presentation.label;
     setPortraitArt(portrait, unit);
   }
 
@@ -261,23 +254,7 @@ function syncPortraits(view) {
   const hudPortrait = document.querySelector("#monster-master-hud-glyph");
   if (hud && selectedUnit && selectedPresentation) {
     hud.dataset.contentId = selectedUnit.contentId ?? "";
-    hud.dataset.role = selectedUnit.role ?? selectedPresentation.kind;
-    hud.dataset.owner = selectedUnit.ownerId === view.playerIds?.[0] ? "alpha" : "beta";
     setPortraitArt(hudPortrait, selectedUnit);
-    const name = document.querySelector("#monster-master-hud-name");
-    const summary = document.querySelector("#monster-master-unit-summary");
-    const abilityOwner = document.querySelector("#monster-master-ability-owner");
-    if (name) name.textContent = `${teamLabel(view, selectedUnit)} ${selectedPresentation.label}`;
-    if (summary && selectedPresentation.summary) summary.textContent = selectedPresentation.summary;
-    if (abilityOwner) abilityOwner.textContent = selectedPresentation.label;
-    const heavyFrameCopy = document.querySelector('[data-ability-id="heavy-frame"] span');
-    if (heavyFrameCopy && selectedUnit.role === "bulwark") {
-      heavyFrameCopy.textContent = `Durable ${selectedUnit.maxHealth}-health body built to hold space.`;
-    }
-    const quickstepCopy = document.querySelector('[data-ability-id="quickstep"] span');
-    if (quickstepCopy && selectedUnit.role === "emberling") {
-      quickstepCopy.textContent = `Movement ${selectedUnit.movement} and initiative ${selectedUnit.initiative}.`;
-    }
   } else {
     delete hud?.dataset.contentId;
     clearPortraitArt(hudPortrait);
