@@ -329,7 +329,8 @@ jobs:
           node --experimental-strip-types --test \
             src/browser/player-navigation-contract.test.ts \
             src/browser/player-platform-extension-contract.test.ts \
-            src/cloudflare/player-platform-object-runtime.test.ts
+            src/cloudflare/player-platform-object-runtime.test.ts \
+            src/cloudflare/player-platform-cascade-progression-edge-roundtrip.test.ts
           npx vitest run --config vitest.config.ts test/workerd/player-progression.test.ts --max-workers=1 --no-isolate
       - name: Player platform browser journeys
         run: npx playwright test test/browser/player-platform.spec.mjs --config playwright.config.mjs
