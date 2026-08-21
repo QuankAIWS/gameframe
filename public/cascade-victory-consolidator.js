@@ -73,8 +73,12 @@ function publishCompletion(level, final, replay) {
 
 function syncStageContinuity(stage) {
   if (!stage.classList.contains("is-active") || stage.classList.contains("is-awaiting-choice")) return;
-  stage.classList.add("is-victory-continuous");
-  stage.setAttribute("aria-hidden", "false");
+  if (!stage.classList.contains("is-victory-continuous")) {
+    stage.classList.add("is-victory-continuous");
+  }
+  if (stage.getAttribute("aria-hidden") !== "false") {
+    stage.setAttribute("aria-hidden", "false");
+  }
 }
 
 function observeRewardStage(stage) {
