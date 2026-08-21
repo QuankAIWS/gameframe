@@ -12,9 +12,9 @@
   filter: drop-shadow(0 2px 2px rgba(31,100,134,.16));
 }
 
-/* The snowflake is a crystalline outline, not a white plate over the candy.
-   A translucent fill plus a bright stroke keeps ice obvious at TV distance
-   while leaving the family hue visible through the center of the cell. */
+/* The snowflake is deliberately airy: a faint interior, a crisp white edge,
+   then a wider cyan/white halo. The eye reads "frozen" from the edge and glow
+   while the candy hue remains legible through most of the glyph. */
 .cascade-cell-coating::before {
   content: "\2744";
   inset: 0;
@@ -22,18 +22,19 @@
   display: grid;
   place-items: center;
   border: 0;
-  color: rgba(240,252,255,.24);
-  -webkit-text-stroke: 1px rgba(244,253,255,.82);
+  color: rgba(240,252,255,.13);
+  -webkit-text-stroke: 1px rgba(247,254,255,.78);
   font-family: "Segoe UI Symbol", sans-serif;
   font-size: clamp(1.9rem, 4.85vw, 3.35rem);
   font-weight: 900;
   line-height: 1;
   text-shadow:
-    0 1px 1px rgba(17,76,106,.52),
-    0 0 5px rgba(31,174,215,.58),
-    0 0 8px rgba(255,255,255,.26);
+    0 1px 1px rgba(17,76,106,.38),
+    0 0 4px rgba(255,255,255,.62),
+    0 0 9px rgba(56,187,224,.42),
+    0 0 14px rgba(255,255,255,.18);
   box-shadow: none;
-  opacity: .9;
+  opacity: .86;
 }
 
 /* One-layer ice lives around the perimeter. The center deliberately remains
@@ -71,13 +72,15 @@
 .cascade-cell-coating.ice-2::before {
   inset: 0;
   border: 0;
-  color: rgba(245,253,255,.28);
-  -webkit-text-stroke: 1.15px rgba(255,255,255,.9);
+  color: rgba(245,253,255,.16);
+  -webkit-text-stroke: 1.15px rgba(255,255,255,.86);
   font-size: clamp(2rem, 5.05vw, 3.5rem);
   text-shadow:
-    0 1px 1px rgba(11,69,100,.58),
-    0 0 6px rgba(25,171,213,.68),
-    0 0 10px rgba(255,255,255,.32);
+    0 1px 1px rgba(11,69,100,.42),
+    0 0 5px rgba(255,255,255,.70),
+    0 0 10px rgba(46,187,225,.48),
+    0 0 16px rgba(255,255,255,.22);
+  opacity: .9;
 }
 
 /* A second hit is communicated by a stronger crystalline ring, not by making
