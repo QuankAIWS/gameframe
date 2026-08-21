@@ -42,112 +42,127 @@ test("Cascade Crush bright casual polish is readable on desktop and mobile", asy
   await expect(page.locator('link[href="/cascade-evolution.css"]')).toHaveCount(1);
   await expect(page.locator('link[href="/cascade-bonus-modes.css"]')).toHaveCount(1);
   await expect(page.locator('link[href="/cascade-cell-objectives.css"]')).toHaveCount(1);
-  await expect(page.locator('link[href="/cascade-cabinet-polish.css"]')).toHaveCount(1);
-  await expect(page.locator('link[href="/cascade-final-touch.css"]')).toHaveCount(1);
-  await expect(page.locator('link[href="/cascade-piece-shapes.css"]')).toHaveCount(1);
-  await expect(page.locator('script[src="/cascade-mobile-ui.js"]')).toHaveCount(1);
 
+  const shapes = await page.locator(".cascade-tile").evaluateAll((tiles) => {
+    const byKind = new Map();
+    for (const tile of tiles) {
+      if (!byKind.has(tile.dataset.kind)) byKind.set(tile.dataset.kind, getComputedStyle(tile).borderRadius);
+    }
+    return [...byKind.values()];
+  });
+  expect(new Set(shapes).size).toBeGreaterThanOrEqual(4);
   await page.screenshot({ path: `${output}/cascade-crush-bright-desktop.png`, fullPage: true });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
-  await expect(page.locator("#board")).toBeVisible();
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
+  await expect(page.locator("#cascade-weekly-card")).toBeVisible();
+  const board = await page.locator("#board").boundingBox();
+  expect(board).toBeTruthy();
+  expect(board.width).toBeLessThanOrEqual(390);
+  const levelMapFits = await page.locator("#level-map").evaluate((map) => map.scrollWidth <= map.clientWidth + 1);
+  expect(levelMapFits).toBe(true);
   await page.screenshot({ path: `${output}/cascade-crush-bright-mobile.png`, fullPage: true });
 });
 
 test("Cascade Crush feedback control can reduce visual spectacle without changing play", async ({ page }) => {
-  await prepare(page, 1);
+  await prepare(page, 5);
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
-  await page.locator("#cascade-effects-toggle").click();
+
+  const button = page.locator("#cascade-effects-toggle");
+  await expect(button).toHaveText(/Effects full/);
+  await button.click();
+  await expect(button).toHaveText(/Effects reduced/);
   await expect(page.locator("body")).toHaveAttribute("data-cascade-effects", "reduced");
-  await expect(page.locator("#cascade-effects-toggle")).toHaveText(/Effects reduced/);
-  await page.screenshot({ path: `${output}/cascade-crush-reduced-effects-desktop.png`, fullPage: true });
+  await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), effectsKey)).toBe("reduced");
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
 });
 
 test("Cascade Crush performance card shows earned stars and the next Blitz slot", async ({ page }) => {
   await prepare(page, 7, {
-    starsByLevel: { "1": 3, "2": 2, "3": 1, "5": 3 },
+    starsByLevel: { "1": 3, "2": 3, "3": 2, "6": 2 },
     blitzBest: {},
     blitzStars: {},
-    blitzSeen: {},
+    blitzSeen: { "after-5": true },
     pendingHammerRewards: 0,
   });
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
-  await expect(page.locator("#cascade-star-count")).toContainText("9");
-  await expect(page.locator("#cascade-next-blitz")).not.toHaveText("—");
-  await page.screenshot({ path: `${output}/cascade-crush-performance-card.png`, fullPage: true });
+
+  await expect(page.locator("#level-stars")).toHaveText("☆☆☆");
+  await expect(page.locator("#star-progress")).toContainText("10 total stars");
+  await expect(page.locator("#bonus-status")).toContainText("NEXT BLITZ AFTER LEVEL 12");
+  await expect(page.locator('#level-map > li[data-level="6"] .cascade-map-stars')).toHaveText("★★");
+  await page.screenshot({ path: `${output}/cascade-crush-performance-desktop.png`, fullPage: true });
 });
 
 test("Cascade Crush persistent specials remain visually distinct", async ({ page }) => {
-  await prepare(page, 6, {
-    starsByLevel: { "1": 3, "2": 3, "3": 2 },
-    blitzBest: {},
-    blitzStars: {},
-    blitzSeen: {},
-    pendingHammerRewards: 0,
-  });
+  await prepare(page, 5);
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
-  await page.evaluate(() => {
-    const tiles = [...document.querySelectorAll(".cascade-tile")];
-    if (tiles[0]) {
-      tiles[0].dataset.special = "stripe-h";
-      tiles[0].classList.add("has-special");
-    }
-    if (tiles[1]) {
-      tiles[1].dataset.special = "stripe-v";
-      tiles[1].classList.add("has-special");
-    }
-    if (tiles[2]) {
-      tiles[2].dataset.special = "bomb";
-      tiles[2].classList.add("has-special");
-    }
-    if (tiles[3]) {
-      tiles[3].dataset.special = "color";
-      tiles[3].classList.add("has-special");
-    }
-  });
+
+  const tiles = page.locator(".cascade-tile");
+  for (const [index, special] of [[0, "stripe-h"], [1, "stripe-v"], [2, "bomb"], [3, "color"]]) {
+    await tiles.nth(index).evaluate((tile, value) => {
+      tile.dataset.special = value;
+      tile.classList.add("has-special");
+      const mark = document.createElement("span");
+      mark.className = "cascade-special-mark";
+      mark.setAttribute("aria-hidden", "true");
+      tile.append(mark);
+    }, special);
+  }
+
+  await expect(page.locator('.cascade-tile[data-special="stripe-h"]')).toBeVisible();
+  await expect(page.locator('.cascade-tile[data-special="bomb"]')).toBeVisible();
+  await expect(page.locator('.cascade-tile[data-special="color"]')).toBeVisible();
   await page.screenshot({ path: `${output}/cascade-crush-specials-desktop.png`, fullPage: true });
 });
 
 test("Cascade Crush big-pop color clear creates a board-wide dopamine hit", async ({ page }) => {
-  await prepare(page, 6, {
-    starsByLevel: { "1": 3, "2": 3, "3": 2 },
-    blitzBest: {},
-    blitzStars: {},
-    blitzSeen: {},
-    pendingHammerRewards: 0,
-  });
+  await prepare(page, 5);
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
-  await page.evaluate(() => window.cascadeResearch.demoColorClear());
-  await expect(page.locator("body")).toHaveClass(/cascade-big-pop/);
-  await page.screenshot({ path: `${output}/cascade-crush-color-clear-pop.png`, fullPage: true });
+
+  await expect.poll(() => page.evaluate(() => Boolean(window.cascadePresentationDirector))).toBe(true);
+  await page.evaluate(() => {
+    const transition = {
+      cascade: 5,
+      combo: "color+special",
+      matched: [27, 28, 29, 30, 31],
+      createdSpecials: [],
+      triggeredSpecials: [{ index: 27, special: "color" }],
+    };
+    window.cascadePresentationDirector.transitionStart(transition);
+    window.cascadePresentationDirector.transitionClear(transition);
+  });
+  await expect(page.locator(".cascade-color-wash")).toBeVisible();
+  await expect(page.locator(".cascade-pop-burst .cascade-pop-ring").first()).toBeVisible();
+  await expect(page.locator(".cascade-hype-word")).toContainText("Power Combo!");
+  await page.screenshot({ path: `${output}/cascade-crush-big-pop-color-desktop.png`, fullPage: true });
 });
 
 test("Cascade Crush level 105 presents ice as fixed board cells instead of shiny moving pieces", async ({ page }) => {
-  await prepare(page, 105, {
-    starsByLevel: { "100": 2 },
-    blitzBest: {},
-    blitzStars: {},
-    blitzSeen: {},
-    pendingHammerRewards: 0,
-  });
+  await prepare(page, 105);
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
+
   await expect(page.locator("#level-number")).toHaveText("105");
-  const coating = page.locator(".cascade-cell-coating").first();
-  await expect(coating).toBeVisible();
-  const alignment = await coating.evaluate((node) => {
-    const index = node.dataset.index;
+  await expect(page.locator('.cascade-tile[data-ice]')).not.toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => document.querySelectorAll(".cascade-cell-coating").length)).toBeGreaterThan(0);
+  await page.screenshot({ path: `${output}/cascade-crush-level-105-cell-ice-desktop.png`, fullPage: true });
+
+  const alignment = await page.evaluate(() => {
+    const coating = document.querySelector(".cascade-cell-coating");
+    if (!coating) return null;
+    const index = coating.dataset.index;
     const tile = document.querySelector(`.cascade-tile[data-index="${index}"]`);
     if (!tile) return null;
-    const coatingRect = node.getBoundingClientRect();
+    const coatingRect = coating.getBoundingClientRect();
     const tileRect = tile.getBoundingClientRect();
     return {
-      separate: !tile.contains(node),
+      separate: !tile.contains(coating),
       dx: Math.abs(coatingRect.left - tileRect.left),
       dy: Math.abs(coatingRect.top - tileRect.top),
       dw: Math.abs(coatingRect.width - tileRect.width),
@@ -163,8 +178,8 @@ test("Cascade Crush level 105 presents ice as fixed board cells instead of shiny
 });
 
 test("Cascade Crush Blitz takes over the board without replacing the core visual language", async ({ page }) => {
-  await prepare(page, 6, {
-    starsByLevel: { "1": 3, "2": 3, "3": 2, "5": 2 },
+  await prepare(page, 7, {
+    starsByLevel: { "1": 3, "2": 3, "3": 2, "6": 2 },
     blitzBest: {},
     blitzStars: {},
     blitzSeen: {},
@@ -193,37 +208,37 @@ test("Cascade Crush Quick Recall reads as a distinct but related bonus mode", as
     recallSeen: {},
     pendingHammerRewards: 0,
   });
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
-  await page.evaluate(() => window.cascadeResearch.startRecall());
-  await expect(page.locator("body")).toHaveClass(/cascade-recall-mode/);
-  await page.screenshot({ path: `${output}/cascade-crush-recall-mobile.png`, fullPage: true });
+  await page.evaluate(() => window.cascadeBonusModes.startQuickRecall(8));
+
+  const dialog = page.locator("#cascade-recall-dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator("[data-recall-kicker]")).toHaveText("QUICK RECALL");
+  await expect(dialog.locator("[data-recall-title]")).toContainText("Round 1");
+  await page.screenshot({ path: `${output}/cascade-crush-quick-recall-desktop.png`, fullPage: true });
 });
 
 test("Cascade Crush layered objective styling remains obvious in veteran chapters", async ({ page }) => {
-  await prepare(page, 210, {
-    starsByLevel: { "200": 3 },
-    blitzBest: {},
-    blitzStars: {},
-    blitzSeen: {},
-    pendingHammerRewards: 0,
-  });
+  await prepare(page, 181);
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
-  await expect(page.locator("#level-number")).toHaveText("210");
-  await page.screenshot({ path: `${output}/cascade-crush-veteran-layered-objective.png`, fullPage: true });
+
+  await expect(page.locator("#level-number")).toHaveText("181");
+  await expect(page.locator('.cascade-tile[data-ice="2"]')).not.toHaveCount(0);
+  await expect(page.locator("#objective-label")).toContainText(/ice|pink|cyan|yellow|green|purple|orange/i);
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "181-210");
+  await page.screenshot({ path: `${output}/cascade-crush-layered-objective-desktop.png`, fullPage: true });
 });
 
 test("Cascade Crush level 300 capstone keeps the progression UI compact", async ({ page }) => {
-  await prepare(page, 300, {
-    starsByLevel: { "299": 3 },
-    blitzBest: {},
-    blitzStars: {},
-    blitzSeen: {},
-    pendingHammerRewards: 0,
-  });
+  await prepare(page, 300);
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
+
   await expect(page.locator("#level-number")).toHaveText("300");
-  await page.screenshot({ path: `${output}/cascade-crush-level-300.png`, fullPage: true });
+  await expect(page.locator("#level-map > li")).toHaveCount(30);
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "271-300");
+  await expect(page.locator('#level-map > li[data-level="300"]')).toContainText("Super hard");
+  await page.screenshot({ path: `${output}/cascade-crush-level-300-desktop.png`, fullPage: true });
 });
