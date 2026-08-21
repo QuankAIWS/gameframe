@@ -85,13 +85,6 @@ function progressionFromResponse(body) {
   return normalizedProgression(body?.cascade ?? body?.progression?.cascade ?? null);
 }
 
-const initialActiveRunLevel = (() => {
-  const activeRun = readJson(ACTIVE_RUN_KEY);
-  if (!activeRun) return null;
-  const level = normalizedLevel(activeRun.level, 0);
-  return level || null;
-})();
-
 function snapshot() {
   const state = readJson(STATE_KEY) || {};
   const performance = readJson(PERFORMANCE_KEY) || {};
@@ -140,13 +133,49 @@ function mergeProgression(local, server) {
   };
 }
 
-function shouldProtectLoadedRun() {
-  if (!initialActiveRunLevel) return false;
+function activeRunState() {
   const state = readJson(STATE_KEY) || {};
   const activeRun = readJson(ACTIVE_RUN_KEY);
-  if (!activeRun) return false;
-  return normalizedLevel(state.level) === initialActiveRunLevel
-    && normalizedLevel(activeRun.level, 0) === initialActiveRunLevel;
+  const currentLevel = normalizedLevel(state.level);
+  const activeRunLevel = activeRun ? normalizedLevel(activeRun.level, 0) : 0;
+  return {
+    activeRun,
+    activeRunLevel,
+    currentLevel,
+    current: Boolean(activeRunLevel && activeRunLevel === currentLevel),
+  };
+}
+
+function hydrationPolicy(server, ownership) {
+  const activeRun = activeRunState();
+  if (ownership.foreign) {
+    return {
+      preserveLevel: false,
+      discardActiveRun: Boolean(activeRun.activeRun),
+    };
+  }
+  if (requestedReplayLevel > 0) {
+    return {
+      preserveLevel: true,
+      discardActiveRun: false,
+    };
+  }
+  if (!activeRun.current) {
+    return {
+      preserveLevel: false,
+      discardActiveRun: false,
+    };
+  }
+
+  // An active run is only current while the authenticated account has not
+  // completed that level elsewhere. Once the server has completed this level,
+  // keeping the saved board would pin the browser behind the canonical frontier.
+  const serverHighestCompleted = Math.max(0, Math.min(300, Math.floor(Number(server?.highestCompletedLevel) || 0)));
+  const staleActiveRun = serverHighestCompleted >= activeRun.activeRunLevel;
+  return {
+    preserveLevel: !staleActiveRun,
+    discardActiveRun: staleActiveRun,
+  };
 }
 
 function applyCanonicalToLocal(canonical, { preserveLevel = false, replace = false } = {}) {
@@ -263,20 +292,21 @@ async function reconcileServer({ force = false } = {}) {
       : mergeProgression(current, server);
     if (!canonical) return;
 
-    const preserveLevel = !ownership.foreign && (shouldProtectLoadedRun() || requestedReplayLevel > 0);
+    const policy = hydrationPolicy(server, ownership);
+    if (policy.discardActiveRun) storage.removeItem(ACTIVE_RUN_KEY);
     const changes = applyCanonicalToLocal(canonical, {
-      preserveLevel,
+      preserveLevel: policy.preserveLevel,
       replace: ownership.foreign,
     });
 
     if (ownership.foreign) {
       // A different authenticated player must never inherit/upload the previous
-      // owner's local Cascade frontier. Replace it with this player's server
-      // progression first, then rebind the browser to the current account.
+      // owner's local Cascade frontier or suspended board. Replace it with this
+      // player's server progression first, then rebind the browser to the account.
       bindCurrentOwner();
     }
 
-    if (maybeReloadAfterHydration(canonical, changes.stateChanged, preserveLevel)) {
+    if (maybeReloadAfterHydration(canonical, changes.stateChanged, policy.preserveLevel)) {
       lastSubmitted = JSON.stringify(canonical);
       return;
     }
