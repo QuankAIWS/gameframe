@@ -45,12 +45,12 @@
     --piece-material-form: linear-gradient(180deg, transparent 0 50%, rgba(136,88,0,.08) 66%, rgba(92,57,0,.14) 100%);
   }
 
-  /* Green: keep the bean silhouette and add one soft off-center molded dimple. */
+  /* Green: keep the bean silhouette and dimple, but blend its gummy volume continuously. */
   .cascade-tile[data-kind="3"]:not([data-special="color"]) {
     --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M18 24C31 8 57 5 76 15C91 23 97 38 91 51C87 60 78 63 68 61C59 59 55 63 52 71C48 83 36 92 23 88C8 84 3 68 7 52C9 41 13 31 18 24Z'/%3E%3C/svg%3E");
     --piece-detail-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='62' cy='57' rx='10' ry='7' transform='rotate(-28 62 57)' fill='black' fill-opacity='.07'/%3E%3Cellipse cx='59' cy='54' rx='6' ry='3.5' transform='rotate(-28 59 54)' fill='white' fill-opacity='.10'/%3E%3C/svg%3E");
-    --piece-material-light: linear-gradient(150deg, rgba(255,255,255,.27) 0 24%, rgba(255,255,255,.08) 25% 38%, transparent 39% 100%);
-    --piece-material-form: linear-gradient(158deg, transparent 0 50%, rgba(32,91,51,.07) 67%, rgba(25,68,39,.16) 100%);
+    --piece-material-light: linear-gradient(150deg, rgba(255,255,255,.25) 0%, rgba(255,255,255,.20) 16%, rgba(255,255,255,.13) 30%, rgba(255,255,255,.07) 43%, rgba(255,255,255,.025) 56%, transparent 70%);
+    --piece-material-form: linear-gradient(158deg, transparent 0 36%, rgba(32,91,51,.025) 48%, rgba(32,91,51,.07) 67%, rgba(25,68,39,.14) 100%);
   }
 
   /* Purple: retain the raised four-point boss but reduce its contrast slightly. */
