@@ -1,4 +1,4 @@
-const CACHE_VERSION = "gameframe-static-v12";
+const CACHE_VERSION = "gameframe-static-v13";
 
 // This is the first intentionally complete GameFrame offline pack. Keep it
 // limited to the lightweight shell plus experiences that can genuinely execute
@@ -85,6 +85,7 @@ const REQUIRED_ASSETS = [
   "/cascade-mobile.css",
   "/cascade-final-touch.css",
   "/cascade-piece-shapes.css",
+  "/cascade-piece-materials.css",
   "/cascade-replay-bootstrap.js",
   "/cascade-fresh-run-guard.js",
   "/cascade-family-state-guard.js",
