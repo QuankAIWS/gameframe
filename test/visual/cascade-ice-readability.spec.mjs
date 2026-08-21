@@ -38,6 +38,8 @@ async function coatingPresentation(locator) {
       fill: snowflakeStyle.color,
       strokeColor: snowflakeStyle.webkitTextStrokeColor,
       strokeWidth: Number.parseFloat(snowflakeStyle.webkitTextStrokeWidth || "0"),
+      opacity: Number.parseFloat(snowflakeStyle.opacity || "1"),
+      textShadow: snowflakeStyle.textShadow,
     };
   });
 }
@@ -52,9 +54,11 @@ test("Cascade one-layer ice frames the candy instead of whitening its center", a
   expect(presentation.backgroundColor).toBe("rgba(0, 0, 0, 0)");
   expect((presentation.backgroundImage.match(/radial-gradient/g) ?? []).length).toBeGreaterThanOrEqual(4);
   expect(presentation.backgroundImage.includes("linear-gradient")).toBe(false);
-  expect(alphaFromCssColor(presentation.fill)).toBeLessThanOrEqual(.35);
+  expect(alphaFromCssColor(presentation.fill)).toBeLessThanOrEqual(.2);
   expect(alphaFromCssColor(presentation.strokeColor)).toBeGreaterThanOrEqual(.75);
   expect(presentation.strokeWidth).toBeGreaterThanOrEqual(.75);
+  expect(presentation.opacity).toBeLessThanOrEqual(.9);
+  expect(presentation.textShadow).toContain("255, 255, 255");
 
   await page.screenshot({ path: `${output}/cascade-crush-ice-readable-desktop.png`, fullPage: true });
 });
@@ -69,9 +73,11 @@ test("Cascade two-layer ice increases the perimeter signal without filling the c
   expect(presentation.backgroundColor).toBe("rgba(0, 0, 0, 0)");
   expect((presentation.backgroundImage.match(/radial-gradient/g) ?? []).length).toBeGreaterThanOrEqual(4);
   expect(presentation.backgroundImage.includes("linear-gradient")).toBe(false);
-  expect(alphaFromCssColor(presentation.fill)).toBeLessThanOrEqual(.4);
+  expect(alphaFromCssColor(presentation.fill)).toBeLessThanOrEqual(.2);
   expect(alphaFromCssColor(presentation.strokeColor)).toBeGreaterThanOrEqual(.8);
   expect(presentation.strokeWidth).toBeGreaterThanOrEqual(1);
+  expect(presentation.opacity).toBeLessThanOrEqual(.92);
+  expect(presentation.textShadow).toContain("255, 255, 255");
 
   await page.screenshot({ path: `${output}/cascade-crush-ice-2-readable-desktop.png`, fullPage: true });
 });
