@@ -59,6 +59,7 @@ async function familyPresentation(page) {
     return {
       kind: tile.dataset.kind,
       pieceSize: tileStyle.getPropertyValue("--piece-size").trim(),
+      detailArt: tileStyle.getPropertyValue("--piece-detail-art").trim(),
       backgroundImage: candyStyle.backgroundImage,
       maskImage: candyStyle.webkitMaskImage || candyStyle.maskImage,
     };
@@ -76,15 +77,17 @@ test("Cascade distinct family silhouettes are readable on the desktop cabinet", 
   expect(Math.max(...numericSizes) - Math.min(...numericSizes)).toBeGreaterThanOrEqual(10);
   expect(families.every((family) => (family.backgroundImage.match(/linear-gradient/g) ?? []).length >= 5)).toBe(true);
   expect(families.every((family) => !family.backgroundImage.includes("radial-gradient"))).toBe(true);
+  expect(families.every((family) => family.backgroundImage.includes("data:image/svg+xml"))).toBe(true);
   expect(new Set(families.map((family) => family.backgroundImage)).size).toBe(6);
   expect(new Set(families.map((family) => family.maskImage)).size).toBe(6);
 
   const heart = families.find((family) => family.kind === "0");
   const green = families.find((family) => family.kind === "3");
-  const detailedFamilies = families.filter((family) => !["0", "3"].includes(family.kind));
-  expect(heart.backgroundImage.includes("data:image/svg+xml")).toBe(false);
-  expect(green.backgroundImage.includes("data:image/svg+xml")).toBe(false);
-  expect(detailedFamilies.every((family) => family.backgroundImage.includes("data:image/svg+xml"))).toBe(true);
+  expect(heart.detailArt.includes("stroke")).toBe(false);
+  expect(green.detailArt.includes("stroke")).toBe(false);
+
+  const materialCss = await page.evaluate(async () => (await fetch("/cascade-piece-materials.css")).text());
+  expect(materialCss).toContain("M43,43L36,30M57,43L64,30M60,48L73,43M60,58L70,66M50,64L50,75M40,58L30,66M40,48L27,43");
 
   const colorClearerBackground = await page.locator('.cascade-tile[data-special="color"]').evaluate((tile) => (
     getComputedStyle(tile, "::before").backgroundImage
