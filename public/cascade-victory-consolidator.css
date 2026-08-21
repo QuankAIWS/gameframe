@@ -3,15 +3,10 @@
   visibility: visible;
 }
 
-.cascade-reward-stage.is-victory-continuous:not(.is-active):not(.is-awaiting-choice) .cascade-reward-panel {
+.cascade-reward-stage.is-victory-continuous:not(.is-active) .cascade-reward-panel {
   animation: none;
   transform: none;
   opacity: 1;
-}
-
-.cascade-reward-stage:not(.is-awaiting-choice) .cascade-reward-summary,
-.cascade-reward-stage:not(.is-awaiting-choice) .cascade-reward-actions {
-  display: none;
 }
 
 .cascade-reward-stage.is-awaiting-choice {
@@ -20,27 +15,26 @@
 
 .cascade-reward-stage.is-awaiting-choice .cascade-reward-panel {
   pointer-events: auto;
-  animation: none;
-  transform: none;
-  opacity: 1;
-}
-
-.cascade-reward-summary {
-  max-width: 34rem;
-  margin: .75rem auto 0;
-  color: #6b4398;
-  font-size: clamp(.82rem, 1.4vw, 1rem);
-  font-weight: 800;
-  line-height: 1.45;
-  text-align: center;
 }
 
 .cascade-reward-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
   gap: .65rem;
+  width: 100%;
+  min-height: 52px;
   margin-top: 1rem;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cascade-reward-stage.is-awaiting-choice .cascade-reward-actions {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .cascade-reward-actions button {
