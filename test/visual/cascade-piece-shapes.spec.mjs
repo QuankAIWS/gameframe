@@ -71,7 +71,9 @@ test("Cascade distinct family silhouettes are readable on the desktop cabinet", 
   await expect(page.locator('link[href="/cascade-piece-shapes.css"]')).toHaveCount(1);
 
   const families = await familyPresentation(page);
-  expect(new Set(families.map((family) => family.pieceSize)).size).toBeGreaterThanOrEqual(4);
+  const numericSizes = families.map((family) => Number.parseFloat(family.pieceSize));
+  expect(new Set(families.map((family) => family.pieceSize)).size).toBeGreaterThanOrEqual(5);
+  expect(Math.max(...numericSizes) - Math.min(...numericSizes)).toBeGreaterThanOrEqual(10);
   expect(families.every((family) => (family.backgroundImage.match(/linear-gradient/g) ?? []).length >= 3)).toBe(true);
   expect(families.every((family) => !family.backgroundImage.includes("radial-gradient"))).toBe(true);
   expect(new Set(families.map((family) => family.maskImage)).size).toBe(6);
