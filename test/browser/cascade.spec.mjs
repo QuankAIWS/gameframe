@@ -131,7 +131,6 @@ test("Cascade keeps best stars and replaces ordinary quick timers with scheduled
       blitzBest: {},
       blitzStars: {},
       blitzSeen: { "after-5": true },
-      pendingHammerRewards: 0,
     }));
   });
 
