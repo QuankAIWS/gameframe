@@ -147,19 +147,33 @@
   opacity: .35;
 }
 
-/* On phones the visible candy is deliberately a little larger than on the TV/
- * desktop cabinet. The extra .cascade-board ancestor gives this rule enough
- * specificity to override the older mobile layer's 58% pseudo-face size while
- * leaving the cell itself—and therefore board geometry—unchanged.
+/* Portrait mobile has a legacy 58% pseudo-face rule in cascade-mobile.css.
+ * This layer intentionally supersedes that old presentation decision. The
+ * !important is narrowly scoped to pseudo-element size only: no hit target,
+ * board geometry, drag math, or gameplay state is affected.
  */
 @media (max-width: 700px) and (orientation: portrait) {
   body.cascade-route .cascade-tile {
-    --piece-size: 91%;
+    --piece-size: 88%;
   }
 
   body.cascade-route .cascade-board .cascade-tile::before {
-    width: 91%;
-    height: 91%;
+    width: 88% !important;
+    height: 88% !important;
+  }
+
+  body.cascade-route .cascade-board .cascade-tile.is-selected {
+    outline: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.cascade-route .cascade-board .cascade-tile.is-selected::before {
+    transform: scale(1.055);
+    filter:
+      drop-shadow(0 0 2px #fff)
+      drop-shadow(0 0 6px rgba(255,255,255,.98))
+      drop-shadow(0 0 11px rgba(116,76,170,.64))
+      drop-shadow(0 7px 7px rgba(82,57,113,.2));
   }
 
   body.cascade-route .cascade-tile[data-special="stripe-h"] .cascade-special-mark,
