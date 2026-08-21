@@ -72,7 +72,8 @@ test("Cascade distinct family silhouettes are readable on the desktop cabinet", 
 
   const families = await familyPresentation(page);
   expect(new Set(families.map((family) => family.pieceSize)).size).toBeGreaterThanOrEqual(4);
-  expect(families.every((family) => family.backgroundImage.includes("radial-gradient"))).toBe(true);
+  expect(families.every((family) => (family.backgroundImage.match(/linear-gradient/g) ?? []).length >= 3)).toBe(true);
+  expect(families.every((family) => !family.backgroundImage.includes("radial-gradient"))).toBe(true);
   expect(new Set(families.map((family) => family.maskImage)).size).toBe(6);
 
   await page.screenshot({ path: `${output}/cascade-crush-distinct-piece-shapes-desktop.png`, fullPage: true });
@@ -85,6 +86,7 @@ test("Cascade distinct family silhouettes remain bold on older-eye mobile", asyn
 
   const families = await familyPresentation(page);
   expect(families.every((family) => family.pieceSize === "88%")).toBe(true);
+  expect(families.every((family) => (family.backgroundImage.match(/linear-gradient/g) ?? []).length === 1)).toBe(true);
   expect(families.every((family) => !family.backgroundImage.includes("radial-gradient"))).toBe(true);
 
   await page.screenshot({ path: `${output}/cascade-crush-distinct-piece-shapes-mobile.png`, fullPage: false });
