@@ -52,10 +52,29 @@ async function stageFamiliesAndSpecials(page) {
   });
 }
 
+async function familyPresentation(page) {
+  return page.locator(".cascade-tile").evaluateAll((tiles) => tiles.slice(0, 6).map((tile) => {
+    const tileStyle = getComputedStyle(tile);
+    const candyStyle = getComputedStyle(tile, "::before");
+    return {
+      kind: tile.dataset.kind,
+      pieceSize: tileStyle.getPropertyValue("--piece-size").trim(),
+      backgroundImage: candyStyle.backgroundImage,
+      maskImage: candyStyle.webkitMaskImage || candyStyle.maskImage,
+    };
+  }));
+}
+
 test("Cascade distinct family silhouettes are readable on the desktop cabinet", async ({ page }) => {
   await prepare(page, { width: 1440, height: 960 });
   await stageFamiliesAndSpecials(page);
   await expect(page.locator('link[href="/cascade-piece-shapes.css"]')).toHaveCount(1);
+
+  const families = await familyPresentation(page);
+  expect(new Set(families.map((family) => family.pieceSize)).size).toBeGreaterThanOrEqual(4);
+  expect(families.every((family) => family.backgroundImage.includes("radial-gradient"))).toBe(true);
+  expect(new Set(families.map((family) => family.maskImage)).size).toBe(6);
+
   await page.screenshot({ path: `${output}/cascade-crush-distinct-piece-shapes-desktop.png`, fullPage: true });
 });
 
@@ -63,5 +82,10 @@ test("Cascade distinct family silhouettes remain bold on older-eye mobile", asyn
   await prepare(page, { width: 390, height: 844 });
   await stageFamiliesAndSpecials(page);
   await expect(page.locator("#booster-hammer")).toBeVisible();
+
+  const families = await familyPresentation(page);
+  expect(families.every((family) => family.pieceSize === "88%")).toBe(true);
+  expect(families.every((family) => !family.backgroundImage.includes("radial-gradient"))).toBe(true);
+
   await page.screenshot({ path: `${output}/cascade-crush-distinct-piece-shapes-mobile.png`, fullPage: false });
 });
