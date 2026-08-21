@@ -352,7 +352,7 @@ test("Cascade syncs new level clears in both directions between separate device 
 
   try {
     await installLocalProgress(phone, playerId, 4, { "3": 1 });
-    await installLocalProgress(desktop, playerId, 2, { "1": 1 });
+    await installLocalProgress(desktop, playerId, 2, {});
     await installSharedProgressionRoutes(phoneContext, playerId, server, counters);
     await installSharedProgressionRoutes(desktopContext, playerId, server, counters);
 
