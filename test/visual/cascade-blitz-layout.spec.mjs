@@ -37,6 +37,17 @@ async function startActiveBlitz(page) {
   await expect(page.locator("#blitz-overlay")).toBeVisible();
   await expect(page.locator("#blitz-callout")).toHaveText("BLITZ", { timeout: 4_000 });
   await expect(page.locator("#blitz-overlay")).not.toHaveClass(/is-countdown/);
+
+  // Big cascades append this effect layer dynamically. Keep it in the test so
+  // the active Blitz grid cannot regress by acquiring an implicit third row.
+  await page.evaluate(() => {
+    const wrap = document.querySelector(".cascade-board-wrap");
+    if (!wrap || wrap.querySelector(".cascade-hype-layer")) return;
+    const layer = document.createElement("div");
+    layer.className = "cascade-hype-layer";
+    layer.setAttribute("aria-hidden", "true");
+    wrap.append(layer);
+  });
 }
 
 async function expectActiveHudClearOfBoard(page) {
@@ -45,7 +56,8 @@ async function expectActiveHudClearOfBoard(page) {
     const objective = document.querySelector(".cascade-objective");
     const board = document.querySelector("#board");
     const firstTile = document.querySelector(".cascade-tile");
-    if (!hud || !objective || !board || !firstTile) return null;
+    const hypeLayer = document.querySelector(".cascade-hype-layer");
+    if (!hud || !objective || !board || !firstTile || !hypeLayer) return null;
 
     const hudRect = hud.getBoundingClientRect();
     const objectiveRect = objective.getBoundingClientRect();
@@ -63,11 +75,13 @@ async function expectActiveHudClearOfBoard(page) {
       hudObjectiveTopDelta: Math.abs(hudRect.top - objectiveRect.top),
       firstTileTop: firstTileRect.top,
       objectiveVisibility: getComputedStyle(objective).visibility,
+      hypePosition: getComputedStyle(hypeLayer).position,
     };
   });
 
   expect(geometry).toBeTruthy();
   expect(geometry.objectiveVisibility).toBe("hidden");
+  expect(geometry.hypePosition).toBe("absolute");
   expect(geometry.hudObjectiveTopDelta).toBeLessThanOrEqual(2);
   expect(geometry.verticalOverlap).toBeLessThanOrEqual(0.5);
   expect(geometry.hudBottom).toBeLessThanOrEqual(geometry.boardTop + 0.5);
