@@ -67,6 +67,57 @@
   --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 3L59 25L73 10L76 33L95 23L83 42L100 50L83 58L95 77L76 67L73 90L59 75L50 97L41 75L27 90L24 67L5 77L17 58L0 50L17 42L5 23L24 33L27 10L41 25Z'/%3E%3C/svg%3E");
 }
 
+/*
+ * Desktop candy pass.
+ *
+ * Compact mobile silhouettes already read well. At desktop/TV scale the same
+ * mathematically-clean masks look more like flat interface icons than physical
+ * candies, so larger viewports get optical sizing, softer geometry, and molded
+ * lighting while preserving the exact six-family vocabulary.
+ */
+@media (min-width: 701px) {
+  .cascade-tile::before {
+    background:
+      radial-gradient(circle at 31% 22%, rgba(255,255,255,.74) 0 7%, rgba(255,255,255,.27) 8% 15%, transparent 16%),
+      linear-gradient(158deg, rgba(255,255,255,.22) 0 17%, transparent 38%),
+      radial-gradient(ellipse at 52% 88%, rgba(70,38,82,.18) 0 16%, transparent 54%),
+      linear-gradient(145deg, var(--tile-a), var(--tile-b));
+    filter:
+      drop-shadow(0 1px 0 rgba(255,255,255,.72))
+      drop-shadow(0 3px 1px rgba(255,255,255,.20))
+      drop-shadow(0 7px 7px rgba(82,57,113,.24));
+  }
+
+  .cascade-tile[data-kind="0"] {
+    --piece-size: 88%;
+  }
+
+  .cascade-tile[data-kind="1"] {
+    --piece-size: 84%;
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C57 15 80 39 96 50C80 61 57 85 50 96C43 85 20 61 4 50C20 39 43 15 50 4Z'/%3E%3C/svg%3E");
+  }
+
+  .cascade-tile[data-kind="2"] {
+    --piece-size: 86%;
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C52 4 54 7 56 12L63 33C64 36 66 37 70 37L91 37C97 37 98 41 93 45L76 58C73 60 72 62 73 66L80 86C82 92 78 95 73 91L55 78C52 76 49 76 46 78L28 91C23 95 19 92 21 86L28 66C29 62 28 60 25 58L8 45C3 41 4 37 10 37L31 37C35 37 37 36 38 33L44 12C46 7 48 4 50 4Z'/%3E%3C/svg%3E");
+  }
+
+  .cascade-tile[data-kind="3"] {
+    --piece-size: 85%;
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 6C65 6 78 13 86 25C94 37 95 52 90 66C84 81 70 92 52 94C34 96 19 87 12 73C5 59 7 42 15 29C23 16 35 8 50 6Z'/%3E%3C/svg%3E");
+  }
+
+  .cascade-tile[data-kind="4"] {
+    --piece-size: 91%;
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C53 4 54 7 56 13L62 35C63 39 65 41 69 42L91 47C97 48 98 50 91 53L69 59C65 60 63 62 62 66L56 88C54 95 53 97 50 97C47 97 46 95 44 88L38 66C37 62 35 60 31 59L9 53C2 51 2 49 9 47L31 42C35 41 37 39 38 35L44 13C46 7 47 4 50 4Z'/%3E%3C/svg%3E");
+  }
+
+  .cascade-tile[data-kind="5"] {
+    --piece-size: 84%;
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4L59 24L73 11L76 32L94 24L83 42L98 50L83 58L94 76L76 68L73 89L59 76L50 96L41 76L27 89L24 68L6 76L17 58L2 50L17 42L6 24L24 32L27 11L41 24Z'/%3E%3C/svg%3E");
+  }
+}
+
 /* Keep the cell interaction feedback rectangular-free: selection and hover
  * emphasize the candy silhouette itself, while the whole cell remains clickable.
  */
