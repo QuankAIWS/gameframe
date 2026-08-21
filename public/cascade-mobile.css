@@ -1,3 +1,10 @@
+/*
+ * Cascade portrait/mobile composition.
+ *
+ * This is intentionally a phone-game layout rather than a compressed desktop
+ * cabinet. Keep the level state and gameplay tool readable, let the board own
+ * the viewport, and move secondary utilities into the mobile game menu.
+ */
 @media (max-width: 700px) and (orientation: portrait) {
   html,
   body.cascade-route {
@@ -5,35 +12,107 @@
     overscroll-behavior: none;
   }
 
+  html {
+    overflow-x: hidden;
+  }
+
   body.cascade-route {
     min-height: 100dvh;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* Cascade gets a compact in-game GameFrame bar. The full destination list is
+     still available from the game menu without spending permanent board space. */
+  body.cascade-route #gameframe-destination-bar {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: calc(50px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 62px 0 max(8px, env(safe-area-inset-left));
+    border-bottom-color: rgba(100, 65, 135, .12);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,239,255,.97));
+    box-shadow: 0 4px 16px rgba(89, 52, 116, .12);
+  }
+
+  body.cascade-route #gameframe-destination-bar .gameframe-destination-links,
+  body.cascade-route #gameframe-destination-bar .gameframe-destination-session-space,
+  body.cascade-route #gameframe-session-badge {
+    display: none !important;
+  }
+
+  body.cascade-route #gameframe-destination-bar .gameframe-destination-brand {
+    width: max-content;
+    min-width: 0;
+    min-height: 50px;
+    padding: 4px 6px;
+    gap: 8px;
+  }
+
+  body.cascade-route #gameframe-destination-bar .gameframe-destination-mark {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+  }
+
+  body.cascade-route #gameframe-destination-bar .gameframe-destination-copy {
+    display: grid !important;
+    min-width: 0;
+    gap: 1px;
+  }
+
+  body.cascade-route #gameframe-destination-bar .gameframe-platform-name {
+    display: block;
+    color: #6c468f;
+    font-size: .82rem;
+    font-weight: 1000;
+    line-height: 1;
+    letter-spacing: .11em;
   }
 
   body.cascade-route .cascade-shell {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
     width: 100%;
-    min-height: 100dvh;
-    padding: 58px 6px 6px;
+    min-height: 0;
+    height: calc(100dvh - 50px - env(safe-area-inset-top));
+    margin: 0;
+    padding: 4px max(2px, env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(2px, env(safe-area-inset-left));
+    overflow: hidden;
   }
 
   body.cascade-route .cascade-header,
   body.cascade-route .cascade-map,
-  body.cascade-route .cascade-help,
-  body.cascade-route .cascade-side .cascade-card:first-child,
-  body.cascade-route .cascade-performance-card > span {
+  body.cascade-route .cascade-help {
     display: none;
   }
 
+  /* Only Level, Moves and Lives remain in the play HUD. Score/target progress is
+     already communicated by the board/objective presentation and does not need
+     two more tiny dashboard cards. */
   body.cascade-route .cascade-status {
-    grid-template-columns: .8fr 1fr 1fr;
+    display: grid;
+    grid-template-columns: minmax(72px, .82fr) minmax(92px, 1fr) minmax(128px, 1.32fr);
     gap: 4px;
-    margin: 0 0 4px;
+    margin: 0 2px 4px;
   }
 
   body.cascade-route .cascade-status > div {
-    min-height: 42px;
-    padding: 5px 8px;
-    border-radius: 10px;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 1px;
+    min-width: 0;
+    min-height: 62px;
+    padding: 6px 7px;
+    border: 2px solid rgba(255,255,255,.8);
+    border-radius: 16px;
+    background:
+      linear-gradient(155deg, rgba(76,45,105,.96), rgba(48,32,73,.97));
+    box-shadow:
+      0 5px 12px rgba(67, 40, 91, .18),
+      inset 0 1px 0 rgba(255,255,255,.14);
+    color: #fff;
+    text-align: center;
   }
 
   body.cascade-route .cascade-status > div:nth-child(2),
@@ -41,50 +120,116 @@
     display: none;
   }
 
+  body.cascade-route .cascade-status > div:nth-child(4) {
+    background:
+      radial-gradient(circle at 50% -30%, rgba(255,216,77,.24), transparent 65%),
+      linear-gradient(155deg, #71479d, #4a326f);
+  }
+
   body.cascade-route .cascade-status small {
-    font-size: .48rem;
-    letter-spacing: .1em;
+    color: rgba(255,255,255,.82);
+    font-size: .72rem;
+    font-weight: 950;
+    line-height: 1;
+    letter-spacing: .09em;
   }
 
   body.cascade-route .cascade-status strong {
-    font-size: 1rem;
+    color: #fff;
+    font-size: 1.48rem;
+    font-weight: 1000;
+    line-height: .98;
+    text-shadow: 0 2px 2px rgba(31, 18, 48, .24);
+  }
+
+  body.cascade-route .cascade-status > div:nth-child(4) strong {
+    font-size: 2rem;
+  }
+
+  body.cascade-route #lives {
+    width: 100%;
+    min-width: 0;
+    font-size: 1.2rem;
+    letter-spacing: .02em;
+    white-space: nowrap;
+    overflow: visible;
+  }
+
+  body.cascade-route #life-timer {
+    margin-top: 2px;
+    color: #fff3a9;
+    font-size: .7rem;
+    font-weight: 900;
   }
 
   body.cascade-route .cascade-game {
     display: flex;
     flex-direction: column;
-    gap: 4px;
     align-items: stretch;
+    min-height: 0;
+    gap: 4px;
   }
 
   body.cascade-route .cascade-board-wrap {
     width: 100%;
-    padding: 4px;
-    border-radius: 14px;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 18px;
+    background: transparent;
+    box-shadow: none;
   }
 
   body.cascade-route .cascade-objective {
-    min-height: 30px;
-    margin: 0 3px 3px;
-    gap: 6px;
-    font-size: .72rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 46px;
+    margin: 0 4px 4px;
+    padding: 5px 10px;
+    gap: 8px;
+    border: 2px solid rgba(255,255,255,.82);
+    border-radius: 15px;
+    background: rgba(255,255,255,.91);
+    color: #5d4376;
+    font-size: 1rem;
+    font-weight: 850;
+    line-height: 1.18;
+    box-shadow: 0 4px 12px rgba(87, 54, 112, .1);
   }
 
   body.cascade-route #objective-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: block;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    text-wrap: balance;
+  }
+
+  body.cascade-route #combo-label {
+    color: #7b4cb0;
+    font-size: .9rem;
+    font-weight: 1000;
     white-space: nowrap;
   }
 
+  /* Near-edge-to-edge 8x8 board. The 8:9 geometry deliberately makes each
+     piece taller than it is wide so a 360px phone still has comfortable touch
+     height without sacrificing the complete board. */
   body.cascade-route .cascade-board {
     grid-template-columns: repeat(8, minmax(0, 1fr));
     grid-template-rows: repeat(8, minmax(0, 1fr));
-    gap: 3px;
-    width: min(calc(100vw - 20px), calc((100dvh - 190px) * .89));
+    gap: 2px;
+    width: min(calc(100vw - 4px - env(safe-area-inset-left) - env(safe-area-inset-right)), 430px);
     max-width: 100%;
     aspect-ratio: 8 / 9;
-    padding: 4px;
-    border-radius: 16px;
+    margin: 0 auto;
+    padding: 2px;
+    border-width: 2px;
+    border-radius: 18px;
+    box-shadow:
+      0 9px 24px rgba(74, 44, 99, .18),
+      inset 0 1px 0 rgba(255,255,255,.1);
   }
 
   body.cascade-route .cascade-tile {
@@ -93,69 +238,409 @@
     min-width: 0;
     min-height: 0;
     border-radius: 22%;
+    touch-action: manipulation;
+  }
+
+  body.cascade-route .cascade-tile::before {
+    width: 58%;
+    height: 58%;
+    border-width: 2px;
   }
 
   body.cascade-route .cascade-tile.is-selected {
-    outline-width: 4px;
+    transform: scale(1.045);
+    outline: 4px solid #fff;
     outline-offset: -4px;
-    filter: brightness(1.18) saturate(1.08);
+    filter: brightness(1.2) saturate(1.08);
+    z-index: 4;
   }
 
+  /* Normal portrait play keeps only the Hammer and a compact Weekly Blitz
+     affordance below the board. Progress and preferences live in Game menu. */
   body.cascade-route .cascade-side {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    width: 100%;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: stretch;
+    width: min(100%, 430px);
+    min-height: 0;
+    margin: 0 auto;
     gap: 4px;
+    padding: 0 2px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body.cascade-route .cascade-side > .cascade-card,
+  body.cascade-route .cascade-side > #cascade-feedback-card {
+    display: none;
+  }
+
+  body.cascade-route .cascade-side > .cascade-card:has(#booster-hammer),
+  body.cascade-route .cascade-side > #cascade-weekly-card {
+    display: grid;
+  }
+
+  body.cascade-route .cascade-side > .cascade-card:has(#booster-hammer) {
+    grid-column: 1;
+    min-height: 54px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  body.cascade-route .cascade-side > .cascade-card:has(#booster-hammer) > small,
+  body.cascade-route .cascade-side > .cascade-card:has(#booster-hammer) > span {
+    display: none;
+  }
+
+  body.cascade-route #booster-hammer {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: 54px;
+    padding: 8px 46px 8px 16px;
+    border: 2px solid rgba(255,255,255,.92);
+    border-radius: 18px;
+    background: linear-gradient(145deg, #ff7ab6, #d35fae 55%, #aa5ac9);
+    color: #fff;
+    font-size: 1.03rem;
+    font-weight: 1000;
+    line-height: 1;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(95, 43, 92, .25);
+    box-shadow:
+      0 5px 12px rgba(114, 55, 110, .18),
+      inset 0 2px 0 rgba(255,255,255,.3);
+  }
+
+  body.cascade-route #booster-hammer b {
+    position: absolute;
+    right: 9px;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    background: rgba(255,255,255,.96);
+    color: #8c4d9d;
+    font-size: .95rem;
+    text-shadow: none;
+  }
+
+  body.cascade-route #cascade-weekly-card {
+    grid-column: 2;
+    min-height: 54px;
     padding: 0;
     border: 0;
     background: transparent;
     box-shadow: none;
   }
 
-  body.cascade-route .cascade-side .cascade-card {
-    min-height: 42px;
-    padding: 4px;
-    border-radius: 10px;
-  }
-
-  body.cascade-route .cascade-side .cascade-card:nth-child(2) {
-    grid-column: 1;
-  }
-
-  body.cascade-route .cascade-performance-card {
-    grid-column: 2;
-    align-content: center;
-  }
-
-  body.cascade-route .cascade-side .cascade-card > small,
-  body.cascade-route .cascade-side .cascade-card:nth-child(2) > span {
+  body.cascade-route #cascade-weekly-card > small,
+  body.cascade-route #cascade-weekly-card > strong,
+  body.cascade-route #cascade-weekly-card > span,
+  body.cascade-route #cascade-weekly-card > b:not([data-weekly-best]) {
     display: none;
   }
 
-  body.cascade-route .cascade-card button {
-    min-height: 42px;
-    padding: 7px 10px;
+  body.cascade-route #cascade-weekly-card [data-weekly-start] {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    width: 100%;
+    min-height: 54px;
+    padding: 8px 10px 8px 14px;
+    border: 2px solid rgba(255,255,255,.92);
+    border-radius: 18px;
+    background: linear-gradient(145deg, #8f69e8, #6d55c9 62%, #5450b5);
+    color: #fff;
+    font-size: 0;
+    box-shadow:
+      0 5px 12px rgba(72, 56, 145, .18),
+      inset 0 2px 0 rgba(255,255,255,.25);
   }
 
-  body.cascade-route .cascade-performance-card > strong {
-    font-size: 1.25rem;
-    text-align: center;
+  body.cascade-route #cascade-weekly-card [data-weekly-start]::before {
+    content: "Blitz";
+    font-size: 1rem;
+    font-weight: 1000;
+    line-height: 1;
   }
 
-  body.cascade-route .cascade-dialog {
+  body.cascade-route #cascade-weekly-card [data-weekly-start] b {
+    font-size: .86rem;
+    font-weight: 950;
+  }
+
+  body.cascade-route .cascade-life-lock {
+    padding: 16px;
+  }
+
+  body.cascade-route .cascade-life-lock-card {
+    width: min(340px, 94%);
+    gap: 10px;
+    padding: 20px;
+  }
+
+  body.cascade-route .cascade-life-lock-card small {
+    font-size: .78rem;
+  }
+
+  body.cascade-route .cascade-life-lock-card strong {
+    font-size: 1.5rem;
+  }
+
+  body.cascade-route .cascade-life-lock-card span {
+    font-size: 1rem;
+  }
+
+  body.cascade-route .cascade-dialog:not(.cascade-mobile-menu) {
     max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     overflow: auto;
+  }
+
+  #cascade-mobile-menu-toggle {
+    position: fixed;
+    z-index: 2147483002;
+    top: calc(env(safe-area-inset-top) + 3px);
+    right: max(5px, env(safe-area-inset-right));
+    display: grid;
+    grid-template-columns: auto auto;
+    place-items: center;
+    gap: 5px;
+    min-width: 52px;
+    min-height: 44px;
+    padding: 5px 9px;
+    border: 2px solid rgba(116,75,151,.16);
+    border-radius: 14px;
+    background: rgba(255,255,255,.94);
+    color: #69468a;
+    box-shadow: 0 4px 12px rgba(79,47,103,.12);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  #cascade-mobile-menu-toggle > span {
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  #cascade-mobile-menu-toggle > strong {
+    font-size: .84rem;
+    font-weight: 950;
+  }
+
+  .cascade-mobile-menu {
+    width: min(100%, 520px);
+    max-width: none;
+    max-height: min(78dvh, 680px);
+    margin: auto auto 0;
+    padding: 0;
+    border: 0;
+    border-radius: 28px 28px 0 0;
+    overflow: hidden;
+    background: #f8f2ff;
+    color: #5b3f78;
+    box-shadow: 0 -18px 60px rgba(63, 39, 84, .28);
+  }
+
+  .cascade-mobile-menu::backdrop {
+    background: rgba(50,31,68,.42);
+    backdrop-filter: blur(4px);
+  }
+
+  .cascade-mobile-menu-sheet {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    max-height: min(78dvh, 680px);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .cascade-mobile-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 70px;
+    padding: 12px 14px 10px 18px;
+    border-bottom: 1px solid rgba(102,66,132,.1);
+    background: rgba(255,255,255,.7);
+  }
+
+  .cascade-mobile-menu-header small {
+    display: block;
+    margin-bottom: 3px;
+    color: #9a62c6;
+    font-size: .72rem;
+    font-weight: 1000;
+    letter-spacing: .1em;
+  }
+
+  .cascade-mobile-menu-header h2 {
+    margin: 0;
+    color: #5b3f78;
+    font-size: 1.45rem;
+    line-height: 1;
+  }
+
+  .cascade-mobile-menu-header button {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    min-width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 2px solid rgba(103,67,132,.14);
+    border-radius: 50%;
+    background: #fff;
+    color: #684686;
+    font-size: 1.8rem;
+    line-height: 1;
+  }
+
+  .cascade-mobile-menu-content {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    overflow: auto;
+  }
+
+  .cascade-mobile-menu-content .cascade-card {
+    display: grid !important;
+    gap: 8px;
+    min-height: 0;
+    padding: 14px;
+    border: 2px solid rgba(113,74,145,.1);
+    border-radius: 18px;
+    background: rgba(255,255,255,.82);
+    box-shadow: 0 4px 12px rgba(83,52,105,.07);
+  }
+
+  .cascade-mobile-menu-content .cascade-card > small {
+    display: block !important;
+    color: #865cac;
+    font-size: .78rem;
+    font-weight: 1000;
+  }
+
+  .cascade-mobile-menu-content .cascade-card > strong {
+    font-size: 1.45rem;
+  }
+
+  .cascade-mobile-menu-content .cascade-card > span {
+    display: block !important;
+    color: #705e7e;
+    font-size: .98rem;
+    line-height: 1.35;
+  }
+
+  .cascade-mobile-menu-content .cascade-feedback-controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .cascade-mobile-menu-content .cascade-feedback-controls button,
+  .cascade-mobile-menu-content .cascade-card button {
+    min-height: 52px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 900;
+  }
+
+  .cascade-mobile-menu-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px 12px 12px;
+    border-top: 1px solid rgba(102,66,132,.1);
+    background: rgba(255,255,255,.72);
+  }
+
+  .cascade-mobile-menu-nav a {
+    display: grid;
+    place-items: center;
+    min-height: 50px;
+    padding: 8px 10px;
+    border: 2px solid rgba(105,70,137,.12);
+    border-radius: 15px;
+    background: #fff;
+    color: #654483;
+    font-size: 1rem;
+    font-weight: 950;
+    text-decoration: none;
+  }
+}
+
+/* `:has()` is supported by the browsers GameFrame targets, but keep the Hammer
+   visible on older embedded webviews as a defensive fallback. */
+@supports not selector(:has(*)) {
+  @media (max-width: 700px) and (orientation: portrait) {
+    body.cascade-route .cascade-side > .cascade-card:nth-of-type(2) {
+      display: grid;
+    }
   }
 }
 
 @media (max-width: 370px) and (orientation: portrait) {
-  body.cascade-route .cascade-shell {
-    padding-top: 54px;
+  body.cascade-route .cascade-status {
+    grid-template-columns: 68px minmax(86px, 1fr) minmax(120px, 1.25fr);
+  }
+
+  body.cascade-route .cascade-status > div {
+    min-height: 58px;
+    padding-inline: 5px;
+  }
+
+  body.cascade-route .cascade-status small {
+    font-size: .68rem;
+  }
+
+  body.cascade-route .cascade-status strong {
+    font-size: 1.35rem;
+  }
+
+  body.cascade-route .cascade-status > div:nth-child(4) strong {
+    font-size: 1.82rem;
+  }
+
+  body.cascade-route .cascade-objective {
+    min-height: 44px;
+    margin-inline: 2px;
+    padding-inline: 8px;
+    font-size: .96rem;
   }
 
   body.cascade-route .cascade-board {
-    width: min(calc(100vw - 16px), calc((100dvh - 180px) * .89));
     gap: 2px;
-    padding: 3px;
+    width: min(calc(100vw - 4px - env(safe-area-inset-left) - env(safe-area-inset-right)), 430px);
+    padding: 2px;
+  }
+
+  body.cascade-route #booster-hammer,
+  body.cascade-route #cascade-weekly-card [data-weekly-start] {
+    min-height: 52px;
+  }
+
+  #cascade-mobile-menu-toggle > strong {
+    display: none;
+  }
+
+  #cascade-mobile-menu-toggle {
+    min-width: 46px;
+    width: 46px;
+    padding-inline: 5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade-mobile-menu,
+  #cascade-mobile-menu-toggle {
+    scroll-behavior: auto;
   }
 }
