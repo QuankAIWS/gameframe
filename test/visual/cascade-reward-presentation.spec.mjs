@@ -21,7 +21,7 @@ async function installRewardFixture(page) {
   }, { stateKey, soundKey, effectsKey });
 }
 
-async function stageVictoryChoice(page) {
+async function stageVictoryReward(page) {
   await page.evaluate(async () => {
     await window.cascadePresentationDirector.demoWin({
       moves: 7,
@@ -30,7 +30,11 @@ async function stageVictoryChoice(page) {
       stars: 3,
       reward: { claimed: 1 },
     });
+  });
+}
 
+async function revealVictoryActions(page) {
+  await page.evaluate(() => {
     const dialog = document.querySelector("#result-dialog");
     document.querySelector("#result-kicker").textContent = "LEVEL COMPLETE";
     document.querySelector("#result-title").textContent = "Level 5 cleared.";
@@ -130,35 +134,49 @@ test("Cascade reward cash-out stays legible inside a zoomed TV board", async ({ 
   await page.evaluate(() => window.__cascadeRewardVisual);
 });
 
-test("Cascade victory choice does not flash into a second popup", async ({ page }) => {
+test("Cascade victory keeps one reward card while actions appear", async ({ page }) => {
   await mkdir(output, { recursive: true });
   await installRewardFixture(page);
   await page.setViewportSize({ width: 960, height: 540 });
   await page.goto("/cascade.html");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 
-  await stageVictoryChoice(page);
+  await stageVictoryReward(page);
   await page.addStyleTag({
     content: ".cascade-confetti-layer,.cascade-dopamine-canvas,.cascade-win-bloom{display:none!important}",
   });
 
   const stage = page.locator(".cascade-reward-stage");
   const panel = stage.locator(".cascade-reward-panel");
-  const summary = stage.locator(".cascade-reward-summary");
+  const actions = stage.locator(".cascade-reward-actions");
   const dialog = page.locator("#result-dialog");
+
+  await expect(stage).not.toHaveClass(/is-active/);
+  await expect(stage).toHaveClass(/is-victory-continuous/);
+  await expect(actions).toBeHidden();
+  await expect(stage.locator(".cascade-reward-summary")).toHaveCount(0);
+  await expect(stage.locator(".cascade-reward-stars i.is-earned")).toHaveCount(3);
+  await expect(stage.locator("[data-reward-hammer]")).toContainText("hammer earned");
+
+  const rewardGeometry = await panelGeometry(page);
+  await panel.screenshot({ path: `${output}/cascade-level-complete-reward-final.png` });
+
+  await revealVictoryActions(page);
+  await expect(stage).not.toHaveClass(/is-active/);
   await expect(stage).toHaveClass(/is-awaiting-choice/);
   await expect(dialog).not.toHaveAttribute("open", "");
-  await expect(summary).toContainText("★★★ this run");
-  expect(await summary.evaluate((node) => getComputedStyle(node).color)).toBe("rgb(107, 67, 152)");
+  await expect(stage.locator(".cascade-reward-summary")).toHaveCount(0);
+  await expect(actions).toBeVisible();
+  await expect(actions.locator("button", { hasText: "Continue" })).toHaveCount(1);
+  expect(await panelGeometry(page)).toEqual(rewardGeometry);
 
-  const initialGeometry = await panelGeometry(page);
-  const first = await panel.screenshot({ path: `${output}/cascade-level-complete-choice-initial.png` });
+  const first = await panel.screenshot({ path: `${output}/cascade-level-complete-actions-initial.png` });
   await page.waitForTimeout(500);
-  const second = await panel.screenshot({ path: `${output}/cascade-level-complete-choice-after-500ms.png` });
-  const laterGeometry = await panelGeometry(page);
+  const second = await panel.screenshot({ path: `${output}/cascade-level-complete-actions-after-500ms.png` });
 
-  expect(laterGeometry).toEqual(initialGeometry);
+  expect(await panelGeometry(page)).toEqual(rewardGeometry);
   expect(await perceptualDifference(first, second)).toBeLessThan(0.01);
+  await expect(stage).not.toHaveClass(/is-active/);
   await expect(stage).toHaveClass(/is-awaiting-choice/);
   await expect(dialog).not.toHaveAttribute("open", "");
 });
