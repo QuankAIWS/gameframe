@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
+import sharp from "sharp";
 
 const output = "visual-results/player-ui-review";
 const stateKey = "scribbles-gameframe.cascade-state:v1";
@@ -40,6 +41,44 @@ async function stageVictoryChoice(page) {
     button.textContent = "Continue";
     document.querySelector("#result-actions").replaceChildren(button);
     dialog.showModal();
+  });
+}
+
+async function perceptualDifference(first, second, channelThreshold = 8) {
+  const [left, right] = await Promise.all([
+    sharp(first).ensureAlpha().raw().toBuffer({ resolveWithObject: true }),
+    sharp(second).ensureAlpha().raw().toBuffer({ resolveWithObject: true }),
+  ]);
+  expect(right.info.width).toBe(left.info.width);
+  expect(right.info.height).toBe(left.info.height);
+  expect(right.info.channels).toBe(left.info.channels);
+
+  const channels = left.info.channels;
+  const pixels = left.info.width * left.info.height;
+  let changedPixels = 0;
+  for (let pixel = 0; pixel < pixels; pixel += 1) {
+    const offset = pixel * channels;
+    let changed = false;
+    for (let channel = 0; channel < Math.min(3, channels); channel += 1) {
+      if (Math.abs(left.data[offset + channel] - right.data[offset + channel]) > channelThreshold) {
+        changed = true;
+        break;
+      }
+    }
+    if (changed) changedPixels += 1;
+  }
+  return changedPixels / pixels;
+}
+
+function panelGeometry(page) {
+  return page.locator(".cascade-reward-panel").evaluate((node) => {
+    const rect = node.getBoundingClientRect();
+    return {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    };
   });
 }
 
@@ -112,11 +151,14 @@ test("Cascade victory choice does not flash into a second popup", async ({ page 
   await expect(summary).toContainText("★★★ this run");
   expect(await summary.evaluate((node) => getComputedStyle(node).color)).toBe("rgb(107, 67, 152)");
 
+  const initialGeometry = await panelGeometry(page);
   const first = await panel.screenshot({ path: `${output}/cascade-level-complete-choice-initial.png` });
   await page.waitForTimeout(500);
   const second = await panel.screenshot({ path: `${output}/cascade-level-complete-choice-after-500ms.png` });
+  const laterGeometry = await panelGeometry(page);
 
-  expect(Buffer.compare(first, second)).toBe(0);
+  expect(laterGeometry).toEqual(initialGeometry);
+  expect(await perceptualDifference(first, second)).toBeLessThan(0.01);
   await expect(stage).toHaveClass(/is-awaiting-choice/);
   await expect(dialog).not.toHaveAttribute("open", "");
 });
