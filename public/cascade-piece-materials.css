@@ -24,11 +24,11 @@
       linear-gradient(145deg, var(--tile-a), var(--tile-b));
   }
 
-  /* Pink: a plump gummy heart with a molded cleft instead of extra sparkle. */
+  /* Pink: let the heart silhouette supply the cleft; keep the gummy face clean. */
   .cascade-tile[data-kind="0"]:not([data-special="color"]) {
-    --piece-detail-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M51,24C49,30,49,36,51,43' fill='none' stroke='black' stroke-opacity='.14' stroke-width='7' stroke-linecap='round'/%3E%3Cpath d='M47,24C45,29,45,34,47,39' fill='none' stroke='white' stroke-opacity='.22' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E");
-    --piece-material-light: linear-gradient(166deg, rgba(255,255,255,.28) 0 19%, rgba(255,255,255,.10) 20% 31%, transparent 32% 100%);
-    --piece-material-form: linear-gradient(178deg, transparent 0 48%, rgba(92,35,73,.08) 64%, rgba(73,26,61,.17) 100%);
+    --piece-detail-art: linear-gradient(transparent, transparent);
+    --piece-material-light: linear-gradient(166deg, rgba(255,255,255,.30) 0 20%, rgba(255,255,255,.11) 21% 33%, transparent 34% 100%);
+    --piece-material-form: linear-gradient(178deg, transparent 0 46%, rgba(92,35,73,.07) 64%, rgba(73,26,61,.16) 100%);
   }
 
   /* Cyan: a hard cushion gem with an obvious inset facet cage. */
@@ -45,11 +45,12 @@
     --piece-material-form: linear-gradient(180deg, transparent 0 50%, rgba(136,88,0,.08) 66%, rgba(92,57,0,.14) 100%);
   }
 
-  /* Green: a soft jelly bean with a single curved gummy groove. */
+  /* Green: make the candy itself bean-shaped; use broad volume instead of a drawn groove. */
   .cascade-tile[data-kind="3"]:not([data-special="color"]) {
-    --piece-detail-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M27,61C36,43,55,33,74,39' fill='none' stroke='black' stroke-opacity='.15' stroke-width='8' stroke-linecap='round'/%3E%3Cpath d='M27,58C37,42,55,34,72,39' fill='none' stroke='white' stroke-opacity='.20' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E");
-    --piece-material-light: linear-gradient(153deg, rgba(255,255,255,.26) 0 23%, rgba(255,255,255,.08) 24% 36%, transparent 37% 100%);
-    --piece-material-form: linear-gradient(166deg, transparent 0 52%, rgba(32,91,51,.08) 68%, rgba(25,68,39,.16) 100%);
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M18 24C31 8 57 5 76 15C91 23 97 38 91 51C87 60 78 63 68 61C59 59 55 63 52 71C48 83 36 92 23 88C8 84 3 68 7 52C9 41 13 31 18 24Z'/%3E%3C/svg%3E");
+    --piece-detail-art: linear-gradient(128deg, rgba(255,255,255,.12) 0 24%, transparent 25% 61%, rgba(23,82,43,.10) 62% 100%);
+    --piece-material-light: linear-gradient(150deg, rgba(255,255,255,.27) 0 24%, rgba(255,255,255,.08) 25% 38%, transparent 39% 100%);
+    --piece-material-form: linear-gradient(158deg, transparent 0 50%, rgba(32,91,51,.07) 67%, rgba(25,68,39,.16) 100%);
   }
 
   /* Purple: a hard four-lobed candy with a raised inner sparkle boss. */
