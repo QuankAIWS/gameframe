@@ -1,0 +1,77 @@
+/*
+ * Active Blitz layout contract.
+ *
+ * The live Blitz timer shares the objective strip instead of creating a third
+ * vertical row above the board. Only the short 3-2-1 countdown is allowed to
+ * float over the playfield. Keeping the board in row 2 preserves the same
+ * square/viewport budget used by normal play across TV, desktop, and mobile.
+ */
+body.cascade-blitz-mode .cascade-board-wrap {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+body.cascade-blitz-mode .cascade-objective {
+  grid-column: 1;
+  grid-row: 1;
+  visibility: hidden;
+}
+
+body.cascade-blitz-mode .cascade-board {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+body.cascade-blitz-mode .cascade-blitz-overlay:not(.is-countdown) {
+  position: relative;
+  inset: auto;
+  z-index: 20;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  padding: 4px 12px;
+  border-width: 2px;
+  border-radius: 999px;
+  box-sizing: border-box;
+}
+
+body.cascade-blitz-mode .cascade-blitz-overlay:not(.is-countdown) #blitz-callout {
+  min-width: 0;
+  font-size: clamp(.82rem, 1.7vh, 1rem);
+  line-height: 1;
+  letter-spacing: .13em;
+}
+
+body.cascade-blitz-mode .cascade-blitz-overlay:not(.is-countdown) #blitz-clock {
+  min-width: 2.2ch;
+  font-size: clamp(1.15rem, 2.8vh, 1.55rem);
+  line-height: 1;
+}
+
+/* The countdown remains the one intentional board overlay. */
+body.cascade-blitz-mode .cascade-blitz-overlay.is-countdown {
+  grid-column: auto;
+  grid-row: auto;
+}
+
+@media (max-width: 700px) and (orientation: portrait) {
+  body.cascade-blitz-mode .cascade-blitz-overlay:not(.is-countdown) {
+    margin: 0 4px 4px;
+    padding: 5px 12px;
+    border-radius: 15px;
+  }
+
+  body.cascade-blitz-mode .cascade-blitz-overlay:not(.is-countdown) #blitz-callout {
+    font-size: .94rem;
+  }
+
+  body.cascade-blitz-mode .cascade-blitz-overlay:not(.is-countdown) #blitz-clock {
+    font-size: 1.42rem;
+  }
+}
