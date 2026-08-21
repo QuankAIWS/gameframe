@@ -170,6 +170,9 @@ if (levelMap) {
 }
 if (help) new MutationObserver(normalizeHelp).observe(help, { childList: true, subtree: true, characterData: true });
 if (resultDialog) new MutationObserver(maybeOfferImprovement).observe(resultDialog, { attributes: true, attributeFilter: ["open"] });
+window.addEventListener("gameframe:cascade-level-complete", (event) => {
+  if (!event.detail?.replay) resetFailures();
+});
 
 decorateMap();
 normalizeHelp();
