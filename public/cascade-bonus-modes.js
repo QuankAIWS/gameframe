@@ -1,4 +1,5 @@
 import { establishGameFrameIdentity, gameFrameFetch } from "./gameframe-auth.js";
+import { HAMMER_MAX, resolveStarHammerReward } from "./cascade-hammer-economy.js";
 
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
@@ -12,8 +13,6 @@ const RECALL_PACE = Object.freeze([
   Object.freeze({ leadIn: 650, show: 950, gap: 230 }),
   Object.freeze({ leadIn: 600, show: 825, gap: 200 }),
 ]);
-const BONUS_STAR_STEP = 10;
-const HAMMER_MAX = 6;
 const WEEKLY_MODE_ID = "weekly-blitz";
 const WEEKLY_RULESET = "cascade-weekly-blitz-v1";
 const WEEKLY_COMPLETED_LEVEL_SEED = 99;
@@ -41,13 +40,13 @@ function safeJson(key, fallback) {
 
 function performanceState() {
   const value = safeJson(PERFORMANCE_KEY, {});
+  const { pendingHammerRewards: _discardedLegacyHammerBank, ...persisted } = value;
   return {
-    ...value,
+    ...persisted,
     starsByLevel: value.starsByLevel && typeof value.starsByLevel === "object" ? value.starsByLevel : {},
     blitzStars: value.blitzStars && typeof value.blitzStars === "object" ? value.blitzStars : {},
     recallBest: value.recallBest && typeof value.recallBest === "object" ? value.recallBest : {},
     recallSeen: value.recallSeen && typeof value.recallSeen === "object" ? value.recallSeen : {},
-    pendingHammerRewards: Math.max(0, Number(value.pendingHammerRewards) || 0),
   };
 }
 
@@ -61,18 +60,6 @@ function totalBestStars(value) {
   // Recall uses a distinct prefixed key so the existing total-star and hammer economy remains backward compatible.
   const bonus = Object.values(value.blitzStars || {}).reduce((sum, stars) => sum + Math.max(0, Math.min(3, Number(stars) || 0)), 0);
   return normal + bonus;
-}
-
-function claimHammerReward(value) {
-  const state = safeJson(STATE_KEY, {});
-  const hammers = Math.max(0, Math.min(HAMMER_MAX, Number(state.hammers) || 0));
-  const available = Math.max(0, HAMMER_MAX - hammers);
-  const claimed = Math.min(available, Math.max(0, Number(value.pendingHammerRewards) || 0));
-  if (!claimed) return 0;
-  state.hammers = hammers + claimed;
-  value.pendingHammerRewards -= claimed;
-  window.localStorage.setItem(STATE_KEY, JSON.stringify(state));
-  return claimed;
 }
 
 function recallStars(accuracy) {
@@ -99,11 +86,25 @@ function awardRecallResult(id, result) {
   }
   value.blitzStars[id] = bestStars;
   const nextTotal = previousTotal + (bestStars - previousStars);
-  const rewards = Math.max(0, Math.floor(nextTotal / BONUS_STAR_STEP) - Math.floor(previousTotal / BONUS_STAR_STEP));
-  value.pendingHammerRewards += rewards;
-  const claimed = claimHammerReward(value);
+  const state = safeJson(STATE_KEY, {});
+  const hammerReward = resolveStarHammerReward({
+    hammers: Math.max(0, Math.min(HAMMER_MAX, Number(state.hammers) || 0)),
+    previousStars: previousTotal,
+    nextStars: nextTotal,
+  });
+  if (hammerReward.granted > 0) {
+    state.hammers = hammerReward.hammers;
+    window.localStorage.setItem(STATE_KEY, JSON.stringify(state));
+  }
   savePerformance(value);
-  return { stars, bestStars, rewards, claimed, best: value.recallBest[id] };
+  return {
+    stars,
+    bestStars,
+    rewards: hammerReward.granted,
+    claimed: hammerReward.granted,
+    discarded: hammerReward.discarded,
+    best: value.recallBest[id],
+  };
 }
 
 function track(type, detail = {}) {
@@ -288,7 +289,7 @@ async function runQuickRecall(level) {
 
   dialog.querySelector("[data-recall-kicker]").textContent = "QUICK RECALL COMPLETE";
   dialog.querySelector("[data-recall-title]").textContent = `${Math.round(accuracy * 100)}% recalled`;
-  dialog.querySelector("[data-recall-copy]").textContent = `${glyphs(reward.stars)} · ${correct}/${total} tiles · ${perfectRounds}/${RECALL_ROUNDS.length} perfect rounds${reward.claimed ? ` · +${reward.claimed} hammer earned` : reward.rewards ? ` · +${reward.rewards} hammer reward banked` : ""}.`;
+  dialog.querySelector("[data-recall-copy]").textContent = `${glyphs(reward.stars)} · ${correct}/${total} tiles · ${perfectRounds}/${RECALL_ROUNDS.length} perfect rounds${reward.claimed ? ` · +${reward.claimed} hammer earned` : ""}.`;
   dialog.querySelector("[data-recall-stage]").replaceChildren();
   dialog.querySelector("[data-recall-progress]").textContent = reward.best?.accuracy > accuracy
     ? `BEST ${Math.round(reward.best.accuracy * 100)}%`

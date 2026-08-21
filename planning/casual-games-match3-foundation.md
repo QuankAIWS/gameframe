@@ -35,7 +35,7 @@ The goal is not filler. The goal is to let a good match-3 player actually master
 
 ### 5. Rewards are earned through play
 
-The player earns 1–3 best stars on ordinary levels and bonus events. Every ten newly earned best stars awards another hammer, subject to the inventory cap. Replaying something only helps if the player improves the stored best result.
+The player earns 1–3 best stars on ordinary levels and bonus events. Every ten newly earned best stars attempts to award one hammer, subject to the six-hammer inventory cap. If the inventory is already full at that moment, that hammer is discarded; Cascade does not bank, queue, defer, or otherwise track overflow hammer rewards. Replaying something only helps if the player improves the stored best result.
 
 Lives remain a pacing mechanic with automatic regeneration. There is no paid, fake-paid, or IOU bypass.
 
@@ -173,8 +173,11 @@ Bonus events do not consume lives.
 
 - two are granted initially
 - a hammer removes one selected tile without spending a move
-- every ten newly earned best stars awards another hammer
-- hammer inventory is capped and overflow rewards can remain banked until there is room
+- every ten newly earned best stars creates one immediate hammer award opportunity
+- hammer inventory is capped at six
+- if inventory is already six when a ten-star threshold is crossed, that hammer is discarded permanently
+- no hidden, banked, pending, deferred, or queued hammer balance exists
+- a single level or bonus result can grant at most one hammer
 - zero inventory points the player back toward earning stars rather than a store
 
 ## Bonus-mode system

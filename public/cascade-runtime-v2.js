@@ -16,11 +16,10 @@ import {
   objectiveComplete,
 } from "./cascade-special-engine.js";
 import { cascadePresentationDirector as presentation } from "./cascade-presentation-director.js";
+import { HAMMER_MAX, HAMMER_STAR_STEP, resolveStarHammerReward } from "./cascade-hammer-economy.js";
 
 const LIFE_MAX = 5;
 const LIFE_REGEN_MS = 10 * 60 * 1000;
-const HAMMER_MAX = 6;
-const HAMMER_STAR_STEP = 10;
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
@@ -106,7 +105,6 @@ function defaultPerformance() {
     blitzBest: {},
     blitzStars: {},
     blitzSeen: {},
-    pendingHammerRewards: 0,
   };
 }
 
@@ -114,15 +112,25 @@ function loadPerformance() {
   try {
     const parsed = JSON.parse(localStorage.getItem(PERFORMANCE_KEY) || "null");
     if (!parsed || typeof parsed !== "object") return defaultPerformance();
-    return {
+    const hadLegacyHammerBank = Object.prototype.hasOwnProperty.call(parsed, "pendingHammerRewards");
+    const { pendingHammerRewards: _discardedLegacyHammerBank, ...persisted } = parsed;
+    const normalized = {
       ...defaultPerformance(),
-      ...parsed,
+      ...persisted,
       starsByLevel: parsed.starsByLevel && typeof parsed.starsByLevel === "object" ? parsed.starsByLevel : {},
       blitzBest: parsed.blitzBest && typeof parsed.blitzBest === "object" ? parsed.blitzBest : {},
       blitzStars: parsed.blitzStars && typeof parsed.blitzStars === "object" ? parsed.blitzStars : {},
       blitzSeen: parsed.blitzSeen && typeof parsed.blitzSeen === "object" ? parsed.blitzSeen : {},
-      pendingHammerRewards: Math.max(0, Number(parsed.pendingHammerRewards) || 0),
     };
+    if (hadLegacyHammerBank) {
+      try {
+        localStorage.setItem(PERFORMANCE_KEY, JSON.stringify(normalized));
+      } catch {
+        // The in-memory migration is authoritative for this session even if the
+        // browser refuses the cleanup write. The legacy bank is never loaded.
+      }
+    }
+    return normalized;
   } catch {
     return defaultPerformance();
   }
@@ -254,28 +262,30 @@ function totalBestStars() {
   return normal + blitz;
 }
 
-function claimPendingHammerRewards() {
-  const capacity = Math.max(0, HAMMER_MAX - state.hammers);
-  const claimed = Math.min(capacity, performance.pendingHammerRewards);
-  if (claimed <= 0) return 0;
-  state.hammers += claimed;
-  performance.pendingHammerRewards -= claimed;
-  saveState();
-  savePerformance();
-  return claimed;
-}
-
 function awardBestStars(bucket, key, stars) {
   const previousTotal = totalBestStars();
   const previous = Math.max(0, Math.min(3, Number(performance[bucket]?.[key]) || 0));
   const best = Math.max(previous, Math.max(0, Math.min(3, Number(stars) || 0)));
   performance[bucket][key] = best;
   const nextTotal = previousTotal + (best - previous);
-  const rewards = Math.max(0, Math.floor(nextTotal / HAMMER_STAR_STEP) - Math.floor(previousTotal / HAMMER_STAR_STEP));
-  performance.pendingHammerRewards += rewards;
+  const hammerReward = resolveStarHammerReward({
+    hammers: state.hammers,
+    previousStars: previousTotal,
+    nextStars: nextTotal,
+  });
+  if (hammerReward.granted > 0) {
+    state.hammers = hammerReward.hammers;
+    saveState();
+  }
   savePerformance();
-  const claimed = claimPendingHammerRewards();
-  return { previous, best, total: nextTotal, rewards, claimed };
+  return {
+    previous,
+    best,
+    total: nextTotal,
+    rewards: hammerReward.granted,
+    claimed: hammerReward.granted,
+    discarded: hammerReward.discarded,
+  };
 }
 
 function calculateLevelStars(level, remaining) {
@@ -437,8 +447,8 @@ function renderPerformance() {
   }
   if (starProgressElement) {
     const nextThreshold = (Math.floor(total / HAMMER_STAR_STEP) + 1) * HAMMER_STAR_STEP;
-    starProgressElement.textContent = performance.pendingHammerRewards > 0 && state.hammers >= HAMMER_MAX
-      ? `${total} total stars · ${performance.pendingHammerRewards} hammer reward banked`
+    starProgressElement.textContent = state.hammers >= HAMMER_MAX
+      ? `${total} total stars · hammers full`
       : `${total} total stars · next hammer at ${nextThreshold}`;
   }
   if (bonusStatusElement) {
@@ -713,7 +723,7 @@ async function checkNormalLevelEnd() {
       finalRun: finalLevel,
     });
     renderStatus();
-    const rewardCopy = reward.claimed ? ` +${reward.claimed} hammer earned.` : reward.rewards ? ` +${reward.rewards} hammer reward banked.` : "";
+    const rewardCopy = reward.claimed ? ` +${reward.claimed} hammer earned.` : "";
     showDialog({
       kicker: finalLevel ? "RUN COMPLETE" : "LEVEL COMPLETE",
       title: finalLevel ? `${LEVEL_COUNT} down.` : `Level ${completedLevel} cleared.`,
@@ -822,7 +832,7 @@ async function finishBlitz() {
   track("blitz_complete", { id: blitzId, score: finalScore, bestScore, stars, ...blitzStats });
   if (blitzOverlay) blitzOverlay.hidden = true;
   await presentation.presentBlitzComplete({ score: finalScore, stars, reward });
-  const rewardCopy = reward.claimed ? ` +${reward.claimed} hammer earned.` : reward.rewards ? ` +${reward.rewards} hammer reward banked.` : "";
+  const rewardCopy = reward.claimed ? ` +${reward.claimed} hammer earned.` : "";
   showDialog({
     kicker: "BLITZ COMPLETE",
     title: `${finalScore.toLocaleString()} points`,
@@ -964,7 +974,6 @@ function startLevel(levelNumber = state.level, { resume = false } = {}) {
     return;
   }
 
-  claimPendingHammerRewards();
   clearActiveRun();
   levelProgress = createLevelProgress(activeLevel);
   score = 0;

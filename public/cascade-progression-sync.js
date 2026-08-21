@@ -33,6 +33,13 @@ function readJson(key) {
   }
 }
 
+function stripLegacyHammerBank(value) {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const hadLegacyHammerBank = Object.prototype.hasOwnProperty.call(source, "pendingHammerRewards");
+  const { pendingHammerRewards: _discardedLegacyHammerBank, ...performance } = source;
+  return { performance, hadLegacyHammerBank };
+}
+
 function networkAttemptAllowed() {
   return Date.now() >= nextNetworkAttemptAt;
 }
@@ -180,7 +187,8 @@ function hydrationPolicy(server, ownership) {
 
 function applyCanonicalToLocal(canonical, { preserveLevel = false, replace = false } = {}) {
   const state = readJson(STATE_KEY) || {};
-  const performance = readJson(PERFORMANCE_KEY) || {};
+  const rawPerformance = readJson(PERFORMANCE_KEY) || {};
+  const { performance, hadLegacyHammerBank } = stripLegacyHammerBank(rawPerformance);
   const currentLevel = normalizedLevel(state.level);
   const canonicalLevel = Math.min(300, canonical.highestCompletedLevel + 1);
   const nextLevel = preserveLevel
@@ -195,7 +203,9 @@ function applyCanonicalToLocal(canonical, { preserveLevel = false, replace = fal
   const stateChanged = nextLevel !== currentLevel;
   const starsChanged = JSON.stringify(localStars) !== JSON.stringify(nextStars);
   if (stateChanged) storage.setItem(STATE_KEY, JSON.stringify({ ...state, level: nextLevel }));
-  if (starsChanged) storage.setItem(PERFORMANCE_KEY, JSON.stringify({ ...performance, starsByLevel: nextStars }));
+  if (starsChanged || hadLegacyHammerBank) {
+    storage.setItem(PERFORMANCE_KEY, JSON.stringify({ ...performance, starsByLevel: nextStars }));
+  }
   return { stateChanged, starsChanged };
 }
 
