@@ -1,3 +1,19 @@
+.cascade-reward-stage.is-victory-continuous {
+  opacity: 1;
+  visibility: visible;
+}
+
+.cascade-reward-stage.is-victory-continuous:not(.is-active):not(.is-awaiting-choice) .cascade-reward-panel {
+  animation: none;
+  transform: none;
+  opacity: 1;
+}
+
+.cascade-reward-stage:not(.is-awaiting-choice) .cascade-reward-summary,
+.cascade-reward-stage:not(.is-awaiting-choice) .cascade-reward-actions {
+  display: none;
+}
+
 .cascade-reward-stage.is-awaiting-choice {
   pointer-events: auto;
 }
@@ -12,8 +28,9 @@
 .cascade-reward-summary {
   max-width: 34rem;
   margin: .75rem auto 0;
-  color: rgba(255, 255, 255, .84);
+  color: #6b4398;
   font-size: clamp(.82rem, 1.4vw, 1rem);
+  font-weight: 800;
   line-height: 1.45;
   text-align: center;
 }
