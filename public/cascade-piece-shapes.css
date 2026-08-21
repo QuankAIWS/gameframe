@@ -10,7 +10,8 @@
 .cascade-tile {
   --piece-size: 86%;
   --piece-mask: none;
-  border-color: transparent;
+  padding: 0;
+  border: 0;
   background: transparent;
   box-shadow: none;
   overflow: visible;
