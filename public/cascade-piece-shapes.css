@@ -1,0 +1,176 @@
+/*
+ * Cascade piece-family silhouettes.
+ *
+ * The grid cell remains a full rectangular hit target for reliable mouse,
+ * touch, drag, hammer, and accessibility behavior. The visible candy lives in
+ * ::before and carries a large family-specific silhouette, so recognition does
+ * not depend on color or a tiny center glyph.
+ */
+
+.cascade-tile {
+  --piece-size: 86%;
+  --piece-mask: none;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.cascade-tile::before {
+  content: "";
+  display: block;
+  width: var(--piece-size);
+  height: var(--piece-size);
+  border: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 31% 22%, rgba(255,255,255,.96) 0 6%, rgba(255,255,255,.36) 7% 17%, transparent 18%),
+    linear-gradient(145deg, var(--tile-a), var(--tile-b));
+  -webkit-mask: var(--piece-mask) center / contain no-repeat;
+  mask: var(--piece-mask) center / contain no-repeat;
+  color: transparent;
+  opacity: 1;
+  filter:
+    drop-shadow(0 2px 0 rgba(255,255,255,.5))
+    drop-shadow(0 5px 5px rgba(82,57,113,.2));
+  text-shadow: none;
+  transform-origin: center;
+  transition: transform .12s ease, filter .12s ease, opacity .12s ease;
+}
+
+/* Pink heart. */
+.cascade-tile[data-kind="0"] {
+  --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 92C45 85 15 66 8 48C0 28 10 11 29 10C39 9 47 14 50 23C53 14 61 9 71 10C90 11 100 28 92 48C85 66 55 85 50 92Z'/%3E%3C/svg%3E");
+}
+
+/* Cyan diamond. */
+.cascade-tile[data-kind="1"] {
+  --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 3L97 50L50 97L3 50Z'/%3E%3C/svg%3E");
+}
+
+/* Yellow five-point star. */
+.cascade-tile[data-kind="2"] {
+  --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 3L61 36L96 36L67 56L78 90L50 70L22 90L33 56L4 36L39 36Z'/%3E%3C/svg%3E");
+}
+
+/* Green round drop. */
+.cascade-tile[data-kind="3"] {
+  --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle fill='black' cx='50' cy='50' r='45'/%3E%3C/svg%3E");
+}
+
+/* Purple four-point sparkle. */
+.cascade-tile[data-kind="4"] {
+  --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 2C54 32 68 46 98 50C68 54 54 68 50 98C46 68 32 54 2 50C32 46 46 32 50 2Z'/%3E%3C/svg%3E");
+}
+
+/* Orange sunburst / flower. */
+.cascade-tile[data-kind="5"] {
+  --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 3L59 25L73 10L76 33L95 23L83 42L100 50L83 58L95 77L76 67L73 90L59 75L50 97L41 75L27 90L24 67L5 77L17 58L0 50L17 42L5 23L24 33L27 10L41 25Z'/%3E%3C/svg%3E");
+}
+
+/* Keep the cell interaction feedback rectangular-free: selection and hover
+ * emphasize the candy silhouette itself, while the whole cell remains clickable.
+ */
+.cascade-tile:hover {
+  box-shadow: none;
+}
+
+.cascade-tile:hover::before {
+  transform: scale(1.04);
+  filter:
+    drop-shadow(0 2px 0 rgba(255,255,255,.7))
+    drop-shadow(0 7px 7px rgba(82,57,113,.25));
+}
+
+.cascade-tile.is-selected {
+  outline: 0;
+  box-shadow: none;
+}
+
+.cascade-tile.is-selected::before {
+  transform: scale(1.055);
+  filter:
+    drop-shadow(0 0 2px #fff)
+    drop-shadow(0 0 6px rgba(255,255,255,.98))
+    drop-shadow(0 0 11px rgba(116,76,170,.64))
+    drop-shadow(0 7px 7px rgba(82,57,113,.2));
+}
+
+/* Stripes are clipped to the same family silhouette. A striped heart remains a
+ * heart, a striped diamond remains a diamond, etc. Bombs sit on top of the base
+ * family silhouette and therefore inherit it naturally.
+ */
+.cascade-tile[data-special="stripe-h"] .cascade-special-mark,
+.cascade-tile[data-special="stripe-v"] .cascade-special-mark {
+  inset: 7%;
+  border: 0;
+  border-radius: 0;
+  -webkit-mask: var(--piece-mask) center / contain no-repeat;
+  mask: var(--piece-mask) center / contain no-repeat;
+  box-shadow: none;
+}
+
+.cascade-tile[data-special="stripe-h"] .cascade-special-mark {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255,255,255,.86) 0 5px,
+    rgba(255,255,255,.08) 5px 12px
+  );
+}
+
+.cascade-tile[data-special="stripe-v"] .cascade-special-mark {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255,255,255,.86) 0 5px,
+    rgba(255,255,255,.08) 5px 12px
+  );
+}
+
+/* The color clearer is intentionally the one exception: it is a unique rainbow
+ * orb rather than pretending to belong to a normal family.
+ */
+.cascade-tile[data-special="color"]::before {
+  --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle fill='black' cx='50' cy='50' r='46'/%3E%3C/svg%3E");
+  content: "";
+  background:
+    radial-gradient(circle at 31% 22%, rgba(255,255,255,.98) 0 7%, rgba(255,255,255,.35) 8% 17%, transparent 18%),
+    radial-gradient(circle at 50% 50%, rgba(42,27,58,.9) 0 35%, transparent 36%),
+    conic-gradient(#ff5eaa, #ffd34e, #69d877, #44c9ee, #a56af4, #ff914d, #ff5eaa);
+  filter:
+    drop-shadow(0 0 2px rgba(255,255,255,.9))
+    drop-shadow(0 0 10px rgba(165,106,244,.56))
+    drop-shadow(0 5px 6px rgba(82,57,113,.22));
+}
+
+.cascade-tile[data-special="color"] .cascade-special-mark {
+  inset: 18%;
+  border: 0;
+  background: conic-gradient(#ff5eaa, #ffd34e, #69d877, #44c9ee, #a56af4, #ff914d, #ff5eaa);
+  opacity: .35;
+}
+
+/* On phones the visible candy is deliberately a little larger than on the TV/
+ * desktop cabinet. The cell remains unchanged, so the older-eye mobile geometry
+ * and drag/touch contract do not move.
+ */
+@media (max-width: 700px) and (orientation: portrait) {
+  body.cascade-route .cascade-tile {
+    --piece-size: 91%;
+  }
+
+  body.cascade-route .cascade-tile::before {
+    width: var(--piece-size);
+    height: var(--piece-size);
+  }
+
+  body.cascade-route .cascade-tile[data-special="stripe-h"] .cascade-special-mark,
+  body.cascade-route .cascade-tile[data-special="stripe-v"] .cascade-special-mark {
+    inset: 4%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade-tile::before {
+    transition: none;
+  }
+}
