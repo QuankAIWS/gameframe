@@ -8,6 +8,33 @@ async function firstLegalMove(page) {
   });
 }
 
+async function stageVictoryChoice(page) {
+  await page.evaluate(async () => {
+    await window.cascadePresentationDirector.demoWin({
+      moves: 4,
+      scoreBeforeBonus: 1200,
+      scoreAfterBonus: 1600,
+      stars: 3,
+      reward: { claimed: 1 },
+    });
+
+    const dialog = document.querySelector("#result-dialog");
+    const kicker = document.querySelector("#result-kicker");
+    const title = document.querySelector("#result-title");
+    const copy = document.querySelector("#result-copy");
+    const actions = document.querySelector("#result-actions");
+    kicker.textContent = "LEVEL COMPLETE";
+    title.textContent = "Level 1 cleared.";
+    copy.textContent = "★★★ this run · best ★★★ · 400 bonus points from 4 unused moves. Streak: 1.";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "primary";
+    button.textContent = "Continue";
+    actions.replaceChildren(button);
+    dialog.showModal();
+  });
+}
+
 test("Cascade routes gameplay spectacle through one explicit presentation director", async ({ page }) => {
   await page.goto("/cascade.html?player=cascade-director-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
@@ -54,6 +81,30 @@ test("Cascade reward sequence cashes unused moves, fills stars, and surfaces ear
 
   await page.evaluate(() => window.__cascadeRewardDemo);
   await expect(stage).not.toHaveClass(/is-active/);
+  await expect(stage).toHaveClass(/is-victory-continuous/);
   await expect(page.locator("#score")).toHaveText("1,600");
   expect(await page.evaluate(() => window.cascadePresentationDirector.getStats().rewardSequences)).toBe(1);
+});
+
+test("Cascade level completion stays on one stable reward surface", async ({ page }) => {
+  await page.goto("/cascade.html?player=cascade-single-victory-surface-test");
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
+
+  await stageVictoryChoice(page);
+
+  const stage = page.locator(".cascade-reward-stage");
+  const dialog = page.locator("#result-dialog");
+  const summary = stage.locator(".cascade-reward-summary");
+  await expect(stage).toHaveClass(/is-active/);
+  await expect(stage).toHaveClass(/is-awaiting-choice/);
+  await expect(dialog).not.toHaveAttribute("open", "");
+  await expect(summary).toContainText("this run");
+  await expect(stage.locator(".cascade-reward-actions button", { hasText: "Continue" })).toHaveCount(1);
+  expect(await summary.evaluate((node) => getComputedStyle(node).color)).toBe("rgb(107, 67, 152)");
+
+  await page.waitForTimeout(550);
+  await expect(stage).toHaveClass(/is-active/);
+  await expect(stage).toHaveClass(/is-awaiting-choice/);
+  await expect(dialog).not.toHaveAttribute("open", "");
+  await expect(summary).toContainText("this run");
 });
