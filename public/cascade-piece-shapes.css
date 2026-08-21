@@ -72,8 +72,9 @@
  *
  * Compact mobile silhouettes already read well. At desktop/TV scale the same
  * mathematically-clean masks look more like flat interface icons than physical
- * candies, so larger viewports get optical sizing, softer geometry, and molded
- * directional lighting while preserving the glare-free surface contract.
+ * candies, so larger viewports get optical sizing, intentionally separated
+ * silhouettes, and molded directional lighting while preserving the glare-free
+ * surface contract.
  */
 @media (min-width: 701px) {
   .cascade-tile::before {
@@ -87,33 +88,40 @@
       drop-shadow(0 7px 7px rgba(82,57,113,.24));
   }
 
+  /* Wide, soft heart: the familiar anchor family. */
   .cascade-tile[data-kind="0"] {
-    --piece-size: 88%;
+    --piece-size: 90%;
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 94C44 86 13 67 7 48C1 29 11 12 29 11C40 10 47 16 50 25C53 16 60 10 71 11C89 12 99 29 93 48C87 67 56 86 50 94Z'/%3E%3C/svg%3E");
   }
 
+  /* Cyan is a rounded cushion-gem rather than a generic mathematical diamond. */
   .cascade-tile[data-kind="1"] {
-    --piece-size: 84%;
-    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C57 15 80 39 96 50C80 61 57 85 50 96C43 85 20 61 4 50C20 39 43 15 50 4Z'/%3E%3C/svg%3E");
+    --piece-size: 82%;
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C58 4 87 25 94 41C97 47 97 53 94 59C87 75 58 96 50 96C42 96 13 75 6 59C3 53 3 47 6 41C13 25 42 4 50 4Z'/%3E%3C/svg%3E");
   }
 
+  /* Yellow stays unmistakably five-pointed, but with rounded candy corners. */
   .cascade-tile[data-kind="2"] {
-    --piece-size: 86%;
+    --piece-size: 87%;
     --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C52 4 54 7 56 12L63 33C64 36 66 37 70 37L91 37C97 37 98 41 93 45L76 58C73 60 72 62 73 66L80 86C82 92 78 95 73 91L55 78C52 76 49 76 46 78L28 91C23 95 19 92 21 86L28 66C29 62 28 60 25 58L8 45C3 41 4 37 10 37L31 37C35 37 37 36 38 33L44 12C46 7 48 4 50 4Z'/%3E%3C/svg%3E");
   }
 
+  /* Green becomes an asymmetric jelly bean: broad mass with no star/diamond read. */
   .cascade-tile[data-kind="3"] {
-    --piece-size: 85%;
-    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 6C65 6 78 13 86 25C94 37 95 52 90 66C84 81 70 92 52 94C34 96 19 87 12 73C5 59 7 42 15 29C23 16 35 8 50 6Z'/%3E%3C/svg%3E");
+    --piece-size: 86%;
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M25 14C42 2 69 6 83 23C96 39 94 67 78 83C62 98 34 95 18 78C4 63 6 35 25 14Z'/%3E%3C/svg%3E");
   }
 
+  /* Purple is deliberately broad through the center, reading as a four-point candy. */
   .cascade-tile[data-kind="4"] {
-    --piece-size: 91%;
-    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C53 4 54 7 56 13L62 35C63 39 65 41 69 42L91 47C97 48 98 50 91 53L69 59C65 60 63 62 62 66L56 88C54 95 53 97 50 97C47 97 46 95 44 88L38 66C37 62 35 60 31 59L9 53C2 51 2 49 9 47L31 42C35 41 37 39 38 35L44 13C46 7 47 4 50 4Z'/%3E%3C/svg%3E");
+    --piece-size: 93%;
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C56 4 58 16 61 31C63 40 66 43 76 45C90 47 97 48 97 52C97 57 90 59 76 61C66 63 63 66 61 76C58 90 56 97 50 97C44 97 42 90 39 76C37 66 34 63 24 61C10 59 3 57 3 52C3 48 10 47 24 45C34 43 37 40 39 31C42 16 44 4 50 4Z'/%3E%3C/svg%3E");
   }
 
+  /* Orange is a soft blossom, clearly separate from the yellow five-point star. */
   .cascade-tile[data-kind="5"] {
-    --piece-size: 84%;
-    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4L59 24L73 11L76 32L94 24L83 42L98 50L83 58L94 76L76 68L73 89L59 76L50 96L41 76L27 89L24 68L6 76L17 58L2 50L17 42L6 24L24 32L27 11L41 24Z'/%3E%3C/svg%3E");
+    --piece-size: 85%;
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C58 4 62 19 65 27C72 22 84 12 90 18C96 24 86 36 76 43C84 46 99 50 99 58C99 66 83 67 72 68C75 78 78 93 70 97C62 101 55 86 50 77C45 86 38 101 30 97C22 93 25 78 28 68C17 67 1 66 1 58C1 50 16 46 24 43C14 36 4 24 10 18C16 12 28 22 35 27C38 19 42 4 50 4Z'/%3E%3C/svg%3E");
   }
 }
 
