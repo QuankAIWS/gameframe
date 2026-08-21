@@ -74,9 +74,17 @@ test("Cascade distinct family silhouettes are readable on the desktop cabinet", 
   const numericSizes = families.map((family) => Number.parseFloat(family.pieceSize));
   expect(new Set(families.map((family) => family.pieceSize)).size).toBeGreaterThanOrEqual(5);
   expect(Math.max(...numericSizes) - Math.min(...numericSizes)).toBeGreaterThanOrEqual(10);
-  expect(families.every((family) => (family.backgroundImage.match(/linear-gradient/g) ?? []).length >= 3)).toBe(true);
+  expect(families.every((family) => (family.backgroundImage.match(/linear-gradient/g) ?? []).length >= 5)).toBe(true);
+  expect(families.every((family) => family.backgroundImage.includes("data:image/svg+xml"))).toBe(true);
   expect(families.every((family) => !family.backgroundImage.includes("radial-gradient"))).toBe(true);
+  expect(new Set(families.map((family) => family.backgroundImage)).size).toBe(6);
   expect(new Set(families.map((family) => family.maskImage)).size).toBe(6);
+
+  const colorClearerBackground = await page.locator('.cascade-tile[data-special="color"]').evaluate((tile) => (
+    getComputedStyle(tile, "::before").backgroundImage
+  ));
+  expect(colorClearerBackground.includes("radial-gradient")).toBe(true);
+  expect(colorClearerBackground.includes("data:image/svg+xml")).toBe(false);
 
   await page.screenshot({ path: `${output}/cascade-crush-distinct-piece-shapes-desktop.png`, fullPage: true });
 });
@@ -90,6 +98,7 @@ test("Cascade distinct family silhouettes remain bold on older-eye mobile", asyn
   expect(families.every((family) => family.pieceSize === "88%")).toBe(true);
   expect(families.every((family) => (family.backgroundImage.match(/linear-gradient/g) ?? []).length === 1)).toBe(true);
   expect(families.every((family) => !family.backgroundImage.includes("radial-gradient"))).toBe(true);
+  expect(families.every((family) => !family.backgroundImage.includes("data:image/svg+xml"))).toBe(true);
 
   await page.screenshot({ path: `${output}/cascade-crush-distinct-piece-shapes-mobile.png`, fullPage: false });
 });
