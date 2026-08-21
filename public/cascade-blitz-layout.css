@@ -54,6 +54,13 @@ body.cascade-blitz-mode .cascade-blitz-overlay:not(.is-countdown) #blitz-clock {
   line-height: 1;
 }
 
+/* Reward/hype layers are dynamic children of the board wrapper. Keep them out
+ * of grid flow so a big Blitz match cannot create an implicit third row. */
+body.cascade-blitz-mode .cascade-hype-layer {
+  position: absolute;
+  inset: 0;
+}
+
 /* The countdown remains the one intentional board overlay. */
 body.cascade-blitz-mode .cascade-blitz-overlay.is-countdown {
   grid-column: auto;
