@@ -1,15 +1,20 @@
 .cascade-cell-coating {
   border: 0;
   background:
-    radial-gradient(circle at 50% 46%, rgba(238,253,255,.14) 0 20%, rgba(92,211,239,.08) 34%, transparent 66%),
-    linear-gradient(132deg, rgba(255,255,255,.09) 0 9%, transparent 10% 70%, rgba(188,240,252,.08) 71% 100%);
+    radial-gradient(circle at 8% 8%, rgba(239,253,255,.42) 0 4%, rgba(102,213,239,.18) 5% 11%, transparent 12%),
+    radial-gradient(circle at 92% 8%, rgba(239,253,255,.34) 0 3%, rgba(102,213,239,.14) 4% 10%, transparent 11%),
+    radial-gradient(circle at 8% 92%, rgba(239,253,255,.32) 0 3%, rgba(102,213,239,.13) 4% 10%, transparent 11%),
+    radial-gradient(circle at 92% 92%, rgba(239,253,255,.38) 0 4%, rgba(102,213,239,.16) 5% 11%, transparent 12%);
   box-shadow:
-    inset 0 0 0 1px rgba(239,253,255,.2),
-    inset 0 0 13px rgba(171,233,247,.12),
-    0 0 9px rgba(55,178,214,.13);
-  filter: drop-shadow(0 2px 2px rgba(31,100,134,.18));
+    inset 0 0 0 1px rgba(226,250,255,.46),
+    inset 0 0 10px rgba(115,216,240,.16),
+    0 0 8px rgba(55,178,214,.14);
+  filter: drop-shadow(0 2px 2px rgba(31,100,134,.16));
 }
 
+/* The snowflake is a crystalline outline, not a white plate over the candy.
+   A translucent fill plus a bright stroke keeps ice obvious at TV distance
+   while leaving the family hue visible through the center of the cell. */
 .cascade-cell-coating::before {
   content: "\2744";
   inset: 0;
@@ -17,68 +22,81 @@
   display: grid;
   place-items: center;
   border: 0;
-  color: rgba(248,254,255,.78);
+  color: rgba(240,252,255,.24);
+  -webkit-text-stroke: 1px rgba(244,253,255,.82);
   font-family: "Segoe UI Symbol", sans-serif;
-  font-size: clamp(2.05rem, 5.55vw, 3.9rem);
+  font-size: clamp(1.9rem, 4.85vw, 3.35rem);
   font-weight: 900;
   line-height: 1;
   text-shadow:
-    0 2px 2px rgba(17,76,106,.58),
-    0 0 5px rgba(40,185,222,.64),
-    0 0 11px rgba(255,255,255,.58);
+    0 1px 1px rgba(17,76,106,.52),
+    0 0 5px rgba(31,174,215,.58),
+    0 0 8px rgba(255,255,255,.26);
   box-shadow: none;
+  opacity: .9;
 }
 
+/* One-layer ice lives around the perimeter. The center deliberately remains
+   visually open so players can still identify the candy color underneath. */
 .cascade-cell-coating::after {
-  content: "";
-  position: absolute;
-  inset: 6%;
-  z-index: 1;
-  width: auto;
-  height: auto;
-  border: 1px solid rgba(232,251,255,.28);
-  border-radius: 30%;
-  background: linear-gradient(142deg, rgba(255,255,255,.12) 0 8%, transparent 9% 72%, rgba(172,231,247,.08) 73% 100%);
-  box-shadow: inset 0 0 8px rgba(255,255,255,.1);
-  opacity: .82;
-}
-
-.cascade-cell-coating.ice-2 {
-  border: 0;
-  background:
-    radial-gradient(circle at 50% 46%, rgba(237,253,255,.18) 0 24%, rgba(62,191,225,.1) 38%, transparent 69%),
-    linear-gradient(132deg, rgba(255,255,255,.11) 0 11%, transparent 12% 67%, rgba(166,229,247,.1) 68% 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(235,252,255,.26),
-    inset 0 0 16px rgba(135,220,242,.15),
-    0 0 11px rgba(47,181,220,.17);
-}
-
-.cascade-cell-coating.ice-2::before {
-  inset: 0;
-  border: 0;
-  color: rgba(255,255,255,.82);
-  font-size: clamp(2.2rem, 5.85vw, 4.05rem);
-  text-shadow:
-    0 2px 2px rgba(11,69,100,.66),
-    0 0 7px rgba(25,171,213,.74),
-    0 0 14px rgba(255,255,255,.68);
-}
-
-.cascade-cell-coating.ice-2::after {
   content: "";
   position: absolute;
   inset: 7%;
   z-index: 1;
   width: auto;
   height: auto;
-  border: 2px solid rgba(229,250,255,.58);
-  border-radius: 50%;
-  background: linear-gradient(145deg, rgba(255,255,255,.08), transparent 38% 68%, rgba(143,219,240,.08));
+  border: 1px solid rgba(221,248,255,.46);
+  border-radius: 27%;
+  background:
+    linear-gradient(142deg, rgba(255,255,255,.15) 0 5%, transparent 6% 83%, rgba(139,220,242,.10) 84% 100%);
   box-shadow:
-    0 0 0 1px rgba(78,197,228,.28),
-    0 0 9px rgba(47,181,220,.34),
-    inset 0 0 8px rgba(255,255,255,.1);
+    inset 0 0 7px rgba(101,207,233,.12),
+    0 0 0 1px rgba(74,191,224,.08);
+  opacity: .88;
+}
+
+.cascade-cell-coating.ice-2 {
+  border: 0;
+  background:
+    radial-gradient(circle at 7% 7%, rgba(242,254,255,.52) 0 5%, rgba(82,205,235,.22) 6% 13%, transparent 14%),
+    radial-gradient(circle at 93% 7%, rgba(242,254,255,.44) 0 4%, rgba(82,205,235,.19) 5% 12%, transparent 13%),
+    radial-gradient(circle at 7% 93%, rgba(242,254,255,.42) 0 4%, rgba(82,205,235,.18) 5% 12%, transparent 13%),
+    radial-gradient(circle at 93% 93%, rgba(242,254,255,.48) 0 5%, rgba(82,205,235,.20) 6% 13%, transparent 14%);
+  box-shadow:
+    inset 0 0 0 2px rgba(226,250,255,.58),
+    inset 0 0 13px rgba(92,208,237,.20),
+    0 0 10px rgba(47,181,220,.20);
+}
+
+.cascade-cell-coating.ice-2::before {
+  inset: 0;
+  border: 0;
+  color: rgba(245,253,255,.28);
+  -webkit-text-stroke: 1.15px rgba(255,255,255,.9);
+  font-size: clamp(2rem, 5.05vw, 3.5rem);
+  text-shadow:
+    0 1px 1px rgba(11,69,100,.58),
+    0 0 6px rgba(25,171,213,.68),
+    0 0 10px rgba(255,255,255,.32);
+}
+
+/* A second hit is communicated by a stronger crystalline ring, not by making
+   the center more opaque. */
+.cascade-cell-coating.ice-2::after {
+  content: "";
+  position: absolute;
+  inset: 5%;
+  z-index: 1;
+  width: auto;
+  height: auto;
+  border: 2px solid rgba(224,249,255,.66);
+  border-radius: 34%;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.14) 0 5%, transparent 6% 82%, rgba(103,207,235,.10) 83% 100%);
+  box-shadow:
+    0 0 0 1px rgba(67,190,224,.34),
+    0 0 8px rgba(47,181,220,.30),
+    inset 0 0 7px rgba(100,209,235,.14);
 }
 
 .cascade-tile {
@@ -267,8 +285,16 @@ body[data-cascade-effects="reduced"] .cascade-tile.is-idle-life .cascade-special
 }
 
 @media (max-width: 650px) {
-  .cascade-cell-coating::before { font-size: clamp(1.6rem, 9.6vw, 2.9rem); }
-  .cascade-cell-coating.ice-2::before { font-size: clamp(1.75rem, 10vw, 3.05rem); }
+  .cascade-cell-coating::before {
+    font-size: clamp(1.45rem, 8.2vw, 2.55rem);
+    -webkit-text-stroke-width: .85px;
+  }
+
+  .cascade-cell-coating.ice-2::before {
+    font-size: clamp(1.55rem, 8.6vw, 2.7rem);
+    -webkit-text-stroke-width: 1px;
+  }
+
   .cascade-cell-coating.ice-2::after { inset: 5%; border-width: 2px; }
 
   .cascade-tile {
