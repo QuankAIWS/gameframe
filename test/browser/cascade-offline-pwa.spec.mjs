@@ -18,6 +18,7 @@ test("installed Cascade reloads and remains playable with the browser offline", 
     const cache = await caches.open(cacheName);
     return Boolean(
       await cache.match("/cascade.html")
+      && await cache.match("/cascade-hammer-economy.js")
       && await cache.match("/cascade-runtime-v2.js")
       && await cache.match("/cascade-special-engine.js")
       && await cache.match("/cascade-engine.js")
