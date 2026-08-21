@@ -56,9 +56,17 @@ test("Cascade final touch enlarges utility labels, centers icons, and removes ca
     expect(icon.mask).not.toBe("none");
   }
 
-  const candyBackground = await page.locator(".cascade-tile").first().evaluate((node) => getComputedStyle(node).backgroundImage);
-  expect(candyBackground).toContain("linear-gradient");
-  expect(candyBackground).not.toContain("radial-gradient");
+  // The rectangular button is now only the interaction cell. The visible
+  // candy lives in ::before so its family silhouette can differ while keeping
+  // a consistent touch target. Preserve the original final-touch requirement:
+  // ordinary candies use a clean linear fill with no shiny radial glare.
+  const candySurface = await page.locator(".cascade-tile").first().evaluate((node) => ({
+    cell: getComputedStyle(node).backgroundImage,
+    face: getComputedStyle(node, "::before").backgroundImage,
+  }));
+  expect(candySurface.cell).toBe("none");
+  expect(candySurface.face).toContain("linear-gradient");
+  expect(candySurface.face).not.toContain("radial-gradient");
 
   mkdirSync(output, { recursive: true });
   await page.screenshot({ path: `${output}/cascade-final-touch-controls.png`, fullPage: true });
