@@ -76,7 +76,7 @@ test("Cascade keeps the same six family identities on the older-eye mobile board
   const board = await page.locator("#board").boundingBox();
   expect(board).toBeTruthy();
   expect(board.width).toBeGreaterThanOrEqual(380);
-  expect(board.bottom).toBeLessThan(844);
+  expect(board.y + board.height).toBeLessThan(844);
 });
 
 test("striped and bomb specials retain their base family silhouette while color stays unique", async ({ page }) => {
