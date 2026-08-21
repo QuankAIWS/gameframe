@@ -711,9 +711,9 @@ async function presentLevelComplete({ moves = 0, scoreBeforeBonus = 0, scoreAfte
     await wait(260);
   }
 
-  if (reward.claimed || reward.rewards) {
+  if (reward.claimed) {
     hammer.hidden = false;
-    hammer.textContent = reward.claimed ? `🔨 +${reward.claimed} hammer earned` : `🔨 +${reward.rewards} hammer banked`;
+    hammer.textContent = `🔨 +${reward.claimed} hammer earned`;
     panel.classList.add("is-reward");
     bodyThump(118, .14, .02);
     tone(880, .16, .028, "triangle", .03);
@@ -730,9 +730,9 @@ async function presentBlitzComplete({ score = 0, stars = 0, reward = {} } = {}) 
   showHype("Blitz Complete!", 4, `${Number(score).toLocaleString()} points`);
   playWin(false);
   impact(3);
-  if (reward.claimed || reward.rewards) {
+  if (reward.claimed) {
     await wait(260);
-    showHype("Hammer!", 3, reward.claimed ? `+${reward.claimed} earned` : `+${reward.rewards} banked`);
+    showHype("Hammer!", 3, `+${reward.claimed} earned`);
   }
   await wait(reducedMotion ? 20 : Math.max(400, Math.min(900, 250 + stars * 180)));
 }
