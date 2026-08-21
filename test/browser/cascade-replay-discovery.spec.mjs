@@ -88,7 +88,10 @@ test("Cascade repeated frontier failures can suggest improving an older low-star
 });
 
 test("Cascade victory actions live on the polished reward stage instead of a second generic modal", async ({ page }) => {
-  await installProgress(page, { level: 10, stars: { "10": 2 } });
+  // The active campaign frontier is level 10, so any stored best must belong to
+  // an already-cleared level below it. Seeding stars for level 10 would describe
+  // a completed level while simultaneously claiming it is still the frontier.
+  await installProgress(page, { level: 10, stars: { "9": 2 } });
   await page.goto("/cascade.html");
 
   await page.evaluate(async () => {
