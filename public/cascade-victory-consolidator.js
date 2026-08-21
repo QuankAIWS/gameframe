@@ -3,7 +3,10 @@ const resultDialog = document.querySelector("#result-dialog");
 const resultKicker = document.querySelector("#result-kicker");
 const resultCopy = document.querySelector("#result-copy");
 const resultActions = document.querySelector("#result-actions");
+const boardWrap = document.querySelector(".cascade-board-wrap");
 let consolidating = false;
+let observedStage = null;
+let stageObserver = null;
 
 function readPerformance() {
   try {
@@ -54,7 +57,7 @@ function customButton(label, className, handler) {
 }
 
 function hideStage(stage) {
-  stage.classList.remove("is-active", "is-awaiting-choice");
+  stage.classList.remove("is-active", "is-awaiting-choice", "is-victory-continuous");
   stage.setAttribute("aria-hidden", "true");
 }
 
@@ -68,14 +71,35 @@ function publishCompletion(level, final, replay) {
   }));
 }
 
-function consolidateVictory() {
-  if (consolidating || !resultDialog?.open || !resultKicker || !resultActions) return;
-  const kicker = resultKicker.textContent?.trim().toUpperCase();
-  if (kicker !== "LEVEL COMPLETE" && kicker !== "RUN COMPLETE") return;
+function syncStageContinuity(stage) {
+  if (!stage.classList.contains("is-active") || stage.classList.contains("is-awaiting-choice")) return;
+  stage.classList.add("is-victory-continuous");
+  stage.setAttribute("aria-hidden", "false");
+}
+
+function observeRewardStage(stage) {
+  if (!stage || stage === observedStage) return;
+  stageObserver?.disconnect();
+  observedStage = stage;
+  stageObserver = new MutationObserver(() => syncStageContinuity(stage));
+  stageObserver.observe(stage, { attributes: true, attributeFilter: ["class"] });
+  syncStageContinuity(stage);
+}
+
+function findRewardStage() {
   const stage = document.querySelector(".cascade-reward-stage");
-  if (!stage) return;
+  if (stage) observeRewardStage(stage);
+  return stage;
+}
+
+function consolidateVictory() {
+  if (consolidating || !resultKicker || !resultActions) return false;
+  const kicker = resultKicker.textContent?.trim().toUpperCase();
+  if (kicker !== "LEVEL COMPLETE" && kicker !== "RUN COMPLETE") return false;
+  const stage = findRewardStage();
+  if (!stage) return false;
   const choice = ensureChoiceArea(stage);
-  if (!choice) return;
+  if (!choice) return false;
 
   consolidating = true;
   try {
@@ -102,17 +126,40 @@ function consolidateVictory() {
     }
 
     publishCompletion(completedLevel, final, replay);
-    resultDialog.close();
+    if (resultDialog?.open) resultDialog.close();
     stage.setAttribute("aria-hidden", "false");
-    stage.classList.add("is-active", "is-awaiting-choice");
+    stage.classList.add("is-victory-continuous", "is-active", "is-awaiting-choice");
+    return true;
   } finally {
     consolidating = false;
   }
 }
 
-if (resultDialog) {
-  new MutationObserver(consolidateVictory).observe(resultDialog, {
-    attributes: true,
-    attributeFilter: ["open"],
-  });
+if (boardWrap) {
+  new MutationObserver(findRewardStage).observe(boardWrap, { childList: true });
 }
+findRewardStage();
+
+if (resultDialog) {
+  const nativeShowModal = resultDialog.showModal.bind(resultDialog);
+  resultDialog.showModal = function cascadeResultShowModal() {
+    // The runtime still prepares the shared result text/actions for all outcomes.
+    // Successful levels consume that payload directly into the animated reward
+    // panel instead of ever opening a second dialog on top of it.
+    if (consolidateVictory()) return;
+    nativeShowModal();
+  };
+
+  // Keep a defensive compatibility path for any caller that bypasses showModal.
+  new MutationObserver(() => {
+    if (resultDialog.open) consolidateVictory();
+  }).observe(resultDialog, { attributes: true, attributeFilter: ["open"] });
+}
+
+window.cascadeVictoryConsolidator = Object.freeze({
+  consolidate: consolidateVictory,
+  hide() {
+    const stage = findRewardStage();
+    if (stage) hideStage(stage);
+  },
+});
