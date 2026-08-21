@@ -61,9 +61,9 @@ test("hammer inventory updates immediately and an iced target loses only one ice
   expect(after.movesRemaining).toBe(before.movesRemaining);
 });
 
-test("banked rewards do not refill a spent hammer during an active level", async ({ page }) => {
+test("legacy banked hammer rewards are deleted and never refill spent inventory", async ({ page }) => {
   await page.addInitScript(({ stateKey, performanceKey, activeRunKey }) => {
-    const seedKey = "cascade-hammer-banked-reward-test-seeded";
+    const seedKey = "cascade-hammer-legacy-bank-test-seeded";
     if (window.sessionStorage.getItem(seedKey) === "1") return;
     window.sessionStorage.setItem(seedKey, "1");
     window.localStorage.removeItem(activeRunKey);
@@ -85,6 +85,7 @@ test("banked rewards do not refill a spent hammer during an active level", async
 
   await page.goto("/cascade.html");
   await expect(page.locator("#hammer-count")).toHaveText("6");
+  expect(await page.evaluate(() => Object.hasOwn(window.cascadeResearch.exportPerformance() || {}, "pendingHammerRewards"))).toBe(false);
 
   const targetIndex = await page.evaluate(() => {
     const snapshot = window.cascadeResearch.exportLevel();
@@ -98,7 +99,7 @@ test("banked rewards do not refill a spent hammer during an active level", async
 
   expect((await page.locator("#hammer-count").textContent())?.trim()).toBe("5");
   expect(await page.evaluate(() => window.cascadeResearch.exportState()?.hammers)).toBe(5);
-  expect(await page.evaluate(() => window.cascadeResearch.exportPerformance()?.pendingHammerRewards)).toBe(3);
+  expect(await page.evaluate(() => Object.hasOwn(window.cascadeResearch.exportPerformance() || {}, "pendingHammerRewards"))).toBe(false);
 
   await expect.poll(() => page.evaluate(() => Boolean(window.cascadeResearch.exportActiveRun())), {
     timeout: 8_000,
@@ -107,5 +108,24 @@ test("banked rewards do not refill a spent hammer during an active level", async
   await page.reload();
   await expect(page.locator("#hammer-count")).toHaveText("5");
   expect(await page.evaluate(() => window.cascadeResearch.exportState()?.hammers)).toBe(5);
-  expect(await page.evaluate(() => window.cascadeResearch.exportPerformance()?.pendingHammerRewards)).toBe(3);
+  expect(await page.evaluate(() => Object.hasOwn(window.cascadeResearch.exportPerformance() || {}, "pendingHammerRewards"))).toBe(false);
+});
+
+test("one Cascade result can grant at most one hammer and full-inventory overflow is discarded", async ({ page }) => {
+  await page.goto("/cascade.html");
+
+  const cases = await page.evaluate(async () => {
+    const { resolveStarHammerReward } = await import("/cascade-hammer-economy.js");
+    return {
+      full: resolveStarHammerReward({ hammers: 6, previousStars: 9, nextStars: 10 }),
+      afterSpendWithoutNewStars: resolveStarHammerReward({ hammers: 4, previousStars: 10, nextStars: 10 }),
+      available: resolveStarHammerReward({ hammers: 4, previousStars: 19, nextStars: 20 }),
+      malformedLargeJump: resolveStarHammerReward({ hammers: 0, previousStars: 0, nextStars: 30 }),
+    };
+  });
+
+  expect(cases.full).toEqual({ hammers: 6, earned: 1, granted: 0, discarded: 1 });
+  expect(cases.afterSpendWithoutNewStars).toEqual({ hammers: 4, earned: 0, granted: 0, discarded: 0 });
+  expect(cases.available).toEqual({ hammers: 5, earned: 1, granted: 1, discarded: 0 });
+  expect(cases.malformedLargeJump).toEqual({ hammers: 1, earned: 1, granted: 1, discarded: 0 });
 });
