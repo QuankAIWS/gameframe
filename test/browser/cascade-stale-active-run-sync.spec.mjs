@@ -17,7 +17,7 @@ function sessionResponse(playerId) {
 }
 
 async function installLocalFrontier(page, playerId, level, starsByLevel) {
-  await page.addInitScript(({ stateKey, performanceKey, ownerKey, seededKey, owner, localLevel, stars }) => {
+  await page.addInitScript(({ stateKey, performanceKey, activeRunKey, ownerKey, seededKey, owner, localLevel, stars }) => {
     if (sessionStorage.getItem(seededKey) === owner) return;
     sessionStorage.setItem(seededKey, owner);
     localStorage.setItem(stateKey, JSON.stringify({
@@ -34,11 +34,12 @@ async function installLocalFrontier(page, playerId, level, starsByLevel) {
       blitzSeen: {},
       pendingHammerRewards: 0,
     }));
-    localStorage.removeItem(ACTIVE_RUN_KEY);
+    localStorage.removeItem(activeRunKey);
     localStorage.setItem(ownerKey, owner);
   }, {
     stateKey: STATE_KEY,
     performanceKey: PERFORMANCE_KEY,
+    activeRunKey: ACTIVE_RUN_KEY,
     ownerKey: OWNER_KEY,
     seededKey: SEEDED_KEY,
     owner: playerId,
