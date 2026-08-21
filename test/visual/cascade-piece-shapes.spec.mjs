@@ -75,10 +75,16 @@ test("Cascade distinct family silhouettes are readable on the desktop cabinet", 
   expect(new Set(families.map((family) => family.pieceSize)).size).toBeGreaterThanOrEqual(5);
   expect(Math.max(...numericSizes) - Math.min(...numericSizes)).toBeGreaterThanOrEqual(10);
   expect(families.every((family) => (family.backgroundImage.match(/linear-gradient/g) ?? []).length >= 5)).toBe(true);
-  expect(families.every((family) => family.backgroundImage.includes("data:image/svg+xml"))).toBe(true);
   expect(families.every((family) => !family.backgroundImage.includes("radial-gradient"))).toBe(true);
   expect(new Set(families.map((family) => family.backgroundImage)).size).toBe(6);
   expect(new Set(families.map((family) => family.maskImage)).size).toBe(6);
+
+  const heart = families.find((family) => family.kind === "0");
+  const green = families.find((family) => family.kind === "3");
+  const detailedFamilies = families.filter((family) => !["0", "3"].includes(family.kind));
+  expect(heart.backgroundImage.includes("data:image/svg+xml")).toBe(false);
+  expect(green.backgroundImage.includes("data:image/svg+xml")).toBe(false);
+  expect(detailedFamilies.every((family) => family.backgroundImage.includes("data:image/svg+xml"))).toBe(true);
 
   const colorClearerBackground = await page.locator('.cascade-tile[data-special="color"]').evaluate((tile) => (
     getComputedStyle(tile, "::before").backgroundImage
