@@ -80,7 +80,7 @@ test("Cascade Crush feedback control can reduce visual spectacle without changin
 });
 
 test("Cascade Crush performance card shows earned stars and the next Blitz slot", async ({ page }) => {
-  await prepare(page, 6, {
+  await prepare(page, 7, {
     starsByLevel: { "1": 3, "2": 3, "3": 2, "6": 2 },
     blitzBest: {},
     blitzStars: {},
@@ -90,7 +90,7 @@ test("Cascade Crush performance card shows earned stars and the next Blitz slot"
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/cascade.html");
 
-  await expect(page.locator("#level-stars")).toHaveText("★★☆");
+  await expect(page.locator("#level-stars")).toHaveText("☆☆☆");
   await expect(page.locator("#star-progress")).toContainText("10 total stars");
   await expect(page.locator("#bonus-status")).toContainText("NEXT BLITZ AFTER LEVEL 12");
   await expect(page.locator('#level-map > li[data-level="6"] .cascade-map-stars')).toHaveText("★★");
@@ -178,7 +178,7 @@ test("Cascade Crush level 105 presents ice as fixed board cells instead of shiny
 });
 
 test("Cascade Crush Blitz takes over the board without replacing the core visual language", async ({ page }) => {
-  await prepare(page, 6, {
+  await prepare(page, 7, {
     starsByLevel: { "1": 3, "2": 3, "3": 2, "6": 2 },
     blitzBest: {},
     blitzStars: {},

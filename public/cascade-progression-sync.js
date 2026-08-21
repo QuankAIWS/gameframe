@@ -5,7 +5,6 @@ const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
 const OWNER_KEY = "scribbles-gameframe.cascade-progression-owner:v1";
 const CANDIDATE_KEY = "scribbles-gameframe.cascade-progression-candidate:v1";
-const VISIT_KEY = "scribbles-gameframe.cascade-progression-visit:v1";
 const RELOAD_KEY = "scribbles-gameframe.cascade-progression-reload:v1";
 const LOCAL_CHANGE_INTERVAL_MS = 1_000;
 const SERVER_RECONCILE_INTERVAL_MS = 5 * 60 * 1_000;
@@ -53,35 +52,6 @@ function noteNetworkFailure() {
 function resetNetworkBackoff() {
   networkRetryMs = 0;
   nextNetworkAttemptAt = 0;
-}
-
-function visitId() {
-  const existing = window.sessionStorage.getItem(VISIT_KEY)?.trim();
-  if (existing) return existing;
-  const created = crypto.randomUUID();
-  window.sessionStorage.setItem(VISIT_KEY, created);
-  return created;
-}
-
-const currentVisitId = visitId();
-
-function readCandidate() {
-  const candidate = readJson(CANDIDATE_KEY);
-  if (
-    !candidate
-    || typeof candidate.playerId !== "string"
-    || !candidate.playerId.trim()
-    || typeof candidate.visitId !== "string"
-    || !candidate.visitId.trim()
-  ) return null;
-  return {
-    playerId: candidate.playerId.trim(),
-    visitId: candidate.visitId.trim(),
-  };
-}
-
-function writeCandidate(playerId) {
-  storage.setItem(CANDIDATE_KEY, JSON.stringify({ playerId, visitId: currentVisitId }));
 }
 
 function normalizedLevel(value, fallback = 1) {
@@ -134,43 +104,25 @@ function snapshot() {
   };
 }
 
-function hasProgress(value) {
-  return value.highestCompletedLevel > 0 || Object.keys(value.starsByLevel).length > 0;
+function ownerState() {
+  const owner = storage.getItem(OWNER_KEY)?.trim() || null;
+  if (!identity) return { owner, owned: false, foreign: false };
+  if (!owner) {
+    storage.setItem(OWNER_KEY, identity.playerId);
+    storage.removeItem(CANDIDATE_KEY);
+    return { owner: identity.playerId, owned: true, foreign: false };
+  }
+  if (owner === identity.playerId) {
+    storage.removeItem(CANDIDATE_KEY);
+    return { owner, owned: true, foreign: false };
+  }
+  return { owner, owned: false, foreign: true };
 }
 
-function resolveOwner(current) {
-  const owner = storage.getItem(OWNER_KEY);
-  if (owner) {
-    storage.removeItem(CANDIDATE_KEY);
-    return owner === identity?.playerId ? owner : null;
-  }
-
-  if (!identity) return null;
-
-  // A blank browser can safely bind immediately. Existing anonymous progress is
-  // intentionally a two-visit migration so a one-off login cannot silently claim
-  // another household member's local save. The visit marker keeps background
-  // synchronization and same-tab reloads from satisfying the second visit.
-  if (!hasProgress(current)) {
-    storage.setItem(OWNER_KEY, identity.playerId);
-    storage.removeItem(CANDIDATE_KEY);
-    return identity.playerId;
-  }
-
-  const candidate = readCandidate();
-  if (
-    candidate?.playerId === identity.playerId
-    && candidate.visitId !== currentVisitId
-  ) {
-    storage.setItem(OWNER_KEY, identity.playerId);
-    storage.removeItem(CANDIDATE_KEY);
-    return identity.playerId;
-  }
-
-  // Legacy raw-string candidates and candidates for another identity are both
-  // rewritten for this visit instead of being trusted as proof of a prior visit.
-  writeCandidate(identity.playerId);
-  return null;
+function bindCurrentOwner() {
+  if (!identity) return;
+  storage.setItem(OWNER_KEY, identity.playerId);
+  storage.removeItem(CANDIDATE_KEY);
 }
 
 function mergeProgression(local, server) {
@@ -197,16 +149,22 @@ function shouldProtectLoadedRun() {
     && normalizedLevel(activeRun.level, 0) === initialActiveRunLevel;
 }
 
-function applyCanonicalToLocal(canonical, { preserveLevel = false } = {}) {
+function applyCanonicalToLocal(canonical, { preserveLevel = false, replace = false } = {}) {
   const state = readJson(STATE_KEY) || {};
   const performance = readJson(PERFORMANCE_KEY) || {};
   const currentLevel = normalizedLevel(state.level);
+  const canonicalLevel = Math.min(300, canonical.highestCompletedLevel + 1);
   const nextLevel = preserveLevel
     ? currentLevel
-    : Math.max(currentLevel, Math.min(300, canonical.highestCompletedLevel + 1));
-  const nextStars = { ...normalizedStars(performance.starsByLevel), ...canonical.starsByLevel };
+    : replace
+      ? canonicalLevel
+      : Math.max(currentLevel, canonicalLevel);
+  const localStars = normalizedStars(performance.starsByLevel);
+  const nextStars = replace
+    ? normalizedStars(canonical.starsByLevel)
+    : { ...localStars, ...canonical.starsByLevel };
   const stateChanged = nextLevel !== currentLevel;
-  const starsChanged = JSON.stringify(normalizedStars(performance.starsByLevel)) !== JSON.stringify(nextStars);
+  const starsChanged = JSON.stringify(localStars) !== JSON.stringify(nextStars);
   if (stateChanged) storage.setItem(STATE_KEY, JSON.stringify({ ...state, level: nextLevel }));
   if (starsChanged) storage.setItem(PERFORMANCE_KEY, JSON.stringify({ ...performance, starsByLevel: nextStars }));
   return { stateChanged, starsChanged };
@@ -286,24 +244,39 @@ function maybeReloadAfterHydration(canonical, stateChanged, preserveLevel) {
 async function reconcileServer({ force = false } = {}) {
   if (!identity || syncPending || !navigator.onLine || document.hidden) return;
   if (!networkAttemptAllowed()) return;
-  const current = snapshot();
-  if (resolveOwner(current) !== identity.playerId) return;
 
   const now = Date.now();
   if (!force && now - lastServerReconcileAt < MIN_EVENT_RECONCILE_GAP_MS) return;
+  const current = snapshot();
+  const ownership = ownerState();
+
   syncPending = true;
   try {
+    // Server progression is always readable for the authenticated player. Local
+    // ownership only decides whether this browser may merge/upload its save.
     const server = await fetchServerProgression();
     if (!identity || !server) return;
     lastServerReconcileAt = Date.now();
 
-    const canonical = mergeProgression(current, server);
-    const preserveLevel = shouldProtectLoadedRun() || requestedReplayLevel > 0;
-    const changes = applyCanonicalToLocal(canonical, { preserveLevel });
+    const canonical = ownership.foreign
+      ? normalizedProgression(server)
+      : mergeProgression(current, server);
+    if (!canonical) return;
+
+    const preserveLevel = !ownership.foreign && (shouldProtectLoadedRun() || requestedReplayLevel > 0);
+    const changes = applyCanonicalToLocal(canonical, {
+      preserveLevel,
+      replace: ownership.foreign,
+    });
+
+    if (ownership.foreign) {
+      // A different authenticated player must never inherit/upload the previous
+      // owner's local Cascade frontier. Replace it with this player's server
+      // progression first, then rebind the browser to the current account.
+      bindCurrentOwner();
+    }
+
     if (maybeReloadAfterHydration(canonical, changes.stateChanged, preserveLevel)) {
-      // establishAndSynchronize continues into the local publisher before the
-      // browser commits navigation. Mark this exact canonical snapshot as
-      // satisfied so hydration cannot race itself into a redundant write.
       lastSubmitted = JSON.stringify(canonical);
       return;
     }
@@ -314,7 +287,8 @@ async function reconcileServer({ force = false } = {}) {
       lastSubmitted = canonicalSerialized;
       return;
     }
-    await submitCanonical(canonical);
+
+    if (!ownership.foreign) await submitCanonical(canonical);
   } finally {
     syncPending = false;
   }
@@ -322,8 +296,10 @@ async function reconcileServer({ force = false } = {}) {
 
 async function publishLocalChanges() {
   if (!identity || syncPending || !navigator.onLine || document.hidden || !networkAttemptAllowed()) return;
+  const ownership = ownerState();
+  if (!ownership.owned) return;
+
   const current = snapshot();
-  if (resolveOwner(current) !== identity.playerId) return;
   if (JSON.stringify(current) === lastSubmitted) return;
 
   syncPending = true;
@@ -348,14 +324,21 @@ async function establishAndSynchronize({ force = false } = {}) {
   await publishLocalChanges();
 }
 
+async function publishCompletedLevel() {
+  resetNetworkBackoff();
+  if (!await establishIdentity()) return;
+  await publishLocalChanges();
+}
+
 void establishAndSynchronize({ force: true });
 window.setInterval(() => void publishLocalChanges(), LOCAL_CHANGE_INTERVAL_MS);
 window.setInterval(() => void reconcileServer(), SERVER_RECONCILE_INTERVAL_MS);
+window.addEventListener("gameframe:cascade-level-complete", () => void publishCompletedLevel());
 window.addEventListener("online", () => {
   resetNetworkBackoff();
   void establishAndSynchronize({ force: true });
 });
-window.addEventListener("focus", () => void establishAndSynchronize());
+window.addEventListener("focus", () => void establishAndSynchronize({ force: true }));
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) void establishAndSynchronize();
 });
