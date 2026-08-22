@@ -19,6 +19,8 @@ interface DirectoryPlayer {
   source: string | null;
 }
 
+type AttemptOutcome = "win" | "failed" | "complete" | "skipped" | "abandoned" | "incomplete";
+
 async function internalJson<T>(response: Response): Promise<T> {
   const body = await response.json().catch(() => ({})) as InternalErrorBody;
   if (!response.ok) {
@@ -45,6 +47,9 @@ export async function recordCascadeTelemetry(
   return internalJson<{
     accepted: number;
     duplicates: number;
+    rejected: Array<{ index: number; eventId: string | null; code: string; message: string }>;
+    acceptedEventIds: string[];
+    duplicateEventIds: string[];
     storedChunks: number;
     updatedAt: number;
   }>(await playerStub(env, playerId).fetch(new Request("https://player.internal/telemetry/cascade/ingest", {
@@ -66,8 +71,26 @@ function finiteNumber(value: unknown): number | null {
 }
 
 function eventLevel(event: CascadeTelemetryStoredEvent): number | null {
-  const level = finiteNumber(event.payload.level);
+  const level = finiteNumber(event.payload.level ?? event.payload.afterLevel);
   return level !== null && Number.isInteger(level) && level > 0 ? level : null;
+}
+
+function increment(map: Record<string, number>, key: unknown) {
+  const normalized = typeof key === "string" && key.trim() ? key.trim() : "unknown";
+  map[normalized] = (map[normalized] ?? 0) + 1;
+}
+
+function terminalOutcome(type: string): AttemptOutcome | null {
+  if (type === "level_win") return "win";
+  if (type === "level_failed") return "failed";
+  if (type === "blitz_complete" || type === "quick_recall_complete") return "complete";
+  if (type === "blitz_skip" || type === "quick_recall_skip") return "skipped";
+  if (type === "blitz_abandon" || type === "quick_recall_abandon") return "abandoned";
+  return null;
+}
+
+function average(values: number[]) {
+  return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : null;
 }
 
 function summarizePlayer(events: CascadeTelemetryStoredEvent[]) {
@@ -85,17 +108,53 @@ function summarizePlayer(events: CascadeTelemetryStoredEvent[]) {
     mode: string | null;
     startedAt: string;
     endedAt: string | null;
-    outcome: "win" | "failed" | "incomplete";
+    outcome: AttemptOutcome;
+    activeAttemptMs: number;
+    wallDurationMs: number | null;
     moves: number;
     invalidSwaps: number;
+    invalidSwapReasons: Record<string, number>;
+    inputMethods: Record<string, number>;
     hammersUsed: number;
     clears: number;
     maxCascade: number;
     score: number | null;
     movesRemaining: number | null;
     stars: number | null;
+    initialRngState: number | null;
+    rulesVersion: string | null;
   }>();
   const startsByLevel = new Map<number, number>();
+  const bonus = {
+    blitzOffers: 0,
+    blitzStarts: 0,
+    blitzCompletes: 0,
+    blitzSkips: 0,
+    blitzAbandons: 0,
+    quickRecallOffers: 0,
+    quickRecallStarts: 0,
+    quickRecallCompletes: 0,
+    quickRecallSkips: 0,
+    quickRecallAbandons: 0,
+    quickRecallRounds: 0,
+  };
+  const resources = {
+    hammerSources: 0,
+    hammerSinks: 0,
+    lifeSources: 0,
+    lifeSinks: 0,
+  };
+  const telemetryHealth = {
+    generated: 0,
+    accepted: 0,
+    duplicates: 0,
+    rejected: 0,
+    uploadAttempts: 0,
+    uploadFailures: 0,
+    outboxWriteFailures: 0,
+    fallbackDrops: 0,
+    payloadTruncated: 0,
+  };
   let hammersUsed = 0;
   let moves = 0;
   let invalidSwaps = 0;
@@ -124,9 +183,14 @@ function summarizePlayer(events: CascadeTelemetryStoredEvent[]) {
       }
     }
 
+    for (const key of Object.keys(telemetryHealth) as Array<keyof typeof telemetryHealth>) {
+      const value = finiteNumber(event.payload[key]);
+      if (value !== null) telemetryHealth[key] = Math.max(telemetryHealth[key], Math.max(0, value));
+    }
+
     const level = eventLevel(event);
-    if (level) highestLevelStarted = Math.max(highestLevelStarted, level);
     if (event.type === "level_start" && level) {
+      highestLevelStarted = Math.max(highestLevelStarted, level);
       startsByLevel.set(level, (startsByLevel.get(level) ?? 0) + 1);
     }
     if (event.type === "move") moves += 1;
@@ -137,6 +201,28 @@ function summarizePlayer(events: CascadeTelemetryStoredEvent[]) {
       if (level) highestLevelCompleted = Math.max(highestLevelCompleted, level);
     }
     if (event.type === "level_failed") levelFailures += 1;
+
+    if (event.type === "blitz_offer") bonus.blitzOffers += 1;
+    if (event.type === "blitz_start") bonus.blitzStarts += 1;
+    if (event.type === "blitz_complete") bonus.blitzCompletes += 1;
+    if (event.type === "blitz_skip") bonus.blitzSkips += 1;
+    if (event.type === "blitz_abandon") bonus.blitzAbandons += 1;
+    if (event.type === "quick_recall_offer") bonus.quickRecallOffers += 1;
+    if (event.type === "quick_recall_start") bonus.quickRecallStarts += 1;
+    if (event.type === "quick_recall_complete") bonus.quickRecallCompletes += 1;
+    if (event.type === "quick_recall_skip") bonus.quickRecallSkips += 1;
+    if (event.type === "quick_recall_abandon") bonus.quickRecallAbandons += 1;
+    if (event.type === "quick_recall_round_complete") bonus.quickRecallRounds += 1;
+
+    if (event.type === "resource_change") {
+      const resource = String(event.payload.resource || "");
+      const direction = String(event.payload.direction || "");
+      const amount = Math.max(0, finiteNumber(event.payload.amount) ?? 0);
+      if (resource === "hammer" && direction === "source") resources.hammerSources += amount;
+      if (resource === "hammer" && direction === "sink") resources.hammerSinks += amount;
+      if (resource === "life" && direction === "source") resources.lifeSources += amount;
+      if (resource === "life" && direction === "sink") resources.lifeSinks += amount;
+    }
 
     if (!event.attemptId) continue;
     let attempt = attemptMap.get(event.attemptId);
@@ -149,22 +235,37 @@ function summarizePlayer(events: CascadeTelemetryStoredEvent[]) {
         startedAt: event.at,
         endedAt: null,
         outcome: "incomplete",
+        activeAttemptMs: Math.max(0, finiteNumber(event.payload.activeAttemptMs) ?? 0),
+        wallDurationMs: null,
         moves: 0,
         invalidSwaps: 0,
+        invalidSwapReasons: {},
+        inputMethods: {},
         hammersUsed: 0,
         clears: 0,
         maxCascade: 0,
         score: finiteNumber(event.payload.score),
         movesRemaining: finiteNumber(event.payload.movesRemaining),
         stars: null,
+        initialRngState: finiteNumber(event.payload.initialRngState),
+        rulesVersion: typeof event.payload.rulesVersion === "string" ? event.payload.rulesVersion : null,
       };
       attemptMap.set(event.attemptId, attempt);
     }
     if (event.at < attempt.startedAt) attempt.startedAt = event.at;
     if (level) attempt.level = level;
     if (typeof event.payload.mode === "string") attempt.mode = event.payload.mode;
+    attempt.activeAttemptMs = Math.max(attempt.activeAttemptMs, Math.max(0, finiteNumber(event.payload.activeAttemptMs) ?? 0));
+    if (attempt.initialRngState === null) attempt.initialRngState = finiteNumber(event.payload.initialRngState);
+    if (!attempt.rulesVersion && typeof event.payload.rulesVersion === "string") attempt.rulesVersion = event.payload.rulesVersion;
     if (event.type === "move") attempt.moves += 1;
-    if (event.type === "invalid_swap") attempt.invalidSwaps += 1;
+    if (event.type === "invalid_swap") {
+      attempt.invalidSwaps += 1;
+      increment(attempt.invalidSwapReasons, event.payload.invalidReason);
+    }
+    if ((event.type === "move" || event.type === "invalid_swap") && event.payload.inputMethod) {
+      increment(attempt.inputMethods, event.payload.inputMethod);
+    }
     if (event.type === "booster_used" && event.payload.booster === "hammer") attempt.hammersUsed += 1;
     if (event.type === "clear") {
       attempt.clears += 1;
@@ -174,21 +275,26 @@ function summarizePlayer(events: CascadeTelemetryStoredEvent[]) {
     const movesRemaining = finiteNumber(event.payload.movesRemaining);
     if (score !== null) attempt.score = score;
     if (movesRemaining !== null) attempt.movesRemaining = movesRemaining;
-    if (event.type === "level_win" || event.type === "level_failed") {
+    const outcome = terminalOutcome(event.type);
+    if (outcome) {
       attempt.endedAt = event.at;
-      attempt.outcome = event.type === "level_win" ? "win" : "failed";
+      attempt.outcome = outcome;
       attempt.stars = finiteNumber(event.payload.stars);
     }
   }
 
   const sessions = [...sessionMap.values()].sort((left, right) => left.startedAt.localeCompare(right.startedAt));
   const attempts = [...attemptMap.values()].sort((left, right) => left.startedAt.localeCompare(right.startedAt));
+  for (const attempt of attempts) {
+    if (!attempt.endedAt) continue;
+    const wall = Date.parse(attempt.endedAt) - Date.parse(attempt.startedAt);
+    attempt.wallDurationMs = Number.isFinite(wall) && wall >= 0 ? wall : null;
+  }
   const retries = [...startsByLevel.values()].reduce((sum, starts) => sum + Math.max(0, starts - 1), 0);
   const activePlayMs = sessions.reduce((sum, session) => sum + session.activeMs, 0);
-  const completedDurations = attempts
-    .filter((attempt) => attempt.endedAt)
-    .map((attempt) => Date.parse(attempt.endedAt!) - Date.parse(attempt.startedAt))
-    .filter((duration) => Number.isFinite(duration) && duration >= 0);
+  const completed = attempts.filter((attempt) => attempt.endedAt);
+  const wallDurations = completed.map((attempt) => attempt.wallDurationMs).filter((value): value is number => value !== null);
+  const activeDurations = completed.map((attempt) => attempt.activeAttemptMs).filter((value) => value > 0);
 
   return {
     eventCount: events.length,
@@ -204,9 +310,12 @@ function summarizePlayer(events: CascadeTelemetryStoredEvent[]) {
     invalidSwaps,
     highestLevelStarted,
     highestLevelCompleted,
-    averageCompletedAttemptMs: completedDurations.length
-      ? Math.round(completedDurations.reduce((sum, duration) => sum + duration, 0) / completedDurations.length)
-      : null,
+    averageCompletedAttemptMs: average(wallDurations),
+    averageWallClockAttemptMs: average(wallDurations),
+    averageActiveAttemptMs: average(activeDurations),
+    bonus,
+    resources,
+    telemetryHealth,
     sessions,
     attemptRows: attempts,
   };
@@ -238,6 +347,11 @@ export function buildCascadeTelemetryExport(
         highestLevelStarted: summary.highestLevelStarted,
         highestLevelCompleted: summary.highestLevelCompleted,
         averageCompletedAttemptMs: summary.averageCompletedAttemptMs,
+        averageWallClockAttemptMs: summary.averageWallClockAttemptMs,
+        averageActiveAttemptMs: summary.averageActiveAttemptMs,
+        bonus: summary.bonus,
+        resources: summary.resources,
+        telemetryHealth: summary.telemetryHealth,
       },
       sessions: summary.sessions,
       attempts: summary.attemptRows,
@@ -246,14 +360,16 @@ export function buildCascadeTelemetryExport(
   });
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     gameId: "cascade",
     generatedAt: new Date(generatedAt).toISOString(),
     definitions: {
       playBlock: "A browser play block grouped by a stable session ID; a new block begins after at least 30 minutes away.",
       activePlayMs: "Foreground, non-idle browser time accumulated while Cascade Crush is open; idle time after two minutes without player input is excluded.",
-      retry: "A level start beyond the first observed start for that level in the exported telemetry window.",
-      attemptDuration: "Wall-clock time from the observed level start/resume event to its win/failure event when both are available.",
+      activeAttemptMs: "Foreground, non-idle time accumulated while one authoritative level, Blitz, or Quick Recall attempt is active.",
+      wallDurationMs: "Literal elapsed wall-clock time between the first and terminal event for an attempt; suspension and time away are included.",
+      retry: "A normal level start beyond the first observed start for that level in the exported telemetry window.",
+      averageCompletedAttemptMs: "Deprecated compatibility field equal to averageWallClockAttemptMs; use averageActiveAttemptMs for gameplay pacing and balancing.",
     },
     totals: {
       players: playerRows.length,
