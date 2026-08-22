@@ -105,9 +105,16 @@ test("Cascade distinct family silhouettes remain bold on older-eye mobile", asyn
 
   const families = await familyPresentation(page);
   expect(families.every((family) => family.pieceSize === "88%")).toBe(true);
-  expect(families.every((family) => (family.backgroundImage.match(/linear-gradient/g) ?? []).length === 1)).toBe(true);
+  expect(families.every((family) => (family.backgroundImage.match(/linear-gradient/g) ?? []).length >= 3)).toBe(true);
   expect(families.every((family) => !family.backgroundImage.includes("radial-gradient"))).toBe(true);
-  expect(families.every((family) => !family.backgroundImage.includes("data:image/svg+xml"))).toBe(true);
+  expect(families.every((family) => family.backgroundImage.includes("data:image/svg+xml"))).toBe(true);
+  expect(new Set(families.map((family) => family.backgroundImage)).size).toBe(6);
+  expect(new Set(families.map((family) => family.maskImage)).size).toBe(6);
+
+  const heart = families.find((family) => family.kind === "0");
+  const green = families.find((family) => family.kind === "3");
+  expect(heart.detailArt.includes("stroke")).toBe(false);
+  expect(green.detailArt.includes("stroke")).toBe(false);
 
   await page.screenshot({ path: `${output}/cascade-crush-distinct-piece-shapes-mobile.png`, fullPage: false });
 });
