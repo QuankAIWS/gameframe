@@ -1,12 +1,83 @@
 /*
- * Desktop material identity for Cascade candy families.
+ * Material identity for Cascade candy families.
  *
  * Shape remains the primary recognition channel. This layer adds one large,
  * family-specific molded/faceted cue inside the existing masked ::before face
  * so each candy reads like a small physical object rather than a flat icon.
- * It deliberately uses no radial-gradient glare on normal candies and does not
- * consume another pseudo-element, preserving special overlays and hit geometry.
+ * Mobile uses broader, lower-frequency forms than desktop so the treatment
+ * survives phone scale and aging vision without becoming visual noise.
+ * Normal candies deliberately use no radial-gradient glare and do not consume
+ * another pseudo-element, preserving special overlays and hit geometry.
  */
+
+@media (max-width: 700px) {
+  body.cascade-route .cascade-tile:not([data-special="color"]) {
+    --piece-detail-art: linear-gradient(transparent, transparent);
+    --piece-material-light: linear-gradient(158deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,.25) 15%, rgba(255,255,255,.12) 31%, rgba(255,255,255,.045) 47%, transparent 66%);
+    --piece-material-form: linear-gradient(168deg, transparent 0 42%, rgba(70,38,82,.035) 57%, rgba(70,38,82,.13) 100%);
+  }
+
+  body.cascade-route .cascade-board .cascade-tile:not([data-special="color"])::before {
+    background:
+      var(--piece-detail-art) center / 100% 100% no-repeat,
+      var(--piece-material-light),
+      var(--piece-material-form),
+      linear-gradient(145deg, var(--tile-a), var(--tile-b));
+    filter:
+      saturate(1.08)
+      drop-shadow(0 1px 0 rgba(255,255,255,.7))
+      drop-shadow(0 4px 4px rgba(82,57,113,.22));
+  }
+
+  /* Pink: broad gummy heart with one shallow molded inner-heart press. */
+  body.cascade-route .cascade-tile[data-kind="0"]:not([data-special="color"]) {
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 94C44 86 13 67 7 48C1 29 11 12 29 11C40 10 47 16 50 25C53 16 60 10 71 11C89 12 99 29 93 48C87 67 56 86 50 94Z'/%3E%3C/svg%3E");
+    --piece-detail-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 42C45 35 34 36 31 45C28 55 41 66 50 72C59 66 72 55 69 45C66 36 55 35 50 42Z' fill='black' fill-opacity='.055'/%3E%3Cpath d='M47 41C42 38 36 40 34 46C33 51 36 55 41 59C39 52 41 46 47 41Z' fill='white' fill-opacity='.13'/%3E%3C/svg%3E");
+    --piece-material-light: linear-gradient(160deg, rgba(255,255,255,.38) 0%, rgba(255,255,255,.27) 18%, rgba(255,255,255,.12) 36%, rgba(255,255,255,.04) 52%, transparent 69%);
+    --piece-material-form: linear-gradient(178deg, transparent 0 43%, rgba(92,35,73,.045) 62%, rgba(73,26,61,.15) 100%);
+  }
+
+  /* Cyan: rounded cushion candy with two broad facet planes, not fine linework. */
+  body.cascade-route .cascade-tile[data-kind="1"]:not([data-special="color"]) {
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C58 4 87 25 94 41C97 47 97 53 94 59C87 75 58 96 50 96C42 96 13 75 6 59C3 53 3 47 6 41C13 25 42 4 50 4Z'/%3E%3C/svg%3E");
+    --piece-detail-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 16L80 50L50 50Z' fill='white' fill-opacity='.13'/%3E%3Cpath d='M50 50L80 50L50 84Z' fill='black' fill-opacity='.065'/%3E%3Cpath d='M20 50L50 16L50 50Z' fill='white' fill-opacity='.055'/%3E%3C/svg%3E");
+    --piece-material-light: linear-gradient(138deg, rgba(255,255,255,.37) 0%, rgba(255,255,255,.25) 17%, rgba(255,255,255,.11) 34%, rgba(255,255,255,.035) 51%, transparent 68%);
+    --piece-material-form: linear-gradient(42deg, rgba(30,92,119,.10) 0%, rgba(30,92,119,.055) 27%, transparent 51%, rgba(255,255,255,.045) 69%, rgba(34,75,102,.10) 100%);
+  }
+
+  /* Yellow: puffy rounded star with one large embossed star face. */
+  body.cascade-route .cascade-tile[data-kind="2"]:not([data-special="color"]) {
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C52 4 54 7 56 12L63 33C64 36 66 37 70 37L91 37C97 37 98 41 93 45L76 58C73 60 72 62 73 66L80 86C82 92 78 95 73 91L55 78C52 76 49 76 46 78L28 91C23 95 19 92 21 86L28 66C29 62 28 60 25 58L8 45C3 41 4 37 10 37L31 37C35 37 37 36 38 33L44 12C46 7 48 4 50 4Z'/%3E%3C/svg%3E");
+    --piece-detail-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 27L57 44L75 44L61 55L66 73L50 63L34 73L39 55L25 44L43 44Z' fill='black' fill-opacity='.07'/%3E%3Cpath d='M50 29L56 44L69 44L58 51L61 60L50 55L40 61L43 51L34 44L44 44Z' fill='white' fill-opacity='.11'/%3E%3C/svg%3E");
+    --piece-material-light: linear-gradient(160deg, rgba(255,255,255,.40) 0%, rgba(255,255,255,.28) 17%, rgba(255,255,255,.12) 34%, rgba(255,255,255,.035) 50%, transparent 68%);
+    --piece-material-form: linear-gradient(180deg, transparent 0 45%, rgba(136,88,0,.045) 65%, rgba(92,57,0,.13) 100%);
+  }
+
+  /* Green: unmistakable jelly bean with continuous gummy shading and one dimple. */
+  body.cascade-route .cascade-tile[data-kind="3"]:not([data-special="color"]) {
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M18 24C31 8 57 5 76 15C91 23 97 38 91 51C87 60 78 63 68 61C59 59 55 63 52 71C48 83 36 92 23 88C8 84 3 68 7 52C9 41 13 31 18 24Z'/%3E%3C/svg%3E");
+    --piece-detail-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='62' cy='57' rx='11' ry='8' transform='rotate(-28 62 57)' fill='black' fill-opacity='.07'/%3E%3Cellipse cx='59' cy='54' rx='6.5' ry='4' transform='rotate(-28 59 54)' fill='white' fill-opacity='.12'/%3E%3C/svg%3E");
+    --piece-material-light: linear-gradient(150deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,.27) 16%, rgba(255,255,255,.17) 31%, rgba(255,255,255,.09) 46%, rgba(255,255,255,.035) 59%, transparent 73%);
+    --piece-material-form: linear-gradient(158deg, transparent 0 35%, rgba(32,91,51,.025) 49%, rgba(32,91,51,.065) 69%, rgba(25,68,39,.13) 100%);
+  }
+
+  /* Purple: broad four-point candy with one large raised central boss. */
+  body.cascade-route .cascade-tile[data-kind="4"]:not([data-special="color"]) {
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C56 4 58 16 61 31C63 40 66 43 76 45C90 47 97 48 97 52C97 57 90 59 76 61C66 63 63 66 61 76C58 90 56 97 50 97C44 97 42 90 39 76C37 66 34 63 24 61C10 59 3 57 3 52C3 48 10 47 24 45C34 43 37 40 39 31C42 16 44 4 50 4Z'/%3E%3C/svg%3E");
+    --piece-detail-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 25C54 40 60 46 75 50C60 54 54 60 50 75C46 60 40 54 25 50C40 46 46 40 50 25Z' fill='black' fill-opacity='.065'/%3E%3Cpath d='M50 29C53 41 59 47 69 50C59 51 51 48 45 42C43 38 45 33 50 29Z' fill='white' fill-opacity='.13'/%3E%3C/svg%3E");
+    --piece-material-light: linear-gradient(145deg, rgba(255,255,255,.36) 0%, rgba(255,255,255,.25) 18%, rgba(255,255,255,.11) 35%, rgba(255,255,255,.035) 51%, transparent 69%);
+    --piece-material-form: linear-gradient(35deg, rgba(65,31,94,.10) 0%, rgba(65,31,94,.05) 29%, transparent 54%, rgba(255,255,255,.035) 72%, rgba(53,23,84,.10) 100%);
+  }
+
+  /* Orange: soft seven-petal blossom with a center press and broad molded valleys. */
+  body.cascade-route .cascade-tile[data-kind="5"]:not([data-special="color"]) {
+    --piece-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M50 4C58 4 62 19 65 27C72 22 84 12 90 18C96 24 86 36 76 43C84 46 99 50 99 58C99 66 83 67 72 68C75 78 78 93 70 97C62 101 55 86 50 77C45 86 38 101 30 97C22 93 25 78 28 68C17 67 1 66 1 58C1 50 16 46 24 43C14 36 4 24 10 18C16 12 28 22 35 27C38 19 42 4 50 4Z'/%3E%3C/svg%3E");
+    --piece-detail-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='53' r='12' fill='black' fill-opacity='.075'/%3E%3Ccircle cx='47' cy='49' r='7' fill='white' fill-opacity='.10'/%3E%3Cpath d='M43 43L36 30M57 43L64 30M60 48L73 43M60 58L70 66M50 64L50 75M40 58L30 66M40 48L27 43' fill='none' stroke='black' stroke-opacity='.07' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M43 43L38 33M57 43L62 33M60 48L69 44' fill='none' stroke='white' stroke-opacity='.10' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E");
+    --piece-material-light: linear-gradient(158deg, rgba(255,255,255,.37) 0%, rgba(255,255,255,.26) 17%, rgba(255,255,255,.115) 34%, rgba(255,255,255,.035) 51%, transparent 68%);
+    --piece-material-form: linear-gradient(180deg, transparent 0 44%, rgba(107,49,21,.04) 64%, rgba(84,37,17,.13) 100%);
+  }
+}
+
 @media (min-width: 701px) {
   .cascade-tile:not([data-special="color"]) {
     --piece-detail-art: linear-gradient(transparent, transparent);
