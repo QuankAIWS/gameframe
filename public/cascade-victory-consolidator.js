@@ -40,10 +40,11 @@ function ensureActionArea(stage) {
   return { panel, actions };
 }
 
-function customButton(label, className, handler) {
+function customButton(label, className, handler, accessibleLabel = label) {
   const button = document.createElement("button");
   button.type = "button";
   button.textContent = label;
+  if (accessibleLabel !== label) button.setAttribute("aria-label", accessibleLabel);
   if (className) button.className = className;
   button.addEventListener("click", handler);
   return button;
@@ -108,23 +109,24 @@ function consolidateVictory() {
     choice.actions.replaceChildren();
 
     if (replay) {
+      const frontier = window.cascadeReplay?.frontier?.() || "run";
       choice.actions.append(
-        customButton(`Replay level ${completedLevel}`, "", () => {
+        customButton("Replay", "", () => {
           hideStage(stage);
           window.cascadeReplay?.start?.(completedLevel);
-        }),
-        customButton(`Return to level ${window.cascadeReplay?.frontier?.() || "run"}`, "primary", () => {
+        }, `Replay level ${completedLevel}`),
+        customButton("Return", "primary", () => {
           hideStage(stage);
           window.cascadeReplay?.finish?.();
-        }),
+        }, `Return to level ${frontier}`),
       );
     } else {
       const originalButtons = [...resultActions.querySelectorAll("button")];
       if (bestStars(completedLevel) < 3) {
-        choice.actions.append(customButton("Replay for more stars", "", () => {
+        choice.actions.append(customButton("Replay", "", () => {
           hideStage(stage);
           window.cascadeReplay?.start?.(completedLevel);
-        }));
+        }, "Replay for more stars"));
       }
       for (const button of originalButtons) {
         button.addEventListener("click", () => hideStage(stage), { once: true });
