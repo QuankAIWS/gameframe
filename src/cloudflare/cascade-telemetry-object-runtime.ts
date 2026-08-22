@@ -3,9 +3,9 @@ import type { DurableStorageLike } from "./runtime-contracts.ts";
 
 const INDEX_KEY = "gameframe:cascade-telemetry-index:v1";
 const CHUNK_PREFIX = "gameframe:cascade-telemetry-chunk:v1:";
-const MAX_REQUEST_EVENTS = 12;
-const MAX_EVENTS_PER_CHUNK = 40;
-const RECENT_EVENT_ID_LIMIT = 512;
+const MAX_REQUEST_EVENTS = 24;
+const MAX_EVENTS_PER_CHUNK = 120;
+const RECENT_EVENT_ID_LIMIT = 2_048;
 const MAX_EVENT_PAYLOAD_BYTES = 2_048;
 
 export interface CascadeTelemetryStoredEvent {
@@ -39,6 +39,13 @@ interface CascadeTelemetryIndex {
   chunks: CascadeTelemetryChunkIndex[];
   recentEventIds: string[];
   updatedAt: number;
+}
+
+interface RejectedTelemetryEvent {
+  index: number;
+  eventId: string | null;
+  code: string;
+  message: string;
 }
 
 function emptyIndex(): CascadeTelemetryIndex {
@@ -103,6 +110,20 @@ function normalizeEvent(value: unknown, receivedAt: number): CascadeTelemetrySto
   };
 }
 
+function rejectedEvent(value: unknown, index: number, error: unknown): RejectedTelemetryEvent {
+  const input = value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+  const rawId = input?.eventId === undefined || input?.eventId === null ? "" : String(input.eventId).trim();
+  const caught = error as { code?: string; message?: string };
+  return {
+    index,
+    eventId: rawId ? rawId.slice(0, 180) : null,
+    code: caught.code ?? "cascade_telemetry_invalid",
+    message: caught.message ?? "Cascade telemetry event was rejected.",
+  };
+}
+
 function chunkKey(index: CascadeTelemetryIndex, day: string): string {
   const key = `${CHUNK_PREFIX}${String(index.nextChunk).padStart(8, "0")}:${day}`;
   index.nextChunk += 1;
@@ -148,13 +169,22 @@ export class CascadeTelemetryObjectRuntime {
     }
 
     const now = Date.now();
-    const incoming = values.map((value) => normalizeEvent(value, now));
+    const incoming: CascadeTelemetryStoredEvent[] = [];
+    const rejected: RejectedTelemetryEvent[] = [];
+    values.forEach((value, index) => {
+      try {
+        incoming.push(normalizeEvent(value, now));
+      } catch (error) {
+        rejected.push(rejectedEvent(value, index, error));
+      }
+    });
+
     const index = await this.#storage.get<CascadeTelemetryIndex>(INDEX_KEY) ?? emptyIndex();
     const recent = new Set(index.recentEventIds);
     const chunkCache = new Map<string, CascadeTelemetryChunk>();
     const dirty = new Set<string>();
-    let accepted = 0;
-    let duplicates = 0;
+    const acceptedEventIds: string[] = [];
+    const duplicateEventIds: string[] = [];
 
     const readChunk = async (meta: CascadeTelemetryChunkIndex): Promise<CascadeTelemetryChunk> => {
       const cached = chunkCache.get(meta.key);
@@ -170,7 +200,7 @@ export class CascadeTelemetryObjectRuntime {
 
     for (const event of incoming) {
       if (recent.has(event.eventId)) {
-        duplicates += 1;
+        duplicateEventIds.push(event.eventId);
         continue;
       }
       const day = event.at.slice(0, 10);
@@ -206,19 +236,24 @@ export class CascadeTelemetryObjectRuntime {
       meta.lastAt = Math.max(meta.lastAt, event.timestamp);
       dirty.add(meta.key);
       recent.add(event.eventId);
-      accepted += 1;
+      acceptedEventIds.push(event.eventId);
     }
 
-    for (const key of dirty) {
-      await this.#storage.put(key, chunkCache.get(key)!);
+    if (acceptedEventIds.length) {
+      for (const key of dirty) {
+        await this.#storage.put(key, chunkCache.get(key)!);
+      }
+      index.recentEventIds = [...recent].slice(-RECENT_EVENT_ID_LIMIT);
+      index.updatedAt = now;
+      await this.#storage.put(INDEX_KEY, index);
     }
-    index.recentEventIds = [...recent].slice(-RECENT_EVENT_ID_LIMIT);
-    index.updatedAt = now;
-    await this.#storage.put(INDEX_KEY, index);
 
     return {
-      accepted,
-      duplicates,
+      accepted: acceptedEventIds.length,
+      duplicates: duplicateEventIds.length,
+      rejected,
+      acceptedEventIds,
+      duplicateEventIds,
       storedChunks: index.chunks.length,
       updatedAt: index.updatedAt,
     };
