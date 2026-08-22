@@ -38,7 +38,6 @@ async function prepare(page) {
 test("Cascade cartoon burst special leaves every desktop candy family visible", async ({ page }) => {
   await prepare(page);
 
-  const firstRow = page.locator(".cascade-tile").slice ? null : null;
   const geometry = await page.locator('.cascade-tile[data-special="bomb"]').evaluateAll((tiles) => tiles.slice(0, 6).map((tile) => {
     const tileRect = tile.getBoundingClientRect();
     const mark = tile.querySelector(".cascade-special-mark");
