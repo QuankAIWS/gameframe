@@ -158,8 +158,12 @@ test("Cascade completion handoff keeps the reward panel visual language", async 
 
   const dialog = page.locator("#result-dialog");
   await expect(dialog).toBeHidden();
-  await expect(rewardStage).toHaveClass(/is-active/);
+  await expect(rewardStage).not.toHaveClass(/is-active/);
+  await expect(rewardStage).toHaveClass(/is-victory-continuous/);
   await expect(rewardStage).toHaveClass(/is-awaiting-choice/);
+  await expect(rewardStage.locator(".cascade-reward-summary")).toHaveCount(0);
+  await expect(rewardStage.locator(".cascade-reward-stars i.is-earned")).toHaveCount(3);
+  await expect(rewardStage.locator("[data-reward-hammer]")).toContainText("hammer earned");
   const handoffSurface = await rewardPanel.evaluate((node) => ({
     backgroundImage: getComputedStyle(node).backgroundImage,
     radius: Number.parseFloat(getComputedStyle(node).borderRadius),

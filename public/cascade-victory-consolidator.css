@@ -3,15 +3,10 @@
   visibility: visible;
 }
 
-.cascade-reward-stage.is-victory-continuous:not(.is-active):not(.is-awaiting-choice) .cascade-reward-panel {
+.cascade-reward-stage.is-victory-continuous:not(.is-active) .cascade-reward-panel {
   animation: none;
   transform: none;
   opacity: 1;
-}
-
-.cascade-reward-stage:not(.is-awaiting-choice) .cascade-reward-summary,
-.cascade-reward-stage:not(.is-awaiting-choice) .cascade-reward-actions {
-  display: none;
 }
 
 .cascade-reward-stage.is-awaiting-choice {
@@ -20,33 +15,37 @@
 
 .cascade-reward-stage.is-awaiting-choice .cascade-reward-panel {
   pointer-events: auto;
-  animation: none;
-  transform: none;
-  opacity: 1;
-}
-
-.cascade-reward-summary {
-  max-width: 34rem;
-  margin: .75rem auto 0;
-  color: #6b4398;
-  font-size: clamp(.82rem, 1.4vw, 1rem);
-  font-weight: 800;
-  line-height: 1.45;
-  text-align: center;
 }
 
 .cascade-reward-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
+  align-items: center;
   gap: .65rem;
+  width: 100%;
+  min-height: 52px;
   margin-top: 1rem;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cascade-reward-stage.is-awaiting-choice .cascade-reward-actions {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .cascade-reward-actions button {
-  min-width: 9.5rem;
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  max-width: 11rem;
+  height: 52px;
   min-height: 52px;
-  padding: 10px 18px;
+  box-sizing: border-box;
+  padding: 8px 10px;
   border: 2px solid rgba(126, 83, 161, .14);
   border-radius: 999px;
   background: linear-gradient(145deg, rgba(255, 255, 255, .98), rgba(239, 230, 250, .95));
@@ -55,6 +54,7 @@
   font-size: clamp(.92rem, 1.7vh, 1.04rem);
   font-weight: 950;
   line-height: 1;
+  white-space: nowrap;
   box-shadow:
     0 6px 14px rgba(77, 47, 105, .11),
     inset 0 1px 0 rgba(255, 255, 255, 1);

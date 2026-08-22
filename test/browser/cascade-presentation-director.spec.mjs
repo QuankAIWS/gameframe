@@ -82,11 +82,13 @@ test("Cascade reward sequence cashes unused moves, fills stars, and surfaces ear
   await page.evaluate(() => window.__cascadeRewardDemo);
   await expect(stage).not.toHaveClass(/is-active/);
   await expect(stage).toHaveClass(/is-victory-continuous/);
+  await expect(stage.locator(".cascade-reward-actions")).toHaveCount(1);
+  await expect(stage.locator(".cascade-reward-actions")).toBeHidden();
   await expect(page.locator("#score")).toHaveText("1,600");
   expect(await page.evaluate(() => window.cascadePresentationDirector.getStats().rewardSequences)).toBe(1);
 });
 
-test("Cascade level completion stays on one stable reward surface", async ({ page }) => {
+test("Cascade victory keeps the animated reward card and only reveals actions", async ({ page }) => {
   await page.goto("/cascade.html?player=cascade-single-victory-surface-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 
@@ -94,17 +96,20 @@ test("Cascade level completion stays on one stable reward surface", async ({ pag
 
   const stage = page.locator(".cascade-reward-stage");
   const dialog = page.locator("#result-dialog");
-  const summary = stage.locator(".cascade-reward-summary");
-  await expect(stage).toHaveClass(/is-active/);
+  const actions = stage.locator(".cascade-reward-actions");
+  await expect(stage).not.toHaveClass(/is-active/);
+  await expect(stage).toHaveClass(/is-victory-continuous/);
   await expect(stage).toHaveClass(/is-awaiting-choice/);
   await expect(dialog).not.toHaveAttribute("open", "");
-  await expect(summary).toContainText("this run");
-  await expect(stage.locator(".cascade-reward-actions button", { hasText: "Continue" })).toHaveCount(1);
-  expect(await summary.evaluate((node) => getComputedStyle(node).color)).toBe("rgb(107, 67, 152)");
+  await expect(stage.locator(".cascade-reward-summary")).toHaveCount(0);
+  await expect(stage.locator(".cascade-reward-stars i.is-earned")).toHaveCount(3);
+  await expect(stage.locator("[data-reward-hammer]")).toContainText("hammer earned");
+  await expect(actions.locator("button", { hasText: "Continue" })).toHaveCount(1);
+  await expect(actions).toBeVisible();
 
   await page.waitForTimeout(550);
-  await expect(stage).toHaveClass(/is-active/);
+  await expect(stage).not.toHaveClass(/is-active/);
   await expect(stage).toHaveClass(/is-awaiting-choice/);
   await expect(dialog).not.toHaveAttribute("open", "");
-  await expect(summary).toContainText("this run");
+  await expect(stage.locator(".cascade-reward-summary")).toHaveCount(0);
 });

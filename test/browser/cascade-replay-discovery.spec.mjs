@@ -109,7 +109,9 @@ test("Cascade victory actions live on the polished reward stage instead of a sec
   await expect(page.locator("#result-dialog")).not.toHaveAttribute("open", "");
   const stage = page.locator(".cascade-reward-stage.is-awaiting-choice");
   await expect(stage).toBeVisible();
-  await expect(stage.locator(".cascade-reward-summary")).toHaveText("Two-star clear.");
+  await expect(stage).not.toHaveClass(/is-active/);
+  await expect(stage.locator(".cascade-reward-summary")).toHaveCount(0);
+  await expect(stage.locator(".cascade-reward-stars i.is-earned")).toHaveCount(2);
   await expect(stage.getByRole("button", { name: "Replay for more stars" })).toBeVisible();
   await expect(stage.getByRole("button", { name: "Continue" })).toBeVisible();
 });

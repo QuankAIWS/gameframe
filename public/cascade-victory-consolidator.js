@@ -1,7 +1,6 @@
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const resultDialog = document.querySelector("#result-dialog");
 const resultKicker = document.querySelector("#result-kicker");
-const resultCopy = document.querySelector("#result-copy");
 const resultActions = document.querySelector("#result-actions");
 const boardWrap = document.querySelector(".cascade-board-wrap");
 let consolidating = false;
@@ -29,28 +28,23 @@ function bestStars(level) {
   return Math.max(0, Math.min(3, Math.floor(Number(readPerformance()?.starsByLevel?.[String(level)]) || 0)));
 }
 
-function ensureChoiceArea(stage) {
+function ensureActionArea(stage) {
   const panel = stage.querySelector(".cascade-reward-panel");
   if (!panel) return null;
-  let summary = panel.querySelector(".cascade-reward-summary");
-  if (!summary) {
-    summary = document.createElement("p");
-    summary.className = "cascade-reward-summary";
-    panel.append(summary);
-  }
   let actions = panel.querySelector(".cascade-reward-actions");
   if (!actions) {
     actions = document.createElement("div");
     actions.className = "cascade-reward-actions";
     panel.append(actions);
   }
-  return { panel, summary, actions };
+  return { panel, actions };
 }
 
-function customButton(label, className, handler) {
+function customButton(label, className, handler, accessibleLabel = label) {
   const button = document.createElement("button");
   button.type = "button";
   button.textContent = label;
+  if (accessibleLabel !== label) button.setAttribute("aria-label", accessibleLabel);
   if (className) button.className = className;
   button.addEventListener("click", handler);
   return button;
@@ -82,7 +76,9 @@ function syncStageContinuity(stage) {
 }
 
 function observeRewardStage(stage) {
-  if (!stage || stage === observedStage) return;
+  if (!stage) return;
+  ensureActionArea(stage);
+  if (stage === observedStage) return;
   stageObserver?.disconnect();
   observedStage = stage;
   stageObserver = new MutationObserver(() => syncStageContinuity(stage));
@@ -102,7 +98,7 @@ function consolidateVictory() {
   if (kicker !== "LEVEL COMPLETE" && kicker !== "RUN COMPLETE") return false;
   const stage = findRewardStage();
   if (!stage) return false;
-  const choice = ensureChoiceArea(stage);
+  const choice = ensureActionArea(stage);
   if (!choice) return false;
 
   consolidating = true;
@@ -110,18 +106,27 @@ function consolidateVictory() {
     const completedLevel = activeLevelNumber();
     const final = kicker === "RUN COMPLETE";
     const replay = Boolean(window.cascadeReplay?.isReplay?.());
-    choice.summary.textContent = resultCopy?.textContent?.trim() || "";
     choice.actions.replaceChildren();
 
     if (replay) {
+      const frontier = window.cascadeReplay?.frontier?.() || "run";
       choice.actions.append(
-        customButton(`Replay level ${completedLevel}`, "", () => window.cascadeReplay?.start?.(completedLevel)),
-        customButton(`Return to level ${window.cascadeReplay?.frontier?.() || "run"}`, "primary", () => window.cascadeReplay?.finish?.()),
+        customButton("Replay", "", () => {
+          hideStage(stage);
+          window.cascadeReplay?.start?.(completedLevel);
+        }, `Replay level ${completedLevel}`),
+        customButton("Return", "primary", () => {
+          hideStage(stage);
+          window.cascadeReplay?.finish?.();
+        }, `Return to level ${frontier}`),
       );
     } else {
       const originalButtons = [...resultActions.querySelectorAll("button")];
       if (bestStars(completedLevel) < 3) {
-        choice.actions.append(customButton("Replay for more stars", "", () => window.cascadeReplay?.start?.(completedLevel)));
+        choice.actions.append(customButton("Replay", "", () => {
+          hideStage(stage);
+          window.cascadeReplay?.start?.(completedLevel);
+        }, "Replay for more stars"));
       }
       for (const button of originalButtons) {
         button.addEventListener("click", () => hideStage(stage), { once: true });
@@ -132,7 +137,10 @@ function consolidateVictory() {
     publishCompletion(completedLevel, final, replay);
     if (resultDialog?.open) resultDialog.close();
     stage.setAttribute("aria-hidden", "false");
-    stage.classList.add("is-victory-continuous", "is-active", "is-awaiting-choice");
+    // Keep the exact final frame of the reward animation. Do not re-add
+    // `is-active`: doing so would replay the panel entrance animation and make
+    // the action handoff look like a second victory menu.
+    stage.classList.add("is-victory-continuous", "is-awaiting-choice");
     return true;
   } finally {
     consolidating = false;
@@ -147,9 +155,9 @@ findRewardStage();
 if (resultDialog) {
   const nativeShowModal = resultDialog.showModal.bind(resultDialog);
   resultDialog.showModal = function cascadeResultShowModal() {
-    // The runtime still prepares the shared result text/actions for all outcomes.
-    // Successful levels consume that payload directly into the animated reward
-    // panel instead of ever opening a second dialog on top of it.
+    // The runtime still prepares the shared result actions for all outcomes.
+    // Successful levels consume those actions directly into the animated reward
+    // panel instead of opening a second dialog or replacing the reward content.
     if (consolidateVictory()) return;
     nativeShowModal();
   };

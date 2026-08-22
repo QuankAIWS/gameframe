@@ -126,7 +126,10 @@ test("Cascade labels progression stars as best ratings and distinguishes a lower
   const rewardStage = page.locator(".cascade-reward-stage");
   await expect(page.locator("#result-dialog")).toBeHidden();
   await expect(rewardStage).toHaveClass(/is-awaiting-choice/, { timeout: 8_000 });
-  await expect(rewardStage.locator(".cascade-reward-summary")).toContainText("★☆☆ this run · best ★★★");
+  await expect(rewardStage.locator(".cascade-reward-summary")).toHaveCount(0);
+  await expect(rewardStage.locator(".cascade-reward-stars i.is-earned")).toHaveCount(1);
+  await expect(page.locator('#level-map > li[data-level="1"] .cascade-map-stars')).toHaveAttribute("aria-label", "Best rating: 3 of 3 stars");
+  expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key))?.starsByLevel?.["1"], PERFORMANCE_KEY)).toBe(3);
 });
 
 test("Cascade admin same-level jump explicitly starts a fresh run", async ({ page }) => {
