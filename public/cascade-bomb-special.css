@@ -1,0 +1,81 @@
+/*
+ * Cartoon bomb special.
+ *
+ * Bombs are modifiers, not replacement pieces: the family candy remains the
+ * dominant silhouette and the bomb sits inside it. This stylesheet loads after
+ * cascade-piece-shapes.css so older generic special styling cannot grow the
+ * bomb back over the candy.
+ */
+.cascade-tile[data-special="bomb"] .cascade-special-mark {
+  inset: 27%;
+  overflow: visible;
+  border: 3px solid rgba(255, 255, 255, .88);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 23%, rgba(255,255,255,.96) 0 7%, rgba(255,255,255,.30) 8% 14%, transparent 15%),
+    radial-gradient(circle at 45% 42%, #56475f 0 8%, #3c3045 36%, #251e2c 67%, #151119 100%);
+  box-shadow:
+    inset -4px -6px 0 rgba(0, 0, 0, .16),
+    inset 2px 2px 0 rgba(255, 255, 255, .13),
+    0 2px 0 rgba(255, 255, 255, .55),
+    0 5px 10px rgba(63, 38, 77, .28);
+  opacity: 1;
+}
+
+/* Curved fuse. It intentionally escapes the bomb body while staying well
+ * inside the surrounding candy footprint at desktop size.
+ */
+.cascade-tile[data-special="bomb"] .cascade-special-mark::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 63%;
+  top: -34%;
+  width: 48%;
+  height: 42%;
+  border-top: 3px solid #71472f;
+  border-right: 3px solid #71472f;
+  border-radius: 0 85% 0 0;
+  transform: rotate(-9deg);
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,.36));
+}
+
+/* Small comic-book spark on the fuse tip. A static starburst gives the bomb
+ * energy without adding permanent board motion or obscuring the candy.
+ */
+.cascade-tile[data-special="bomb"] .cascade-special-mark::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  right: -48%;
+  top: -54%;
+  width: 46%;
+  aspect-ratio: 1;
+  background: conic-gradient(
+    from 15deg,
+    #fff7a8 0 9%,
+    #ffb83e 10% 22%,
+    #fff 23% 31%,
+    #ff724d 32% 44%,
+    #fff7a8 45% 58%,
+    #ffb83e 59% 72%,
+    #fff 73% 82%,
+    #ff724d 83% 100%
+  );
+  clip-path: polygon(50% 0, 61% 31%, 86% 14%, 71% 40%, 100% 50%, 70% 60%, 86% 86%, 60% 70%, 50% 100%, 40% 70%, 14% 86%, 30% 60%, 0 50%, 30% 40%, 14% 14%, 40% 31%);
+  filter:
+    drop-shadow(0 0 2px rgba(255,255,255,.96))
+    drop-shadow(0 0 5px rgba(255,171,55,.78));
+}
+
+@media (max-width: 700px) {
+  .cascade-tile[data-special="bomb"] .cascade-special-mark {
+    inset: 24%;
+    border-width: 2px;
+  }
+
+  .cascade-tile[data-special="bomb"] .cascade-special-mark::before {
+    border-top-width: 2px;
+    border-right-width: 2px;
+  }
+}
