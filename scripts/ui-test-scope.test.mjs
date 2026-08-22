@@ -44,6 +44,14 @@ test("Cascade telemetry stays separate from the 300-level profile", () => {
   ]), { ...none, cascadeUi: true, cascadeTelemetry: true });
 });
 
+test("Cascade telemetry browser modules use the telemetry lane without generic UI review", () => {
+  assert.deepEqual(classifyUiTestScope([
+    "public/cascade-telemetry-sync.js",
+    "public/cascade-telemetry-health.js",
+    "public/cascade-admin-telemetry.js",
+  ]), { ...none, cascadeTelemetry: true });
+});
+
 test("Cascade progression sync stays in the player-platform lane", () => {
   assert.deepEqual(classifyUiTestScope(["public/cascade-progression-sync.js"]), {
     ...none,

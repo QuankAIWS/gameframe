@@ -93,6 +93,7 @@ const REQUIRED_ASSETS = [
   "/cascade-viewport-guard.js",
   "/cascade-progression-sync.js",
   "/cascade-telemetry-sync.js",
+  "/cascade-telemetry-health.js",
   "/cascade-presentation-director.js",
   "/cascade-hammer-economy.js",
   "/cascade-runtime-v2.js",
