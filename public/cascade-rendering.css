@@ -1,4 +1,8 @@
 /* Keep compositor hints on active effects instead of promoting all 64 tiles forever. */
+.cascade-board {
+  will-change: transform;
+}
+
 .cascade-tile {
   will-change: auto;
 }
@@ -21,6 +25,28 @@
   height: 100vh;
   pointer-events: none;
   contain: strict;
+}
+
+.cascade-juice-layer {
+  contain: paint;
+  isolation: isolate;
+}
+
+/* Whole-board filters are disproportionately expensive during large clears.
+   Keep the physical hit while tile-level flashes, rings, particles and hype
+   carry the brightness spectacle. */
+@keyframes cascade-board-hit {
+  0% { transform: scale(1); }
+  48% { transform: scale(1.004); }
+  100% { transform: scale(1); }
+}
+
+@keyframes cascade-board-big-hit {
+  0% { transform: translate(0, 0) scale(1); }
+  28% { transform: translate(-1px, 1px) scale(1.006); }
+  52% { transform: translate(2px, -1px) scale(1.004); }
+  74% { transform: translate(-1px, 0) scale(1.002); }
+  100% { transform: translate(0, 0) scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {
