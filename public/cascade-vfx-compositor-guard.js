@@ -1,5 +1,5 @@
 const CANVAS_SELECTOR = ".cascade-dopamine-canvas";
-const ANCHOR_SELECTOR = ".cascade-game";
+const ANCHOR_SELECTOR = "#board";
 const MAX_DPR = 1.5;
 const LARGE_SURFACE_DPR = 1.25;
 const LARGE_SURFACE_AREA = 1_500_000;
@@ -21,12 +21,13 @@ function surfaceBounds() {
     return { left: 0, top: 0, width: viewportWidth, height: viewportHeight, viewportWidth, viewportHeight };
   }
 
-  // The game grid already includes the campaign map and side rail. Add a wide
-  // overscan gutter so nuclear particles can spray well beyond the board while
-  // avoiding a permanent full-browser alpha surface on roomy displays.
-  const overscanX = clamp(viewportWidth * .10, 96, 220);
-  const overscanTop = clamp(viewportHeight * .08, 72, 160);
-  const overscanBottom = clamp(viewportHeight * .16, 110, 240);
+  // Anchor on the candy grid, then deliberately overscan far enough to cover
+  // the campaign map and side rail. This keeps the Candy-Crush-style blast
+  // radius while preventing the transparent particle surface from owning the
+  // entire browser on roomy desktop/TV layouts.
+  const overscanX = clamp(viewportWidth * .18, 220, 420);
+  const overscanTop = clamp(viewportHeight * .12, 110, 220);
+  const overscanBottom = clamp(viewportHeight * .22, 180, 340);
   const left = clamp(Math.floor(anchor.left - overscanX), 0, viewportWidth - 1);
   const top = clamp(Math.floor(anchor.top - overscanTop), 0, viewportHeight - 1);
   const right = clamp(Math.ceil(anchor.right + overscanX), left + 1, viewportWidth);
