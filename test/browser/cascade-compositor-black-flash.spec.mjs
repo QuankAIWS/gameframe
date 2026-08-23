@@ -1,14 +1,16 @@
 import { expect, test } from "@playwright/test";
 import sharp from "sharp";
 
-// This test is specifically about full-effects rendering. The repository-wide
-// Playwright default requests reduced motion, so override it explicitly here.
+// This test exercises the normal headed/full-motion compositor path. The
+// repository-wide Playwright default requests reduced motion, so override it.
 test.use({ reducedMotion: "no-preference" });
-test.setTimeout(60_000);
+test.setTimeout(75_000);
 
 const VIEWPORT = { width: 1920, height: 1080 };
 const BLACK_CHANNEL_MAX = 24;
-const FRAME_LIMIT = 220;
+const FRAME_LIMIT = 260;
+const MAX_VISIBLE_EFFECT_GROUPS = 28;
+const MAX_COMPOSITOR_LAYERS = 260;
 
 async function analyzeRegion(buffer, rect) {
   const { data, info } = await sharp(buffer).removeAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -58,9 +60,20 @@ async function installRafTelemetry(page) {
       const canvas = document.querySelector(".cascade-dopamine-canvas");
       const board = document.querySelector("#board");
       const wrap = document.querySelector(".cascade-board-wrap");
+      const juice = document.querySelector(".cascade-juice-layer");
       let opaqueBlackCanvasSamples = 0;
       let opaqueCanvasSamples = 0;
+      let visibleEffectGroups = 0;
 
+      if (juice) {
+        for (const effect of juice.children) {
+          if (getComputedStyle(effect).display !== "none") visibleEffectGroups += 1;
+        }
+      }
+
+      // Sample source pixels from the 2D canvas. If compositor output ever goes
+      // black while these stay transparent/colored, the failure is downstream
+      // of particle drawing rather than the canvas painting black itself.
       if (frame % 2 === 0 && canvas && board) {
         const context = canvas.getContext("2d", { alpha: true });
         const rect = board.getBoundingClientRect();
@@ -82,17 +95,19 @@ async function installRafTelemetry(page) {
       samples.push({
         t: performance.now(),
         activeParticles: Number(stats.activeParticles) || 0,
+        peakParticles: Number(stats.peakParticles) || 0,
         activeDomNodes: Number(stats.activeDomNodes) || 0,
         peakDomNodes: Number(stats.peakDomNodes) || 0,
         contextLosses: Number(stats.contextLosses) || 0,
         opaqueCanvasSamples,
         opaqueBlackCanvasSamples,
+        visibleEffectGroups,
         boardOpacity: board ? getComputedStyle(board).opacity : "missing",
         boardVisibility: board ? getComputedStyle(board).visibility : "missing",
         wrapOpacity: wrap ? getComputedStyle(wrap).opacity : "missing",
         wrapVisibility: wrap ? getComputedStyle(wrap).visibility : "missing",
       });
-      if (samples.length > 900) samples.shift();
+      if (samples.length > 1000) samples.shift();
       requestAnimationFrame(tick);
     }
 
@@ -120,8 +135,9 @@ async function runStackedNuclearStress(page) {
     };
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    // Keep realistic 180 ms phase spacing, but repeat long enough to catch an
-    // intermittent single-frame compositor failure instead of sampling one event.
+    // Real cascade phases overlap. Repeat long enough to exercise several
+    // generations of effects and give a one-frame renderer failure a chance to
+    // surface without inventing a zero-delay synthetic flood.
     for (let round = 0; round < 30; round += 1) {
       window.cascadePresentationDirector.transitionStart(transition);
       window.cascadePresentationDirector.transitionClear(transition);
@@ -131,7 +147,7 @@ async function runStackedNuclearStress(page) {
   });
 }
 
-test("Cascade compositor probe catches transient black frames during stacked nuclear clears", async ({ context, page }, testInfo) => {
+test("Cascade headed compositor survives stacked nuclear clears without black frame, crash, reload, or layer runaway", async ({ context, page }, testInfo) => {
   await page.setViewportSize(VIEWPORT);
   await page.addInitScript(() => {
     localStorage.setItem("scribbles-gameframe.cascade-sound:v1", "off");
@@ -141,6 +157,16 @@ test("Cascade compositor probe catches transient black frames during stacked nuc
   await page.goto("/cascade.html?player=cascade-black-flash-probe");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(false);
+
+  const initialTimeOrigin = await page.evaluate(() => performance.timeOrigin);
+  let pageCrashed = false;
+  let unexpectedNavigations = 0;
+  page.on("crash", () => {
+    pageCrashed = true;
+  });
+  page.on("framenavigated", (frame) => {
+    if (frame === page.mainFrame()) unexpectedNavigations += 1;
+  });
 
   const boardRect = await page.locator("#board").boundingBox();
   expect(boardRect).toBeTruthy();
@@ -174,7 +200,20 @@ test("Cascade compositor probe catches transient black frames during stacked nuc
   await sharp(baselineBuffer).png().toFile(testInfo.outputPath("cascade-compositor-baseline.png"));
   screencastFrames.length = 0;
 
-  await runStackedNuclearStress(page);
+  let stressError = null;
+  try {
+    await runStackedNuclearStress(page);
+  } catch (error) {
+    stressError = error instanceof Error ? error.message : String(error);
+  }
+
+  // A renderer crash or unexpected document navigation can abort page.evaluate.
+  // Classify those before attempting any more in-page inspection.
+  expect(pageCrashed, `Chrome renderer crashed during Cascade stress${stressError ? `: ${stressError}` : ""}`).toBe(false);
+  expect(unexpectedNavigations, `Cascade unexpectedly navigated/reloaded during VFX stress${stressError ? `: ${stressError}` : ""}`).toBe(0);
+  expect(stressError, "Cascade stress evaluation aborted without a recorded crash/navigation").toBeNull();
+  const currentTimeOrigin = await page.evaluate(() => performance.timeOrigin);
+  expect(currentTimeOrigin, "Cascade document was replaced during VFX stress").toBe(initialTimeOrigin);
 
   captureOpen = false;
   await cdp.send("Page.stopScreencast");
@@ -202,6 +241,8 @@ test("Cascade compositor probe catches transient black frames during stacked nuc
 
   const telemetry = await page.evaluate(() => window.__cascadeCompositorProbe?.samples || []);
   const peakDomNodes = telemetry.reduce((max, sample) => Math.max(max, sample.activeDomNodes || 0, sample.peakDomNodes || 0), 0);
+  const peakParticles = telemetry.reduce((max, sample) => Math.max(max, sample.activeParticles || 0, sample.peakParticles || 0), 0);
+  const peakVisibleEffectGroups = telemetry.reduce((max, sample) => Math.max(max, sample.visibleEffectGroups || 0), 0);
   const maxCanvasBlackSamples = telemetry.reduce((max, sample) => Math.max(max, sample.opaqueBlackCanvasSamples || 0), 0);
   const maxContextLosses = telemetry.reduce((max, sample) => Math.max(max, sample.contextLosses || 0), 0);
   const hiddenBoardSamples = telemetry.filter((sample) => sample.boardOpacity === "0" || sample.boardVisibility !== "visible" || sample.wrapOpacity === "0" || sample.wrapVisibility !== "visible").length;
@@ -212,12 +253,21 @@ test("Cascade compositor probe catches transient black frames during stacked nuc
     baseline,
     worst: worst ? { index: worst.index, timestamp: worst.timestamp, ...worst.stats } : null,
     peakDomNodes,
+    peakParticles,
+    peakVisibleEffectGroups,
     maxLayerCount,
     maxCanvasBlackSamples,
     maxContextLosses,
     hiddenBoardSamples,
+    pageCrashed,
+    unexpectedNavigations,
   };
   console.log(`CASCADE_COMPOSITOR_PROBE ${JSON.stringify(summary)}`);
 
+  expect(peakParticles, `Full particle spectacle was not exercised: ${JSON.stringify(summary)}`).toBe(360);
+  expect(peakVisibleEffectGroups, `Cascade exceeded its concurrent visible DOM effect-group budget: ${JSON.stringify(summary)}`).toBeLessThanOrEqual(MAX_VISIBLE_EFFECT_GROUPS);
+  expect(maxLayerCount, `Cascade compositor layer count ran away: ${JSON.stringify(summary)}`).toBeLessThanOrEqual(MAX_COMPOSITOR_LAYERS);
+  expect(maxContextLosses, `Cascade particle canvas lost its context: ${JSON.stringify(summary)}`).toBe(0);
+  expect(hiddenBoardSamples, `Cascade board became hidden during stress: ${JSON.stringify(summary)}`).toBe(0);
   expect(blackFrames, `Transient black compositor frames detected: ${JSON.stringify(summary)}`).toBe(0);
 });
