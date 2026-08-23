@@ -1,0 +1,26 @@
+/*
+ * Cascade nuclear-effect compositor guard.
+ *
+ * The presentation director owns particle count and trajectories. This layer
+ * only changes how the browser composites those particles: the canvas is
+ * cabinet-bounded by cascade-vfx-compositor-guard.js instead of permanently
+ * owning the full browser viewport. Screen blending is intentional: luminous
+ * particles stay bright, while a black backing surface cannot visually erase
+ * the game underneath it.
+ */
+.cascade-dopamine-canvas {
+  inset: auto;
+  background: transparent;
+  mix-blend-mode: screen;
+  contain: layout style;
+  isolation: auto;
+}
+
+/* Do not force the transparent DOM spectacle host into its own full-screen
+ * paint/isolation surface. Individual rings, beams, sparks, and washes retain
+ * their existing positioning and z-order. */
+.cascade-juice-layer {
+  contain: none;
+  isolation: auto;
+  background: transparent;
+}
