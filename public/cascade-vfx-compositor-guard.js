@@ -28,8 +28,9 @@ function surfaceBounds() {
   const overscanX = clamp(viewportWidth * .18, 220, 420);
   const overscanTop = clamp(viewportHeight * .12, 110, 220);
   const overscanBottom = clamp(viewportHeight * .22, 180, 340);
+  const desktopTopFloor = viewportHeight >= 800 ? 72 : 0;
   const left = clamp(Math.floor(anchor.left - overscanX), 0, viewportWidth - 1);
-  const top = clamp(Math.floor(anchor.top - overscanTop), 0, viewportHeight - 1);
+  const top = clamp(Math.floor(anchor.top - overscanTop), desktopTopFloor, viewportHeight - 1);
   const right = clamp(Math.ceil(anchor.right + overscanX), left + 1, viewportWidth);
   const bottom = clamp(Math.ceil(anchor.bottom + overscanBottom), top + 1, viewportHeight);
 
