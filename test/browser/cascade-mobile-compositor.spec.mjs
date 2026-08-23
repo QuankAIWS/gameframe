@@ -158,7 +158,7 @@ test("Cascade mobile chained stripes survive browser-chrome viewport changes wit
   expect(result.peakParticles).toBeLessThanOrEqual(360);
   expect(result.contextLosses).toBe(0);
   expect(result.viewportResizeCount).toBeGreaterThan(20);
-  expect(result.visibleEffectGroups).toBeLessThanOrEqual(28);
+  expect(result.visibleEffectGroups).toBeLessThanOrEqual(20);
   expect(maxLayerCount).toBeLessThanOrEqual(260);
   expect(blackFrames).toBe(0);
 });
