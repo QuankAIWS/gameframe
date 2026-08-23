@@ -13,6 +13,10 @@ import {
 import type { ChallengeNotifier } from "./challenge-notification-port.ts";
 import { errorResponse, json, readJson } from "./http-utils.ts";
 import {
+  exportCascadeDiagnostics,
+  recordCascadeDiagnostics,
+} from "./cascade-diagnostics-coordinator.ts";
+import {
   exportCascadeTelemetry,
   recordCascadeTelemetry,
 } from "./cascade-telemetry-coordinator.ts";
@@ -232,10 +236,22 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           return json(200, await recordCascadeTelemetry(env, principal.playerId, body));
         }
 
+        if (request.method === "POST" && url.pathname === "/api/me/cascade/diagnostics") {
+          const principal = await authenticatorFor(env).authenticate(request);
+          const body = await readJson(request);
+          return json(200, await recordCascadeDiagnostics(env, principal.playerId, body));
+        }
+
         if (request.method === "GET" && url.pathname === "/api/admin/cascade/telemetry/export") {
           const principal = await authenticatorFor(env).authenticate(request);
           const admin = requireStagingAdminPrincipal(env, principal);
           return json(200, await exportCascadeTelemetry(env, admin));
+        }
+
+        if (request.method === "GET" && url.pathname === "/api/admin/cascade/diagnostics/export") {
+          const principal = await authenticatorFor(env).authenticate(request);
+          const admin = requireStagingAdminPrincipal(env, principal);
+          return json(200, await exportCascadeDiagnostics(env, admin));
         }
 
         if (request.method === "POST" && url.pathname === "/api/scores") {
