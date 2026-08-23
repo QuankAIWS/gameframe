@@ -1,0 +1,51 @@
+name: Cascade Compositor Probe
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - ".github/workflows/cascade-compositor-probe.yml"
+      - "public/cascade-presentation-director.js"
+      - "public/cascade-rendering.css"
+      - "public/cascade-juice.css"
+      - "public/cascade-presentation-director.css"
+      - "test/browser/cascade-compositor-black-flash.spec.mjs"
+      - "playwright.config.mjs"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cascade-compositor-probe-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  headed-compositor:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run headed compositor black-flash probe
+        run: xvfb-run -a npx playwright test test/browser/cascade-compositor-black-flash.spec.mjs --config playwright.config.mjs --headed
+      - name: Upload compositor probe frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cascade-compositor-probe-${{ github.run_id }}
+          path: test-results/**/*.png
+          if-no-files-found: warn
+          retention-days: 10
