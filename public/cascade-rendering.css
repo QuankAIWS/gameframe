@@ -16,6 +16,10 @@
   will-change: transform, opacity, filter;
 }
 
+/* The particle canvas intentionally owns the full viewport so nuclear clears can
+   throw squares, ribbons, and waves across the entire cabinet and surrounding UI.
+   Keep it transparent and screen-blended: black contributes nothing to screen
+   blending, so an opaque-black backing should not erase the game underneath. */
 .cascade-dopamine-canvas {
   position: fixed;
   inset: 0;
@@ -23,13 +27,20 @@
   display: block;
   width: 100vw;
   height: 100vh;
+  background: transparent;
+  mix-blend-mode: screen;
+  isolation: auto;
+  contain: none;
   pointer-events: none;
-  contain: strict;
 }
 
+/* Do not force the transparent DOM spectacle host into a separate full-screen
+   paint/isolation surface. Individual rings, beams, sparks, and washes keep
+   their existing positioning and z-order without another compositor island. */
 .cascade-juice-layer {
-  contain: paint;
-  isolation: isolate;
+  contain: none;
+  isolation: auto;
+  background: transparent;
 }
 
 /* Whole-board filters are disproportionately expensive during large clears.

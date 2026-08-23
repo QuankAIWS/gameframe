@@ -9,7 +9,7 @@ async function firstLegalMove(page) {
   });
 }
 
-test("Cascade emits large reward effects through one bounded canvas layer", async ({ page }) => {
+test("Cascade emits large reward effects through one full-viewport screen-blended canvas", async ({ page }) => {
   await page.goto("/cascade.html?player=cascade-vfx-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 
@@ -27,6 +27,7 @@ test("Cascade emits large reward effects through one bounded canvas layer", asyn
 
   const afterMatch = await page.evaluate(() => window.cascadeDopamineVfx.getStats());
   expect(afterMatch.canvasCount).toBe(1);
+  expect(afterMatch.canvasMode).toBe("full-viewport-screen");
   expect(afterMatch.particleBudget).toBe(360);
   expect(afterMatch.peakParticles).toBeGreaterThanOrEqual(20);
   expect(afterMatch.peakParticles).toBeLessThanOrEqual(afterMatch.particleBudget);
@@ -42,11 +43,14 @@ test("Cascade emits large reward effects through one bounded canvas layer", asyn
   expect(stressed.peakParticles).toBeLessThanOrEqual(stressed.particleBudget);
 });
 
-test("Cascade bounds DOM spectacle and keeps the cabinet visible through a nuclear clear", async ({ page }, testInfo) => {
+test("Cascade keeps full-range confetti and the cabinet visible through a nuclear clear", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.addInitScript(() => {
     localStorage.setItem("scribbles-gameframe.cascade-sound:v1", "off");
     localStorage.setItem("scribbles-gameframe.cascade-effects:v1", "full");
+    // Exercise the backing-buffer cap on a high-DPI desktop while keeping the
+    // CSS particle surface full-viewport.
+    Object.defineProperty(window, "devicePixelRatio", { configurable: true, get: () => 2 });
   });
   await page.goto("/cascade.html?player=cascade-vfx-nuclear-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
@@ -85,67 +89,61 @@ test("Cascade bounds DOM spectacle and keeps the cabinet visible through a nucle
   expect(result.colorWashes).toBeLessThanOrEqual(1);
   expect(result.bombImpacts).toBeLessThanOrEqual(4);
   expect(result.stripeBeams).toBeLessThanOrEqual(8);
-  expect(result.stats.activeParticles).toBeLessThanOrEqual(result.stats.particleBudget);
-  expect(result.stats.peakParticles).toBeLessThanOrEqual(result.stats.particleBudget);
+  expect(result.stats.activeParticles).toBe(result.stats.particleBudget);
+  expect(result.stats.peakParticles).toBe(result.stats.particleBudget);
+  expect(result.stats.activeSquares).toBeGreaterThan(0);
+  expect(result.stats.activeRibbons).toBeGreaterThan(0);
   expect(result.stats.activeDomNodes).toBeLessThanOrEqual(170);
   expect(result.stats.peakDomNodes).toBeLessThanOrEqual(170);
   expect(result.stats.lastGeometryReads).toBeLessThanOrEqual(65);
   expect(result.stats.canvasCount).toBe(1);
+  expect(result.stats.canvasMode).toBe("full-viewport-screen");
   expect(result.stats.contextLosses).toBe(0);
-
-  await expect.poll(() => page.evaluate(() => window.cascadeVfxCompositorGuard?.getStats().applyCount || 0), {
-    timeout: 2_000,
-  }).toBeGreaterThan(0);
+  expect(result.stats.canvasDpr).toBe(1.25);
+  expect(result.stats.canvasBackingPixels).toBe(2400 * 1350);
 
   const compositor = await page.evaluate(() => {
     const canvas = document.querySelector(".cascade-dopamine-canvas");
-    const board = document.querySelector("#board");
-    const map = document.querySelector(".cascade-map");
-    const side = document.querySelector(".cascade-side");
     const canvasRect = canvas.getBoundingClientRect();
-    const boardRect = board.getBoundingClientRect();
-    const mapRect = map.getBoundingClientRect();
-    const sideRect = side.getBoundingClientRect();
     const style = getComputedStyle(canvas);
     return {
-      guard: window.cascadeVfxCompositorGuard.getStats(),
-      canvas: { left: canvasRect.left, top: canvasRect.top, right: canvasRect.right, bottom: canvasRect.bottom, width: canvasRect.width, height: canvasRect.height },
-      board: { left: boardRect.left, top: boardRect.top, right: boardRect.right, bottom: boardRect.bottom },
-      map: { left: mapRect.left, top: mapRect.top, right: mapRect.right, bottom: mapRect.bottom },
-      side: { left: sideRect.left, top: sideRect.top, right: sideRect.right, bottom: sideRect.bottom },
+      canvas: {
+        left: canvasRect.left,
+        top: canvasRect.top,
+        right: canvasRect.right,
+        bottom: canvasRect.bottom,
+        width: canvasRect.width,
+        height: canvasRect.height,
+      },
       mixBlendMode: style.mixBlendMode,
       backgroundColor: style.backgroundColor,
+      contain: style.contain,
     };
   });
 
-  expect(compositor.guard.guarded).toBe(true);
-  expect(compositor.guard.coverage).toBeLessThan(.85);
-  expect(compositor.guard.backingPixels).toBeLessThan(
-    Math.round(1920 * compositor.guard.dpr) * Math.round(1080 * compositor.guard.dpr) * .85,
-  );
+  // The particle surface intentionally reaches every viewport edge again so
+  // square/ribbon confetti cannot be clipped at the cabinet boundary.
+  expect(compositor.canvas.left).toBe(0);
+  expect(compositor.canvas.top).toBe(0);
+  expect(compositor.canvas.right).toBe(1920);
+  expect(compositor.canvas.bottom).toBe(1080);
+  expect(compositor.canvas.width).toBe(1920);
+  expect(compositor.canvas.height).toBe(1080);
   expect(compositor.mixBlendMode).toBe("screen");
   expect(compositor.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+  expect(compositor.contain).toBe("none");
 
-  // Overscan must carry particles beyond the grid and across both cabinet rails.
-  expect(compositor.canvas.left).toBeLessThanOrEqual(compositor.map.left);
-  expect(compositor.canvas.right).toBeGreaterThanOrEqual(compositor.side.right);
-  expect(compositor.canvas.left).toBeLessThan(compositor.board.left - 80);
-  expect(compositor.canvas.right).toBeGreaterThan(compositor.board.right + 80);
-  expect(compositor.board.top - compositor.canvas.top).toBeGreaterThanOrEqual(60);
-  expect(compositor.canvas.bottom).toBeGreaterThan(compositor.board.bottom + 120);
-
-  // A roomy desktop retains an uncovered upper strip; a compositor backing
-  // failure therefore cannot black out the whole application/header anymore.
-  expect(compositor.canvas.top).toBeGreaterThanOrEqual(72);
-
-  // Capture the exact vulnerable moment: every candy is entering its clear-out
-  // animation while the nuclear particle/DOM spectacle is still alive.
+  // Capture the vulnerable moment after particles have had time to travel well
+  // outside the grid: candies are clearing while squares/ribbons remain active.
   await page.evaluate(() => {
     document.querySelectorAll(".cascade-tile").forEach((tile) => tile.classList.add("is-clearing"));
   });
-  await page.waitForTimeout(135);
+  await page.waitForTimeout(220);
   await expect(page.locator(".cascade-game")).toBeVisible();
   await expect(page.locator(".cascade-board-wrap")).toBeVisible();
-  expect(await page.evaluate(() => window.cascadePresentationDirector.getStats().activeParticles)).toBeGreaterThan(0);
+  const live = await page.evaluate(() => window.cascadePresentationDirector.getStats());
+  expect(live.activeParticles).toBeGreaterThan(0);
+  expect(live.activeSquares).toBeGreaterThan(0);
+  expect(live.activeRibbons).toBeGreaterThan(0);
   await page.screenshot({ path: testInfo.outputPath("cascade-nuclear-live.png"), fullPage: false });
 });

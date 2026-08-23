@@ -5,6 +5,11 @@ const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.m
 const DOM_BURST_TILE_CAP = 12;
 const DOM_BURST_SPARK_CAP = 120;
 const SPECIAL_EFFECT_CAP = Object.freeze({ color: 1, bomb: 4, stripe: 8 });
+const CANVAS_MAX_DPR = 1.5;
+const CANVAS_MEDIUM_DPR = 1.25;
+const CANVAS_MEDIUM_AREA = 1_500_000;
+const CANVAS_LARGE_DPR = 1;
+const CANVAS_LARGE_AREA = 4_000_000;
 
 let soundEnabled = localStorage.getItem(SOUND_KEY) !== "off";
 let effectsMode = localStorage.getItem(EFFECTS_KEY) === "reduced" ? "reduced" : "full";
@@ -175,6 +180,7 @@ function ensureCanvas() {
   if (canvas?.isConnected && context) return canvas;
   canvas = document.createElement("canvas");
   canvas.className = "cascade-dopamine-canvas";
+  canvas.dataset.compositorMode = "full-viewport-screen";
   canvas.setAttribute("aria-hidden", "true");
   canvas.addEventListener("contextlost", handleCanvasContextLost, { once: true });
   document.body.append(canvas);
@@ -188,11 +194,19 @@ function ensureCanvas() {
   return canvas;
 }
 
+function canvasDpr() {
+  const requested = Math.min(CANVAS_MAX_DPR, Math.max(1, window.devicePixelRatio || 1));
+  const area = viewportWidth * viewportHeight;
+  if (area >= CANVAS_LARGE_AREA) return Math.min(requested, CANVAS_LARGE_DPR);
+  if (area >= CANVAS_MEDIUM_AREA) return Math.min(requested, CANVAS_MEDIUM_DPR);
+  return requested;
+}
+
 function resizeCanvas() {
   if (!canvas || !context) return;
   viewportWidth = Math.max(1, window.innerWidth);
   viewportHeight = Math.max(1, window.innerHeight);
-  dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
+  dpr = canvasDpr();
   canvas.width = Math.round(viewportWidth * dpr);
   canvas.height = Math.round(viewportHeight * dpr);
   canvas.style.width = `${viewportWidth}px`;
@@ -202,25 +216,28 @@ function resizeCanvas() {
 
 function addWave(x, y, color, intensity = 1) {
   if (waves.length >= 18) waves.shift();
-  waves.push({ x, y, color, age: 0, life: .6 + intensity * .1, startRadius: 18 + intensity * 7, endRadius: 150 + intensity * 88, width: 3 + intensity * 1.2 });
+  waves.push({ x, y, color, age: 0, life: .62 + intensity * .11, startRadius: 18 + intensity * 7, endRadius: 170 + intensity * 92, width: 3.5 + intensity * 1.35 });
 }
 
 function addParticle(x, y, color, intensity, cascade, ordinal) {
   if (particles.length >= particleBudget()) return false;
   const angle = Math.random() * Math.PI * 2;
-  const speed = 280 + Math.random() * (380 + intensity * 145 + Math.min(cascade, 6) * 60);
+  const speed = 300 + Math.random() * (410 + intensity * 155 + Math.min(cascade, 5) * 68);
+  const upwardBias = 60 + Math.random() * 150;
+  const life = .78 + Math.random() * .62 + intensity * .08;
+  const size = 3.2 + Math.random() * (5.6 + intensity * 1.55);
   particles.push({
     x,
     y,
     previousX: x,
     previousY: y,
     vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed - 55 - Math.random() * 150,
-    gravity: 160 + Math.random() * 220,
+    vy: Math.sin(angle) * speed - upwardBias,
+    gravity: 150 + Math.random() * 230,
     drag: .978 + Math.random() * .012,
     age: 0,
-    life: .72 + Math.random() * .55 + intensity * .07,
-    size: 3 + Math.random() * (5 + intensity * 1.4),
+    life,
+    size,
     color,
     rotation: Math.random() * Math.PI,
     spin: (Math.random() - .5) * 11,
@@ -232,8 +249,8 @@ function addParticle(x, y, color, intensity, cascade, ordinal) {
 function emitBurst(x, y, color, intensity = 1, cascade = 1, multiplier = 1) {
   if (reducedMotion || !ensureCanvas()) return 0;
   const full = effectiveEffectsMode() === "full";
-  const base = full ? 18 : 6;
-  const requested = Math.round((base + intensity * (full ? 8 : 3) + Math.min(cascade, 6) * (full ? 4 : 1)) * multiplier);
+  const base = full ? 20 : 7;
+  const requested = Math.round((base + intensity * (full ? 9 : 3) + Math.min(cascade, 5) * (full ? 5 : 1)) * multiplier);
   let emitted = 0;
   for (let index = 0; index < requested; index += 1) {
     if (!addParticle(x, y, color, intensity, cascade, index)) break;
@@ -275,7 +292,7 @@ function drawWave(wave) {
   if (!context) return;
   const progress = Math.min(1, wave.age / wave.life);
   const radius = wave.startRadius + (wave.endRadius - wave.startRadius) * (1 - Math.pow(1 - progress, 2));
-  context.globalAlpha = Math.max(0, .82 * (1 - progress));
+  context.globalAlpha = Math.max(0, .84 * (1 - progress));
   context.strokeStyle = wave.color;
   context.lineWidth = wave.width * (1 - progress * .5);
   context.beginPath();
@@ -614,7 +631,7 @@ function transitionClear(transition) {
   if (samples.length && cascade >= 2 && effectiveEffectsMode() === "full") {
     const x = samples.reduce((sum, sample) => sum + sample.x, 0) / samples.length;
     const y = samples.reduce((sum, sample) => sum + sample.y, 0) / samples.length;
-    emitBurst(x, y, palette[Math.min(palette.length - 1, cascade)], Math.min(3, tier), cascade, cascade >= 4 ? 1.35 : .7);
+    emitBurst(x, y, palette[Math.min(palette.length - 1, cascade)], Math.min(3, tier), cascade, cascade >= 4 ? 1.45 : .8);
   }
   playClear(samples.length, tier, cascade);
 
@@ -913,12 +930,17 @@ export const cascadePresentationDirector = Object.freeze({
     return {
       ...metrics,
       activeParticles: particles.length,
+      activeSquares: particles.filter((particle) => particle.shape === "square").length,
+      activeRibbons: particles.filter((particle) => particle.shape === "ribbon").length,
       activeWaves: waves.length,
       activeDomNodes,
       particleBudget: particleBudget(),
       domBurstTileCap: DOM_BURST_TILE_CAP,
       domBurstSparkCap: DOM_BURST_SPARK_CAP,
       canvasCount: document.querySelectorAll(".cascade-dopamine-canvas").length,
+      canvasDpr: dpr,
+      canvasBackingPixels: canvas ? canvas.width * canvas.height : 0,
+      canvasMode: canvas?.dataset.compositorMode || "",
     };
   },
   demo,
