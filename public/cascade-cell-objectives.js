@@ -6,7 +6,12 @@ if (board && wrap) {
   const coatingLayer = document.createElement("div");
   coatingLayer.className = "cascade-cell-coating-layer";
   coatingLayer.setAttribute("aria-hidden", "true");
-  wrap.append(coatingLayer);
+
+  const effectLayer = document.createElement("div");
+  effectLayer.className = "cascade-cell-coating-layer cascade-cell-coating-effects";
+  effectLayer.setAttribute("aria-hidden", "true");
+
+  wrap.append(coatingLayer, effectLayer);
 
   let previousIce = new Map();
   let initialized = false;
@@ -29,11 +34,41 @@ if (board && wrap) {
     element.dataset.index = String(index);
   }
 
+  function shellInset(shellNumber) {
+    if (shellNumber <= 1) return 7;
+    if (shellNumber === 2) return 3.5;
+    if (shellNumber === 3) return 0;
+    if (shellNumber === 4) return -1.5;
+    return -2.5;
+  }
+
+  function appendShells(coating, firstShell, lastShell) {
+    for (let shellNumber = firstShell; shellNumber <= lastShell; shellNumber += 1) {
+      const shell = document.createElement("span");
+      shell.className = "cascade-ice-shell";
+      shell.dataset.shell = String(shellNumber);
+      shell.style.inset = `${shellInset(shellNumber)}%`;
+      coating.append(shell);
+    }
+  }
+
   function makeCoating(index, layers) {
     const coating = document.createElement("span");
-    coating.className = `cascade-cell-coating ice-${layers > 1 ? 2 : 1}`;
+    const visualLayers = Math.min(3, Math.max(1, layers));
+    coating.className = `cascade-cell-coating ice-${visualLayers} ice-layers-${layers}`;
     coating.dataset.layers = String(layers);
     cellPlacement(coating, index);
+    appendShells(coating, 1, layers);
+    return coating;
+  }
+
+  function makeRemovedShells(index, remainingLayers, oldLayers) {
+    const coating = document.createElement("span");
+    coating.className = "cascade-cell-coating is-shedding-shell";
+    coating.dataset.layers = String(oldLayers);
+    coating.dataset.remainingLayers = String(remainingLayers);
+    cellPlacement(coating, index);
+    appendShells(coating, remainingLayers + 1, oldLayers);
     return coating;
   }
 
@@ -56,12 +91,18 @@ if (board && wrap) {
     // Absolutely positioned children use the wrapper's padding box as their
     // containing block. Subtract the wrapper border so a thicker cabinet bezel
     // cannot shift fixed cell coatings away from the underlying candy grid.
-    coatingLayer.style.left = `${boardRect.left - wrapRect.left - wrapBorderLeft + borderLeft + paddingLeft}px`;
-    coatingLayer.style.top = `${boardRect.top - wrapRect.top - wrapBorderTop + borderTop + paddingTop}px`;
-    coatingLayer.style.width = `${Math.max(0, boardRect.width - borderLeft - borderRight - paddingLeft - paddingRight)}px`;
-    coatingLayer.style.height = `${Math.max(0, boardRect.height - borderTop - borderBottom - paddingTop - paddingBottom)}px`;
-    coatingLayer.style.columnGap = style.columnGap;
-    coatingLayer.style.rowGap = style.rowGap;
+    for (const layer of [coatingLayer, effectLayer]) {
+      layer.style.left = `${boardRect.left - wrapRect.left - wrapBorderLeft + borderLeft + paddingLeft}px`;
+      layer.style.top = `${boardRect.top - wrapRect.top - wrapBorderTop + borderTop + paddingTop}px`;
+      layer.style.width = `${Math.max(0, boardRect.width - borderLeft - borderRight - paddingLeft - paddingRight)}px`;
+      layer.style.height = `${Math.max(0, boardRect.height - borderTop - borderBottom - paddingTop - paddingBottom)}px`;
+      layer.style.columnGap = style.columnGap;
+      layer.style.rowGap = style.rowGap;
+    }
+  }
+
+  function removeEffectAfterAnimation(effect) {
+    window.setTimeout(() => effect.remove(), 520);
   }
 
   function syncCoatings() {
@@ -71,6 +112,7 @@ if (board && wrap) {
       previousLevel = currentLevel;
       previousIce = new Map();
       initialized = false;
+      effectLayer.replaceChildren();
     }
 
     const nextIce = iceSnapshot();
@@ -78,9 +120,15 @@ if (board && wrap) {
 
     for (const [index, layers] of nextIce) {
       const coating = makeCoating(index, layers);
-      if (initialized && previousIce.has(index) && previousIce.get(index) > layers) {
-        coating.classList.add("is-cracking");
+      const oldLayers = previousIce.get(index);
+
+      if (initialized && oldLayers > layers) {
+        coating.classList.add("is-layer-exposed");
+        const removedShells = makeRemovedShells(index, layers, oldLayers);
+        effectLayer.append(removedShells);
+        removeEffectAfterAnimation(removedShells);
       }
+
       fragment.append(coating);
     }
 
@@ -89,8 +137,8 @@ if (board && wrap) {
         if (nextIce.has(index)) continue;
         const shatter = makeCoating(index, oldLayers);
         shatter.classList.add("is-shattering");
-        fragment.append(shatter);
-        window.setTimeout(() => shatter.remove(), 520);
+        effectLayer.append(shatter);
+        removeEffectAfterAnimation(shatter);
       }
     }
 
