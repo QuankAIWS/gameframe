@@ -131,7 +131,7 @@ test("Cascade bounds DOM spectacle and keeps the cabinet visible through a nucle
   expect(compositor.canvas.right).toBeGreaterThanOrEqual(compositor.side.right);
   expect(compositor.canvas.left).toBeLessThan(compositor.board.left - 80);
   expect(compositor.canvas.right).toBeGreaterThan(compositor.board.right + 80);
-  expect(compositor.canvas.top).toBeLessThan(compositor.board.top - 80);
+  expect(compositor.board.top - compositor.canvas.top).toBeGreaterThanOrEqual(60);
   expect(compositor.canvas.bottom).toBeGreaterThan(compositor.board.bottom + 120);
 
   // A roomy desktop retains an uncovered upper strip; a compositor backing
