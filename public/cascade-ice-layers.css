@@ -1,0 +1,182 @@
+/* Cascade ice durability is communicated by countable crystalline shells.
+   Keep the candy center visually open so hue remains the primary match signal. */
+.cascade-cell-coating {
+  overflow: visible;
+  border: 0;
+  background:
+    radial-gradient(circle at 8% 8%, rgba(239,253,255,.42) 0 4%, rgba(102,213,239,.18) 5% 11%, transparent 12%),
+    radial-gradient(circle at 92% 8%, rgba(239,253,255,.34) 0 3%, rgba(102,213,239,.14) 4% 10%, transparent 11%),
+    radial-gradient(circle at 8% 92%, rgba(239,253,255,.32) 0 3%, rgba(102,213,239,.13) 4% 10%, transparent 11%),
+    radial-gradient(circle at 92% 92%, rgba(239,253,255,.38) 0 4%, rgba(102,213,239,.16) 5% 11%, transparent 12%);
+  box-shadow:
+    inset 0 0 10px rgba(115,216,240,.12),
+    0 0 8px rgba(55,178,214,.14);
+  filter: drop-shadow(0 2px 2px rgba(31,100,134,.16));
+}
+
+/* The snowflake identifies the objective family. It is intentionally airy;
+   durability comes from the shell count, not from obscuring the candy. */
+.cascade-cell-coating::before {
+  content: "\2744";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border: 0;
+  color: rgba(240,252,255,.13);
+  -webkit-text-stroke: 1px rgba(247,254,255,.78);
+  font-family: "Segoe UI Symbol", sans-serif;
+  font-size: clamp(1.9rem, 4.85vw, 3.35rem);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow:
+    0 1px 1px rgba(17,76,106,.38),
+    0 0 4px rgba(255,255,255,.62),
+    0 0 9px rgba(56,187,224,.42),
+    0 0 14px rgba(255,255,255,.18);
+  box-shadow: none;
+  opacity: .86;
+  pointer-events: none;
+}
+
+/* A small diagonal glare adds ice texture without reading as another layer. */
+.cascade-cell-coating::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 14%;
+  top: 12%;
+  width: 25%;
+  height: 2px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.7), rgba(113,211,238,.08));
+  box-shadow: 0 0 4px rgba(255,255,255,.32);
+  transform: rotate(-34deg);
+  opacity: .7;
+  pointer-events: none;
+}
+
+/* Each DOM shell is a real, countable durability layer. The renderer places
+   successive shells farther toward the cell edge, so 1 -> 2 -> 3 is readable
+   by silhouette even with motion, reduced effects, or different candy hues. */
+.cascade-ice-shell {
+  position: absolute;
+  z-index: 1;
+  box-sizing: border-box;
+  border: 2px solid rgba(230,250,255,.76);
+  border-radius: 27%;
+  background: transparent;
+  box-shadow:
+    0 0 0 1px rgba(68,188,222,.22),
+    inset 0 0 6px rgba(108,213,238,.12),
+    0 0 5px rgba(59,185,220,.16);
+  pointer-events: none;
+}
+
+.cascade-ice-shell:nth-child(even) {
+  border-color: rgba(151,225,246,.82);
+  box-shadow:
+    0 0 0 1px rgba(244,253,255,.52),
+    inset 0 0 6px rgba(73,195,229,.16),
+    0 0 5px rgba(59,185,220,.2);
+}
+
+.cascade-cell-coating.ice-2 {
+  background:
+    radial-gradient(circle at 7% 7%, rgba(242,254,255,.5) 0 5%, rgba(82,205,235,.21) 6% 13%, transparent 14%),
+    radial-gradient(circle at 93% 7%, rgba(242,254,255,.42) 0 4%, rgba(82,205,235,.18) 5% 12%, transparent 13%),
+    radial-gradient(circle at 7% 93%, rgba(242,254,255,.4) 0 4%, rgba(82,205,235,.17) 5% 12%, transparent 13%),
+    radial-gradient(circle at 93% 93%, rgba(242,254,255,.46) 0 5%, rgba(82,205,235,.19) 6% 13%, transparent 14%);
+}
+
+.cascade-cell-coating.ice-3,
+.cascade-cell-coating[data-layers="4"],
+.cascade-cell-coating[data-layers="5"] {
+  background:
+    radial-gradient(circle at 7% 7%, rgba(247,255,255,.58) 0 6%, rgba(74,198,231,.25) 7% 15%, transparent 16%),
+    radial-gradient(circle at 93% 7%, rgba(247,255,255,.5) 0 5%, rgba(74,198,231,.22) 6% 14%, transparent 15%),
+    radial-gradient(circle at 7% 93%, rgba(247,255,255,.48) 0 5%, rgba(74,198,231,.21) 6% 14%, transparent 15%),
+    radial-gradient(circle at 93% 93%, rgba(247,255,255,.54) 0 6%, rgba(74,198,231,.23) 7% 15%, transparent 16%);
+  box-shadow:
+    inset 0 0 13px rgba(92,208,237,.17),
+    0 0 10px rgba(47,181,220,.2);
+}
+
+/* The newly exposed state gives a short confirmation beat. Persistent layer
+   meaning still comes only from the number of visible shells. */
+.cascade-cell-coating.is-layer-exposed {
+  animation: cascade-ice-layer-exposed 390ms ease-out both;
+}
+
+/* Removed shells live on a separate effects grid so subsequent board mutations
+   cannot erase the shatter before the player sees it. */
+.cascade-cell-coating-layer.cascade-cell-coating-effects {
+  z-index: 12;
+}
+
+.cascade-cell-coating.is-shedding-shell {
+  z-index: 4;
+  background: transparent;
+  box-shadow: none;
+  filter: none;
+  animation: cascade-ice-shell-shed 500ms cubic-bezier(.12,.7,.2,1) both;
+}
+
+.cascade-cell-coating.is-shedding-shell::before,
+.cascade-cell-coating.is-shedding-shell::after {
+  content: none;
+}
+
+.cascade-cell-coating.is-shedding-shell .cascade-ice-shell {
+  border-color: rgba(244,253,255,.9);
+  box-shadow:
+    0 0 0 1px rgba(82,202,234,.48),
+    0 0 8px rgba(255,255,255,.46),
+    0 0 12px rgba(55,190,226,.3);
+}
+
+@keyframes cascade-ice-layer-exposed {
+  0% { transform: scale(1); filter: brightness(1); }
+  42% { transform: scale(1.035); filter: brightness(1.35); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes cascade-ice-shell-shed {
+  0% { transform: scale(1); opacity: 1; }
+  36% { transform: scale(1.045); opacity: .96; filter: brightness(1.55); }
+  100% { transform: scale(1.2); opacity: 0; filter: brightness(1.9); }
+}
+
+body[data-cascade-effects="reduced"] .cascade-cell-coating {
+  filter: none;
+}
+
+body[data-cascade-effects="reduced"] .cascade-cell-coating.is-layer-exposed,
+body[data-cascade-effects="reduced"] .cascade-cell-coating.is-shedding-shell,
+@media (prefers-reduced-motion: reduce) {
+  .cascade-cell-coating.is-layer-exposed,
+  .cascade-cell-coating.is-shedding-shell {
+    animation-duration: 1ms !important;
+  }
+}
+
+@media (max-width: 650px) {
+  .cascade-cell-coating::before {
+    font-size: clamp(1.45rem, 8.2vw, 2.55rem);
+    -webkit-text-stroke-width: .85px;
+  }
+
+  .cascade-ice-shell {
+    border-width: 1.5px;
+    box-shadow:
+      0 0 0 .75px rgba(68,188,222,.28),
+      inset 0 0 4px rgba(108,213,238,.12),
+      0 0 3px rgba(59,185,220,.18);
+  }
+
+  .cascade-ice-shell:nth-child(even) {
+    border-width: 2px;
+  }
+}
