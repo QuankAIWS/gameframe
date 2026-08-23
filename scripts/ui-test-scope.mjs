@@ -63,15 +63,18 @@ function isFamilyAuthFile(file) {
 function isCascadeTelemetryFile(file) {
   return file === "public/cascade-admin-telemetry.js"
     || file === "public/cascade-telemetry-sync.js"
-    || /^src\/cloudflare\/cascade-telemetry-.*\.ts$/.test(file)
-    || /^test\/browser\/cascade-telemetry.*\.spec\.mjs$/.test(file);
+    || file === "public/cascade-diagnostics-sync.js"
+    || file === "public/cascade-lifecycle-diagnostics.js"
+    || /^src\/cloudflare\/cascade-(?:telemetry|diagnostics)-.*\.ts$/.test(file)
+    || /^test\/browser\/cascade-(?:telemetry|render-lifecycle).*\.spec\.mjs$/.test(file);
 }
 
 function isCascadeUiFile(file) {
   const publicCascade = /^public\/cascade[^/]*\.(?:html|css|js)$/.test(file)
     && file !== "public/cascade-progression-sync.js"
     && file !== "public/cascade-admin-telemetry.js"
-    && file !== "public/cascade-telemetry-sync.js";
+    && file !== "public/cascade-telemetry-sync.js"
+    && file !== "public/cascade-diagnostics-sync.js";
   return publicCascade
     || file.startsWith("src/games/cascade/")
     || /^test\/browser\/cascade.*\.spec\.mjs$/.test(file)
