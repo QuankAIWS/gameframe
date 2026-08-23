@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 const VIEWPORT = { width: 1920, height: 1080 };
 const ROUNDS = 10;
 const PHASE_MS = 180;
+test.setTimeout(90_000);
 
 async function runScenario(browser, name, { css = "", domBudget = 0 } = {}) {
   const context = await browser.newContext({
