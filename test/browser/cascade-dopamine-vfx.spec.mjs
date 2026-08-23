@@ -41,3 +41,54 @@ test("Cascade emits large reward effects through one bounded canvas layer", asyn
   expect(stressed.activeParticles).toBeLessThanOrEqual(stressed.particleBudget);
   expect(stressed.peakParticles).toBeLessThanOrEqual(stressed.particleBudget);
 });
+
+test("Cascade bounds DOM spectacle and batches geometry for a nuclear clear", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("scribbles-gameframe.cascade-sound:v1", "off");
+    localStorage.setItem("scribbles-gameframe.cascade-effects:v1", "full");
+  });
+  await page.goto("/cascade.html?player=cascade-vfx-nuclear-test");
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
+
+  const result = await page.evaluate(() => {
+    const matched = Array.from({ length: 64 }, (_, index) => index);
+    const triggeredSpecials = [
+      ...Array.from({ length: 8 }, (_, index) => ({ index, special: "color" })),
+      ...Array.from({ length: 8 }, (_, offset) => ({ index: 8 + offset, special: "bomb" })),
+      ...Array.from({ length: 16 }, (_, offset) => ({
+        index: 16 + offset,
+        special: offset % 2 ? "stripe-v" : "stripe-h",
+      })),
+    ];
+
+    window.cascadePresentationDirector.transitionClear({
+      combo: "color-bomb",
+      cascade: 6,
+      matched,
+      triggeredSpecials,
+      createdSpecials: [],
+    });
+
+    return {
+      stats: window.cascadePresentationDirector.getStats(),
+      popBursts: document.querySelectorAll(".cascade-pop-burst").length,
+      popSparks: document.querySelectorAll(".cascade-pop-spark").length,
+      colorWashes: document.querySelectorAll(".cascade-color-wash").length,
+      bombImpacts: document.querySelectorAll(".cascade-impact-bomb").length,
+      stripeBeams: document.querySelectorAll(".cascade-stripe-beam").length,
+    };
+  });
+
+  expect(result.popBursts).toBeLessThanOrEqual(12);
+  expect(result.popSparks).toBeLessThanOrEqual(120);
+  expect(result.colorWashes).toBeLessThanOrEqual(1);
+  expect(result.bombImpacts).toBeLessThanOrEqual(4);
+  expect(result.stripeBeams).toBeLessThanOrEqual(8);
+  expect(result.stats.activeParticles).toBeLessThanOrEqual(result.stats.particleBudget);
+  expect(result.stats.peakParticles).toBeLessThanOrEqual(result.stats.particleBudget);
+  expect(result.stats.activeDomNodes).toBeLessThanOrEqual(170);
+  expect(result.stats.peakDomNodes).toBeLessThanOrEqual(170);
+  expect(result.stats.lastGeometryReads).toBeLessThanOrEqual(65);
+  expect(result.stats.canvasCount).toBe(1);
+  expect(result.stats.contextLosses).toBe(0);
+});

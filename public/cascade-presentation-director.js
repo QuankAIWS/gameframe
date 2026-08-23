@@ -2,6 +2,9 @@ const SOUND_KEY = "scribbles-gameframe.cascade-sound:v1";
 const EFFECTS_KEY = "scribbles-gameframe.cascade-effects:v1";
 const palette = ["#ff5eaa", "#44c9ee", "#ffd34e", "#69d877", "#a56af4", "#ff914d"];
 const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+const DOM_BURST_TILE_CAP = 12;
+const DOM_BURST_SPARK_CAP = 120;
+const SPECIAL_EFFECT_CAP = Object.freeze({ color: 1, bomb: 4, stripe: 8 });
 
 let soundEnabled = localStorage.getItem(SOUND_KEY) !== "off";
 let effectsMode = localStorage.getItem(EFFECTS_KEY) === "reduced" ? "reduced" : "full";
@@ -14,6 +17,7 @@ let viewportWidth = 0;
 let viewportHeight = 0;
 let dpr = 1;
 let hypeToken = 0;
+let activeDomNodes = 0;
 const particles = [];
 const waves = [];
 const metrics = {
@@ -25,6 +29,10 @@ const metrics = {
   bursts: 0,
   peakParticles: 0,
   lastBurstParticles: 0,
+  peakDomNodes: 0,
+  contextLosses: 0,
+  lastGeometryReads: 0,
+  peakGeometryReads: 0,
   frames: 0,
 };
 
@@ -154,13 +162,28 @@ function playFail() {
   tone(247, .16, .02, "triangle", .09);
 }
 
+function handleCanvasContextLost() {
+  metrics.contextLosses += 1;
+  clearAnimation();
+  const lostCanvas = canvas;
+  canvas = null;
+  context = null;
+  lostCanvas?.remove();
+}
+
 function ensureCanvas() {
   if (canvas?.isConnected && context) return canvas;
   canvas = document.createElement("canvas");
   canvas.className = "cascade-dopamine-canvas";
   canvas.setAttribute("aria-hidden", "true");
+  canvas.addEventListener("contextlost", handleCanvasContextLost, { once: true });
   document.body.append(canvas);
-  context = canvas.getContext("2d", { alpha: true, desynchronized: true });
+  context = canvas.getContext("2d", { alpha: true });
+  if (!context) {
+    canvas.remove();
+    canvas = null;
+    return null;
+  }
   resizeCanvas();
   return canvas;
 }
@@ -207,8 +230,7 @@ function addParticle(x, y, color, intensity, cascade, ordinal) {
 }
 
 function emitBurst(x, y, color, intensity = 1, cascade = 1, multiplier = 1) {
-  if (reducedMotion) return 0;
-  ensureCanvas();
+  if (reducedMotion || !ensureCanvas()) return 0;
   const full = effectiveEffectsMode() === "full";
   const base = full ? 18 : 6;
   const requested = Math.round((base + intensity * (full ? 8 : 3) + Math.min(cascade, 6) * (full ? 4 : 1)) * multiplier);
@@ -327,6 +349,57 @@ function tileColor(tile) {
   return palette[Number.isInteger(kind) ? ((kind % palette.length) + palette.length) % palette.length : 0];
 }
 
+function tileSample(index) {
+  const tile = tileAt(index);
+  if (!tile) return null;
+  const rect = tile.getBoundingClientRect();
+  return {
+    index,
+    tile,
+    rect,
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+    color: tileColor(tile),
+  };
+}
+
+function collectTransitionGeometry(transition) {
+  const indices = new Set(transition.matched || []);
+  for (const trigger of transition.triggeredSpecials || []) indices.add(trigger.index);
+  const samples = new Map();
+  let reads = 0;
+  for (const index of indices) {
+    const sample = tileSample(index);
+    if (!sample) continue;
+    samples.set(index, sample);
+    reads += 1;
+  }
+  const board = document.querySelector("#board");
+  const boardRect = board?.getBoundingClientRect?.() ?? null;
+  if (boardRect) reads += 1;
+  metrics.lastGeometryReads = reads;
+  metrics.peakGeometryReads = Math.max(metrics.peakGeometryReads, reads);
+  return { samples, boardRect };
+}
+
+function spreadSamples(samples, cap) {
+  if (samples.length <= cap) return samples;
+  const sorted = [...samples].sort((left, right) => left.index - right.index);
+  const chosen = [];
+  for (let index = 0; index < cap; index += 1) {
+    const position = cap === 1 ? 0 : Math.round(index * (sorted.length - 1) / (cap - 1));
+    chosen.push(sorted[position]);
+  }
+  return chosen;
+}
+
+function popSparkCount(intensity, matchedCount, burstCount) {
+  const base = effectiveEffectsMode() === "reduced" ? 5 : intensity >= 3 ? 15 : intensity === 2 ? 10 : 7;
+  if (matchedCount <= 8) return base;
+  const budget = effectiveEffectsMode() === "reduced" ? 30 : DOM_BURST_SPARK_CAP;
+  return Math.max(4, Math.min(base, Math.floor(budget / Math.max(1, burstCount))));
+}
+
 function ensureJuiceLayer() {
   let layer = document.querySelector(".cascade-juice-layer");
   if (!layer) {
@@ -336,6 +409,16 @@ function ensureJuiceLayer() {
     document.body.append(layer);
   }
   return layer;
+}
+
+function appendJuiceEffect(effect, lifetime, nodeCost = 1) {
+  ensureJuiceLayer().append(effect);
+  activeDomNodes += nodeCost;
+  metrics.peakDomNodes = Math.max(metrics.peakDomNodes, activeDomNodes);
+  window.setTimeout(() => {
+    effect.remove();
+    activeDomNodes = Math.max(0, activeDomNodes - nodeCost);
+  }, lifetime);
 }
 
 function ensureHypeLayer() {
@@ -351,20 +434,18 @@ function ensureHypeLayer() {
   return layer;
 }
 
-function spawnPopBurst(tile, intensity = 1) {
-  if (reducedMotion || !tile) return;
-  const center = tileCenter(tile);
-  if (!center) return;
+function spawnPopBurst(sample, intensity = 1, sparkCount = null) {
+  if (reducedMotion || !sample) return;
   const burst = document.createElement("div");
   burst.className = "cascade-pop-burst";
   burst.dataset.intensity = String(Math.max(1, Math.min(3, intensity)));
-  burst.style.setProperty("--juice-x", `${center.x}px`);
-  burst.style.setProperty("--juice-y", `${center.y}px`);
-  burst.style.setProperty("--juice-color", tileColor(tile));
+  burst.style.setProperty("--juice-x", `${sample.x}px`);
+  burst.style.setProperty("--juice-y", `${sample.y}px`);
+  burst.style.setProperty("--juice-color", sample.color);
   const ring = document.createElement("span");
   ring.className = "cascade-pop-ring";
   burst.append(ring);
-  const count = effectiveEffectsMode() === "reduced" ? 5 : intensity >= 3 ? 15 : intensity === 2 ? 10 : 7;
+  const count = sparkCount ?? (effectiveEffectsMode() === "reduced" ? 5 : intensity >= 3 ? 15 : intensity === 2 ? 10 : 7);
   for (let index = 0; index < count; index += 1) {
     const spark = document.createElement("i");
     spark.className = "cascade-pop-spark";
@@ -375,62 +456,52 @@ function spawnPopBurst(tile, intensity = 1) {
     spark.style.setProperty("--spark-duration", `${430 + Math.random() * 170}ms`);
     burst.append(spark);
   }
-  ensureJuiceLayer().append(burst);
-  window.setTimeout(() => burst.remove(), 760);
+  appendJuiceEffect(burst, 760, count + 2);
 }
 
-function spawnStripeBeam(tile, type) {
-  const board = document.querySelector("#board");
-  const center = tileCenter(tile);
-  const boardRect = board?.getBoundingClientRect();
-  if (!center || !boardRect || reducedMotion) return;
+function spawnStripeBeam(sample, type, boardRect) {
+  if (!sample || !boardRect || reducedMotion) return;
   const beam = document.createElement("div");
   const horizontal = type === "stripe-h";
   beam.className = `cascade-stripe-beam ${horizontal ? "is-horizontal" : "is-vertical"}`;
-  beam.style.setProperty("--juice-color", tileColor(tile));
+  beam.style.setProperty("--juice-color", sample.color);
   if (horizontal) {
     beam.style.left = `${boardRect.left}px`;
-    beam.style.top = `${center.y - Math.max(4, center.rect.height * .08)}px`;
+    beam.style.top = `${sample.y - Math.max(4, sample.rect.height * .08)}px`;
     beam.style.width = `${boardRect.width}px`;
-    beam.style.height = `${Math.max(8, center.rect.height * .16)}px`;
+    beam.style.height = `${Math.max(8, sample.rect.height * .16)}px`;
   } else {
-    beam.style.left = `${center.x - Math.max(4, center.rect.width * .08)}px`;
+    beam.style.left = `${sample.x - Math.max(4, sample.rect.width * .08)}px`;
     beam.style.top = `${boardRect.top}px`;
-    beam.style.width = `${Math.max(8, center.rect.width * .16)}px`;
+    beam.style.width = `${Math.max(8, sample.rect.width * .16)}px`;
     beam.style.height = `${boardRect.height}px`;
   }
-  ensureJuiceLayer().append(beam);
-  window.setTimeout(() => beam.remove(), 560);
+  appendJuiceEffect(beam, 560);
 }
 
-function spawnBombImpact(tile) {
-  const center = tileCenter(tile);
-  if (!center || reducedMotion) return;
+function spawnBombImpact(sample) {
+  if (!sample || reducedMotion) return;
   const effect = document.createElement("div");
   effect.className = "cascade-impact-bomb";
-  effect.style.setProperty("--juice-x", `${center.x}px`);
-  effect.style.setProperty("--juice-y", `${center.y}px`);
-  effect.style.setProperty("--juice-color", tileColor(tile));
+  effect.style.setProperty("--juice-x", `${sample.x}px`);
+  effect.style.setProperty("--juice-y", `${sample.y}px`);
+  effect.style.setProperty("--juice-color", sample.color);
   const ring = document.createElement("span");
   ring.className = "cascade-bomb-ring";
   effect.append(ring);
-  ensureJuiceLayer().append(effect);
-  window.setTimeout(() => effect.remove(), 760);
+  appendJuiceEffect(effect, 760, 2);
 }
 
-function spawnColorSweep(tile) {
-  const board = document.querySelector("#board");
-  const rect = board?.getBoundingClientRect();
-  if (!rect || reducedMotion) return;
+function spawnColorSweep(sample, boardRect) {
+  if (!sample || !boardRect || reducedMotion) return;
   const wash = document.createElement("div");
   wash.className = "cascade-color-wash";
-  wash.style.left = `${rect.left}px`;
-  wash.style.top = `${rect.top}px`;
-  wash.style.width = `${rect.width}px`;
-  wash.style.height = `${rect.height}px`;
-  wash.style.setProperty("--juice-color", tileColor(tile));
-  ensureJuiceLayer().append(wash);
-  window.setTimeout(() => wash.remove(), 760);
+  wash.style.left = `${boardRect.left}px`;
+  wash.style.top = `${boardRect.top}px`;
+  wash.style.width = `${boardRect.width}px`;
+  wash.style.height = `${boardRect.height}px`;
+  wash.style.setProperty("--juice-color", sample.color);
+  appendJuiceEffect(wash, 760);
 }
 
 function spawnSpecialBirth(index, type) {
@@ -449,8 +520,7 @@ function spawnSpecialBirth(index, type) {
   const ring = document.createElement("span");
   ring.className = "cascade-birth-ring";
   birth.append(ring);
-  ensureJuiceLayer().append(birth);
-  window.setTimeout(() => birth.remove(), 900);
+  appendJuiceEffect(birth, 900, 2);
 }
 
 function impact(level = 1) {
@@ -531,32 +601,42 @@ function transitionClear(transition) {
   metrics.clears += 1;
   const tier = tierFor(transition);
   const cascade = Math.max(1, Number(transition.cascade) || 1);
-  const tiles = (transition.matched || []).map(tileAt).filter(Boolean);
-  const centers = [];
-  for (const tile of tiles) {
-    const center = tileCenter(tile);
-    if (!center) continue;
-    centers.push(center);
-    const intensity = Math.min(3, tier);
-    spawnPopBurst(tile, intensity);
-    emitBurst(center.x, center.y, tileColor(tile), intensity, cascade, tier >= 4 ? 1.15 : 1);
-  }
-  if (centers.length && cascade >= 2 && effectiveEffectsMode() === "full") {
-    const x = centers.reduce((sum, center) => sum + center.x, 0) / centers.length;
-    const y = centers.reduce((sum, center) => sum + center.y, 0) / centers.length;
+  const geometry = collectTransitionGeometry(transition);
+  const samples = (transition.matched || []).map((index) => geometry.samples.get(index)).filter(Boolean);
+  const intensity = Math.min(3, tier);
+  const burstCap = effectiveEffectsMode() === "reduced" ? Math.min(6, DOM_BURST_TILE_CAP) : DOM_BURST_TILE_CAP;
+  const burstSamples = spreadSamples(samples, burstCap);
+  const sparkCount = popSparkCount(intensity, samples.length, burstSamples.length);
+
+  for (const sample of burstSamples) spawnPopBurst(sample, intensity, sparkCount);
+  for (const sample of samples) emitBurst(sample.x, sample.y, sample.color, intensity, cascade, tier >= 4 ? 1.15 : 1);
+
+  if (samples.length && cascade >= 2 && effectiveEffectsMode() === "full") {
+    const x = samples.reduce((sum, sample) => sum + sample.x, 0) / samples.length;
+    const y = samples.reduce((sum, sample) => sum + sample.y, 0) / samples.length;
     emitBurst(x, y, palette[Math.min(palette.length - 1, cascade)], Math.min(3, tier), cascade, cascade >= 4 ? 1.35 : .7);
   }
-  playClear(tiles.length, tier, cascade);
+  playClear(samples.length, tier, cascade);
 
   let strongest = "";
+  let colorSweeps = 0;
+  let bombImpacts = 0;
+  let stripeBeams = 0;
   const priority = (type) => type === "color" ? 3 : type === "bomb" ? 2 : type?.startsWith("stripe") ? 1 : 0;
   for (const trigger of transition.triggeredSpecials || []) {
-    const tile = tileAt(trigger.index);
-    const type = trigger.special || tile?.dataset.special || "";
+    const sample = geometry.samples.get(trigger.index);
+    const type = trigger.special || sample?.tile?.dataset.special || "";
     metrics.specialTriggers += 1;
-    if (type === "bomb") spawnBombImpact(tile);
-    else if (type === "color") spawnColorSweep(tile);
-    else if (type === "stripe-h" || type === "stripe-v") spawnStripeBeam(tile, type);
+    if (type === "bomb" && bombImpacts < SPECIAL_EFFECT_CAP.bomb) {
+      spawnBombImpact(sample);
+      bombImpacts += 1;
+    } else if (type === "color" && colorSweeps < SPECIAL_EFFECT_CAP.color) {
+      spawnColorSweep(sample, geometry.boardRect);
+      colorSweeps += 1;
+    } else if ((type === "stripe-h" || type === "stripe-v") && stripeBeams < SPECIAL_EFFECT_CAP.stripe) {
+      spawnStripeBeam(sample, type, geometry.boardRect);
+      stripeBeams += 1;
+    }
     if (priority(type) > priority(strongest)) strongest = type;
   }
   if (strongest) playSpecial(strongest);
@@ -797,6 +877,8 @@ function reset() {
   document.querySelector("#combo-label")?.classList.remove("is-hot", "is-wild");
   const combo = document.querySelector("#combo-label");
   if (combo) combo.textContent = "";
+  document.querySelector(".cascade-juice-layer")?.replaceChildren();
+  activeDomNodes = 0;
   clearAnimation();
 }
 
@@ -832,7 +914,10 @@ export const cascadePresentationDirector = Object.freeze({
       ...metrics,
       activeParticles: particles.length,
       activeWaves: waves.length,
+      activeDomNodes,
       particleBudget: particleBudget(),
+      domBurstTileCap: DOM_BURST_TILE_CAP,
+      domBurstSparkCap: DOM_BURST_SPARK_CAP,
       canvasCount: document.querySelectorAll(".cascade-dopamine-canvas").length,
     };
   },
