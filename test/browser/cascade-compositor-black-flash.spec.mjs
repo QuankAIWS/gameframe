@@ -23,8 +23,6 @@ async function analyzeRegion(buffer, rect) {
   let nearBlack = 0;
   let luminance = 0;
 
-  // Subsample the board heavily enough to keep the stress probe cheap while
-  // still detecting a large transient black backing/compositor frame.
   for (let y = top; y < bottom; y += 4) {
     for (let x = left; x < right; x += 4) {
       const offset = (y * info.width + x) * channels;
@@ -63,17 +61,11 @@ async function installRafTelemetry(page) {
       let opaqueBlackCanvasSamples = 0;
       let opaqueCanvasSamples = 0;
 
-      // Read only five backing-store pixels every other rAF. If the 2D canvas
-      // itself turns into an opaque-black source, this catches it. If the CDP
-      // screencast goes black while these remain transparent/colored, the fault
-      // is downstream in browser composition rather than particle drawing.
       if (frame % 2 === 0 && canvas && board) {
         const context = canvas.getContext("2d", { alpha: true });
         const rect = board.getBoundingClientRect();
         const dpr = Number(stats.canvasDpr) || 1;
-        const points = [
-          [.2, .2], [.8, .2], [.5, .5], [.2, .8], [.8, .8],
-        ];
+        const points = [[.2, .2], [.8, .2], [.5, .5], [.2, .8], [.8, .8]];
         if (context) {
           for (const [xRatio, yRatio] of points) {
             const x = Math.max(0, Math.min(canvas.width - 1, Math.round((rect.left + rect.width * xRatio) * dpr)));
@@ -100,7 +92,7 @@ async function installRafTelemetry(page) {
         wrapOpacity: wrap ? getComputedStyle(wrap).opacity : "missing",
         wrapVisibility: wrap ? getComputedStyle(wrap).visibility : "missing",
       });
-      if (samples.length > 720) samples.shift();
+      if (samples.length > 900) samples.shift();
       requestAnimationFrame(tick);
     }
 
@@ -128,10 +120,9 @@ async function runStackedNuclearStress(page) {
     };
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    // Real cascade phases can arrive while the previous 560-760 ms DOM effects
-    // are still alive. Five 180 ms phases exercise that overlap without inventing
-    // a zero-delay synthetic flood.
-    for (let round = 0; round < 5; round += 1) {
+    // Keep realistic 180 ms phase spacing, but repeat long enough to catch an
+    // intermittent single-frame compositor failure instead of sampling one event.
+    for (let round = 0; round < 30; round += 1) {
       window.cascadePresentationDirector.transitionStart(transition);
       window.cascadePresentationDirector.transitionClear(transition);
       await wait(180);
@@ -153,10 +144,6 @@ test("Cascade compositor probe catches transient black frames during stacked nuc
 
   const boardRect = await page.locator("#board").boundingBox();
   expect(boardRect).toBeTruthy();
-  const baselineBuffer = await page.screenshot({ fullPage: false });
-  const baseline = await analyzeRegion(baselineBuffer, boardRect);
-  await sharp(baselineBuffer).png().toFile(testInfo.outputPath("cascade-compositor-baseline.png"));
-
   await installRafTelemetry(page);
 
   const cdp = await context.newCDPSession(page);
@@ -181,6 +168,12 @@ test("Cascade compositor probe catches transient black frames during stacked nuc
     everyNthFrame: 1,
   });
 
+  await expect.poll(() => screencastFrames.length, { timeout: 4_000 }).toBeGreaterThan(0);
+  const baselineBuffer = Buffer.from(screencastFrames[0].data, "base64");
+  const baseline = await analyzeRegion(baselineBuffer, boardRect);
+  await sharp(baselineBuffer).png().toFile(testInfo.outputPath("cascade-compositor-baseline.png"));
+  screencastFrames.length = 0;
+
   await runStackedNuclearStress(page);
 
   captureOpen = false;
@@ -190,7 +183,7 @@ test("Cascade compositor probe catches transient black frames during stacked nuc
     if (window.__cascadeCompositorProbe) window.__cascadeCompositorProbe.running = false;
   });
 
-  expect(screencastFrames.length).toBeGreaterThan(10);
+  expect(screencastFrames.length).toBeGreaterThan(20);
 
   let worst = null;
   let blackFrames = 0;
@@ -226,8 +219,5 @@ test("Cascade compositor probe catches transient black frames during stacked nuc
   };
   console.log(`CASCADE_COMPOSITOR_PROBE ${JSON.stringify(summary)}`);
 
-  // This is the actual visual failure detector: it judges compositor output,
-  // not DOM visibility. Keep the pressure diagnostics in the assertion message
-  // so a caught black frame also tells us whether source canvas/DOM state failed.
   expect(blackFrames, `Transient black compositor frames detected: ${JSON.stringify(summary)}`).toBe(0);
 });
