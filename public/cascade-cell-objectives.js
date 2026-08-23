@@ -52,6 +52,23 @@ if (board && wrap) {
     }
   }
 
+  function appendMarkers(coating, layers) {
+    const markerCount = Math.min(3, Math.max(1, layers));
+    const markers = document.createElement("span");
+    markers.className = "cascade-ice-markers";
+    markers.dataset.count = String(markerCount);
+    markers.dataset.totalLayers = String(layers);
+
+    for (let markerNumber = 1; markerNumber <= markerCount; markerNumber += 1) {
+      const marker = document.createElement("i");
+      marker.className = "cascade-ice-marker";
+      marker.dataset.marker = String(markerNumber);
+      markers.append(marker);
+    }
+
+    coating.append(markers);
+  }
+
   function makeCoating(index, layers) {
     const coating = document.createElement("span");
     const visualLayers = Math.min(3, Math.max(1, layers));
@@ -59,6 +76,7 @@ if (board && wrap) {
     coating.dataset.layers = String(layers);
     cellPlacement(coating, index);
     appendShells(coating, 1, layers);
+    appendMarkers(coating, layers);
     return coating;
   }
 
