@@ -1,0 +1,13 @@
+/*
+ * Cascade compositor guard.
+ *
+ * A single maximum-strength clear can create roughly 25 top-level DOM effect
+ * groups. Consecutive cascade phases used to leave several generations alive
+ * together, which drove Chrome above 600 compositor layers in the headed
+ * stress probe. Keep the newest complete phase plus a small amount of overlap;
+ * older groups continue to exist only until their normal cleanup timer fires,
+ * but Chrome no longer has to paint/composite them.
+ */
+.cascade-juice-layer > :nth-last-child(n + 29) {
+  display: none !important;
+}
