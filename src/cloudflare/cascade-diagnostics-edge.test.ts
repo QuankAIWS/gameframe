@@ -60,7 +60,7 @@ function workerFor(principal: AuthenticatedPrincipal) {
 function env(): GameFrameWorkerEnv {
   return {
     GAMEFRAME_ADMIN_DISCORD_USER_IDS: "1",
-    CF_VERSION_METADATA: { id: "build-mobile-diagnostics", tag: null, timestamp: null },
+    CF_VERSION_METADATA: { id: "build-mobile-diagnostics" },
     MATCHES: new MemoryNamespace(),
   };
 }
