@@ -6,6 +6,7 @@ const MAX_BATCH = 4;
 const storage = window.localStorage;
 const query = new URLSearchParams(window.location.search);
 let identity = null;
+let identityPending = null;
 let flushPending = false;
 
 function readQueue() {
@@ -26,6 +27,20 @@ function writeQueue(value) {
   }
 }
 
+async function ensureIdentity() {
+  if (identity) return identity;
+  if (identityPending) return identityPending;
+  identityPending = tryGameFrameIdentity({
+    preferredDevelopmentPlayerId: query.get("player"),
+  }).then((value) => {
+    identity = value;
+    return value;
+  }).finally(() => {
+    identityPending = null;
+  });
+  return identityPending;
+}
+
 async function postIncidents(incidents, { keepalive = false } = {}) {
   if (!identity || !incidents.length) return false;
   const response = await gameFrameOptionalFetch("/api/me/cascade/diagnostics", {
@@ -39,11 +54,12 @@ async function postIncidents(incidents, { keepalive = false } = {}) {
 }
 
 async function flush({ keepalive = false } = {}) {
-  if (!identity || flushPending) return;
+  if (flushPending) return;
   const queue = readQueue();
   if (!queue.length) return;
   flushPending = true;
   try {
+    if (!await ensureIdentity()) return;
     const pending = queue.slice(0, MAX_BATCH);
     if (!await postIncidents(pending, { keepalive })) return;
     const delivered = new Set(pending.map((incident) => incident.incidentId));
@@ -55,19 +71,22 @@ async function flush({ keepalive = false } = {}) {
   }
 }
 
-async function start() {
-  identity = await tryGameFrameIdentity({
-    preferredDevelopmentPlayerId: query.get("player"),
-  });
-  if (!identity) return;
-  await flush();
-  window.setInterval(() => void flush(), FLUSH_INTERVAL_MS);
+function start() {
+  // No session lookup or diagnostics POST occurs on an ordinary clean page boot.
+  // Identity is resolved lazily only after an incident actually exists.
+  if (readQueue().length) void flush();
+  window.setInterval(() => {
+    if (readQueue().length) void flush();
+  }, FLUSH_INTERVAL_MS);
   document.addEventListener("visibilitychange", () => {
+    if (!readQueue().length) return;
     if (document.hidden) void flush({ keepalive: true });
     else void flush();
   });
   window.addEventListener("cascade:diagnostic-queued", () => void flush());
-  window.addEventListener("pagehide", () => void flush({ keepalive: true }));
+  window.addEventListener("pagehide", () => {
+    if (readQueue().length) void flush({ keepalive: true });
+  });
 }
 
-void start();
+start();
