@@ -44,6 +44,13 @@ async function probeCachedIdentitySession() {
     if (response.status < 500) {
       reloadingForSessionRevalidation = true;
       clearCachedIdentityProbe();
+      window.dispatchEvent(new CustomEvent("gameframe:reload-intent", {
+        detail: {
+          reason: "session-revalidation",
+          status: response.status,
+          source: identity.source,
+        },
+      }));
       window.location.reload();
       return;
     }
