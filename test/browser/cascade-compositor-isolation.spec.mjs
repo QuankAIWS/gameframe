@@ -76,11 +76,11 @@ async function runScenario(browser, name, { css = "", domBudget = 0 } = {}) {
   const stats = await page.evaluate(() => {
     const director = window.cascadePresentationDirector.getStats();
     const layer = document.querySelector(".cascade-juice-layer");
-    const actualJuiceNodes = layer ? layer.querySelectorAll("*").length + layer.children.length : 0;
+    const visibleTopLevelEffects = layer ? [...layer.children].filter((effect) => getComputedStyle(effect).display !== "none").length : 0;
     return {
       peakDomNodes: director.peakDomNodes,
-      actualJuiceNodes,
       actualJuicePeak: window.__cascadeProbeActualJuicePeak || null,
+      visibleTopLevelEffects,
       activeParticles: director.activeParticles,
       peakParticles: director.peakParticles,
       contextLosses: director.contextLosses,
@@ -124,6 +124,9 @@ test("Cascade compositor A/B isolates the source of nuclear layer pressure", asy
     domBudget: 240,
     css: `.cascade-dopamine-canvas { mix-blend-mode: normal !important; }`,
   }));
+  scenarios.push(await runScenario(browser, "newest-28-effect-groups", {
+    css: `.cascade-juice-layer > :nth-last-child(n + 29) { display: none !important; }`,
+  }));
 
   console.log(`CASCADE_COMPOSITOR_AB ${JSON.stringify(scenarios)}`);
 
@@ -133,6 +136,7 @@ test("Cascade compositor A/B isolates the source of nuclear layer pressure", asy
   const noBlend = scenarios.find((scenario) => scenario.name === "screen-blend-disabled");
   const budgeted = scenarios.find((scenario) => scenario.name === "dom-budget-240");
   const budgetedNormal = scenarios.find((scenario) => scenario.name === "dom-budget-240-normal-blend");
+  const newest28 = scenarios.find((scenario) => scenario.name === "newest-28-effect-groups");
 
   expect(combined.maxLayerCount).toBeGreaterThan(100);
   expect(combined.peakDomNodes).toBeGreaterThan(170);
@@ -141,4 +145,5 @@ test("Cascade compositor A/B isolates the source of nuclear layer pressure", asy
   expect(noBlend.contextLosses).toBe(0);
   expect(budgeted.contextLosses).toBe(0);
   expect(budgetedNormal.contextLosses).toBe(0);
+  expect(newest28.contextLosses).toBe(0);
 });
