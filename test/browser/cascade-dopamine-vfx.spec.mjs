@@ -42,7 +42,8 @@ test("Cascade emits large reward effects through one bounded canvas layer", asyn
   expect(stressed.peakParticles).toBeLessThanOrEqual(stressed.particleBudget);
 });
 
-test("Cascade bounds DOM spectacle and batches geometry for a nuclear clear", async ({ page }) => {
+test("Cascade bounds DOM spectacle and keeps the cabinet visible through a nuclear clear", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await page.addInitScript(() => {
     localStorage.setItem("scribbles-gameframe.cascade-sound:v1", "off");
     localStorage.setItem("scribbles-gameframe.cascade-effects:v1", "full");
@@ -91,4 +92,58 @@ test("Cascade bounds DOM spectacle and batches geometry for a nuclear clear", as
   expect(result.stats.lastGeometryReads).toBeLessThanOrEqual(65);
   expect(result.stats.canvasCount).toBe(1);
   expect(result.stats.contextLosses).toBe(0);
+
+  await expect.poll(() => page.evaluate(() => window.cascadeVfxCompositorGuard?.getStats().applyCount || 0), {
+    timeout: 2_000,
+  }).toBeGreaterThan(0);
+
+  const compositor = await page.evaluate(() => {
+    const canvas = document.querySelector(".cascade-dopamine-canvas");
+    const board = document.querySelector("#board");
+    const game = document.querySelector(".cascade-game");
+    const canvasRect = canvas.getBoundingClientRect();
+    const boardRect = board.getBoundingClientRect();
+    const gameRect = game.getBoundingClientRect();
+    const style = getComputedStyle(canvas);
+    return {
+      guard: window.cascadeVfxCompositorGuard.getStats(),
+      canvas: { left: canvasRect.left, top: canvasRect.top, right: canvasRect.right, bottom: canvasRect.bottom, width: canvasRect.width, height: canvasRect.height },
+      board: { left: boardRect.left, top: boardRect.top, right: boardRect.right, bottom: boardRect.bottom },
+      game: { left: gameRect.left, top: gameRect.top, right: gameRect.right, bottom: gameRect.bottom },
+      mixBlendMode: style.mixBlendMode,
+      backgroundColor: style.backgroundColor,
+    };
+  });
+
+  expect(compositor.guard.guarded).toBe(true);
+  expect(compositor.guard.coverage).toBeLessThan(.9);
+  expect(compositor.guard.backingPixels).toBeLessThan(
+    Math.round(1920 * compositor.guard.dpr) * Math.round(1080 * compositor.guard.dpr) * .9,
+  );
+  expect(compositor.mixBlendMode).toBe("screen");
+  expect(compositor.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+
+  // The particle surface still covers the entire game cabinet plus overscan, so
+  // explosions can fly well outside the candy grid and across the map/side rail.
+  expect(compositor.canvas.left).toBeLessThanOrEqual(compositor.game.left);
+  expect(compositor.canvas.right).toBeGreaterThanOrEqual(compositor.game.right);
+  expect(compositor.canvas.top).toBeLessThanOrEqual(compositor.game.top);
+  expect(compositor.canvas.bottom).toBeGreaterThanOrEqual(compositor.game.bottom);
+  expect(compositor.canvas.left).toBeLessThan(compositor.board.left - 80);
+  expect(compositor.canvas.right).toBeGreaterThan(compositor.board.right + 80);
+
+  // A roomy desktop must retain an uncovered upper strip; a compositor backing
+  // failure therefore cannot black out the whole application/header anymore.
+  expect(compositor.canvas.top).toBeGreaterThan(60);
+
+  // Capture the exact vulnerable moment: every candy is entering its clear-out
+  // animation while the nuclear particle/DOM spectacle is still alive.
+  await page.evaluate(() => {
+    document.querySelectorAll(".cascade-tile").forEach((tile) => tile.classList.add("is-clearing"));
+  });
+  await page.waitForTimeout(135);
+  await expect(page.locator(".cascade-game")).toBeVisible();
+  await expect(page.locator(".cascade-board-wrap")).toBeVisible();
+  expect(await page.evaluate(() => window.cascadePresentationDirector.getStats().activeParticles)).toBeGreaterThan(0);
+  await page.screenshot({ path: testInfo.outputPath("cascade-nuclear-live.png"), fullPage: false });
 });
