@@ -7,7 +7,7 @@ test.use({
   hasTouch: true,
   deviceScaleFactor: 3,
 });
-test.setTimeout(60_000);
+test.setTimeout(70_000);
 
 const BASE_VIEWPORT = { width: 390, height: 844 };
 
@@ -30,7 +30,7 @@ async function emitStripePhase(page, round) {
 }
 
 async function runStress(page, { pulseViewport }) {
-  for (let round = 0; round < 10; round += 1) {
+  for (let round = 0; round < 8; round += 1) {
     await emitStripePhase(page, round);
     await page.waitForTimeout(70);
     if (pulseViewport) {
@@ -42,22 +42,24 @@ async function runStress(page, { pulseViewport }) {
       await page.waitForTimeout(130);
     }
   }
-  await page.waitForTimeout(750);
+  await page.waitForTimeout(650);
 }
 
 async function loadCase(page, mode) {
   await page.setViewportSize(BASE_VIEWPORT);
   await page.goto(`/cascade.html?player=cascade-mobile-isolation-${mode}`);
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
-  if (mode === "dom-hidden") {
-    await page.addStyleTag({ content: ".cascade-juice-layer { display: none !important; }" });
-  }
-  if (mode === "canvas-hidden") {
-    await page.addStyleTag({ content: ".cascade-dopamine-canvas { display: none !important; }" });
-  }
+  const styles = {
+    "dom-hidden": ".cascade-juice-layer { display: none !important; }",
+    "canvas-hidden": ".cascade-dopamine-canvas { display: none !important; }",
+    "pop-sparks-hidden": ".cascade-pop-spark { display: none !important; }",
+    "pop-bursts-hidden": ".cascade-pop-burst { display: none !important; }",
+    "stripe-beams-hidden": ".cascade-stripe-beam { display: none !important; }",
+  };
+  if (styles[mode]) await page.addStyleTag({ content: styles[mode] });
 }
 
-test("Cascade mobile compositor isolation identifies viewport, DOM, and canvas pressure", async ({ context, page }) => {
+test("Cascade mobile compositor isolation identifies the expensive DOM effect class", async ({ context, page }) => {
   await page.addInitScript(() => {
     localStorage.setItem("scribbles-gameframe.cascade-sound:v1", "off");
     localStorage.setItem("scribbles-gameframe.cascade-effects:v1", "full");
@@ -77,6 +79,9 @@ test("Cascade mobile compositor isolation identifies viewport, DOM, and canvas p
     { name: "changing-viewport", mode: "full", pulseViewport: true },
     { name: "changing-viewport-dom-hidden", mode: "dom-hidden", pulseViewport: true },
     { name: "changing-viewport-canvas-hidden", mode: "canvas-hidden", pulseViewport: true },
+    { name: "changing-viewport-pop-sparks-hidden", mode: "pop-sparks-hidden", pulseViewport: true },
+    { name: "changing-viewport-pop-bursts-hidden", mode: "pop-bursts-hidden", pulseViewport: true },
+    { name: "changing-viewport-stripe-beams-hidden", mode: "stripe-beams-hidden", pulseViewport: true },
   ];
   const results = [];
   for (const candidate of cases) {
@@ -106,4 +111,5 @@ test("Cascade mobile compositor isolation identifies viewport, DOM, and canvas p
   expect(byName["changing-viewport"].viewportResizeCount).toBeGreaterThan(10);
   expect(byName["fixed-viewport"].viewportResizeCount).toBeLessThan(byName["changing-viewport"].viewportResizeCount);
   expect(byName["changing-viewport-dom-hidden"].maxLayerCount).toBeLessThan(byName["changing-viewport"].maxLayerCount);
+  expect(byName["changing-viewport-pop-bursts-hidden"].maxLayerCount).toBeLessThan(byName["changing-viewport"].maxLayerCount);
 });
