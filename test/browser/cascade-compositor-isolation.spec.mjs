@@ -4,7 +4,7 @@ const VIEWPORT = { width: 1920, height: 1080 };
 const ROUNDS = 10;
 const PHASE_MS = 180;
 
-async function runScenario(browser, name, css = "") {
+async function runScenario(browser, name, { css = "", domBudget = 0 } = {}) {
   const context = await browser.newContext({
     viewport: VIEWPORT,
     reducedMotion: "no-preference",
@@ -18,6 +18,26 @@ async function runScenario(browser, name, css = "") {
   await page.goto("/cascade.html?player=cascade-compositor-isolation");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   if (css) await page.addStyleTag({ content: css });
+
+  if (domBudget > 0) {
+    await page.evaluate((cap) => {
+      const cost = (effect) => 1 + effect.querySelectorAll("*").length;
+      const enforce = () => {
+        const layer = document.querySelector(".cascade-juice-layer");
+        if (!layer) return;
+        const children = [...layer.children];
+        let total = children.reduce((sum, effect) => sum + cost(effect), 0);
+        while (total > cap && children.length) {
+          const oldest = children.shift();
+          total -= cost(oldest);
+          oldest.remove();
+        }
+        window.__cascadeProbeActualJuicePeak = Math.max(window.__cascadeProbeActualJuicePeak || 0, total);
+      };
+      new MutationObserver(enforce).observe(document.documentElement, { childList: true, subtree: true });
+      window.__cascadeProbeActualJuicePeak = 0;
+    }, domBudget);
+  }
 
   const cdp = await context.newCDPSession(page);
   let maxLayerCount = 0;
@@ -54,8 +74,12 @@ async function runScenario(browser, name, css = "") {
 
   const stats = await page.evaluate(() => {
     const director = window.cascadePresentationDirector.getStats();
+    const layer = document.querySelector(".cascade-juice-layer");
+    const actualJuiceNodes = layer ? layer.querySelectorAll("*").length + layer.children.length : 0;
     return {
       peakDomNodes: director.peakDomNodes,
+      actualJuiceNodes,
+      actualJuicePeak: window.__cascadeProbeActualJuicePeak || null,
       activeParticles: director.activeParticles,
       peakParticles: director.peakParticles,
       contextLosses: director.contextLosses,
@@ -66,10 +90,7 @@ async function runScenario(browser, name, css = "") {
         const style = getComputedStyle(canvas);
         return { display: style.display, mixBlendMode: style.mixBlendMode };
       })(),
-      juiceDisplay: (() => {
-        const layer = document.querySelector(".cascade-juice-layer");
-        return layer ? getComputedStyle(layer).display : "missing";
-      })(),
+      juiceDisplay: layer ? getComputedStyle(layer).display : "missing",
     };
   });
 
@@ -83,18 +104,25 @@ test("Cascade compositor A/B isolates the source of nuclear layer pressure", asy
 
   const scenarios = [];
   scenarios.push(await runScenario(browser, "combined"));
-  scenarios.push(await runScenario(browser, "particle-hidden", `
-    .cascade-dopamine-canvas { display: none !important; }
-  `));
-  scenarios.push(await runScenario(browser, "dom-juice-hidden", `
-    .cascade-juice-layer,
-    .cascade-hype-layer { display: none !important; }
-    .cascade-board-wrap::after { display: none !important; }
-    .cascade-board-wrap { animation: none !important; }
-  `));
-  scenarios.push(await runScenario(browser, "screen-blend-disabled", `
-    .cascade-dopamine-canvas { mix-blend-mode: normal !important; }
-  `));
+  scenarios.push(await runScenario(browser, "particle-hidden", {
+    css: `.cascade-dopamine-canvas { display: none !important; }`,
+  }));
+  scenarios.push(await runScenario(browser, "dom-juice-hidden", {
+    css: `
+      .cascade-juice-layer,
+      .cascade-hype-layer { display: none !important; }
+      .cascade-board-wrap::after { display: none !important; }
+      .cascade-board-wrap { animation: none !important; }
+    `,
+  }));
+  scenarios.push(await runScenario(browser, "screen-blend-disabled", {
+    css: `.cascade-dopamine-canvas { mix-blend-mode: normal !important; }`,
+  }));
+  scenarios.push(await runScenario(browser, "dom-budget-240", { domBudget: 240 }));
+  scenarios.push(await runScenario(browser, "dom-budget-240-normal-blend", {
+    domBudget: 240,
+    css: `.cascade-dopamine-canvas { mix-blend-mode: normal !important; }`,
+  }));
 
   console.log(`CASCADE_COMPOSITOR_AB ${JSON.stringify(scenarios)}`);
 
@@ -102,10 +130,14 @@ test("Cascade compositor A/B isolates the source of nuclear layer pressure", asy
   const noParticles = scenarios.find((scenario) => scenario.name === "particle-hidden");
   const noDom = scenarios.find((scenario) => scenario.name === "dom-juice-hidden");
   const noBlend = scenarios.find((scenario) => scenario.name === "screen-blend-disabled");
+  const budgeted = scenarios.find((scenario) => scenario.name === "dom-budget-240");
+  const budgetedNormal = scenarios.find((scenario) => scenario.name === "dom-budget-240-normal-blend");
 
   expect(combined.maxLayerCount).toBeGreaterThan(100);
   expect(combined.peakDomNodes).toBeGreaterThan(170);
   expect(noParticles.contextLosses).toBe(0);
   expect(noDom.contextLosses).toBe(0);
   expect(noBlend.contextLosses).toBe(0);
+  expect(budgeted.contextLosses).toBe(0);
+  expect(budgetedNormal.contextLosses).toBe(0);
 });
