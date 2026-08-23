@@ -18,6 +18,7 @@ on:
       - "test/browser/cascade-compositor-black-flash.spec.mjs"
       - "test/browser/cascade-compositor-isolation.spec.mjs"
       - "test/browser/cascade-mobile-compositor.spec.mjs"
+      - "test/browser/cascade-mobile-compositor-isolation.spec.mjs"
       - "test/browser/cascade-render-lifecycle.spec.mjs"
       - "playwright.config.mjs"
       - "package.json"
@@ -50,7 +51,7 @@ jobs:
       - name: Run headed compositor probes
         env:
           CASCADE_COMPOSITOR_AB: "1"
-        run: xvfb-run -a npx playwright test test/browser/cascade-compositor-black-flash.spec.mjs test/browser/cascade-compositor-isolation.spec.mjs test/browser/cascade-mobile-compositor.spec.mjs test/browser/cascade-render-lifecycle.spec.mjs --config playwright.config.mjs --headed
+        run: xvfb-run -a npx playwright test test/browser/cascade-compositor-black-flash.spec.mjs test/browser/cascade-compositor-isolation.spec.mjs test/browser/cascade-mobile-compositor.spec.mjs test/browser/cascade-mobile-compositor-isolation.spec.mjs test/browser/cascade-render-lifecycle.spec.mjs --config playwright.config.mjs --headed
       - name: Upload compositor probe frames
         if: always()
         uses: actions/upload-artifact@v4
