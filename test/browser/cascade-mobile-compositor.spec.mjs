@@ -13,9 +13,22 @@ test.setTimeout(45_000);
 const BASE_VIEWPORT = { width: 390, height: 844 };
 const FRAME_LIMIT = 160;
 const BLACK_CHANNEL_MAX = 24;
+const REGION_SELECTORS = {
+  board: "#board",
+  nav: "#gameframe-destination-bar",
+  status: ".cascade-status",
+  objective: ".cascade-objective",
+  controls: ".cascade-side",
+  menu: "#cascade-mobile-menu-toggle",
+};
 
-async function analyzeFrame(buffer, rect) {
+async function decodeFrame(buffer) {
   const { data, info } = await sharp(buffer).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  return { data, info };
+}
+
+function analyzeDecodedFrame(decoded, rect) {
+  const { data, info } = decoded;
   const scaleX = info.width / BASE_VIEWPORT.width;
   const scaleY = info.height / BASE_VIEWPORT.height;
   const left = Math.max(0, Math.floor(rect.x * scaleX));
@@ -40,6 +53,16 @@ async function analyzeFrame(buffer, rect) {
     blackRatio: sampled ? nearBlack / sampled : 0,
     meanLuminance: sampled ? luminance / sampled : 0,
   };
+}
+
+async function regionRects(page) {
+  return page.evaluate((selectors) => Object.fromEntries(Object.entries(selectors).map(([name, selector]) => {
+    const node = document.querySelector(selector);
+    if (!node) return [name, null];
+    const rect = node.getBoundingClientRect();
+    if (!rect.width || !rect.height) return [name, null];
+    return [name, { x: rect.x, y: rect.y, width: rect.width, height: rect.height }];
+  })), REGION_SELECTORS);
 }
 
 async function runChainedStripes(page) {
@@ -82,17 +105,19 @@ async function runChainedStripes(page) {
   return { peakVisiblePopSparks, peakVisibleEffectGroups };
 }
 
-test("Cascade mobile chained stripes keep full particle spectacle without compositor runaway or black flash", async ({ context, page }, testInfo) => {
+test("Cascade mobile chained stripes keep the board and UI chrome stable without compositor runaway or black flash", async ({ context, page }, testInfo) => {
   await page.addInitScript(() => {
     localStorage.setItem("scribbles-gameframe.cascade-sound:v1", "off");
     localStorage.setItem("scribbles-gameframe.cascade-effects:v1", "full");
   });
   await page.goto("/cascade.html?player=cascade-mobile-compositor-probe");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
+  await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
+  await expect(page.locator("#cascade-mobile-menu-toggle")).toBeVisible();
 
   const initialTimeOrigin = await page.evaluate(() => performance.timeOrigin);
-  const boardRect = await page.locator("#board").boundingBox();
-  expect(boardRect).toBeTruthy();
+  const rects = await regionRects(page);
+  for (const [name, rect] of Object.entries(rects)) expect(rect, `${name} compositor region should be visible`).toBeTruthy();
   let pageCrashed = false;
   let unexpectedNavigations = 0;
   page.on("crash", () => { pageCrashed = true; });
@@ -119,8 +144,8 @@ test("Cascade mobile chained stripes keep full particle spectacle without compos
     everyNthFrame: 1,
   });
   await expect.poll(() => frames.length, { timeout: 4_000 }).toBeGreaterThan(0);
-  const baselineBuffer = Buffer.from(frames[0].data, "base64");
-  const baseline = await analyzeFrame(baselineBuffer, boardRect);
+  const baselineDecoded = await decodeFrame(Buffer.from(frames[0].data, "base64"));
+  const baselineByRegion = Object.fromEntries(Object.entries(rects).map(([name, rect]) => [name, analyzeDecodedFrame(baselineDecoded, rect)]));
   frames.length = 0;
 
   const pressure = await runChainedStripes(page);
@@ -131,22 +156,28 @@ test("Cascade mobile chained stripes keep full particle spectacle without compos
   await cdp.send("Page.stopScreencast");
   await cdp.send("LayerTree.disable");
 
-  let blackFrames = 0;
+  const blackFramesByRegion = Object.fromEntries(Object.keys(rects).map((name) => [name, 0]));
   let worst = null;
-  const blackRatioThreshold = Math.max(.36, baseline.blackRatio + .28);
-  const luminanceThreshold = baseline.meanLuminance * .42;
   for (let index = 0; index < frames.length; index += 1) {
     const buffer = Buffer.from(frames[index].data, "base64");
-    const stats = await analyzeFrame(buffer, boardRect);
-    const score = stats.blackRatio * 2 + Math.max(0, (baseline.meanLuminance - stats.meanLuminance) / Math.max(1, baseline.meanLuminance));
-    if (!worst || score > worst.score) worst = { index, score, stats, buffer };
-    if (stats.blackRatio >= blackRatioThreshold && stats.meanLuminance <= luminanceThreshold) blackFrames += 1;
+    const decoded = await decodeFrame(buffer);
+    for (const [name, rect] of Object.entries(rects)) {
+      const baseline = baselineByRegion[name];
+      const stats = analyzeDecodedFrame(decoded, rect);
+      const blackRatioThreshold = Math.max(.36, baseline.blackRatio + .28);
+      const luminanceThreshold = baseline.meanLuminance * .42;
+      const score = stats.blackRatio * 2 + Math.max(0, (baseline.meanLuminance - stats.meanLuminance) / Math.max(1, baseline.meanLuminance));
+      if (!worst || score > worst.score) worst = { index, name, score, stats, buffer };
+      if (stats.blackRatio >= blackRatioThreshold && stats.meanLuminance <= luminanceThreshold) blackFramesByRegion[name] += 1;
+    }
   }
-  if (worst) await sharp(worst.buffer).png().toFile(testInfo.outputPath("cascade-mobile-stripe-worst.png"));
+  if (worst) await sharp(worst.buffer).png().toFile(testInfo.outputPath(`cascade-mobile-${worst.name}-worst.png`));
 
   const result = await page.evaluate(() => {
     const stats = window.cascadePresentationDirector.getStats();
     const lifecycle = window.cascadeLifecycleDiagnostics.snapshot();
+    const nav = document.querySelector("#gameframe-destination-bar");
+    const mark = document.querySelector("#gameframe-destination-bar .gameframe-destination-mark");
     return {
       peakParticles: stats.peakParticles,
       contextLosses: stats.contextLosses,
@@ -154,16 +185,19 @@ test("Cascade mobile chained stripes keep full particle spectacle without compos
       canvasBackingPixels: stats.canvasBackingPixels,
       viewportResizeCount: lifecycle.viewportResizeCount,
       visualViewportResizeCount: lifecycle.visualViewportResizeCount,
+      navBackdropFilter: nav ? getComputedStyle(nav).backdropFilter : null,
+      navMarkFilter: mark ? getComputedStyle(mark).filter : null,
+      navMarkTransform: mark ? getComputedStyle(mark).transform : null,
     };
   });
 
   console.log(`CASCADE_MOBILE_COMPOSITOR_PROBE ${JSON.stringify({
     capturedFrames: frames.length,
-    blackFrames,
+    blackFramesByRegion,
     maxLayerCount,
     ...pressure,
     ...result,
-    worst: worst ? worst.stats : null,
+    worst: worst ? { region: worst.name, ...worst.stats } : null,
   })}`);
 
   expect(frames.length).toBeGreaterThan(15);
@@ -172,6 +206,11 @@ test("Cascade mobile chained stripes keep full particle spectacle without compos
   expect(result.viewportResizeCount).toBeGreaterThan(15);
   expect(pressure.peakVisibleEffectGroups).toBeLessThanOrEqual(28);
   expect(pressure.peakVisiblePopSparks).toBeLessThanOrEqual(pressure.peakVisibleEffectGroups * 3);
+  expect(result.navBackdropFilter).toBe("none");
+  expect(result.navMarkFilter).toBe("none");
+  expect(result.navMarkTransform).toBe("none");
   expect(maxLayerCount).toBeLessThanOrEqual(150);
-  expect(blackFrames).toBe(0);
+  for (const [name, blackFrames] of Object.entries(blackFramesByRegion)) {
+    expect(blackFrames, `${name} should not emit a near-black compositor frame`).toBe(0);
+  }
 });
