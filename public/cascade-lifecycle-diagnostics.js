@@ -11,6 +11,7 @@
   const RECENT_VFX_SAMPLE_LIMIT = 8;
   const RECENT_FRAME_GAP_LIMIT = 6;
   const FRAME_GAP_THRESHOLD_MS = 120;
+  const FRAME_GAP_INCIDENT_COOLDOWN_MS = 5_000;
   const REPORT_VFX_SAMPLE_LIMIT = 4;
   const REPORT_FRAME_GAP_LIMIT = 3;
   const REPORT_BREADCRUMB_LIMIT = 4;
@@ -25,6 +26,7 @@
   let lastInteractionAt = now;
   let lastContextLosses = 0;
   let frameProbePending = false;
+  let lastFrameGapIncidentAt = 0;
   let visibilityGeneration = 0;
 
   function readJson(target, key, fallback = null) {
@@ -250,6 +252,17 @@
     };
   }
 
+  function vfxIsActive(vfx) {
+    return Boolean(vfx && (vfx.activeDomNodes > 0 || vfx.activeParticles > 0 || vfx.visibleEffectGroups > 0));
+  }
+
+  function rememberVfx(vfx) {
+    if (!vfxIsActive(vfx)) return;
+    state.lastVfx = vfx;
+    state.recentVfxSamples.push(compactVfxSample(vfx));
+    state.recentVfxSamples = state.recentVfxSamples.slice(-RECENT_VFX_SAMPLE_LIMIT);
+  }
+
   function rendererReport(value) {
     if (!value || typeof value !== "object") return null;
     const recentVfxSamples = Array.isArray(value.recentVfxSamples)
@@ -388,10 +401,23 @@
       if (!requestedVisible || requestedVisibilityGeneration !== visibilityGeneration || document.visibilityState !== "visible") return;
       const gapMs = Math.max(0, frameAt - requestedAt);
       if (Date.now() - state.openedAt > 1_000 && gapMs >= FRAME_GAP_THRESHOLD_MS) {
-        state.frameHealth.maxVisibleFrameGapMs = Math.max(state.frameHealth.maxVisibleFrameGapMs, Math.round(gapMs));
-        state.frameHealth.recentVisibleFrameGaps.push({ at: Date.now(), gapMs: Math.round(gapMs) });
+        const observedAt = Date.now();
+        const roundedGapMs = Math.round(gapMs);
+        const stallVfx = snapshotVfx();
+        const compactStallVfx = stallVfx ? compactVfxSample(stallVfx) : null;
+        state.frameHealth.maxVisibleFrameGapMs = Math.max(state.frameHealth.maxVisibleFrameGapMs, roundedGapMs);
+        state.frameHealth.recentVisibleFrameGaps.push({ at: observedAt, gapMs: roundedGapMs, vfx: compactStallVfx });
         state.frameHealth.recentVisibleFrameGaps = state.frameHealth.recentVisibleFrameGaps.slice(-RECENT_FRAME_GAP_LIMIT);
-        persist();
+        rememberVfx(stallVfx);
+        persist(true);
+        if (vfxIsActive(stallVfx) && observedAt - lastFrameGapIncidentAt >= FRAME_GAP_INCIDENT_COOLDOWN_MS) {
+          lastFrameGapIncidentAt = observedAt;
+          queueIncident("visible_frame_stall", {
+            gapMs: roundedGapMs,
+            stallVfx,
+            recentVisibleFrameGaps: state.frameHealth.recentVisibleFrameGaps.slice(-REPORT_FRAME_GAP_LIMIT),
+          });
+        }
       }
     });
   }
@@ -407,11 +433,9 @@
       });
     }
     if (vfx) lastContextLosses = vfx.contextLosses;
-    const active = Boolean(vfx && (vfx.activeDomNodes > 0 || vfx.activeParticles > 0 || vfx.visibleEffectGroups > 0));
+    const active = vfxIsActive(vfx);
     if (active) {
-      state.lastVfx = vfx;
-      state.recentVfxSamples.push(compactVfxSample(vfx));
-      state.recentVfxSamples = state.recentVfxSamples.slice(-RECENT_VFX_SAMPLE_LIMIT);
+      rememberVfx(vfx);
       persist();
       return;
     }
