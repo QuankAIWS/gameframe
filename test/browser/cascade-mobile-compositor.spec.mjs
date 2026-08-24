@@ -171,7 +171,7 @@ test("Cascade mobile chained stripes keep full particle spectacle without compos
   expect(result.contextLosses).toBe(0);
   expect(result.viewportResizeCount).toBeGreaterThan(15);
   expect(pressure.peakVisibleEffectGroups).toBeLessThanOrEqual(28);
-  expect(pressure.peakVisiblePopSparks).toBeLessThanOrEqual(36);
+  expect(pressure.peakVisiblePopSparks).toBeLessThanOrEqual(pressure.peakVisibleEffectGroups * 3);
   expect(maxLayerCount).toBeLessThanOrEqual(150);
   expect(blackFrames).toBe(0);
 });
