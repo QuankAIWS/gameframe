@@ -3,6 +3,8 @@ import { gameFrameOptionalFetch, tryGameFrameIdentity } from "./gameframe-auth.j
 const QUEUE_KEY = "scribbles-gameframe.cascade-diagnostics-queue:v1";
 const FLUSH_INTERVAL_MS = 2_000;
 const MAX_BATCH = 4;
+const MAX_REQUEST_CHARS = 15_000;
+const MAX_DELIVERY_PAYLOAD_CHARS = 7_800;
 const storage = window.localStorage;
 const query = new URLSearchParams(window.location.search);
 let identity = null;
@@ -27,6 +29,55 @@ function writeQueue(value) {
   }
 }
 
+function serializedLength(value) {
+  try {
+    return JSON.stringify(value).length;
+  } catch {
+    return Number.POSITIVE_INFINITY;
+  }
+}
+
+function deliveryIncident(incident) {
+  const payloadChars = serializedLength(incident?.payload ?? {});
+  if (payloadChars <= MAX_DELIVERY_PAYLOAD_CHARS) return incident;
+  return {
+    incidentId: incident?.incidentId,
+    at: incident?.at,
+    type: "diagnostic_payload_truncated",
+    payload: {
+      deliveryTruncated: true,
+      originalType: typeof incident?.type === "string" ? incident.type : null,
+      originalPayloadChars: Number.isFinite(payloadChars) ? payloadChars : null,
+    },
+  };
+}
+
+function buildBatch(queue) {
+  const originals = [];
+  const incidents = [];
+  for (const original of queue.slice(0, MAX_BATCH)) {
+    const candidate = deliveryIncident(original);
+    const next = [...incidents, candidate];
+    if (serializedLength({ incidents: next }) > MAX_REQUEST_CHARS) break;
+    originals.push(original);
+    incidents.push(candidate);
+  }
+  if (!incidents.length && queue.length) {
+    originals.push(queue[0]);
+    incidents.push(deliveryIncident(queue[0]));
+  }
+  return { originals, incidents };
+}
+
+function removeQueued(originals) {
+  const ids = new Set(originals.map((incident) => incident?.incidentId));
+  writeQueue(readQueue().filter((incident) => !ids.has(incident?.incidentId)));
+}
+
+function permanentlyRejected(status) {
+  return status === 400 || status === 413;
+}
+
 async function ensureIdentity() {
   if (identity) return identity;
   if (identityPending) return identityPending;
@@ -42,7 +93,7 @@ async function ensureIdentity() {
 }
 
 async function postIncidents(incidents, { keepalive = false } = {}) {
-  if (!identity || !incidents.length) return false;
+  if (!identity || !incidents.length) return null;
   const response = await gameFrameOptionalFetch("/api/me/cascade/diagnostics", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -50,7 +101,21 @@ async function postIncidents(incidents, { keepalive = false } = {}) {
     keepalive,
   }, identity);
   if (response.status === 401) identity = null;
-  return response.ok;
+  return response;
+}
+
+async function isolateRejectedBatch(batch, { keepalive = false } = {}) {
+  const handled = [];
+  for (let index = 0; index < batch.incidents.length; index += 1) {
+    const response = await postIncidents([batch.incidents[index]], { keepalive });
+    if (!response) break;
+    if (response.ok || permanentlyRejected(response.status)) {
+      handled.push(batch.originals[index]);
+      continue;
+    }
+    break;
+  }
+  if (handled.length) removeQueued(handled);
 }
 
 async function flush({ keepalive = false } = {}) {
@@ -60,12 +125,22 @@ async function flush({ keepalive = false } = {}) {
   flushPending = true;
   try {
     if (!await ensureIdentity()) return;
-    const pending = queue.slice(0, MAX_BATCH);
-    if (!await postIncidents(pending, { keepalive })) return;
-    const delivered = new Set(pending.map((incident) => incident.incidentId));
-    writeQueue(readQueue().filter((incident) => !delivered.has(incident.incidentId)));
+    const batch = buildBatch(queue);
+    if (!batch.incidents.length) return;
+    const response = await postIncidents(batch.incidents, { keepalive });
+    if (!response) return;
+    if (response.ok) {
+      removeQueued(batch.originals);
+      return;
+    }
+    if (!permanentlyRejected(response.status)) return;
+    if (batch.incidents.length === 1) {
+      removeQueued(batch.originals);
+      return;
+    }
+    await isolateRejectedBatch(batch, { keepalive });
   } catch {
-    // Incidents stay in the bounded local queue for the next attempt/page boot.
+    // Transient failures leave incidents in the bounded local queue for retry.
   } finally {
     flushPending = false;
   }
