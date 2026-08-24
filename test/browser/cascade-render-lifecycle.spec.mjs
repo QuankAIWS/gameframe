@@ -167,6 +167,95 @@ test("Cascade diagnostic delivery splits large queued incidents below the edge r
   expect(delivered).toHaveLength(4);
 });
 
+test("Cascade manual visual report preserves prior renderer pressure and waits for upload", async ({ page }) => {
+  const posted = [];
+  let postCompleted = false;
+  await page.route("**/api/session", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        playerId: "cascade-manual-visual-report",
+        displayName: "Manual Visual Report",
+        source: "development",
+        admin: true,
+      }),
+    });
+  });
+  await page.route("**/api/me/cascade/diagnostics", async (route) => {
+    posted.push(JSON.parse(route.request().postData() || "{}"));
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    postCompleted = true;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ accepted: 1, duplicates: 0, storedIncidents: 1, retentionDays: 30, updatedAt: Date.now() }),
+    });
+  });
+  await page.addInitScript(({ lifecycleKey, diagnosticsKey }) => {
+    localStorage.removeItem(diagnosticsKey);
+    localStorage.setItem(lifecycleKey, JSON.stringify({
+      documentId: "prior-black-screen",
+      openedAt: Date.now() - 12_000,
+      lastSeenAt: Date.now() - 500,
+      cleanExit: true,
+      visibility: "visible",
+      navigationType: "reload",
+      wasDiscarded: false,
+      reloadIntent: null,
+      lastInteractionAt: Date.now() - 150,
+      viewportResizeCount: 9,
+      visualViewportResizeCount: 12,
+      lastViewport: { width: 390, height: 844 },
+      build: { loadedBuildId: "black-screen-build" },
+      lastVfx: {
+        at: Date.now() - 650,
+        activeDomNodes: 483,
+        peakDomNodes: 636,
+        activeParticles: 360,
+        peakParticles: 360,
+        contextLosses: 0,
+        visibleEffectGroups: 28,
+        canvasDpr: 1.5,
+        canvasBackingPixels: 740610,
+        canvasMode: "adaptive",
+        level: 17,
+        moves: 8,
+        interactionAgeMs: 70,
+      },
+      recentVfxSamples: [
+        { at: Date.now() - 900, dom: 420, particles: 360, groups: 27, losses: 0, dpr: 1.5, pixels: 740610, level: 17, moves: 8 },
+        { at: Date.now() - 650, dom: 483, particles: 360, groups: 28, losses: 0, dpr: 1.5, pixels: 740610, level: 17, moves: 8 },
+      ],
+      frameHealth: {
+        maxVisibleFrameGapMs: 487,
+        recentVisibleFrameGaps: [{ at: Date.now() - 700, gapMs: 487 }],
+      },
+      lastError: null,
+    }));
+  }, { lifecycleKey: LIFECYCLE_KEY, diagnosticsKey: DIAGNOSTIC_QUEUE_KEY });
+
+  await page.goto("/cascade.html?player=cascade-manual-visual-report");
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
+  await page.evaluate(async () => {
+    window.cascadeLifecycleDiagnostics.reportVisualIssue("test-black-screen");
+    await window.cascadeDiagnosticsSync.flush();
+  });
+
+  expect(postCompleted).toBe(true);
+  const incidents = posted.flatMap((body) => body.incidents || []);
+  const reports = incidentsOfType(incidents, "manual_visual_report");
+  expect(reports).toHaveLength(1);
+  expect(reports[0].payload.reason).toBe("test-black-screen");
+  expect(reports[0].payload.previousRenderer?.documentId).toBe("prior-black-screen");
+  expect(reports[0].payload.previousRenderer?.cleanExit).toBe(true);
+  expect(reports[0].payload.previousRenderer?.lastVfx?.activeParticles).toBe(360);
+  expect(reports[0].payload.previousRenderer?.recentVfxSamples).toHaveLength(2);
+  expect(reports[0].payload.previousRenderer?.recentVfxSamples[1]?.groups).toBe(28);
+  expect(reports[0].payload.previousRenderer?.frameHealth?.maxVisibleFrameGapMs).toBe(487);
+  await expect.poll(() => page.evaluate((diagnosticsKey) => JSON.parse(localStorage.getItem(diagnosticsKey) || "[]").length, DIAGNOSTIC_QUEUE_KEY)).toBe(0);
+});
+
 test("Cascade marks a normal pagehide as a clean renderer exit without creating a diagnostic incident", async ({ page }) => {
   await page.addInitScript(({ lifecycleKey, diagnosticsKey }) => {
     localStorage.removeItem(lifecycleKey);
