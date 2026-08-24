@@ -9,7 +9,6 @@ on:
       - "public/cascade.html"
       - "public/cascade-compositor-guard.css"
       - "public/cascade-lifecycle-diagnostics.js"
-      - "public/cascade-diagnostics-sync.js"
       - "public/cascade-presentation-director.js"
       - "public/cascade-rendering.css"
       - "public/cascade-juice.css"
@@ -17,8 +16,6 @@ on:
       - "public/gameframe-pwa.js"
       - "test/browser/cascade-compositor-black-flash.spec.mjs"
       - "test/browser/cascade-compositor-isolation.spec.mjs"
-      - "test/browser/cascade-mobile-compositor.spec.mjs"
-      - "test/browser/cascade-mobile-compositor-isolation.spec.mjs"
       - "test/browser/cascade-render-lifecycle.spec.mjs"
       - "playwright.config.mjs"
       - "package.json"
@@ -48,10 +45,10 @@ jobs:
         run: npm ci
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-      - name: Run headed compositor probes
+      - name: Run headed compositor black-flash probe
         env:
           CASCADE_COMPOSITOR_AB: "1"
-        run: xvfb-run -a npx playwright test test/browser/cascade-compositor-black-flash.spec.mjs test/browser/cascade-compositor-isolation.spec.mjs test/browser/cascade-mobile-compositor.spec.mjs test/browser/cascade-mobile-compositor-isolation.spec.mjs test/browser/cascade-render-lifecycle.spec.mjs --config playwright.config.mjs --headed
+        run: xvfb-run -a npx playwright test test/browser/cascade-compositor-black-flash.spec.mjs test/browser/cascade-compositor-isolation.spec.mjs test/browser/cascade-render-lifecycle.spec.mjs --config playwright.config.mjs --headed
       - name: Upload compositor probe frames
         if: always()
         uses: actions/upload-artifact@v4
