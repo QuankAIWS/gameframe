@@ -123,6 +123,50 @@ test("Cascade queues JavaScript errors with recent gameplay breadcrumbs but not 
   expect(errors[0].payload.breadcrumbs.some((event) => event.type === "clear" && event.cascade === 2)).toBe(true);
 });
 
+test("Cascade diagnostic delivery splits large queued incidents below the edge request limit", async ({ page }) => {
+  const requestBodies = [];
+  await page.route("**/api/session", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        playerId: "cascade-diagnostics-batch",
+        displayName: "Diagnostics Batch",
+        source: "development",
+        admin: false,
+      }),
+    });
+  });
+  await page.route("**/api/me/cascade/diagnostics", async (route) => {
+    requestBodies.push(route.request().postData() || "");
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ accepted: 1, duplicates: 0, storedIncidents: 1, retentionDays: 30, updatedAt: Date.now() }),
+    });
+  });
+  await page.addInitScript(({ lifecycleKey, diagnosticsKey }) => {
+    localStorage.removeItem(lifecycleKey);
+    const blob = "x".repeat(6_000);
+    const incidents = Array.from({ length: 4 }, (_, index) => ({
+      incidentId: `cascade-diagnostic:batch:${index}`,
+      at: new Date(Date.now() + index).toISOString(),
+      type: "synthetic_large_diagnostic",
+      payload: { index, blob },
+    }));
+    localStorage.setItem(diagnosticsKey, JSON.stringify(incidents));
+  }, { lifecycleKey: LIFECYCLE_KEY, diagnosticsKey: DIAGNOSTIC_QUEUE_KEY });
+
+  await page.goto("/cascade.html?player=cascade-diagnostics-batch");
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
+  await expect.poll(() => requestBodies.length, { timeout: 6_000 }).toBeGreaterThan(1);
+  await expect.poll(() => page.evaluate((diagnosticsKey) => JSON.parse(localStorage.getItem(diagnosticsKey) || "[]").length, DIAGNOSTIC_QUEUE_KEY), { timeout: 6_000 }).toBe(0);
+
+  expect(requestBodies.every((body) => body.length <= 15_000)).toBe(true);
+  const delivered = requestBodies.flatMap((body) => JSON.parse(body).incidents || []);
+  expect(delivered).toHaveLength(4);
+});
+
 test("Cascade marks a normal pagehide as a clean renderer exit without creating a diagnostic incident", async ({ page }) => {
   await page.addInitScript(({ lifecycleKey, diagnosticsKey }) => {
     localStorage.removeItem(lifecycleKey);
