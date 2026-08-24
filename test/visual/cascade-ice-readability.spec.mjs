@@ -3,6 +3,11 @@ import { mkdir } from "node:fs/promises";
 
 const output = "visual-results/player-ui-review";
 const stateKey = "scribbles-gameframe.cascade-state:v1";
+const iceShellColors = [
+  "rgb(18, 207, 234)",
+  "rgb(240, 68, 173)",
+  "rgb(240, 181, 46)",
+];
 
 async function openLevel(page, level, viewport = { width: 1440, height: 960 }) {
   await mkdir(output, { recursive: true });
@@ -46,6 +51,18 @@ async function coatingPresentation(locator) {
   });
 }
 
+async function shellPresentation(locator) {
+  return locator.locator(".cascade-ice-shell").evaluateAll((shells) => shells.map((shell) => {
+    const style = getComputedStyle(shell);
+    return {
+      color: style.borderTopColor,
+      width: style.borderTopWidth,
+      radius: style.borderTopLeftRadius,
+      shadow: style.boxShadow,
+    };
+  }));
+}
+
 async function icedCandyPresentation(locator) {
   return locator.evaluate((tile) => {
     const style = getComputedStyle(tile);
@@ -71,6 +88,15 @@ function expectReadableTransparentIce(presentation) {
   expect(presentation.textShadow).toContain("255, 255, 255");
 }
 
+function expectHighContrastShells(shells, widths) {
+  expect(shells.map(({ color }) => color)).toEqual(iceShellColors.slice(0, shells.length));
+  expect(shells.map(({ width }) => width)).toEqual(widths);
+  expect(new Set(shells.map(({ radius }) => radius)).size).toBe(shells.length);
+  for (const shell of shells) {
+    expect(shell.shadow).toContain("49, 34, 66");
+  }
+}
+
 async function expectColorAura(tile) {
   const presentation = await icedCandyPresentation(tile);
   expect(presentation.backgroundImage).toContain("radial-gradient");
@@ -85,6 +111,7 @@ test("Cascade one-layer ice keeps the candy color dominant", async ({ page }) =>
   const coating = page.locator(".cascade-cell-coating:not(.ice-2):not(.ice-3)").first();
   await expect(coating).toBeVisible();
   expectReadableTransparentIce(await coatingPresentation(coating));
+  expectHighContrastShells(await shellPresentation(coating), ["3px"]);
 
   const index = await coating.getAttribute("data-index");
   const tile = page.locator(`.cascade-tile[data-index="${index}"]`);
@@ -102,6 +129,7 @@ test("Cascade two-layer ice adds durability cues without darkening the candy", a
   expectReadableTransparentIce(await coatingPresentation(coating));
   await expect(coating.locator(".cascade-ice-shell")).toHaveCount(2);
   await expect(coating.locator(".cascade-ice-marker")).toHaveCount(2);
+  expectHighContrastShells(await shellPresentation(coating), ["3px", "3.5px"]);
 
   const index = await coating.getAttribute("data-index");
   const tile = page.locator(`.cascade-tile[data-index="${index}"]`);
@@ -117,6 +145,7 @@ test("Cascade iced candy colors remain obvious on a phone-sized board", async ({
   const coating = page.locator(".cascade-cell-coating.ice-2").first();
   await expect(coating).toBeVisible();
   expectReadableTransparentIce(await coatingPresentation(coating));
+  expectHighContrastShells(await shellPresentation(coating), ["3px", "3.25px"]);
 
   const index = await coating.getAttribute("data-index");
   const tile = page.locator(`.cascade-tile[data-index="${index}"]`);
