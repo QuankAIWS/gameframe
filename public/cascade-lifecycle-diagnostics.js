@@ -21,7 +21,7 @@
   let lastPersistAt = 0;
   let lastInteractionAt = now;
   let lastContextLosses = 0;
-  let lastAnimationFrameAt = performance.now();
+  let frameProbePending = false;
 
   function readJson(target, key, fallback = null) {
     try {
@@ -369,20 +369,24 @@
     persist(true);
   });
 
-  function watchAnimationFrame(frameAt) {
-    const gapMs = Math.max(0, frameAt - lastAnimationFrameAt);
-    lastAnimationFrameAt = frameAt;
-    if (document.visibilityState === "visible" && Date.now() - state.openedAt > 1_000 && gapMs >= FRAME_GAP_THRESHOLD_MS) {
-      state.frameHealth.maxVisibleFrameGapMs = Math.max(state.frameHealth.maxVisibleFrameGapMs, Math.round(gapMs));
-      state.frameHealth.recentVisibleFrameGaps.push({ at: Date.now(), gapMs: Math.round(gapMs) });
-      state.frameHealth.recentVisibleFrameGaps = state.frameHealth.recentVisibleFrameGaps.slice(-RECENT_FRAME_GAP_LIMIT);
-      persist();
-    }
-    window.requestAnimationFrame(watchAnimationFrame);
+  function sampleAnimationFrameGap() {
+    if (frameProbePending) return;
+    frameProbePending = true;
+    const requestedAt = performance.now();
+    window.requestAnimationFrame((frameAt) => {
+      frameProbePending = false;
+      const gapMs = Math.max(0, frameAt - requestedAt);
+      if (document.visibilityState === "visible" && Date.now() - state.openedAt > 1_000 && gapMs >= FRAME_GAP_THRESHOLD_MS) {
+        state.frameHealth.maxVisibleFrameGapMs = Math.max(state.frameHealth.maxVisibleFrameGapMs, Math.round(gapMs));
+        state.frameHealth.recentVisibleFrameGaps.push({ at: Date.now(), gapMs: Math.round(gapMs) });
+        state.frameHealth.recentVisibleFrameGaps = state.frameHealth.recentVisibleFrameGaps.slice(-RECENT_FRAME_GAP_LIMIT);
+        persist();
+      }
+    });
   }
-  window.requestAnimationFrame(watchAnimationFrame);
 
   window.setInterval(() => {
+    sampleAnimationFrameGap();
     const vfx = snapshotVfx();
     if (vfx && vfx.contextLosses > lastContextLosses) {
       queueIncident("canvas_context_loss", {
