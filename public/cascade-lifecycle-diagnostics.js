@@ -257,9 +257,8 @@
   }
 
   function rememberVfx(vfx) {
-    if (!vfx) return;
-    state.lastVfx = vfx;
     if (!vfxIsActive(vfx)) return;
+    state.lastVfx = vfx;
     state.recentVfxSamples.push(compactVfxSample(vfx));
     state.recentVfxSamples = state.recentVfxSamples.slice(-RECENT_VFX_SAMPLE_LIMIT);
   }
