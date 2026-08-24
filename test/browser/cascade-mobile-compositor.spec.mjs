@@ -95,11 +95,11 @@ async function runChainedStripes(page) {
     });
     peakVisiblePopSparks = Math.max(peakVisiblePopSparks, visible.popSparks);
     peakVisibleEffectGroups = Math.max(peakVisibleEffectGroups, visible.effectGroups);
-    await page.waitForTimeout(25);
-    await page.setViewportSize({ width: 390, height: round % 2 ? 782 : 744 });
-    await page.waitForTimeout(60);
-    await page.setViewportSize(BASE_VIEWPORT);
-    await page.waitForTimeout(70);
+    // Keep the viewport fixed while screencast regions are sampled. Viewport
+    // changes are covered by the dedicated mobile layout/scroll tests; this
+    // regression isolates the triple-special compositor pressure observed on
+    // the real phone and keeps every pixel rectangle geometrically exact.
+    await page.waitForTimeout(155);
   }
   await page.waitForTimeout(750);
   return { peakVisiblePopSparks, peakVisibleEffectGroups };
@@ -175,7 +175,6 @@ test("Cascade mobile chained stripes keep the board and UI chrome stable without
 
   const result = await page.evaluate(() => {
     const stats = window.cascadePresentationDirector.getStats();
-    const lifecycle = window.cascadeLifecycleDiagnostics.snapshot();
     const nav = document.querySelector("#gameframe-destination-bar");
     const mark = document.querySelector("#gameframe-destination-bar .gameframe-destination-mark");
     return {
@@ -183,8 +182,6 @@ test("Cascade mobile chained stripes keep the board and UI chrome stable without
       contextLosses: stats.contextLosses,
       canvasDpr: stats.canvasDpr,
       canvasBackingPixels: stats.canvasBackingPixels,
-      viewportResizeCount: lifecycle.viewportResizeCount,
-      visualViewportResizeCount: lifecycle.visualViewportResizeCount,
       navBackdropFilter: nav ? getComputedStyle(nav).backdropFilter : null,
       navMarkFilter: mark ? getComputedStyle(mark).filter : null,
       navMarkTransform: mark ? getComputedStyle(mark).transform : null,
@@ -203,7 +200,6 @@ test("Cascade mobile chained stripes keep the board and UI chrome stable without
   expect(frames.length).toBeGreaterThan(15);
   expect(result.peakParticles).toBe(360);
   expect(result.contextLosses).toBe(0);
-  expect(result.viewportResizeCount).toBeGreaterThan(15);
   expect(pressure.peakVisibleEffectGroups).toBeLessThanOrEqual(28);
   expect(pressure.peakVisiblePopSparks).toBeLessThanOrEqual(pressure.peakVisibleEffectGroups * 3);
   expect(result.navBackdropFilter).toBe("none");
