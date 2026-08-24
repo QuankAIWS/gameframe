@@ -26,3 +26,44 @@
     display: none !important;
   }
 }
+
+/*
+ * The remaining real-device flash after the mobile spark fix is outside the
+ * board: the playfield stays stable while phone-only HUD/navigation surfaces
+ * briefly darken. Those surfaces were almost opaque already, but several still
+ * depended on transparent/backdrop-filter compositing. Current Chromium also
+ * has open compositor regressions involving overlay/nav layers. Keep Cascade's
+ * phone chrome visually equivalent while removing unnecessary backdrop/filter
+ * surfaces and alpha-dependent panel fills. Do not promote these elements with
+ * translateZ/will-change; the goal is fewer compositor dependencies, not more.
+ */
+@media (max-width: 700px) and (orientation: portrait) {
+  body.cascade-route #gameframe-destination-bar {
+    background: linear-gradient(180deg, #ffffff, #f7efff) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  body.cascade-route #gameframe-destination-bar .gameframe-destination-mark {
+    filter: none !important;
+    transform: none !important;
+  }
+
+  body.cascade-route .cascade-status > div {
+    background: linear-gradient(155deg, #4c2d69, #302049) !important;
+  }
+
+  body.cascade-route .cascade-status > div:nth-child(4) {
+    background: radial-gradient(circle at 50% -30%, #8b6896 0%, #71479d 48%, #4a326f 100%) !important;
+  }
+
+  body.cascade-route .cascade-objective,
+  body.cascade-route #cascade-mobile-menu-toggle,
+  body.cascade-route #booster-hammer b {
+    background-color: #ffffff !important;
+  }
+
+  body.cascade-route .cascade-objective {
+    background-image: none !important;
+  }
+}
