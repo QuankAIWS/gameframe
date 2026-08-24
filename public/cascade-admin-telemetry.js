@@ -10,31 +10,47 @@ function downloadJson(value, filename) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }
 
+function insertBeforeReset(panel, reset, section) {
+  if (reset) panel.insertBefore(section, reset);
+  else panel.append(section);
+}
+
 function installTelemetryExport(dialog) {
   if (dialog.querySelector("[data-admin-telemetry-export]")) return;
   const panel = dialog.querySelector(".cascade-admin-panel");
   const reset = dialog.querySelector(".cascade-admin-reset-section");
   if (!panel) return;
+  const status = dialog.querySelector("[data-admin-status]");
 
-  const section = document.createElement("section");
-  section.className = "cascade-admin-section";
-  section.dataset.adminTelemetryExport = "";
-  section.innerHTML = `
+  const telemetrySection = document.createElement("section");
+  telemetrySection.className = "cascade-admin-section";
+  telemetrySection.dataset.adminTelemetryExport = "";
+  telemetrySection.innerHTML = `
     <small>PLAYTEST DATA</small>
     <p>Download server-custodied Cascade Crush play sessions, attempts, retries, hammer use, timing, progression events, and raw research telemetry.</p>
     <div class="cascade-admin-control-grid">
       <button type="button" data-download-cascade-telemetry>Download telemetry package</button>
     </div>
   `;
-  if (reset) panel.insertBefore(section, reset);
-  else panel.append(section);
+  insertBeforeReset(panel, reset, telemetrySection);
 
-  const button = section.querySelector("[data-download-cascade-telemetry]");
-  const status = dialog.querySelector("[data-admin-status]");
-  button.addEventListener("click", async () => {
-    button.disabled = true;
-    const original = button.textContent;
-    button.textContent = "Preparing download…";
+  const diagnosticsSection = document.createElement("section");
+  diagnosticsSection.className = "cascade-admin-section";
+  diagnosticsSection.dataset.adminDiagnosticsExport = "";
+  diagnosticsSection.innerHTML = `
+    <small>DIAGNOSTICS</small>
+    <p>Download the small bounded renderer/error log: crashes or abrupt recoveries, browser discards, JavaScript errors, intentional reloads, canvas loss, device/viewport facts, and recent effect breadcrumbs.</p>
+    <div class="cascade-admin-control-grid">
+      <button type="button" data-download-cascade-diagnostics>Download diagnostic pack</button>
+    </div>
+  `;
+  insertBeforeReset(panel, reset, diagnosticsSection);
+
+  const telemetryButton = telemetrySection.querySelector("[data-download-cascade-telemetry]");
+  telemetryButton.addEventListener("click", async () => {
+    telemetryButton.disabled = true;
+    const original = telemetryButton.textContent;
+    telemetryButton.textContent = "Preparing download…";
     if (status) status.textContent = "Collecting Cascade Crush playtest telemetry…";
     try {
       const response = await fetch("/api/admin/cascade/telemetry/export", {
@@ -53,8 +69,36 @@ function installTelemetryExport(dialog) {
     } catch (error) {
       if (status) status.textContent = error instanceof Error ? error.message : "Telemetry export failed.";
     } finally {
-      button.disabled = false;
-      button.textContent = original;
+      telemetryButton.disabled = false;
+      telemetryButton.textContent = original;
+    }
+  });
+
+  const diagnosticsButton = diagnosticsSection.querySelector("[data-download-cascade-diagnostics]");
+  diagnosticsButton.addEventListener("click", async () => {
+    diagnosticsButton.disabled = true;
+    const original = diagnosticsButton.textContent;
+    diagnosticsButton.textContent = "Preparing download…";
+    if (status) status.textContent = "Collecting bounded Cascade renderer diagnostics…";
+    try {
+      const response = await fetch("/api/admin/cascade/diagnostics/export", {
+        credentials: "same-origin",
+        headers: { accept: "application/json" },
+      });
+      const value = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(value.message || `Diagnostics export failed with ${response.status}.`);
+      const stamp = new Date().toISOString().replaceAll(":", "-");
+      downloadJson(value, `cascade-crush-diagnostics-${stamp}.json`);
+      if (status) {
+        const incidents = Number(value?.totals?.incidents) || 0;
+        const players = Number(value?.totals?.playersWithIncidents) || 0;
+        status.textContent = `Downloaded ${incidents.toLocaleString()} diagnostic incident${incidents === 1 ? "" : "s"} from ${players} player${players === 1 ? "" : "s"}.`;
+      }
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "Diagnostics export failed.";
+    } finally {
+      diagnosticsButton.disabled = false;
+      diagnosticsButton.textContent = original;
     }
   });
 }

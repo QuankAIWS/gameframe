@@ -1,0 +1,45 @@
+name: Cascade Diagnostics Review
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - ".github/workflows/cascade-diagnostics-review.yml"
+      - "public/cascade-admin-telemetry.js"
+      - "public/cascade-diagnostics-sync.js"
+      - "public/cascade-lifecycle-diagnostics.js"
+      - "src/cloudflare/cascade-diagnostics-*.ts"
+      - "src/cloudflare/rpg-edge-worker.ts"
+      - "src/cloudflare/worker.ts"
+      - "src/cloudflare/runtime-contracts.ts"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cascade-diagnostics-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostics-contracts:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Diagnostics client syntax
+        run: |
+          node --check public/cascade-lifecycle-diagnostics.js
+          node --check public/cascade-diagnostics-sync.js
+          node --check public/cascade-admin-telemetry.js
+      - name: Bounded diagnostics storage and edge contracts
+        run: node --experimental-strip-types --test src/cloudflare/cascade-diagnostics-object-runtime.test.ts src/cloudflare/cascade-diagnostics-edge.test.ts

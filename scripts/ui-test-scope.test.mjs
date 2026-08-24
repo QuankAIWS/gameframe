@@ -44,6 +44,16 @@ test("Cascade telemetry stays separate from the 300-level profile", () => {
   ]), { ...none, cascadeUi: true, cascadeTelemetry: true });
 });
 
+test("Cascade diagnostics use telemetry contracts while lifecycle UI still gets browser coverage", () => {
+  assert.deepEqual(classifyUiTestScope([
+    "public/cascade-diagnostics-sync.js",
+    "public/cascade-lifecycle-diagnostics.js",
+    "src/cloudflare/cascade-diagnostics-object-runtime.ts",
+    "src/cloudflare/cascade-diagnostics-edge.test.ts",
+    "test/browser/cascade-render-lifecycle.spec.mjs",
+  ]), { ...none, cascadeUi: true, cascadeTelemetry: true });
+});
+
 test("Cascade progression sync stays in the player-platform lane", () => {
   assert.deepEqual(classifyUiTestScope(["public/cascade-progression-sync.js"]), {
     ...none,

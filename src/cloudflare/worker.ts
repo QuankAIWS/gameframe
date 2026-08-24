@@ -6,6 +6,7 @@ import { MatchSocketHub } from "./match-socket-hub.ts";
 import { PlayerEventSocketHub } from "./player-event-socket-hub.ts";
 import { PlayerPlatformThemeRuntime } from "./player-platform-theme-runtime.ts";
 import { CascadeTelemetryObjectRuntime } from "./cascade-telemetry-object-runtime.ts";
+import { CascadeDiagnosticsObjectRuntime } from "./cascade-diagnostics-object-runtime.ts";
 import { FamilyAuthObjectRuntime } from "./family-auth-object-runtime.ts";
 import { familyAuthEdgeRoute, handleFamilyAuthEdge } from "./family-auth-edge.ts";
 import { createRpgEdgeGameFrameWorker } from "./rpg-edge-worker.ts";
@@ -13,14 +14,15 @@ import type { GameFrameWorkerEnv } from "./runtime-contracts.ts";
 
 // The class name remains migration-stable for the existing Durable Object binding.
 // Its internal runtime now dispatches every supported GameFrame game, invitation
-// rendezvous, lightweight player-platform indexes, playtest telemetry, and the
-// private family trusted-device registry.
+// rendezvous, lightweight player-platform indexes, playtest telemetry, bounded
+// diagnostics, and the private family trusted-device registry.
 export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEnv> {
   readonly #runtime: GameFrameMatchObjectRuntime;
   readonly #invitations: InvitationObjectRuntime;
   readonly #players: PlayerPlatformThemeRuntime;
   readonly #playerEvents: PlayerEventSocketHub;
   readonly #telemetry: CascadeTelemetryObjectRuntime;
+  readonly #diagnostics: CascadeDiagnosticsObjectRuntime;
   readonly #familyAuth: FamilyAuthObjectRuntime;
   readonly #sockets: MatchSocketHub;
 
@@ -35,6 +37,7 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
       onUpdated: (topics) => this.#playerEvents.broadcast(topics),
     });
     this.#telemetry = new CascadeTelemetryObjectRuntime(ctx.storage);
+    this.#diagnostics = new CascadeDiagnosticsObjectRuntime(ctx.storage);
     this.#familyAuth = new FamilyAuthObjectRuntime(ctx.storage);
     this.#sockets = new MatchSocketHub(ctx, (matchId, playerId) => (
       this.#runtime.view(matchId, playerId)
@@ -58,6 +61,7 @@ export class TicTacToeMatchDurableObject extends DurableObject<GameFrameWorkerEn
     }
     if (url.pathname.startsWith("/directory/") || url.pathname.startsWith("/player/")) return this.#players.fetch(request);
     if (url.pathname.startsWith("/telemetry/")) return this.#telemetry.fetch(request);
+    if (url.pathname.startsWith("/diagnostics/")) return this.#diagnostics.fetch(request);
     if (url.pathname.startsWith("/family/")) return this.#familyAuth.fetch(request);
     if (request.method === "GET" && url.pathname === "/events") {
       if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {

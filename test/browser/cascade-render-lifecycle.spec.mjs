@@ -2,15 +2,17 @@ import { expect, test } from "@playwright/test";
 
 const LIFECYCLE_KEY = "scribbles-gameframe.cascade-render-lifecycle:v1";
 const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
+const DIAGNOSTIC_QUEUE_KEY = "scribbles-gameframe.cascade-diagnostics-queue:v1";
 const RELOAD_INTENT_KEY = "scribbles-gameframe.reload-intent:v1";
 
-function analyticsOfType(events, type) {
+function incidentsOfType(events, type) {
   return events.filter((event) => event?.type === type);
 }
 
-test("Cascade reports a recent abrupt renderer recovery with its last VFX state", async ({ page }) => {
-  await page.addInitScript(({ lifecycleKey, analyticsKey }) => {
+test("Cascade queues a recent abrupt renderer recovery with its last VFX and device state", async ({ page }) => {
+  await page.addInitScript(({ lifecycleKey, analyticsKey, diagnosticsKey }) => {
     localStorage.removeItem(analyticsKey);
+    localStorage.removeItem(diagnosticsKey);
     localStorage.setItem(lifecycleKey, JSON.stringify({
       documentId: "prior-render",
       openedAt: Date.now() - 10_000,
@@ -18,6 +20,10 @@ test("Cascade reports a recent abrupt renderer recovery with its last VFX state"
       cleanExit: false,
       visibility: "visible",
       lastInteractionAt: Date.now() - 200,
+      viewportResizeCount: 4,
+      visualViewportResizeCount: 3,
+      lastViewport: { width: 390, height: 780 },
+      build: { loadedBuildId: "prior-build" },
       lastVfx: {
         activeDomNodes: 636,
         peakDomNodes: 636,
@@ -31,34 +37,38 @@ test("Cascade reports a recent abrupt renderer recovery with its last VFX state"
       },
       lastError: null,
     }));
-  }, { lifecycleKey: LIFECYCLE_KEY, analyticsKey: ANALYTICS_KEY });
+  }, { lifecycleKey: LIFECYCLE_KEY, analyticsKey: ANALYTICS_KEY, diagnosticsKey: DIAGNOSTIC_QUEUE_KEY });
 
   await page.goto("/cascade.html?player=cascade-lifecycle-abrupt");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 
-  const result = await page.evaluate(({ lifecycleKey, analyticsKey }) => {
-    const current = JSON.parse(localStorage.getItem(lifecycleKey) || "null");
-    const analytics = JSON.parse(localStorage.getItem(analyticsKey) || "[]");
-    return { current, analytics };
-  }, { lifecycleKey: LIFECYCLE_KEY, analyticsKey: ANALYTICS_KEY });
+  const result = await page.evaluate(({ lifecycleKey, analyticsKey, diagnosticsKey }) => ({
+    current: JSON.parse(localStorage.getItem(lifecycleKey) || "null"),
+    analytics: JSON.parse(localStorage.getItem(analyticsKey) || "[]"),
+    diagnostics: JSON.parse(localStorage.getItem(diagnosticsKey) || "[]"),
+  }), { lifecycleKey: LIFECYCLE_KEY, analyticsKey: ANALYTICS_KEY, diagnosticsKey: DIAGNOSTIC_QUEUE_KEY });
 
   expect(result.current?.cleanExit).toBe(false);
   expect(result.current?.documentId).not.toBe("prior-render");
-  const recoveries = analyticsOfType(result.analytics, "render_abrupt_recovery");
+  expect(result.analytics.some((event) => event?.type === "render_boot" || event?.type === "render_abrupt_recovery")).toBe(false);
+  const recoveries = incidentsOfType(result.diagnostics, "abrupt_renderer_recovery");
   expect(recoveries).toHaveLength(1);
-  expect(recoveries[0].previousDocumentId).toBe("prior-render");
-  expect(recoveries[0].previousVisibility).toBe("visible");
-  expect(recoveries[0].previousLastVfx?.activeDomNodes).toBe(636);
-  expect(recoveries[0].previousLastVfx?.activeParticles).toBe(360);
-  expect(recoveries[0].previousLastVfx?.visibleEffectGroups).toBe(28);
+  expect(recoveries[0].payload.previousDocumentId).toBe("prior-render");
+  expect(recoveries[0].payload.previousLastVfx?.activeDomNodes).toBe(636);
+  expect(recoveries[0].payload.previousLastVfx?.activeParticles).toBe(360);
+  expect(recoveries[0].payload.previousLastVfx?.visibleEffectGroups).toBe(28);
+  expect(recoveries[0].payload.previousViewportResizeCount).toBe(4);
+  expect(recoveries[0].payload.previousLastViewport).toEqual({ width: 390, height: 780 });
+  expect(recoveries[0].payload.device?.viewport?.width).toBeGreaterThan(0);
 });
 
-test("Cascade persists intentional GameFrame reload reasons separately from abrupt recovery", async ({ page }) => {
-  await page.addInitScript(({ lifecycleKey, analyticsKey, reloadKey }) => {
+test("Cascade queues intentional GameFrame reload reasons separately from abrupt recovery", async ({ page }) => {
+  await page.addInitScript(({ lifecycleKey, analyticsKey, diagnosticsKey, reloadKey }) => {
     localStorage.removeItem(lifecycleKey);
     localStorage.removeItem(analyticsKey);
+    localStorage.removeItem(diagnosticsKey);
     sessionStorage.removeItem(reloadKey);
-  }, { lifecycleKey: LIFECYCLE_KEY, analyticsKey: ANALYTICS_KEY, reloadKey: RELOAD_INTENT_KEY });
+  }, { lifecycleKey: LIFECYCLE_KEY, analyticsKey: ANALYTICS_KEY, diagnosticsKey: DIAGNOSTIC_QUEUE_KEY, reloadKey: RELOAD_INTENT_KEY });
 
   await page.goto("/cascade.html?player=cascade-lifecycle-intent");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
@@ -73,35 +83,105 @@ test("Cascade persists intentional GameFrame reload reasons separately from abru
     }));
   });
 
-  const result = await page.evaluate(({ lifecycleKey, analyticsKey, reloadKey }) => ({
+  const result = await page.evaluate(({ lifecycleKey, diagnosticsKey, reloadKey }) => ({
     lifecycle: JSON.parse(localStorage.getItem(lifecycleKey) || "null"),
-    analytics: JSON.parse(localStorage.getItem(analyticsKey) || "[]"),
+    diagnostics: JSON.parse(localStorage.getItem(diagnosticsKey) || "[]"),
     sessionIntent: JSON.parse(sessionStorage.getItem(reloadKey) || "null"),
-  }), { lifecycleKey: LIFECYCLE_KEY, analyticsKey: ANALYTICS_KEY, reloadKey: RELOAD_INTENT_KEY });
+  }), { lifecycleKey: LIFECYCLE_KEY, diagnosticsKey: DIAGNOSTIC_QUEUE_KEY, reloadKey: RELOAD_INTENT_KEY });
 
   expect(result.lifecycle?.reloadIntent?.reason).toBe("test-reload");
   expect(result.sessionIntent?.reason).toBe("test-reload");
   expect(result.sessionIntent?.status).toBeUndefined();
   expect(result.sessionIntent?.detail?.status).toBe(200);
-  const intents = analyticsOfType(result.analytics, "render_reload_intent");
+  const intents = incidentsOfType(result.diagnostics, "intentional_reload");
   expect(intents).toHaveLength(1);
-  expect(intents[0].reason).toBe("test-reload");
+  expect(intents[0].payload.reason).toBe("test-reload");
 });
 
-test("Cascade marks a normal pagehide as a clean renderer exit", async ({ page }) => {
-  await page.addInitScript(({ lifecycleKey, analyticsKey }) => {
+test("Cascade queues JavaScript errors with recent gameplay breadcrumbs but not ordinary boots", async ({ page }) => {
+  await page.addInitScript(({ diagnosticsKey, analyticsKey }) => {
+    localStorage.removeItem(diagnosticsKey);
+    localStorage.setItem(analyticsKey, JSON.stringify([
+      { at: new Date(Date.now() - 100).toISOString(), type: "clear", level: 7, cascade: 2, specialTriggered: 2 },
+      { at: new Date().toISOString(), type: "move", level: 7, movesRemaining: 11 },
+    ]));
+  }, { diagnosticsKey: DIAGNOSTIC_QUEUE_KEY, analyticsKey: ANALYTICS_KEY });
+  await page.goto("/cascade.html?player=cascade-lifecycle-error");
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
+
+  expect(await page.evaluate((diagnosticsKey) => JSON.parse(localStorage.getItem(diagnosticsKey) || "[]").length, DIAGNOSTIC_QUEUE_KEY)).toBe(0);
+  await page.evaluate(() => window.dispatchEvent(new ErrorEvent("error", {
+    message: "synthetic mobile renderer error",
+    filename: "cascade-test.js",
+    lineno: 17,
+    colno: 3,
+  })));
+  const incidents = await page.evaluate((diagnosticsKey) => JSON.parse(localStorage.getItem(diagnosticsKey) || "[]"), DIAGNOSTIC_QUEUE_KEY);
+  const errors = incidentsOfType(incidents, "javascript_error");
+  expect(errors).toHaveLength(1);
+  expect(errors[0].payload.error?.message).toContain("synthetic mobile renderer error");
+  expect(errors[0].payload.breadcrumbs.some((event) => event.type === "clear" && event.cascade === 2)).toBe(true);
+});
+
+test("Cascade diagnostic delivery splits large queued incidents below the edge request limit", async ({ page }) => {
+  const requestBodies = [];
+  await page.route("**/api/session", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        playerId: "cascade-diagnostics-batch",
+        displayName: "Diagnostics Batch",
+        source: "development",
+        admin: false,
+      }),
+    });
+  });
+  await page.route("**/api/me/cascade/diagnostics", async (route) => {
+    requestBodies.push(route.request().postData() || "");
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ accepted: 1, duplicates: 0, storedIncidents: 1, retentionDays: 30, updatedAt: Date.now() }),
+    });
+  });
+  await page.addInitScript(({ lifecycleKey, diagnosticsKey }) => {
     localStorage.removeItem(lifecycleKey);
-    localStorage.removeItem(analyticsKey);
-  }, { lifecycleKey: LIFECYCLE_KEY, analyticsKey: ANALYTICS_KEY });
+    const blob = "x".repeat(6_000);
+    const incidents = Array.from({ length: 4 }, (_, index) => ({
+      incidentId: `cascade-diagnostic:batch:${index}`,
+      at: new Date(Date.now() + index).toISOString(),
+      type: "synthetic_large_diagnostic",
+      payload: { index, blob },
+    }));
+    localStorage.setItem(diagnosticsKey, JSON.stringify(incidents));
+  }, { lifecycleKey: LIFECYCLE_KEY, diagnosticsKey: DIAGNOSTIC_QUEUE_KEY });
+
+  await page.goto("/cascade.html?player=cascade-diagnostics-batch");
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
+  await expect.poll(() => requestBodies.length, { timeout: 6_000 }).toBeGreaterThan(1);
+  await expect.poll(() => page.evaluate((diagnosticsKey) => JSON.parse(localStorage.getItem(diagnosticsKey) || "[]").length, DIAGNOSTIC_QUEUE_KEY), { timeout: 6_000 }).toBe(0);
+
+  expect(requestBodies.every((body) => body.length <= 15_000)).toBe(true);
+  const delivered = requestBodies.flatMap((body) => JSON.parse(body).incidents || []);
+  expect(delivered).toHaveLength(4);
+});
+
+test("Cascade marks a normal pagehide as a clean renderer exit without creating a diagnostic incident", async ({ page }) => {
+  await page.addInitScript(({ lifecycleKey, diagnosticsKey }) => {
+    localStorage.removeItem(lifecycleKey);
+    localStorage.removeItem(diagnosticsKey);
+  }, { lifecycleKey: LIFECYCLE_KEY, diagnosticsKey: DIAGNOSTIC_QUEUE_KEY });
 
   await page.goto("/cascade.html?player=cascade-lifecycle-pagehide");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
+  await page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
 
-  await page.evaluate(() => {
-    window.dispatchEvent(new Event("pagehide"));
-  });
-
-  const lifecycle = await page.evaluate((lifecycleKey) => JSON.parse(localStorage.getItem(lifecycleKey) || "null"), LIFECYCLE_KEY);
-  expect(lifecycle?.cleanExit).toBe(true);
-  expect(Number(lifecycle?.exitAt)).toBeGreaterThan(0);
+  const result = await page.evaluate(({ lifecycleKey, diagnosticsKey }) => ({
+    lifecycle: JSON.parse(localStorage.getItem(lifecycleKey) || "null"),
+    diagnostics: JSON.parse(localStorage.getItem(diagnosticsKey) || "[]"),
+  }), { lifecycleKey: LIFECYCLE_KEY, diagnosticsKey: DIAGNOSTIC_QUEUE_KEY });
+  expect(result.lifecycle?.cleanExit).toBe(true);
+  expect(Number(result.lifecycle?.exitAt)).toBeGreaterThan(0);
+  expect(result.diagnostics).toHaveLength(0);
 });
