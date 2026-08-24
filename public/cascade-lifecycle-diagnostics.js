@@ -25,6 +25,7 @@
   let lastInteractionAt = now;
   let lastContextLosses = 0;
   let frameProbePending = false;
+  let visibilityGeneration = 0;
 
   function readJson(target, key, fallback = null) {
     try {
@@ -103,7 +104,7 @@
     }).filter((entry) => Object.keys(entry).length > 0);
   }
 
-  function queueIncident(type, payload = {}) {
+  function queueIncident(type, payload = {}, { notify = true } = {}) {
     try {
       const current = readJson(storage, DIAGNOSTIC_QUEUE_KEY, []);
       const queue = Array.isArray(current) ? current : [];
@@ -129,7 +130,7 @@
       };
       queue.push(incident);
       storage.setItem(DIAGNOSTIC_QUEUE_KEY, JSON.stringify(queue.slice(-LOCAL_INCIDENT_LIMIT)));
-      window.dispatchEvent(new CustomEvent("cascade:diagnostic-queued", { detail: { incidentId: incident.incidentId, type } }));
+      if (notify) window.dispatchEvent(new CustomEvent("cascade:diagnostic-queued", { detail: { incidentId: incident.incidentId, type } }));
       return incident;
     } catch {
       return null;
@@ -287,7 +288,7 @@
       breadcrumbs: breadcrumbs().slice(-REPORT_BREADCRUMB_LIMIT),
       currentRenderer: rendererReport(state),
       previousRenderer: rendererReport(previous),
-    });
+    }, { notify: false });
   }
 
   if (previousAbrupt) {
@@ -333,7 +334,10 @@
     persist(true);
   }, { passive: true });
 
-  document.addEventListener("visibilitychange", () => persist(true));
+  document.addEventListener("visibilitychange", () => {
+    visibilityGeneration += 1;
+    persist(true);
+  });
 
   window.addEventListener("gameframe:reload-intent", (event) => {
     markReloadIntent(event?.detail?.reason || "gameframe", event?.detail);
@@ -377,10 +381,13 @@
     if (frameProbePending) return;
     frameProbePending = true;
     const requestedAt = performance.now();
+    const requestedVisibilityGeneration = visibilityGeneration;
+    const requestedVisible = document.visibilityState === "visible";
     window.requestAnimationFrame((frameAt) => {
       frameProbePending = false;
+      if (!requestedVisible || requestedVisibilityGeneration !== visibilityGeneration || document.visibilityState !== "visible") return;
       const gapMs = Math.max(0, frameAt - requestedAt);
-      if (document.visibilityState === "visible" && Date.now() - state.openedAt > 1_000 && gapMs >= FRAME_GAP_THRESHOLD_MS) {
+      if (Date.now() - state.openedAt > 1_000 && gapMs >= FRAME_GAP_THRESHOLD_MS) {
         state.frameHealth.maxVisibleFrameGapMs = Math.max(state.frameHealth.maxVisibleFrameGapMs, Math.round(gapMs));
         state.frameHealth.recentVisibleFrameGaps.push({ at: Date.now(), gapMs: Math.round(gapMs) });
         state.frameHealth.recentVisibleFrameGaps = state.frameHealth.recentVisibleFrameGaps.slice(-RECENT_FRAME_GAP_LIMIT);
