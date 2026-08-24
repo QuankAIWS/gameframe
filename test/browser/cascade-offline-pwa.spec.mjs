@@ -26,7 +26,9 @@ test("installed Cascade reloads and remains playable with the browser offline", 
       && await cache.match("/cascade-cabinet-polish.css")
       && await cache.match("/cascade-mobile-ui.js")
       && await cache.match("/cascade-final-touch.css")
-      && await cache.match("/cascade-piece-shapes.css"),
+      && await cache.match("/cascade-piece-shapes.css")
+      && await cache.match("/cascade-ice-layers.css")
+      && await cache.match("/cascade-ice-visibility.css"),
     );
   }), { timeout: 10_000 }).toBe(true);
 
@@ -36,17 +38,22 @@ test("installed Cascade reloads and remains playable with the browser offline", 
   await expect(page.locator("#board .cascade-tile")).toHaveCount(64, { timeout: 8_000 });
   await expect(page.locator("#moves")).not.toHaveText("");
 
-  // The cabinet/final-touch/shape styles and phone shell are part of the first-
-  // install precache, not merely runtime-cache side effects from a controlled visit.
+  // The cabinet/final-touch/shape/ice styles and phone shell are part of the
+  // first-install precache, not merely runtime-cache side effects from a
+  // controlled visit.
   const presentation = await page.locator(".cascade-shell").evaluate((node) => ({
     cabinetMapWidth: getComputedStyle(node).getPropertyValue("--cascade-tv-map-width").trim(),
     finalTouchLoaded: [...document.styleSheets].some((sheet) => sheet.href?.endsWith("/cascade-final-touch.css")),
     pieceShapesLoaded: [...document.styleSheets].some((sheet) => sheet.href?.endsWith("/cascade-piece-shapes.css")),
+    iceLayersLoaded: [...document.styleSheets].some((sheet) => sheet.href?.endsWith("/cascade-ice-layers.css")),
+    iceVisibilityLoaded: [...document.styleSheets].some((sheet) => sheet.href?.endsWith("/cascade-ice-visibility.css")),
     mobileMenuLoaded: Boolean(document.querySelector("#cascade-mobile-menu-toggle")),
   }));
   expect(presentation.cabinetMapWidth).toContain("156px");
   expect(presentation.finalTouchLoaded).toBe(true);
   expect(presentation.pieceShapesLoaded).toBe(true);
+  expect(presentation.iceLayersLoaded).toBe(true);
+  expect(presentation.iceVisibilityLoaded).toBe(true);
   expect(presentation.mobileMenuLoaded).toBe(true);
 
   // Local interactions remain available; no server round trip is required to
