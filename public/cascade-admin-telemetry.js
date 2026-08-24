@@ -39,9 +39,9 @@ function installTelemetryExport(dialog) {
   diagnosticsSection.dataset.adminDiagnosticsExport = "";
   diagnosticsSection.innerHTML = `
     <small>DIAGNOSTICS</small>
-    <p>Download the small bounded renderer/error log: crashes or abrupt recoveries, browser discards, JavaScript errors, intentional reloads, canvas loss, device/viewport facts, and recent effect breadcrumbs.</p>
+    <p>Capture the current and recent renderer state, then download the bounded renderer/error log with crashes, recoveries, browser discards, JavaScript errors, canvas loss, device/viewport facts, frame stalls, and recent effect pressure.</p>
     <div class="cascade-admin-control-grid">
-      <button type="button" data-download-cascade-diagnostics>Download diagnostic pack</button>
+      <button type="button" data-download-cascade-diagnostics>Capture & download diagnostic pack</button>
     </div>
   `;
   insertBeforeReset(panel, reset, diagnosticsSection);
@@ -78,9 +78,14 @@ function installTelemetryExport(dialog) {
   diagnosticsButton.addEventListener("click", async () => {
     diagnosticsButton.disabled = true;
     const original = diagnosticsButton.textContent;
-    diagnosticsButton.textContent = "Preparing download…";
-    if (status) status.textContent = "Collecting bounded Cascade renderer diagnostics…";
+    diagnosticsButton.textContent = "Capturing diagnostics…";
+    if (status) status.textContent = "Capturing recent Cascade renderer state before download…";
     try {
+      const report = window.cascadeLifecycleDiagnostics?.reportVisualIssue?.("diagnostic_pack_requested");
+      const delivered = report?.incidentId
+        ? await window.cascadeDiagnosticsSync?.flushIncident?.(report.incidentId)
+        : false;
+      if (!delivered) throw new Error("Could not upload the fresh renderer capture. Try the diagnostic download again.");
       const response = await fetch("/api/admin/cascade/diagnostics/export", {
         credentials: "same-origin",
         headers: { accept: "application/json" },
@@ -92,7 +97,7 @@ function installTelemetryExport(dialog) {
       if (status) {
         const incidents = Number(value?.totals?.incidents) || 0;
         const players = Number(value?.totals?.playersWithIncidents) || 0;
-        status.textContent = `Downloaded ${incidents.toLocaleString()} diagnostic incident${incidents === 1 ? "" : "s"} from ${players} player${players === 1 ? "" : "s"}.`;
+        status.textContent = `Captured and downloaded ${incidents.toLocaleString()} diagnostic incident${incidents === 1 ? "" : "s"} from ${players} player${players === 1 ? "" : "s"}.`;
       }
     } catch (error) {
       if (status) status.textContent = error instanceof Error ? error.message : "Diagnostics export failed.";

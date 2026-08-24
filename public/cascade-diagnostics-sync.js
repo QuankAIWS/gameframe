@@ -9,7 +9,7 @@ const storage = window.localStorage;
 const query = new URLSearchParams(window.location.search);
 let identity = null;
 let identityPending = null;
-let flushPending = false;
+let flushPromise = null;
 
 function readQueue() {
   try {
@@ -118,31 +118,55 @@ async function isolateRejectedBatch(batch, { keepalive = false } = {}) {
   if (handled.length) removeQueued(handled);
 }
 
-async function flush({ keepalive = false } = {}) {
-  if (flushPending) return;
+async function performFlush({ keepalive = false } = {}) {
   const queue = readQueue();
   if (!queue.length) return;
-  flushPending = true;
+  if (!await ensureIdentity()) return;
+  const batch = buildBatch(queue);
+  if (!batch.incidents.length) return;
+  const response = await postIncidents(batch.incidents, { keepalive });
+  if (!response) return;
+  if (response.ok) {
+    removeQueued(batch.originals);
+    return;
+  }
+  if (!permanentlyRejected(response.status)) return;
+  if (batch.incidents.length === 1) {
+    removeQueued(batch.originals);
+    return;
+  }
+  await isolateRejectedBatch(batch, { keepalive });
+}
+
+function flush(options = {}) {
+  if (flushPromise) return flushPromise;
+  flushPromise = performFlush(options)
+    .catch(() => {
+      // Transient failures leave incidents in the bounded local queue for retry.
+    })
+    .finally(() => {
+      flushPromise = null;
+    });
+  return flushPromise;
+}
+
+async function flushIncident(incidentId, { keepalive = false } = {}) {
+  const normalizedId = String(incidentId || "").trim();
+  if (!normalizedId) return false;
+  const original = readQueue().find((incident) => incident?.incidentId === normalizedId);
+  if (!original) return true;
   try {
-    if (!await ensureIdentity()) return;
-    const batch = buildBatch(queue);
-    if (!batch.incidents.length) return;
-    const response = await postIncidents(batch.incidents, { keepalive });
-    if (!response) return;
+    if (!await ensureIdentity()) return false;
+    const response = await postIncidents([deliveryIncident(original)], { keepalive });
+    if (!response) return false;
     if (response.ok) {
-      removeQueued(batch.originals);
-      return;
+      removeQueued([original]);
+      return true;
     }
-    if (!permanentlyRejected(response.status)) return;
-    if (batch.incidents.length === 1) {
-      removeQueued(batch.originals);
-      return;
-    }
-    await isolateRejectedBatch(batch, { keepalive });
+    if (permanentlyRejected(response.status)) removeQueued([original]);
+    return false;
   } catch {
-    // Transient failures leave incidents in the bounded local queue for retry.
-  } finally {
-    flushPending = false;
+    return false;
   }
 }
 
@@ -164,4 +188,5 @@ function start() {
   });
 }
 
+window.cascadeDiagnosticsSync = Object.freeze({ flush, flushIncident });
 start();

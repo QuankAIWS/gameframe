@@ -8,6 +8,12 @@
   const IDLE_PERSIST_MS = 2_000;
   const LOCAL_INCIDENT_LIMIT = 40;
   const BREADCRUMB_LIMIT = 18;
+  const RECENT_VFX_SAMPLE_LIMIT = 8;
+  const RECENT_FRAME_GAP_LIMIT = 6;
+  const FRAME_GAP_THRESHOLD_MS = 120;
+  const REPORT_VFX_SAMPLE_LIMIT = 4;
+  const REPORT_FRAME_GAP_LIMIT = 3;
+  const REPORT_BREADCRUMB_LIMIT = 4;
 
   const storage = window.localStorage;
   const session = window.sessionStorage;
@@ -18,6 +24,8 @@
   let lastPersistAt = 0;
   let lastInteractionAt = now;
   let lastContextLosses = 0;
+  let frameProbePending = false;
+  let visibilityGeneration = 0;
 
   function readJson(target, key, fallback = null) {
     try {
@@ -96,7 +104,7 @@
     }).filter((entry) => Object.keys(entry).length > 0);
   }
 
-  function queueIncident(type, payload = {}) {
+  function queueIncident(type, payload = {}, { notify = true } = {}) {
     try {
       const current = readJson(storage, DIAGNOSTIC_QUEUE_KEY, []);
       const queue = Array.isArray(current) ? current : [];
@@ -122,7 +130,7 @@
       };
       queue.push(incident);
       storage.setItem(DIAGNOSTIC_QUEUE_KEY, JSON.stringify(queue.slice(-LOCAL_INCIDENT_LIMIT)));
-      window.dispatchEvent(new CustomEvent("cascade:diagnostic-queued", { detail: { incidentId: incident.incidentId, type } }));
+      if (notify) window.dispatchEvent(new CustomEvent("cascade:diagnostic-queued", { detail: { incidentId: incident.incidentId, type } }));
       return incident;
     } catch {
       return null;
@@ -151,6 +159,11 @@
     reloadIntent: carriedReloadIntent,
     lastInteractionAt,
     lastVfx: null,
+    recentVfxSamples: [],
+    frameHealth: {
+      maxVisibleFrameGapMs: 0,
+      recentVisibleFrameGaps: [],
+    },
     lastError: null,
     build: null,
     viewportResizeCount: 0,
@@ -223,6 +236,61 @@
     };
   }
 
+  function compactVfxSample(vfx) {
+    return {
+      at: vfx.at,
+      dom: vfx.activeDomNodes,
+      particles: vfx.activeParticles,
+      groups: vfx.visibleEffectGroups,
+      losses: vfx.contextLosses,
+      dpr: vfx.canvasDpr,
+      pixels: vfx.canvasBackingPixels,
+      level: vfx.level,
+      moves: vfx.moves,
+    };
+  }
+
+  function rendererReport(value) {
+    if (!value || typeof value !== "object") return null;
+    const recentVfxSamples = Array.isArray(value.recentVfxSamples)
+      ? value.recentVfxSamples.slice(-REPORT_VFX_SAMPLE_LIMIT)
+      : [];
+    const recentVisibleFrameGaps = Array.isArray(value.frameHealth?.recentVisibleFrameGaps)
+      ? value.frameHealth.recentVisibleFrameGaps.slice(-REPORT_FRAME_GAP_LIMIT)
+      : [];
+    return {
+      documentId: value.documentId || null,
+      openedAt: finite(value.openedAt),
+      lastSeenAt: finite(value.lastSeenAt),
+      cleanExit: Boolean(value.cleanExit),
+      visibility: value.visibility || null,
+      navigationType: value.navigationType || null,
+      wasDiscarded: Boolean(value.wasDiscarded),
+      reloadIntent: value.reloadIntent || null,
+      lastViewport: value.lastViewport || null,
+      viewportResizeCount: Number(value.viewportResizeCount) || 0,
+      visualViewportResizeCount: Number(value.visualViewportResizeCount) || 0,
+      lastVfx: value.lastVfx || null,
+      recentVfxSamples,
+      frameHealth: {
+        maxVisibleFrameGapMs: finite(value.frameHealth?.maxVisibleFrameGapMs) || 0,
+        recentVisibleFrameGaps,
+      },
+      lastError: value.lastError || null,
+      build: value.build || null,
+    };
+  }
+
+  function reportVisualIssue(reason = "diagnostic_pack_requested") {
+    persist(true);
+    return queueIncident("manual_visual_report", {
+      reason: String(reason || "diagnostic_pack_requested").slice(0, 120),
+      breadcrumbs: breadcrumbs().slice(-REPORT_BREADCRUMB_LIMIT),
+      currentRenderer: rendererReport(state),
+      previousRenderer: rendererReport(previous),
+    }, { notify: false });
+  }
+
   if (previousAbrupt) {
     queueIncident("abrupt_renderer_recovery", {
       previousDocumentId: previous.documentId || null,
@@ -266,7 +334,10 @@
     persist(true);
   }, { passive: true });
 
-  document.addEventListener("visibilitychange", () => persist(true));
+  document.addEventListener("visibilitychange", () => {
+    visibilityGeneration += 1;
+    persist(true);
+  });
 
   window.addEventListener("gameframe:reload-intent", (event) => {
     markReloadIntent(event?.detail?.reason || "gameframe", event?.detail);
@@ -306,7 +377,27 @@
     persist(true);
   });
 
+  function sampleAnimationFrameGap() {
+    if (frameProbePending) return;
+    frameProbePending = true;
+    const requestedAt = performance.now();
+    const requestedVisibilityGeneration = visibilityGeneration;
+    const requestedVisible = document.visibilityState === "visible";
+    window.requestAnimationFrame((frameAt) => {
+      frameProbePending = false;
+      if (!requestedVisible || requestedVisibilityGeneration !== visibilityGeneration || document.visibilityState !== "visible") return;
+      const gapMs = Math.max(0, frameAt - requestedAt);
+      if (Date.now() - state.openedAt > 1_000 && gapMs >= FRAME_GAP_THRESHOLD_MS) {
+        state.frameHealth.maxVisibleFrameGapMs = Math.max(state.frameHealth.maxVisibleFrameGapMs, Math.round(gapMs));
+        state.frameHealth.recentVisibleFrameGaps.push({ at: Date.now(), gapMs: Math.round(gapMs) });
+        state.frameHealth.recentVisibleFrameGaps = state.frameHealth.recentVisibleFrameGaps.slice(-RECENT_FRAME_GAP_LIMIT);
+        persist();
+      }
+    });
+  }
+
   window.setInterval(() => {
+    sampleAnimationFrameGap();
     const vfx = snapshotVfx();
     if (vfx && vfx.contextLosses > lastContextLosses) {
       queueIncident("canvas_context_loss", {
@@ -319,6 +410,8 @@
     const active = Boolean(vfx && (vfx.activeDomNodes > 0 || vfx.activeParticles > 0 || vfx.visibleEffectGroups > 0));
     if (active) {
       state.lastVfx = vfx;
+      state.recentVfxSamples.push(compactVfxSample(vfx));
+      state.recentVfxSamples = state.recentVfxSamples.slice(-RECENT_VFX_SAMPLE_LIMIT);
       persist();
       return;
     }
@@ -330,6 +423,7 @@
     diagnosticQueueKey: DIAGNOSTIC_QUEUE_KEY,
     markReloadIntent,
     recordIncident: queueIncident,
+    reportVisualIssue,
     snapshotVfx,
     snapshot: () => JSON.parse(JSON.stringify(state)),
     previous: () => previous ? JSON.parse(JSON.stringify(previous)) : null,
