@@ -4,24 +4,10 @@
  * A single maximum-strength clear can create roughly 25 top-level DOM effect
  * groups. Consecutive cascade phases used to leave several generations alive
  * together, which drove Chrome above 600 compositor layers in the headed
- * desktop stress probe. Keep the newest complete phase plus a small amount of
- * overlap; older groups still reach their normal cleanup timer, but Chrome no
- * longer has to paint/composite them.
+ * stress probe. Keep the newest complete phase plus a small amount of overlap;
+ * older groups continue to exist only until their normal cleanup timer fires,
+ * but Chrome no longer has to paint/composite them.
  */
 .cascade-juice-layer > :nth-last-child(n + 29) {
   display: none !important;
-}
-
-/*
- * Mobile Chrome showed a separate pressure multiplier: the chained-stripe probe
- * reached 343 compositor layers while the browser viewport was changing height,
- * even with the 28-group desktop guard. Three consecutive stripes fit inside
- * roughly 15 top-level groups, so 20 preserves the complete current stripe hit
- * plus overlap while reducing stale DOM surfaces. Canvas particles remain on
- * their independent full-effects budget and are not reduced here.
- */
-@media (max-width: 700px) {
-  .cascade-juice-layer > :nth-last-child(n + 21) {
-    display: none !important;
-  }
 }
