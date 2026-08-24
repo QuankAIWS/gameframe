@@ -12,20 +12,18 @@ function sessionBody(playerId) {
   });
 }
 
-async function holdAnimationFramesWithActiveVfx(page) {
-  await page.evaluate(() => {
-    const originalDirector = window.cascadePresentationDirector;
-    const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-    const held = [];
+async function installVfxStats(page, { active = true } = {}) {
+  await page.evaluate(({ activeVfx }) => {
+    const originalDirector = window.__cascadeFrameStallOriginalDirector || window.cascadePresentationDirector;
     window.__cascadeFrameStallOriginalDirector = originalDirector;
     window.cascadePresentationDirector = {
       ...originalDirector,
       getStats() {
         return {
           ...originalDirector.getStats(),
-          activeDomNodes: 36,
+          activeDomNodes: activeVfx ? 36 : 0,
           peakDomNodes: 420,
-          activeParticles: 360,
+          activeParticles: activeVfx ? 360 : 0,
           peakParticles: 360,
           contextLosses: 0,
           canvasDpr: 1.5,
@@ -34,6 +32,14 @@ async function holdAnimationFramesWithActiveVfx(page) {
         };
       },
     };
+  }, { activeVfx: active });
+}
+
+async function holdAnimationFramesWithVfx(page, { active = true } = {}) {
+  await installVfxStats(page, { active });
+  await page.evaluate(() => {
+    const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
+    const held = [];
     window.requestAnimationFrame = (callback) => {
       held.push(callback);
       return held.length;
@@ -94,7 +100,7 @@ test("Cascade captures active VFX at a visible frame stall without spamming diag
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   await page.waitForTimeout(1_100);
 
-  expect(await holdAnimationFramesWithActiveVfx(page)).toBeGreaterThan(0);
+  expect(await holdAnimationFramesWithVfx(page, { active: true })).toBeGreaterThan(0);
   await expect.poll(() => posted.flatMap((body) => body.incidents || []).filter((incident) => incident.type === "visible_frame_stall").length).toBe(1);
 
   const incident = posted.flatMap((body) => body.incidents || []).find((candidate) => candidate.type === "visible_frame_stall");
@@ -111,7 +117,7 @@ test("Cascade captures active VFX at a visible frame stall without spamming diag
   expect(firstSnapshot.frameHealth.recentVisibleFrameGaps.at(-1)?.vfx?.particles).toBe(360);
   expect(firstSnapshot.lastVfx?.activeParticles).toBe(360);
 
-  expect(await holdAnimationFramesWithActiveVfx(page)).toBeGreaterThan(0);
+  expect(await holdAnimationFramesWithVfx(page, { active: true })).toBeGreaterThan(0);
   await page.waitForTimeout(500);
   const stallIncidents = posted.flatMap((body) => body.incidents || []).filter((candidate) => candidate.type === "visible_frame_stall");
   expect(stallIncidents).toHaveLength(1);
@@ -119,6 +125,38 @@ test("Cascade captures active VFX at a visible frame stall without spamming diag
   const secondSnapshot = await page.evaluate(() => window.cascadeLifecycleDiagnostics.snapshot());
   expect(secondSnapshot.frameHealth.recentVisibleFrameGaps.length).toBeGreaterThanOrEqual(2);
   expect(secondSnapshot.frameHealth.recentVisibleFrameGaps.at(-1)?.vfx?.particles).toBe(360);
+
+  await restoreDirector(page);
+});
+
+test("Cascade keeps the last active VFX evidence when a later idle frame stall occurs", async ({ page }) => {
+  await page.addInitScript(({ lifecycleKey, diagnosticsKey }) => {
+    localStorage.removeItem(lifecycleKey);
+    localStorage.removeItem(diagnosticsKey);
+  }, { lifecycleKey: LIFECYCLE_KEY, diagnosticsKey: DIAGNOSTIC_QUEUE_KEY });
+
+  await page.goto("/cascade.html?player=cascade-frame-stall-idle-preserve");
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
+  await page.waitForTimeout(1_100);
+
+  await installVfxStats(page, { active: true });
+  await page.waitForTimeout(320);
+  const activeSnapshot = await page.evaluate(() => window.cascadeLifecycleDiagnostics.snapshot());
+  expect(activeSnapshot.lastVfx?.activeParticles).toBe(360);
+  expect(activeSnapshot.lastVfx?.activeDomNodes).toBe(36);
+
+  expect(await holdAnimationFramesWithVfx(page, { active: false })).toBeGreaterThan(0);
+  await page.waitForTimeout(100);
+
+  const idleStallSnapshot = await page.evaluate(() => ({
+    lifecycle: window.cascadeLifecycleDiagnostics.snapshot(),
+    queued: JSON.parse(localStorage.getItem(window.cascadeLifecycleDiagnostics.diagnosticQueueKey) || "[]"),
+  }));
+  expect(idleStallSnapshot.lifecycle.frameHealth.recentVisibleFrameGaps.at(-1)?.vfx?.particles).toBe(0);
+  expect(idleStallSnapshot.lifecycle.frameHealth.recentVisibleFrameGaps.at(-1)?.vfx?.dom).toBe(0);
+  expect(idleStallSnapshot.lifecycle.lastVfx?.activeParticles).toBe(360);
+  expect(idleStallSnapshot.lifecycle.lastVfx?.activeDomNodes).toBe(36);
+  expect(idleStallSnapshot.queued.filter((incident) => incident.type === "visible_frame_stall")).toHaveLength(0);
 
   await restoreDirector(page);
 });
