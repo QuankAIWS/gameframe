@@ -135,6 +135,10 @@ test("Cascade ice coatings expose exact durability without obscuring candy color
   await expect(coating).toHaveClass(/ice-1/);
   await expect(coating.locator(".cascade-ice-shell")).toHaveCount(1);
   await expect(coating.locator(".cascade-ice-marker")).toHaveCount(1);
+  await expect.poll(async () => (await coatingVisual(coating)).filter, {
+    timeout: 1_000,
+    intervals: [50, 100, 150],
+  }).toBe("none");
 
   const ice1Visual = await coatingVisual(coating);
   expect(ice1Visual.backgroundImage).toBe(ice2Visual.backgroundImage);
