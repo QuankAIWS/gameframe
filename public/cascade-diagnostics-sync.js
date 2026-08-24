@@ -164,4 +164,5 @@ function start() {
   });
 }
 
+window.cascadeDiagnosticsSync = Object.freeze({ flush });
 start();
