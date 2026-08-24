@@ -11,3 +11,18 @@
 .cascade-juice-layer > :nth-last-child(n + 29) {
   display: none !important;
 }
+
+/*
+ * Mobile Chromium promotes the individually animated pop sparks very
+ * aggressively. The phone A/B isolated these sparks as the dominant layer
+ * multiplier: hiding them reduced the chained-stripe probe from roughly 270
+ * layers to roughly 49, while hiding the full-screen particle canvas had almost
+ * no effect. Keep three DOM sparks per burst for the close-range pop, but leave
+ * the ring, stripe beams, complete top-level effect phase, and 360-particle
+ * canvas spectacle untouched.
+ */
+@media (max-width: 700px) {
+  .cascade-pop-burst .cascade-pop-spark:nth-of-type(n + 4) {
+    display: none !important;
+  }
+}
