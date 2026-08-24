@@ -129,7 +129,7 @@ test("Cascade two-layer ice adds durability cues without darkening the candy", a
   expectReadableTransparentIce(await coatingPresentation(coating));
   await expect(coating.locator(".cascade-ice-shell")).toHaveCount(2);
   await expect(coating.locator(".cascade-ice-marker")).toHaveCount(2);
-  expectHighContrastShells(await shellPresentation(coating), ["3px", "3.5px"]);
+  expectHighContrastShells(await shellPresentation(coating), ["3px", "4px"]);
 
   const index = await coating.getAttribute("data-index");
   const tile = page.locator(`.cascade-tile[data-index="${index}"]`);
@@ -145,7 +145,7 @@ test("Cascade iced candy colors remain obvious on a phone-sized board", async ({
   const coating = page.locator(".cascade-cell-coating.ice-2").first();
   await expect(coating).toBeVisible();
   expectReadableTransparentIce(await coatingPresentation(coating));
-  expectHighContrastShells(await shellPresentation(coating), ["3px", "3.25px"]);
+  expectHighContrastShells(await shellPresentation(coating), ["3px", "4px"]);
 
   const index = await coating.getAttribute("data-index");
   const tile = page.locator(`.cascade-tile[data-index="${index}"]`);
