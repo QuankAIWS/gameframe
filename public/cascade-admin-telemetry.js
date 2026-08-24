@@ -81,8 +81,11 @@ function installTelemetryExport(dialog) {
     diagnosticsButton.textContent = "Capturing diagnostics…";
     if (status) status.textContent = "Capturing recent Cascade renderer state before download…";
     try {
-      window.cascadeLifecycleDiagnostics?.reportVisualIssue?.("diagnostic_pack_requested");
-      await window.cascadeDiagnosticsSync?.flush?.();
+      const report = window.cascadeLifecycleDiagnostics?.reportVisualIssue?.("diagnostic_pack_requested");
+      const delivered = report?.incidentId
+        ? await window.cascadeDiagnosticsSync?.flushIncident?.(report.incidentId)
+        : false;
+      if (!delivered) throw new Error("Could not upload the fresh renderer capture. Try the diagnostic download again.");
       const response = await fetch("/api/admin/cascade/diagnostics/export", {
         credentials: "same-origin",
         headers: { accept: "application/json" },
