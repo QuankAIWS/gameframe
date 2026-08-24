@@ -11,6 +11,9 @@
   const RECENT_VFX_SAMPLE_LIMIT = 8;
   const RECENT_FRAME_GAP_LIMIT = 6;
   const FRAME_GAP_THRESHOLD_MS = 120;
+  const REPORT_VFX_SAMPLE_LIMIT = 4;
+  const REPORT_FRAME_GAP_LIMIT = 3;
+  const REPORT_BREADCRUMB_LIMIT = 4;
 
   const storage = window.localStorage;
   const session = window.sessionStorage;
@@ -249,10 +252,10 @@
   function rendererReport(value) {
     if (!value || typeof value !== "object") return null;
     const recentVfxSamples = Array.isArray(value.recentVfxSamples)
-      ? value.recentVfxSamples.slice(-RECENT_VFX_SAMPLE_LIMIT)
+      ? value.recentVfxSamples.slice(-REPORT_VFX_SAMPLE_LIMIT)
       : [];
     const recentVisibleFrameGaps = Array.isArray(value.frameHealth?.recentVisibleFrameGaps)
-      ? value.frameHealth.recentVisibleFrameGaps.slice(-RECENT_FRAME_GAP_LIMIT)
+      ? value.frameHealth.recentVisibleFrameGaps.slice(-REPORT_FRAME_GAP_LIMIT)
       : [];
     return {
       documentId: value.documentId || null,
@@ -281,6 +284,7 @@
     persist(true);
     return queueIncident("manual_visual_report", {
       reason: String(reason || "diagnostic_pack_requested").slice(0, 120),
+      breadcrumbs: breadcrumbs().slice(-REPORT_BREADCRUMB_LIMIT),
       currentRenderer: rendererReport(state),
       previousRenderer: rendererReport(previous),
     });
