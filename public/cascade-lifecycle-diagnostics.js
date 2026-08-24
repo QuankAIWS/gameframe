@@ -8,6 +8,9 @@
   const IDLE_PERSIST_MS = 2_000;
   const LOCAL_INCIDENT_LIMIT = 40;
   const BREADCRUMB_LIMIT = 18;
+  const RECENT_VFX_SAMPLE_LIMIT = 8;
+  const RECENT_FRAME_GAP_LIMIT = 6;
+  const FRAME_GAP_THRESHOLD_MS = 120;
 
   const storage = window.localStorage;
   const session = window.sessionStorage;
@@ -18,6 +21,7 @@
   let lastPersistAt = 0;
   let lastInteractionAt = now;
   let lastContextLosses = 0;
+  let lastAnimationFrameAt = performance.now();
 
   function readJson(target, key, fallback = null) {
     try {
@@ -151,6 +155,11 @@
     reloadIntent: carriedReloadIntent,
     lastInteractionAt,
     lastVfx: null,
+    recentVfxSamples: [],
+    frameHealth: {
+      maxVisibleFrameGapMs: 0,
+      recentVisibleFrameGaps: [],
+    },
     lastError: null,
     build: null,
     viewportResizeCount: 0,
@@ -221,6 +230,60 @@
       moves: Number(document.querySelector("#moves")?.textContent) || null,
       interactionAgeMs: Math.max(0, Date.now() - lastInteractionAt),
     };
+  }
+
+  function compactVfxSample(vfx) {
+    return {
+      at: vfx.at,
+      dom: vfx.activeDomNodes,
+      particles: vfx.activeParticles,
+      groups: vfx.visibleEffectGroups,
+      losses: vfx.contextLosses,
+      dpr: vfx.canvasDpr,
+      pixels: vfx.canvasBackingPixels,
+      level: vfx.level,
+      moves: vfx.moves,
+    };
+  }
+
+  function rendererReport(value) {
+    if (!value || typeof value !== "object") return null;
+    const recentVfxSamples = Array.isArray(value.recentVfxSamples)
+      ? value.recentVfxSamples.slice(-RECENT_VFX_SAMPLE_LIMIT)
+      : [];
+    const recentVisibleFrameGaps = Array.isArray(value.frameHealth?.recentVisibleFrameGaps)
+      ? value.frameHealth.recentVisibleFrameGaps.slice(-RECENT_FRAME_GAP_LIMIT)
+      : [];
+    return {
+      documentId: value.documentId || null,
+      openedAt: finite(value.openedAt),
+      lastSeenAt: finite(value.lastSeenAt),
+      cleanExit: Boolean(value.cleanExit),
+      visibility: value.visibility || null,
+      navigationType: value.navigationType || null,
+      wasDiscarded: Boolean(value.wasDiscarded),
+      reloadIntent: value.reloadIntent || null,
+      lastViewport: value.lastViewport || null,
+      viewportResizeCount: Number(value.viewportResizeCount) || 0,
+      visualViewportResizeCount: Number(value.visualViewportResizeCount) || 0,
+      lastVfx: value.lastVfx || null,
+      recentVfxSamples,
+      frameHealth: {
+        maxVisibleFrameGapMs: finite(value.frameHealth?.maxVisibleFrameGapMs) || 0,
+        recentVisibleFrameGaps,
+      },
+      lastError: value.lastError || null,
+      build: value.build || null,
+    };
+  }
+
+  function reportVisualIssue(reason = "diagnostic_pack_requested") {
+    persist(true);
+    return queueIncident("manual_visual_report", {
+      reason: String(reason || "diagnostic_pack_requested").slice(0, 120),
+      currentRenderer: rendererReport(state),
+      previousRenderer: rendererReport(previous),
+    });
   }
 
   if (previousAbrupt) {
@@ -306,6 +369,19 @@
     persist(true);
   });
 
+  function watchAnimationFrame(frameAt) {
+    const gapMs = Math.max(0, frameAt - lastAnimationFrameAt);
+    lastAnimationFrameAt = frameAt;
+    if (document.visibilityState === "visible" && Date.now() - state.openedAt > 1_000 && gapMs >= FRAME_GAP_THRESHOLD_MS) {
+      state.frameHealth.maxVisibleFrameGapMs = Math.max(state.frameHealth.maxVisibleFrameGapMs, Math.round(gapMs));
+      state.frameHealth.recentVisibleFrameGaps.push({ at: Date.now(), gapMs: Math.round(gapMs) });
+      state.frameHealth.recentVisibleFrameGaps = state.frameHealth.recentVisibleFrameGaps.slice(-RECENT_FRAME_GAP_LIMIT);
+      persist();
+    }
+    window.requestAnimationFrame(watchAnimationFrame);
+  }
+  window.requestAnimationFrame(watchAnimationFrame);
+
   window.setInterval(() => {
     const vfx = snapshotVfx();
     if (vfx && vfx.contextLosses > lastContextLosses) {
@@ -319,6 +395,8 @@
     const active = Boolean(vfx && (vfx.activeDomNodes > 0 || vfx.activeParticles > 0 || vfx.visibleEffectGroups > 0));
     if (active) {
       state.lastVfx = vfx;
+      state.recentVfxSamples.push(compactVfxSample(vfx));
+      state.recentVfxSamples = state.recentVfxSamples.slice(-RECENT_VFX_SAMPLE_LIMIT);
       persist();
       return;
     }
@@ -330,6 +408,7 @@
     diagnosticQueueKey: DIAGNOSTIC_QUEUE_KEY,
     markReloadIntent,
     recordIncident: queueIncident,
+    reportVisualIssue,
     snapshotVfx,
     snapshot: () => JSON.parse(JSON.stringify(state)),
     previous: () => previous ? JSON.parse(JSON.stringify(previous)) : null,
