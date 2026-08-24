@@ -11,7 +11,7 @@ const ICE_MARKER_COLORS = [
   "rgb(240, 76, 173)",
   "rgb(240, 181, 46)",
 ];
-const ICE_SHELL_WIDTHS = ["3px", "3.5px", "4px"];
+const ICE_SHELL_WIDTHS = ["3px", "4px", "5px"];
 
 async function shellColors(coating) {
   return coating.locator(".cascade-ice-shell").evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).borderTopColor));
