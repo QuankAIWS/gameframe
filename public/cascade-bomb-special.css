@@ -2,54 +2,63 @@
  * Cartoon bomb special.
  *
  * Bombs are modifiers, not replacement pieces: the family candy remains the
- * dominant silhouette and the bomb sits inside it. This stylesheet loads after
- * cascade-piece-shapes.css so older generic special styling cannot grow the
- * bomb back over the candy.
+ * dominant silhouette and the bomb is attached low-left. The top edge stays
+ * reserved for ice durability markers so the two systems never compete.
  */
 .cascade-tile[data-special="bomb"] .cascade-special-mark {
-  inset: 27%;
+  position: absolute;
+  inset: auto;
+  left: 14%;
+  bottom: 14%;
+  width: 36%;
+  height: auto;
+  aspect-ratio: 1;
+  box-sizing: border-box;
   overflow: visible;
-  border: 3px solid rgba(255, 255, 255, .88);
-  border-radius: 50%;
+  border: 0;
+  border-radius: 45% 48% 50% 50%;
   background:
-    radial-gradient(circle at 30% 23%, rgba(255,255,255,.96) 0 7%, rgba(255,255,255,.30) 8% 14%, transparent 15%),
-    radial-gradient(circle at 45% 42%, #56475f 0 8%, #3c3045 36%, #251e2c 67%, #151119 100%);
+    radial-gradient(circle at 29% 22%, rgba(255,255,255,.92) 0 7%, rgba(255,255,255,.26) 8% 14%, transparent 15%),
+    radial-gradient(circle at 45% 42%, #62526c 0 8%, #44384e 36%, #2a2231 67%, #17131c 100%);
   box-shadow:
-    inset -4px -6px 0 rgba(0, 0, 0, .16),
-    inset 2px 2px 0 rgba(255, 255, 255, .13),
-    0 2px 0 rgba(255, 255, 255, .55),
-    0 5px 10px rgba(63, 38, 77, .28);
+    inset -4px -6px 0 rgba(0,0,0,.18),
+    inset 2px 2px 0 rgba(255,255,255,.14),
+    0 0 0 1px rgba(82,57,113,.34),
+    0 3px 5px rgba(82,57,113,.28);
   opacity: 1;
 }
 
-/* Curved fuse. It intentionally escapes the bomb body while staying well
- * inside the surrounding candy footprint at desktop size.
+/* The fuse rises inward from the low-left body. A small brass collar is painted
+ * into the same pseudo-element so the bomb has a real fuse-neck silhouette
+ * instead of reading as a black button with a line attached to it.
  */
 .cascade-tile[data-special="bomb"] .cascade-special-mark::before {
   content: "";
   position: absolute;
   z-index: -1;
-  left: 63%;
-  top: -34%;
-  width: 48%;
-  height: 42%;
-  border-top: 3px solid #71472f;
-  border-right: 3px solid #71472f;
-  border-radius: 0 85% 0 0;
-  transform: rotate(-9deg);
-  filter: drop-shadow(0 1px 0 rgba(255,255,255,.36));
+  left: 58%;
+  top: -36%;
+  width: 54%;
+  height: 48%;
+  border-top: 4px solid #76503a;
+  border-right: 4px solid #76503a;
+  border-radius: 0 88% 0 0;
+  background:
+    radial-gradient(ellipse at 15% 88%, #f5d583 0 10%, #c99143 11% 19%, #85592e 20% 25%, transparent 26%);
+  transform: rotate(-8deg);
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,.30));
 }
 
-/* Small comic-book spark on the fuse tip. A static starburst gives the bomb
- * energy without adding permanent board motion or obscuring the candy.
+/* Static comic spark: large enough to identify the fuse, but its low-left
+ * anchor keeps the entire bomb assembly below the top-right ice-marker band.
  */
 .cascade-tile[data-special="bomb"] .cascade-special-mark::after {
   content: "";
   position: absolute;
   z-index: 2;
-  right: -48%;
-  top: -54%;
-  width: 46%;
+  right: -40%;
+  top: -48%;
+  width: 40%;
   aspect-ratio: 1;
   background: conic-gradient(
     from 15deg,
@@ -64,18 +73,19 @@
   );
   clip-path: polygon(50% 0, 61% 31%, 86% 14%, 71% 40%, 100% 50%, 70% 60%, 86% 86%, 60% 70%, 50% 100%, 40% 70%, 14% 86%, 30% 60%, 0 50%, 30% 40%, 14% 14%, 40% 31%);
   filter:
-    drop-shadow(0 0 2px rgba(255,255,255,.96))
-    drop-shadow(0 0 5px rgba(255,171,55,.78));
+    drop-shadow(0 0 2px rgba(255,255,255,.94))
+    drop-shadow(0 0 4px rgba(255,171,55,.72));
 }
 
 @media (max-width: 700px) {
   .cascade-tile[data-special="bomb"] .cascade-special-mark {
-    inset: 24%;
-    border-width: 2px;
+    left: 11%;
+    bottom: 12%;
+    width: 38%;
   }
 
   .cascade-tile[data-special="bomb"] .cascade-special-mark::before {
-    border-top-width: 2px;
-    border-right-width: 2px;
+    border-top-width: 3px;
+    border-right-width: 3px;
   }
 }
