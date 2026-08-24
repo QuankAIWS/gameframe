@@ -1,9 +1,32 @@
 import { expect, test } from "@playwright/test";
 
 const CASCADE_STATE_KEY = "scribbles-gameframe.cascade-state:v1";
+const ICE_SHELL_COLORS = [
+  "rgb(18, 207, 234)",
+  "rgb(240, 68, 173)",
+  "rgb(240, 181, 46)",
+];
+const ICE_MARKER_COLORS = [
+  "rgb(24, 207, 232)",
+  "rgb(240, 76, 173)",
+  "rgb(240, 181, 46)",
+];
+const ICE_SHELL_WIDTHS = ["3px", "4px", "5px"];
 
 async function shellColors(coating) {
   return coating.locator(".cascade-ice-shell").evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).borderTopColor));
+}
+
+async function shellPresentation(coating) {
+  return coating.locator(".cascade-ice-shell").evaluateAll((nodes) => nodes.map((node) => {
+    const style = getComputedStyle(node);
+    return {
+      color: style.borderTopColor,
+      width: style.borderTopWidth,
+      radius: style.borderTopLeftRadius,
+      shadow: style.boxShadow,
+    };
+  }));
 }
 
 async function markerColors(coating) {
@@ -39,6 +62,15 @@ async function tileAura(tile) {
 
 function identityFilter(filter) {
   return filter === "none" || filter === "brightness(1)";
+}
+
+function expectHighContrastShells(shells, count) {
+  expect(shells.map(({ color }) => color)).toEqual(ICE_SHELL_COLORS.slice(0, count));
+  expect(shells.map(({ width }) => width)).toEqual(ICE_SHELL_WIDTHS.slice(0, count));
+  expect(new Set(shells.map(({ radius }) => radius)).size).toBe(count);
+  for (const shell of shells) {
+    expect(shell.shadow).toContain("49, 34, 66");
+  }
 }
 
 test("Cascade ice coatings expose exact durability without obscuring candy color", async ({ page }) => {
@@ -90,8 +122,9 @@ test("Cascade ice coatings expose exact durability without obscuring candy color
   await expect(coating).toHaveClass(/ice-2/);
   await expect(coating.locator(".cascade-ice-shell")).toHaveCount(2);
   await expect(coating.locator(".cascade-ice-marker")).toHaveCount(2);
-  expect(new Set(await shellColors(coating)).size).toBe(2);
-  expect(new Set(await markerColors(coating)).size).toBe(2);
+  expect(await shellColors(coating)).toEqual(ICE_SHELL_COLORS.slice(0, 2));
+  expect(await markerColors(coating)).toEqual(ICE_MARKER_COLORS.slice(0, 2));
+  expectHighContrastShells(await shellPresentation(coating), 2);
 
   const ice2Visual = await coatingVisual(coating);
   expect(identityFilter(ice2Visual.filter)).toBe(true);
@@ -106,8 +139,9 @@ test("Cascade ice coatings expose exact durability without obscuring candy color
   await expect(coating).toHaveClass(/ice-3/);
   await expect(coating.locator(".cascade-ice-shell")).toHaveCount(3);
   await expect(coating.locator(".cascade-ice-marker")).toHaveCount(3);
-  expect(new Set(await shellColors(coating)).size).toBe(3);
-  expect(new Set(await markerColors(coating)).size).toBe(3);
+  expect(await shellColors(coating)).toEqual(ICE_SHELL_COLORS);
+  expect(await markerColors(coating)).toEqual(ICE_MARKER_COLORS);
+  expectHighContrastShells(await shellPresentation(coating), 3);
 
   const ice3Visual = await coatingVisual(coating);
   expect(ice3Visual.backgroundImage).toBe(ice2Visual.backgroundImage);
@@ -139,6 +173,9 @@ test("Cascade ice coatings expose exact durability without obscuring candy color
   await expect(coating).toHaveClass(/ice-1/);
   await expect(coating.locator(".cascade-ice-shell")).toHaveCount(1);
   await expect(coating.locator(".cascade-ice-marker")).toHaveCount(1);
+  expect(await shellColors(coating)).toEqual(ICE_SHELL_COLORS.slice(0, 1));
+  expect(await markerColors(coating)).toEqual(ICE_MARKER_COLORS.slice(0, 1));
+  expectHighContrastShells(await shellPresentation(coating), 1);
 
   // The existing crack animation owns `filter` while the newly exposed layer
   // flashes brighter. Readability invariants live in the persistent frost and

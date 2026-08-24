@@ -80,41 +80,117 @@ body.cascade-route .cascade-cell-coating.ice-3::after {
   opacity: .42;
 }
 
-/* Additional durability may add another rim, but never another dark shadow
- * over the candy. Marker/rim count communicates hits remaining. */
+/*
+ * Durability rims must remain legible on pale candies and small phone boards.
+ * Hue, shell count, and increasing line weight all encode the same 1/2/3-hit
+ * state. Every saturated rim also gets a dark outer keyline so contrast does
+ * not depend on the candy underneath it.
+ */
 body.cascade-route .cascade-ice-shell {
-  border-color: rgba(250,254,255,.74);
+  --ice-shell-keyline: rgba(49,34,66,.82);
+  border-style: solid;
   background: transparent;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.44),
-    0 0 0 1px rgba(205,244,252,.34),
-    0 0 5px rgba(104,220,239,.15);
+  pointer-events: none;
 }
 
 body.cascade-route .cascade-ice-shell[data-shell="1"] {
-  border-color: rgba(250,254,255,.76);
+  --ice-shell-accent: #12cfea;
+  border-color: var(--ice-shell-accent);
+  border-width: 3px;
+  border-radius: 32%;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.48),
-    0 0 0 1px rgba(205,244,252,.38),
-    0 0 5px rgba(104,220,239,.14);
+    inset 0 1px 0 rgba(255,255,255,.38),
+    0 0 0 1.25px var(--ice-shell-keyline),
+    0 0 7px rgba(18,207,234,.42);
 }
 
 body.cascade-route .cascade-ice-shell[data-shell="2"] {
-  border-color: rgba(104,220,239,.72);
+  --ice-shell-accent: #f044ad;
+  border-color: var(--ice-shell-accent);
+  border-width: 4px;
+  border-radius: 29%;
   box-shadow:
-    inset 0 1px 0 rgba(236,253,255,.46),
-    0 0 0 1px rgba(255,255,255,.40),
-    0 0 6px rgba(104,220,239,.20);
+    inset 0 1px 0 rgba(255,255,255,.32),
+    inset 0 0 0 1px rgba(255,255,255,.16),
+    0 0 0 1.25px var(--ice-shell-keyline),
+    0 0 7px rgba(240,68,173,.42);
 }
 
 body.cascade-route .cascade-ice-shell[data-shell="3"] {
-  border-color: rgba(183,153,236,.70);
+  --ice-shell-accent: #f0b52e;
+  border-color: var(--ice-shell-accent);
+  border-width: 5px;
+  border-radius: 26%;
   box-shadow:
-    inset 0 1px 0 rgba(249,243,255,.44),
-    0 0 0 1px rgba(255,255,255,.38),
-    0 0 6px rgba(183,153,236,.20);
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 0 0 1px rgba(102,66,0,.20),
+    0 0 0 1.5px var(--ice-shell-keyline),
+    0 0 8px rgba(240,181,46,.48);
+}
+
+/* Match the small countable pearls to the rim palette. Their dark edge makes
+ * the count readable even where a pearl lands over a very light candy. */
+body.cascade-route .cascade-ice-marker {
+  border-color: rgba(49,34,66,.78);
+}
+
+body.cascade-route .cascade-ice-marker[data-marker="1"] {
+  background:
+    radial-gradient(circle at 31% 23%, rgba(255,255,255,.98) 0 17%, rgba(255,255,255,.42) 18% 30%, transparent 31%),
+    linear-gradient(145deg, #7becf8, #0fb9d4);
+  background-color: #18cfe8;
+  box-shadow:
+    inset 0 -2px 2px rgba(20,111,128,.18),
+    0 0 0 1px rgba(49,34,66,.48),
+    0 2px 4px rgba(49,34,66,.24),
+    0 0 5px rgba(18,207,234,.36);
+}
+
+body.cascade-route .cascade-ice-marker[data-marker="2"] {
+  background:
+    radial-gradient(circle at 31% 23%, rgba(255,255,255,.98) 0 17%, rgba(255,255,255,.40) 18% 30%, transparent 31%),
+    linear-gradient(145deg, #ff8dcd, #d52d8b);
+  background-color: #f04cad;
+  box-shadow:
+    inset 0 -2px 2px rgba(132,29,86,.18),
+    0 0 0 1px rgba(49,34,66,.48),
+    0 2px 4px rgba(49,34,66,.24),
+    0 0 5px rgba(240,76,173,.36);
+}
+
+body.cascade-route .cascade-ice-marker[data-marker="3"] {
+  background:
+    radial-gradient(circle at 31% 23%, rgba(255,255,255,.98) 0 17%, rgba(255,255,255,.38) 18% 30%, transparent 31%),
+    linear-gradient(145deg, #ffd879, #d99a12);
+  background-color: #f0b52e;
+  box-shadow:
+    inset 0 -2px 2px rgba(130,84,0,.18),
+    0 0 0 1px rgba(49,34,66,.52),
+    0 2px 4px rgba(49,34,66,.24),
+    0 0 5px rgba(240,181,46,.40);
 }
 
 body.cascade-route .cascade-ice-markers {
   filter: none;
+}
+
+/* Keep the contrast cues physically substantial at the phone breakpoint. */
+@media (max-width: 650px) {
+  body.cascade-route .cascade-ice-shell[data-shell="1"] {
+    border-width: 3px;
+  }
+
+  body.cascade-route .cascade-ice-shell[data-shell="2"] {
+    border-width: 4px;
+  }
+
+  body.cascade-route .cascade-ice-shell[data-shell="3"] {
+    border-width: 5px;
+  }
+
+  body.cascade-route .cascade-ice-marker {
+    width: 8px;
+    height: 8px;
+    border-width: 1.25px;
+  }
 }
