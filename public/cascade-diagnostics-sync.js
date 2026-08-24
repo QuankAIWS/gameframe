@@ -150,6 +150,26 @@ function flush(options = {}) {
   return flushPromise;
 }
 
+async function flushIncident(incidentId, { keepalive = false } = {}) {
+  const normalizedId = String(incidentId || "").trim();
+  if (!normalizedId) return false;
+  const original = readQueue().find((incident) => incident?.incidentId === normalizedId);
+  if (!original) return true;
+  try {
+    if (!await ensureIdentity()) return false;
+    const response = await postIncidents([deliveryIncident(original)], { keepalive });
+    if (!response) return false;
+    if (response.ok) {
+      removeQueued([original]);
+      return true;
+    }
+    if (permanentlyRejected(response.status)) removeQueued([original]);
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 function start() {
   // No session lookup or diagnostics POST occurs on an ordinary clean page boot.
   // Identity is resolved lazily only after an incident actually exists.
@@ -168,5 +188,5 @@ function start() {
   });
 }
 
-window.cascadeDiagnosticsSync = Object.freeze({ flush });
+window.cascadeDiagnosticsSync = Object.freeze({ flush, flushIncident });
 start();
