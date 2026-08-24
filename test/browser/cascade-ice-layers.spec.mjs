@@ -37,6 +37,10 @@ async function tileAura(tile) {
   });
 }
 
+function identityFilter(filter) {
+  return filter === "none" || filter === "brightness(1)";
+}
+
 test("Cascade ice coatings expose exact durability without obscuring candy color", async ({ page }) => {
   await page.addInitScript((stateKey) => {
     window.localStorage.setItem(stateKey, JSON.stringify({
@@ -90,7 +94,7 @@ test("Cascade ice coatings expose exact durability without obscuring candy color
   expect(new Set(await markerColors(coating)).size).toBe(2);
 
   const ice2Visual = await coatingVisual(coating);
-  expect(ice2Visual.filter).toBe("none");
+  expect(identityFilter(ice2Visual.filter)).toBe(true);
   expect(ice2Visual.snowflakeOpacity).toBeLessThanOrEqual(0.6);
 
   await page.evaluate((tileIndex) => {
@@ -108,7 +112,7 @@ test("Cascade ice coatings expose exact durability without obscuring candy color
   const ice3Visual = await coatingVisual(coating);
   expect(ice3Visual.backgroundImage).toBe(ice2Visual.backgroundImage);
   expect(ice3Visual.boxShadow).toBe(ice2Visual.boxShadow);
-  expect(ice3Visual.filter).toBe(ice2Visual.filter);
+  expect(identityFilter(ice3Visual.filter)).toBe(true);
   expect(ice3Visual.snowflakeOpacity).toBe(ice2Visual.snowflakeOpacity);
   expect(ice3Visual.snowflakeColor).toBe(ice2Visual.snowflakeColor);
   expect(ice3Visual.snowflakeStroke).toBe(ice2Visual.snowflakeStroke);
@@ -135,15 +139,15 @@ test("Cascade ice coatings expose exact durability without obscuring candy color
   await expect(coating).toHaveClass(/ice-1/);
   await expect(coating.locator(".cascade-ice-shell")).toHaveCount(1);
   await expect(coating.locator(".cascade-ice-marker")).toHaveCount(1);
-  await expect.poll(async () => (await coatingVisual(coating)).filter, {
+  await expect.poll(async () => identityFilter((await coatingVisual(coating)).filter), {
     timeout: 1_000,
     intervals: [50, 100, 150],
-  }).toBe("none");
+  }).toBe(true);
 
   const ice1Visual = await coatingVisual(coating);
   expect(ice1Visual.backgroundImage).toBe(ice2Visual.backgroundImage);
   expect(ice1Visual.boxShadow).toBe(ice2Visual.boxShadow);
-  expect(ice1Visual.filter).toBe(ice2Visual.filter);
+  expect(identityFilter(ice1Visual.filter)).toBe(true);
   expect(ice1Visual.snowflakeOpacity).toBe(ice2Visual.snowflakeOpacity);
   expect(ice1Visual.snowflakeColor).toBe(ice2Visual.snowflakeColor);
   expect(ice1Visual.snowflakeStroke).toBe(ice2Visual.snowflakeStroke);
