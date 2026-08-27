@@ -189,7 +189,7 @@ function findSquareGroups(board) {
 export function findSpecialMatchGroups(board, specials = [], rules = {}) {
   const matchable = board.map((kind, index) => specials[index] === SPECIAL.COLOR ? null : kind);
   const groups = findMatchGroups(matchable);
-  if (ruleEnabled(rules, "fish")) groups.push(...findSquareGroups(matchable));
+  if (rules?.fish === true) groups.push(...findSquareGroups(matchable));
   return groups;
 }
 
@@ -214,7 +214,7 @@ function detectCreations(groups, from, to, specials, rules) {
 
   groups.forEach((group, groupIndex) => {
     if (consumed.has(groupIndex)) return;
-    if (group.orientation === "square" && group.indices.length === 4 && ruleEnabled(rules, "fish")) {
+    if (group.orientation === "square" && group.indices.length === 4 && rules?.fish === true) {
       creations.push({
         index: preferredAnchor(group.indices, from, to, specials),
         special: SPECIAL.FISH,
@@ -523,7 +523,7 @@ export function resolveSpecialCascades(board, specials, rng, {
   let shuffle = null;
   if (!hasPlayableMove(currentBoard, currentSpecials, rules)) {
     const before = currentBoard.slice();
-    currentBoard = createBoard({ rng });
+    currentBoard = createBoard({ rng, rules });
     currentSpecials = emptySpecials();
     shuffled = true;
     shuffle = { type: "shuffle", before, after: currentBoard.slice() };
