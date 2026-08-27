@@ -995,7 +995,7 @@ function startLevel(levelNumber = state.level, { resume = false } = {}) {
   score = 0;
   movesRemaining = activeLevel.moves;
   boardRng = createRng(((activeLevel.level * 0x9e3779b1) ^ Date.now()) >>> 0);
-  board = createBoard({ rng: boardRng });
+  board = createBoard({ rng: boardRng, rules: currentRules() });
   specials = emptySpecials();
   saveState();
   saveActiveRun();
@@ -1030,7 +1030,7 @@ function startBlitz(completedLevel) {
   locked = true;
   levelProgress = { collected: [], ice: [] };
   boardRng = createRng(((completedLevel * 0x85ebca6b) ^ Date.now()) >>> 0);
-  board = createBoard({ rng: boardRng });
+  board = createBoard({ rng: boardRng, rules: currentRules() });
   specials = emptySpecials();
   document.body.classList.add("cascade-blitz-mode");
   renderBoard();
