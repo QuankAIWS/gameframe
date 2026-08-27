@@ -84,6 +84,7 @@ function isCascadeUiFile(file) {
 function isCascadeProfileFile(file) {
   return file === "scripts/cascade-profile.mjs"
     || file === "scripts/cascade-profile-compare.mjs"
+    || file === "scripts/cascade-persona-calibrate.mjs"
     || file === "scripts/cascade-fragility.mjs"
     || file === "scripts/cascade-playtest-analyze.mjs"
     || file === "planning/cascade-testing-methodology.md"
