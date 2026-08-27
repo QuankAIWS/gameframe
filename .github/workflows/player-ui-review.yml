@@ -228,7 +228,15 @@ jobs:
           npm run cascade:test
           node --test src/games/cascade/cascade-special-engine.test.mjs
       - name: Cascade 450-level solver and human difficulty profile
-        run: npm run cascade:profile -- --runs=6
+        run: npm run cascade:profile -- --runs=6 --json=cascade-profile.json
+      - name: Upload Cascade difficulty profile
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cascade-difficulty-profile-${{ github.run_id }}
+          path: cascade-profile.json
+          if-no-files-found: warn
+          retention-days: 14
 
   cascade-telemetry:
     needs: scope
