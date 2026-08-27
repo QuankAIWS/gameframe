@@ -14,6 +14,8 @@ on:
       - "scripts/build-monster-master-pixi.mjs"
       - "scripts/monster-master-*.mjs"
       - "scripts/cascade-profile.mjs"
+      - "scripts/cascade-profile-compare.mjs"
+      - "scripts/cascade-fragility.mjs"
       - "scripts/cascade-playtest-analyze.mjs"
       - "planning/cascade-testing-methodology.md"
       - "src/browser/player-*"
