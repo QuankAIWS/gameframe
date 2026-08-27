@@ -316,7 +316,10 @@ test("playtest analysis excludes hammer-assisted attempts from intrinsic difficu
     difficulty: bucket.difficulty,
     eligible: bucket.eligible,
     wins: bucket.wins,
-  })), [{ difficulty: "relief", eligible: 3, wins: 1 }]);
+  })), [
+    { difficulty: "relief", eligible: 1, wins: 0 },
+    { difficulty: "normal", eligible: 2, wins: 1 },
+  ]);
   const orange = report.players.find((player) => player.displayName === "Orange");
   const rose = report.players.find((player) => player.displayName === "Rose");
   assert.equal(orange.boosterMetrics.excluded, true);
