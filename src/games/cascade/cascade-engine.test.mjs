@@ -15,7 +15,7 @@ import {
   objectiveComplete,
   resolveCascades,
 } from "../../../public/cascade-engine.js";
-import { profileCascadeLevels, runCascadeLevel } from "./cascade-simulator.js";
+import { chooseMove, profileCascadeLevels, runCascadeLevel, targetFirstPassBand } from "./cascade-simulator.js";
 
 test("Cascade ships 450 levels on a campaign model sized for 3000", () => {
   assert.equal(LEVEL_COUNT, 450);
@@ -193,6 +193,46 @@ test("a legal swap returns replayable objective-aware cascade transition records
   assert.ok(listLegalMoves(result.board).length > 0);
 });
 
+test("human personas choose from visible board information without peeking at future RNG", () => {
+  const level = CASCADE_LEVELS[30];
+  const progress = createLevelProgress(level);
+  const board = createBoard({ rng: createRng(424242) });
+  const specials = Array(64).fill(null);
+  const moves = listLegalMoves(board);
+  const first = chooseMove(
+    "human-skilled",
+    level,
+    progress,
+    board,
+    specials,
+    moves,
+    createRng(1),
+    createRng(777),
+  );
+  const second = chooseMove(
+    "human-skilled",
+    level,
+    progress,
+    board,
+    specials,
+    moves,
+    createRng(0xdeadbeef),
+    createRng(777),
+  );
+  assert.deepEqual(first, second);
+});
+
+test("deep-campaign first-pass targets ramp toward roughly fifty-percent normal play", () => {
+  assert.equal(targetFirstPassBand(300, "normal"), null);
+  const opening = targetFirstPassBand(301, "normal");
+  const mature = targetFirstPassBand(900, "normal");
+  assert.ok(opening.min > mature.min);
+  assert.ok(opening.max > mature.max);
+  assert.equal(mature.min, 0.48);
+  assert.equal(mature.max, 0.62);
+  assert.equal(mature.phase, "mature");
+});
+
 test("all 450 levels exercise the objective-aware lookahead bot without engine errors", () => {
   for (const level of CASCADE_LEVELS) {
     const run = runCascadeLevel({ level, seed: 1000 + level.level, strategy: "lookahead" });
@@ -202,15 +242,20 @@ test("all 450 levels exercise the objective-aware lookahead bot without engine e
   }
 });
 
-test("sample profiling covers all 450 levels and records skill/planning sensitivity", () => {
-  const report = profileCascadeLevels({ runsPerLevel: 1 });
+test("sample profiling covers all 450 levels and records solver and human-persona sensitivity", () => {
+  const report = profileCascadeLevels({ runsPerLevel: 1, humanRunsPerLevel: 1 });
   assert.equal(report.levels.length, 450);
   for (const level of report.levels) {
     assert.ok(level.strategies.random);
+    assert.ok(level.strategies["human-casual"]);
+    assert.ok(level.strategies["human-skilled"]);
     assert.ok(level.strategies.greedy);
     assert.ok(level.strategies.lookahead);
     assert.equal(typeof level.strategies.lookahead.objectiveFailureRate, "number");
+    assert.equal(typeof level.humanSkillSpread, "number");
   }
+  assert.equal(report.levels[299].targetFirstPassBand, null);
+  assert.ok(report.levels[300].targetFirstPassBand);
   const laterRun = report.levels.slice(30);
   assert.ok(laterRun.some((level) => level.skillSensitivity !== 0));
 });
