@@ -20,7 +20,7 @@ function specialRules(levelNumber) {
     stripe: levelNumber >= 2,
     bomb: levelNumber >= 3,
     color: levelNumber >= 5,
-    fish: levelNumber >= 301,
+    fish: levelNumber >= 6,
   };
 }
 
