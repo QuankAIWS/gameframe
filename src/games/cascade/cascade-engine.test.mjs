@@ -17,11 +17,11 @@ import {
 } from "../../../public/cascade-engine.js";
 import { profileCascadeLevels, runCascadeLevel } from "./cascade-simulator.js";
 
-test("Cascade ships 300 levels on a campaign model sized for 1000", () => {
-  assert.equal(LEVEL_COUNT, 300);
-  assert.equal(CAMPAIGN_CAPACITY, 1000);
+test("Cascade ships 450 levels on a campaign model sized for 3000", () => {
+  assert.equal(LEVEL_COUNT, 450);
+  assert.equal(CAMPAIGN_CAPACITY, 3000);
   assert.equal(CHAPTER_SIZE, 30);
-  assert.equal(CASCADE_LEVELS.length, 300);
+  assert.equal(CASCADE_LEVELS.length, 450);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
   assert.equal(CASCADE_LEVELS[0].moves, 20);
   assert.equal(CASCADE_LEVELS[4].target, 2375);
@@ -64,6 +64,17 @@ test("Cascade ships 300 levels on a campaign model sized for 1000", () => {
   assert.equal(CASCADE_LEVELS[299].difficulty, "super-hard");
   assert.equal(CASCADE_LEVELS[299].objective.collect.length, 2);
   assert.equal(CASCADE_LEVELS[299].objective.ice.layers, 2);
+
+  assert.equal(CASCADE_LEVELS[300].chapter, "fish-school");
+  assert.ok(CASCADE_LEVELS[300].mechanics.includes("smart-fish"));
+  assert.equal(CASCADE_LEVELS[330].chapter, "fish-ice");
+  assert.equal(CASCADE_LEVELS[360].chapter, "fish-collection");
+  assert.equal(CASCADE_LEVELS[390].chapter, "fish-mix");
+  assert.equal(CASCADE_LEVELS[420].chapter, "fish-veteran");
+  assert.equal(CASCADE_LEVELS[449].chapter, "fish-capstone");
+  assert.equal(CASCADE_LEVELS[449].difficulty, "super-hard");
+  assert.equal(CASCADE_LEVELS[449].objective.collect.length, 2);
+  assert.equal(CASCADE_LEVELS[449].objective.ice.layers, 2);
 });
 
 test("difficulty uses repeating tension waves instead of a monotonic staircase", () => {
@@ -180,7 +191,7 @@ test("a legal swap returns replayable objective-aware cascade transition records
   assert.ok(listLegalMoves(result.board).length > 0);
 });
 
-test("all 300 levels exercise the objective-aware lookahead bot without engine errors", () => {
+test("all 450 levels exercise the objective-aware lookahead bot without engine errors", () => {
   for (const level of CASCADE_LEVELS) {
     const run = runCascadeLevel({ level, seed: 1000 + level.level, strategy: "lookahead" });
     assert.ok(run.moveHistory.length > 0, `lookahead made no moves on level ${level.level}`);
@@ -189,9 +200,9 @@ test("all 300 levels exercise the objective-aware lookahead bot without engine e
   }
 });
 
-test("sample profiling covers all 300 levels and records skill/planning sensitivity", () => {
+test("sample profiling covers all 450 levels and records skill/planning sensitivity", () => {
   const report = profileCascadeLevels({ runsPerLevel: 1 });
-  assert.equal(report.levels.length, 300);
+  assert.equal(report.levels.length, 450);
   for (const level of report.levels) {
     assert.ok(level.strategies.random);
     assert.ok(level.strategies.greedy);
