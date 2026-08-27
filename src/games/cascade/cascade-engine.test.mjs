@@ -271,7 +271,7 @@ test("playtest analysis excludes hammer-assisted attempts from intrinsic difficu
         summary: { highestLevelStarted: 33, highestLevelCompleted: 32 },
         attempts: [
           { mode: "normal", level: 31, outcome: "win", hammersUsed: 1, startedAt: "2026-08-01T00:00:00Z" },
-          { mode: "normal", level: 32, outcome: "failure", hammersUsed: 0, startedAt: "2026-08-01T00:01:00Z" },
+          { mode: "normal", level: 32, outcome: "failed", hammersUsed: 0, startedAt: "2026-08-01T00:01:00Z" },
           { mode: "normal", level: 32, outcome: "win", hammersUsed: 0, startedAt: "2026-08-01T00:02:00Z" },
         ],
       },
@@ -280,7 +280,7 @@ test("playtest analysis excludes hammer-assisted attempts from intrinsic difficu
         playerId: "rose",
         summary: { highestLevelStarted: 32, highestLevelCompleted: 32 },
         attempts: [
-          { mode: "normal", level: 31, outcome: "failure", hammersUsed: 0, startedAt: "2026-08-01T00:00:00Z" },
+          { mode: "normal", level: 31, outcome: "failed", hammersUsed: 0, startedAt: "2026-08-01T00:00:00Z" },
           { mode: "normal", level: 31, outcome: "win", hammersUsed: 0, startedAt: "2026-08-01T00:01:00Z" },
           { mode: "normal", level: 32, outcome: "win", hammersUsed: 0, startedAt: "2026-08-01T00:02:00Z" },
         ],
