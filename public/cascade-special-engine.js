@@ -256,27 +256,48 @@ function dominantKind(board) {
   return best;
 }
 
-function smartFishTargets(board, sourceIndex, { ice = [], targetKinds = [], count = 1, exclude = [] } = {}) {
+function fishTargets(board, sourceIndex, { ice = [], targetKinds = [], count = 1, exclude = [], rng = null } = {}) {
   const blocked = new Set([sourceIndex, ...exclude]);
   const neededKinds = new Set((targetKinds || []).filter((kind) => Number.isInteger(kind) && kind >= 0 && kind < TILE_KINDS));
-  const candidates = [];
+  const available = [];
+  const useful = [];
+
   for (let index = 0; index < board.length; index += 1) {
     if (blocked.has(index) || board[index] === null) continue;
-    const layers = Math.max(0, Number(ice?.[index]) || 0);
+    available.push(index);
+    const hasIce = Math.max(0, Number(ice?.[index]) || 0) > 0;
     const neededColor = neededKinds.has(board[index]);
-    const priority = (layers > 0 ? 10000 + layers * 250 : 0) + (neededColor ? 1000 : 0);
-    const distance = Math.abs(rowOf(index) - rowOf(sourceIndex)) + Math.abs(colOf(index) - colOf(sourceIndex));
-    candidates.push({ index, priority, distance, tie: (index * 37 + sourceIndex * 17) % 97 });
+    if (hasIce || neededColor) useful.push(index);
   }
-  candidates.sort((a, b) => b.priority - a.priority || b.distance - a.distance || a.tie - b.tie || a.index - b.index);
-  return candidates.slice(0, Math.max(1, count)).map((candidate) => candidate.index);
+
+  const selected = [];
+  const pick = (pool) => {
+    if (!pool.length) return null;
+    const random = typeof rng?.next === "function" ? rng.next() : 0;
+    const offset = Math.min(pool.length - 1, Math.floor(random * pool.length));
+    return pool.splice(offset, 1)[0];
+  };
+
+  const usefulPool = useful.slice();
+  while (selected.length < Math.max(1, count) && usefulPool.length) {
+    const target = pick(usefulPool);
+    if (target !== null) selected.push(target);
+  }
+
+  const fillerPool = available.filter((index) => !selected.includes(index));
+  while (selected.length < Math.max(1, count) && fillerPool.length) {
+    const target = pick(fillerPool);
+    if (target !== null) selected.push(target);
+  }
+
+  return selected;
 }
 
 function specialBlast(index, special, board, colorTarget = null, targeting = {}) {
   if (special === SPECIAL.STRIPE_H) return rowIndices(rowOf(index));
   if (special === SPECIAL.STRIPE_V) return colIndices(colOf(index));
   if (special === SPECIAL.BOMB) return areaAround(index, 1);
-  if (special === SPECIAL.FISH) return smartFishTargets(board, index, targeting);
+  if (special === SPECIAL.FISH) return fishTargets(board, index, targeting);
   if (special === SPECIAL.COLOR) {
     const target = Number.isInteger(colorTarget) && colorTarget >= 0 && colorTarget < TILE_KINDS
       ? colorTarget
@@ -286,7 +307,7 @@ function specialBlast(index, special, board, colorTarget = null, targeting = {})
   return [];
 }
 
-function expandTriggeredSpecials({ board, specials, seedIndices, protectedIndices = [], colorTarget = null, ice = [], targetKinds = [] }) {
+function expandTriggeredSpecials({ board, specials, seedIndices, protectedIndices = [], colorTarget = null, ice = [], targetKinds = [], rng = null }) {
   const clear = new Set(seedIndices);
   const protectedSet = new Set(protectedIndices);
   const queue = [...clear];
@@ -299,7 +320,7 @@ function expandTriggeredSpecials({ board, specials, seedIndices, protectedIndice
     seen.add(index);
     const special = specials[index];
     if (!special) continue;
-    const blast = specialBlast(index, special, board, colorTarget, { ice, targetKinds });
+    const blast = specialBlast(index, special, board, colorTarget, { ice, targetKinds, rng });
     triggered.push({ index, special, cleared: blast.slice() });
     for (const target of blast) {
       if (protectedSet.has(target)) continue;
@@ -346,25 +367,25 @@ function comboClear(board, specials, from, to, options = {}) {
   if (!a || !b) return null;
 
   if (a === SPECIAL.FISH && b === SPECIAL.FISH) {
-    const targets = smartFishTargets(board, to, { ice: options.ice, targetKinds: options.targetKinds, count: 3, exclude: [from, to] });
+    const targets = fishTargets(board, to, { ice: options.ice, targetKinds: options.targetKinds, count: 3, exclude: [from, to] });
     return { kind: "fish+fish", indices: [...new Set([from, to, ...targets])], colorTarget: null };
   }
   if ((a === SPECIAL.FISH && b === SPECIAL.BOMB) || (b === SPECIAL.FISH && a === SPECIAL.BOMB)) {
     const fishIndex = a === SPECIAL.FISH ? from : to;
-    const target = smartFishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 1, exclude: [from, to] })[0] ?? fishIndex;
+    const target = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 1, exclude: [from, to] })[0] ?? fishIndex;
     return { kind: "fish+bomb", indices: [...new Set([from, to, ...areaAround(target, 1)])], colorTarget: null };
   }
   const fishStripes = [SPECIAL.STRIPE_H, SPECIAL.STRIPE_V];
   if ((a === SPECIAL.FISH && fishStripes.includes(b)) || (b === SPECIAL.FISH && fishStripes.includes(a))) {
     const fishIndex = a === SPECIAL.FISH ? from : to;
     const stripe = a === SPECIAL.FISH ? b : a;
-    const target = smartFishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 1, exclude: [from, to] })[0] ?? fishIndex;
+    const target = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 1, exclude: [from, to] })[0] ?? fishIndex;
     const line = stripe === SPECIAL.STRIPE_H ? rowIndices(rowOf(target)) : colIndices(colOf(target));
     return { kind: "fish+stripe", indices: [...new Set([from, to, ...line])], colorTarget: null };
   }
   if ((a === SPECIAL.FISH && b === SPECIAL.COLOR) || (b === SPECIAL.FISH && a === SPECIAL.COLOR)) {
     const fishIndex = a === SPECIAL.FISH ? from : to;
-    const targets = smartFishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 5, exclude: [from, to] });
+    const targets = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 5, exclude: [from, to] });
     return { kind: "fish+color", indices: [...new Set([from, to, ...targets])], colorTarget: null };
   }
 
@@ -460,6 +481,7 @@ export function resolveSpecialCascades(board, specials, rng, {
       colorTarget: forcedStep?.colorTarget ?? null,
       ice: currentIce,
       targetKinds,
+      rng,
     });
     const matched = [...expanded.clear].sort((a, b) => a - b);
     const matchedForProgress = [...new Set([...matched, ...creationIndices])].sort((a, b) => a - b);
@@ -553,7 +575,7 @@ export function applySpecialSwap(board, specials, from, to, rng, options = {}) {
 
   const swappedBoard = swapPair(board, from, to);
   const swappedSpecials = swapPair(cleanSpecials, from, to);
-  const combo = comboClear(swappedBoard, swappedSpecials, from, to, options)
+  const combo = comboClear(swappedBoard, swappedSpecials, from, to, { ...options, rng })
     || colorSwapClear(swappedBoard, swappedSpecials, from, to);
 
   if (combo) {
