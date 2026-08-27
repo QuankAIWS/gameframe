@@ -14,6 +14,8 @@ on:
       - "scripts/build-monster-master-pixi.mjs"
       - "scripts/monster-master-*.mjs"
       - "scripts/cascade-profile.mjs"
+      - "scripts/cascade-playtest-analyze.mjs"
+      - "planning/cascade-testing-methodology.md"
       - "src/browser/player-*"
       - "src/browser/monster-master*"
       - "src/cloudflare/player-*"
@@ -91,7 +93,7 @@ jobs:
           echo "- shared shell: ${{ steps.classify.outputs.shell }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Casual Games: ${{ steps.classify.outputs.casual }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Cascade UI: ${{ steps.classify.outputs.cascadeUi }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Cascade 300-level profile: ${{ steps.classify.outputs.cascadeProfile }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Cascade 450-level solver + human profile: ${{ steps.classify.outputs.cascadeProfile }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Cascade telemetry: ${{ steps.classify.outputs.cascadeTelemetry }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Monster Master: ${{ steps.classify.outputs.monsterMaster }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Player Platform: ${{ steps.classify.outputs.playerPlatform }}" >> "$GITHUB_STEP_SUMMARY"
@@ -222,7 +224,7 @@ jobs:
         run: |
           npm run cascade:test
           node --test src/games/cascade/cascade-special-engine.test.mjs
-      - name: Cascade 300-level bot difficulty profile
+      - name: Cascade 450-level solver and human difficulty profile
         run: npm run cascade:profile -- --runs=6
 
   cascade-telemetry:
