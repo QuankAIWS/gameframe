@@ -317,6 +317,7 @@ function campaignSpec(levelNumber) {
     target: 22000, moves: 26, hard: true, difficulty: "super-hard", chapter: "fish-capstone",
     objective: objective({ collect: [{ kind: firstKind, count: 18 }, { kind: secondKind, count: 18 }], ice: { count: 9, layers: 2, pattern: "cross" } }),
   };
+}
 
 function level(levelNumber, { target, moves, hard = false, difficulty = "normal", chapter = "onboarding", mechanics, objective: levelObjective } = {}) {
   return Object.freeze({ level: levelNumber, target: target ?? 1000, moves: moves ?? 20, hard, difficulty, chapter, mechanics: Object.freeze((mechanics ?? mechanicsForLevel(levelNumber)).slice()), objective: levelObjective ?? objective() });
