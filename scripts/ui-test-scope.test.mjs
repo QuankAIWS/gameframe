@@ -33,6 +33,7 @@ test("Cascade browser input and presentation changes do not run the solver/perso
 test("Cascade analysis tools and methodology changes add the profile gate", () => {
   assert.deepEqual(classifyUiTestScope([
     "scripts/cascade-profile-compare.mjs",
+    "scripts/cascade-persona-calibrate.mjs",
     "scripts/cascade-fragility.mjs",
     "scripts/cascade-playtest-analyze.mjs",
     "planning/cascade-testing-methodology.md",
