@@ -200,6 +200,26 @@ test("Fish chooses a seeded random useful objective target without ranking deepe
   assert.ok(result.transitions[0].triggeredSpecials.some((trigger) => trigger.special === SPECIAL.FISH));
 });
 
+test("Fish combo targeting uses the seeded random useful target", () => {
+  const board = stableBoard();
+  const specials = emptySpecials();
+  const ice = Array(64).fill(0);
+  specials[0] = SPECIAL.FISH;
+  specials[1] = SPECIAL.BOMB;
+  ice[10] = 2;
+  ice[63] = 1;
+
+  const result = applySpecialSwap(board, specials, 0, 1, createRng(12288), {
+    ice,
+    rules: { stripe: true, bomb: true, color: true, fish: true },
+  });
+
+  assert.equal(result.legal, true);
+  assert.equal(result.transitions[0].combo, "fish+bomb");
+  assert.ok(result.transitions[0].iceHits.some((hit) => hit.index === 63));
+  assert.equal(result.transitions[0].iceHits.some((hit) => hit.index === 10), false);
+});
+
 test("Fish plus Fish sends three seeded random hits toward useful objectives", () => {
   const board = stableBoard();
   const specials = emptySpecials();
