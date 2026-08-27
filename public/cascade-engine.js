@@ -35,7 +35,7 @@ function mechanicsForLevel(levelNumber) {
   if (levelNumber >= 31) mechanics.push("ice-blockers");
   if (levelNumber >= 61) mechanics.push("collection");
   if (levelNumber >= 151) mechanics.push("layered-ice");
-  if (levelNumber >= 301) mechanics.push("smart-fish");
+  if (levelNumber >= 6) mechanics.push("smart-fish");
   return mechanics;
 }
 
@@ -251,7 +251,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 330) {
     return buildSpec({
-      levelNumber, start: 301, chapter: "fish-school", baseTarget: 11800, targetStep: 95, baseMoves: 24,
+      levelNumber, start: 301, chapter: "advanced-mastery", baseTarget: 11800, targetStep: 95, baseMoves: 24,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         const layers = phase === 0 ? 1 : 2;
@@ -264,7 +264,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 360) {
     return buildSpec({
-      levelNumber, start: 331, chapter: "fish-ice", baseTarget: 12600, targetStep: 100, baseMoves: 23,
+      levelNumber, start: 331, chapter: "ice-remix", baseTarget: 12600, targetStep: 100, baseMoves: 23,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         return objective({
@@ -276,7 +276,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 390) {
     return buildSpec({
-      levelNumber, start: 361, chapter: "fish-collection", baseTarget: 13200, targetStep: 110, baseMoves: 23,
+      levelNumber, start: 361, chapter: "collection-remix", baseTarget: 13200, targetStep: 110, baseMoves: 23,
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind, secondKind] = twoKinds(levelNumber, 3);
         const count = scaleCount(9 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor);
@@ -286,7 +286,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 420) {
     return buildSpec({
-      levelNumber, start: 391, chapter: "fish-mix", baseTarget: 13800, targetStep: 115, baseMoves: 24,
+      levelNumber, start: 391, chapter: "advanced-mix", baseTarget: 13800, targetStep: 115, baseMoves: 24,
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind, secondKind] = twoKinds(levelNumber, 2);
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
@@ -300,7 +300,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber < 450) {
     return buildSpec({
-      levelNumber, start: 421, chapter: "fish-veteran", baseTarget: 14600, targetStep: 120, baseMoves: 24,
+      levelNumber, start: 421, chapter: "veteran-remix", baseTarget: 14600, targetStep: 120, baseMoves: 24,
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind, secondKind] = twoKinds(levelNumber, 2);
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
@@ -314,7 +314,7 @@ function campaignSpec(levelNumber) {
   }
   const [firstKind, secondKind] = twoKinds(levelNumber, 2);
   return {
-    target: 22000, moves: 26, hard: true, difficulty: "super-hard", chapter: "fish-capstone",
+    target: 22000, moves: 26, hard: true, difficulty: "super-hard", chapter: "veteran-capstone",
     objective: objective({ collect: [{ kind: firstKind, count: 18 }, { kind: secondKind, count: 18 }], ice: { count: 9, layers: 2, pattern: "cross" } }),
   };
 }
