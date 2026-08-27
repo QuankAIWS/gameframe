@@ -513,6 +513,7 @@ export function profileCascadeLevels({
     rules: "persistent-specials-v2-fish/campaign-wave-v2",
     runsPerLevel,
     humanRunsPerLevel,
+    seedBase,
     strategies,
     humanPersonas: HUMAN_PERSONAS,
     levels,
