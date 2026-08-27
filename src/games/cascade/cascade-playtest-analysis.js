@@ -75,6 +75,57 @@ function attemptsPerSuccessSummary(attempts) {
   };
 }
 
+function aggregateCleanFirstPass(players) {
+  const byLevel = new Map();
+
+  for (const player of players) {
+    const levels = groupByLevel(resolvedNormalAttempts(player));
+    for (const [levelNumber, levelAttempts] of levels) {
+      const first = levelAttempts[0];
+      if (!first || Number(first.hammersUsed || 0) > 0) continue;
+      const definition = CASCADE_LEVELS[levelNumber - 1];
+      if (!definition) continue;
+      if (!byLevel.has(levelNumber)) {
+        byLevel.set(levelNumber, {
+          level: levelNumber,
+          chapter: definition.chapter || "unknown",
+          difficulty: definition.difficulty || "normal",
+          eligible: 0,
+          wins: 0,
+        });
+      }
+      const row = byLevel.get(levelNumber);
+      row.eligible += 1;
+      if (first.outcome === "win") row.wins += 1;
+    }
+  }
+
+  const levels = [...byLevel.values()]
+    .sort((a, b) => a.level - b.level)
+    .map((row) => ({ ...row, rate: ratio(row.wins, row.eligible) }));
+
+  const aggregate = (key) => {
+    const buckets = new Map();
+    for (const row of levels) {
+      const bucketKey = row[key];
+      if (!buckets.has(bucketKey)) buckets.set(bucketKey, { [key]: bucketKey, eligible: 0, wins: 0 });
+      const bucket = buckets.get(bucketKey);
+      bucket.eligible += row.eligible;
+      bucket.wins += row.wins;
+    }
+    return [...buckets.values()].map((bucket) => ({
+      ...bucket,
+      rate: ratio(bucket.wins, bucket.eligible),
+    }));
+  };
+
+  return {
+    levels,
+    byDifficulty: aggregate("difficulty"),
+    byChapter: aggregate("chapter"),
+  };
+}
+
 function aggregateDifficultyBuckets(players) {
   const buckets = new Map();
   for (const player of players) {
@@ -174,6 +225,7 @@ export function analyzePlaytestExport(data, { boosterMetricExclusions = {} } = {
   const allResolved = players.flatMap((player) => resolvedNormalAttempts(player));
   const allUnassisted = allResolved.filter((attempt) => Number(attempt.hammersUsed || 0) === 0);
   const unassistedWins = allUnassisted.filter((attempt) => attempt.outcome === "win").length;
+  const cleanFirstPass = aggregateCleanFirstPass(players);
 
   return {
     schemaVersion: data?.schemaVersion ?? null,
@@ -184,6 +236,7 @@ export function analyzePlaytestExport(data, { boosterMetricExclusions = {} } = {
     unassistedWins,
     unassistedWinRate: ratio(unassistedWins, allUnassisted.length),
     players: playerReports,
+    cleanFirstPass,
     byDifficulty: aggregateDifficultyBuckets(players),
     byChapter: aggregateChapterBuckets(players),
     policy: {
