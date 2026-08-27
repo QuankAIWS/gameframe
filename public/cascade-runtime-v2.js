@@ -322,12 +322,12 @@ function rulesForLevel(levelNumber) {
     stripe: levelNumber >= 2,
     bomb: levelNumber >= 3,
     color: levelNumber >= 5,
-    fish: levelNumber >= 301,
+    fish: levelNumber >= 6,
   };
 }
 
 function currentRules() {
-  if (mode === "blitz") return { stripe: true, bomb: true, color: true, fish: state.level >= 301 };
+  if (mode === "blitz") return { stripe: true, bomb: true, color: true, fish: state.level >= 6 };
   return rulesForLevel(activeLevel.level);
 }
 
@@ -383,7 +383,7 @@ function mapLabel(level) {
   if (level.level === 3) return "Bombs";
   if (level.level === 4) return "Combos";
   if (level.level === 5) return "Color";
-  if (level.level === 301) return "Fish";
+  if (level.level === 6) return "Fish";
   if (level.difficulty === "super-hard") return "Super hard";
   if (level.difficulty === "hard" || level.hard) return "Hard";
   const hasIce = Boolean(level.objective?.ice);
@@ -440,7 +440,7 @@ function renderHelp() {
     helpElement.textContent = "Get two specials next to each other and swap them together for a bigger hit.";
   } else if (activeLevel.level === 5) {
     helpElement.textContent = "Match five to make a color clearer. Swap it with a color to sweep that color off the board.";
-  } else if (activeLevel.level === 301) {
+  } else if (activeLevel.level === 6) {
     helpElement.textContent = "Make a 2×2 square of one color to create a Fish. Trigger it and it swims to something you still need.";
   } else {
     const notes = [];
