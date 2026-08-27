@@ -186,6 +186,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     const result = applySpecialSwap(board, specials, move.from, move.to, boardRng, {
       rules: specialRules(definition.level),
       ice: progress.ice,
+      targetKinds: remainingTargetKinds(definition, progress),
     });
     if (!result.legal) throw new Error(`Cascade bot selected an illegal move ${move.from}->${move.to}`);
 
