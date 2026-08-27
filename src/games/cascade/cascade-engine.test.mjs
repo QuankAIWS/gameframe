@@ -16,6 +16,7 @@ import {
   resolveCascades,
 } from "../../../public/cascade-engine.js";
 import { chooseMove, profileCascadeLevels, runCascadeLevel, targetFirstPassBand } from "./cascade-simulator.js";
+import { analyzePlaytestExport } from "./cascade-playtest-analysis.js";
 
 test("Cascade ships 450 levels on a campaign model sized for 3000", () => {
   assert.equal(LEVEL_COUNT, 450);
@@ -258,6 +259,52 @@ test("sample profiling covers all 450 levels and records solver and human-person
   assert.ok(report.levels[300].targetFirstPassBand);
   const laterRun = report.levels.slice(30);
   assert.ok(laterRun.some((level) => level.skillSensitivity !== 0));
+});
+
+test("playtest analysis excludes hammer-assisted attempts from intrinsic difficulty", () => {
+  const report = analyzePlaytestExport({
+    schemaVersion: 1,
+    players: [
+      {
+        displayName: "Orange",
+        playerId: "orange",
+        summary: { highestLevelStarted: 33, highestLevelCompleted: 32 },
+        attempts: [
+          { mode: "normal", level: 31, outcome: "win", hammersUsed: 1, startedAt: "2026-08-01T00:00:00Z" },
+          { mode: "normal", level: 32, outcome: "failure", hammersUsed: 0, startedAt: "2026-08-01T00:01:00Z" },
+          { mode: "normal", level: 32, outcome: "win", hammersUsed: 0, startedAt: "2026-08-01T00:02:00Z" },
+        ],
+      },
+      {
+        displayName: "Rose",
+        playerId: "rose",
+        summary: { highestLevelStarted: 32, highestLevelCompleted: 32 },
+        attempts: [
+          { mode: "normal", level: 31, outcome: "failure", hammersUsed: 0, startedAt: "2026-08-01T00:00:00Z" },
+          { mode: "normal", level: 31, outcome: "win", hammersUsed: 0, startedAt: "2026-08-01T00:01:00Z" },
+          { mode: "normal", level: 32, outcome: "win", hammersUsed: 0, startedAt: "2026-08-01T00:02:00Z" },
+        ],
+      },
+    ],
+  }, {
+    boosterMetricExclusions: {
+      Orange: "known live hammer testing",
+    },
+  });
+
+  assert.equal(report.resolvedNormalAttempts, 6);
+  assert.equal(report.unassistedResolvedAttempts, 5);
+  assert.equal(report.unassistedWins, 3);
+  assert.equal(report.unassistedWinRate, 0.6);
+  const orange = report.players.find((player) => player.displayName === "Orange");
+  const rose = report.players.find((player) => player.displayName === "Rose");
+  assert.equal(orange.boosterMetrics.excluded, true);
+  assert.equal(orange.firstPass.hammerContaminatedLevels, 1);
+  assert.equal(orange.unassistedAttemptsPerSuccess.attemptsPerSuccess, 2);
+  assert.equal(rose.firstPass.rate, 0.5);
+  assert.equal(rose.unassistedAttemptsPerSuccess.attemptsPerSuccess, 1.5);
+  assert.equal(report.policy.invalidSwapsUsedAsSkillSignal, false);
+  assert.equal(report.policy.deviceClassChangesLevelDifficulty, false);
 });
 
 test("objectiveComplete requires score plus every authored non-score objective", () => {
