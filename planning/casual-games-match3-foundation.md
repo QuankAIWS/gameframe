@@ -43,7 +43,7 @@ Lives remain a pacing mechanic with automatic regeneration. There is no paid, fa
 
 The campaign system is deliberately sized for **3,000 levels** without requiring another level-model rewrite.
 
-The currently shipped and continuously validated campaign contains **450 levels**. The smart Fish is part of the ordinary permanent special toolkit from the early campaign onward; levels 301–450 simply extend the same Cascade vocabulary with harder combinations and geometry. Levels 451–3000 remain future content on the same campaign model.
+The currently shipped and continuously validated campaign contains **450 levels**. The Fish is part of the ordinary permanent special toolkit from the early campaign onward; levels 301–450 simply extend the same Cascade vocabulary with harder combinations and geometry. Levels 451–3000 remain future content on the same campaign model.
 
 The player-facing level map renders only the current 30-level chapter rather than every campaign level. This prevents the UI and DOM size from growing linearly as the campaign expands.
 
@@ -79,14 +79,14 @@ A T or L intersection creates a bomb. Activating it clears a 3 × 3 area.
 
 A five-or-more straight match creates a color clearer. Swapping it with a normal tile clears that tile's color from the board.
 
-### Smart Fish
+### Fish
 
 Starting at level 6, a 2 × 2 square of one color creates a persistent Fish.
 
-- when triggered, Fish prioritizes unfinished board objectives instead of choosing an arbitrary tile;
-- remaining ice is the first positional priority, with deeper ice preferred;
-- when no ice remains, Fish prefers colors that are still required by collection goals;
-- Fish + Fish sends multiple smart hits;
+- when triggered, Fish randomly chooses among unfinished board-objective targets;
+- ice cells and still-needed collection colors are useful targets;
+- when several useful targets exist, Fish does not rank them by depth, position, or mathematical value;
+- Fish + Fish sends multiple useful-target hits without replacement;
 - Fish + stripe, Fish + bomb, and Fish + color clearer redirect stronger effects toward useful objective locations;
 - Fish is a normal special piece, not a chapter theme or a special class of level.
 
@@ -360,7 +360,7 @@ The practical authoring loop remains: design a chapter recipe, generate candidat
 1. Persistent stripe/bomb/color special engine and combinations — implemented.
 2. Original 300-level campaign, Blitz, Quick Recall, Weekly Blitz, telemetry, and automated profiling — implemented.
 3. Family playtest pass through the original campaign — collected and used for difficulty/geometry calibration.
-4. Smart Fish added to the permanent toolkit and backdated into the established campaign; levels 301–450 extend the same vocabulary — current expansion.
+4. Fish added to the permanent toolkit and backdated into the established campaign; levels 301–450 extend the same vocabulary — current expansion.
 5. Validate the full 1–450 profile after the Fish backdate, then calibrate against new family traces.
 6. Add the next board-element family (drop/exit goals and locks are leading candidates).
 7. Add spreadable/regrowing terrain and producer/dependency mechanics in separate, testable slices.
