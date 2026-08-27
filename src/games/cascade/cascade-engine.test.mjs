@@ -312,6 +312,11 @@ test("playtest analysis excludes hammer-assisted attempts from intrinsic difficu
   assert.equal(report.unassistedResolvedAttempts, 5);
   assert.equal(report.unassistedWins, 3);
   assert.equal(report.unassistedWinRate, 0.6);
+  assert.deepEqual(report.cleanFirstPass.byDifficulty.map((bucket) => ({
+    difficulty: bucket.difficulty,
+    eligible: bucket.eligible,
+    wins: bucket.wins,
+  })), [{ difficulty: "relief", eligible: 3, wins: 1 }]);
   const orange = report.players.find((player) => player.displayName === "Orange");
   const rose = report.players.find((player) => player.displayName === "Rose");
   assert.equal(orange.boosterMetrics.excluded, true);
