@@ -15,7 +15,7 @@ import {
   objectiveComplete,
   resolveCascades,
 } from "../../../public/cascade-engine.js";
-import { chooseMove, profileCascadeLevels, runCascadeLevel, targetFirstPassBand } from "./cascade-simulator.js";
+import { chooseMove, profileCascadeLevels, profileCascadeMoveFragility, runCascadeLevel, targetFirstPassBand } from "./cascade-simulator.js";
 import { analyzePlaytestExport } from "./cascade-playtest-analysis.js";
 
 test("Cascade ships 450 levels on a campaign model sized for 3000", () => {
@@ -240,6 +240,22 @@ test("all 450 levels exercise the objective-aware lookahead bot without engine e
     assert.ok(run.moveHistory.length > 0, `lookahead made no moves on level ${level.level}`);
     assert.ok(run.maxCascade >= 1, `lookahead saw no cascade on level ${level.level}`);
     assert.equal(Array.isArray(run.objectiveRemaining), true);
+  }
+});
+
+test("move fragility profiling uses paired seeds across plus/minus one move", () => {
+  const report = profileCascadeMoveFragility({
+    levels: CASCADE_LEVELS.slice(30, 32),
+    runsPerLevel: 1,
+    strategy: "human-skilled",
+    seedBase: 1234,
+  });
+  assert.equal(report.levels.length, 2);
+  for (const level of report.levels) {
+    assert.equal(typeof level.minusOneWinRate, "number");
+    assert.equal(typeof level.baselineWinRate, "number");
+    assert.equal(typeof level.plusOneWinRate, "number");
+    assert.equal(level.moveSensitivity, level.plusOneWinRate - level.minusOneWinRate);
   }
 });
 
