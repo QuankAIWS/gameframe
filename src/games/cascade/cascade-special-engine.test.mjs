@@ -163,7 +163,7 @@ test("hammer clears exposed candy normally once no ice remains", () => {
 });
 
 
-test("a 2x2 square creates a persistent smart Fish when the Fish rule is active", () => {
+test("a 2x2 square creates a persistent Fish when the Fish rule is active", () => {
   const board = stableBoard();
   board[0] = 0;
   board[1] = 0;
@@ -179,26 +179,26 @@ test("a 2x2 square creates a persistent smart Fish when the Fish rule is active"
   assert.ok(result.specials.includes(SPECIAL.FISH));
 });
 
-test("smart Fish prioritizes unfinished ice when it is triggered", () => {
+test("Fish chooses a seeded random useful objective target without ranking deeper ice first", () => {
   const board = stableBoard();
   const specials = emptySpecials();
   const ice = Array(64).fill(0);
   specials[0] = SPECIAL.FISH;
-  ice[63] = 2;
+  ice[10] = 2;
+  ice[63] = 1;
 
-  const result = applySpecialHammer(board, specials, 0, createRng(32), {
+  const result = applySpecialHammer(board, specials, 0, createRng(12288), {
     ice,
-    targetKinds: [board[18]],
     rules: { stripe: true, bomb: true, color: true, fish: true },
   });
 
   assert.equal(result.legal, true);
-  assert.ok(result.transitions[0].matched.includes(63));
-  assert.equal(result.ice[63], 1);
+  assert.equal(result.ice[10], 2);
+  assert.equal(result.ice[63], 0);
   assert.ok(result.transitions[0].triggeredSpecials.some((trigger) => trigger.special === SPECIAL.FISH));
 });
 
-test("Fish plus Fish sends three smart hits toward objectives", () => {
+test("Fish plus Fish sends three seeded random hits toward useful objectives", () => {
   const board = stableBoard();
   const specials = emptySpecials();
   const ice = Array(64).fill(0);
