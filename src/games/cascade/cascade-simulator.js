@@ -318,7 +318,7 @@ export function profileCascadeLevels({ runsPerLevel = 40, strategies = ["random"
   }
   return {
     generatedAt: new Date().toISOString(),
-    rules: "persistent-specials-v2-smart-fish/campaign-wave-v2",
+    rules: "persistent-specials-v2-fish/campaign-wave-v2",
     runsPerLevel,
     strategies,
     levels,
