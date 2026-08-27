@@ -35,7 +35,7 @@ function mechanicsForLevel(levelNumber) {
   if (levelNumber >= 31) mechanics.push("ice-blockers");
   if (levelNumber >= 61) mechanics.push("collection");
   if (levelNumber >= 151) mechanics.push("layered-ice");
-  if (levelNumber >= 6) mechanics.push("smart-fish");
+  if (levelNumber >= 6) mechanics.push("fish");
   return mechanics;
 }
 
