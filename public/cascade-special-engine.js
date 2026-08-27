@@ -32,6 +32,7 @@ export const SPECIAL = Object.freeze({
   STRIPE_V: "stripe-v",
   BOMB: "bomb",
   COLOR: "color",
+  FISH: "fish",
 });
 
 export function emptySpecials() {
@@ -171,9 +172,25 @@ function preferredAnchor(indices, from, to, specials) {
   return pool[Math.floor(pool.length / 2)];
 }
 
-export function findSpecialMatchGroups(board, specials = []) {
+function findSquareGroups(board) {
+  const groups = [];
+  for (let row = 0; row < BOARD_SIZE - 1; row += 1) {
+    for (let col = 0; col < BOARD_SIZE - 1; col += 1) {
+      const topLeft = row * BOARD_SIZE + col;
+      const indices = [topLeft, topLeft + 1, topLeft + BOARD_SIZE, topLeft + BOARD_SIZE + 1];
+      const kind = board[topLeft];
+      if (kind === null || kind === undefined) continue;
+      if (indices.every((index) => board[index] === kind)) groups.push({ orientation: "square", kind, indices });
+    }
+  }
+  return groups;
+}
+
+export function findSpecialMatchGroups(board, specials = [], rules = {}) {
   const matchable = board.map((kind, index) => specials[index] === SPECIAL.COLOR ? null : kind);
-  return findMatchGroups(matchable);
+  const groups = findMatchGroups(matchable);
+  if (ruleEnabled(rules, "fish")) groups.push(...findSquareGroups(matchable));
+  return groups;
 }
 
 function detectCreations(groups, from, to, specials, rules) {
@@ -197,6 +214,14 @@ function detectCreations(groups, from, to, specials, rules) {
 
   groups.forEach((group, groupIndex) => {
     if (consumed.has(groupIndex)) return;
+    if (group.orientation === "square" && group.indices.length === 4 && ruleEnabled(rules, "fish")) {
+      creations.push({
+        index: preferredAnchor(group.indices, from, to, specials),
+        special: SPECIAL.FISH,
+        source: group.indices.slice(),
+      });
+      return;
+    }
     if (group.indices.length >= 5 && ruleEnabled(rules, "color")) {
       creations.push({
         index: preferredAnchor(group.indices, from, to, specials),
@@ -205,7 +230,7 @@ function detectCreations(groups, from, to, specials, rules) {
       });
       return;
     }
-    if (group.indices.length === 4 && ruleEnabled(rules, "stripe")) {
+    if ((group.orientation === "row" || group.orientation === "column") && group.indices.length === 4 && ruleEnabled(rules, "stripe")) {
       creations.push({
         index: preferredAnchor(group.indices, from, to, specials),
         special: group.orientation === "row" ? SPECIAL.STRIPE_H : SPECIAL.STRIPE_V,
@@ -231,10 +256,27 @@ function dominantKind(board) {
   return best;
 }
 
-function specialBlast(index, special, board, colorTarget = null) {
+function smartFishTargets(board, sourceIndex, { ice = [], targetKinds = [], count = 1, exclude = [] } = {}) {
+  const blocked = new Set([sourceIndex, ...exclude]);
+  const neededKinds = new Set((targetKinds || []).filter((kind) => Number.isInteger(kind) && kind >= 0 && kind < TILE_KINDS));
+  const candidates = [];
+  for (let index = 0; index < board.length; index += 1) {
+    if (blocked.has(index) || board[index] === null) continue;
+    const layers = Math.max(0, Number(ice?.[index]) || 0);
+    const neededColor = neededKinds.has(board[index]);
+    const priority = (layers > 0 ? 10000 + layers * 250 : 0) + (neededColor ? 1000 : 0);
+    const distance = Math.abs(rowOf(index) - rowOf(sourceIndex)) + Math.abs(colOf(index) - colOf(sourceIndex));
+    candidates.push({ index, priority, distance, tie: (index * 37 + sourceIndex * 17) % 97 });
+  }
+  candidates.sort((a, b) => b.priority - a.priority || b.distance - a.distance || a.tie - b.tie || a.index - b.index);
+  return candidates.slice(0, Math.max(1, count)).map((candidate) => candidate.index);
+}
+
+function specialBlast(index, special, board, colorTarget = null, targeting = {}) {
   if (special === SPECIAL.STRIPE_H) return rowIndices(rowOf(index));
   if (special === SPECIAL.STRIPE_V) return colIndices(colOf(index));
   if (special === SPECIAL.BOMB) return areaAround(index, 1);
+  if (special === SPECIAL.FISH) return smartFishTargets(board, index, targeting);
   if (special === SPECIAL.COLOR) {
     const target = Number.isInteger(colorTarget) && colorTarget >= 0 && colorTarget < TILE_KINDS
       ? colorTarget
@@ -244,7 +286,7 @@ function specialBlast(index, special, board, colorTarget = null) {
   return [];
 }
 
-function expandTriggeredSpecials({ board, specials, seedIndices, protectedIndices = [], colorTarget = null }) {
+function expandTriggeredSpecials({ board, specials, seedIndices, protectedIndices = [], colorTarget = null, ice = [], targetKinds = [] }) {
   const clear = new Set(seedIndices);
   const protectedSet = new Set(protectedIndices);
   const queue = [...clear];
@@ -257,7 +299,7 @@ function expandTriggeredSpecials({ board, specials, seedIndices, protectedIndice
     seen.add(index);
     const special = specials[index];
     if (!special) continue;
-    const blast = specialBlast(index, special, board, colorTarget);
+    const blast = specialBlast(index, special, board, colorTarget, { ice, targetKinds });
     triggered.push({ index, special, cleared: blast.slice() });
     for (const target of blast) {
       if (protectedSet.has(target)) continue;
@@ -271,7 +313,7 @@ function expandTriggeredSpecials({ board, specials, seedIndices, protectedIndice
   return { clear, triggered };
 }
 
-function hasOrdinaryLegalMove(board, specials) {
+function hasOrdinaryLegalMove(board, specials, rules = {}) {
   for (let index = 0; index < board.length; index += 1) {
     const right = colOf(index) < BOARD_SIZE - 1 ? index + 1 : -1;
     const down = index + BOARD_SIZE < board.length ? index + BOARD_SIZE : -1;
@@ -279,14 +321,14 @@ function hasOrdinaryLegalMove(board, specials) {
       if (neighbor < 0) continue;
       const swappedBoard = swapPair(board, index, neighbor);
       const swappedSpecials = swapPair(specials, index, neighbor);
-      if (findSpecialMatchGroups(swappedBoard, swappedSpecials).length) return true;
+      if (findSpecialMatchGroups(swappedBoard, swappedSpecials, rules).length) return true;
     }
   }
   return false;
 }
 
-function hasPlayableMove(board, specials) {
-  if (hasOrdinaryLegalMove(board, specials)) return true;
+function hasPlayableMove(board, specials, rules = {}) {
+  if (hasOrdinaryLegalMove(board, specials, rules)) return true;
   for (let index = 0; index < board.length; index += 1) {
     if (specials[index] === SPECIAL.COLOR) return true;
     const right = colOf(index) < BOARD_SIZE - 1 ? index + 1 : -1;
@@ -298,10 +340,33 @@ function hasPlayableMove(board, specials) {
   return false;
 }
 
-function comboClear(board, specials, from, to) {
+function comboClear(board, specials, from, to, options = {}) {
   const a = specials[from];
   const b = specials[to];
   if (!a || !b) return null;
+
+  if (a === SPECIAL.FISH && b === SPECIAL.FISH) {
+    const targets = smartFishTargets(board, to, { ice: options.ice, targetKinds: options.targetKinds, count: 3, exclude: [from, to] });
+    return { kind: "fish+fish", indices: [...new Set([from, to, ...targets])], colorTarget: null };
+  }
+  if ((a === SPECIAL.FISH && b === SPECIAL.BOMB) || (b === SPECIAL.FISH && a === SPECIAL.BOMB)) {
+    const fishIndex = a === SPECIAL.FISH ? from : to;
+    const target = smartFishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 1, exclude: [from, to] })[0] ?? fishIndex;
+    return { kind: "fish+bomb", indices: [...new Set([from, to, ...areaAround(target, 1)])], colorTarget: null };
+  }
+  const fishStripes = [SPECIAL.STRIPE_H, SPECIAL.STRIPE_V];
+  if ((a === SPECIAL.FISH && fishStripes.includes(b)) || (b === SPECIAL.FISH && fishStripes.includes(a))) {
+    const fishIndex = a === SPECIAL.FISH ? from : to;
+    const stripe = a === SPECIAL.FISH ? b : a;
+    const target = smartFishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 1, exclude: [from, to] })[0] ?? fishIndex;
+    const line = stripe === SPECIAL.STRIPE_H ? rowIndices(rowOf(target)) : colIndices(colOf(target));
+    return { kind: "fish+stripe", indices: [...new Set([from, to, ...line])], colorTarget: null };
+  }
+  if ((a === SPECIAL.FISH && b === SPECIAL.COLOR) || (b === SPECIAL.FISH && a === SPECIAL.COLOR)) {
+    const fishIndex = a === SPECIAL.FISH ? from : to;
+    const targets = smartFishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 5, exclude: [from, to] });
+    return { kind: "fish+color", indices: [...new Set([from, to, ...targets])], colorTarget: null };
+  }
 
   if (a === SPECIAL.COLOR && b === SPECIAL.COLOR) {
     return { kind: "color+color", indices: board.map((_, index) => index), colorTarget: null };
@@ -357,6 +422,7 @@ function colorSwapClear(board, specials, from, to) {
 
 export function resolveSpecialCascades(board, specials, rng, {
   ice = [],
+  targetKinds = [],
   startingCascade = 1,
   from = null,
   to = null,
@@ -376,7 +442,7 @@ export function resolveSpecialCascades(board, specials, rng, {
   let forcedStep = forced;
 
   while (true) {
-    const groups = forcedStep ? [] : findSpecialMatchGroups(currentBoard, currentSpecials);
+    const groups = forcedStep ? [] : findSpecialMatchGroups(currentBoard, currentSpecials, rules);
     if (!forcedStep && !groups.length) break;
 
     const before = currentBoard.slice();
@@ -392,6 +458,8 @@ export function resolveSpecialCascades(board, specials, rng, {
       seedIndices: [...seed],
       protectedIndices: [...creationIndices],
       colorTarget: forcedStep?.colorTarget ?? null,
+      ice: currentIce,
+      targetKinds,
     });
     const matched = [...expanded.clear].sort((a, b) => a - b);
     const matchedForProgress = [...new Set([...matched, ...creationIndices])].sort((a, b) => a - b);
@@ -453,7 +521,7 @@ export function resolveSpecialCascades(board, specials, rng, {
 
   let shuffled = false;
   let shuffle = null;
-  if (!hasPlayableMove(currentBoard, currentSpecials)) {
+  if (!hasPlayableMove(currentBoard, currentSpecials, rules)) {
     const before = currentBoard.slice();
     currentBoard = createBoard({ rng });
     currentSpecials = emptySpecials();
@@ -485,7 +553,7 @@ export function applySpecialSwap(board, specials, from, to, rng, options = {}) {
 
   const swappedBoard = swapPair(board, from, to);
   const swappedSpecials = swapPair(cleanSpecials, from, to);
-  const combo = comboClear(swappedBoard, swappedSpecials, from, to)
+  const combo = comboClear(swappedBoard, swappedSpecials, from, to, options)
     || colorSwapClear(swappedBoard, swappedSpecials, from, to);
 
   if (combo) {
@@ -499,7 +567,7 @@ export function applySpecialSwap(board, specials, from, to, rng, options = {}) {
     };
   }
 
-  if (!findSpecialMatchGroups(swappedBoard, swappedSpecials).length) {
+  if (!findSpecialMatchGroups(swappedBoard, swappedSpecials, options.rules).length) {
     return {
       legal: false,
       reason: "no_match",
