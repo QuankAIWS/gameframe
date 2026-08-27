@@ -193,8 +193,10 @@ test("Fish chooses a seeded random useful objective target without ranking deepe
   });
 
   assert.equal(result.legal, true);
-  assert.equal(result.ice[10], 2);
-  assert.equal(result.ice[63], 0);
+  assert.ok(result.transitions[0].matched.includes(63));
+  assert.equal(result.transitions[0].matched.includes(10), false);
+  assert.ok(result.transitions[0].iceHits.some((hit) => hit.index === 63));
+  assert.equal(result.transitions[0].iceHits.some((hit) => hit.index === 10), false);
   assert.ok(result.transitions[0].triggeredSpecials.some((trigger) => trigger.special === SPECIAL.FISH));
 });
 
