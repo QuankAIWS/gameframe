@@ -463,7 +463,7 @@ function summarizeRuns(level, strategy, runs) {
 
 export function profileCascadeLevels({
   runsPerLevel = 40,
-  humanRunsPerLevel = Math.max(12, Math.floor(runsPerLevel / 2)),
+  humanRunsPerLevel = Math.max(1, Math.floor(runsPerLevel / 2)),
   strategies = ["random", "human-casual", "human-skilled", "greedy", "lookahead"],
   seedBase = 0xc45cade,
 } = {}) {
