@@ -11,12 +11,14 @@ const FULL_SPECIAL_RULES = Object.freeze({
   stripe: true,
   bomb: true,
   color: true,
+  fish: true,
 });
 
 const UNIVERSAL_SPECIAL_MECHANICS = Object.freeze([
   "power-match",
   "cross-blast",
   "color-sweep",
+  "smart-fish",
 ]);
 
 export const CASCADE_LEVELS = Object.freeze(baseCascadeLevels.map((level) => Object.freeze({
