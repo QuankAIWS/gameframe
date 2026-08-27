@@ -142,6 +142,17 @@ Requirements:
 - persona choice remains probabilistic;
 - CI continues to retain random, greedy, and lookahead reference agents.
 
+### Outcome calibration available now
+
+Before exact move replay is available, the current schema can still calibrate persona **outcomes** against hammer-clean first-pass results on the exact levels people actually played.
+
+```bash
+npm run cascade:profile -- --runs=40 --human-runs=20 --json=profile.json
+npm run cascade:persona:calibrate -- playtest.json profile.json --exclude-booster-player=<display-name>
+```
+
+The calibration report weights the human-skilled simulation by the same level exposures present in the clean human sample and reports observed-versus-predicted first-pass rates by difficulty, chapter, and sufficiently observed individual levels. This is weaker than move-choice replay but better than tuning persona weights by intuition alone.
+
 ### Phase 2 — telemetry replay
 
 Requires the richer telemetry contract to provide a stable attempt/run identity plus the starting board/RNG state and complete move sequence.
