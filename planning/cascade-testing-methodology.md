@@ -167,24 +167,29 @@ Player identity is calibration metadata, not a permanent hardcoded persona in th
 
 ### Phase 4 — paired-seed regression
 
-For meaningful level or mechanic changes, profile the old and new rules against the exact same seed set and report:
+Implemented as a manual report-comparison tool.
 
-- changed win rate by persona;
-- changed moves remaining;
-- changed objective-failure rate;
-- levels with unusually large deltas.
+Generate baseline and candidate JSON with identical seed/run settings, then compare them:
 
-This distinguishes a real difficulty change from ordinary sampling noise.
+```bash
+npm run cascade:profile -- --runs=40 --human-runs=20 --json=baseline.json
+npm run cascade:profile -- --runs=40 --human-runs=20 --json=candidate.json
+npm run cascade:profile:compare -- baseline.json candidate.json
+```
+
+The comparator refuses mismatched seed bases or run counts and reports materially changed levels by persona/solver win rate. This distinguishes a real difficulty change from ordinary sampling noise.
 
 ### Phase 5 — fragility analysis
 
-Deep profiling should perturb candidate levels by small authoring changes:
+Implemented initially as a paired ±1-move scan:
 
-- one move fewer / one move more;
-- slightly heavier / lighter objective pressure;
-- repeated seed families.
+```bash
+npm run cascade:fragility -- --from=301 --to=450 --runs=12 --strategy=human-skilled
+```
 
-A level whose estimated human win rate collapses under a one-move perturbation is brittle even if its nominal pass rate looks acceptable.
+The same seeds are run with one fewer move, the authored move count, and one extra move. A 50-point or larger win-rate swing across that two-move window is flagged as brittle.
+
+Future extensions can add small objective-count perturbations once the human-persona calibration is trustworthy.
 
 ## CI policy
 
