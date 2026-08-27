@@ -20,6 +20,7 @@ function specialRules(levelNumber) {
     stripe: levelNumber >= 2,
     bomb: levelNumber >= 3,
     color: levelNumber >= 5,
+    fish: levelNumber >= 301,
   };
 }
 
@@ -27,7 +28,7 @@ function swap(values, a, b) {
   [values[a], values[b]] = [values[b], values[a]];
 }
 
-function listPlayableMoves(board, specials) {
+function listPlayableMoves(board, specials, rules = {}) {
   const moves = [];
   for (let index = 0; index < board.length; index += 1) {
     const right = index % 8 < 7 ? index + 1 : -1;
@@ -41,7 +42,7 @@ function listPlayableMoves(board, specials) {
         continue;
       }
       swap(board, index, neighbor);
-      const groups = findSpecialMatchGroups(board, specials);
+      const groups = findSpecialMatchGroups(board, specials, rules);
       swap(board, index, neighbor);
       if (groups.length) {
         moves.push({
@@ -54,6 +55,12 @@ function listPlayableMoves(board, specials) {
     }
   }
   return moves;
+}
+
+function remainingTargetKinds(level, progress) {
+  return (level.objective?.collect || [])
+    .filter((goal) => Number(progress?.collected?.[goal.kind] || 0) < goal.count)
+    .map((goal) => goal.kind);
 }
 
 function objectiveAdvanceValue(level, before, after) {
@@ -74,6 +81,7 @@ function evaluateImmediate(level, progress, board, specials, move, boardRng) {
   const result = applySpecialSwap(board, specials, move.from, move.to, trialRng, {
     rules: specialRules(level.level),
     ice: progress.ice,
+    targetKinds: remainingTargetKinds(level, progress),
   });
   if (!result.legal) return null;
   const nextProgress = applySpecialLevelProgress(level, progress, result);
@@ -117,7 +125,7 @@ function chooseLookahead(level, progress, board, specials, moves, boardRng) {
 
   let best = null;
   for (const candidate of firstPass) {
-    const nextMoves = listPlayableMoves(candidate.result.board.slice(), candidate.result.specials);
+    const nextMoves = listPlayableMoves(candidate.result.board.slice(), candidate.result.specials, specialRules(level.level));
     let futureBest = 0;
     for (const nextMove of nextMoves) {
       const nextEval = evaluateImmediate(
@@ -170,7 +178,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
   const moveHistory = [];
 
   while (movesRemaining > 0 && !objectiveComplete(definition, progress, score)) {
-    const legalMoves = listPlayableMoves(board.slice(), specials);
+    const legalMoves = listPlayableMoves(board.slice(), specials, specialRules(definition.level));
     branchingTotal += legalMoves.length;
     if (!legalMoves.length) throw new Error(`Cascade special engine returned a board with no playable moves at level ${definition.level}`);
 
@@ -310,7 +318,7 @@ export function profileCascadeLevels({ runsPerLevel = 40, strategies = ["random"
   }
   return {
     generatedAt: new Date().toISOString(),
-    rules: "persistent-specials-v1/campaign-wave-v1",
+    rules: "persistent-specials-v2-smart-fish/campaign-wave-v2",
     runsPerLevel,
     strategies,
     levels,
