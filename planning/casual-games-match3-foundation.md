@@ -43,7 +43,7 @@ Lives remain a pacing mechanic with automatic regeneration. There is no paid, fa
 
 The campaign system is deliberately sized for **3,000 levels** without requiring another level-model rewrite.
 
-The currently shipped and continuously validated campaign contains **450 levels**. Level 301 introduces the first post-300 mechanic, the smart Fish. Levels 451–3000 remain future content on the same campaign model.
+The currently shipped and continuously validated campaign contains **450 levels**. The smart Fish is part of the ordinary permanent special toolkit from the early campaign onward; levels 301–450 simply extend the same Cascade vocabulary with harder combinations and geometry. Levels 451–3000 remain future content on the same campaign model.
 
 The player-facing level map renders only the current 30-level chapter rather than every campaign level. This prevents the UI and DOM size from growing linearly as the campaign expands.
 
@@ -81,14 +81,14 @@ A five-or-more straight match creates a color clearer. Swapping it with a normal
 
 ### Smart Fish
 
-Starting at level 301, a 2 × 2 square of one color creates a persistent Fish.
+Starting at level 6, a 2 × 2 square of one color creates a persistent Fish.
 
 - when triggered, Fish prioritizes unfinished board objectives instead of choosing an arbitrary tile;
 - remaining ice is the first positional priority, with deeper ice preferred;
 - when no ice remains, Fish prefers colors that are still required by collection goals;
 - Fish + Fish sends multiple smart hits;
 - Fish + stripe, Fish + bomb, and Fish + color clearer redirect stronger effects toward useful objective locations;
-- Fish is intentionally introduced only after the original 300-level vocabulary has been learned.
+- Fish is a normal special piece, not a chapter theme or a special class of level.
 
 ### Combinations
 
@@ -108,24 +108,25 @@ Specials hit by another special can trigger recursively.
 
 ## Opening teaching sequence
 
-The first five levels introduce the permanent rules rather than treating them as late-game gimmicks.
+The opening six levels introduce the permanent rules rather than treating them as late-game gimmicks.
 
 1. **Level 1 — Match 3:** ordinary matching and cascades.
 2. **Level 2 — Stripes:** make four and keep the resulting striped piece.
 3. **Level 3 — Bombs:** create a T/L bomb.
 4. **Level 4 — Combos:** place two specials beside each other and combine them.
 5. **Level 5 — Color:** create and use the color clearer.
+6. **Level 6 — Fish:** make a 2 × 2 square and learn that Fish targets something useful.
 
-After level 5, the original three special families are part of normal play. Fish joins the permanent special vocabulary at level 301.
+After level 6, stripes, bombs, color clearers, and Fish are all ordinary tools throughout the campaign.
 
 ## 450-level campaign architecture
 
-The first 300 levels deliberately reuse and recombine the original mechanics before the Fish expansion. Levels 301–450 add one major new permanent special, then spend enough runway teaching and recombining it before the next blocker family arrives.
+The 450 shipped levels share one permanent special vocabulary. Fish is backdated into the established campaign rather than defining a separate era. Chapters are organized around objectives, geometry, and difficulty—not around Fish.
 
 | Levels | Chapter | Primary job |
 |---|---|---|
-| 1–5 | Onboarding | Teach match-3 and the permanent special families |
-| 6–30 | Special mastery | Learn positioning, saving, triggering, and combining specials |
+| 1–5 | Onboarding | Teach match-3, stripes, bombs, combos, and the color clearer |
+| 6–30 | Special mastery | Introduce Fish at level 6, then learn positioning, saving, targeting, triggering, and combining the full special toolkit |
 | 31–60 | Ice | Learn single-layer blocker clearing across different board patterns |
 | 61–90 | Collection | Learn single-color collection pressure |
 | 91–120 | Mixed | Combine single-layer ice with collection |
@@ -134,14 +135,14 @@ The first 300 levels deliberately reuse and recombine the original mechanics bef
 | 181–210 | Layered mix | Combine layered ice with collection |
 | 211–240 | Precision | Smaller awkward layered-ice patterns plus targeted collection |
 | 241–270 | Heavy remix | Dual collection plus layered ice |
-| 271–299 | Expert remix | Denser combinations of the original objective vocabulary |
-| 300 | Capstone | Super-hard combined finale for the original campaign |
-| 301–330 | Fish school | Learn 2 × 2 Fish creation, smart targeting, and simple Fish-assisted mixed goals |
-| 331–360 | Fish + ice | Use Fish against layered positional blockers with difficulty-aware geometry |
-| 361–390 | Fish + collection | Learn how smart targeting changes dual-collection planning |
-| 391–420 | Fish mix | Combine Fish with layered ice, dual collection, and the original specials |
-| 421–449 | Fish veteran | Denser Fish combinations and late-campaign objective pressure |
-| 450 | Fish capstone | Super-hard combined Fish-era finale |
+| 271–299 | Expert remix | Denser combinations of the full established objective vocabulary |
+| 300 | Capstone | Super-hard combined milestone |
+| 301–330 | Advanced mastery | Full-toolkit mixed goals with difficulty-aware geometry |
+| 331–360 | Ice remix | Layered positional blockers with more demanding layouts |
+| 361–390 | Collection remix | Stronger dual-collection planning using the full special toolkit |
+| 391–420 | Advanced mix | Layered ice, dual collection, and special combinations |
+| 421–449 | Veteran remix | Dense late-campaign combinations and objective pressure |
+| 450 | Veteran capstone | Super-hard combined milestone |
 
 The chapter boundary is a design tool, not a promise that every level in a chapter looks alike. Each chapter contains three ten-level difficulty waves and varies target pressure, objective counts, patterns, colors, and move budgets.
 
@@ -339,7 +340,7 @@ Track enough to tune the game, not to manufacture pressure:
 
 ## Expansion beyond level 450
 
-The 3,000-level target should be reached by adding mechanics that change the player's decision topology, not by inflating target counts indefinitely. The strongest future families are mechanics that create transport, production, territory, sequencing, or turn-to-turn state changes.
+The 3,000-level target should be reached by adding mechanics that change the player's decision topology, not by inflating target counts indefinitely. New mechanics should become reusable parts of the global vocabulary once taught rather than branding an entire era of levels. The strongest future families are mechanics that create transport, production, territory, sequencing, or turn-to-turn state changes.
 
 Planned direction:
 
@@ -359,9 +360,9 @@ The practical authoring loop remains: design a chapter recipe, generate candidat
 1. Persistent stripe/bomb/color special engine and combinations — implemented.
 2. Original 300-level campaign, Blitz, Quick Recall, Weekly Blitz, telemetry, and automated profiling — implemented.
 3. Family playtest pass through the original campaign — collected and used for difficulty/geometry calibration.
-4. Smart Fish special plus levels 301–450 — current expansion.
-5. Validate the Fish-era 150-level profile, then calibrate against the first real family traces from levels 301+.
-6. Add the first post-Fish board-element family (drop/exit goals and locks are leading candidates).
+4. Smart Fish added to the permanent toolkit and backdated into the established campaign; levels 301–450 extend the same vocabulary — current expansion.
+5. Validate the full 1–450 profile after the Fish backdate, then calibrate against new family traces.
+6. Add the next board-element family (drop/exit goals and locks are leading candidates).
 7. Add spreadable/regrowing terrain and producer/dependency mechanics in separate, testable slices.
 8. Continue the campaign toward 3,000 through 30-level recipes and profiled batches rather than one giant static authoring pass.
 9. Memory Fog and other attention/memory variations remain optional side modes unless human playtesting shows they improve the base game.
