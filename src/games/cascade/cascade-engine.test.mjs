@@ -26,8 +26,8 @@ test("Cascade ships 450 levels on a campaign model sized for 3000", () => {
   assert.equal(CASCADE_LEVELS[0].moves, 20);
   assert.equal(CASCADE_LEVELS[4].target, 2375);
   assert.equal(CASCADE_LEVELS[4].hard, true);
-  assert.equal(CASCADE_LEVELS[4].mechanics.includes("smart-fish"), false);
-  assert.equal(CASCADE_LEVELS[5].mechanics.includes("smart-fish"), true);
+  assert.equal(CASCADE_LEVELS[4].mechanics.includes("fish"), false);
+  assert.equal(CASCADE_LEVELS[5].mechanics.includes("fish"), true);
 
   assert.equal(CASCADE_LEVELS[29].chapter, "special-mastery");
   assert.equal(CASCADE_LEVELS[29].difficulty, "super-hard");
@@ -68,7 +68,7 @@ test("Cascade ships 450 levels on a campaign model sized for 3000", () => {
   assert.equal(CASCADE_LEVELS[299].objective.ice.layers, 2);
 
   assert.equal(CASCADE_LEVELS[300].chapter, "advanced-mastery");
-  assert.ok(CASCADE_LEVELS[300].mechanics.includes("smart-fish"));
+  assert.ok(CASCADE_LEVELS[300].mechanics.includes("fish"));
   assert.equal(CASCADE_LEVELS[330].chapter, "ice-remix");
   assert.equal(CASCADE_LEVELS[360].chapter, "collection-remix");
   assert.equal(CASCADE_LEVELS[390].chapter, "advanced-mix");
