@@ -11,7 +11,7 @@ function attemptTime(attempt) {
 
 function resolvedNormalAttempts(player) {
   return (player?.attempts || [])
-    .filter((attempt) => attempt?.mode === "normal" && (attempt.outcome === "win" || attempt.outcome === "failure"))
+    .filter((attempt) => attempt?.mode === "normal" && (attempt.outcome === "win" || attempt.outcome === "failed"))
     .slice()
     .sort((a, b) => attemptTime(a) - attemptTime(b));
 }
@@ -137,7 +137,7 @@ export function analyzePlaytestExport(data, { boosterMetricExclusions = {} } = {
   const playerReports = players.map((player) => {
     const resolved = resolvedNormalAttempts(player);
     const wins = resolved.filter((attempt) => attempt.outcome === "win").length;
-    const failures = resolved.filter((attempt) => attempt.outcome === "failure").length;
+    const failures = resolved.filter((attempt) => attempt.outcome === "failed").length;
     const unassisted = resolved.filter((attempt) => Number(attempt.hammersUsed || 0) === 0);
     const unassistedWins = unassisted.filter((attempt) => attempt.outcome === "win").length;
     const firstPass = firstPassSummary(resolved);
