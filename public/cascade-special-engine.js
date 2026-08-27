@@ -367,25 +367,25 @@ function comboClear(board, specials, from, to, options = {}) {
   if (!a || !b) return null;
 
   if (a === SPECIAL.FISH && b === SPECIAL.FISH) {
-    const targets = fishTargets(board, to, { ice: options.ice, targetKinds: options.targetKinds, count: 3, exclude: [from, to] });
+    const targets = fishTargets(board, to, { ice: options.ice, targetKinds: options.targetKinds, count: 3, exclude: [from, to], rng: options.rng });
     return { kind: "fish+fish", indices: [...new Set([from, to, ...targets])], colorTarget: null };
   }
   if ((a === SPECIAL.FISH && b === SPECIAL.BOMB) || (b === SPECIAL.FISH && a === SPECIAL.BOMB)) {
     const fishIndex = a === SPECIAL.FISH ? from : to;
-    const target = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 1, exclude: [from, to] })[0] ?? fishIndex;
+    const target = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 1, exclude: [from, to], rng: options.rng })[0] ?? fishIndex;
     return { kind: "fish+bomb", indices: [...new Set([from, to, ...areaAround(target, 1)])], colorTarget: null };
   }
   const fishStripes = [SPECIAL.STRIPE_H, SPECIAL.STRIPE_V];
   if ((a === SPECIAL.FISH && fishStripes.includes(b)) || (b === SPECIAL.FISH && fishStripes.includes(a))) {
     const fishIndex = a === SPECIAL.FISH ? from : to;
     const stripe = a === SPECIAL.FISH ? b : a;
-    const target = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 1, exclude: [from, to] })[0] ?? fishIndex;
+    const target = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 1, exclude: [from, to], rng: options.rng })[0] ?? fishIndex;
     const line = stripe === SPECIAL.STRIPE_H ? rowIndices(rowOf(target)) : colIndices(colOf(target));
     return { kind: "fish+stripe", indices: [...new Set([from, to, ...line])], colorTarget: null };
   }
   if ((a === SPECIAL.FISH && b === SPECIAL.COLOR) || (b === SPECIAL.FISH && a === SPECIAL.COLOR)) {
     const fishIndex = a === SPECIAL.FISH ? from : to;
-    const targets = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 5, exclude: [from, to] });
+    const targets = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 5, exclude: [from, to], rng: options.rng });
     return { kind: "fish+color", indices: [...new Set([from, to, ...targets])], colorTarget: null };
   }
 
