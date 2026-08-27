@@ -15,6 +15,7 @@ on:
       - "scripts/monster-master-*.mjs"
       - "scripts/cascade-profile.mjs"
       - "scripts/cascade-profile-compare.mjs"
+      - "scripts/cascade-persona-calibrate.mjs"
       - "scripts/cascade-fragility.mjs"
       - "scripts/cascade-playtest-analyze.mjs"
       - "planning/cascade-testing-methodology.md"
