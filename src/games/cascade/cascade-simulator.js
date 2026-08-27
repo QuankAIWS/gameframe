@@ -13,7 +13,64 @@ import {
 } from "../../../public/cascade-special-engine.js";
 import { objectiveRemaining } from "../../../public/cascade-engine.js";
 
-const STRATEGIES = new Set(["random", "greedy", "lookahead"]);
+export const HUMAN_PERSONAS = Object.freeze({
+  "human-casual": Object.freeze({
+    temperature: 3.4,
+    lapseRate: 0.12,
+    weights: Object.freeze({
+      match: 0.55,
+      ice: 1.15,
+      collection: 0.95,
+      specialCreation: 1.05,
+      specialActivation: 0.65,
+      combo: 1.45,
+      colorObjective: 1.25,
+    }),
+  }),
+  "human-skilled": Object.freeze({
+    temperature: 1.35,
+    lapseRate: 0.03,
+    weights: Object.freeze({
+      match: 0.35,
+      ice: 2.05,
+      collection: 1.75,
+      specialCreation: 1.75,
+      specialActivation: 1.05,
+      combo: 2.35,
+      colorObjective: 2.4,
+    }),
+  }),
+});
+
+const STRATEGIES = new Set(["random", "greedy", "lookahead", ...Object.keys(HUMAN_PERSONAS)]);
+
+const EARLY_DEEP_TARGETS = Object.freeze({
+  relief: Object.freeze([0.82, 0.95]),
+  normal: Object.freeze([0.70, 0.88]),
+  hard: Object.freeze([0.52, 0.70]),
+  "super-hard": Object.freeze([0.40, 0.60]),
+});
+
+const MATURE_DEEP_TARGETS = Object.freeze({
+  relief: Object.freeze([0.68, 0.82]),
+  normal: Object.freeze([0.48, 0.62]),
+  hard: Object.freeze([0.34, 0.50]),
+  "super-hard": Object.freeze([0.25, 0.42]),
+});
+
+export function targetFirstPassBand(levelNumber, difficulty = "normal") {
+  if (levelNumber <= 300) return null;
+  const key = EARLY_DEEP_TARGETS[difficulty] ? difficulty : "normal";
+  const ramp = Math.min(1, Math.max(0, (levelNumber - 300) / 600));
+  const start = EARLY_DEEP_TARGETS[key];
+  const end = MATURE_DEEP_TARGETS[key];
+  const interpolate = (a, b) => a + ((b - a) * ramp);
+  return Object.freeze({
+    min: interpolate(start[0], end[0]),
+    max: interpolate(start[1], end[1]),
+    phase: ramp >= 1 ? "mature" : "ramp",
+  });
+}
 
 function specialRules(levelNumber) {
   return {
@@ -74,6 +131,121 @@ function objectiveAdvanceValue(level, before, after) {
   const afterIce = (after?.ice || []).reduce((sum, layers) => sum + Math.max(0, Number(layers) || 0), 0);
   value += Math.max(0, beforeIce - afterIce) * 190;
   return value;
+}
+
+function comboStrength(a, b) {
+  if (!a && !b) return 0;
+  if (a === SPECIAL.COLOR && b === SPECIAL.COLOR) return 5;
+  if (a === SPECIAL.COLOR || b === SPECIAL.COLOR) return 4.4;
+  if (a === SPECIAL.BOMB && b === SPECIAL.BOMB) return 4.2;
+  if ((a === SPECIAL.BOMB && [SPECIAL.STRIPE_H, SPECIAL.STRIPE_V].includes(b))
+    || (b === SPECIAL.BOMB && [SPECIAL.STRIPE_H, SPECIAL.STRIPE_V].includes(a))) return 4;
+  if (a === SPECIAL.FISH || b === SPECIAL.FISH) return 3.8;
+  if ([SPECIAL.STRIPE_H, SPECIAL.STRIPE_V].includes(a)
+    && [SPECIAL.STRIPE_H, SPECIAL.STRIPE_V].includes(b)) return 3.3;
+  return 2.6;
+}
+
+function visibleMoveFeatures(level, progress, board, specials, move) {
+  const swappedBoard = board.slice();
+  const swappedSpecials = specials.slice();
+  swap(swappedBoard, move.from, move.to);
+  swap(swappedSpecials, move.from, move.to);
+
+  const a = swappedSpecials[move.from];
+  const b = swappedSpecials[move.to];
+  const neededKinds = new Set(remainingTargetKinds(level, progress));
+  const features = {
+    match: 0,
+    ice: 0,
+    collection: 0,
+    specialCreation: 0,
+    specialActivation: 0,
+    combo: 0,
+    colorObjective: 0,
+  };
+
+  if (a === SPECIAL.COLOR || b === SPECIAL.COLOR) {
+    const colorIndex = a === SPECIAL.COLOR ? move.from : move.to;
+    const partnerIndex = colorIndex === move.from ? move.to : move.from;
+    const targetKind = swappedBoard[partnerIndex];
+    const targetCount = swappedBoard.filter((kind) => kind === targetKind).length;
+    features.specialActivation = 1;
+    features.match = Math.min(8, targetCount) * 0.3;
+    if (neededKinds.has(targetKind)) features.colorObjective = Math.min(6, targetCount) * 0.35;
+    if (a && b) features.combo = comboStrength(a, b);
+    return features;
+  }
+
+  if (a && b) {
+    features.specialActivation = 1;
+    features.combo = comboStrength(a, b);
+    return features;
+  }
+
+  const groups = findSpecialMatchGroups(swappedBoard, swappedSpecials, specialRules(level.level));
+  const matched = new Set(groups.flatMap((group) => group.indices));
+  features.match = Math.min(10, matched.size);
+
+  for (const index of matched) {
+    if (Number(progress?.ice?.[index] || 0) > 0) features.ice += 1;
+    if (neededKinds.has(swappedBoard[index])) features.collection += 1;
+  }
+
+  const lineGroups = groups.filter((group) => group.orientation === "row" || group.orientation === "column");
+  const squareGroups = groups.filter((group) => group.orientation === "square");
+  const createsColor = lineGroups.some((group) => group.indices.length >= 5);
+  const createsStripe = lineGroups.some((group) => group.indices.length === 4);
+  const createsFish = squareGroups.some((group) => group.indices.length === 4);
+  let createsBomb = false;
+  const rows = lineGroups.filter((group) => group.orientation === "row");
+  const columns = lineGroups.filter((group) => group.orientation === "column");
+  for (const row of rows) {
+    if (columns.some((column) => row.indices.some((index) => column.indices.includes(index)))) {
+      createsBomb = true;
+      break;
+    }
+  }
+
+  features.specialCreation =
+    (createsStripe ? 1.0 : 0)
+    + (createsFish ? 1.15 : 0)
+    + (createsBomb ? 1.65 : 0)
+    + (createsColor ? 2.25 : 0);
+  return features;
+}
+
+export function scoreVisibleMove(personaName, level, progress, board, specials, move) {
+  const persona = HUMAN_PERSONAS[personaName];
+  if (!persona) throw new Error(`Unknown Cascade human persona: ${personaName}`);
+  const features = visibleMoveFeatures(level, progress, board, specials, move);
+  const value = Object.entries(features).reduce(
+    (sum, [key, featureValue]) => sum + (featureValue * Number(persona.weights[key] || 0)),
+    0,
+  );
+  return { value, features };
+}
+
+function chooseHuman(personaName, level, progress, board, specials, moves, decisionRng) {
+  const persona = HUMAN_PERSONAS[personaName];
+  if (decisionRng.next() < persona.lapseRate) return chooseRandom(moves, decisionRng);
+
+  const candidates = moves.map((move) => ({
+    move,
+    ...scoreVisibleMove(personaName, level, progress, board, specials, move),
+  }));
+  const maxValue = Math.max(...candidates.map((candidate) => candidate.value));
+  const weighted = candidates.map((candidate) => ({
+    ...candidate,
+    weight: Math.exp((candidate.value - maxValue) / persona.temperature),
+  }));
+  const total = weighted.reduce((sum, candidate) => sum + candidate.weight, 0);
+  let roll = decisionRng.next() * total;
+  for (const candidate of weighted) {
+    roll -= candidate.weight;
+    if (roll <= 0) return candidate.move;
+  }
+  return weighted.at(-1)?.move ?? moves[0] ?? null;
 }
 
 function evaluateImmediate(level, progress, board, specials, move, boardRng) {
@@ -151,7 +323,8 @@ export function chooseMove(strategy, level, progress, board, specials, moves, bo
   if (!moves.length) return null;
   if (strategy === "random") return chooseRandom(moves, decisionRng);
   if (strategy === "greedy") return chooseGreedy(level, progress, board, specials, moves, boardRng);
-  return chooseLookahead(level, progress, board, specials, moves, boardRng);
+  if (strategy === "lookahead") return chooseLookahead(level, progress, board, specials, moves, boardRng);
+  return chooseHuman(strategy, level, progress, board, specials, moves, decisionRng);
 }
 
 export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
@@ -288,13 +461,19 @@ function summarizeRuns(level, strategy, runs) {
   };
 }
 
-export function profileCascadeLevels({ runsPerLevel = 40, strategies = ["random", "greedy", "lookahead"], seedBase = 0xc45cade } = {}) {
+export function profileCascadeLevels({
+  runsPerLevel = 40,
+  humanRunsPerLevel = Math.max(12, Math.floor(runsPerLevel / 2)),
+  strategies = ["random", "human-casual", "human-skilled", "greedy", "lookahead"],
+  seedBase = 0xc45cade,
+} = {}) {
   const levels = [];
   for (const level of CASCADE_LEVELS) {
     const strategyReports = {};
     for (const strategy of strategies) {
       const runs = [];
-      for (let run = 0; run < runsPerLevel; run += 1) {
+      const strategyRuns = HUMAN_PERSONAS[strategy] ? humanRunsPerLevel : runsPerLevel;
+      for (let run = 0; run < strategyRuns; run += 1) {
         const seed = (seedBase + (level.level * 100003) + (run * 2654435761)) >>> 0;
         runs.push(runCascadeLevel({ level, seed, strategy }));
       }
@@ -303,6 +482,9 @@ export function profileCascadeLevels({ runsPerLevel = 40, strategies = ["random"
     const random = strategyReports.random;
     const greedy = strategyReports.greedy;
     const lookahead = strategyReports.lookahead;
+    const humanCasual = strategyReports["human-casual"];
+    const humanSkilled = strategyReports["human-skilled"];
+    const targetBand = targetFirstPassBand(level.level, level.difficulty);
     levels.push({
       level: level.level,
       chapter: level.chapter,
@@ -315,13 +497,24 @@ export function profileCascadeLevels({ runsPerLevel = 40, strategies = ["random"
       strategies: strategyReports,
       skillSensitivity: random && lookahead ? lookahead.winRate - random.winRate : null,
       planningSensitivity: greedy && lookahead ? lookahead.winRate - greedy.winRate : null,
+      humanSkillSpread: humanCasual && humanSkilled ? humanSkilled.winRate - humanCasual.winRate : null,
+      targetFirstPassBand: targetBand,
+      humanSkilledTargetDelta: humanSkilled && targetBand
+        ? humanSkilled.winRate < targetBand.min
+          ? humanSkilled.winRate - targetBand.min
+          : humanSkilled.winRate > targetBand.max
+            ? humanSkilled.winRate - targetBand.max
+            : 0
+        : null,
     });
   }
   return {
     generatedAt: new Date().toISOString(),
     rules: "persistent-specials-v2-fish/campaign-wave-v2",
     runsPerLevel,
+    humanRunsPerLevel,
     strategies,
+    humanPersonas: HUMAN_PERSONAS,
     levels,
   };
 }
