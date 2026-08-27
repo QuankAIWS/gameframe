@@ -274,7 +274,9 @@ Useful ranking surfaces now or later:
 
 ## Automated difficulty profiling
 
-The automated player uses the same persistent-special engine as the browser game. Every shipped campaign level is exercised by the lookahead bot, and CI samples multiple seeds per level for random, greedy, and lookahead strategies.
+The automated players use the same persistent-special engine as the browser game. Every shipped campaign level is exercised by the lookahead bot, and CI samples random, visible-only human personas, greedy, and lookahead strategies.
+
+The human-casual and human-skilled personas are deliberately non-clairvoyant: they score only the board state visible before the move and never resolve candidate refills, Fish destinations, or cascades before choosing. Greedy and lookahead remain clairvoyant upper-bound/search agents. The detailed contract and calibration plan lives in `planning/cascade-testing-methodology.md`.
 
 The profiler records:
 
@@ -293,7 +295,9 @@ The profiler records:
 
 A level is not considered shippable if the sampled lookahead strategy cannot produce a win. This is a coarse solvability gate, not a claim that bot difficulty perfectly predicts a human player.
 
-As family playtest traces accumulate, the preferred difficulty measures become first-attempt pass rate, attempts-to-clear, moves remaining, abandonment, booster usage, and star distribution.
+As family playtest traces accumulate, the preferred difficulty measures become first-attempt pass rate, attempts-to-clear, moves remaining, abandonment, and star distribution. Hammer-assisted attempts are excluded from intrinsic difficulty estimates, and known hammer-system testing accounts must not be used to calibrate booster-usage behavior. Invalid swaps are not treated as a player-skill signal.
+
+The first 300 levels may remain comparatively forgiving. From level 301 onward, human-skilled first-pass targets begin an advisory ramp toward a mature deep-campaign wave averaging roughly the mid-50% range by about level 900, while preserving easier relief beats and harder capstones.
 
 ## Local play telemetry
 
@@ -353,7 +357,7 @@ Planned direction:
 
 Future mechanics should be implemented as reusable stateful board elements with clear hooks for direct hits, adjacent matches, special hits, gravity, end-of-turn changes, spawning, movement, and objective completion. New content should extend the shared engine and profiler rather than create browser-only rules.
 
-The practical authoring loop remains: design a chapter recipe, generate candidate levels, batch-profile multiple player personas/seeds, reject impossible/trivial/luck-dominated candidates, then calibrate survivors against family play traces.
+The practical authoring loop remains: design a chapter recipe, generate candidate levels, batch-profile multiple player personas/seeds, reject impossible/trivial/luck-dominated candidates, then calibrate survivors against family play traces. Desktop and mobile use the same authored difficulty; device-specific telemetry is reserved for diagnosing interaction and readability problems.
 
 ## Current development order
 
