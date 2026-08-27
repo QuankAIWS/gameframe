@@ -30,8 +30,10 @@ test("Cascade browser input and presentation changes do not run the solver/perso
   ]), { ...none, cascadeUi: true });
 });
 
-test("Cascade playtest analysis and methodology changes add the profile gate", () => {
+test("Cascade analysis tools and methodology changes add the profile gate", () => {
   assert.deepEqual(classifyUiTestScope([
+    "scripts/cascade-profile-compare.mjs",
+    "scripts/cascade-fragility.mjs",
     "scripts/cascade-playtest-analyze.mjs",
     "planning/cascade-testing-methodology.md",
   ]), { ...none, cascadeProfile: true });
