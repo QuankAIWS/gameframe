@@ -461,6 +461,51 @@ function summarizeRuns(level, strategy, runs) {
   };
 }
 
+export function profileCascadeMoveFragility({
+  levels = CASCADE_LEVELS,
+  runsPerLevel = 8,
+  strategy = "human-skilled",
+  seedBase = 0xf12a91,
+} = {}) {
+  if (!STRATEGIES.has(strategy)) throw new Error(`Unknown Cascade fragility strategy: ${strategy}`);
+  const reports = [];
+  for (const level of levels) {
+    const variants = new Map();
+    for (const moveDelta of [-1, 0, 1]) {
+      const definition = { ...level, moves: Math.max(1, level.moves + moveDelta) };
+      const runs = [];
+      for (let run = 0; run < runsPerLevel; run += 1) {
+        const seed = (seedBase + (level.level * 100003) + (run * 2654435761)) >>> 0;
+        runs.push(runCascadeLevel({ level: definition, seed, strategy }));
+      }
+      variants.set(moveDelta, summarizeRuns(definition, strategy, runs));
+    }
+    const minusOne = variants.get(-1);
+    const baseline = variants.get(0);
+    const plusOne = variants.get(1);
+    const moveSensitivity = plusOne.winRate - minusOne.winRate;
+    reports.push({
+      level: level.level,
+      chapter: level.chapter,
+      difficulty: level.difficulty,
+      strategy,
+      runsPerVariant: runsPerLevel,
+      minusOneWinRate: minusOne.winRate,
+      baselineWinRate: baseline.winRate,
+      plusOneWinRate: plusOne.winRate,
+      moveSensitivity,
+      brittle: moveSensitivity >= 0.5,
+    });
+  }
+  return {
+    generatedAt: new Date().toISOString(),
+    strategy,
+    runsPerLevel,
+    seedBase,
+    levels: reports,
+  };
+}
+
 export function profileCascadeLevels({
   runsPerLevel = 40,
   humanRunsPerLevel = Math.max(1, Math.floor(runsPerLevel / 2)),
