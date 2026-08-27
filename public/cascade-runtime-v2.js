@@ -30,6 +30,7 @@ const VALID_SPECIALS = new Set(Object.values(SPECIAL));
 const BLITZ_SECONDS = 30;
 const BLITZ_AFTER_LEVELS = Object.freeze(new Set([
   5, 12, 20, 30, 45, 60, 75, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290,
+  310, 330, 350, 370, 390, 410, 430,
 ]));
 const LEVEL_MAP_WINDOW = 30;
 const PRESENTATION = Object.freeze({
@@ -321,18 +322,27 @@ function rulesForLevel(levelNumber) {
     stripe: levelNumber >= 2,
     bomb: levelNumber >= 3,
     color: levelNumber >= 5,
+    fish: levelNumber >= 301,
   };
 }
 
 function currentRules() {
-  if (mode === "blitz") return { stripe: true, bomb: true, color: true };
+  if (mode === "blitz") return { stripe: true, bomb: true, color: true, fish: state.level >= 301 };
   return rulesForLevel(activeLevel.level);
+}
+
+function remainingTargetKinds() {
+  if (mode !== "normal") return [];
+  return (activeLevel.objective?.collect || [])
+    .filter((goal) => Number(levelProgress?.collected?.[goal.kind] || 0) < goal.count)
+    .map((goal) => goal.kind);
 }
 
 function specialName(value) {
   if (value === SPECIAL.STRIPE_H || value === SPECIAL.STRIPE_V) return "striped line clearer";
   if (value === SPECIAL.BOMB) return "burst bomb";
   if (value === SPECIAL.COLOR) return "color clearer";
+  if (value === SPECIAL.FISH) return "smart fish";
   return "";
 }
 
@@ -373,6 +383,7 @@ function mapLabel(level) {
   if (level.level === 3) return "Bombs";
   if (level.level === 4) return "Combos";
   if (level.level === 5) return "Color";
+  if (level.level === 301) return "Fish";
   if (level.difficulty === "super-hard") return "Super hard";
   if (level.difficulty === "hard" || level.hard) return "Hard";
   const hasIce = Boolean(level.objective?.ice);
@@ -429,10 +440,13 @@ function renderHelp() {
     helpElement.textContent = "Get two specials next to each other and swap them together for a bigger hit.";
   } else if (activeLevel.level === 5) {
     helpElement.textContent = "Match five to make a color clearer. Swap it with a color to sweep that color off the board.";
+  } else if (activeLevel.level === 301) {
+    helpElement.textContent = "Make a 2×2 square of one color to create a Fish. Trigger it and it swims to something you still need.";
   } else {
     const notes = [];
     if (activeLevel.objective?.ice) notes.push("crack every iced cell");
     if (activeLevel.objective?.collect?.length) notes.push("collect the required colors");
+    if (activeLevel.mechanics?.includes("smart-fish")) notes.push("make 2×2 Fish for smart objective hits");
     notes.push("build specials and combine them when you can");
     helpElement.textContent = `${notes.join(" · ")}.`;
   }
@@ -869,6 +883,7 @@ async function onTileClick(index) {
     const result = applySpecialHammer(board, specials, index, boardRng, {
       ice: levelProgress.ice,
       rules: currentRules(),
+      targetKinds: remainingTargetKinds(),
     });
     await presentResolvedResult(result);
     locked = false;
@@ -902,6 +917,7 @@ async function onTileClick(index) {
   const result = applySpecialSwap(board, specials, first, index, boardRng, {
     ice: mode === "normal" ? levelProgress.ice : [],
     rules: currentRules(),
+    targetKinds: remainingTargetKinds(),
   });
   if (!result.legal) {
     if (result.swapped) {
