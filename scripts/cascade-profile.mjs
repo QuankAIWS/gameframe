@@ -14,21 +14,25 @@ function readStringFlag(name) {
 }
 
 const runsPerLevel = readNumberFlag("runs", 40);
+const humanRunsPerLevel = readNumberFlag("human-runs", Math.max(1, Math.floor(runsPerLevel / 2)));
 const jsonPath = readStringFlag("json");
-const report = profileCascadeLevels({ runsPerLevel });
+const report = profileCascadeLevels({ runsPerLevel, humanRunsPerLevel });
 const percent = (value) => `${Math.round(value * 100)}%`;
 
-console.log(`Cascade difficulty profile · persistent specials + campaign waves · ${runsPerLevel} seeds per level/strategy`);
-console.log("Lvl Mv Target Difficulty  Random Greedy Look   Gap  ObjFail Ice Made Trig Combo");
+console.log(`Cascade difficulty profile · persistent specials + campaign waves · ${runsPerLevel} solver seeds · ${humanRunsPerLevel} human-persona seeds`);
+console.log("Lvl Mv Target Difficulty  Random Casual Skill  Greedy Look   Gap  ObjFail Ice Made Trig Combo");
 for (const level of report.levels) {
   const random = level.strategies.random;
+  const casual = level.strategies["human-casual"];
+  const skilled = level.strategies["human-skilled"];
   const greedy = level.strategies.greedy;
   const lookahead = level.strategies.lookahead;
   const gap = level.skillSensitivity === null ? "n/a" : `${Math.round(level.skillSensitivity * 100)}pp`;
   console.log(
     `${String(level.level).padStart(3)} ${String(level.moves).padStart(2)} ${String(level.target).padStart(6)} ` +
     `${String(level.difficulty || "normal").padEnd(10)} ` +
-    `${percent(random.winRate).padStart(7)} ${percent(greedy.winRate).padStart(6)} ${percent(lookahead.winRate).padStart(5)} ` +
+    `${percent(random.winRate).padStart(7)} ${percent(casual.winRate).padStart(6)} ${percent(skilled.winRate).padStart(5)} ` +
+    `${percent(greedy.winRate).padStart(6)} ${percent(lookahead.winRate).padStart(5)} ` +
     `${gap.padStart(5)} ${percent(lookahead.objectiveFailureRate).padStart(7)} ` +
     `${lookahead.averageIceHits.toFixed(1).padStart(4)} ` +
     `${lookahead.averageSpecialsCreated.toFixed(1).padStart(4)} ` +
@@ -42,6 +46,8 @@ for (let start = 0; start < report.levels.length; start += 10) {
   const wave = report.levels.slice(start, start + 10);
   const average = (selector) => wave.reduce((sum, item) => sum + selector(item), 0) / wave.length;
   const random = average((item) => item.strategies.random.winRate);
+  const casual = average((item) => item.strategies["human-casual"].winRate);
+  const skilled = average((item) => item.strategies["human-skilled"].winRate);
   const greedy = average((item) => item.strategies.greedy.winRate);
   const lookahead = average((item) => item.strategies.lookahead.winRate);
   const worstLookahead = Math.min(...wave.map((item) => item.strategies.lookahead.winRate));
@@ -49,7 +55,8 @@ for (let start = 0; start < report.levels.length; start += 10) {
   const combos = average((item) => item.strategies.lookahead.averageSpecialCombos);
   console.log(
     `L${String(start + 1).padStart(3)}-${String(start + wave.length).padStart(3)} ` +
-    `random ${percent(random)} · greedy ${percent(greedy)} · lookahead ${percent(lookahead)} · ` +
+    `random ${percent(random)} · casual ${percent(casual)} · skilled ${percent(skilled)} · ` +
+    `greedy ${percent(greedy)} · lookahead ${percent(lookahead)} · ` +
     `worst ${percent(worstLookahead)} · specials ${created.toFixed(1)} · combos ${combos.toFixed(1)}`,
   );
 }
@@ -65,11 +72,13 @@ for (const [chapter, chapterLevels] of chapters) {
   const average = (selector) => chapterLevels.reduce((sum, item) => sum + selector(item), 0) / chapterLevels.length;
   const lookahead = average((item) => item.strategies.lookahead.winRate);
   const random = average((item) => item.strategies.random.winRate);
+  const casual = average((item) => item.strategies["human-casual"].winRate);
+  const skilled = average((item) => item.strategies["human-skilled"].winRate);
   const objectiveFailure = average((item) => item.strategies.lookahead.objectiveFailureRate);
   const worst = Math.min(...chapterLevels.map((item) => item.strategies.lookahead.winRate));
   console.log(
     `${chapter.padEnd(18)} L${String(chapterLevels[0].level).padStart(3)}-${String(chapterLevels.at(-1).level).padStart(3)} · ` +
-    `random ${percent(random)} · lookahead ${percent(lookahead)} · worst ${percent(worst)} · objective fail ${percent(objectiveFailure)}`,
+    `random ${percent(random)} · casual ${percent(casual)} · skilled ${percent(skilled)} · lookahead ${percent(lookahead)} · worst ${percent(worst)} · objective fail ${percent(objectiveFailure)}`,
   );
 }
 
@@ -87,6 +96,12 @@ console.log(`L31-${report.levels.length} levels with random < lookahead: ${skill
 console.log(`L31-${report.levels.length} levels with greedy < lookahead: ${planningSeparated}/${laterLevels.length}`);
 console.log(`Family-beta relief cliffs (<50% lookahead): ${reliefCliffs.length ? reliefCliffs.map((level) => level.level).join(", ") : "none"}`);
 console.log(`Family-beta normal cliffs (<33% lookahead): ${normalCliffs.length ? normalCliffs.map((level) => level.level).join(", ") : "none"}`);
+const targetable = report.levels.filter((level) => level.targetFirstPassBand);
+const targetMisses = targetable.filter((level) => Math.abs(level.humanSkilledTargetDelta || 0) > 0.0001);
+const targetBelow = targetMisses.filter((level) => level.humanSkilledTargetDelta < 0);
+const targetAbove = targetMisses.filter((level) => level.humanSkilledTargetDelta > 0);
+console.log(`Human-skilled target bands are advisory until telemetry calibration: ${targetable.length} deep-campaign levels tracked`);
+console.log(`Human-skilled below target band: ${targetBelow.length}; above target band: ${targetAbove.length}`);
 
 if (jsonPath) {
   await writeFile(jsonPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
