@@ -342,7 +342,7 @@ function specialName(value) {
   if (value === SPECIAL.STRIPE_H || value === SPECIAL.STRIPE_V) return "striped line clearer";
   if (value === SPECIAL.BOMB) return "burst bomb";
   if (value === SPECIAL.COLOR) return "color clearer";
-  if (value === SPECIAL.FISH) return "smart fish";
+  if (value === SPECIAL.FISH) return "fish";
   return "";
 }
 
@@ -446,7 +446,7 @@ function renderHelp() {
     const notes = [];
     if (activeLevel.objective?.ice) notes.push("crack every iced cell");
     if (activeLevel.objective?.collect?.length) notes.push("collect the required colors");
-    if (activeLevel.mechanics?.includes("smart-fish")) notes.push("make 2×2 Fish for smart objective hits");
+    if (activeLevel.mechanics?.includes("fish")) notes.push("make 2×2 Fish for useful objective hits");
     notes.push("build specials and combine them when you can");
     helpElement.textContent = `${notes.join(" · ")}.`;
   }
