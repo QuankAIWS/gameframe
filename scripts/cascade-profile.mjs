@@ -1,4 +1,5 @@
 import { writeFile } from "node:fs/promises";
+import { CASCADE_LEVELS } from "../public/cascade-engine.js";
 import { profileCascadeLevels } from "../src/games/cascade/cascade-simulator.js";
 
 function readNumberFlag(name, fallback) {
@@ -15,11 +16,15 @@ function readStringFlag(name) {
 
 const runsPerLevel = readNumberFlag("runs", 40);
 const humanRunsPerLevel = readNumberFlag("human-runs", Math.max(1, Math.floor(runsPerLevel / 2)));
+const fromLevel = Math.max(1, readNumberFlag("from", 1));
+const toLevel = Math.min(CASCADE_LEVELS.length, readNumberFlag("to", CASCADE_LEVELS.length));
+if (toLevel < fromLevel) throw new Error(`Invalid Cascade profile range: ${fromLevel}-${toLevel}`);
+const levelDefinitions = CASCADE_LEVELS.slice(fromLevel - 1, toLevel);
 const jsonPath = readStringFlag("json");
-const report = profileCascadeLevels({ runsPerLevel, humanRunsPerLevel });
+const report = profileCascadeLevels({ levelDefinitions, runsPerLevel, humanRunsPerLevel });
 const percent = (value) => `${Math.round(value * 100)}%`;
 
-console.log(`Cascade difficulty profile · persistent specials + campaign waves · ${runsPerLevel} solver seeds · ${humanRunsPerLevel} human-persona seeds`);
+console.log(`Cascade difficulty profile · L${fromLevel}-${toLevel} · persistent specials + campaign waves · ${runsPerLevel} solver seeds · ${humanRunsPerLevel} human-persona seeds`);
 console.log("Lvl Mv Target Difficulty  Random Casual Skill  Greedy Look   Gap  ObjFail Ice Made Trig Combo");
 for (const level of report.levels) {
   const random = level.strategies.random;
