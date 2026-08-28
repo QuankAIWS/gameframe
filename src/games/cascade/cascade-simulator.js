@@ -507,13 +507,14 @@ export function profileCascadeMoveFragility({
 }
 
 export function profileCascadeLevels({
+  levelDefinitions = CASCADE_LEVELS,
   runsPerLevel = 40,
   humanRunsPerLevel = Math.max(1, Math.floor(runsPerLevel / 2)),
   strategies = ["random", "human-casual", "human-skilled", "greedy", "lookahead"],
   seedBase = 0xc45cade,
 } = {}) {
   const levels = [];
-  for (const level of CASCADE_LEVELS) {
+  for (const level of levelDefinitions) {
     const strategyReports = {};
     for (const strategy of strategies) {
       const runs = [];
@@ -561,6 +562,9 @@ export function profileCascadeLevels({
     seedBase,
     strategies,
     humanPersonas: HUMAN_PERSONAS,
+    levelRange: levelDefinitions.length
+      ? { from: levelDefinitions[0].level, to: levelDefinitions.at(-1).level }
+      : { from: null, to: null },
     levels,
   };
 }
