@@ -306,7 +306,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 360) {
     return buildSpec({
-      levelNumber, start: 331, chapter: "ice-remix", baseTarget: 12600, targetStep: 100, baseMoves: 23,
+      levelNumber, start: 331, chapter: "ice-remix", baseTarget: 12600, targetStep: 100, baseMoves: 24,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         return objective({
@@ -328,7 +328,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 420) {
     return buildSpec({
-      levelNumber, start: 391, chapter: "advanced-mix", baseTarget: 13800, targetStep: 115, baseMoves: 24,
+      levelNumber, start: 391, chapter: "advanced-mix", baseTarget: 13800, targetStep: 115, baseMoves: 25,
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind, secondKind] = twoKinds(levelNumber, 2);
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
@@ -342,7 +342,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber < 450) {
     return buildSpec({
-      levelNumber, start: 421, chapter: "veteran-remix", baseTarget: 14600, targetStep: 120, baseMoves: 24,
+      levelNumber, start: 421, chapter: "veteran-remix", baseTarget: 14600, targetStep: 120, baseMoves: 25,
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind, secondKind] = twoKinds(levelNumber, 2);
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
