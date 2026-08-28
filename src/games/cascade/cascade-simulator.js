@@ -152,7 +152,7 @@ export function targetFirstPassBand(levelNumber, difficulty = "normal") {
   return Object.freeze({
     min: interpolate(start[0], end[0]),
     max: interpolate(start[1], end[1]),
-    phase: lower === upper ? lower.phase : `${lower.phase}->${upper.phase}`,
+    phase: lower === upper || progress >= 1 ? upper.phase : `${lower.phase}->${upper.phase}`,
   });
 }
 
