@@ -108,10 +108,10 @@ const LATE_LEVEL_TUNING = Object.freeze({
   360: Object.freeze({ collectDelta: -2, iceDelta: -3, pattern: "center" }),
   414: Object.freeze({ pattern: "center" }),
   419: Object.freeze({ pattern: "center" }),
-  444: Object.freeze({ moveDelta: 1, pattern: "center" }),
+  444: Object.freeze({ moveDelta: 2, pattern: "center" }),
   445: Object.freeze({ moveDelta: 1, iceDelta: -2, pattern: "center" }),
   448: Object.freeze({ collectDelta: -1, iceDelta: -3, pattern: "center" }),
-  449: Object.freeze({ moveDelta: 1, collectDelta: -2, iceDelta: -2, pattern: "center" }),
+  449: Object.freeze({ moveDelta: 2, collectDelta: -2, iceDelta: -2, pattern: "center" }),
 });
 
 function lateLevelTuning(levelNumber) {
