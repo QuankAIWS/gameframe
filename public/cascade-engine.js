@@ -251,7 +251,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 330) {
     return buildSpec({
-      levelNumber, start: 301, chapter: "advanced-mastery", baseTarget: 11800, targetStep: 95, baseMoves: 24,
+      levelNumber, start: 301, chapter: "advanced-mastery", baseTarget: 11800, targetStep: 95, baseMoves: 23,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         const layers = phase === 0 ? 1 : 2;
@@ -276,7 +276,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 390) {
     return buildSpec({
-      levelNumber, start: 361, chapter: "collection-remix", baseTarget: 13200, targetStep: 110, baseMoves: 23,
+      levelNumber, start: 361, chapter: "collection-remix", baseTarget: 13200, targetStep: 110, baseMoves: 22,
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind, secondKind] = twoKinds(levelNumber, 3);
         const count = scaleCount(9 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor);
@@ -286,7 +286,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 420) {
     return buildSpec({
-      levelNumber, start: 391, chapter: "advanced-mix", baseTarget: 13800, targetStep: 115, baseMoves: 24,
+      levelNumber, start: 391, chapter: "advanced-mix", baseTarget: 13800, targetStep: 115, baseMoves: 23,
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind, secondKind] = twoKinds(levelNumber, 2);
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
@@ -314,7 +314,7 @@ function campaignSpec(levelNumber) {
   }
   const [firstKind, secondKind] = twoKinds(levelNumber, 2);
   return {
-    target: 22000, moves: 26, hard: true, difficulty: "super-hard", chapter: "veteran-capstone",
+    target: 22000, moves: 24, hard: true, difficulty: "super-hard", chapter: "veteran-capstone",
     objective: objective({ collect: [{ kind: firstKind, count: 18 }, { kind: secondKind, count: 18 }], ice: { count: 9, layers: 2, pattern: "cross" } }),
   };
 }
