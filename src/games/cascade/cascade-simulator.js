@@ -44,31 +44,115 @@ export const HUMAN_PERSONAS = Object.freeze({
 
 const STRATEGIES = new Set(["random", "greedy", "lookahead", ...Object.keys(HUMAN_PERSONAS)]);
 
-const EARLY_DEEP_TARGETS = Object.freeze({
-  relief: Object.freeze([0.82, 0.95]),
-  normal: Object.freeze([0.70, 0.88]),
-  hard: Object.freeze([0.52, 0.70]),
-  "super-hard": Object.freeze([0.40, 0.60]),
-});
+const CAMPAIGN_DIFFICULTY_ANCHORS = Object.freeze([
+  Object.freeze({
+    level: 301,
+    phase: "early",
+    bands: Object.freeze({
+      relief: Object.freeze([0.90, 0.98]),
+      normal: Object.freeze([0.82, 0.94]),
+      hard: Object.freeze([0.70, 0.84]),
+      "super-hard": Object.freeze([0.55, 0.72]),
+    }),
+  }),
+  Object.freeze({
+    level: 1000,
+    phase: "growth",
+    bands: Object.freeze({
+      relief: Object.freeze([0.88, 0.96]),
+      normal: Object.freeze([0.78, 0.90]),
+      hard: Object.freeze([0.64, 0.78]),
+      "super-hard": Object.freeze([0.50, 0.68]),
+    }),
+  }),
+  Object.freeze({
+    level: 2000,
+    phase: "established",
+    bands: Object.freeze({
+      relief: Object.freeze([0.85, 0.94]),
+      normal: Object.freeze([0.73, 0.87]),
+      hard: Object.freeze([0.59, 0.74]),
+      "super-hard": Object.freeze([0.45, 0.63]),
+    }),
+  }),
+  Object.freeze({
+    level: 3000,
+    phase: "milestone",
+    bands: Object.freeze({
+      relief: Object.freeze([0.82, 0.92]),
+      normal: Object.freeze([0.68, 0.83]),
+      hard: Object.freeze([0.54, 0.70]),
+      "super-hard": Object.freeze([0.40, 0.58]),
+    }),
+  }),
+  Object.freeze({
+    level: 5000,
+    phase: "advanced",
+    bands: Object.freeze({
+      relief: Object.freeze([0.78, 0.90]),
+      normal: Object.freeze([0.60, 0.78]),
+      hard: Object.freeze([0.46, 0.64]),
+      "super-hard": Object.freeze([0.33, 0.52]),
+    }),
+  }),
+  Object.freeze({
+    level: 7500,
+    phase: "deep",
+    bands: Object.freeze({
+      relief: Object.freeze([0.74, 0.87]),
+      normal: Object.freeze([0.53, 0.72]),
+      hard: Object.freeze([0.39, 0.58]),
+      "super-hard": Object.freeze([0.27, 0.46]),
+    }),
+  }),
+  Object.freeze({
+    level: 10000,
+    phase: "mature",
+    bands: Object.freeze({
+      relief: Object.freeze([0.70, 0.84]),
+      normal: Object.freeze([0.48, 0.68]),
+      hard: Object.freeze([0.34, 0.54]),
+      "super-hard": Object.freeze([0.23, 0.42]),
+    }),
+  }),
+]);
 
-const MATURE_DEEP_TARGETS = Object.freeze({
-  relief: Object.freeze([0.68, 0.82]),
-  normal: Object.freeze([0.48, 0.62]),
-  hard: Object.freeze([0.34, 0.50]),
-  "super-hard": Object.freeze([0.25, 0.42]),
-});
+function campaignDifficultyAnchor(levelNumber) {
+  if (levelNumber <= CAMPAIGN_DIFFICULTY_ANCHORS[0].level) {
+    return {
+      lower: CAMPAIGN_DIFFICULTY_ANCHORS[0],
+      upper: CAMPAIGN_DIFFICULTY_ANCHORS[0],
+      progress: 0,
+    };
+  }
+
+  for (let index = 1; index < CAMPAIGN_DIFFICULTY_ANCHORS.length; index += 1) {
+    const upper = CAMPAIGN_DIFFICULTY_ANCHORS[index];
+    if (levelNumber <= upper.level) {
+      const lower = CAMPAIGN_DIFFICULTY_ANCHORS[index - 1];
+      return {
+        lower,
+        upper,
+        progress: (levelNumber - lower.level) / (upper.level - lower.level),
+      };
+    }
+  }
+
+  const mature = CAMPAIGN_DIFFICULTY_ANCHORS.at(-1);
+  return { lower: mature, upper: mature, progress: 0 };
+}
 
 export function targetFirstPassBand(levelNumber, difficulty = "normal") {
   if (levelNumber <= 300) return null;
-  const key = EARLY_DEEP_TARGETS[difficulty] ? difficulty : "normal";
-  const ramp = Math.min(1, Math.max(0, (levelNumber - 300) / 600));
-  const start = EARLY_DEEP_TARGETS[key];
-  const end = MATURE_DEEP_TARGETS[key];
-  const interpolate = (a, b) => a + ((b - a) * ramp);
+  const { lower, upper, progress } = campaignDifficultyAnchor(levelNumber);
+  const key = lower.bands[difficulty] ? difficulty : "normal";
+  const start = lower.bands[key];
+  const end = upper.bands[key];
+  const interpolate = (a, b) => a + ((b - a) * progress);
   return Object.freeze({
     min: interpolate(start[0], end[0]),
     max: interpolate(start[1], end[1]),
-    phase: ramp >= 1 ? "mature" : "ramp",
+    phase: lower === upper ? lower.phase : `${lower.phase}->${upper.phase}`,
   });
 }
 
