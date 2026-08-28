@@ -59,7 +59,7 @@ for (let start = 0; start < report.levels.length; start += 10) {
   const created = average((item) => item.strategies.lookahead.averageSpecialsCreated);
   const combos = average((item) => item.strategies.lookahead.averageSpecialCombos);
   console.log(
-    `L${String(start + 1).padStart(3)}-${String(start + wave.length).padStart(3)} ` +
+    `L${String(wave[0].level).padStart(3)}-${String(wave.at(-1).level).padStart(3)} ` +
     `random ${percent(random)} · casual ${percent(casual)} · skilled ${percent(skilled)} · ` +
     `greedy ${percent(greedy)} · lookahead ${percent(lookahead)} · ` +
     `worst ${percent(worstLookahead)} · specials ${created.toFixed(1)} · combos ${combos.toFixed(1)}`,
@@ -88,8 +88,8 @@ for (const [chapter, chapterLevels] of chapters) {
 }
 
 const allLookaheadBeatable = report.levels.every((level) => level.strategies.lookahead.wins > 0);
-const laterLevels = report.levels.slice(30);
-const postOnboardingLevels = report.levels.slice(5);
+const laterLevels = report.levels.filter((level) => level.level >= 31);
+const postOnboardingLevels = report.levels.filter((level) => level.level >= 6);
 const skillSeparated = laterLevels.filter((level) => level.strategies.random.winRate < level.strategies.lookahead.winRate).length;
 const planningSeparated = laterLevels.filter((level) => level.strategies.greedy.winRate < level.strategies.lookahead.winRate).length;
 const reliefCliffs = postOnboardingLevels.filter((level) => level.difficulty === "relief" && level.strategies.lookahead.winRate < 0.5);
@@ -97,8 +97,8 @@ const normalCliffs = postOnboardingLevels.filter((level) => level.difficulty ===
 
 console.log("");
 console.log(`Lookahead can clear all ${report.levels.length} levels in the sampled seeds: ${allLookaheadBeatable ? "yes" : "no"}`);
-console.log(`L31-${report.levels.length} levels with random < lookahead: ${skillSeparated}/${laterLevels.length}`);
-console.log(`L31-${report.levels.length} levels with greedy < lookahead: ${planningSeparated}/${laterLevels.length}`);
+console.log(`L${laterLevels[0]?.level ?? fromLevel}-${laterLevels.at(-1)?.level ?? toLevel} levels with random < lookahead: ${skillSeparated}/${laterLevels.length}`);
+console.log(`L${laterLevels[0]?.level ?? fromLevel}-${laterLevels.at(-1)?.level ?? toLevel} levels with greedy < lookahead: ${planningSeparated}/${laterLevels.length}`);
 console.log(`Family-beta relief cliffs (<50% lookahead): ${reliefCliffs.length ? reliefCliffs.map((level) => level.level).join(", ") : "none"}`);
 console.log(`Family-beta normal cliffs (<33% lookahead): ${normalCliffs.length ? normalCliffs.map((level) => level.level).join(", ") : "none"}`);
 const targetable = report.levels.filter((level) => level.targetFirstPassBand);
