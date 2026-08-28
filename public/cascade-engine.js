@@ -121,7 +121,7 @@ function lateLevelTuning(levelNumber) {
 
 function applyLateObjectiveTuning(levelNumber, levelObjective) {
   const tuning = lateLevelTuning(levelNumber);
-  if (!tuning.collectDelta && !tuning.iceDelta) return levelObjective;
+  if (!tuning.collectDelta && !tuning.iceDelta && !tuning.pattern) return levelObjective;
   return objective({
     collect: (levelObjective?.collect || []).map((goal) => ({
       kind: goal.kind,
