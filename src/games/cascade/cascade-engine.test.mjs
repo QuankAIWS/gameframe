@@ -80,6 +80,15 @@ test("Cascade ships 450 levels on a campaign model sized for 3000", () => {
   assert.equal(CASCADE_LEVELS[449].objective.ice.layers, 2);
 });
 
+test("late campaign tuning tightens only the over-target chapters", () => {
+  assert.equal(CASCADE_LEVELS[300].moves, 25, "advanced mastery relief beat should use the tightened move budget");
+  assert.equal(CASCADE_LEVELS[330].moves, 26, "ice remix should keep its existing balanced move budget");
+  assert.equal(CASCADE_LEVELS[360].moves, 24, "collection remix should use the tightened move budget");
+  assert.equal(CASCADE_LEVELS[390].moves, 26, "advanced mix should use the tightened move budget");
+  assert.equal(CASCADE_LEVELS[420].moves, 27, "veteran remix should keep its existing move budget");
+  assert.equal(CASCADE_LEVELS[449].moves, 24, "veteran capstone should use the tightened move budget");
+});
+
 test("difficulty uses repeating tension waves instead of a monotonic staircase", () => {
   const wave = CASCADE_LEVELS.slice(30, 40);
   assert.equal(wave[0].difficulty, "relief");
