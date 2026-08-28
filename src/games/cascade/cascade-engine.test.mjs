@@ -243,6 +243,17 @@ test("all 450 levels exercise the objective-aware lookahead bot without engine e
   }
 });
 
+test("ranged profiling preserves absolute campaign level numbers", () => {
+  const report = profileCascadeLevels({
+    levelDefinitions: CASCADE_LEVELS.slice(300, 303),
+    runsPerLevel: 1,
+    humanRunsPerLevel: 1,
+  });
+  assert.equal(report.levels.length, 3);
+  assert.deepEqual(report.levelRange, { from: 301, to: 303 });
+  assert.deepEqual(report.levels.map((level) => level.level), [301, 302, 303]);
+});
+
 test("move fragility profiling uses paired seeds across plus/minus one move", () => {
   const report = profileCascadeMoveFragility({
     levels: CASCADE_LEVELS.slice(30, 32),
