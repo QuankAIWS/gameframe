@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   CAMPAIGN_CAPACITY,
+  CAMPAIGN_MILESTONE,
   CASCADE_LEVELS,
   CHAPTER_SIZE,
   LEVEL_COUNT,
@@ -21,6 +22,7 @@ import { analyzePlaytestExport } from "./cascade-playtest-analysis.js";
 test("Cascade ships 450 levels on a campaign model sized for 10000", () => {
   assert.equal(LEVEL_COUNT, 450);
   assert.equal(CAMPAIGN_CAPACITY, 10000);
+  assert.equal(CAMPAIGN_MILESTONE, 3000);
   assert.equal(CHAPTER_SIZE, 30);
   assert.equal(CASCADE_LEVELS.length, 450);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
