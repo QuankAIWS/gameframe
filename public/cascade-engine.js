@@ -102,6 +102,39 @@ function lateIceCount(value, factor, pattern, { layers = 2 } = {}) {
   return Math.max(2, count);
 }
 
+const LATE_LEVEL_TUNING = Object.freeze({
+  329: Object.freeze({ moveDelta: 1 }),
+  357: Object.freeze({ iceDelta: -2 }),
+  360: Object.freeze({ collectDelta: -2, iceDelta: -3 }),
+  414: Object.freeze({ moveDelta: 1 }),
+  420: Object.freeze({ moveDelta: 1 }),
+  444: Object.freeze({ moveDelta: 1 }),
+  445: Object.freeze({ moveDelta: 1, iceDelta: -2 }),
+  448: Object.freeze({ collectDelta: -1, iceDelta: -3 }),
+  449: Object.freeze({ moveDelta: 1, collectDelta: -2, iceDelta: -2 }),
+});
+
+function lateLevelTuning(levelNumber) {
+  return LATE_LEVEL_TUNING[levelNumber] || Object.freeze({});
+}
+
+function applyLateObjectiveTuning(levelNumber, levelObjective) {
+  const tuning = lateLevelTuning(levelNumber);
+  if (!tuning.collectDelta && !tuning.iceDelta) return levelObjective;
+  return objective({
+    collect: (levelObjective?.collect || []).map((goal) => ({
+      kind: goal.kind,
+      count: Math.max(1, goal.count + Number(tuning.collectDelta || 0)),
+    })),
+    ice: levelObjective?.ice
+      ? {
+          ...levelObjective.ice,
+          count: Math.max(2, levelObjective.ice.count + Number(tuning.iceDelta || 0)),
+        }
+      : null,
+  });
+}
+
 function twoKinds(levelNumber, separation = 2) {
   const first = (levelNumber + Math.floor(levelNumber / CHAPTER_SIZE)) % TILE_KINDS;
   return [first, (first + separation) % TILE_KINDS];
@@ -128,11 +161,19 @@ function compoundGeometryMoveBonus(levelObjective, difficulty) {
 
 function buildSpec({ levelNumber, start, chapter, baseTarget, targetStep, baseMoves, objectiveFactory = null }) {
   const position = chapterPosition(levelNumber, start);
-  const levelObjective = objectiveFactory ? objectiveFactory({ ...position, levelNumber }) : objective();
+  const authoredObjective = objectiveFactory ? objectiveFactory({ ...position, levelNumber }) : objective();
+  const levelObjective = applyLateObjectiveTuning(levelNumber, authoredObjective);
+  const tuning = lateLevelTuning(levelNumber);
   const hard = position.wave.difficulty === "hard" || position.wave.difficulty === "super-hard";
   return {
     target: roundedTarget((baseTarget + position.offset * targetStep) * position.wave.targetFactor),
-    moves: Math.max(12, baseMoves + position.wave.moveDelta + compoundGeometryMoveBonus(levelObjective, position.wave.difficulty)),
+    moves: Math.max(
+      12,
+      baseMoves
+        + position.wave.moveDelta
+        + compoundGeometryMoveBonus(levelObjective, position.wave.difficulty)
+        + Number(tuning.moveDelta || 0),
+    ),
     hard,
     difficulty: position.wave.difficulty,
     chapter,
