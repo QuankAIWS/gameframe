@@ -41,9 +41,11 @@ Lives remain a pacing mechanic with automatic regeneration. There is no paid, fa
 
 ## Campaign scale
 
-The campaign system is deliberately sized for **3,000 levels** without requiring another level-model rewrite.
+The campaign system is deliberately sized for **10,000 levels** without requiring another level-model rewrite.
 
-The currently shipped and continuously validated campaign contains **450 levels**. The Fish is part of the ordinary permanent special toolkit from the early campaign onward; levels 301–450 simply extend the same Cascade vocabulary with harder combinations and geometry. Levels 451–3000 remain future content on the same campaign model.
+The immediate production milestone is **3,000 shipped levels**. That milestone is only the first large content tranche, not the mature endgame. The longer design horizon is 10,000 levels, with the option to extend beyond that or reskin/reframe the experience later without rebuilding the core campaign model.
+
+The currently shipped and continuously validated campaign contains **450 levels**. Fish is part of the ordinary permanent special toolkit from the early campaign onward; levels 301–450 are still early-campaign fluency content, not the point where mature difficulty begins. Levels 451–3000 are the immediate expansion target, and levels 3001–10000 remain the long-horizon campaign.
 
 The player-facing level map renders only the current 30-level chapter rather than every campaign level. This prevents the UI and DOM size from growing linearly as the campaign expands.
 
@@ -344,20 +346,30 @@ Track enough to tune the game, not to manufacture pressure:
 
 ## Expansion beyond level 450
 
-The 3,000-level target should be reached by adding mechanics that change the player's decision topology, not by inflating target counts indefinitely. New mechanics should become reusable parts of the global vocabulary once taught rather than branding an entire era of levels. The strongest future families are mechanics that create transport, production, territory, sequencing, or turn-to-turn state changes.
+The immediate target is **3,000 levels inside a 10,000-level campaign horizon**. Difficulty must not be compressed merely because the currently authored ceiling is lower. New content should increase decision-space complexity much faster than it increases raw failure pressure.
 
-Planned direction:
+Mechanics should change the player's decision topology rather than simply adding hit points or larger collection counts. Once taught, a mechanic becomes part of the permanent global vocabulary and can combine with older systems.
 
-- **451–600 — blockers that change movement and territory:** drop/exit objectives, locks/cages, spreadable terrain, and a regrowing/spreading blocker.
-- **601–900 — production and access:** generators/producers, cupboards/containers, curtains or gates that reveal new regions, and portals.
-- **901–1200 — turn-driven boards:** conveyors, moving objects, alternating-color or alternating-state blockers, and directional requirements.
-- **1201–1600 — dependency chains:** create an item, release it, then collect or destroy it; charged machines; special-only armor; path-opening objectives.
-- **1601–2200 — multi-stage composition:** multiple board phases, linked regions, dynamic priorities, and occasional optional memory/attention variants.
-- **2201–3000 — veteran campaign:** mostly sophisticated combinations of established mechanics, with genuinely new rules spaced far apart enough that the game remains readable.
+The current production roadmap is maintained in `planning/cascade-10000-campaign-roadmap.md`. The immediate mechanic families through level 3,000 are:
 
-Future mechanics should be implemented as reusable stateful board elements with clear hooks for direct hits, adjacent matches, special hits, gravity, end-of-turn changes, spawning, movement, and objective completion. New content should extend the shared engine and profiler rather than create browser-only rules.
+- drop/exit objects;
+- locks/cages;
+- spreading terrain or jam;
+- spreading/regrowing blockers;
+- color-conditional blockers;
+- generators/producers;
+- reveal/access systems such as curtains or gates;
+- portals;
+- conveyors or moving board elements;
+- special-only armor or charged devices;
+- alternating/toggle elements;
+- a 2,800–3,000 mastery arc built primarily from combinations of the established vocabulary.
 
-The practical authoring loop remains: design a chapter recipe, generate candidate levels, batch-profile multiple player personas/seeds, reject impossible/trivial/luck-dominated candidates, then calibrate survivors against family play traces. Desktop and mobile use the same authored difficulty; device-specific telemetry is reserved for diagnosing interaction and readability problems.
+Optional attention and memory mechanics, including Memory Fog and Pattern Echo concepts, can enter as side modes or carefully scoped board mechanics after the foundational spatial systems are stable.
+
+New mechanics should be implemented as reusable stateful board elements with explicit hooks for direct hits, adjacent matches, special hits, gravity, end-of-turn changes, spawning, movement, targeting, and objective completion. New content should extend the shared engine and profiler rather than create browser-only rules.
+
+The practical authoring loop is: define a chapter recipe, generate multiple candidate levels, batch-profile player personas and seeds, reject impossible/trivial/brittle/luck-dominated candidates, retain varied survivors, then recalibrate against family play traces at campaign checkpoints. Desktop and mobile use the same authored difficulty; device-specific telemetry is reserved for diagnosing interaction and readability problems.
 
 ## Current development order
 
@@ -365,9 +377,12 @@ The practical authoring loop remains: design a chapter recipe, generate candidat
 2. Original 300-level campaign, Blitz, Quick Recall, Weekly Blitz, telemetry, and automated profiling — implemented.
 3. Family playtest pass through the original campaign — collected and used for difficulty/geometry calibration.
 4. Fish added to the permanent toolkit and backdated into the established campaign; levels 301–450 extend the same vocabulary — current expansion.
-5. Validate the full 1–450 profile after the Fish backdate, then calibrate against new family traces.
-6. Add the next board-element family (drop/exit goals and locks are leading candidates).
-7. Add spreadable/regrowing terrain and producer/dependency mechanics in separate, testable slices.
-8. Continue the campaign toward 3,000 through 30-level recipes and profiled batches rather than one giant static authoring pass.
-9. Memory Fog and other attention/memory variations remain optional side modes unless human playtesting shows they improve the base game.
-10. VFX/presentation gets its own dedicated pass; spectacle should be preserved or increased rather than solved by simply reducing effects.
+5. Human-like profiling, clean playtest analysis, paired-seed comparison, fragility scanning, and the 10,000-level difficulty horizon — current testing foundation.
+6. Add drop/exit goals as the first new board-element family and verify full runtime/simulator/telemetry parity.
+7. Add locks/cages as the second new family, then begin generating the 451–850 chapter batches.
+8. Add spreading terrain, regrowing blockers, color-conditional blockers, and producers in separate testable slices while expanding toward 1,500.
+9. Re-evaluate actual player data during the 1,000–1,500 range before generating the remainder of the first 3,000-level milestone.
+10. Add reveal/access systems, portals, conveyors, charged/special-only systems, and toggle mechanics while completing levels 1,500–3,000.
+11. Perform a full 3,000-level player-data and content review before committing the 3,001–10,000 recipe mix.
+12. Memory Fog and other attention/memory variations remain candidates for distinctive later content or side modes.
+13. VFX/presentation gets its own dedicated pass; spectacle should be preserved or increased rather than solved by simply reducing effects.
