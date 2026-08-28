@@ -89,6 +89,23 @@ test("late campaign tuning tightens only the over-target chapters", () => {
   assert.equal(CASCADE_LEVELS[449].moves, 24, "veteran capstone should use the tightened move budget");
 });
 
+test("late-campaign outlier smoothing preserves the wave while fixing profiler walls", () => {
+  assert.equal(CASCADE_LEVELS[328].moves, 24, "level 329 should recover one move");
+  assert.equal(CASCADE_LEVELS[356].objective.ice.count, 5, "level 357 should reduce layered-ice pressure");
+  assert.equal(CASCADE_LEVELS[359].objective.collect[0].count, 13, "level 360 should reduce collection pressure");
+  assert.equal(CASCADE_LEVELS[359].objective.ice.count, 6, "level 360 should reduce edge-ice pressure");
+  assert.equal(CASCADE_LEVELS[413].moves, 24, "level 414 should recover one move");
+  assert.equal(CASCADE_LEVELS[419].moves, 23, "level 420 should recover one move from the brittle threshold");
+  assert.equal(CASCADE_LEVELS[443].moves, 26, "level 444 should recover one move");
+  assert.equal(CASCADE_LEVELS[444].moves, 24, "level 445 should recover one move");
+  assert.equal(CASCADE_LEVELS[444].objective.ice.count, 9, "level 445 should reduce cross-ice pressure");
+  assert.equal(CASCADE_LEVELS[447].objective.collect[0].count, 15, "level 448 should reduce collection pressure");
+  assert.equal(CASCADE_LEVELS[447].objective.ice.count, 8, "level 448 should reduce cross-ice pressure");
+  assert.equal(CASCADE_LEVELS[448].moves, 26, "level 449 should recover one move");
+  assert.equal(CASCADE_LEVELS[448].objective.collect[0].count, 15, "level 449 should reduce collection pressure");
+  assert.equal(CASCADE_LEVELS[448].objective.ice.count, 6, "level 449 should reduce diagonal-ice pressure");
+});
+
 test("difficulty uses repeating tension waves instead of a monotonic staircase", () => {
   const wave = CASCADE_LEVELS.slice(30, 40);
   assert.equal(wave[0].difficulty, "relief");
