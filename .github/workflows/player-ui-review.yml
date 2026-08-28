@@ -264,6 +264,32 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  cascade-fragility:
+    needs: scope
+    if: needs.scope.outputs.cascadeProfile == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Scan deep-campaign move fragility
+        run: npm run cascade:fragility -- --from=301 --to=450 --runs=12 --strategy=human-skilled | tee cascade-fragility.txt
+      - name: Upload Cascade fragility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cascade-fragility-${{ github.run_id }}
+          path: cascade-fragility.txt
+          if-no-files-found: warn
+          retention-days: 14
+
   cascade-telemetry:
     needs: scope
     if: needs.scope.outputs.cascadeTelemetry == 'true'
