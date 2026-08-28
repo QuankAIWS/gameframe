@@ -105,7 +105,7 @@ const targetable = report.levels.filter((level) => level.targetFirstPassBand);
 const targetMisses = targetable.filter((level) => Math.abs(level.humanSkilledTargetDelta || 0) > 0.0001);
 const targetBelow = targetMisses.filter((level) => level.humanSkilledTargetDelta < 0);
 const targetAbove = targetMisses.filter((level) => level.humanSkilledTargetDelta > 0);
-console.log(`Human-skilled target bands are advisory until telemetry calibration: ${targetable.length} deep-campaign levels tracked`);
+console.log(`Human-skilled target bands are advisory until telemetry calibration: ${targetable.length} post-300 expansion levels tracked`);
 console.log(`Human-skilled below target band: ${targetBelow.length}; above target band: ${targetAbove.length}`);
 
 if (jsonPath) {
