@@ -104,14 +104,15 @@ function lateIceCount(value, factor, pattern, { layers = 2 } = {}) {
 
 const LATE_LEVEL_TUNING = Object.freeze({
   329: Object.freeze({ moveDelta: 1 }),
-  357: Object.freeze({ iceDelta: -2 }),
-  360: Object.freeze({ collectDelta: -2, iceDelta: -3 }),
-  414: Object.freeze({ moveDelta: 1 }),
+  357: Object.freeze({ iceDelta: -2, pattern: "center" }),
+  360: Object.freeze({ collectDelta: -2, iceDelta: -3, pattern: "center" }),
+  414: Object.freeze({ moveDelta: 1, pattern: "center" }),
+  419: Object.freeze({ pattern: "center" }),
   420: Object.freeze({ moveDelta: 1 }),
-  444: Object.freeze({ moveDelta: 1 }),
-  445: Object.freeze({ moveDelta: 1, iceDelta: -2 }),
-  448: Object.freeze({ collectDelta: -1, iceDelta: -3 }),
-  449: Object.freeze({ moveDelta: 1, collectDelta: -2, iceDelta: -2 }),
+  444: Object.freeze({ moveDelta: 1, pattern: "center" }),
+  445: Object.freeze({ moveDelta: 1, iceDelta: -2, pattern: "center" }),
+  448: Object.freeze({ collectDelta: -1, iceDelta: -3, pattern: "center" }),
+  449: Object.freeze({ moveDelta: 1, collectDelta: -2, iceDelta: -2, pattern: "center" }),
 });
 
 function lateLevelTuning(levelNumber) {
@@ -130,6 +131,7 @@ function applyLateObjectiveTuning(levelNumber, levelObjective) {
       ? {
           ...levelObjective.ice,
           count: Math.max(2, levelObjective.ice.count + Number(tuning.iceDelta || 0)),
+          pattern: tuning.pattern || levelObjective.ice.pattern,
         }
       : null,
   });
