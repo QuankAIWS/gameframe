@@ -18,9 +18,9 @@ import {
 import { chooseMove, profileCascadeLevels, profileCascadeMoveFragility, runCascadeLevel, targetFirstPassBand } from "./cascade-simulator.js";
 import { analyzePlaytestExport } from "./cascade-playtest-analysis.js";
 
-test("Cascade ships 450 levels on a campaign model sized for 3000", () => {
+test("Cascade ships 450 levels on a campaign model sized for 10000", () => {
   assert.equal(LEVEL_COUNT, 450);
-  assert.equal(CAMPAIGN_CAPACITY, 3000);
+  assert.equal(CAMPAIGN_CAPACITY, 10000);
   assert.equal(CHAPTER_SIZE, 30);
   assert.equal(CASCADE_LEVELS.length, 450);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
@@ -80,13 +80,13 @@ test("Cascade ships 450 levels on a campaign model sized for 3000", () => {
   assert.equal(CASCADE_LEVELS[449].objective.ice.layers, 2);
 });
 
-test("late campaign tuning tightens only the over-target chapters", () => {
-  assert.equal(CASCADE_LEVELS[300].moves, 25, "advanced mastery relief beat should use the tightened move budget");
-  assert.equal(CASCADE_LEVELS[330].moves, 26, "ice remix should keep its existing balanced move budget");
-  assert.equal(CASCADE_LEVELS[360].moves, 24, "collection remix should use the tightened move budget");
-  assert.equal(CASCADE_LEVELS[390].moves, 26, "advanced mix should use the tightened move budget");
-  assert.equal(CASCADE_LEVELS[420].moves, 27, "veteran remix should keep its existing move budget");
-  assert.equal(CASCADE_LEVELS[449].moves, 24, "veteran capstone should use the tightened move budget");
+test("levels 301-450 stay in the early-campaign difficulty band while preserving outlier fixes", () => {
+  assert.equal(CASCADE_LEVELS[300].moves, 26, "advanced mastery should recover the move removed by the obsolete level-900 ramp");
+  assert.equal(CASCADE_LEVELS[330].moves, 26, "ice remix keeps its existing move budget");
+  assert.equal(CASCADE_LEVELS[360].moves, 25, "collection remix should recover the move removed by the obsolete level-900 ramp");
+  assert.equal(CASCADE_LEVELS[390].moves, 27, "advanced mix should recover the move removed by the obsolete level-900 ramp");
+  assert.equal(CASCADE_LEVELS[420].moves, 27, "veteran remix keeps its existing move budget");
+  assert.equal(CASCADE_LEVELS[449].moves, 26, "the level-450 capstone should not use mature-campaign pressure");
 });
 
 test("late-campaign outlier smoothing preserves the wave while fixing profiler walls", () => {
@@ -257,15 +257,22 @@ test("human personas choose from visible board information without peeking at fu
   assert.deepEqual(first, second);
 });
 
-test("deep-campaign first-pass targets ramp toward roughly fifty-percent normal play", () => {
+test("campaign first-pass targets ramp gradually across the 10000-level horizon", () => {
   assert.equal(targetFirstPassBand(300, "normal"), null);
+
   const opening = targetFirstPassBand(301, "normal");
-  const mature = targetFirstPassBand(900, "normal");
-  assert.ok(opening.min > mature.min);
-  assert.ok(opening.max > mature.max);
-  assert.equal(mature.min, 0.48);
-  assert.equal(mature.max, 0.62);
-  assert.equal(mature.phase, "mature");
+  const thousand = targetFirstPassBand(1000, "normal");
+  const milestone = targetFirstPassBand(3000, "normal");
+  const mature = targetFirstPassBand(10000, "normal");
+  const beyond = targetFirstPassBand(12000, "normal");
+
+  assert.deepEqual(opening, { min: 0.82, max: 0.94, phase: "early" });
+  assert.deepEqual(thousand, { min: 0.78, max: 0.90, phase: "growth->established" });
+  assert.deepEqual(milestone, { min: 0.68, max: 0.83, phase: "milestone->advanced" });
+  assert.deepEqual(mature, { min: 0.48, max: 0.68, phase: "mature" });
+  assert.deepEqual(beyond, mature);
+  assert.ok(opening.min > milestone.min);
+  assert.ok(milestone.min > mature.min);
 });
 
 test("all 450 levels exercise the objective-aware lookahead bot without engine errors", () => {
