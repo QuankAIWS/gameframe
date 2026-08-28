@@ -267,8 +267,8 @@ test("campaign first-pass targets ramp gradually across the 10000-level horizon"
   const beyond = targetFirstPassBand(12000, "normal");
 
   assert.deepEqual(opening, { min: 0.82, max: 0.94, phase: "early" });
-  assert.deepEqual(thousand, { min: 0.78, max: 0.90, phase: "growth->established" });
-  assert.deepEqual(milestone, { min: 0.68, max: 0.83, phase: "milestone->advanced" });
+  assert.deepEqual(thousand, { min: 0.78, max: 0.90, phase: "growth" });
+  assert.deepEqual(milestone, { min: 0.68, max: 0.83, phase: "milestone" });
   assert.deepEqual(mature, { min: 0.48, max: 0.68, phase: "mature" });
   assert.deepEqual(beyond, mature);
   assert.ok(opening.min > milestone.min);
