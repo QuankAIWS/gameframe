@@ -71,22 +71,30 @@ Lookahead resolves candidate moves, retains the strongest immediate candidates, 
 
 ## Long-term first-pass difficulty target
 
-The first 300 levels may remain comparatively forgiving. They function as the long onboarding and retention runway for the current family build.
+Cascade is designed around a **10,000-level campaign horizon**, with **3,000 levels as the immediate production milestone** rather than the start of endgame difficulty.
 
-Starting after level 300, the authoring target begins a gradual ramp toward a mature deep-campaign difficulty envelope by approximately level 900.
+The campaign keeps two separate forms of progression:
 
-The mature human-skilled first-pass target bands are:
+- **complexity growth** can continue for thousands of levels as mechanics and interactions accumulate;
+- **raw first-pass difficulty** rises slowly, oscillates inside the ten-level tension wave, and eventually plateaus instead of increasing forever.
 
-| Beat | Mature target |
-|---|---:|
-| Relief | 68–82% |
-| Normal | 48–62% |
-| Hard | 34–50% |
-| Super-hard | 25–42% |
+The human-skilled target bands are piecewise anchors, not a single linear ramp:
 
-Because the campaign repeats two relief beats, several normal beats, one hard beat, and one super-hard beat in each ten-level wave, the mature wave average lands in roughly the mid-50% range rather than forcing every individual level to 50%.
+| Level anchor | Relief | Normal | Hard | Super-hard | Approx. wave-average midpoint |
+|---|---:|---:|---:|---:|---:|
+| 301 | 90–98% | 82–94% | 70–84% | 55–72% | ~86% |
+| 1,000 | 88–96% | 78–90% | 64–78% | 50–68% | ~82% |
+| 2,000 | 85–94% | 73–87% | 59–74% | 45–63% | ~78% |
+| 3,000 | 82–92% | 68–83% | 54–70% | 40–58% | ~74% |
+| 5,000 | 78–90% | 60–78% | 46–64% | 33–52% | ~68% |
+| 7,500 | 74–87% | 53–72% | 39–58% | 27–46% | ~62% |
+| 10,000+ | 70–84% | 48–68% | 34–54% | 23–42% | ~58% |
 
-Levels 301–899 interpolate toward these bands. The bands are currently **advisory** and must not fail CI until the human personas are calibrated against replayable family traces.
+Targets interpolate between anchors. Beyond level 10,000, the mature bands plateau until player data justifies another change.
+
+Levels 301–450 therefore remain **early-campaign content**. They should not be tuned toward the mature 5,000–10,000 difficulty envelope merely because 450 is the current shipping ceiling.
+
+These bands remain **advisory** and must not fail CI until the human personas are calibrated against replayable family traces.
 
 ## Family-playtest data policy
 
