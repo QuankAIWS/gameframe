@@ -84,10 +84,10 @@ test("Cascade ships 450 levels on a campaign model sized for 10000", () => {
 
 test("levels 301-450 stay in the early-campaign difficulty band while preserving outlier fixes", () => {
   assert.equal(CASCADE_LEVELS[300].moves, 26, "advanced mastery should recover the move removed by the obsolete level-900 ramp");
-  assert.equal(CASCADE_LEVELS[330].moves, 26, "ice remix keeps its existing move budget");
+  assert.equal(CASCADE_LEVELS[330].moves, 27, "ice remix gets one additional early-campaign move");
   assert.equal(CASCADE_LEVELS[360].moves, 25, "collection remix should recover the move removed by the obsolete level-900 ramp");
-  assert.equal(CASCADE_LEVELS[390].moves, 27, "advanced mix should recover the move removed by the obsolete level-900 ramp");
-  assert.equal(CASCADE_LEVELS[420].moves, 27, "veteran remix keeps its existing move budget");
+  assert.equal(CASCADE_LEVELS[390].moves, 28, "advanced mix gets one additional early-campaign move");
+  assert.equal(CASCADE_LEVELS[420].moves, 28, "veteran remix gets one additional early-campaign move");
   assert.equal(CASCADE_LEVELS[449].moves, 26, "the level-450 capstone should not use mature-campaign pressure");
 });
 
@@ -98,19 +98,19 @@ test("late-campaign outlier smoothing preserves the wave while fixing profiler w
   assert.equal(CASCADE_LEVELS[359].objective.collect[0].count, 13, "level 360 should reduce collection pressure");
   assert.equal(CASCADE_LEVELS[359].objective.ice.count, 6, "level 360 should reduce edge-ice pressure");
   assert.equal(CASCADE_LEVELS[359].objective.ice.pattern, "center");
-  assert.equal(CASCADE_LEVELS[413].moves, 24, "level 414 should recover one move");
+  assert.equal(CASCADE_LEVELS[413].moves, 25, "level 414 keeps its early-campaign move slack");
   assert.equal(CASCADE_LEVELS[413].objective.ice.pattern, "center");
   assert.equal(CASCADE_LEVELS[418].objective.ice.pattern, "center");
-  assert.equal(CASCADE_LEVELS[419].moves, 23, "level 420 should recover one move from the brittle threshold");
-  assert.equal(CASCADE_LEVELS[443].moves, 26, "level 444 should recover one move");
+  assert.equal(CASCADE_LEVELS[419].moves, 24, "level 420 should retain early-campaign move slack");
+  assert.equal(CASCADE_LEVELS[443].moves, 27, "level 444 should retain outlier compensation");
   assert.equal(CASCADE_LEVELS[443].objective.ice.pattern, "center");
-  assert.equal(CASCADE_LEVELS[444].moves, 24, "level 445 should recover one move");
+  assert.equal(CASCADE_LEVELS[444].moves, 25, "level 445 should retain outlier compensation");
   assert.equal(CASCADE_LEVELS[444].objective.ice.count, 9, "level 445 should reduce cross-ice pressure");
   assert.equal(CASCADE_LEVELS[444].objective.ice.pattern, "center");
   assert.equal(CASCADE_LEVELS[447].objective.collect[0].count, 15, "level 448 should reduce collection pressure");
   assert.equal(CASCADE_LEVELS[447].objective.ice.count, 8, "level 448 should reduce cross-ice pressure");
   assert.equal(CASCADE_LEVELS[447].objective.ice.pattern, "center");
-  assert.equal(CASCADE_LEVELS[448].moves, 26, "level 449 should recover one move");
+  assert.equal(CASCADE_LEVELS[448].moves, 27, "level 449 should retain outlier compensation");
   assert.equal(CASCADE_LEVELS[448].objective.collect[0].count, 15, "level 449 should reduce collection pressure");
   assert.equal(CASCADE_LEVELS[448].objective.ice.count, 6, "level 449 should reduce diagonal-ice pressure");
   assert.equal(CASCADE_LEVELS[448].objective.ice.pattern, "center");
