@@ -2,6 +2,7 @@ export const BOARD_SIZE = 8;
 export const TILE_KINDS = 6;
 export const LEVEL_COUNT = 450;
 export const CAMPAIGN_CAPACITY = 10000;
+export const CAMPAIGN_MILESTONE = 3000;
 export const CHAPTER_SIZE = 30;
 export const TILE_LABELS = Object.freeze(["pink", "cyan", "yellow", "green", "purple", "orange"]);
 
