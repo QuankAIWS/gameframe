@@ -195,7 +195,7 @@ test("Cascade admin can launch a standalone non-failing Blitz round", async ({ p
   await expect(page.locator("#blitz-overlay")).toBeVisible();
 });
 
-test("Cascade admin console reaches level 300 and keeps the map bounded", async ({ page }) => {
+test("Cascade admin console reaches level 450 and keeps the map bounded", async ({ page }) => {
   await page.route("**/api/session", async (route) => {
     await route.fulfill({
       status: 200,
@@ -212,11 +212,11 @@ test("Cascade admin console reaches level 300 and keeps the map bounded", async 
   await page.goto("/cascade.html");
   await page.locator("#cascade-admin-open").click();
   await expect(page.locator("#cascade-admin-dialog")).toBeVisible();
-  await page.locator("#cascade-admin-command").fill("go to level 300");
+  await page.locator("#cascade-admin-command").fill("go to level 450");
   await page.locator("[data-admin-run]").click();
-  await expect(page.locator("#level-number")).toHaveText("300");
+  await expect(page.locator("#level-number")).toHaveText("450");
   await expect(page.locator("#level-map > li")).toHaveCount(30);
-  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "271-300");
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "421-450");
 });
 
 test("Cascade admin can force life and inventory edge states", async ({ page }) => {

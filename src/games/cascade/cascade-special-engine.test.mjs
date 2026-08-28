@@ -161,3 +161,81 @@ test("hammer clears exposed candy normally once no ice remains", () => {
   assert.equal(result.clearedKindCounts[kind], 1);
   assert.equal(result.transitions[0].matched.includes(9), true);
 });
+
+
+test("a 2x2 square creates a persistent Fish when the Fish rule is active", () => {
+  const board = stableBoard();
+  board[0] = 0;
+  board[1] = 0;
+  board[8] = 0;
+  board[9] = 0;
+  const result = resolveSpecialCascades(board, emptySpecials(), createRng(31), {
+    from: 0,
+    to: 1,
+    rules: { stripe: true, bomb: true, color: true, fish: true },
+  });
+
+  assert.ok(result.transitions[0].createdSpecials.some((creation) => creation.special === SPECIAL.FISH));
+  assert.ok(result.specials.includes(SPECIAL.FISH));
+});
+
+test("Fish chooses a seeded random useful objective target without ranking deeper ice first", () => {
+  const board = stableBoard();
+  const specials = emptySpecials();
+  const ice = Array(64).fill(0);
+  specials[0] = SPECIAL.FISH;
+  ice[10] = 2;
+  ice[63] = 1;
+
+  const result = applySpecialHammer(board, specials, 0, createRng(12288), {
+    ice,
+    rules: { stripe: true, bomb: true, color: true, fish: true },
+  });
+
+  assert.equal(result.legal, true);
+  assert.ok(result.transitions[0].matched.includes(63));
+  assert.equal(result.transitions[0].matched.includes(10), false);
+  assert.ok(result.transitions[0].iceHits.some((hit) => hit.index === 63));
+  assert.equal(result.transitions[0].iceHits.some((hit) => hit.index === 10), false);
+  assert.ok(result.transitions[0].triggeredSpecials.some((trigger) => trigger.special === SPECIAL.FISH));
+});
+
+test("Fish combo targeting uses the seeded random useful target", () => {
+  const board = stableBoard();
+  const specials = emptySpecials();
+  const ice = Array(64).fill(0);
+  specials[0] = SPECIAL.FISH;
+  specials[1] = SPECIAL.BOMB;
+  ice[10] = 2;
+  ice[63] = 1;
+
+  const result = applySpecialSwap(board, specials, 0, 1, createRng(12288), {
+    ice,
+    rules: { stripe: true, bomb: true, color: true, fish: true },
+  });
+
+  assert.equal(result.legal, true);
+  assert.equal(result.transitions[0].combo, "fish+bomb");
+  assert.ok(result.transitions[0].iceHits.some((hit) => hit.index === 63));
+  assert.equal(result.transitions[0].iceHits.some((hit) => hit.index === 10), false);
+});
+
+test("Fish plus Fish sends three seeded random hits toward useful objectives", () => {
+  const board = stableBoard();
+  const specials = emptySpecials();
+  const ice = Array(64).fill(0);
+  specials[0] = SPECIAL.FISH;
+  specials[1] = SPECIAL.FISH;
+  ice[55] = 1;
+  ice[62] = 1;
+  ice[63] = 1;
+
+  const result = applySpecialSwap(board, specials, 0, 1, createRng(33), {
+    ice,
+    rules: { stripe: true, bomb: true, color: true, fish: true },
+  });
+
+  assert.equal(result.legal, true);
+  assert.equal(result.transitions[0].combo, "fish+fish");
+  assert.equal(result.ice.filter((layers) => layers > 0).length, 0);
+});

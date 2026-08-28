@@ -88,6 +88,13 @@ function installConsole(identity) {
           <button type="button" data-level="41">41</button>
           <button type="button" data-level="71">71</button>
           <button type="button" data-level="100">100</button>
+          <button type="button" data-level="300">300</button>
+          <button type="button" data-level="301">301</button>
+          <button type="button" data-level="330">330</button>
+          <button type="button" data-level="360">360</button>
+          <button type="button" data-level="390">390</button>
+          <button type="button" data-level="420">420</button>
+          <button type="button" data-level="450">450</button>
         </div>
       </section>
 

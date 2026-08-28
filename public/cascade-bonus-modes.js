@@ -6,6 +6,7 @@ const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
 const QUICK_RECALL_AFTER_LEVELS = Object.freeze(new Set([
   8, 24, 48, 72, 96, 126, 156, 186, 216, 246, 276,
+  306, 336, 366, 396, 426,
 ]));
 const RECALL_ROUNDS = Object.freeze([3, 4, 5]);
 const RECALL_PACE = Object.freeze([

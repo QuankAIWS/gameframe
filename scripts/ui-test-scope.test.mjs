@@ -20,7 +20,7 @@ test("Casual Games changes stay in the Casual Games lane", () => {
   ]), { ...none, casual: true });
 });
 
-test("Cascade browser input and presentation changes do not run the 300-level profile", () => {
+test("Cascade browser input and presentation changes do not run the solver/persona profile", () => {
   assert.deepEqual(classifyUiTestScope([
     "public/cascade-runtime-v2.js",
     "public/cascade-input.js",
@@ -30,13 +30,23 @@ test("Cascade browser input and presentation changes do not run the 300-level pr
   ]), { ...none, cascadeUi: true });
 });
 
+test("Cascade analysis tools and methodology changes add the profile gate", () => {
+  assert.deepEqual(classifyUiTestScope([
+    "scripts/cascade-profile-compare.mjs",
+    "scripts/cascade-persona-calibrate.mjs",
+    "scripts/cascade-fragility.mjs",
+    "scripts/cascade-playtest-analyze.mjs",
+    "planning/cascade-testing-methodology.md",
+  ]), { ...none, cascadeProfile: true });
+});
+
 test("Cascade simulator and game mechanics changes add the profile gate", () => {
   assert.deepEqual(classifyUiTestScope([
     "src/games/cascade/cascade-engine.test.mjs",
   ]), { ...none, cascadeUi: true, cascadeProfile: true });
 });
 
-test("Cascade telemetry stays separate from the 300-level profile", () => {
+test("Cascade telemetry stays separate from the solver/persona profile", () => {
   assert.deepEqual(classifyUiTestScope([
     "public/cascade.html",
     "public/cascade-telemetry-sync.js",

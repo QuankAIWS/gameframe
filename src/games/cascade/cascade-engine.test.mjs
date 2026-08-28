@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   CAMPAIGN_CAPACITY,
+  CAMPAIGN_MILESTONE,
   CASCADE_LEVELS,
   CHAPTER_SIZE,
   LEVEL_COUNT,
@@ -15,17 +16,21 @@ import {
   objectiveComplete,
   resolveCascades,
 } from "../../../public/cascade-engine.js";
-import { profileCascadeLevels, runCascadeLevel } from "./cascade-simulator.js";
+import { chooseMove, profileCascadeLevels, profileCascadeMoveFragility, runCascadeLevel, targetFirstPassBand } from "./cascade-simulator.js";
+import { analyzePlaytestExport } from "./cascade-playtest-analysis.js";
 
-test("Cascade ships 300 levels on a campaign model sized for 1000", () => {
-  assert.equal(LEVEL_COUNT, 300);
-  assert.equal(CAMPAIGN_CAPACITY, 1000);
+test("Cascade ships 450 levels on a campaign model sized for 10000", () => {
+  assert.equal(LEVEL_COUNT, 450);
+  assert.equal(CAMPAIGN_CAPACITY, 10000);
+  assert.equal(CAMPAIGN_MILESTONE, 3000);
   assert.equal(CHAPTER_SIZE, 30);
-  assert.equal(CASCADE_LEVELS.length, 300);
+  assert.equal(CASCADE_LEVELS.length, 450);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
   assert.equal(CASCADE_LEVELS[0].moves, 20);
   assert.equal(CASCADE_LEVELS[4].target, 2375);
   assert.equal(CASCADE_LEVELS[4].hard, true);
+  assert.equal(CASCADE_LEVELS[4].mechanics.includes("fish"), false);
+  assert.equal(CASCADE_LEVELS[5].mechanics.includes("fish"), true);
 
   assert.equal(CASCADE_LEVELS[29].chapter, "special-mastery");
   assert.equal(CASCADE_LEVELS[29].difficulty, "super-hard");
@@ -64,6 +69,51 @@ test("Cascade ships 300 levels on a campaign model sized for 1000", () => {
   assert.equal(CASCADE_LEVELS[299].difficulty, "super-hard");
   assert.equal(CASCADE_LEVELS[299].objective.collect.length, 2);
   assert.equal(CASCADE_LEVELS[299].objective.ice.layers, 2);
+
+  assert.equal(CASCADE_LEVELS[300].chapter, "advanced-mastery");
+  assert.ok(CASCADE_LEVELS[300].mechanics.includes("fish"));
+  assert.equal(CASCADE_LEVELS[330].chapter, "ice-remix");
+  assert.equal(CASCADE_LEVELS[360].chapter, "collection-remix");
+  assert.equal(CASCADE_LEVELS[390].chapter, "advanced-mix");
+  assert.equal(CASCADE_LEVELS[420].chapter, "veteran-remix");
+  assert.equal(CASCADE_LEVELS[449].chapter, "veteran-capstone");
+  assert.equal(CASCADE_LEVELS[449].difficulty, "super-hard");
+  assert.equal(CASCADE_LEVELS[449].objective.collect.length, 2);
+  assert.equal(CASCADE_LEVELS[449].objective.ice.layers, 2);
+});
+
+test("levels 301-450 stay in the early-campaign difficulty band while preserving outlier fixes", () => {
+  assert.equal(CASCADE_LEVELS[300].moves, 26, "advanced mastery should recover the move removed by the obsolete level-900 ramp");
+  assert.equal(CASCADE_LEVELS[330].moves, 27, "ice remix gets one additional early-campaign move");
+  assert.equal(CASCADE_LEVELS[360].moves, 25, "collection remix should recover the move removed by the obsolete level-900 ramp");
+  assert.equal(CASCADE_LEVELS[390].moves, 28, "advanced mix gets one additional early-campaign move");
+  assert.equal(CASCADE_LEVELS[420].moves, 28, "veteran remix gets one additional early-campaign move");
+  assert.equal(CASCADE_LEVELS[449].moves, 26, "the level-450 capstone should not use mature-campaign pressure");
+});
+
+test("late-campaign outlier smoothing preserves the wave while fixing profiler walls", () => {
+  assert.equal(CASCADE_LEVELS[328].moves, 24, "level 329 should recover one move");
+  assert.equal(CASCADE_LEVELS[356].objective.ice.count, 5, "level 357 should reduce layered-ice pressure");
+  assert.equal(CASCADE_LEVELS[356].objective.ice.pattern, "center");
+  assert.equal(CASCADE_LEVELS[359].objective.collect[0].count, 13, "level 360 should reduce collection pressure");
+  assert.equal(CASCADE_LEVELS[359].objective.ice.count, 6, "level 360 should reduce edge-ice pressure");
+  assert.equal(CASCADE_LEVELS[359].objective.ice.pattern, "center");
+  assert.equal(CASCADE_LEVELS[413].moves, 25, "level 414 keeps its early-campaign move slack");
+  assert.equal(CASCADE_LEVELS[413].objective.ice.pattern, "center");
+  assert.equal(CASCADE_LEVELS[418].objective.ice.pattern, "center");
+  assert.equal(CASCADE_LEVELS[419].moves, 24, "level 420 should retain early-campaign move slack");
+  assert.equal(CASCADE_LEVELS[443].moves, 27, "level 444 should retain outlier compensation");
+  assert.equal(CASCADE_LEVELS[443].objective.ice.pattern, "center");
+  assert.equal(CASCADE_LEVELS[444].moves, 25, "level 445 should retain outlier compensation");
+  assert.equal(CASCADE_LEVELS[444].objective.ice.count, 9, "level 445 should reduce cross-ice pressure");
+  assert.equal(CASCADE_LEVELS[444].objective.ice.pattern, "center");
+  assert.equal(CASCADE_LEVELS[447].objective.collect[0].count, 15, "level 448 should reduce collection pressure");
+  assert.equal(CASCADE_LEVELS[447].objective.ice.count, 8, "level 448 should reduce cross-ice pressure");
+  assert.equal(CASCADE_LEVELS[447].objective.ice.pattern, "center");
+  assert.equal(CASCADE_LEVELS[448].moves, 27, "level 449 should retain outlier compensation");
+  assert.equal(CASCADE_LEVELS[448].objective.collect[0].count, 15, "level 449 should reduce collection pressure");
+  assert.equal(CASCADE_LEVELS[448].objective.ice.count, 6, "level 449 should reduce diagonal-ice pressure");
+  assert.equal(CASCADE_LEVELS[448].objective.ice.pattern, "center");
 });
 
 test("difficulty uses repeating tension waves instead of a monotonic staircase", () => {
@@ -180,7 +230,54 @@ test("a legal swap returns replayable objective-aware cascade transition records
   assert.ok(listLegalMoves(result.board).length > 0);
 });
 
-test("all 300 levels exercise the objective-aware lookahead bot without engine errors", () => {
+test("human personas choose from visible board information without peeking at future RNG", () => {
+  const level = CASCADE_LEVELS[30];
+  const progress = createLevelProgress(level);
+  const board = createBoard({ rng: createRng(424242) });
+  const specials = Array(64).fill(null);
+  const moves = listLegalMoves(board);
+  const first = chooseMove(
+    "human-skilled",
+    level,
+    progress,
+    board,
+    specials,
+    moves,
+    createRng(1),
+    createRng(777),
+  );
+  const second = chooseMove(
+    "human-skilled",
+    level,
+    progress,
+    board,
+    specials,
+    moves,
+    createRng(0xdeadbeef),
+    createRng(777),
+  );
+  assert.deepEqual(first, second);
+});
+
+test("campaign first-pass targets ramp gradually across the 10000-level horizon", () => {
+  assert.equal(targetFirstPassBand(300, "normal"), null);
+
+  const opening = targetFirstPassBand(301, "normal");
+  const thousand = targetFirstPassBand(1000, "normal");
+  const milestone = targetFirstPassBand(3000, "normal");
+  const mature = targetFirstPassBand(10000, "normal");
+  const beyond = targetFirstPassBand(12000, "normal");
+
+  assert.deepEqual(opening, { min: 0.82, max: 0.94, phase: "early" });
+  assert.deepEqual(thousand, { min: 0.78, max: 0.90, phase: "growth" });
+  assert.deepEqual(milestone, { min: 0.68, max: 0.83, phase: "milestone" });
+  assert.deepEqual(mature, { min: 0.48, max: 0.68, phase: "mature" });
+  assert.deepEqual(beyond, mature);
+  assert.ok(opening.min > milestone.min);
+  assert.ok(milestone.min > mature.min);
+});
+
+test("all 450 levels exercise the objective-aware lookahead bot without engine errors", () => {
   for (const level of CASCADE_LEVELS) {
     const run = runCascadeLevel({ level, seed: 1000 + level.level, strategy: "lookahead" });
     assert.ok(run.moveHistory.length > 0, `lookahead made no moves on level ${level.level}`);
@@ -189,17 +286,103 @@ test("all 300 levels exercise the objective-aware lookahead bot without engine e
   }
 });
 
-test("sample profiling covers all 300 levels and records skill/planning sensitivity", () => {
-  const report = profileCascadeLevels({ runsPerLevel: 1 });
-  assert.equal(report.levels.length, 300);
+test("ranged profiling preserves absolute campaign level numbers", () => {
+  const report = profileCascadeLevels({
+    levelDefinitions: CASCADE_LEVELS.slice(300, 303),
+    runsPerLevel: 1,
+    humanRunsPerLevel: 1,
+  });
+  assert.equal(report.levels.length, 3);
+  assert.deepEqual(report.levelRange, { from: 301, to: 303 });
+  assert.deepEqual(report.levels.map((level) => level.level), [301, 302, 303]);
+});
+
+test("move fragility profiling uses paired seeds across plus/minus one move", () => {
+  const report = profileCascadeMoveFragility({
+    levels: CASCADE_LEVELS.slice(30, 32),
+    runsPerLevel: 1,
+    strategy: "human-skilled",
+    seedBase: 1234,
+  });
+  assert.equal(report.levels.length, 2);
+  for (const level of report.levels) {
+    assert.equal(typeof level.minusOneWinRate, "number");
+    assert.equal(typeof level.baselineWinRate, "number");
+    assert.equal(typeof level.plusOneWinRate, "number");
+    assert.equal(level.moveSensitivity, level.plusOneWinRate - level.minusOneWinRate);
+  }
+});
+
+test("sample profiling covers all 450 levels and records solver and human-persona sensitivity", () => {
+  const report = profileCascadeLevels({ runsPerLevel: 1, humanRunsPerLevel: 1 });
+  assert.equal(report.levels.length, 450);
   for (const level of report.levels) {
     assert.ok(level.strategies.random);
+    assert.ok(level.strategies["human-casual"]);
+    assert.ok(level.strategies["human-skilled"]);
     assert.ok(level.strategies.greedy);
     assert.ok(level.strategies.lookahead);
     assert.equal(typeof level.strategies.lookahead.objectiveFailureRate, "number");
+    assert.equal(typeof level.humanSkillSpread, "number");
   }
+  assert.equal(report.levels[299].targetFirstPassBand, null);
+  assert.ok(report.levels[300].targetFirstPassBand);
   const laterRun = report.levels.slice(30);
   assert.ok(laterRun.some((level) => level.skillSensitivity !== 0));
+});
+
+test("playtest analysis excludes hammer-assisted attempts from intrinsic difficulty", () => {
+  const report = analyzePlaytestExport({
+    schemaVersion: 1,
+    players: [
+      {
+        displayName: "Orange",
+        playerId: "orange",
+        summary: { highestLevelStarted: 33, highestLevelCompleted: 32 },
+        attempts: [
+          { mode: "normal", level: 31, outcome: "win", hammersUsed: 1, startedAt: "2026-08-01T00:00:00Z" },
+          { mode: "normal", level: 32, outcome: "failed", hammersUsed: 0, startedAt: "2026-08-01T00:01:00Z" },
+          { mode: "normal", level: 32, outcome: "win", hammersUsed: 0, startedAt: "2026-08-01T00:02:00Z" },
+        ],
+      },
+      {
+        displayName: "Rose",
+        playerId: "rose",
+        summary: { highestLevelStarted: 32, highestLevelCompleted: 32 },
+        attempts: [
+          { mode: "normal", level: 31, outcome: "failed", hammersUsed: 0, startedAt: "2026-08-01T00:00:00Z" },
+          { mode: "normal", level: 31, outcome: "win", hammersUsed: 0, startedAt: "2026-08-01T00:01:00Z" },
+          { mode: "normal", level: 32, outcome: "win", hammersUsed: 0, startedAt: "2026-08-01T00:02:00Z" },
+        ],
+      },
+    ],
+  }, {
+    boosterMetricExclusions: {
+      Orange: "known live hammer testing",
+    },
+  });
+
+  assert.equal(report.resolvedNormalAttempts, 6);
+  assert.equal(report.unassistedResolvedAttempts, 5);
+  assert.equal(report.unassistedWins, 3);
+  assert.equal(report.unassistedWinRate, 0.6);
+  assert.deepEqual(report.cleanFirstPass.byDifficulty.map((bucket) => ({
+    difficulty: bucket.difficulty,
+    eligible: bucket.eligible,
+    wins: bucket.wins,
+  })), [
+    { difficulty: "relief", eligible: 1, wins: 0 },
+    { difficulty: "normal", eligible: 2, wins: 1 },
+  ]);
+  const orange = report.players.find((player) => player.displayName === "Orange");
+  const rose = report.players.find((player) => player.displayName === "Rose");
+  assert.equal(orange.boosterMetrics.excluded, true);
+  assert.equal(orange.firstPass.hammerContaminatedLevels, 1);
+  assert.equal(orange.unassistedAttemptsPerSuccess.attemptsPerSuccess, 2);
+  assert.equal(rose.firstPass.rate, 0.5);
+  assert.equal(rose.unassistedAttemptsPerSuccess.attemptsPerSuccess, 1.5);
+  assert.equal(report.policy.invalidSwapsUsedAsSkillSignal, false);
+  assert.equal(report.policy.deviceClassChangesLevelDifficulty, false);
 });
 
 test("objectiveComplete requires score plus every authored non-score objective", () => {

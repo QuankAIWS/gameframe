@@ -9,7 +9,7 @@ Cascade Crush should be a bright, friction-light match-3 game that is fun enough
 
 The cognitive goal is modest and practical: mix ordinary match-3 planning with short bursts of speed, recall, divided attention, and visuospatial memory. The game is not presented as a treatment or medical intervention.
 
-The game must remain original in presentation, content, level design, art, names, progression, and implementation. Familiar genre mechanics are useful because players can understand them immediately without learning a new hobby before the interesting parts begin.
+Because Cascade Crush is a private family game rather than a commercial product, familiar match-3 mechanics may be borrowed and recombined aggressively when they make the game more fun or legible. Presentation, art, names, implementation, and authored level recipes should still remain GameFrame-owned so the codebase stays understandable and maintainable.
 
 ## Core principles
 
@@ -41,9 +41,11 @@ Lives remain a pacing mechanic with automatic regeneration. There is no paid, fa
 
 ## Campaign scale
 
-The campaign system is deliberately sized for **1,000 levels** without requiring another level-model rewrite.
+The campaign system is deliberately sized for **10,000 levels** without requiring another level-model rewrite.
 
-The currently shipped and continuously validated campaign contains **300 levels**. Levels 301–1000 are future content, not a separate architecture.
+The immediate production milestone is **3,000 shipped levels**. That milestone is only the first large content tranche, not the mature endgame. The longer design horizon is 10,000 levels, with the option to extend beyond that or reskin/reframe the experience later without rebuilding the core campaign model.
+
+The currently shipped and continuously validated campaign contains **450 levels**. Fish is part of the ordinary permanent special toolkit from the early campaign onward; levels 301–450 are still early-campaign fluency content, not the point where mature difficulty begins. Levels 451–3000 are the immediate expansion target, and levels 3001–10000 remain the long-horizon campaign.
 
 The player-facing level map renders only the current 30-level chapter rather than every campaign level. This prevents the UI and DOM size from growing linearly as the campaign expands.
 
@@ -79,6 +81,17 @@ A T or L intersection creates a bomb. Activating it clears a 3 × 3 area.
 
 A five-or-more straight match creates a color clearer. Swapping it with a normal tile clears that tile's color from the board.
 
+### Fish
+
+Starting at level 6, a 2 × 2 square of one color creates a persistent Fish.
+
+- when triggered, Fish randomly chooses among unfinished board-objective targets;
+- ice cells and still-needed collection colors are useful targets;
+- when several useful targets exist, Fish does not rank them by depth, position, or mathematical value;
+- Fish + Fish sends multiple useful-target hits without replacement;
+- Fish + stripe, Fish + bomb, and Fish + color clearer redirect stronger effects toward useful objective locations;
+- Fish is a normal special piece, not a chapter theme or a special class of level.
+
 ### Combinations
 
 Adjacent specials can be swapped together for stronger effects. Initial supported combinations include:
@@ -88,29 +101,34 @@ Adjacent specials can be swapped together for stronger effects. Initial supporte
 - bomb + bomb
 - color clearer + another special
 - color clearer + color clearer
+- Fish + Fish
+- Fish + stripe
+- Fish + bomb
+- Fish + color clearer
 
 Specials hit by another special can trigger recursively.
 
 ## Opening teaching sequence
 
-The first five levels introduce the permanent rules rather than treating them as late-game gimmicks.
+The opening six levels introduce the permanent rules rather than treating them as late-game gimmicks.
 
 1. **Level 1 — Match 3:** ordinary matching and cascades.
 2. **Level 2 — Stripes:** make four and keep the resulting striped piece.
 3. **Level 3 — Bombs:** create a T/L bomb.
 4. **Level 4 — Combos:** place two specials beside each other and combine them.
 5. **Level 5 — Color:** create and use the color clearer.
+6. **Level 6 — Fish:** make a 2 × 2 square and learn that Fish targets something useful.
 
-After level 5, all three special families are part of normal play.
+After level 6, stripes, bombs, color clearers, and Fish are all ordinary tools throughout the campaign.
 
-## 300-level campaign architecture
+## 450-level campaign architecture
 
-The first 300 levels deliberately reuse and recombine the existing mechanics instead of burning through a large pile of new blockers.
+The 450 shipped levels share one permanent special vocabulary. Fish is backdated into the established campaign rather than defining a separate era. Chapters are organized around objectives, geometry, and difficulty—not around Fish.
 
 | Levels | Chapter | Primary job |
 |---|---|---|
-| 1–5 | Onboarding | Teach match-3 and the permanent special families |
-| 6–30 | Special mastery | Learn positioning, saving, triggering, and combining specials |
+| 1–5 | Onboarding | Teach match-3, stripes, bombs, combos, and the color clearer |
+| 6–30 | Special mastery | Introduce Fish at level 6, then learn positioning, saving, targeting, triggering, and combining the full special toolkit |
 | 31–60 | Ice | Learn single-layer blocker clearing across different board patterns |
 | 61–90 | Collection | Learn single-color collection pressure |
 | 91–120 | Mixed | Combine single-layer ice with collection |
@@ -119,8 +137,14 @@ The first 300 levels deliberately reuse and recombine the existing mechanics ins
 | 181–210 | Layered mix | Combine layered ice with collection |
 | 211–240 | Precision | Smaller awkward layered-ice patterns plus targeted collection |
 | 241–270 | Heavy remix | Dual collection plus layered ice |
-| 271–299 | Expert remix | Denser combinations of the full objective vocabulary |
-| 300 | Capstone | Super-hard combined finale |
+| 271–299 | Expert remix | Denser combinations of the full established objective vocabulary |
+| 300 | Capstone | Super-hard combined milestone |
+| 301–330 | Advanced mastery | Full-toolkit mixed goals with difficulty-aware geometry |
+| 331–360 | Ice remix | Layered positional blockers with more demanding layouts |
+| 361–390 | Collection remix | Stronger dual-collection planning using the full special toolkit |
+| 391–420 | Advanced mix | Layered ice, dual collection, and special combinations |
+| 421–449 | Veteran remix | Dense late-campaign combinations and objective pressure |
+| 450 | Veteran capstone | Super-hard combined milestone |
 
 The chapter boundary is a design tool, not a promise that every level in a chapter looks alike. Each chapter contains three ten-level difficulty waves and varies target pressure, objective counts, patterns, colors, and move budgets.
 
@@ -141,7 +165,9 @@ For generated campaign levels the default tension rhythm is:
 
 Relief levels generally provide more moves and lighter targets/objectives. Hard and super-hard beats reduce move slack and increase target/objective pressure. The next wave deliberately drops back instead of continuing a monotonic climb.
 
-Automated difficulty profiling remains authoritative for solvability. Human playtest data should eventually tune the exact factors.
+Automated difficulty profiling remains authoritative for solvability, while human traces tune whether the nominal difficulty labels actually feel correct.
+
+The first family pass through the 300-level campaign confirmed the wave direction but also exposed geometry as a major hidden multiplier. Edge-pattern ice was consistently harsher than center/checker layouts, with diagonal and cross patterns also producing more pressure. From level 301 onward, geometry selection is therefore difficulty-aware: relief beats favor center/checker/column layouts, while harder beats draw more often from cross/diagonal/edge layouts and edge counts receive an additional discount. This is intended to reduce accidental difficulty cliffs without flattening the ten-level wave.
 
 ## Objective variation
 
@@ -197,9 +223,9 @@ Blitz is the processing-speed bonus mode.
 - result records score, match groups, specials created, and best rating
 - replay is allowed, but only a new best star result advances the reward total
 
-Progression Blitz slots continue through the 300-level campaign rather than disappearing after the opening run. Current milestone levels are:
+Progression Blitz slots continue through the 450-level campaign rather than disappearing after the opening run. Current milestone levels are:
 
-`5, 12, 20, 30, 45, 60, 75, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290`
+`5, 12, 20, 30, 45, 60, 75, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290, 310, 330, 350, 370, 390, 410, 430`
 
 ### Quick Recall
 
@@ -216,7 +242,7 @@ Quick Recall is a short sequence-memory intermission using Cascade's existing si
 
 Quick Recall offers also continue through the campaign. Current milestone levels are:
 
-`8, 24, 48, 72, 96, 126, 156, 186, 216, 246, 276`
+`8, 24, 48, 72, 96, 126, 156, 186, 216, 246, 276, 306, 336, 366, 396, 426`
 
 ### Memory Fog — planned
 
@@ -250,7 +276,9 @@ Useful ranking surfaces now or later:
 
 ## Automated difficulty profiling
 
-The automated player uses the same persistent-special engine as the browser game. Every shipped campaign level is exercised by the lookahead bot, and CI samples multiple seeds per level for random, greedy, and lookahead strategies.
+The automated players use the same persistent-special engine as the browser game. Every shipped campaign level is exercised by the lookahead bot, and CI samples random, visible-only human personas, greedy, and lookahead strategies.
+
+The human-casual and human-skilled personas are deliberately non-clairvoyant: they score only the board state visible before the move and never resolve candidate refills, Fish destinations, or cascades before choosing. Greedy and lookahead remain clairvoyant upper-bound/search agents. The detailed contract and calibration plan lives in `planning/cascade-testing-methodology.md`.
 
 The profiler records:
 
@@ -269,7 +297,9 @@ The profiler records:
 
 A level is not considered shippable if the sampled lookahead strategy cannot produce a win. This is a coarse solvability gate, not a claim that bot difficulty perfectly predicts a human player.
 
-As family playtest traces accumulate, the preferred difficulty measures become first-attempt pass rate, attempts-to-clear, moves remaining, abandonment, booster usage, and star distribution.
+As family playtest traces accumulate, the preferred difficulty measures become first-attempt pass rate, attempts-to-clear, moves remaining, abandonment, and star distribution. Hammer-assisted attempts are excluded from intrinsic difficulty estimates, and known hammer-system testing accounts must not be used to calibrate booster-usage behavior. Invalid swaps are not treated as a player-skill signal.
+
+The first 300 levels may remain comparatively forgiving. From level 301 onward, human-skilled first-pass targets begin an advisory ramp toward a mature deep-campaign wave averaging roughly the mid-50% range by about level 900, while preserving easier relief beats and harder capstones.
 
 ## Local play telemetry
 
@@ -314,26 +344,45 @@ Track enough to tune the game, not to manufacture pressure:
 - Weekly Blitz participation and best-score spread
 - optional-memory-mode participation and performance once additional modes exist
 
-## Expansion beyond level 300
+## Expansion beyond level 450
 
-Levels 301–1000 should extend the same model rather than introduce a second campaign system.
+The immediate target is **3,000 levels inside a 10,000-level campaign horizon**. Difficulty must not be compressed merely because the currently authored ceiling is lower. New content should increase decision-space complexity much faster than it increases raw failure pressure.
 
-The intended direction is:
+Mechanics should change the player's decision topology rather than simply adding hit points or larger collection counts. Once taught, a mechanic becomes part of the permanent global vocabulary and can combine with older systems.
 
-- **301–600 — mastery:** fewer new mechanics, more demanding geometry and combinations
-- **601–1000 — veteran:** mostly expert remixes, occasional genuinely useful new mechanics, long spacing between introductions
+The current production roadmap is maintained in `planning/cascade-10000-campaign-roadmap.md`. The immediate mechanic families through level 3,000 are:
 
-A future expansion should add chapter recipes and validated generated candidates; it should not require changing save-state shape, navigation, level numbering, or the core engine.
+- drop/exit objects;
+- locks/cages;
+- spreading terrain or jam;
+- spreading/regrowing blockers;
+- color-conditional blockers;
+- generators/producers;
+- reveal/access systems such as curtains or gates;
+- portals;
+- conveyors or moving board elements;
+- special-only armor or charged devices;
+- alternating/toggle elements;
+- a 2,800–3,000 mastery arc built primarily from combinations of the established vocabulary.
+
+Optional attention and memory mechanics, including Memory Fog and Pattern Echo concepts, can enter as side modes or carefully scoped board mechanics after the foundational spatial systems are stable.
+
+New mechanics should be implemented as reusable stateful board elements with explicit hooks for direct hits, adjacent matches, special hits, gravity, end-of-turn changes, spawning, movement, targeting, and objective completion. New content should extend the shared engine and profiler rather than create browser-only rules.
+
+The practical authoring loop is: define a chapter recipe, generate multiple candidate levels, batch-profile player personas and seeds, reject impossible/trivial/brittle/luck-dominated candidates, retain varied survivors, then recalibrate against family play traces at campaign checkpoints. Desktop and mobile use the same authored difficulty; device-specific telemetry is reserved for diagnosing interaction and readability problems.
 
 ## Current development order
 
-1. Persistent special-piece engine and combinations — implemented.
-2. Teach permanent special rules in levels 1–5 — implemented.
-3. Remove the IOU/fake-economy code path completely — implemented.
-4. Standalone 30-second Blitz bonus mode — implemented.
-5. Quick Recall bonus mode — implemented.
-6. Generic scored-game leaderboard contract + Weekly Blitz — implemented.
-7. Expand the campaign architecture to 1,000-capable and ship 300 profiled levels — current slice.
-8. Memory Fog and other memory/attention variations after real playtest feedback.
-9. Use human traces to retune the 300-level curve before authoring the 301–1000 expansion.
-10. Continue polishing effects, sound, authored level beats, competitive surfaces, and accessibility without making the UI busier than the board needs.
+1. Persistent stripe/bomb/color special engine and combinations — implemented.
+2. Original 300-level campaign, Blitz, Quick Recall, Weekly Blitz, telemetry, and automated profiling — implemented.
+3. Family playtest pass through the original campaign — collected and used for difficulty/geometry calibration.
+4. Fish added to the permanent toolkit and backdated into the established campaign; levels 301–450 extend the same vocabulary — current expansion.
+5. Human-like profiling, clean playtest analysis, paired-seed comparison, fragility scanning, and the 10,000-level difficulty horizon — current testing foundation.
+6. Add drop/exit goals as the first new board-element family and verify full runtime/simulator/telemetry parity.
+7. Add locks/cages as the second new family, then begin generating the 451–850 chapter batches.
+8. Add spreading terrain, regrowing blockers, color-conditional blockers, and producers in separate testable slices while expanding toward 1,500.
+9. Re-evaluate actual player data during the 1,000–1,500 range before generating the remainder of the first 3,000-level milestone.
+10. Add reveal/access systems, portals, conveyors, charged/special-only systems, and toggle mechanics while completing levels 1,500–3,000.
+11. Perform a full 3,000-level player-data and content review before committing the 3,001–10,000 recipe mix.
+12. Memory Fog and other attention/memory variations remain candidates for distinctive later content or side modes.
+13. VFX/presentation gets its own dedicated pass; spectacle should be preserved or increased rather than solved by simply reducing effects.

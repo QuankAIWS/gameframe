@@ -1,7 +1,8 @@
 export const BOARD_SIZE = 8;
 export const TILE_KINDS = 6;
-export const LEVEL_COUNT = 300;
-export const CAMPAIGN_CAPACITY = 1000;
+export const LEVEL_COUNT = 450;
+export const CAMPAIGN_CAPACITY = 10000;
+export const CAMPAIGN_MILESTONE = 3000;
 export const CHAPTER_SIZE = 30;
 export const TILE_LABELS = Object.freeze(["pink", "cyan", "yellow", "green", "purple", "orange"]);
 
@@ -35,6 +36,7 @@ function mechanicsForLevel(levelNumber) {
   if (levelNumber >= 31) mechanics.push("ice-blockers");
   if (levelNumber >= 61) mechanics.push("collection");
   if (levelNumber >= 151) mechanics.push("layered-ice");
+  if (levelNumber >= 6) mechanics.push("fish");
   return mechanics;
 }
 
@@ -68,6 +70,18 @@ function patternFor(levelNumber, phase = 0, precision = false) {
   return patterns[(levelNumber + (phase * 2) + Math.floor(levelNumber / CHAPTER_SIZE)) % patterns.length];
 }
 
+const LATE_PATTERN_POOLS = Object.freeze({
+  relief: Object.freeze(["checker", "center", "columns", "center"]),
+  normal: Object.freeze(["checker", "center", "columns", "cross", "diagonal"]),
+  hard: Object.freeze(["columns", "cross", "diagonal", "center"]),
+  "super-hard": Object.freeze(["cross", "diagonal", "edges", "columns"]),
+});
+
+function latePatternFor(levelNumber, phase = 0, difficulty = "normal") {
+  const pool = LATE_PATTERN_POOLS[difficulty] || LATE_PATTERN_POOLS.normal;
+  return pool[(levelNumber + phase * 3 + Math.floor(levelNumber / CHAPTER_SIZE)) % pool.length];
+}
+
 function tunedIceCount(value, factor, pattern, { layers = 1, precision = false } = {}) {
   let count = scaleCount(value, factor);
   if (pattern === "edges") count -= precision ? 4 : layers === 1 ? 3 : 2;
@@ -80,6 +94,46 @@ function tunedIceCount(value, factor, pattern, { layers = 1, precision = false }
     }
   }
   return Math.max(2, count);
+}
+
+function lateIceCount(value, factor, pattern, { layers = 2 } = {}) {
+  let count = tunedIceCount(value, factor, pattern, { layers });
+  if (pattern === "edges") count -= 2;
+  if (pattern === "diagonal") count -= 1;
+  return Math.max(2, count);
+}
+
+const LATE_LEVEL_TUNING = Object.freeze({
+  357: Object.freeze({ iceDelta: -2, pattern: "center" }),
+  360: Object.freeze({ collectDelta: -2, iceDelta: -3, pattern: "center" }),
+  414: Object.freeze({ pattern: "center" }),
+  419: Object.freeze({ pattern: "center" }),
+  444: Object.freeze({ moveDelta: 2, pattern: "center" }),
+  445: Object.freeze({ moveDelta: 1, iceDelta: -2, pattern: "center" }),
+  448: Object.freeze({ collectDelta: -1, iceDelta: -3, pattern: "center" }),
+  449: Object.freeze({ moveDelta: 2, collectDelta: -2, iceDelta: -2, pattern: "center" }),
+});
+
+function lateLevelTuning(levelNumber) {
+  return LATE_LEVEL_TUNING[levelNumber] || Object.freeze({});
+}
+
+function applyLateObjectiveTuning(levelNumber, levelObjective) {
+  const tuning = lateLevelTuning(levelNumber);
+  if (!tuning.collectDelta && !tuning.iceDelta && !tuning.pattern) return levelObjective;
+  return objective({
+    collect: (levelObjective?.collect || []).map((goal) => ({
+      kind: goal.kind,
+      count: Math.max(1, goal.count + Number(tuning.collectDelta || 0)),
+    })),
+    ice: levelObjective?.ice
+      ? {
+          ...levelObjective.ice,
+          count: Math.max(2, levelObjective.ice.count + Number(tuning.iceDelta || 0)),
+          pattern: tuning.pattern || levelObjective.ice.pattern,
+        }
+      : null,
+  });
 }
 
 function twoKinds(levelNumber, separation = 2) {
@@ -108,11 +162,19 @@ function compoundGeometryMoveBonus(levelObjective, difficulty) {
 
 function buildSpec({ levelNumber, start, chapter, baseTarget, targetStep, baseMoves, objectiveFactory = null }) {
   const position = chapterPosition(levelNumber, start);
-  const levelObjective = objectiveFactory ? objectiveFactory({ ...position, levelNumber }) : objective();
+  const authoredObjective = objectiveFactory ? objectiveFactory({ ...position, levelNumber }) : objective();
+  const levelObjective = applyLateObjectiveTuning(levelNumber, authoredObjective);
+  const tuning = lateLevelTuning(levelNumber);
   const hard = position.wave.difficulty === "hard" || position.wave.difficulty === "super-hard";
   return {
     target: roundedTarget((baseTarget + position.offset * targetStep) * position.wave.targetFactor),
-    moves: Math.max(12, baseMoves + position.wave.moveDelta + compoundGeometryMoveBonus(levelObjective, position.wave.difficulty)),
+    moves: Math.max(
+      12,
+      baseMoves
+        + position.wave.moveDelta
+        + compoundGeometryMoveBonus(levelObjective, position.wave.difficulty)
+        + Number(tuning.moveDelta || 0),
+    ),
     hard,
     difficulty: position.wave.difficulty,
     chapter,
@@ -222,10 +284,80 @@ function campaignSpec(levelNumber) {
       },
     });
   }
+  if (levelNumber === 300) {
+    const [firstKind, secondKind] = twoKinds(levelNumber, 2);
+    return {
+      target: 18000, moves: 24, hard: true, difficulty: "super-hard", chapter: "capstone",
+      objective: objective({ collect: [{ kind: firstKind, count: 18 }, { kind: secondKind, count: 18 }], ice: { count: 10, layers: 2, pattern: "cross" } }),
+    };
+  }
+  if (levelNumber <= 330) {
+    return buildSpec({
+      levelNumber, start: 301, chapter: "advanced-mastery", baseTarget: 11800, targetStep: 95, baseMoves: 24,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        const layers = phase === 0 ? 1 : 2;
+        return objective({
+          collect: [{ kind: (levelNumber + phase) % TILE_KINDS, count: scaleCount(8 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor) }],
+          ice: { count: lateIceCount(4 + phase + Math.floor(within / 4), wave.objectiveFactor, pattern, { layers }), layers, pattern },
+        });
+      },
+    });
+  }
+  if (levelNumber <= 360) {
+    return buildSpec({
+      levelNumber, start: 331, chapter: "ice-remix", baseTarget: 12600, targetStep: 100, baseMoves: 24,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        return objective({
+          collect: [{ kind: (levelNumber + phase + 1) % TILE_KINDS, count: scaleCount(9 + phase + Math.floor(within / 4), wave.objectiveFactor) }],
+          ice: { count: lateIceCount(5 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor, pattern, { layers: 2 }), layers: 2, pattern },
+        });
+      },
+    });
+  }
+  if (levelNumber <= 390) {
+    return buildSpec({
+      levelNumber, start: 361, chapter: "collection-remix", baseTarget: 13200, targetStep: 110, baseMoves: 23,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const [firstKind, secondKind] = twoKinds(levelNumber, 3);
+        const count = scaleCount(9 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor);
+        return objective({ collect: [{ kind: firstKind, count }, { kind: secondKind, count }] });
+      },
+    });
+  }
+  if (levelNumber <= 420) {
+    return buildSpec({
+      levelNumber, start: 391, chapter: "advanced-mix", baseTarget: 13800, targetStep: 115, baseMoves: 25,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const [firstKind, secondKind] = twoKinds(levelNumber, 2);
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        const count = scaleCount(9 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor);
+        return objective({
+          collect: [{ kind: firstKind, count }, { kind: secondKind, count }],
+          ice: { count: lateIceCount(4 + phase + Math.floor(within / 3), wave.objectiveFactor, pattern, { layers: 2 }), layers: 2, pattern },
+        });
+      },
+    });
+  }
+  if (levelNumber < 450) {
+    return buildSpec({
+      levelNumber, start: 421, chapter: "veteran-remix", baseTarget: 14600, targetStep: 120, baseMoves: 25,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const [firstKind, secondKind] = twoKinds(levelNumber, 2);
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        const count = scaleCount(10 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor);
+        return objective({
+          collect: [{ kind: firstKind, count }, { kind: secondKind, count }],
+          ice: { count: lateIceCount(5 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor, pattern, { layers: 2 }), layers: 2, pattern },
+        });
+      },
+    });
+  }
   const [firstKind, secondKind] = twoKinds(levelNumber, 2);
   return {
-    target: 18000, moves: 24, hard: true, difficulty: "super-hard", chapter: "capstone",
-    objective: objective({ collect: [{ kind: firstKind, count: 18 }, { kind: secondKind, count: 18 }], ice: { count: 10, layers: 2, pattern: "cross" } }),
+    target: 22000, moves: 26, hard: true, difficulty: "super-hard", chapter: "veteran-capstone",
+    objective: objective({ collect: [{ kind: firstKind, count: 18 }, { kind: secondKind, count: 18 }], ice: { count: 9, layers: 2, pattern: "cross" } }),
   };
 }
 
@@ -300,10 +432,21 @@ export function listLegalMoves(board) {
   return moves;
 }
 export function hasLegalMove(board) { return listLegalMoves(board).length > 0; }
-export function createBoard({ rng }) {
+function wouldCreateImmediateSquare(candidate, index, board) {
+  const row = Math.floor(index / BOARD_SIZE);
+  const col = index % BOARD_SIZE;
+  if (row < 1 || col < 1) return false;
+  return board[index - 1] === candidate
+    && board[index - BOARD_SIZE] === candidate
+    && board[index - BOARD_SIZE - 1] === candidate;
+}
+export function createBoard({ rng, rules = {} }) {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     const next = [];
-    for (let index = 0; index < BOARD_SIZE * BOARD_SIZE; index += 1) { let candidate = randomKind(rng); let guard = 0; while (wouldCreateImmediateMatch(candidate, index, next) && guard < 20) { candidate = randomKind(rng); guard += 1; } next.push(candidate); }
+    for (let index = 0; index < BOARD_SIZE * BOARD_SIZE; index += 1) { let candidate = randomKind(rng); let guard = 0; while (
+        (wouldCreateImmediateMatch(candidate, index, next) || (rules?.fish === true && wouldCreateImmediateSquare(candidate, index, next)))
+        && guard < 20
+      ) { candidate = randomKind(rng); guard += 1; } next.push(candidate); }
     if (hasLegalMove(next)) return next;
   }
   return Array.from({ length: BOARD_SIZE * BOARD_SIZE }, () => randomKind(rng));

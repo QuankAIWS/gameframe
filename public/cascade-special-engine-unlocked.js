@@ -28,9 +28,13 @@ export const CASCADE_LEVELS = Object.freeze(baseCascadeLevels.map((level) => Obj
 })));
 
 function unlockedOptions(options) {
+  const supplied = options && typeof options === "object" ? options : {};
   return {
-    ...(options && typeof options === "object" ? options : {}),
-    rules: FULL_SPECIAL_RULES,
+    ...supplied,
+    rules: {
+      ...FULL_SPECIAL_RULES,
+      fish: supplied.rules?.fish === true,
+    },
   };
 }
 

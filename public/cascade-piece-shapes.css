@@ -185,6 +185,53 @@
   );
 }
 
+/* Fish is a large, literal smart-target marker so it remains obvious on phones
+ * and to older eyes while the candy family underneath is still visible. */
+.cascade-tile[data-special="fish"] .cascade-special-mark {
+  position: absolute;
+  z-index: 3;
+  left: 20%;
+  top: 31%;
+  width: 58%;
+  height: 34%;
+  inset: auto;
+  overflow: visible;
+  border: 2px solid rgba(72, 61, 113, .46);
+  border-radius: 52% 64% 64% 52%;
+  background:
+    linear-gradient(155deg, rgba(255,255,255,.96) 0 18%, #a8f3ff 36%, #67d8f2 63%, #ffd86d 100%);
+  box-shadow:
+    inset 0 -3px 0 rgba(66,112,151,.2),
+    0 0 0 1px rgba(255,255,255,.72),
+    0 3px 6px rgba(82,57,113,.28);
+  transform: rotate(-7deg);
+  opacity: 1;
+}
+
+.cascade-tile[data-special="fish"] .cascade-special-mark::before {
+  content: "";
+  position: absolute;
+  left: -31%;
+  top: 4%;
+  width: 38%;
+  height: 90%;
+  background: linear-gradient(135deg, #7ee5f7, #ffd86d);
+  clip-path: polygon(100% 50%, 0 0, 18% 50%, 0 100%);
+  filter: drop-shadow(-1px 2px 1px rgba(82,57,113,.22));
+}
+
+.cascade-tile[data-special="fish"] .cascade-special-mark::after {
+  content: "";
+  position: absolute;
+  right: 14%;
+  top: 24%;
+  width: 12%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #2d2440;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.92);
+}
+
 /* The color clearer is intentionally the one exception: it is a unique rainbow
  * orb rather than pretending to belong to a normal family.
  */

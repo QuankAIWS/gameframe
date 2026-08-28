@@ -1,4 +1,4 @@
-const CACHE_VERSION = "gameframe-static-v22";
+const CACHE_VERSION = "gameframe-static-v26";
 
 // This is the first intentionally complete GameFrame offline pack. Keep it
 // limited to the lightweight shell plus experiences that can genuinely execute
