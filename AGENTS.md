@@ -90,6 +90,9 @@ Durable encounter→match restart/reconnect authority, shared-team tactical cont
 - Treat workflow logs, artifacts, screenshots, traces, branches, pull requests, and commit history as public information.
 - Public-repository workflows must use GitHub-hosted runners. Do not execute public repository code on persistent self-hosted runners.
 - Third-party code, assets, and data require documented provenance, compatible licensing, and attribution.
+- Cascade historical testing evidence is stored in the private `QuankAIWS/rpg-gm-runtime` repository under `archive/cascade-testing/`; GameFrame remains the owner of that evidence even though the private repository is the storage location.
+- GitHub Actions artifacts are transient, not the historical record. Meaningful Cascade bot baselines, calibration profiles, fragility reports, and human-playtest snapshots must be copied to the private archive with the GameFrame commit and workflow/run provenance before transient artifacts expire.
+- Raw Cascade player telemetry, stable player IDs, session IDs, and other private player-level records must stay in private storage. Public GameFrame may retain aggregate or anonymized analysis only.
 
 ## Development and validation posture
 

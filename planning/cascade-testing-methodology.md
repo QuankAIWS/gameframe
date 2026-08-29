@@ -222,6 +222,25 @@ The shipping gate remains conservative:
 
 After sufficient replayable human data exists, human-persona envelopes can become authoring warnings first. They should become hard CI gates only after the model has demonstrated useful agreement with real players.
 
+## Historical evidence archive
+
+The canonical long-term store for Cascade testing history is the private `QuankAIWS/rpg-gm-runtime` repository at `archive/cascade-testing/`. This is a storage boundary only: GameFrame continues to own the Cascade levels, simulator, telemetry contracts, calibration policy, and interpretation of the evidence.
+
+GitHub Actions artifacts are temporary execution evidence and must not be treated as durable history. Preserve a meaningful baseline when it is used to tune levels, calibrate a persona, establish a regression reference, or interpret family play by copying the relevant evidence into the private archive before the Actions artifact expires.
+
+Each retained bot/calibration snapshot should record, when available:
+
+- the exact GameFrame commit and related PR;
+- workflow run/job and original artifact identifiers;
+- simulator rules/version and level range;
+- seed base and solver/human-persona run counts;
+- exact machine-readable profile, fragility report, or surviving workflow-log profile block;
+- whether the evidence is an original artifact, exact log recovery, deterministic reconstruction, or narrative historical record.
+
+Do not overwrite an older snapshot when levels, rules, Fish behavior, persona weights, or simulator logic change. Add a new dated phase so later work can compare against the historical campaign state that actually produced the result.
+
+Human playtest exports containing player IDs, session IDs, or raw event streams stay private. Public GameFrame may contain aggregate/anonymized conclusions and the analysis tooling, but not the raw player export. If an old artifact must be reconstructed from an immutable historical GameFrame commit because the original bytes are gone, label it as reconstructed rather than presenting it as the original run.
+
 ## Data interpretation boundary
 
 Automated difficulty is one input, not the final product decision.
