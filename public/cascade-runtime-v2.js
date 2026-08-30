@@ -33,6 +33,7 @@ const BLITZ_SECONDS = 30;
 const BLITZ_AFTER_LEVELS = Object.freeze(new Set([
   5, 12, 20, 30, 45, 60, 75, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290,
   310, 330, 350, 370, 390, 410, 430, 450, 470, 490, 510, 530, 550, 570, 590,
+  610, 630, 650, 670, 690, 710, 730,
 ]));
 const LEVEL_MAP_WINDOW = 30;
 const PRESENTATION = Object.freeze({
