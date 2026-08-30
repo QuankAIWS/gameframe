@@ -161,69 +161,96 @@ At level 1,000, explicitly review both ordinary level difficulty and the new cog
 
 This checkpoint is deliberately before the campaign reaches 3,000 so the second half can benefit from real play.
 
-### 1,451–1,700 — Generators / producers
+### 1,051–1,250 — Regrowing / spreading blockers
 
-Primary new rule: board elements create objective pieces or blockers when activated.
+Primary rule: an unresolved blocker can reproduce or reclaim cells at end of turn.
 
 Decision changes:
 
-- the player may need to manufacture the thing they later collect;
-- activation order and producer access matter;
-- producer + cage + drop combinations create dependency chains.
+- urgency and containment enter the puzzle;
+- allowing a threat to survive has an opportunity cost;
+- local tactics compete with long-term control.
 
-Producer output must be deterministic under the board RNG and fully understood by simulator/replay tooling.
+Growth must be bounded and deterministic enough for the simulator to profile reliably. This family should not be stacked with difficult memory tasks on introduction.
 
-### 1,701–1,950 — Reveal / access systems
+### 1,251–1,450 — Reveal / access systems
 
-Primary new rule: curtains, gates, covers, or similar elements hide or isolate regions until conditions are met.
+Primary rule: curtains, gates, covers, or similar elements hide or isolate board regions until conditions are met.
 
 Decision changes:
 
 - the available board changes during the level;
 - early moves can be about opening future space;
-- objectives can be staged without requiring a separate game scene.
+- objectives can be staged without requiring another scene.
 
-### 1,951–2,200 — Portals
+These systems can later support memory-aware variants, but their initial form should remain visually explicit.
 
-Primary new rule: gravity can transfer pieces between linked entry/exit cells.
+### 1,451–1,700 — Advanced producer / dependency chains
+
+Generators/Producers are already introduced around 901–950. This later slice deepens them rather than introducing them again.
+
+Use:
+
+- producer + cage dependencies;
+- producer + Drop routing;
+- producers that create required objectives;
+- controlled multi-step dependency chains.
+
+No new cognitive family is required here unless level-1,000 family data clearly supports one.
+
+### 1,701–1,950 — Portals
+
+Primary rule: gravity can transfer pieces between linked entry/exit cells.
 
 Decision changes:
 
 - board topology becomes non-Euclidean;
 - vertical planning no longer maps directly to screen position;
-- drop objects and producers gain substantially more depth.
+- Drop objects and producers gain substantially more depth.
 
 Portals must expose their routing graph to the simulator and level validator.
 
-### 2,201–2,450 — Conveyors / moving board elements
+### 1,951–2,200 — Conveyors / moving board elements
 
-Primary new rule: selected cells or occupants move automatically at turn boundaries.
+Primary rule: selected cells or occupants move automatically at turn boundaries.
 
 Decision changes:
 
 - board state changes even when the player does not directly touch an element;
 - timing and prediction become important;
-- moving objectives can create controlled dynamism without random hazards.
+- moving objectives create controlled dynamism without random hazards.
 
-### 2,451–2,650 — Special-only armor / charged devices
+### 2,201–2,450 — Special-only armor / charged devices
 
-Primary new rule: some elements require specials, combinations, or accumulated charge rather than ordinary matches.
+Primary rule: some elements require specials, combinations, or accumulated charge rather than ordinary matches.
 
 Decision changes:
 
 - special creation becomes mandatory rather than merely advantageous;
 - players must preserve and position specials deliberately;
-- Butterfly can remain useful without becoming a universal answer.
+- Butterfly remains useful without becoming a universal answer.
 
-### 2,651–2,800 — Toggle / alternating elements
+### 2,451–2,650 — Toggle / alternating elements
 
-Primary new rule: elements change state on a deterministic turn cadence or after specific actions.
+Primary rule: elements change state on a deterministic turn cadence or after specific actions.
 
 Decision changes:
 
 - timing joins color and position as a planning axis;
 - the same move can be good or bad depending on current state;
-- later conveyors/portals can interact with timing without introducing more raw blocker health.
+- the mechanic naturally exercises cognitive flexibility without becoming a memory test.
+
+### 2,651–2,800 — Cross-system mastery prelude
+
+Introduce few or no foundational mechanics.
+
+Use the established vocabulary to practice:
+
+- producer + portal routing;
+- Recall Locks with already-mastered spatial systems;
+- Ground + conveyors;
+- toggles + color conditions;
+- memory accents only when visual load remains manageable.
 
 ### 2,801–3,000 — First milestone mastery arc
 
