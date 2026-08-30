@@ -6,6 +6,8 @@ import {
   CASCADE_LEVELS,
   CHAPTER_SIZE,
   LEVEL_COUNT,
+  advanceBloomProgress,
+  advanceGroundProgress,
   applyLevelProgress,
   applySwap,
   createBoard,
@@ -440,67 +442,57 @@ test("levels 751-900 introduce Memory Blooms, Enchanted Ground, and controlled r
 });
 
 test("Memory Blooms reveal, mismatch safely, and collect only matching fixed pairs", () => {
-  const level = CASCADE_LEVELS[750];
-  const initial = createLevelProgress(level);
-  const bySymbol = new Map();
-  initial.blooms.symbols.forEach((symbol, index) => {
-    if (symbol < 0) return;
-    if (!bySymbol.has(symbol)) bySymbol.set(symbol, []);
-    bySymbol.get(symbol).push(index);
-  });
-  const pair = [...bySymbol.values()].find((indices) => indices.length >= 2);
-  assert.ok(pair);
-
-  const adjacentClear = (index) => {
-    const row = Math.floor(index / 8);
-    const col = index % 8;
-    if (col < 7) return index + 1;
-    if (col > 0) return index - 1;
-    if (row < 7) return index + 8;
-    return index - 8;
+  const value = {
+    totalPairs: 2,
+    collectedPairs: 0,
+    activeIndex: -1,
+    symbols: Array(64).fill(-1),
+    lastEvents: [],
   };
+  value.symbols[9] = 2;
+  value.symbols[54] = 2;
+  value.symbols[18] = 4;
+  value.symbols[45] = 4;
 
-  const first = applyLevelProgress(level, initial, {
-    transitions: [{ matchedForProgress: [adjacentClear(pair[0])], clearedKindCounts: Array(6).fill(0) }],
-    clearedKindCounts: Array(6).fill(0),
-  });
-  assert.equal(first.blooms.activeIndex, pair[0]);
-  assert.equal(first.blooms.collectedPairs, 0);
-  assert.equal(first.blooms.lastEvents[0].type, "open");
+  const first = advanceBloomProgress(value, [8]);
+  assert.equal(first.activeIndex, 9);
+  assert.equal(first.collectedPairs, 0);
+  assert.equal(first.lastEvents[0].type, "open");
 
-  const second = applyLevelProgress(level, first, {
-    transitions: [{ matchedForProgress: [adjacentClear(pair[1])], clearedKindCounts: Array(6).fill(0) }],
-    clearedKindCounts: Array(6).fill(0),
-  });
-  assert.equal(second.blooms.collectedPairs, 1);
-  assert.equal(second.blooms.activeIndex, -1);
-  assert.equal(second.blooms.lastEvents.at(-1).type, "match");
-  assert.equal(second.blooms.symbols[pair[0]], -1);
-  assert.equal(second.blooms.symbols[pair[1]], -1);
+  const mismatch = advanceBloomProgress(first, [17]);
+  assert.equal(mismatch.activeIndex, -1);
+  assert.equal(mismatch.collectedPairs, 0);
+  assert.equal(mismatch.lastEvents.at(-1).type, "mismatch");
+  assert.equal(mismatch.symbols[9], 2);
+  assert.equal(mismatch.symbols[18], 4);
+
+  const reopen = advanceBloomProgress(mismatch, [8]);
+  const matched = advanceBloomProgress(reopen, [55]);
+  assert.equal(matched.collectedPairs, 1);
+  assert.equal(matched.activeIndex, -1);
+  assert.equal(matched.lastEvents.at(-1).type, "match");
+  assert.equal(matched.symbols[9], -1);
+  assert.equal(matched.symbols[54], -1);
 });
 
 test("Enchanted Ground spreads only when a clear touches existing magic", () => {
-  const level = CASCADE_LEVELS[800];
-  const initial = createLevelProgress(level);
-  const seed = initial.ground.covered.findIndex(Boolean);
-  assert.ok(seed >= 0);
-  const row = Math.floor(seed / 8);
-  const neighbor = seed % 8 < 7 ? seed + 1 : seed - 1;
-  assert.equal(initial.ground.covered[neighbor], false);
+  const value = {
+    target: 12,
+    covered: Array(64).fill(false),
+    count: 1,
+    lastSpread: [],
+  };
+  value.covered[27] = true;
 
-  const untouched = applyLevelProgress(level, initial, {
-    transitions: [{ matchedForProgress: [row === 0 ? 56 : 0], clearedKindCounts: Array(6).fill(0) }],
-    clearedKindCounts: Array(6).fill(0),
-  });
-  assert.equal(untouched.ground.count, initial.ground.count);
+  const untouched = advanceGroundProgress(value, [0, 1, 2]);
+  assert.equal(untouched.count, 1);
+  assert.deepEqual(untouched.lastSpread, []);
 
-  const spread = applyLevelProgress(level, initial, {
-    transitions: [{ matchedForProgress: [seed, neighbor], clearedKindCounts: Array(6).fill(0) }],
-    clearedKindCounts: Array(6).fill(0),
-  });
-  assert.equal(spread.ground.covered[neighbor], true);
-  assert.equal(spread.ground.count, initial.ground.count + 1);
-  assert.deepEqual(spread.ground.lastSpread, [neighbor]);
+  const spread = advanceGroundProgress(value, [26, 27, 28]);
+  assert.equal(spread.covered[26], true);
+  assert.equal(spread.covered[28], true);
+  assert.equal(spread.count, 3);
+  assert.deepEqual(spread.lastSpread, [26, 28]);
 });
 
 test("representative campaign sentinels exercise the objective-aware lookahead bot without engine errors", () => {
