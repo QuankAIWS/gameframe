@@ -293,7 +293,7 @@ Acceptance criteria for a useful learned model:
 
 ### Checkpoint 450
 
-Current implementation slice. Validate Butterfly, early-campaign balance, testing infrastructure, and outlier handling.
+Historical accepted checkpoint for Butterfly, early-campaign balance, testing infrastructure, and outlier handling.
 
 ### Checkpoint 850
 
