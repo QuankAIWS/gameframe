@@ -1,6 +1,6 @@
 export const BOARD_SIZE = 8;
 export const TILE_KINDS = 6;
-export const LEVEL_COUNT = 750;
+export const LEVEL_COUNT = 900;
 export const CAMPAIGN_CAPACITY = 10000;
 export const CAMPAIGN_MILESTONE = 3000;
 export const CHAPTER_SIZE = 30;
@@ -40,6 +40,8 @@ function mechanicsForLevel(levelNumber) {
   if (levelNumber >= 451) mechanics.push("drop");
   if (levelNumber >= 651) mechanics.push("locks");
   if (levelNumber >= 701) mechanics.push("recall-locks");
+  if (levelNumber >= 751) mechanics.push("memory-blooms");
+  if (levelNumber >= 801) mechanics.push("enchanted-ground");
   return mechanics;
 }
 
@@ -47,7 +49,7 @@ function collectGoal(kind, count) {
   return Object.freeze({ kind, count });
 }
 
-function objective({ collect = [], ice = null, drop = null, locks = null } = {}) {
+function objective({ collect = [], ice = null, drop = null, locks = null, blooms = null, ground = null } = {}) {
   return Object.freeze({
     collect: Object.freeze(collect.map((item) => collectGoal(item.kind, item.count))),
     ice: ice ? Object.freeze({ ...ice }) : null,
@@ -64,6 +66,19 @@ function objective({ collect = [], ice = null, drop = null, locks = null } = {})
           layers: Math.max(1, Math.min(2, Math.floor(Number(locks.layers) || 1))),
           pattern: String(locks.pattern || "center"),
           recall: locks.recall === true,
+        })
+      : null,
+    blooms: blooms
+      ? Object.freeze({
+          pairs: Math.max(1, Math.min(4, Math.floor(Number(blooms.pairs) || 2))),
+          pattern: String(blooms.pattern || "center"),
+        })
+      : null,
+    ground: ground
+      ? Object.freeze({
+          target: Math.max(4, Math.min(BOARD_SIZE * BOARD_SIZE, Math.floor(Number(ground.target) || 16))),
+          seeds: Math.max(1, Math.min(8, Math.floor(Number(ground.seeds) || 3))),
+          pattern: String(ground.pattern || "center"),
         })
       : null,
   });
@@ -179,6 +194,8 @@ function applyLateObjectiveTuning(levelNumber, levelObjective) {
           pattern: tuning.lockPattern || levelObjective.locks.pattern,
         }
       : null,
+    blooms: levelObjective?.blooms ? { ...levelObjective.blooms } : null,
+    ground: levelObjective?.ground ? { ...levelObjective.ground } : null,
   });
 }
 
@@ -230,6 +247,11 @@ function compoundGeometryMoveBonus(levelObjective, difficulty) {
   } else if (levelObjective?.locks && difficulty === "relief") {
     bonus += 1;
   }
+  if (levelObjective?.blooms) {
+    if (difficulty === "relief") bonus += 2;
+    else if (difficulty === "normal") bonus += 1;
+  }
+  if (levelObjective?.ground && difficulty === "relief") bonus += 1;
   return bonus;
 }
 
@@ -578,15 +600,131 @@ function campaignSpec(levelNumber) {
       },
     });
   }
+  if (levelNumber <= 750) {
+    return buildSpec({
+      levelNumber, start: 731, chapter: "recall-lock-mix", baseTarget: 19600, targetStep: 95, baseMoves: 38,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const [firstKind] = twoKinds(levelNumber, 2);
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+        return objective({
+          locks: { count: wave.difficulty === "relief" ? 2 : phase === 0 ? 2 : 3, layers: 1, pattern, recall: true },
+          collect: [{ kind: firstKind, count: scaleCount(5 + phase + Math.floor(within / 6), Math.min(1, wave.objectiveFactor)) }],
+          drop: phase >= 1 && within >= 7 ? dropObjective(levelNumber, 1, phase) : null,
+        });
+      },
+    });
+  }
+  if (levelNumber <= 780) {
+    return buildSpec({
+      levelNumber, start: 751, chapter: "memory-bloom-intro", baseTarget: 19800, targetStep: 90, baseMoves: 40,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+        const firstTeachingWave = phase === 0;
+        const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        if (firstTeachingWave && pressureBeat) {
+          return objective({ locks: { count: 5 + (within >= 9 ? 1 : 0), layers: 1, pattern, recall: false } });
+        }
+        const pairs = wave.difficulty === "relief" ? 2 : phase >= 2 ? 3 : (phase === 1 && within >= 6 ? 3 : 2);
+        return objective({ blooms: { pairs, pattern } });
+      },
+    });
+  }
+  if (levelNumber <= 800) {
+    return buildSpec({
+      levelNumber, start: 781, chapter: "memory-bloom-mix", baseTarget: 20200, targetStep: 90, baseMoves: 41,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const [firstKind] = twoKinds(levelNumber, 2);
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+        return objective({
+          blooms: { pairs: wave.difficulty === "relief" ? 2 : 3, pattern },
+          collect: [{ kind: firstKind, count: scaleCount(4 + phase + Math.floor(within / 6), Math.min(1, wave.objectiveFactor)) }],
+        });
+      },
+    });
+  }
+  if (levelNumber <= 830) {
+    return buildSpec({
+      levelNumber, start: 801, chapter: "enchanted-ground-intro", baseTarget: 20400, targetStep: 90, baseMoves: 38,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        const firstTeachingWave = phase === 0;
+        const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        if (firstTeachingWave && pressureBeat) {
+          return objective({ locks: { count: 6, layers: 1, pattern, recall: false } });
+        }
+        return objective({
+          ground: {
+            target: scaleCount(14 + phase * 3 + Math.floor(within / 4), Math.min(1.05, wave.objectiveFactor)),
+            seeds: 3 + (phase >= 2 ? 1 : 0),
+            pattern,
+          },
+        });
+      },
+    });
+  }
+  if (levelNumber <= 850) {
+    return buildSpec({
+      levelNumber, start: 831, chapter: "enchanted-ground-mix", baseTarget: 20800, targetStep: 95, baseMoves: 39,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const [firstKind] = twoKinds(levelNumber, 3);
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        return objective({
+          ground: {
+            target: scaleCount(20 + phase * 3 + Math.floor(within / 4), Math.min(1.08, wave.objectiveFactor)),
+            seeds: 4,
+            pattern,
+          },
+          collect: [{ kind: firstKind, count: scaleCount(5 + phase + Math.floor(within / 6), Math.min(1, wave.objectiveFactor)) }],
+        });
+      },
+    });
+  }
+  if (levelNumber <= 870) {
+    return buildSpec({
+      levelNumber, start: 851, chapter: "bloom-ground-remix", baseTarget: 21000, targetStep: 95, baseMoves: 42,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+        return objective({
+          blooms: { pairs: wave.difficulty === "relief" ? 2 : 3, pattern },
+          ground: {
+            target: scaleCount(15 + phase * 2 + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)),
+            seeds: 4,
+            pattern,
+          },
+        });
+      },
+    });
+  }
+  if (levelNumber <= 885) {
+    return buildSpec({
+      levelNumber, start: 871, chapter: "ground-route-remix", baseTarget: 21400, targetStep: 100, baseMoves: 41,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        return objective({
+          ground: {
+            target: scaleCount(18 + phase * 2 + Math.floor(within / 5), Math.min(1.05, wave.objectiveFactor)),
+            seeds: 4,
+            pattern,
+          },
+          locks: { count: scaleCount(4 + phase + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)), layers: 1, pattern, recall: false },
+          drop: within >= 7 ? dropObjective(levelNumber, 1, phase) : null,
+        });
+      },
+    });
+  }
   return buildSpec({
-    levelNumber, start: 731, chapter: "recall-lock-mix", baseTarget: 19600, targetStep: 95, baseMoves: 38,
+    levelNumber, start: 886, chapter: "cognitive-spatial-remix", baseTarget: 21800, targetStep: 105, baseMoves: 43,
     objectiveFactory: ({ phase, within, wave }) => {
-      const [firstKind] = twoKinds(levelNumber, 2);
       const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+      const useRecall = within % 3 === 0;
       return objective({
-        locks: { count: wave.difficulty === "relief" ? 2 : phase === 0 ? 2 : 3, layers: 1, pattern, recall: true },
-        collect: [{ kind: firstKind, count: scaleCount(5 + phase + Math.floor(within / 6), Math.min(1, wave.objectiveFactor)) }],
-        drop: phase >= 1 && within >= 7 ? dropObjective(levelNumber, 1, phase) : null,
+        ground: {
+          target: scaleCount(16 + phase * 2 + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)),
+          seeds: 4,
+          pattern,
+        },
+        blooms: useRecall ? null : { pairs: wave.difficulty === "relief" ? 2 : 3, pattern },
+        locks: useRecall ? { count: wave.difficulty === "relief" ? 2 : 3, layers: 1, pattern, recall: true } : null,
       });
     },
   });
@@ -891,9 +1029,150 @@ export function chipLockProgress(lockProgress, board, clearIndices, { allowRecal
   return { before, after, hits };
 }
 
+function createBloomProgress(levelDefinition, dropProgress = null, lockProgress = null) {
+  const spec = levelDefinition?.objective?.blooms;
+  const symbols = Array(BOARD_SIZE * BOARD_SIZE).fill(-1);
+  if (!spec?.pairs) return { totalPairs: 0, collectedPairs: 0, activeIndex: -1, symbols, lastEvents: [] };
+  const blocked = new Set([
+    ...(dropProgress?.tokens || []).map((token) => Number(token.index)),
+    ...(dropProgress?.exits || []).map(Number),
+    ...(lockProgress?.layers || []).flatMap((layer, index) => Number(layer) > 0 ? [index] : []),
+  ]);
+  const cells = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
+    const row = Math.floor(index / BOARD_SIZE);
+    const col = index % BOARD_SIZE;
+    return { index, score: patternScore(spec.pattern, row, col) };
+  }).filter(({ index }) => !blocked.has(index));
+  cells.sort((a, b) => a.score - b.score || ((a.index * 29 + levelDefinition.level * 31) % 79) - ((b.index * 29 + levelDefinition.level * 31) % 79));
+  const pairCount = Math.min(Math.floor(cells.length / 2), Math.max(1, Math.floor(Number(spec.pairs) || 2)));
+  const chosen = cells.slice(0, pairCount * 2);
+  for (let pair = 0; pair < pairCount; pair += 1) {
+    const symbol = (levelDefinition.level + pair * 2) % TILE_KINDS;
+    const first = chosen[pair];
+    const second = chosen[pair + pairCount];
+    if (first) symbols[first.index] = symbol;
+    if (second) symbols[second.index] = symbol;
+  }
+  return { totalPairs: pairCount, collectedPairs: 0, activeIndex: -1, symbols, lastEvents: [] };
+}
+
+export function normalizeBloomProgress(value) {
+  const symbols = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
+    const symbol = Math.floor(Number(value?.symbols?.[index]));
+    return Number.isInteger(symbol) && symbol >= 0 && symbol < TILE_KINDS ? symbol : -1;
+  });
+  const remainingPairs = Math.floor(symbols.filter((symbol) => symbol >= 0).length / 2);
+  const totalPairs = Math.max(0, Math.floor(Number(value?.totalPairs) || remainingPairs));
+  const activeIndex = Math.floor(Number(value?.activeIndex));
+  return {
+    totalPairs,
+    collectedPairs: Math.max(0, Math.min(totalPairs, Math.floor(Number(value?.collectedPairs) || (totalPairs - remainingPairs)))),
+    activeIndex: Number.isInteger(activeIndex) && activeIndex >= 0 && activeIndex < symbols.length && symbols[activeIndex] >= 0 ? activeIndex : -1,
+    symbols,
+    lastEvents: Array.isArray(value?.lastEvents) ? value.lastEvents.map((event) => ({ ...event, indices: (event.indices || []).slice(), symbols: (event.symbols || []).slice() })) : [],
+  };
+}
+
+function bloomTriggerIndices(clearIndices, blooms) {
+  const clearSet = new Set((clearIndices || []).filter((index) => Number.isInteger(index) && index >= 0 && index < BOARD_SIZE * BOARD_SIZE));
+  const triggered = [];
+  for (let index = 0; index < blooms.symbols.length; index += 1) {
+    if (blooms.symbols[index] < 0) continue;
+    if (clearSet.has(index) || adjacentIndices(index).some((neighbor) => clearSet.has(neighbor))) triggered.push(index);
+  }
+  return triggered.sort((a, b) => a - b);
+}
+
+export function advanceBloomProgress(value, clearIndices) {
+  const next = normalizeBloomProgress(value);
+  const events = [];
+  for (const index of bloomTriggerIndices(clearIndices, next)) {
+    if (next.symbols[index] < 0) continue;
+    if (next.activeIndex < 0) {
+      next.activeIndex = index;
+      events.push({ type: "open", index, symbol: next.symbols[index], indices: [index], symbols: [next.symbols[index]] });
+      continue;
+    }
+    if (next.activeIndex === index) continue;
+    const first = next.activeIndex;
+    const firstSymbol = next.symbols[first];
+    const secondSymbol = next.symbols[index];
+    if (firstSymbol === secondSymbol) {
+      next.symbols[first] = -1;
+      next.symbols[index] = -1;
+      next.collectedPairs = Math.min(next.totalPairs, next.collectedPairs + 1);
+      next.activeIndex = -1;
+      events.push({ type: "match", index, symbol: secondSymbol, indices: [first, index], symbols: [firstSymbol, secondSymbol] });
+    } else {
+      next.activeIndex = -1;
+      events.push({ type: "mismatch", index, symbol: secondSymbol, indices: [first, index], symbols: [firstSymbol, secondSymbol] });
+    }
+  }
+  next.lastEvents = events;
+  return next;
+}
+
+function createGroundProgress(levelDefinition, dropProgress = null, lockProgress = null, bloomProgress = null) {
+  const spec = levelDefinition?.objective?.ground;
+  const covered = Array(BOARD_SIZE * BOARD_SIZE).fill(false);
+  if (!spec?.target) return { target: 0, covered, count: 0, lastSpread: [] };
+  const blocked = new Set([
+    ...(dropProgress?.exits || []).map(Number),
+    ...(lockProgress?.layers || []).flatMap((layer, index) => Number(layer) > 0 ? [index] : []),
+  ]);
+  const cells = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
+    const row = Math.floor(index / BOARD_SIZE);
+    const col = index % BOARD_SIZE;
+    return { index, score: patternScore(spec.pattern, row, col) };
+  }).filter(({ index }) => !blocked.has(index));
+  cells.sort((a, b) => a.score - b.score || ((a.index * 37 + levelDefinition.level * 17) % 83) - ((b.index * 37 + levelDefinition.level * 17) % 83));
+  const seedCount = Math.min(cells.length, Math.max(1, Math.floor(Number(spec.seeds) || 3)));
+  for (const { index } of cells.slice(0, seedCount)) covered[index] = true;
+  return {
+    target: Math.max(seedCount, Math.min(BOARD_SIZE * BOARD_SIZE, Math.floor(Number(spec.target) || seedCount))),
+    covered,
+    count: covered.filter(Boolean).length,
+    lastSpread: [],
+  };
+}
+
+export function normalizeGroundProgress(value) {
+  const covered = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => value?.covered?.[index] === true);
+  const count = covered.filter(Boolean).length;
+  return {
+    target: Math.max(0, Math.min(BOARD_SIZE * BOARD_SIZE, Math.floor(Number(value?.target) || 0))),
+    covered,
+    count,
+    lastSpread: Array.isArray(value?.lastSpread) ? value.lastSpread.filter((index) => Number.isInteger(index) && index >= 0 && index < BOARD_SIZE * BOARD_SIZE) : [],
+  };
+}
+
+export function advanceGroundProgress(value, clearIndices) {
+  const next = normalizeGroundProgress(value);
+  if (!next.target) return next;
+  const clearSet = new Set((clearIndices || []).filter((index) => Number.isInteger(index) && index >= 0 && index < BOARD_SIZE * BOARD_SIZE));
+  if (![...clearSet].some((index) => next.covered[index])) {
+    next.lastSpread = [];
+    return next;
+  }
+  const spread = [];
+  for (const index of clearSet) {
+    if (!next.covered[index]) {
+      next.covered[index] = true;
+      spread.push(index);
+    }
+  }
+  next.count = next.covered.filter(Boolean).length;
+  next.lastSpread = spread;
+  return next;
+}
+
 export function createLevelProgress(levelDefinition) {
   const drop = createDropProgress(levelDefinition);
-  return { collected: Array(TILE_KINDS).fill(0), ice: createIceBoard(levelDefinition), drop, locks: createLockProgress(levelDefinition, drop) };
+  const locks = createLockProgress(levelDefinition, drop);
+  const blooms = createBloomProgress(levelDefinition, drop, locks);
+  const ground = createGroundProgress(levelDefinition, drop, locks, blooms);
+  return { collected: Array(TILE_KINDS).fill(0), ice: createIceBoard(levelDefinition), drop, locks, blooms, ground };
 }
 
 export function applyLevelProgress(levelDefinition, progress, result) {
@@ -902,11 +1181,22 @@ export function applyLevelProgress(levelDefinition, progress, result) {
     ice: normalizeIce(result?.iceAfter ?? result?.ice ?? progress?.ice),
     drop: normalizeDropProgress(levelDefinition, progress?.drop),
     locks: normalizeLockProgress(result?.locksAfter ?? result?.locks ?? progress?.locks),
+    blooms: normalizeBloomProgress(progress?.blooms),
+    ground: normalizeGroundProgress(progress?.ground),
   };
   addKindCounts(next.collected, result?.clearedKindCounts);
   const steps = Array.isArray(result?.transitions) ? result.transitions : result?.cleared ? [result] : [];
-  if (result?.hammer?.cleared) next.drop = dropStepProgress(next.drop, result.hammer);
-  for (const step of steps) next.drop = dropStepProgress(next.drop, step);
+  if (result?.hammer?.cleared) {
+    next.drop = dropStepProgress(next.drop, result.hammer);
+    next.blooms = advanceBloomProgress(next.blooms, result.hammer.matchedForProgress || result.hammer.matched || []);
+    next.ground = advanceGroundProgress(next.ground, result.hammer.matchedForProgress || result.hammer.matched || []);
+  }
+  for (const step of steps) {
+    next.drop = dropStepProgress(next.drop, step);
+    const clearIndices = step.matchedForProgress || step.matched || [];
+    next.blooms = advanceBloomProgress(next.blooms, clearIndices);
+    next.ground = advanceGroundProgress(next.ground, clearIndices);
+  }
   return next;
 }
 
@@ -916,6 +1206,8 @@ export function objectiveComplete(levelDefinition, progress, score) {
   if (levelDefinition.objective?.ice && (progress?.ice || []).some((layers) => layers > 0)) return false;
   if (levelDefinition.objective?.drop && Number(progress?.drop?.delivered || 0) < Number(levelDefinition.objective.drop.count || 0)) return false;
   if (levelDefinition.objective?.locks && (progress?.locks?.layers || []).some((layer) => Number(layer) > 0)) return false;
+  if (levelDefinition.objective?.blooms && Number(progress?.blooms?.collectedPairs || 0) < Number(levelDefinition.objective.blooms.pairs || 0)) return false;
+  if (levelDefinition.objective?.ground && Number(progress?.ground?.count || 0) < Number(levelDefinition.objective.ground.target || 0)) return false;
   return true;
 }
 
@@ -939,6 +1231,14 @@ export function objectiveRemaining(levelDefinition, progress, score) {
     const count = (progress?.locks?.layers || []).reduce((sum, layer) => sum + Math.max(0, Number(layer) || 0), 0);
     if (count > 0) remaining.push({ type: levelDefinition.objective.locks.recall ? "recall-lock" : "lock", count });
   }
+  if (levelDefinition.objective?.blooms) {
+    const count = Math.max(0, Number(levelDefinition.objective.blooms.pairs || 0) - Number(progress?.blooms?.collectedPairs || 0));
+    if (count > 0) remaining.push({ type: "memory-bloom", count });
+  }
+  if (levelDefinition.objective?.ground) {
+    const count = Math.max(0, Number(levelDefinition.objective.ground.target || 0) - Number(progress?.ground?.count || 0));
+    if (count > 0) remaining.push({ type: "ground", count });
+  }
   return remaining;
 }
 
@@ -959,6 +1259,14 @@ export function describeLevelObjective(levelDefinition, progress, score = 0) {
   if (levelDefinition.objective?.locks) {
     const remaining = (progress?.locks?.layers || []).reduce((sum, layer) => sum + Math.max(0, Number(layer) || 0), 0);
     parts.push(`${levelDefinition.objective.locks.recall ? "recall locks" : "locks"} ${remaining} left`);
+  }
+  if (levelDefinition.objective?.blooms) {
+    const current = Math.min(Number(levelDefinition.objective.blooms.pairs || 0), Number(progress?.blooms?.collectedPairs || 0));
+    parts.push(`blooms ${current}/${levelDefinition.objective.blooms.pairs} pairs`);
+  }
+  if (levelDefinition.objective?.ground) {
+    const current = Math.min(Number(levelDefinition.objective.ground.target || 0), Number(progress?.ground?.count || 0));
+    parts.push(`magic ground ${current}/${levelDefinition.objective.ground.target}`);
   }
   return parts.join(" · ");
 }
