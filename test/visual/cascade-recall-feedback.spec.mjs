@@ -17,9 +17,8 @@ test("Quick Recall keeps the player's entered colors visible on mobile", async (
   const stage = dialog.locator("[data-recall-stage]");
   await expect(choices).toBeVisible({ timeout: 8_000 });
   await choices.locator("button").nth(1).click();
-  await choices.locator("button").nth(4).click();
-  await expect(stage.locator(".is-recall-entered")).toHaveCount(2);
-  await expect(dialog.locator("[data-recall-progress]")).toHaveText("REPEAT · 2/3");
+  await expect(stage.locator(".is-recall-entered")).toHaveCount(1);
+  await expect(dialog.locator("[data-recall-progress]")).toHaveText("REPEAT · 1/2");
 
   await page.screenshot({ path: `${output}/cascade-quick-recall-entry-mobile.png`, fullPage: true });
 });
