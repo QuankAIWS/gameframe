@@ -255,17 +255,20 @@
  * stays visible at a smaller scale so its color family still reads immediately.
  * data-special="fish" remains the persisted engine token for save compatibility. */
 .cascade-tile[data-special="fish"]::before {
-  transform: scale(.66);
-  filter: drop-shadow(0 2px 0 rgba(255,255,255,.66)) drop-shadow(0 4px 5px rgba(82,57,113,.18));
+  transform: scale(.48);
+  filter:
+    drop-shadow(0 2px 0 rgba(255,255,255,.72))
+    drop-shadow(0 4px 5px rgba(82,57,113,.16))
+    saturate(1.08);
 }
 
 .cascade-tile[data-special="fish"] .cascade-special-mark {
   position: absolute;
   z-index: 4;
-  left: 44%;
-  top: 27%;
-  width: 12%;
-  height: 46%;
+  left: 46%;
+  top: 21%;
+  width: 8%;
+  height: 58%;
   inset: auto;
   overflow: visible;
   border: 2px solid rgba(82,57,113,.36);
@@ -279,23 +282,29 @@
 .cascade-tile[data-special="fish"] .cascade-special-mark::after {
   content: "";
   position: absolute;
-  top: -5%;
-  width: 245%;
-  height: 84%;
-  border: 2px solid rgba(255,255,255,.78);
-  background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.92) 0 9%, transparent 10%), linear-gradient(145deg, color-mix(in srgb, var(--tile-a) 82%, white), var(--tile-b));
-  box-shadow: inset 0 -3px 0 rgba(82,57,113,.12), 0 2px 5px rgba(82,57,113,.2);
-  clip-path: polygon(50% 2%, 82% 12%, 100% 38%, 91% 66%, 64% 88%, 48% 100%, 24% 77%, 5% 54%, 9% 25%, 30% 8%);
+  top: -3%;
+  width: 405%;
+  height: 106%;
+  border: 2px solid color-mix(in srgb, var(--tile-b) 48%, #6f4f86);
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255,255,255,.98) 0 8%, transparent 9%),
+    radial-gradient(circle at 48% 70%, rgba(255,236,250,.78) 0 11%, transparent 12%),
+    linear-gradient(150deg, color-mix(in srgb, var(--tile-a) 90%, white), var(--tile-b));
+  box-shadow:
+    inset 0 -4px 0 rgba(82,57,113,.13),
+    0 2px 5px rgba(82,57,113,.23),
+    0 0 7px color-mix(in srgb, var(--tile-a) 38%, transparent);
+  clip-path: polygon(100% 48%, 79% 12%, 49% 0, 18% 7%, 0 31%, 12% 53%, 2% 73%, 25% 96%, 55% 100%, 82% 78%);
 }
 
 .cascade-tile[data-special="fish"] .cascade-special-mark::before {
-  right: 72%;
+  right: 58%;
   transform-origin: 100% 54%;
   animation: cascade-butterfly-wing-left 980ms ease-in-out infinite alternate;
 }
 
 .cascade-tile[data-special="fish"] .cascade-special-mark::after {
-  left: 72%;
+  left: 58%;
   transform-origin: 0 54%;
   animation: cascade-butterfly-wing-right 980ms ease-in-out infinite alternate;
 }
@@ -309,8 +318,8 @@
   z-index: 110;
   left: 0;
   top: 0;
-  width: clamp(26px, 4.6vw, 48px);
-  height: clamp(26px, 4.6vw, 48px);
+  width: clamp(38px, 8vw, 62px);
+  height: clamp(38px, 8vw, 62px);
   pointer-events: none;
   filter: drop-shadow(0 4px 6px rgba(82,57,113,.28));
   will-change: transform, opacity;
@@ -331,12 +340,15 @@
 .cascade-butterfly-flight::after {
   content: "";
   position: absolute;
-  top: 4%;
-  width: 49%;
-  height: 73%;
-  border: 2px solid rgba(255,255,255,.82);
-  background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.96) 0 8%, transparent 9%), linear-gradient(145deg, color-mix(in srgb, var(--tile-a, #ff5eaa) 82%, white), var(--tile-b, #d53d86));
-  clip-path: polygon(50% 2%, 82% 12%, 100% 38%, 91% 66%, 64% 88%, 48% 100%, 24% 77%, 5% 54%, 9% 25%, 30% 8%);
+  top: 0;
+  width: 53%;
+  height: 86%;
+  border: 2px solid color-mix(in srgb, var(--tile-b, #d53d86) 52%, #6f4f86);
+  background:
+    radial-gradient(circle at 35% 24%, rgba(255,255,255,.98) 0 8%, transparent 9%),
+    radial-gradient(circle at 48% 70%, rgba(255,236,250,.82) 0 11%, transparent 12%),
+    linear-gradient(150deg, color-mix(in srgb, var(--tile-a, #ff5eaa) 90%, white), var(--tile-b, #d53d86));
+  clip-path: polygon(100% 48%, 79% 12%, 49% 0, 18% 7%, 0 31%, 12% 53%, 2% 73%, 25% 96%, 55% 100%, 82% 78%);
 }
 
 .cascade-butterfly-flight::before {
