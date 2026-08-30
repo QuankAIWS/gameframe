@@ -1,5 +1,6 @@
 import { establishGameFrameIdentity, gameFrameFetch } from "./gameframe-auth.js";
 import { HAMMER_MAX, resolveStarHammerReward } from "./cascade-hammer-economy.js";
+import { LEVEL_COUNT } from "./cascade-engine.js";
 
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
@@ -7,8 +8,9 @@ const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
 const QUICK_RECALL_AFTER_LEVELS = Object.freeze(new Set([
   8, 24, 48, 72, 96, 126, 156, 186, 216, 246, 276,
   306, 336, 366, 396, 426, 456, 486, 516, 546, 576,
+  606, 636, 666, 696, 726,
 ]));
-const RECALL_ROUNDS = Object.freeze([3, 4, 5]);
+const RECALL_ROUNDS = Object.freeze([2, 3, 4]);
 const RECALL_PACE = Object.freeze([
   Object.freeze({ leadIn: 700, show: 1100, gap: 260 }),
   Object.freeze({ leadIn: 650, show: 950, gap: 230 }),
@@ -61,6 +63,18 @@ function totalBestStars(value) {
   // Recall uses a distinct prefixed key so the existing total-star and hammer economy remains backward compatible.
   const bonus = Object.values(value.blitzStars || {}).reduce((sum, stars) => sum + Math.max(0, Math.min(3, Number(stars) || 0)), 0);
   return normal + bonus;
+}
+
+function adaptiveRecallRounds() {
+  const history = Object.values(performanceState().recallBest || {})
+    .map((entry) => Number(entry?.accuracy))
+    .filter((value) => Number.isFinite(value))
+    .slice(-4);
+  if (!history.length) return RECALL_ROUNDS.slice();
+  const average = history.reduce((sum, value) => sum + value, 0) / history.length;
+  if (average >= .88) return [3, 4, 5];
+  if (average >= .68) return [2, 3, 4];
+  return [2, 2, 3];
 }
 
 function recallStars(accuracy) {
@@ -198,7 +212,7 @@ function continueAfterRecall() {
   window.location.reload();
 }
 
-async function playRecallRound(dialog, roundIndex, sequence) {
+async function playRecallRound(dialog, roundIndex, sequence, totalRounds) {
   const title = dialog.querySelector("[data-recall-title]");
   const copy = dialog.querySelector("[data-recall-copy]");
   const stage = dialog.querySelector("[data-recall-stage]");
@@ -206,7 +220,7 @@ async function playRecallRound(dialog, roundIndex, sequence) {
   const choices = dialog.querySelector("[data-recall-choices]");
   const actions = dialog.querySelector("[data-recall-actions]");
   const pace = RECALL_PACE[roundIndex] || RECALL_PACE.at(-1);
-  title.textContent = `Round ${roundIndex + 1} of ${RECALL_ROUNDS.length}`;
+  title.textContent = `Round ${roundIndex + 1} of ${totalRounds}`;
   copy.textContent = `Watch ${sequence.length} tiles, then repeat them in order. Your picks stay visible as you enter them.`;
   progress.textContent = "WATCH";
   choices.hidden = true;
@@ -267,9 +281,10 @@ async function runQuickRecall(level) {
   let correct = 0;
   let total = 0;
   let perfectRounds = 0;
-  for (let index = 0; index < RECALL_ROUNDS.length; index += 1) {
-    const sequence = randomSequence(RECALL_ROUNDS[index]);
-    const result = await playRecallRound(dialog, index, sequence);
+  const roundLengths = adaptiveRecallRounds();
+  for (let index = 0; index < roundLengths.length; index += 1) {
+    const sequence = randomSequence(roundLengths[index]);
+    const result = await playRecallRound(dialog, index, sequence, roundLengths.length);
     correct += result.correct;
     total += result.total;
     perfectRounds += Number(result.perfect);
@@ -290,7 +305,7 @@ async function runQuickRecall(level) {
 
   dialog.querySelector("[data-recall-kicker]").textContent = "QUICK RECALL COMPLETE";
   dialog.querySelector("[data-recall-title]").textContent = `${Math.round(accuracy * 100)}% recalled`;
-  dialog.querySelector("[data-recall-copy]").textContent = `${glyphs(reward.stars)} · ${correct}/${total} tiles · ${perfectRounds}/${RECALL_ROUNDS.length} perfect rounds${reward.claimed ? ` · +${reward.claimed} hammer earned` : ""}.`;
+  dialog.querySelector("[data-recall-copy]").textContent = `${glyphs(reward.stars)} · ${correct}/${total} tiles · ${perfectRounds}/${roundLengths.length} perfect rounds${reward.claimed ? ` · +${reward.claimed} hammer earned` : ""}.`;
   dialog.querySelector("[data-recall-stage]").replaceChildren();
   dialog.querySelector("[data-recall-progress]").textContent = reward.best?.accuracy > accuracy
     ? `BEST ${Math.round(reward.best.accuracy * 100)}%`
@@ -548,7 +563,7 @@ window.cascadeBonusModes = Object.freeze({
   },
   startWeeklyBlitz,
   startQuickRecall(afterLevel = 8) {
-    const level = Math.max(1, Math.min(300, Number(afterLevel) || 8));
+    const level = Math.max(1, Math.min(LEVEL_COUNT, Number(afterLevel) || 8));
     runQuickRecall(level);
   },
   exportRecall() {
