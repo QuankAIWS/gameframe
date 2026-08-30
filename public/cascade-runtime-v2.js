@@ -1192,7 +1192,11 @@ function startLevel(levelNumber = state.level, { resume = false } = {}) {
   score = 0;
   movesRemaining = activeLevel.moves;
   boardRng = createRng(((activeLevel.level * 0x9e3779b1) ^ Date.now()) >>> 0);
-  board = createBoard({ rng: boardRng, rules: currentRules() });
+  board = createBoard({
+    rng: boardRng,
+    rules: currentRules(),
+    locked: levelProgress?.locks?.layers || [],
+  });
   specials = emptySpecials();
   saveState();
   saveActiveRun();
