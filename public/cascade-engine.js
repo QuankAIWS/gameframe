@@ -1,6 +1,6 @@
 export const BOARD_SIZE = 8;
 export const TILE_KINDS = 6;
-export const LEVEL_COUNT = 450;
+export const LEVEL_COUNT = 600;
 export const CAMPAIGN_CAPACITY = 10000;
 export const CAMPAIGN_MILESTONE = 3000;
 export const CHAPTER_SIZE = 30;
@@ -37,6 +37,7 @@ function mechanicsForLevel(levelNumber) {
   if (levelNumber >= 61) mechanics.push("collection");
   if (levelNumber >= 151) mechanics.push("layered-ice");
   if (levelNumber >= 6) mechanics.push("fish");
+  if (levelNumber >= 451) mechanics.push("drop");
   return mechanics;
 }
 
@@ -44,10 +45,17 @@ function collectGoal(kind, count) {
   return Object.freeze({ kind, count });
 }
 
-function objective({ collect = [], ice = null } = {}) {
+function objective({ collect = [], ice = null, drop = null } = {}) {
   return Object.freeze({
     collect: Object.freeze(collect.map((item) => collectGoal(item.kind, item.count))),
     ice: ice ? Object.freeze({ ...ice }) : null,
+    drop: drop
+      ? Object.freeze({
+          count: Math.max(1, Math.floor(Number(drop.count) || 1)),
+          columns: Object.freeze((drop.columns || []).map((value) => Math.max(0, Math.min(BOARD_SIZE - 1, Math.floor(Number(value) || 0))))),
+          startRows: Object.freeze((drop.startRows || []).map((value) => Math.max(0, Math.min(BOARD_SIZE - 2, Math.floor(Number(value) || 0))))),
+        })
+      : null,
   });
 }
 
@@ -112,6 +120,8 @@ const LATE_LEVEL_TUNING = Object.freeze({
   445: Object.freeze({ moveDelta: 1, iceDelta: -2, pattern: "center" }),
   448: Object.freeze({ collectDelta: -1, iceDelta: -3, pattern: "center" }),
   449: Object.freeze({ moveDelta: 2, collectDelta: -2, iceDelta: -2, pattern: "center" }),
+  565: Object.freeze({ moveDelta: 1, iceDelta: -2, pattern: "center" }),
+  570: Object.freeze({ moveDelta: 1, iceDelta: -3, pattern: "center" }),
 });
 
 function lateLevelTuning(levelNumber) {
@@ -133,12 +143,32 @@ function applyLateObjectiveTuning(levelNumber, levelObjective) {
           pattern: tuning.pattern || levelObjective.ice.pattern,
         }
       : null,
+    drop: levelObjective?.drop ? { ...levelObjective.drop } : null,
   });
 }
 
 function twoKinds(levelNumber, separation = 2) {
   const first = (levelNumber + Math.floor(levelNumber / CHAPTER_SIZE)) % TILE_KINDS;
   return [first, (first + separation) % TILE_KINDS];
+}
+
+function dropColumns(levelNumber, count, phase = 0) {
+  const pools = Object.freeze({
+    1: Object.freeze([[3], [4], [2], [5]]),
+    2: Object.freeze([[2, 5], [1, 6], [0, 7], [3, 5]]),
+    3: Object.freeze([[1, 3, 6], [0, 4, 7], [1, 4, 6], [0, 3, 7]]),
+    4: Object.freeze([[0, 2, 5, 7], [1, 3, 4, 6], [0, 3, 5, 7], [1, 2, 5, 6]]),
+  });
+  const safeCount = Math.max(1, Math.min(4, Math.floor(Number(count) || 1)));
+  const pool = pools[safeCount];
+  return pool[(levelNumber + phase) % pool.length].slice();
+}
+
+function dropObjective(levelNumber, count, phase = 0) {
+  const columns = dropColumns(levelNumber, count, phase);
+  const baseRow = Math.max(3, 5 - Math.max(0, phase));
+  const startRows = columns.map((_, index) => Math.min(5, baseRow + ((levelNumber + index) % 2)));
+  return { count: columns.length, columns, startRows };
 }
 
 function chapterPosition(levelNumber, start) {
@@ -354,11 +384,77 @@ function campaignSpec(levelNumber) {
       },
     });
   }
-  const [firstKind, secondKind] = twoKinds(levelNumber, 2);
-  return {
-    target: 22000, moves: 26, hard: true, difficulty: "super-hard", chapter: "veteran-capstone",
-    objective: objective({ collect: [{ kind: firstKind, count: 18 }, { kind: secondKind, count: 18 }], ice: { count: 9, layers: 2, pattern: "cross" } }),
-  };
+  if (levelNumber === 450) {
+    const [firstKind, secondKind] = twoKinds(levelNumber, 2);
+    return {
+      target: 22000, moves: 26, hard: true, difficulty: "super-hard", chapter: "veteran-capstone",
+      objective: objective({ collect: [{ kind: firstKind, count: 18 }, { kind: secondKind, count: 18 }], ice: { count: 9, layers: 2, pattern: "cross" } }),
+    };
+  }
+  if (levelNumber <= 480) {
+    return buildSpec({
+      levelNumber, start: 451, chapter: "drop-intro", baseTarget: 15400, targetStep: 105, baseMoves: 27,
+      objectiveFactory: ({ phase, within }) => {
+        const count = 1 + (phase >= 1 ? 1 : 0) + (phase >= 2 && within >= 7 ? 1 : 0);
+        return objective({ drop: dropObjective(levelNumber, count, phase) });
+      },
+    });
+  }
+  if (levelNumber <= 510) {
+    return buildSpec({
+      levelNumber, start: 481, chapter: "drop-ice", baseTarget: 16000, targetStep: 105, baseMoves: 29,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const count = 2 + (phase >= 2 ? 1 : 0);
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        return objective({
+          drop: dropObjective(levelNumber, count, phase),
+          ice: { count: lateIceCount(4 + phase + Math.floor(within / 4), wave.objectiveFactor, pattern, { layers: 1 }), layers: 1, pattern },
+        });
+      },
+    });
+  }
+  if (levelNumber <= 540) {
+    return buildSpec({
+      levelNumber, start: 511, chapter: "drop-collection", baseTarget: 16600, targetStep: 110, baseMoves: 29,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const count = 2 + (phase >= 2 ? 1 : 0);
+        return objective({
+          drop: dropObjective(levelNumber, count, phase),
+          collect: [{
+            kind: (levelNumber + phase) % TILE_KINDS,
+            count: scaleCount(8 + phase * 2 + Math.floor(within / 3), wave.objectiveFactor),
+          }],
+        });
+      },
+    });
+  }
+  if (levelNumber <= 570) {
+    return buildSpec({
+      levelNumber, start: 541, chapter: "drop-layered", baseTarget: 17200, targetStep: 115, baseMoves: 30,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const count = 2 + (phase >= 2 ? 1 : 0);
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        return objective({
+          drop: dropObjective(levelNumber, count, phase),
+          ice: { count: lateIceCount(4 + phase + Math.floor(within / 4), wave.objectiveFactor, pattern, { layers: 2 }), layers: 2, pattern },
+        });
+      },
+    });
+  }
+  return buildSpec({
+    levelNumber, start: 571, chapter: "drop-mastery", baseTarget: 18000, targetStep: 120, baseMoves: 31,
+    objectiveFactory: ({ phase, within, wave }) => {
+      const [firstKind, secondKind] = twoKinds(levelNumber, 3);
+      const count = 2 + (phase >= 1 ? 1 : 0);
+      const collectCount = scaleCount(7 + phase + Math.floor(within / 4), wave.objectiveFactor);
+      const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+      return objective({
+        drop: dropObjective(levelNumber, count, phase),
+        collect: [{ kind: firstKind, count: collectCount }, { kind: secondKind, count: collectCount }],
+        ice: { count: lateIceCount(3 + phase + Math.floor(within / 5), wave.objectiveFactor, pattern, { layers: phase >= 2 ? 2 : 1 }), layers: phase >= 2 ? 2 : 1, pattern },
+      });
+    },
+  });
 }
 
 function level(levelNumber, { target, moves, hard = false, difficulty = "normal", chapter = "onboarding", mechanics, objective: levelObjective } = {}) {
@@ -488,8 +584,126 @@ export function resolveCascades(board, rng, { startingCascade = 1, mechanics = [
 }
 export function applySwap(board, from, to, rng, options = {}) { if (!adjacent(from, to)) return { legal: false, reason: "not_adjacent", board: board.slice(), ice: normalizeIce(options.ice), scoreGained: 0, transitions: [] }; const swapped = board.slice(); swap(swapped, from, to); if (!findMatches(swapped).size) return { legal: false, reason: "no_match", board: board.slice(), ice: normalizeIce(options.ice), swapped, scoreGained: 0, transitions: [] }; const resolved = resolveCascades(swapped, rng, options); return { legal: true, from, to, swapped, ...resolved }; }
 export function applyHammer(board, index, rng, options = {}) { if (index < 0 || index >= board.length) return { legal: false, reason: "invalid_index", board: board.slice(), ice: normalizeIce(options.ice), scoreGained: 0, transitions: [] }; const cleared = board.slice(); const directKindCounts = kindCounts(board, [index]); const chipped = chipIce(options.ice, [index]); cleared[index] = null; const collapsed = collapseBoard(cleared, rng); const resolved = resolveCascades(collapsed.board, rng, { ...options, ice: chipped.after }); const totalKindCounts = directKindCounts.slice(); addKindCounts(totalKindCounts, resolved.clearedKindCounts); return { legal: true, index, hammer: { type: "hammer", index, before: board.slice(), cleared, after: collapsed.board.slice(), falls: collapsed.falls, spawns: collapsed.spawns, clearedKindCounts: directKindCounts, iceBefore: chipped.before, iceAfter: chipped.after, iceHits: chipped.hits }, ...resolved, iceHitCount: resolved.iceHitCount + chipped.hits.length, clearedKindCounts: totalKindCounts }; }
-export function createLevelProgress(levelDefinition) { return { collected: Array(TILE_KINDS).fill(0), ice: createIceBoard(levelDefinition) }; }
-export function applyLevelProgress(levelDefinition, progress, result) { const next = { collected: Array.from({ length: TILE_KINDS }, (_, kind) => Math.max(0, Number(progress?.collected?.[kind]) || 0)), ice: normalizeIce(result?.iceAfter ?? result?.ice ?? progress?.ice) }; addKindCounts(next.collected, result?.clearedKindCounts); return next; }
-export function objectiveComplete(levelDefinition, progress, score) { if (Number(score) < Number(levelDefinition.target || 0)) return false; for (const goal of levelDefinition.objective?.collect || []) if ((progress?.collected?.[goal.kind] || 0) < goal.count) return false; if (levelDefinition.objective?.ice && (progress?.ice || []).some((layers) => layers > 0)) return false; return true; }
-export function objectiveRemaining(levelDefinition, progress, score) { const remaining = []; const scoreLeft = Math.max(0, Number(levelDefinition.target || 0) - Number(score || 0)); if (scoreLeft > 0) remaining.push({ type: "score", count: scoreLeft }); for (const goal of levelDefinition.objective?.collect || []) { const count = Math.max(0, goal.count - Number(progress?.collected?.[goal.kind] || 0)); if (count > 0) remaining.push({ type: "collect", kind: goal.kind, count }); } if (levelDefinition.objective?.ice) { const count = (progress?.ice || []).reduce((sum, layers) => sum + Math.max(0, Number(layers) || 0), 0); if (count > 0) remaining.push({ type: "ice", count }); } return remaining; }
-export function describeLevelObjective(levelDefinition, progress, score = 0) { const parts = [`${Math.min(Number(score) || 0, levelDefinition.target).toLocaleString()}/${levelDefinition.target.toLocaleString()} pts`]; for (const goal of levelDefinition.objective?.collect || []) { const current = Math.min(goal.count, Number(progress?.collected?.[goal.kind] || 0)); parts.push(`${TILE_LABELS[goal.kind]} ${current}/${goal.count}`); } if (levelDefinition.objective?.ice) { const remaining = (progress?.ice || []).reduce((sum, layers) => sum + Math.max(0, Number(layers) || 0), 0); parts.push(`ice ${remaining} left`); } return parts.join(" · "); }
+function createDropProgress(levelDefinition) {
+  const spec = levelDefinition?.objective?.drop;
+  if (!spec?.count) return { delivered: 0, total: 0, tokens: [], exits: [] };
+  const columns = [...new Set((spec.columns || []).filter((col) => Number.isInteger(col) && col >= 0 && col < BOARD_SIZE))];
+  const total = Math.min(Math.max(1, Number(spec.count) || 1), columns.length);
+  const startRows = spec.startRows || [];
+  const tokens = columns.slice(0, total).map((column, id) => {
+    const row = Math.max(0, Math.min(BOARD_SIZE - 2, Math.floor(Number(startRows[id]) || 0)));
+    return { id, index: row * BOARD_SIZE + column, exit: (BOARD_SIZE - 1) * BOARD_SIZE + column };
+  });
+  return { delivered: 0, total: tokens.length, tokens, exits: tokens.map((token) => token.exit) };
+}
+
+function normalizeDropProgress(levelDefinition, value) {
+  const baseline = createDropProgress(levelDefinition);
+  if (!baseline.total) return baseline;
+  if (!value || !Array.isArray(value.tokens)) return baseline;
+  const delivered = Math.max(0, Math.min(baseline.total, Math.floor(Number(value.delivered) || 0)));
+  const baselineById = new Map(baseline.tokens.map((token) => [token.id, token]));
+  const tokens = value.tokens.flatMap((token) => {
+    const id = Math.floor(Number(token?.id));
+    const authored = baselineById.get(id);
+    const index = Math.floor(Number(token?.index));
+    if (!authored || !Number.isInteger(index) || index < 0 || index >= BOARD_SIZE * BOARD_SIZE) return [];
+    if (index % BOARD_SIZE !== authored.exit % BOARD_SIZE) return [];
+    return [{ id, index, exit: authored.exit }];
+  });
+  return {
+    delivered: Math.min(baseline.total, Math.max(delivered, baseline.total - tokens.length)),
+    total: baseline.total,
+    tokens,
+    exits: baseline.exits.slice(),
+  };
+}
+
+function dropStepProgress(drop, step) {
+  if (!drop?.tokens?.length || !step?.cleared) return drop;
+  let delivered = drop.delivered;
+  const tokens = [];
+  for (const token of drop.tokens) {
+    const row = Math.floor(token.index / BOARD_SIZE);
+    const col = token.index % BOARD_SIZE;
+    let clearedBelow = 0;
+    for (let belowRow = row + 1; belowRow < BOARD_SIZE; belowRow += 1) {
+      const index = belowRow * BOARD_SIZE + col;
+      if (step.before?.[index] !== null && step.cleared?.[index] === null) clearedBelow += 1;
+    }
+    const nextRow = Math.min(BOARD_SIZE - 1, row + clearedBelow);
+    const nextIndex = nextRow * BOARD_SIZE + col;
+    if (nextIndex === token.exit) delivered += 1;
+    else tokens.push({ ...token, index: nextIndex });
+  }
+  return { delivered: Math.min(drop.total, delivered), total: drop.total, tokens, exits: drop.exits.slice() };
+}
+
+export function dropSupportIndices(progress) {
+  return [...new Set((progress?.drop?.tokens || []).flatMap((token) => {
+    const row = Math.floor(Number(token.index) / BOARD_SIZE);
+    if (!Number.isInteger(row) || row >= BOARD_SIZE - 1) return [];
+    return [Number(token.index) + BOARD_SIZE];
+  }))];
+}
+
+export function createLevelProgress(levelDefinition) {
+  return { collected: Array(TILE_KINDS).fill(0), ice: createIceBoard(levelDefinition), drop: createDropProgress(levelDefinition) };
+}
+
+export function applyLevelProgress(levelDefinition, progress, result) {
+  const next = {
+    collected: Array.from({ length: TILE_KINDS }, (_, kind) => Math.max(0, Number(progress?.collected?.[kind]) || 0)),
+    ice: normalizeIce(result?.iceAfter ?? result?.ice ?? progress?.ice),
+    drop: normalizeDropProgress(levelDefinition, progress?.drop),
+  };
+  addKindCounts(next.collected, result?.clearedKindCounts);
+  const steps = Array.isArray(result?.transitions) ? result.transitions : result?.cleared ? [result] : [];
+  if (result?.hammer?.cleared) next.drop = dropStepProgress(next.drop, result.hammer);
+  for (const step of steps) next.drop = dropStepProgress(next.drop, step);
+  return next;
+}
+
+export function objectiveComplete(levelDefinition, progress, score) {
+  if (Number(score) < Number(levelDefinition.target || 0)) return false;
+  for (const goal of levelDefinition.objective?.collect || []) if ((progress?.collected?.[goal.kind] || 0) < goal.count) return false;
+  if (levelDefinition.objective?.ice && (progress?.ice || []).some((layers) => layers > 0)) return false;
+  if (levelDefinition.objective?.drop && Number(progress?.drop?.delivered || 0) < Number(levelDefinition.objective.drop.count || 0)) return false;
+  return true;
+}
+
+export function objectiveRemaining(levelDefinition, progress, score) {
+  const remaining = [];
+  const scoreLeft = Math.max(0, Number(levelDefinition.target || 0) - Number(score || 0));
+  if (scoreLeft > 0) remaining.push({ type: "score", count: scoreLeft });
+  for (const goal of levelDefinition.objective?.collect || []) {
+    const count = Math.max(0, goal.count - Number(progress?.collected?.[goal.kind] || 0));
+    if (count > 0) remaining.push({ type: "collect", kind: goal.kind, count });
+  }
+  if (levelDefinition.objective?.ice) {
+    const count = (progress?.ice || []).reduce((sum, layers) => sum + Math.max(0, Number(layers) || 0), 0);
+    if (count > 0) remaining.push({ type: "ice", count });
+  }
+  if (levelDefinition.objective?.drop) {
+    const count = Math.max(0, Number(levelDefinition.objective.drop.count || 0) - Number(progress?.drop?.delivered || 0));
+    if (count > 0) remaining.push({ type: "drop", count });
+  }
+  return remaining;
+}
+
+export function describeLevelObjective(levelDefinition, progress, score = 0) {
+  const parts = [`${Math.min(Number(score) || 0, levelDefinition.target).toLocaleString()}/${levelDefinition.target.toLocaleString()} pts`];
+  for (const goal of levelDefinition.objective?.collect || []) {
+    const current = Math.min(goal.count, Number(progress?.collected?.[goal.kind] || 0));
+    parts.push(`${TILE_LABELS[goal.kind]} ${current}/${goal.count}`);
+  }
+  if (levelDefinition.objective?.ice) {
+    const remaining = (progress?.ice || []).reduce((sum, layers) => sum + Math.max(0, Number(layers) || 0), 0);
+    parts.push(`ice ${remaining} left`);
+  }
+  if (levelDefinition.objective?.drop) {
+    const delivered = Math.min(Number(levelDefinition.objective.drop.count || 0), Number(progress?.drop?.delivered || 0));
+    parts.push(`drops ${delivered}/${levelDefinition.objective.drop.count}`);
+  }
+  return parts.join(" · ");
+}

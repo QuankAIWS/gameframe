@@ -45,7 +45,7 @@ The campaign system is deliberately sized for **10,000 levels** without requirin
 
 The immediate production milestone is **3,000 shipped levels**. That milestone is only the first large content tranche, not the mature endgame. The longer design horizon is 10,000 levels, with the option to extend beyond that or reskin/reframe the experience later without rebuilding the core campaign model.
 
-The currently shipped and continuously validated campaign contains **450 levels**. Fish is part of the ordinary permanent special toolkit from the early campaign onward; levels 301–450 are still early-campaign fluency content, not the point where mature difficulty begins. Levels 451–3000 are the immediate expansion target, and levels 3001–10000 remain the long-horizon campaign.
+The currently shipped expansion target contains **600 levels**. Fish is part of the ordinary permanent special toolkit from the early campaign onward; levels 301–450 remain early-campaign fluency content, and levels 451–600 add the first new positional objective family: drop/exit objects. Levels 601–3000 remain the immediate expansion target, and levels 3001–10000 remain the long-horizon campaign.
 
 The player-facing level map renders only the current 30-level chapter rather than every campaign level. This prevents the UI and DOM size from growing linearly as the campaign expands.
 
@@ -121,9 +121,9 @@ The opening six levels introduce the permanent rules rather than treating them a
 
 After level 6, stripes, bombs, color clearers, and Fish are all ordinary tools throughout the campaign.
 
-## 450-level campaign architecture
+## 600-level campaign architecture
 
-The 450 shipped levels share one permanent special vocabulary. Fish is backdated into the established campaign rather than defining a separate era. Chapters are organized around objectives, geometry, and difficulty—not around Fish.
+The first 600 levels share one permanent special vocabulary. Fish is backdated into the established campaign rather than defining a separate era. From level 451 onward, drop/exit objects join that permanent vocabulary. Chapters are organized around objectives, geometry, and difficulty—not around a single featured special.
 
 | Levels | Chapter | Primary job |
 |---|---|---|
@@ -145,6 +145,11 @@ The 450 shipped levels share one permanent special vocabulary. Fish is backdated
 | 391–420 | Advanced mix | Layered ice, dual collection, and special combinations |
 | 421–449 | Veteran remix | Dense late-campaign combinations and objective pressure |
 | 450 | Veteran capstone | Super-hard combined milestone |
+| 451–480 | Drop intro | Learn to clear below drop objects and deliver them to exits |
+| 481–510 | Drop + ice | Combine positional dropping with single-layer blockers |
+| 511–540 | Drop + collection | Balance drop progress against color collection |
+| 541–570 | Drop + layered ice | Use specials and Fish to create vertical progress through layered blockers |
+| 571–600 | Drop mastery | Combine drop goals with the established collection/ice vocabulary |
 
 The chapter boundary is a design tool, not a promise that every level in a chapter looks alike. Each chapter contains three ten-level difficulty waves and varies target pressure, objective counts, patterns, colors, and move budgets.
 
@@ -223,9 +228,9 @@ Blitz is the processing-speed bonus mode.
 - result records score, match groups, specials created, and best rating
 - replay is allowed, but only a new best star result advances the reward total
 
-Progression Blitz slots continue through the 450-level campaign rather than disappearing after the opening run. Current milestone levels are:
+Progression Blitz slots continue through the campaign rather than disappearing after the opening run. Current milestone levels are:
 
-`5, 12, 20, 30, 45, 60, 75, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290, 310, 330, 350, 370, 390, 410, 430`
+`5, 12, 20, 30, 45, 60, 75, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290, 310, 330, 350, 370, 390, 410, 430, 450, 470, 490, 510, 530, 550, 570, 590`
 
 ### Quick Recall
 
@@ -242,7 +247,7 @@ Quick Recall is a short sequence-memory intermission using Cascade's existing si
 
 Quick Recall offers also continue through the campaign. Current milestone levels are:
 
-`8, 24, 48, 72, 96, 126, 156, 186, 216, 246, 276, 306, 336, 366, 396, 426`
+`8, 24, 48, 72, 96, 126, 156, 186, 216, 246, 276, 306, 336, 366, 396, 426, 456, 486, 516, 546, 576`
 
 ### Memory Fog — planned
 
@@ -376,10 +381,10 @@ The practical authoring loop is: define a chapter recipe, generate multiple cand
 1. Persistent stripe/bomb/color special engine and combinations — implemented.
 2. Original 300-level campaign, Blitz, Quick Recall, Weekly Blitz, telemetry, and automated profiling — implemented.
 3. Family playtest pass through the original campaign — collected and used for difficulty/geometry calibration.
-4. Fish added to the permanent toolkit and backdated into the established campaign; levels 301–450 extend the same vocabulary — current expansion.
+4. Fish added to the permanent toolkit and backdated into the established campaign; levels 301–450 extend the same vocabulary — implemented.
 5. Human-like profiling, clean playtest analysis, paired-seed comparison, fragility scanning, and the 10,000-level difficulty horizon — current testing foundation.
-6. Add drop/exit goals as the first new board-element family and verify full runtime/simulator/telemetry parity.
-7. Add locks/cages as the second new family, then begin generating the 451–850 chapter batches.
+6. Add drop/exit goals as the first new board-element family and verify full runtime/simulator/telemetry parity — implemented through level 600.
+7. Finish the advanced drop slice through level 650 after profiling 451–600, then add locks/cages as the second new family.
 8. Add spreading terrain, regrowing blockers, color-conditional blockers, and producers in separate testable slices while expanding toward 1,500.
 9. Re-evaluate actual player data during the 1,000–1,500 range before generating the remainder of the first 3,000-level milestone.
 10. Add reveal/access systems, portals, conveyors, charged/special-only systems, and toggle mechanics while completing levels 1,500–3,000.

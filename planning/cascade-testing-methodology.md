@@ -92,7 +92,7 @@ The human-skilled target bands are piecewise anchors, not a single linear ramp:
 
 Targets interpolate between anchors. Beyond level 10,000, the mature bands plateau until player data justifies another change.
 
-Levels 301–450 therefore remain **early-campaign content**. They should not be tuned toward the mature 5,000–10,000 difficulty envelope merely because 450 is the current shipping ceiling.
+Levels 301–600 therefore remain **early-campaign content**. They should not be tuned toward the mature 5,000–10,000 difficulty envelope merely because 450 is the current shipping ceiling.
 
 These bands remain **advisory** and must not fail CI until the human personas are calibrated against replayable family traces.
 
@@ -210,6 +210,43 @@ The same seeds are run with one fewer move, the authored move count, and one ext
 
 Future extensions can add small objective-count perturbations once the human-persona calibration is trustworthy.
 
+## Historical evidence archive
+
+The canonical long-term store for Cascade testing history is the private `QuankAIWS/rpg-gm-runtime` repository at `archive/cascade-testing/`. GameFrame remains the owner of the levels, simulator, telemetry contracts, calibration policy, and interpretation of the evidence; the private repository is only the storage boundary.
+
+GitHub Actions artifacts are temporary execution evidence. Meaningful baselines used to tune levels, calibrate personas, establish regressions, or interpret family play must be copied into the private canonical archive before transient artifacts expire.
+
+The public `data/cascade/difficulty-archive/` directory is a **public-safe compact mirror**, not a second canonical archive. It exists so GameFrame can run archive integrity checks, compare accepted bot baselines locally, and retain anonymous aggregate player evidence without exposing private telemetry.
+
+For each accepted bounded level batch:
+
+1. retain the exact tested GameFrame head SHA plus workflow run/job provenance;
+2. retain the accepted compact profile and fragility evidence in the private canonical archive;
+3. when safe, mirror compact bot/fragility snapshots into `data/cascade/difficulty-archive/` for CI/local comparison;
+4. preserve sampling information and level range;
+5. never replace older history;
+6. keep candidate evidence labeled `candidate` until the corresponding code is accepted.
+
+At larger campaign sizes, normal validation should profile the **new/changed range** and representative sentinel levels from older mechanic families. Full historical sweeps are reserved for major checkpoints, consequential rule changes, or sentinel drift suggesting broad regression.
+
+Raw player telemetry, display names, stable player IDs, session/attempt/event IDs, device metadata, diagnostics exports, and raw event streams never belong in the public GameFrame mirror. Public player evidence is limited to sanitized anonymous aggregates with source filename/hash provenance. Raw source files remain private.
+
+If an old result must be reconstructed from an immutable historical GameFrame commit because the original bytes are gone, label it as reconstructed rather than presenting it as the original run.
+
+Archive-only public-mirror edits route through the lightweight archive-validation lane and do not justify an expensive campaign simulation by themselves.
+
+Public-mirror integrity is checked with:
+
+```bash
+npm run cascade:archive:check
+```
+
+A generated JSON profile can be compacted with:
+
+```bash
+npm run cascade:archive -- --profile=profile.json --out=archive.json --status=accepted --label=<batch-label> --run-id=<run> --job-id=<job> --head-sha=<sha>
+```
+
 ## CI policy
 
 The shipping gate remains conservative:
@@ -221,25 +258,6 @@ The shipping gate remains conservative:
 - human-persona results are recorded but remain advisory until calibrated.
 
 After sufficient replayable human data exists, human-persona envelopes can become authoring warnings first. They should become hard CI gates only after the model has demonstrated useful agreement with real players.
-
-## Historical evidence archive
-
-The canonical long-term store for Cascade testing history is the private `QuankAIWS/rpg-gm-runtime` repository at `archive/cascade-testing/`. This is a storage boundary only: GameFrame continues to own the Cascade levels, simulator, telemetry contracts, calibration policy, and interpretation of the evidence.
-
-GitHub Actions artifacts are temporary execution evidence and must not be treated as durable history. Preserve a meaningful baseline when it is used to tune levels, calibrate a persona, establish a regression reference, or interpret family play by copying the relevant evidence into the private archive before the Actions artifact expires.
-
-Each retained bot/calibration snapshot should record, when available:
-
-- the exact GameFrame commit and related PR;
-- workflow run/job and original artifact identifiers;
-- simulator rules/version and level range;
-- seed base and solver/human-persona run counts;
-- exact machine-readable profile, fragility report, or surviving workflow-log profile block;
-- whether the evidence is an original artifact, exact log recovery, deterministic reconstruction, or narrative historical record.
-
-Do not overwrite an older snapshot when levels, rules, Fish behavior, persona weights, or simulator logic change. Add a new dated phase so later work can compare against the historical campaign state that actually produced the result.
-
-Human playtest exports containing player IDs, session IDs, or raw event streams stay private. Public GameFrame may contain aggregate/anonymized conclusions and the analysis tooling, but not the raw player export. If an old artifact must be reconstructed from an immutable historical GameFrame commit because the original bytes are gone, label it as reconstructed rather than presenting it as the original run.
 
 ## Data interpretation boundary
 

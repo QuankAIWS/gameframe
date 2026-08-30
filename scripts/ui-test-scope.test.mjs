@@ -7,6 +7,7 @@ const none = {
   casual: false,
   cascadeUi: false,
   cascadeProfile: false,
+  cascadeArchive: false,
   cascadeTelemetry: false,
   monsterMaster: false,
   playerPlatform: false,
@@ -38,6 +39,14 @@ test("Cascade analysis tools and methodology changes add the profile gate", () =
     "scripts/cascade-playtest-analyze.mjs",
     "planning/cascade-testing-methodology.md",
   ]), { ...none, cascadeProfile: true });
+});
+
+test("Cascade difficulty archive changes run only the lightweight archive gate", () => {
+  assert.deepEqual(classifyUiTestScope([
+    "data/cascade/difficulty-archive/manifest.json",
+    "data/cascade/difficulty-archive/bot/2026-08-28-accepted-1-450.json",
+    "scripts/cascade-archive-check.mjs",
+  ]), { ...none, cascadeArchive: true });
 });
 
 test("Cascade simulator and game mechanics changes add the profile gate", () => {

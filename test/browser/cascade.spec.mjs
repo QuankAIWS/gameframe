@@ -89,6 +89,23 @@ test("Cascade spreads objective families across the 300-level campaign", async (
   await expect(page.locator("#level-map")).toHaveAttribute("data-range", "241-270");
 });
 
+test("Cascade introduces readable drop objectives at level 451", async ({ page }) => {
+  await installLevelFixture(page, 451);
+  await page.goto("/cascade.html?cascadeTestLevel=451");
+
+  await expect(page.locator("#level-number")).toHaveText("451");
+  await expect(page.locator("#objective-label")).toContainText("drops 0/1");
+  await expect(page.locator(".cascade-drop-object")).toHaveCount(1);
+  await expect(page.locator(".cascade-drop-exit")).toHaveCount(1);
+  await expect(page.locator(".cascade-help")).toContainText("drop every diamond");
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "451-480");
+
+  const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
+  expect(exported.level.chapter).toBe("drop-intro");
+  expect(exported.progress.drop.total).toBe(1);
+  expect(exported.progress.drop.tokens).toHaveLength(1);
+});
+
 test("Cascade has no IOU ledger, purchase path, or fake currency surface", async ({ page }) => {
   await page.goto("/cascade.html");
   await expect(page.locator("#iou-total, #ledger-dialog, #reset-ledger")).toHaveCount(0);
@@ -195,7 +212,7 @@ test("Cascade admin can launch a standalone non-failing Blitz round", async ({ p
   await expect(page.locator("#blitz-overlay")).toBeVisible();
 });
 
-test("Cascade admin console reaches level 450 and keeps the map bounded", async ({ page }) => {
+test("Cascade admin console reaches level 600 and keeps the map bounded", async ({ page }) => {
   await page.route("**/api/session", async (route) => {
     await route.fulfill({
       status: 200,
@@ -212,11 +229,11 @@ test("Cascade admin console reaches level 450 and keeps the map bounded", async 
   await page.goto("/cascade.html");
   await page.locator("#cascade-admin-open").click();
   await expect(page.locator("#cascade-admin-dialog")).toBeVisible();
-  await page.locator("#cascade-admin-command").fill("go to level 450");
+  await page.locator("#cascade-admin-command").fill("go to level 600");
   await page.locator("[data-admin-run]").click();
-  await expect(page.locator("#level-number")).toHaveText("450");
+  await expect(page.locator("#level-number")).toHaveText("600");
   await expect(page.locator("#level-map > li")).toHaveCount(30);
-  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "421-450");
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "571-600");
 });
 
 test("Cascade admin can force life and inventory edge states", async ({ page }) => {

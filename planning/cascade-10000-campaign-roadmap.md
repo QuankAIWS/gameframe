@@ -3,11 +3,11 @@
 Status: canonical campaign expansion plan  
 Immediate production milestone: 3,000 shipped levels  
 Long-horizon capacity: 10,000 levels  
-Current shipped slice: 1–450
+Current shipped slice: 1–600
 
 ## Core doctrine
 
-Cascade is not designed as a 450-level game that gets progressively harder until it runs out of room.
+Cascade is not designed as a short campaign that gets progressively harder until it runs out of room.
 
 The campaign is designed around a 10,000-level horizon. The first 3,000 levels are the immediate content milestone and should establish a broad reusable mechanic vocabulary without exhausting the design space.
 
@@ -17,7 +17,7 @@ Three progression axes remain separate:
 2. **Local tension** — every ten-level wave continues to oscillate through relief, normal, hard, and super-hard beats.
 3. **Global raw difficulty** — first-pass pressure rises slowly across thousands of levels and plateaus near the mature campaign rather than increasing forever.
 
-Levels 301–450 remain early-campaign mastery content.
+Levels 301–600 remain early-campaign fluency and mechanic-growth content.
 
 ## Immediate milestone architecture: levels 451–3,000
 
@@ -92,6 +92,7 @@ Decision changes:
 
 Before generating the remainder of the 3,000-level milestone at scale:
 
+- consult the retained Cascade difficulty history (private canonical archive, with the GameFrame public-safe mirror for local comparison) rather than recomputing every earlier batch by default;
 - export new family telemetry;
 - measure clean first-pass rate and attempts-per-success by wave, mechanic family, and chapter;
 - compare observed outcomes with the human-skilled persona;
@@ -299,6 +300,12 @@ Run player-data checkpoint A and decide whether simulator/persona calibration ne
 
 Validate producers, reveal systems, and portals before adding moving-board systems at scale.
 
+### Archive each accepted batch
+
+Before moving on from a profiled/tuned batch, retain its accepted compact profile and fragility snapshot in the private canonical archive. Mirror public-safe bot/fragility evidence into `data/cascade/difficulty-archive/` for repository-local comparison and CI integrity. Historical baselines let later work compare against earlier campaign regions without repeatedly simulating every shipped level.
+
+Use sentinel levels from each established mechanic family after consequential engine changes. Escalate to a full historical sweep only when sentinels drift materially or at a deliberate major checkpoint.
+
 ### Checkpoint 3,000
 
 Run a full campaign review:
@@ -315,8 +322,8 @@ Only after this review should the 3,001–10,000 recipe mix be locked in.
 
 ## Implementation order from the current branch
 
-1. Land the 450-level Fish and human-testing foundation with the 10,000-level horizon corrected.
-2. Implement drop/exit objectives end-to-end: engine, runtime, rendering, simulator, telemetry, tests.
-3. Implement locks/cages end-to-end on the same shared board-element contracts.
-4. Generate and profile the first post-450 chapter batches.
+1. 450-level Fish and human-testing foundation with the 10,000-level horizon — implemented.
+2. Drop/exit objectives end-to-end plus levels 451–600 — current expansion.
+3. Profile/tune levels 451–600, then finish the advanced drop slice through level 650 if the mechanic remains healthy.
+4. Implement locks/cages end-to-end on the same shared board-element contracts.
 5. Continue mechanics and content in bounded batches toward the 3,000 milestone.
