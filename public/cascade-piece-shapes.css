@@ -478,18 +478,21 @@
 }
 
 .cascade-tile.has-recall-lock .cascade-lock-mark {
-  inset: 6%;
+  --recall-color: #9f6bb4;
+  --recall-soft: #f4ddfb;
+  inset: 5%;
+  border-width: clamp(2px, .48vw, 4px);
   border-radius: 38% 38% 24% 24%;
   border-color: rgba(177, 93, 187, .92);
   background:
-    radial-gradient(circle at 50% 20%, rgba(255,255,255,.92) 0 8%, transparent 9%),
-    linear-gradient(145deg, rgba(255,222,248,.66), rgba(181,126,224,.3));
+    radial-gradient(circle at 50% 18%, rgba(255,255,255,.96) 0 9%, transparent 10%),
+    linear-gradient(145deg, rgba(255,232,250,.8), rgba(201,158,229,.46));
   color: #68416f;
-  font-size: clamp(1rem, 4.7vw, 2.2rem);
+  font-size: clamp(1.2rem, 5.4vw, 2.45rem);
   font-weight: 1000;
   text-shadow:
     0 1px 0 #fff,
-    0 0 7px rgba(255,255,255,.9);
+    0 0 8px rgba(255,255,255,.96);
 }
 
 .cascade-tile.has-recall-lock .cascade-lock-mark::after {
@@ -505,19 +508,24 @@
 }
 
 .cascade-tile.has-recall-lock .cascade-lock-mark.is-revealed {
-  border-color: var(--tile-b);
+  border-color: var(--recall-color);
   background:
-    radial-gradient(circle at 50% 20%, rgba(255,255,255,.98) 0 9%, transparent 10%),
-    linear-gradient(145deg, color-mix(in srgb, var(--tile-a) 42%, white), color-mix(in srgb, var(--tile-b) 34%, white));
+    radial-gradient(circle at 50% 18%, rgba(255,255,255,.98) 0 10%, transparent 11%),
+    linear-gradient(145deg, color-mix(in srgb, var(--recall-soft) 82%, white), color-mix(in srgb, var(--recall-color) 34%, white));
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.86),
+    0 0 0 2px color-mix(in srgb, var(--recall-color) 36%, white),
+    0 0 10px color-mix(in srgb, var(--recall-color) 48%, transparent),
+    0 4px 7px rgba(72,45,83,.24);
   animation: cascade-recall-cue 860ms ease-in-out infinite alternate;
 }
 
-.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="0"] { color: #bd2f79; }
-.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="1"] { color: #147f9e; }
-.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="2"] { color: #9b7100; }
-.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="3"] { color: #297f3c; }
-.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="4"] { color: #6d3bb4; }
-.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="5"] { color: #a8501d; }
+.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="0"] { --recall-color: #e33d91; --recall-soft: #ffd1e9; color: #b52270; }
+.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="1"] { --recall-color: #20b8d6; --recall-soft: #c9f5ff; color: #0f7892; }
+.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="2"] { --recall-color: #f0c52d; --recall-soft: #fff1a8; color: #8a6900; }
+.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="3"] { --recall-color: #58c969; --recall-soft: #d6f7d7; color: #287d39; }
+.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="4"] { --recall-color: #a06ce0; --recall-soft: #ead8ff; color: #6535ae; }
+.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="5"] { --recall-color: #f28a45; --recall-soft: #ffe0c7; color: #a94d18; }
 
 .cascade-tile.is-lock-nudge .cascade-lock-mark {
   animation: cascade-lock-nudge .28s ease-out;
