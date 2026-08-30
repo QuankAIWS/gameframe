@@ -165,6 +165,18 @@ const LATE_LEVEL_TUNING = Object.freeze({
   742: Object.freeze({ collectDelta: -1, lockPattern: "center" }),
   745: Object.freeze({ moveDelta: 1, lockPattern: "center" }),
   747: Object.freeze({ moveDelta: 1, collectDelta: -2, lockDelta: -1, lockPattern: "center" }),
+  886: Object.freeze({ moveDelta: 1 }),
+  887: Object.freeze({ moveDelta: -2 }),
+  888: Object.freeze({ moveDelta: -2 }),
+  889: Object.freeze({ moveDelta: 2, lockDelta: -1 }),
+  890: Object.freeze({ moveDelta: -2 }),
+  891: Object.freeze({ moveDelta: -1 }),
+  892: Object.freeze({ moveDelta: 1 }),
+  894: Object.freeze({ moveDelta: -2 }),
+  895: Object.freeze({ moveDelta: 1 }),
+  897: Object.freeze({ moveDelta: -2 }),
+  899: Object.freeze({ moveDelta: 1, lockDelta: -1 }),
+  900: Object.freeze({ moveDelta: -1 }),
 });
 
 function lateLevelTuning(levelNumber) {
@@ -618,7 +630,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 780) {
     return buildSpec({
-      levelNumber, start: 751, chapter: "memory-bloom-intro", baseTarget: 20200, targetStep: 100, baseMoves: 35,
+      levelNumber, start: 751, chapter: "memory-bloom-intro", baseTarget: 20200, targetStep: 100, baseMoves: 33,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
         const firstTeachingWave = phase === 0;
@@ -633,7 +645,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 800) {
     return buildSpec({
-      levelNumber, start: 781, chapter: "memory-bloom-mix", baseTarget: 20800, targetStep: 100, baseMoves: 36,
+      levelNumber, start: 781, chapter: "memory-bloom-mix", baseTarget: 20800, targetStep: 100, baseMoves: 35,
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind] = twoKinds(levelNumber, 2);
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
@@ -646,7 +658,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 830) {
     return buildSpec({
-      levelNumber, start: 801, chapter: "enchanted-ground-intro", baseTarget: 21000, targetStep: 100, baseMoves: 35,
+      levelNumber, start: 801, chapter: "enchanted-ground-intro", baseTarget: 21000, targetStep: 100, baseMoves: 34,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         const firstTeachingWave = phase === 0;
@@ -666,7 +678,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 850) {
     return buildSpec({
-      levelNumber, start: 831, chapter: "enchanted-ground-mix", baseTarget: 21600, targetStep: 105, baseMoves: 36,
+      levelNumber, start: 831, chapter: "enchanted-ground-mix", baseTarget: 21600, targetStep: 105, baseMoves: 35,
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind] = twoKinds(levelNumber, 3);
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
@@ -683,7 +695,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 870) {
     return buildSpec({
-      levelNumber, start: 851, chapter: "bloom-ground-remix", baseTarget: 22000, targetStep: 105, baseMoves: 37,
+      levelNumber, start: 851, chapter: "bloom-ground-remix", baseTarget: 22000, targetStep: 105, baseMoves: 35,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
         return objective({
@@ -699,7 +711,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 885) {
     return buildSpec({
-      levelNumber, start: 871, chapter: "ground-route-remix", baseTarget: 22400, targetStep: 110, baseMoves: 37,
+      levelNumber, start: 871, chapter: "ground-route-remix", baseTarget: 22400, targetStep: 110, baseMoves: 35,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         return objective({
