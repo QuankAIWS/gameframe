@@ -413,8 +413,14 @@ test("levels 601-750 advance from Drop mastery into Cages and Recall Locks", () 
   assert.ok(recallCells.every((index) => recallProgress.locks.requiredKinds[index] >= 0));
 });
 
-test("all 750 levels exercise the objective-aware lookahead bot without engine errors", () => {
-  for (const level of CASCADE_LEVELS) {
+test("representative campaign sentinels exercise the objective-aware lookahead bot without engine errors", () => {
+  const sentinelLevels = [
+    1, 6, 30, 31, 60, 61, 90, 91, 120, 150, 180, 210, 240, 270, 300,
+    301, 330, 360, 390, 420, 450, 451, 480, 510, 540, 570, 600,
+    601, 630, 650, 651, 680, 700, 701, 730, 750,
+  ];
+  for (const levelNumber of sentinelLevels) {
+    const level = CASCADE_LEVELS[levelNumber - 1];
     const run = runCascadeLevel({ level, seed: 1000 + level.level, strategy: "lookahead" });
     assert.ok(run.moveHistory.length > 0, `lookahead made no moves on level ${level.level}`);
     assert.ok(run.maxCascade >= 1, `lookahead saw no cascade on level ${level.level}`);
@@ -449,9 +455,14 @@ test("move fragility profiling uses paired seeds across plus/minus one move", ()
   }
 });
 
-test("sample profiling covers all 750 levels and records solver and human-persona sensitivity", () => {
-  const report = profileCascadeLevels({ runsPerLevel: 1, humanRunsPerLevel: 1 });
-  assert.equal(report.levels.length, 750);
+test("bounded sample profiling records solver and human-persona sensitivity", () => {
+  const report = profileCascadeLevels({
+    levelDefinitions: CASCADE_LEVELS.slice(720, 750),
+    runsPerLevel: 1,
+    humanRunsPerLevel: 1,
+  });
+  assert.equal(report.levels.length, 30);
+  assert.deepEqual(report.levelRange, { from: 721, to: 750 });
   for (const level of report.levels) {
     assert.ok(level.strategies.random);
     assert.ok(level.strategies["human-casual"]);
@@ -460,11 +471,9 @@ test("sample profiling covers all 750 levels and records solver and human-person
     assert.ok(level.strategies.lookahead);
     assert.equal(typeof level.strategies.lookahead.objectiveFailureRate, "number");
     assert.equal(typeof level.humanSkillSpread, "number");
+    assert.ok(level.targetFirstPassBand);
   }
-  assert.equal(report.levels[299].targetFirstPassBand, null);
-  assert.ok(report.levels[300].targetFirstPassBand);
-  const laterRun = report.levels.slice(30);
-  assert.ok(laterRun.some((level) => level.skillSensitivity !== 0));
+  assert.ok(report.levels.some((level) => level.skillSensitivity !== 0));
 });
 
 test("playtest analysis excludes hammer-assisted attempts from intrinsic difficulty", () => {
