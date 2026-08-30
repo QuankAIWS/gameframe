@@ -639,14 +639,14 @@ function wouldCreateImmediateSquare(candidate, index, board) {
     && board[index - BOARD_SIZE] === candidate
     && board[index - BOARD_SIZE - 1] === candidate;
 }
-export function createBoard({ rng, rules = {} }) {
+export function createBoard({ rng, rules = {}, locked = [] }) {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     const next = [];
     for (let index = 0; index < BOARD_SIZE * BOARD_SIZE; index += 1) { let candidate = randomKind(rng); let guard = 0; while (
         (wouldCreateImmediateMatch(candidate, index, next) || (rules?.fish === true && wouldCreateImmediateSquare(candidate, index, next)))
         && guard < 20
       ) { candidate = randomKind(rng); guard += 1; } next.push(candidate); }
-    if (hasLegalMove(next)) return next;
+    if (hasLegalMove(next, locked)) return next;
   }
   return Array.from({ length: BOARD_SIZE * BOARD_SIZE }, () => randomKind(rng));
 }
