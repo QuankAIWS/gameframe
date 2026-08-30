@@ -205,7 +205,7 @@ test("ordinary cages absorb a direct special hit before the candy can clear", ()
   assert.equal(result.transitions[0].lockHits.length, 1);
   assert.equal(result.transitions[0].matched.includes(9), false);
   assert.equal(result.locks.layers[9], 0);
-  assert.equal(result.board[9], original);
+  assert.equal(result.transitions[0].cleared[9], original);
 });
 
 test("Recall Locks open only from the remembered adjacent color", () => {
