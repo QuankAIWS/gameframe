@@ -1,6 +1,6 @@
 export const BOARD_SIZE = 8;
 export const TILE_KINDS = 6;
-export const LEVEL_COUNT = 600;
+export const LEVEL_COUNT = 750;
 export const CAMPAIGN_CAPACITY = 10000;
 export const CAMPAIGN_MILESTONE = 3000;
 export const CHAPTER_SIZE = 30;
@@ -38,6 +38,8 @@ function mechanicsForLevel(levelNumber) {
   if (levelNumber >= 151) mechanics.push("layered-ice");
   if (levelNumber >= 6) mechanics.push("fish");
   if (levelNumber >= 451) mechanics.push("drop");
+  if (levelNumber >= 651) mechanics.push("locks");
+  if (levelNumber >= 701) mechanics.push("recall-locks");
   return mechanics;
 }
 
@@ -45,7 +47,7 @@ function collectGoal(kind, count) {
   return Object.freeze({ kind, count });
 }
 
-function objective({ collect = [], ice = null, drop = null } = {}) {
+function objective({ collect = [], ice = null, drop = null, locks = null } = {}) {
   return Object.freeze({
     collect: Object.freeze(collect.map((item) => collectGoal(item.kind, item.count))),
     ice: ice ? Object.freeze({ ...ice }) : null,
@@ -54,6 +56,14 @@ function objective({ collect = [], ice = null, drop = null } = {}) {
           count: Math.max(1, Math.floor(Number(drop.count) || 1)),
           columns: Object.freeze((drop.columns || []).map((value) => Math.max(0, Math.min(BOARD_SIZE - 1, Math.floor(Number(value) || 0))))),
           startRows: Object.freeze((drop.startRows || []).map((value) => Math.max(0, Math.min(BOARD_SIZE - 2, Math.floor(Number(value) || 0))))),
+        })
+      : null,
+    locks: locks
+      ? Object.freeze({
+          count: Math.max(1, Math.floor(Number(locks.count) || 1)),
+          layers: Math.max(1, Math.min(2, Math.floor(Number(locks.layers) || 1))),
+          pattern: String(locks.pattern || "center"),
+          recall: locks.recall === true,
         })
       : null,
   });
@@ -144,6 +154,7 @@ function applyLateObjectiveTuning(levelNumber, levelObjective) {
         }
       : null,
     drop: levelObjective?.drop ? { ...levelObjective.drop } : null,
+    locks: levelObjective?.locks ? { ...levelObjective.locks } : null,
   });
 }
 
@@ -184,10 +195,18 @@ function chapterPosition(levelNumber, start) {
 function compoundGeometryMoveBonus(levelObjective, difficulty) {
   const ice = levelObjective?.ice;
   const collectGoals = levelObjective?.collect?.length || 0;
-  if (!ice || ice.layers < 2 || collectGoals === 0) return 0;
-  if (difficulty === "relief") return 1;
-  if (difficulty === "normal" && (ice.pattern === "edges" || ice.pattern === "diagonal")) return 1;
-  return 0;
+  let bonus = 0;
+  if (ice && ice.layers >= 2 && collectGoals > 0) {
+    if (difficulty === "relief") bonus += 1;
+    if (difficulty === "normal" && (ice.pattern === "edges" || ice.pattern === "diagonal")) bonus += 1;
+  }
+  if (levelObjective?.locks?.recall) {
+    if (difficulty === "relief") bonus += 2;
+    else if (difficulty === "normal") bonus += 1;
+  } else if (levelObjective?.locks && difficulty === "relief") {
+    bonus += 1;
+  }
+  return bonus;
 }
 
 function buildSpec({ levelNumber, start, chapter, baseTarget, targetStep, baseMoves, objectiveFactory = null }) {
@@ -441,17 +460,93 @@ function campaignSpec(levelNumber) {
       },
     });
   }
+  if (levelNumber <= 600) {
+    return buildSpec({
+      levelNumber, start: 571, chapter: "drop-mastery", baseTarget: 18000, targetStep: 120, baseMoves: 31,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const [firstKind, secondKind] = twoKinds(levelNumber, 3);
+        const count = 2 + (phase >= 1 ? 1 : 0);
+        const collectCount = scaleCount(7 + phase + Math.floor(within / 4), wave.objectiveFactor);
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        return objective({
+          drop: dropObjective(levelNumber, count, phase),
+          collect: [{ kind: firstKind, count: collectCount }, { kind: secondKind, count: collectCount }],
+          ice: { count: lateIceCount(3 + phase + Math.floor(within / 5), wave.objectiveFactor, pattern, { layers: phase >= 2 ? 2 : 1 }), layers: phase >= 2 ? 2 : 1, pattern },
+        });
+      },
+    });
+  }
+  if (levelNumber <= 630) {
+    return buildSpec({
+      levelNumber, start: 601, chapter: "drop-precision-mastery", baseTarget: 18600, targetStep: 105, baseMoves: 32,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const count = 3 + (phase >= 2 ? 1 : 0);
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        return objective({
+          drop: dropObjective(levelNumber, count, phase + 1),
+          ice: { count: lateIceCount(3 + phase + Math.floor(within / 5), wave.objectiveFactor, pattern, { layers: 1 }), layers: 1, pattern },
+        });
+      },
+    });
+  }
+  if (levelNumber <= 650) {
+    return buildSpec({
+      levelNumber, start: 631, chapter: "drop-capstone", baseTarget: 19200, targetStep: 110, baseMoves: 33,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const [firstKind, secondKind] = twoKinds(levelNumber, 2);
+        const collectCount = scaleCount(6 + phase + Math.floor(within / 5), wave.objectiveFactor);
+        return objective({
+          drop: dropObjective(levelNumber, 3 + (within >= 7 ? 1 : 0), phase + 1),
+          collect: [{ kind: firstKind, count: collectCount }, { kind: secondKind, count: collectCount }],
+        });
+      },
+    });
+  }
+  if (levelNumber <= 680) {
+    return buildSpec({
+      levelNumber, start: 651, chapter: "lock-intro", baseTarget: 18800, targetStep: 95, baseMoves: 33,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        return objective({
+          locks: { count: scaleCount(4 + phase + Math.floor(within / 4), wave.objectiveFactor), layers: 1, pattern },
+        });
+      },
+    });
+  }
+  if (levelNumber <= 700) {
+    return buildSpec({
+      levelNumber, start: 681, chapter: "lock-mix", baseTarget: 19400, targetStep: 100, baseMoves: 34,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const [firstKind] = twoKinds(levelNumber, 3);
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        return objective({
+          locks: { count: scaleCount(6 + phase + Math.floor(within / 4), wave.objectiveFactor), layers: phase >= 1 ? 2 : 1, pattern },
+          collect: [{ kind: firstKind, count: scaleCount(7 + phase + Math.floor(within / 5), wave.objectiveFactor) }],
+          drop: within >= 5 ? dropObjective(levelNumber, 2, phase) : null,
+        });
+      },
+    });
+  }
+  if (levelNumber <= 730) {
+    return buildSpec({
+      levelNumber, start: 701, chapter: "recall-lock-intro", baseTarget: 19000, targetStep: 90, baseMoves: 36,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+        return objective({
+          locks: { count: scaleCount(2 + phase + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)), layers: 1, pattern, recall: true },
+        });
+      },
+    });
+  }
   return buildSpec({
-    levelNumber, start: 571, chapter: "drop-mastery", baseTarget: 18000, targetStep: 120, baseMoves: 31,
+    levelNumber, start: 731, chapter: "recall-lock-mix", baseTarget: 19600, targetStep: 95, baseMoves: 37,
     objectiveFactory: ({ phase, within, wave }) => {
-      const [firstKind, secondKind] = twoKinds(levelNumber, 3);
-      const count = 2 + (phase >= 1 ? 1 : 0);
-      const collectCount = scaleCount(7 + phase + Math.floor(within / 4), wave.objectiveFactor);
-      const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+      const [firstKind] = twoKinds(levelNumber, 2);
+      const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
       return objective({
-        drop: dropObjective(levelNumber, count, phase),
-        collect: [{ kind: firstKind, count: collectCount }, { kind: secondKind, count: collectCount }],
-        ice: { count: lateIceCount(3 + phase + Math.floor(within / 5), wave.objectiveFactor, pattern, { layers: phase >= 2 ? 2 : 1 }), layers: phase >= 2 ? 2 : 1, pattern },
+        locks: { count: scaleCount(3 + phase + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)), layers: 1, pattern, recall: true },
+        collect: [{ kind: firstKind, count: scaleCount(6 + phase + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)) }],
+        drop: within >= 6 ? dropObjective(levelNumber, 1 + (phase >= 1 ? 1 : 0), phase) : null,
       });
     },
   });
@@ -496,12 +591,13 @@ function wouldCreateImmediateMatch(candidate, index, board) {
 export function adjacent(a, b) { const ar = Math.floor(a / BOARD_SIZE); const ac = a % BOARD_SIZE; const br = Math.floor(b / BOARD_SIZE); const bc = b % BOARD_SIZE; return Math.abs(ar - br) + Math.abs(ac - bc) === 1; }
 export function swap(board, a, b) { [board[a], board[b]] = [board[b], board[a]]; return board; }
 
-export function findMatchGroups(board) {
+export function findMatchGroups(board, locked = []) {
   const groups = [];
+  const blocked = (index) => Math.max(0, Number(locked?.[index]) || 0) > 0;
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     let start = 0;
     for (let col = 1; col <= BOARD_SIZE; col += 1) {
-      const index = row * BOARD_SIZE + col; const startIndex = row * BOARD_SIZE + start; const kind = board[startIndex]; const same = col < BOARD_SIZE && kind !== null && board[index] === kind;
+      const index = row * BOARD_SIZE + col; const startIndex = row * BOARD_SIZE + start; const kind = blocked(startIndex) ? null : board[startIndex]; const same = col < BOARD_SIZE && !blocked(index) && kind !== null && board[index] === kind;
       if (same) continue;
       if (kind !== null && col - start >= 3) groups.push({ orientation: "row", kind, indices: Array.from({ length: col - start }, (_, offset) => row * BOARD_SIZE + start + offset) });
       start = col;
@@ -510,7 +606,7 @@ export function findMatchGroups(board) {
   for (let col = 0; col < BOARD_SIZE; col += 1) {
     let start = 0;
     for (let row = 1; row <= BOARD_SIZE; row += 1) {
-      const index = row * BOARD_SIZE + col; const startIndex = start * BOARD_SIZE + col; const kind = board[startIndex]; const same = row < BOARD_SIZE && kind !== null && board[index] === kind;
+      const index = row * BOARD_SIZE + col; const startIndex = start * BOARD_SIZE + col; const kind = blocked(startIndex) ? null : board[startIndex]; const same = row < BOARD_SIZE && !blocked(index) && kind !== null && board[index] === kind;
       if (same) continue;
       if (kind !== null && row - start >= 3) groups.push({ orientation: "column", kind, indices: Array.from({ length: row - start }, (_, offset) => (start + offset) * BOARD_SIZE + col) });
       start = row;
@@ -518,16 +614,16 @@ export function findMatchGroups(board) {
   }
   return groups;
 }
-export function findMatches(board) { const matched = new Set(); for (const group of findMatchGroups(board)) for (const index of group.indices) matched.add(index); return matched; }
-export function listLegalMoves(board) {
+export function findMatches(board, locked = []) { const matched = new Set(); for (const group of findMatchGroups(board, locked)) for (const index of group.indices) matched.add(index); return matched; }
+export function listLegalMoves(board, locked = []) {
   const moves = [];
   for (let index = 0; index < board.length; index += 1) {
     const right = index % BOARD_SIZE < BOARD_SIZE - 1 ? index + 1 : -1; const down = index + BOARD_SIZE < board.length ? index + BOARD_SIZE : -1;
-    for (const neighbor of [right, down]) { if (neighbor < 0) continue; swap(board, index, neighbor); const matched = findMatches(board).size; swap(board, index, neighbor); if (matched > 0) moves.push({ from: index, to: neighbor, matched }); }
+    for (const neighbor of [right, down]) { if (neighbor < 0 || Number(locked?.[index]) > 0 || Number(locked?.[neighbor]) > 0) continue; swap(board, index, neighbor); const matched = findMatches(board, locked).size; swap(board, index, neighbor); if (matched > 0) moves.push({ from: index, to: neighbor, matched }); }
   }
   return moves;
 }
-export function hasLegalMove(board) { return listLegalMoves(board).length > 0; }
+export function hasLegalMove(board, locked = []) { return listLegalMoves(board, locked).length > 0; }
 function wouldCreateImmediateSquare(candidate, index, board) {
   const row = Math.floor(index / BOARD_SIZE);
   const col = index % BOARD_SIZE;
@@ -547,12 +643,38 @@ export function createBoard({ rng, rules = {} }) {
   }
   return Array.from({ length: BOARD_SIZE * BOARD_SIZE }, () => randomKind(rng));
 }
-export function collapseBoard(board, rng) {
+export function collapseBoard(board, rng, locked = []) {
   const next = board.slice(); const falls = []; const spawns = [];
-  for (let col = 0; col < BOARD_SIZE; col += 1) {
+  const compactSegment = (col, top, bottom) => {
+    if (top > bottom) return;
     const kept = [];
-    for (let row = BOARD_SIZE - 1; row >= 0; row -= 1) { const from = row * BOARD_SIZE + col; const kind = next[from]; if (kind !== null) kept.push({ from, kind }); }
-    for (let row = BOARD_SIZE - 1; row >= 0; row -= 1) { const to = row * BOARD_SIZE + col; const offset = BOARD_SIZE - 1 - row; const existing = kept[offset]; if (existing) { next[to] = existing.kind; if (existing.from !== to) falls.push({ from: existing.from, to, kind: existing.kind }); } else { const kind = randomKind(rng); next[to] = kind; spawns.push({ to, kind, spawnOffset: offset - kept.length + 1 }); } }
+    for (let row = bottom; row >= top; row -= 1) {
+      const from = row * BOARD_SIZE + col;
+      const kind = next[from];
+      if (kind !== null) kept.push({ from, kind });
+    }
+    for (let row = bottom; row >= top; row -= 1) {
+      const to = row * BOARD_SIZE + col;
+      const offset = bottom - row;
+      const existing = kept[offset];
+      if (existing) {
+        next[to] = existing.kind;
+        if (existing.from !== to) falls.push({ from: existing.from, to, kind: existing.kind });
+      } else {
+        const kind = randomKind(rng);
+        next[to] = kind;
+        spawns.push({ to, kind, spawnOffset: offset - kept.length + 1 });
+      }
+    }
+  };
+  for (let col = 0; col < BOARD_SIZE; col += 1) {
+    let bottom = BOARD_SIZE - 1;
+    for (let row = BOARD_SIZE - 1; row >= -1; row -= 1) {
+      const index = row >= 0 ? row * BOARD_SIZE + col : -1;
+      if (row >= 0 && Math.max(0, Number(locked?.[index]) || 0) <= 0) continue;
+      compactSegment(col, row + 1, bottom);
+      bottom = row - 1;
+    }
   }
   return { board: next, falls, spawns };
 }
@@ -647,8 +769,91 @@ export function dropSupportIndices(progress) {
   }))];
 }
 
+function adjacentIndices(index) {
+  const row = Math.floor(index / BOARD_SIZE);
+  const col = index % BOARD_SIZE;
+  const out = [];
+  if (row > 0) out.push(index - BOARD_SIZE);
+  if (row < BOARD_SIZE - 1) out.push(index + BOARD_SIZE);
+  if (col > 0) out.push(index - 1);
+  if (col < BOARD_SIZE - 1) out.push(index + 1);
+  return out;
+}
+
+function createLockProgress(levelDefinition, dropProgress = null) {
+  const spec = levelDefinition?.objective?.locks;
+  const layers = Array(BOARD_SIZE * BOARD_SIZE).fill(0);
+  const requiredKinds = Array(BOARD_SIZE * BOARD_SIZE).fill(-1);
+  if (!spec?.count) return { total: 0, opened: 0, layers, requiredKinds, recall: false };
+  const blocked = new Set([
+    ...(dropProgress?.tokens || []).map((token) => Number(token.index)),
+    ...(dropProgress?.exits || []).map(Number),
+  ]);
+  const cells = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
+    const row = Math.floor(index / BOARD_SIZE);
+    const col = index % BOARD_SIZE;
+    return { index, score: patternScore(spec.pattern, row, col) };
+  }).filter(({ index }) => !blocked.has(index));
+  cells.sort((a, b) => a.score - b.score || ((a.index * 23 + levelDefinition.level * 19) % 71) - ((b.index * 23 + levelDefinition.level * 19) % 71));
+  const count = Math.min(cells.length, Math.max(1, Math.floor(Number(spec.count) || 1)));
+  for (const { index } of cells.slice(0, count)) {
+    layers[index] = Math.max(1, Math.min(2, Math.floor(Number(spec.layers) || 1)));
+    if (spec.recall === true) requiredKinds[index] = (levelDefinition.level + index * 3 + Math.floor(index / BOARD_SIZE)) % TILE_KINDS;
+  }
+  return { total: count, opened: 0, layers, requiredKinds, recall: spec.recall === true };
+}
+
+export function normalizeLockProgress(value) {
+  const layers = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => Math.max(0, Math.min(2, Math.floor(Number(value?.layers?.[index]) || 0))));
+  const requiredKinds = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
+    const kind = Math.floor(Number(value?.requiredKinds?.[index]));
+    return Number.isInteger(kind) && kind >= 0 && kind < TILE_KINDS ? kind : -1;
+  });
+  const total = Math.max(0, Math.floor(Number(value?.total) || layers.filter((layer) => layer > 0).length));
+  const remaining = layers.filter((layer) => layer > 0).length;
+  return {
+    total,
+    opened: Math.max(0, Math.min(total, Math.floor(Number(value?.opened) || (total - remaining)))),
+    layers,
+    requiredKinds,
+    recall: value?.recall === true || requiredKinds.some((kind) => kind >= 0),
+  };
+}
+
+export function lockedIndices(progress) {
+  return (progress?.locks?.layers || []).flatMap((layer, index) => Number(layer) > 0 ? [index] : []);
+}
+
+export function ordinaryLockTargetIndices(progress) {
+  const locks = normalizeLockProgress(progress?.locks);
+  return locks.layers.flatMap((layer, index) => layer > 0 && locks.requiredKinds[index] < 0 ? [index] : []);
+}
+
+export function chipLockProgress(lockProgress, board, clearIndices, { allowRecallDirect = false } = {}) {
+  const before = normalizeLockProgress(lockProgress);
+  const after = normalizeLockProgress(before);
+  const clearSet = new Set((clearIndices || []).filter((index) => Number.isInteger(index) && index >= 0 && index < BOARD_SIZE * BOARD_SIZE));
+  const hits = [];
+  for (let index = 0; index < after.layers.length; index += 1) {
+    if (after.layers[index] <= 0) continue;
+    const requiredKind = after.requiredKinds[index];
+    const direct = clearSet.has(index);
+    const neighbors = adjacentIndices(index).filter((neighbor) => clearSet.has(neighbor));
+    const qualifies = requiredKind >= 0
+      ? (allowRecallDirect && direct) || neighbors.some((neighbor) => board?.[neighbor] === requiredKind)
+      : direct || neighbors.length > 0;
+    if (!qualifies) continue;
+    const previous = after.layers[index];
+    after.layers[index] = Math.max(0, previous - 1);
+    hits.push({ index, before: previous, after: after.layers[index], requiredKind });
+  }
+  after.opened = Math.max(0, after.total - after.layers.filter((layer) => layer > 0).length);
+  return { before, after, hits };
+}
+
 export function createLevelProgress(levelDefinition) {
-  return { collected: Array(TILE_KINDS).fill(0), ice: createIceBoard(levelDefinition), drop: createDropProgress(levelDefinition) };
+  const drop = createDropProgress(levelDefinition);
+  return { collected: Array(TILE_KINDS).fill(0), ice: createIceBoard(levelDefinition), drop, locks: createLockProgress(levelDefinition, drop) };
 }
 
 export function applyLevelProgress(levelDefinition, progress, result) {
@@ -656,6 +861,7 @@ export function applyLevelProgress(levelDefinition, progress, result) {
     collected: Array.from({ length: TILE_KINDS }, (_, kind) => Math.max(0, Number(progress?.collected?.[kind]) || 0)),
     ice: normalizeIce(result?.iceAfter ?? result?.ice ?? progress?.ice),
     drop: normalizeDropProgress(levelDefinition, progress?.drop),
+    locks: normalizeLockProgress(result?.locksAfter ?? result?.locks ?? progress?.locks),
   };
   addKindCounts(next.collected, result?.clearedKindCounts);
   const steps = Array.isArray(result?.transitions) ? result.transitions : result?.cleared ? [result] : [];
@@ -669,6 +875,7 @@ export function objectiveComplete(levelDefinition, progress, score) {
   for (const goal of levelDefinition.objective?.collect || []) if ((progress?.collected?.[goal.kind] || 0) < goal.count) return false;
   if (levelDefinition.objective?.ice && (progress?.ice || []).some((layers) => layers > 0)) return false;
   if (levelDefinition.objective?.drop && Number(progress?.drop?.delivered || 0) < Number(levelDefinition.objective.drop.count || 0)) return false;
+  if (levelDefinition.objective?.locks && (progress?.locks?.layers || []).some((layer) => Number(layer) > 0)) return false;
   return true;
 }
 
@@ -688,6 +895,10 @@ export function objectiveRemaining(levelDefinition, progress, score) {
     const count = Math.max(0, Number(levelDefinition.objective.drop.count || 0) - Number(progress?.drop?.delivered || 0));
     if (count > 0) remaining.push({ type: "drop", count });
   }
+  if (levelDefinition.objective?.locks) {
+    const count = (progress?.locks?.layers || []).reduce((sum, layer) => sum + Math.max(0, Number(layer) || 0), 0);
+    if (count > 0) remaining.push({ type: levelDefinition.objective.locks.recall ? "recall-lock" : "lock", count });
+  }
   return remaining;
 }
 
@@ -704,6 +915,10 @@ export function describeLevelObjective(levelDefinition, progress, score = 0) {
   if (levelDefinition.objective?.drop) {
     const delivered = Math.min(Number(levelDefinition.objective.drop.count || 0), Number(progress?.drop?.delivered || 0));
     parts.push(`drops ${delivered}/${levelDefinition.objective.drop.count}`);
+  }
+  if (levelDefinition.objective?.locks) {
+    const remaining = (progress?.locks?.layers || []).reduce((sum, layer) => sum + Math.max(0, Number(layer) || 0), 0);
+    parts.push(`${levelDefinition.objective.locks.recall ? "recall locks" : "locks"} ${remaining} left`);
   }
   return parts.join(" · ");
 }
