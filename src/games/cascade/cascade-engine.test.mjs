@@ -20,12 +20,12 @@ import {
 import { chooseMove, profileCascadeLevels, profileCascadeMoveFragility, runCascadeLevel, scoreVisibleMove, targetFirstPassBand } from "./cascade-simulator.js";
 import { analyzePlaytestExport } from "./cascade-playtest-analysis.js";
 
-test("Cascade ships 750 levels on a campaign model sized for 10000", () => {
-  assert.equal(LEVEL_COUNT, 750);
+test("Cascade ships 900 levels on a campaign model sized for 10000", () => {
+  assert.equal(LEVEL_COUNT, 900);
   assert.equal(CAMPAIGN_CAPACITY, 10000);
   assert.equal(CAMPAIGN_MILESTONE, 3000);
   assert.equal(CHAPTER_SIZE, 30);
-  assert.equal(CASCADE_LEVELS.length, 750);
+  assert.equal(CASCADE_LEVELS.length, 900);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
   assert.equal(CASCADE_LEVELS[0].moves, 20);
   assert.equal(CASCADE_LEVELS[4].target, 2375);
@@ -413,11 +413,102 @@ test("levels 601-750 advance from Drop mastery into Cages and Recall Locks", () 
   assert.ok(recallCells.every((index) => recallProgress.locks.requiredKinds[index] >= 0));
 });
 
+test("levels 751-900 introduce Memory Blooms, Enchanted Ground, and controlled recombination", () => {
+  const level751 = CASCADE_LEVELS[750];
+  const level755 = CASCADE_LEVELS[754];
+  const level801 = CASCADE_LEVELS[800];
+  const level805 = CASCADE_LEVELS[804];
+  const level851 = CASCADE_LEVELS[850];
+  const level900 = CASCADE_LEVELS[899];
+
+  assert.equal(level751.chapter, "memory-bloom-intro");
+  assert.ok(level751.objective.blooms);
+  assert.ok(level751.mechanics.includes("memory-blooms"));
+  assert.equal(level755.objective.blooms, null);
+  assert.ok(level755.objective.locks);
+
+  assert.equal(level801.chapter, "enchanted-ground-intro");
+  assert.ok(level801.objective.ground);
+  assert.ok(level801.mechanics.includes("enchanted-ground"));
+  assert.equal(level805.objective.ground, null);
+  assert.ok(level805.objective.locks);
+
+  assert.equal(level851.chapter, "bloom-ground-remix");
+  assert.ok(level851.objective.blooms);
+  assert.ok(level851.objective.ground);
+  assert.equal(level900.chapter, "cognitive-spatial-remix");
+});
+
+test("Memory Blooms reveal, mismatch safely, and collect only matching fixed pairs", () => {
+  const level = CASCADE_LEVELS[750];
+  const initial = createLevelProgress(level);
+  const bySymbol = new Map();
+  initial.blooms.symbols.forEach((symbol, index) => {
+    if (symbol < 0) return;
+    if (!bySymbol.has(symbol)) bySymbol.set(symbol, []);
+    bySymbol.get(symbol).push(index);
+  });
+  const pair = [...bySymbol.values()].find((indices) => indices.length >= 2);
+  assert.ok(pair);
+
+  const adjacentClear = (index) => {
+    const row = Math.floor(index / 8);
+    const col = index % 8;
+    if (col < 7) return index + 1;
+    if (col > 0) return index - 1;
+    if (row < 7) return index + 8;
+    return index - 8;
+  };
+
+  const first = applyLevelProgress(level, initial, {
+    transitions: [{ matchedForProgress: [adjacentClear(pair[0])], clearedKindCounts: Array(6).fill(0) }],
+    clearedKindCounts: Array(6).fill(0),
+  });
+  assert.equal(first.blooms.activeIndex, pair[0]);
+  assert.equal(first.blooms.collectedPairs, 0);
+  assert.equal(first.blooms.lastEvents[0].type, "open");
+
+  const second = applyLevelProgress(level, first, {
+    transitions: [{ matchedForProgress: [adjacentClear(pair[1])], clearedKindCounts: Array(6).fill(0) }],
+    clearedKindCounts: Array(6).fill(0),
+  });
+  assert.equal(second.blooms.collectedPairs, 1);
+  assert.equal(second.blooms.activeIndex, -1);
+  assert.equal(second.blooms.lastEvents.at(-1).type, "match");
+  assert.equal(second.blooms.symbols[pair[0]], -1);
+  assert.equal(second.blooms.symbols[pair[1]], -1);
+});
+
+test("Enchanted Ground spreads only when a clear touches existing magic", () => {
+  const level = CASCADE_LEVELS[800];
+  const initial = createLevelProgress(level);
+  const seed = initial.ground.covered.findIndex(Boolean);
+  assert.ok(seed >= 0);
+  const row = Math.floor(seed / 8);
+  const neighbor = seed % 8 < 7 ? seed + 1 : seed - 1;
+  assert.equal(initial.ground.covered[neighbor], false);
+
+  const untouched = applyLevelProgress(level, initial, {
+    transitions: [{ matchedForProgress: [row === 0 ? 56 : 0], clearedKindCounts: Array(6).fill(0) }],
+    clearedKindCounts: Array(6).fill(0),
+  });
+  assert.equal(untouched.ground.count, initial.ground.count);
+
+  const spread = applyLevelProgress(level, initial, {
+    transitions: [{ matchedForProgress: [seed, neighbor], clearedKindCounts: Array(6).fill(0) }],
+    clearedKindCounts: Array(6).fill(0),
+  });
+  assert.equal(spread.ground.covered[neighbor], true);
+  assert.equal(spread.ground.count, initial.ground.count + 1);
+  assert.deepEqual(spread.ground.lastSpread, [neighbor]);
+});
+
 test("representative campaign sentinels exercise the objective-aware lookahead bot without engine errors", () => {
   const sentinelLevels = [
     1, 6, 30, 31, 60, 61, 90, 91, 120, 150, 180, 210, 240, 270, 300,
     301, 330, 360, 390, 420, 450, 451, 480, 510, 540, 570, 600,
     601, 630, 650, 651, 680, 700, 701, 730, 750,
+    751, 780, 800, 801, 830, 850, 851, 870, 885, 900,
   ];
   for (const levelNumber of sentinelLevels) {
     const level = CASCADE_LEVELS[levelNumber - 1];
@@ -457,12 +548,12 @@ test("move fragility profiling uses paired seeds across plus/minus one move", ()
 
 test("bounded sample profiling records solver and human-persona sensitivity", () => {
   const report = profileCascadeLevels({
-    levelDefinitions: CASCADE_LEVELS.slice(720, 750),
+    levelDefinitions: CASCADE_LEVELS.slice(870, 900),
     runsPerLevel: 1,
     humanRunsPerLevel: 1,
   });
   assert.equal(report.levels.length, 30);
-  assert.deepEqual(report.levelRange, { from: 721, to: 750 });
+  assert.deepEqual(report.levelRange, { from: 871, to: 900 });
   for (const level of report.levels) {
     assert.ok(level.strategies.random);
     assert.ok(level.strategies["human-casual"]);
