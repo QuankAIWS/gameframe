@@ -215,7 +215,7 @@ function saveActiveRun() {
 function loadActiveRun(levelNumber) {
   try {
     const parsed = JSON.parse(localStorage.getItem(ACTIVE_RUN_KEY) || "null");
-    if (!parsed || typeof parsed !== "object" || parsed.version !== ACTIVE_RUN_VERSION) return null;
+    if (!parsed || typeof parsed !== "object" || ![1, ACTIVE_RUN_VERSION].includes(Number(parsed.version))) return null;
     if (Number(parsed.level) !== Number(levelNumber)) return null;
     const level = levels[levelNumber - 1];
     if (!level) return null;
