@@ -1209,7 +1209,7 @@ window.cascadeResearch = Object.freeze({
     if (!VALID_SPECIALS.has(mapped)) return [];
     const blocked = new Set((levelProgress?.drop?.tokens || []).map((token) => Number(token.index)));
     const candidates = board.map((kind, index) => ({ kind, index }))
-      .filter(({ kind, index }) => kind !== null && !blocked.has(index) && Math.max(0, Number(levelProgress?.ice?.[index]) || 0) === 0)
+      .filter(({ kind, index }) => kind !== null && !specials[index] && !blocked.has(index) && Math.max(0, Number(levelProgress?.ice?.[index]) || 0) === 0)
       .map(({ index }) => index);
     const placed = [];
     while (placed.length < Math.max(1, Math.min(8, Number(count) || 1)) && candidates.length) {
@@ -1230,7 +1230,7 @@ window.cascadeResearch = Object.freeze({
       const right = index % BOARD_SIZE < BOARD_SIZE - 1 ? index + 1 : -1;
       const down = index + BOARD_SIZE < board.length ? index + BOARD_SIZE : -1;
       for (const neighbor of [right, down]) {
-        if (neighbor < 0 || blocked.has(index) || blocked.has(neighbor)) continue;
+        if (neighbor < 0 || specials[index] || specials[neighbor] || blocked.has(index) || blocked.has(neighbor)) continue;
         if (Math.max(0, Number(levelProgress?.ice?.[index]) || 0) > 0 || Math.max(0, Number(levelProgress?.ice?.[neighbor]) || 0) > 0) continue;
         pairs.push([index, neighbor]);
       }
