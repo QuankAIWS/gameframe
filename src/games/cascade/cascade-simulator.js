@@ -11,6 +11,7 @@ import {
   emptySpecials,
   findSpecialMatchGroups,
   objectiveComplete,
+  ordinaryLockTargetIndices,
 } from "../../../public/cascade-special-engine.js";
 import { objectiveRemaining } from "../../../public/cascade-engine.js";
 
@@ -27,6 +28,8 @@ export const HUMAN_PERSONAS = Object.freeze({
       specialActivation: 0.65,
       combo: 1.45,
       colorObjective: 1.25,
+      lock: 1.3,
+      recall: 1.45,
     }),
   }),
   "human-skilled": Object.freeze({
@@ -41,6 +44,8 @@ export const HUMAN_PERSONAS = Object.freeze({
       specialActivation: 1.05,
       combo: 2.35,
       colorObjective: 2.4,
+      lock: 2.4,
+      recall: 2.8,
     }),
   }),
 });
@@ -172,13 +177,13 @@ function swap(values, a, b) {
   [values[a], values[b]] = [values[b], values[a]];
 }
 
-function listPlayableMoves(board, specials, rules = {}) {
+function listPlayableMoves(board, specials, rules = {}, locked = []) {
   const moves = [];
   for (let index = 0; index < board.length; index += 1) {
     const right = index % 8 < 7 ? index + 1 : -1;
     const down = index + 8 < board.length ? index + 8 : -1;
     for (const neighbor of [right, down]) {
-      if (neighbor < 0) continue;
+      if (neighbor < 0 || Number(locked?.[index]) > 0 || Number(locked?.[neighbor]) > 0) continue;
       const a = specials[index];
       const b = specials[neighbor];
       if (a === SPECIAL.COLOR || b === SPECIAL.COLOR || (a && b)) {
@@ -186,7 +191,7 @@ function listPlayableMoves(board, specials, rules = {}) {
         continue;
       }
       swap(board, index, neighbor);
-      const groups = findSpecialMatchGroups(board, specials, rules);
+      const groups = findSpecialMatchGroups(board, specials, rules, locked);
       swap(board, index, neighbor);
       if (groups.length) {
         moves.push({
@@ -228,6 +233,9 @@ function objectiveAdvanceValue(level, before, after) {
   const afterDrops = Number(after?.drop?.delivered || 0);
   value += Math.max(0, afterDrops - beforeDrops) * 420;
   value += Math.max(0, dropDistance(before) - dropDistance(after)) * 170;
+  const beforeLocks = (before?.locks?.layers || []).reduce((sum, layer) => sum + Math.max(0, Number(layer) || 0), 0);
+  const afterLocks = (after?.locks?.layers || []).reduce((sum, layer) => sum + Math.max(0, Number(layer) || 0), 0);
+  value += Math.max(0, beforeLocks - afterLocks) * 300;
   return value;
 }
 
@@ -262,6 +270,8 @@ function visibleMoveFeatures(level, progress, board, specials, move) {
     specialActivation: 0,
     combo: 0,
     colorObjective: 0,
+    lock: 0,
+    recall: 0,
   };
 
   if (a === SPECIAL.COLOR || b === SPECIAL.COLOR) {
@@ -282,7 +292,7 @@ function visibleMoveFeatures(level, progress, board, specials, move) {
     return features;
   }
 
-  const groups = findSpecialMatchGroups(swappedBoard, swappedSpecials, specialRules(level.level));
+  const groups = findSpecialMatchGroups(swappedBoard, swappedSpecials, specialRules(level.level), progress?.locks?.layers || []);
   const matched = new Set(groups.flatMap((group) => group.indices));
   features.match = Math.min(10, matched.size);
 
@@ -291,6 +301,27 @@ function visibleMoveFeatures(level, progress, board, specials, move) {
     if (Number(progress?.ice?.[index] || 0) > 0) features.ice += 1;
     if (neededKinds.has(swappedBoard[index])) features.collection += 1;
     if (dropSupports.has(index)) features.drop += 1;
+  }
+
+  const lockLayers = progress?.locks?.layers || [];
+  const requiredKinds = progress?.locks?.requiredKinds || [];
+  for (let lockIndex = 0; lockIndex < lockLayers.length; lockIndex += 1) {
+    if (Number(lockLayers[lockIndex]) <= 0) continue;
+    const row = Math.floor(lockIndex / 8);
+    const col = lockIndex % 8;
+    const neighbors = [];
+    if (row > 0) neighbors.push(lockIndex - 8);
+    if (row < 7) neighbors.push(lockIndex + 8);
+    if (col > 0) neighbors.push(lockIndex - 1);
+    if (col < 7) neighbors.push(lockIndex + 1);
+    const matchedNeighbors = neighbors.filter((index) => matched.has(index));
+    if (!matchedNeighbors.length) continue;
+    const requiredKind = Number(requiredKinds[lockIndex]);
+    if (requiredKind >= 0) {
+      if (matchedNeighbors.some((index) => swappedBoard[index] === requiredKind)) features.recall += 1;
+    } else {
+      features.lock += 1;
+    }
   }
 
   const lineGroups = groups.filter((group) => group.orientation === "row" || group.orientation === "column");
@@ -354,8 +385,9 @@ function evaluateImmediate(level, progress, board, specials, move, boardRng) {
   const result = applySpecialSwap(board, specials, move.from, move.to, trialRng, {
     rules: specialRules(level.level),
     ice: progress.ice,
+    locks: progress.locks,
     targetKinds: remainingTargetKinds(level, progress),
-    targetIndices: dropSupportIndices(progress),
+    targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress)])],
   });
   if (!result.legal) return null;
   const nextProgress = applySpecialLevelProgress(level, progress, result);
@@ -450,11 +482,13 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
   let comboCount = 0;
   let iceHitCount = 0;
   let dropDeliveredCount = 0;
+  let lockHitCount = 0;
+  let locksOpenedCount = 0;
   const collectedTotals = Array(TILE_KINDS).fill(0);
   const moveHistory = [];
 
   while (movesRemaining > 0 && !objectiveComplete(definition, progress, score)) {
-    const legalMoves = listPlayableMoves(board.slice(), specials, specialRules(definition.level));
+    const legalMoves = listPlayableMoves(board.slice(), specials, specialRules(definition.level), progress?.locks?.layers || []);
     branchingTotal += legalMoves.length;
     if (!legalMoves.length) throw new Error(`Cascade special engine returned a board with no playable moves at level ${definition.level}`);
 
@@ -462,16 +496,20 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     const result = applySpecialSwap(board, specials, move.from, move.to, boardRng, {
       rules: specialRules(definition.level),
       ice: progress.ice,
+      locks: progress.locks,
       targetKinds: remainingTargetKinds(definition, progress),
-      targetIndices: dropSupportIndices(progress),
+      targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress)])],
     });
     if (!result.legal) throw new Error(`Cascade bot selected an illegal move ${move.from}->${move.to}`);
 
     movesRemaining -= 1;
     score += result.scoreGained;
     const deliveredBefore = Number(progress?.drop?.delivered || 0);
+    const openedBefore = Number(progress?.locks?.opened || 0);
     progress = applySpecialLevelProgress(definition, progress, result);
     dropDeliveredCount += Math.max(0, Number(progress?.drop?.delivered || 0) - deliveredBefore);
+    locksOpenedCount += Math.max(0, Number(progress?.locks?.opened || 0) - openedBefore);
+    lockHitCount += result.transitions.reduce((sum, transition) => sum + (transition.lockHits?.length || 0), 0);
     cascadeCount += result.transitions.length;
     maxCascade = Math.max(maxCascade, result.maxCascade);
     specialCreatedCount += result.specialCreatedCount || 0;
@@ -493,6 +531,8 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
       comboCount: result.transitions.filter((transition) => Boolean(transition.combo)).length,
       iceHitCount: result.iceHitCount || 0,
       dropsDelivered: Number(progress?.drop?.delivered || 0),
+      lockHits: result.transitions.reduce((sum, transition) => sum + (transition.lockHits?.length || 0), 0),
+      locksOpened: Number(progress?.locks?.opened || 0),
       shuffled: result.shuffled,
       score,
       movesRemaining,
@@ -523,6 +563,8 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     comboCount,
     iceHitCount,
     dropDeliveredCount,
+    lockHitCount,
+    locksOpenedCount,
     collectedTotals,
     objectiveRemaining: remaining,
     objectiveComplete: win,
