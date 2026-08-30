@@ -594,7 +594,21 @@ export function resolveSpecialCascades(board, specials, rng, {
   let shuffle = null;
   if (!hasPlayableMove(currentBoard, currentSpecials, rules, currentLocks.layers)) {
     const before = currentBoard.slice();
-    currentBoard = createBoard({ rng, rules });
+    const lockedValues = currentLocks.layers.flatMap((layer, index) => Number(layer) > 0 ? [{ index, kind: before[index] }] : []);
+    let candidate = before.slice();
+    let found = false;
+    for (let attempt = 0; attempt < 128; attempt += 1) {
+      candidate = createBoard({ rng, rules });
+      for (const locked of lockedValues) candidate[locked.index] = locked.kind;
+      if (hasPlayableMove(candidate, emptySpecials(), rules, currentLocks.layers)) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      throw new Error("Cascade could not produce a playable shuffle around locked cells");
+    }
+    currentBoard = candidate;
     currentSpecials = emptySpecials();
     shuffled = true;
     shuffle = { type: "shuffle", before, after: currentBoard.slice() };
