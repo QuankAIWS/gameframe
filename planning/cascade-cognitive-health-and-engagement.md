@@ -306,6 +306,28 @@ Memory Blooms debut only on relief/normal beats.
 
 Level 1,000 remains a major human-data checkpoint inside this production batch rather than changing the 150-level generation cadence.
 
+## Current difficulty baseline
+
+The accepted 451–600 deep profile does not justify a wholesale raw-difficulty reset.
+
+On the accepted Butterfly-era 20-run human-skilled sample, average win rates by tension label were approximately:
+
+- relief: 86.3%;
+- normal: 78.0%;
+- hard: 65.7%;
+- super-hard: 61.7%.
+
+The accepted 451–600 fragility scan flagged no level at the 50-percentage-point brittle threshold. The largest observed -1/+1 move swing was 33 percentage points.
+
+Earlier clean family telemetry through level 296 recorded an 88.2% hammer-clean first-pass rate overall, with expected separation among relief, normal, hard, and super-hard labels.
+
+Interpretation:
+
+- the pressure curve is serviceable enough to preserve;
+- the major design opportunity is richer cognitive and board vocabulary rather than simply making levels harder;
+- future tuning should still correct individual outliers and compare simulator output with new family traces;
+- memory-heavy levels must not receive extra raw pressure merely because they are cognitively richer.
+
 ## Existing 1–600 campaign
 
 Do not rewrite the accepted 1–600 campaign wholesale merely to increase cognitive density.
