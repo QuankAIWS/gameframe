@@ -131,7 +131,8 @@ test("Cascade Butterfly keeps all six color families readable on desktop", async
   expect(new Set(geometry.map((item) => item.kind)).size).toBe(6);
   for (const item of geometry) {
     expect(item.faceWidth).toBeGreaterThan(item.tileWidth * .75);
-    expect(item.markWidth).toBeLessThan(item.tileWidth * .2);
+    expect(item.markWidth).toBeGreaterThan(item.tileWidth * .68);
+    expect(item.markWidth).toBeLessThan(item.tileWidth * .82);
     expect(item.faceTransform).not.toBe("none");
   }
   await page.screenshot({ path: `${output}/cascade-butterfly-special-desktop.png`, fullPage: true });
