@@ -132,6 +132,7 @@ const LATE_LEVEL_TUNING = Object.freeze({
   449: Object.freeze({ moveDelta: 2, collectDelta: -2, iceDelta: -2, pattern: "center" }),
   565: Object.freeze({ moveDelta: 1, iceDelta: -2, pattern: "center" }),
   570: Object.freeze({ moveDelta: 1, iceDelta: -3, pattern: "center" }),
+  700: Object.freeze({ moveDelta: 1 }),
 });
 
 function lateLevelTuning(levelNumber) {
@@ -478,7 +479,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 630) {
     return buildSpec({
-      levelNumber, start: 601, chapter: "drop-precision-mastery", baseTarget: 18600, targetStep: 105, baseMoves: 32,
+      levelNumber, start: 601, chapter: "drop-precision-mastery", baseTarget: 18600, targetStep: 105, baseMoves: 34,
       objectiveFactory: ({ phase, within, wave }) => {
         const count = 3 + (phase >= 2 ? 1 : 0);
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
@@ -491,7 +492,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 650) {
     return buildSpec({
-      levelNumber, start: 631, chapter: "drop-capstone", baseTarget: 19200, targetStep: 110, baseMoves: 33,
+      levelNumber, start: 631, chapter: "drop-capstone", baseTarget: 19200, targetStep: 110, baseMoves: 35,
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind, secondKind] = twoKinds(levelNumber, 2);
         const collectCount = scaleCount(6 + phase + Math.floor(within / 5), wave.objectiveFactor);
@@ -508,7 +509,7 @@ function campaignSpec(levelNumber) {
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         return objective({
-          locks: { count: scaleCount(4 + phase + Math.floor(within / 4), wave.objectiveFactor), layers: 1, pattern },
+          locks: { count: scaleCount(4 + phase * 2 + Math.floor(within / 4), wave.objectiveFactor), layers: 1, pattern },
         });
       },
     });
@@ -519,8 +520,9 @@ function campaignSpec(levelNumber) {
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind] = twoKinds(levelNumber, 3);
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        const masteredPressure = wave.difficulty === "relief" || wave.difficulty === "normal" ? 1 : 0;
         return objective({
-          locks: { count: scaleCount(6 + phase + Math.floor(within / 4), wave.objectiveFactor), layers: phase >= 1 ? 2 : 1, pattern },
+          locks: { count: scaleCount(6 + phase + Math.floor(within / 4) + masteredPressure, wave.objectiveFactor), layers: phase >= 1 ? 2 : 1, pattern },
           collect: [{ kind: firstKind, count: scaleCount(7 + phase + Math.floor(within / 5), wave.objectiveFactor) }],
           drop: within >= 5 ? dropObjective(levelNumber, 2, phase) : null,
         });
@@ -529,31 +531,33 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 730) {
     return buildSpec({
-      levelNumber, start: 701, chapter: "recall-lock-intro", baseTarget: 19000, targetStep: 90, baseMoves: 36,
+      levelNumber, start: 701, chapter: "recall-lock-intro", baseTarget: 19000, targetStep: 90, baseMoves: 37,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
         const firstTeachingWave = phase === 0;
         const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        const isRecall = !(firstTeachingWave && pressureBeat);
+        const recallCount = phase === 0 ? 2 : phase === 1 ? (within >= 5 ? 3 : 2) : 3;
         return objective({
           locks: {
-            count: scaleCount(2 + phase + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)),
+            count: isRecall ? recallCount : 5,
             layers: 1,
             pattern,
-            recall: !(firstTeachingWave && pressureBeat),
+            recall: isRecall,
           },
         });
       },
     });
   }
   return buildSpec({
-    levelNumber, start: 731, chapter: "recall-lock-mix", baseTarget: 19600, targetStep: 95, baseMoves: 37,
+    levelNumber, start: 731, chapter: "recall-lock-mix", baseTarget: 19600, targetStep: 95, baseMoves: 38,
     objectiveFactory: ({ phase, within, wave }) => {
       const [firstKind] = twoKinds(levelNumber, 2);
       const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
       return objective({
-        locks: { count: scaleCount(3 + phase + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)), layers: 1, pattern, recall: true },
-        collect: [{ kind: firstKind, count: scaleCount(6 + phase + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)) }],
-        drop: within >= 6 ? dropObjective(levelNumber, 1 + (phase >= 1 ? 1 : 0), phase) : null,
+        locks: { count: phase === 0 ? 2 : 3, layers: 1, pattern, recall: true },
+        collect: [{ kind: firstKind, count: scaleCount(5 + phase + Math.floor(within / 6), Math.min(1, wave.objectiveFactor)) }],
+        drop: phase >= 1 && within >= 7 ? dropObjective(levelNumber, 1, phase) : null,
       });
     },
   });
