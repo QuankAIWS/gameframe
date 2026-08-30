@@ -532,8 +532,15 @@ function campaignSpec(levelNumber) {
       levelNumber, start: 701, chapter: "recall-lock-intro", baseTarget: 19000, targetStep: 90, baseMoves: 36,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+        const firstTeachingWave = phase === 0;
+        const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
         return objective({
-          locks: { count: scaleCount(2 + phase + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)), layers: 1, pattern, recall: true },
+          locks: {
+            count: scaleCount(2 + phase + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)),
+            layers: 1,
+            pattern,
+            recall: !(firstTeachingWave && pressureBeat),
+          },
         });
       },
     });
