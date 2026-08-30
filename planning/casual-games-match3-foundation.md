@@ -357,7 +357,7 @@ Track enough to tune the game, not to manufacture pressure:
 - Blitz attempts, scores, and improvement rate
 - Quick Recall participation, accuracy, and improvement rate
 - Weekly Blitz participation and best-score spread
-- optional-memory-mode participation and performance once additional modes exist
+- cognitive-accent participation, mismatch/hint use, and performance once core memory mechanics exist
 
 ## Expansion beyond level 450
 
@@ -394,9 +394,9 @@ The practical production loop uses **150-level expansion/tuning batches**. Inter
 5. Human-like profiling, clean playtest analysis, paired-seed comparison, fragility scanning, and the 10,000-level difficulty horizon — current testing foundation.
 6. Add drop/exit goals as the first new board-element family and verify full runtime/simulator/telemetry parity — implemented through level 600.
 7. Finish the advanced drop slice through level 650 after profiling 451–600, then add locks/cages as the second new family.
-8. Add spreading terrain, regrowing blockers, color-conditional blockers, and producers in separate testable slices while expanding toward 1,500.
-9. Re-evaluate actual player data during the 1,000–1,500 range before generating the remainder of the first 3,000-level milestone.
-10. Add reveal/access systems, portals, conveyors, charged/special-only systems, and toggle mechanics while completing levels 1,500–3,000.
+8. Use level 1,000 as the first explicit cognitive-mechanic/player-data checkpoint; continue collecting through 1,500 before locking later cognitive density.
+9. From 1,051–1,700, add regrowing blockers, reveal/access systems, and deeper producer/dependency combinations in separate testable slices.
+10. Add portals, conveyors, charged/special-only systems, toggle mechanics, and cross-system mastery while completing levels 1,700–3,000.
 11. Perform a full 3,000-level player-data and content review before committing the 3,001–10,000 recipe mix.
-12. Cognitive-accent mechanics are now part of the controlled main-campaign vocabulary; Quick Recall and Blitz remain optional concentrated memory/speed modes.
+12. Cognitive-accent mechanics are part of the controlled main-campaign vocabulary; Quick Recall and Blitz remain optional concentrated memory/speed modes.
 13. VFX/presentation gets its own dedicated pass; spectacle should be preserved or increased rather than solved by simply reducing effects.
