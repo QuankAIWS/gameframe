@@ -555,30 +555,42 @@
 .cascade-ground-mark {
   position: absolute;
   z-index: 2;
-  inset: 3%;
+  inset: 5%;
   pointer-events: none;
-  border-radius: 24%;
-  border: clamp(2px, .45vw, 4px) solid rgba(92, 211, 201, .72);
+  border-radius: 52% 43% 56% 46% / 46% 57% 43% 54%;
+  border: 0;
   background:
-    radial-gradient(circle at 16% 18%, rgba(255,255,255,.98) 0 3%, transparent 4%),
-    radial-gradient(circle at 82% 24%, rgba(255,255,255,.9) 0 2.5%, transparent 3.5%),
-    radial-gradient(circle at 24% 82%, rgba(255,247,176,.92) 0 2.5%, transparent 3.5%),
-    radial-gradient(circle at 80% 78%, rgba(255,255,255,.92) 0 2%, transparent 3%),
-    linear-gradient(145deg, rgba(131, 239, 213, .2), rgba(124, 165, 245, .12));
+    radial-gradient(circle at 20% 24%, rgba(255,255,255,.96) 0 3%, transparent 4.5%),
+    radial-gradient(circle at 78% 22%, rgba(255,247,184,.92) 0 2.5%, transparent 4%),
+    radial-gradient(circle at 72% 76%, rgba(255,255,255,.9) 0 2%, transparent 3.5%),
+    radial-gradient(ellipse at 48% 48%, rgba(150,246,218,.56) 0 42%, rgba(123,210,235,.28) 58%, rgba(143,136,244,.12) 76%, transparent 78%);
   box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,.54),
-    inset 0 0 13px rgba(103, 234, 211, .32),
-    0 0 8px rgba(96, 210, 214, .28);
+    0 0 7px rgba(83, 216, 204, .32),
+    0 0 14px rgba(116, 186, 240, .18);
+  filter: saturate(1.08) brightness(1.05);
+}
+
+.cascade-ground-mark::before {
+  content: "";
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.36);
+  border-left-color: transparent;
+  border-bottom-color: rgba(255,255,255,.14);
+  transform: rotate(-18deg);
 }
 
 .cascade-tile.has-enchanted-ground .cascade-ground-mark::after {
   content: "✦";
   position: absolute;
-  right: 5%;
-  bottom: 1%;
-  color: rgba(255,255,255,.95);
+  right: 9%;
+  bottom: 4%;
+  color: rgba(255,255,255,.98);
   font-size: clamp(.55rem, 2.1vw, 1rem);
-  text-shadow: 0 0 5px rgba(78,194,207,.9);
+  text-shadow:
+    0 0 4px rgba(255,255,255,.9),
+    0 0 7px rgba(78,194,207,.82);
 }
 
 .cascade-tile.has-memory-bloom::before {
