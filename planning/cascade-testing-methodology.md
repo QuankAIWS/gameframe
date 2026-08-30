@@ -229,6 +229,8 @@ For each accepted bounded level batch:
 
 At larger campaign sizes, normal validation should profile the **new/changed range** and representative sentinel levels from older mechanic families. Full historical sweeps are reserved for major checkpoints, consequential rule changes, or sentinel drift suggesting broad regression.
 
+The production expansion cadence is defined by `planning/cascade-10000-campaign-roadmap.md`; the current default is **150 levels per generation/tuning pass**. A 30-level chapter or map window is an internal content/UI structure and must not be interpreted as the validation or generation batch size.
+
 Raw player telemetry, display names, stable player IDs, session/attempt/event IDs, device metadata, diagnostics exports, and raw event streams never belong in the public GameFrame mirror. Public player evidence is limited to sanitized anonymous aggregates with source filename/hash provenance. Raw source files remain private.
 
 If an old result must be reconstructed from an immutable historical GameFrame commit because the original bytes are gone, label it as reconstructed rather than presenting it as the original run.
