@@ -100,7 +100,7 @@ Durable encounter→match restart/reconnect authority, shared-team tactical cont
 - The current production expansion unit is **150 levels per generation/tuning pass**. The 451–600 accepted expansion is the reference workflow.
 - `CHAPTER_SIZE = 30`, 30-level map windows, and 30-level chapter recipes are internal organization/presentation structures only. They do **not** mean agents should generate or tune only 30 levels at a time.
 - `planning/cascade-cognitive-design-and-playtesting.md` is historical product-design material and is not authoritative for current bot architecture, level counts, generation cadence, difficulty calibration, or implementation order.
-- Do not revive superseded first-20-level or chapter-sized production guidance from repository history unless the user explicitly asks for historical context.
+- Do not revive superseded prototype-era or chapter-sized production guidance from repository history unless the user explicitly asks for historical context.
 
 ## Cascade public-safe difficulty mirror
 
