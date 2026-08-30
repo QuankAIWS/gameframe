@@ -19,6 +19,14 @@ Three progression axes remain separate:
 
 Levels 301–600 remain early-campaign fluency and mechanic-growth content.
 
+## Production batch contract
+
+The current production expansion unit is **150 shipped levels per generation/tuning pass**. The accepted 451–600 expansion is the reference implementation of that workflow.
+
+A 30-level chapter is an internal content-organization and player-map unit, not the production generation cadence. A normal 150-level pass may span five 30-level chapters and may cross mechanic-family boundaries when the roadmap requires it.
+
+Unless explicitly changed by a later decision, agents should plan, generate, profile, tune, review, and accept Cascade expansion work in 150-level batches. Do not infer a 30-level generation limit from `CHAPTER_SIZE`, the player-facing map window, or chapter recipe boundaries.
+
 ## Immediate milestone architecture: levels 451–3,000
 
 New mechanics enter in teach/practice/mix/mastery arcs, then become ordinary parts of the global vocabulary.
@@ -237,24 +245,23 @@ These are advisory authoring targets, not guarantees or CI gates.
 
 The ten-level wave remains more important than the global average: relief must still feel like relief, and super-hard beats must remain exceptional rather than becoming the permanent baseline.
 
-## Candidate-generation pipeline
+## 150-level production pass
 
-Do not author one generated candidate and accept it automatically.
+The current level-production workflow is the one proven by the accepted 451–600 expansion:
 
-For each intended level slot:
+1. define the mechanic progression and internal chapter structure for the next 150-level range;
+2. generate the full 150-level candidate range from the shared campaign rules;
+3. validate schema, objective reachability, mechanic compatibility, and engine execution;
+4. profile the new range with random, human-casual, human-skilled, greedy, and lookahead strategies;
+5. run fragility analysis and inspect seed/geometry outliers;
+6. tune specific bad levels or recipes rather than shrinking the production batch;
+7. rerun the affected range and exact-head validation;
+8. visually review new mechanics/presentation where applicable;
+9. archive the accepted profile and fragility evidence with exact commit/workflow provenance.
 
-1. generate multiple candidate recipes from the chapter vocabulary;
-2. validate schema, objective reachability, and mechanic compatibility;
-3. run random, human-casual, human-skilled, greedy, and lookahead personas;
-4. reject impossible or solver-broken candidates;
-5. reject trivially easy candidates when they do not occupy a relief slot;
-6. reject fragile candidates with excessive +/- one-move sensitivity;
-7. reject candidates with excessive seed variance or geometry dependence;
-8. score novelty against recently selected levels;
-9. retain candidates closest to the target tension band while preserving variety;
-10. run paired-seed comparison whenever engine rules change.
+Older shipped ranges are not re-simulated in full on every 150-level pass. Use retained historical evidence plus mechanic sentinels, escalating to a full historical sweep only for consequential engine changes, material sentinel drift, or deliberate major checkpoints.
 
-Generation should happen in bounded batches, preferably 30-level chapters or a few chapters at a time, so mechanic quality can be reviewed before multiplying mistakes across thousands of levels.
+Internal 30-level chapters remain useful for teaching arcs, map presentation, and recipe organization. They are not separate generation passes.
 
 ## Testing and model roadmap
 
@@ -320,10 +327,10 @@ Run a full campaign review:
 
 Only after this review should the 3,001–10,000 recipe mix be locked in.
 
-## Implementation order from the current branch
+## Implementation order from current main
 
 1. 450-level Butterfly and human-testing foundation with the 10,000-level horizon — implemented.
-2. Drop/exit objectives end-to-end plus levels 451–600 — current expansion.
-3. Profile/tune levels 451–600, then finish the advanced drop slice through level 650 if the mechanic remains healthy.
-4. Implement locks/cages end-to-end on the same shared board-element contracts.
-5. Continue mechanics and content in bounded batches toward the 3,000 milestone.
+2. Drop/exit objectives end-to-end plus the 451–600 production batch — implemented, profiled, tuned, accepted, and archived.
+3. The next nominal production batch is 601–750 under the 150-level batch contract, carrying the roadmap from advanced drop work into locks/cages as appropriate.
+4. Continue subsequent mechanics and content in 150-level production batches toward the 3,000 milestone.
+5. Reassess batch policy only through an explicit later decision; do not silently revert to chapter-sized generation.
