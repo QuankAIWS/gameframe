@@ -241,6 +241,7 @@ function compoundGeometryMoveBonus(levelObjective, difficulty) {
     if (difficulty === "relief") bonus += 1;
     if (difficulty === "normal" && (ice.pattern === "edges" || ice.pattern === "diagonal")) bonus += 1;
   }
+  const memoryHeavy = levelObjective?.locks?.recall || levelObjective?.blooms;
   if (levelObjective?.locks?.recall) {
     if (difficulty === "relief") bonus += 2;
     else if (difficulty === "normal") bonus += 1;
@@ -251,7 +252,8 @@ function compoundGeometryMoveBonus(levelObjective, difficulty) {
     if (difficulty === "relief") bonus += 2;
     else if (difficulty === "normal") bonus += 1;
   }
-  if (levelObjective?.ground && difficulty === "relief") bonus += 1;
+  // Do not stack an extra Ground move subsidy on top of a memory subsidy.
+  if (levelObjective?.ground && !memoryHeavy && difficulty === "relief") bonus += 1;
   return bonus;
 }
 
@@ -616,7 +618,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 780) {
     return buildSpec({
-      levelNumber, start: 751, chapter: "memory-bloom-intro", baseTarget: 19800, targetStep: 90, baseMoves: 40,
+      levelNumber, start: 751, chapter: "memory-bloom-intro", baseTarget: 20200, targetStep: 100, baseMoves: 35,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
         const firstTeachingWave = phase === 0;
@@ -631,7 +633,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 800) {
     return buildSpec({
-      levelNumber, start: 781, chapter: "memory-bloom-mix", baseTarget: 20200, targetStep: 90, baseMoves: 41,
+      levelNumber, start: 781, chapter: "memory-bloom-mix", baseTarget: 20800, targetStep: 100, baseMoves: 36,
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind] = twoKinds(levelNumber, 2);
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
@@ -644,7 +646,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 830) {
     return buildSpec({
-      levelNumber, start: 801, chapter: "enchanted-ground-intro", baseTarget: 20400, targetStep: 90, baseMoves: 38,
+      levelNumber, start: 801, chapter: "enchanted-ground-intro", baseTarget: 21000, targetStep: 100, baseMoves: 35,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         const firstTeachingWave = phase === 0;
@@ -654,7 +656,7 @@ function campaignSpec(levelNumber) {
         }
         return objective({
           ground: {
-            target: scaleCount(14 + phase * 3 + Math.floor(within / 4), Math.min(1.05, wave.objectiveFactor)),
+            target: scaleCount(18 + phase * 4 + Math.floor(within / 3), wave.objectiveFactor),
             seeds: 3 + (phase >= 2 ? 1 : 0),
             pattern,
           },
@@ -664,14 +666,14 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 850) {
     return buildSpec({
-      levelNumber, start: 831, chapter: "enchanted-ground-mix", baseTarget: 20800, targetStep: 95, baseMoves: 39,
+      levelNumber, start: 831, chapter: "enchanted-ground-mix", baseTarget: 21600, targetStep: 105, baseMoves: 36,
       objectiveFactory: ({ phase, within, wave }) => {
         const [firstKind] = twoKinds(levelNumber, 3);
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         return objective({
           ground: {
-            target: scaleCount(20 + phase * 3 + Math.floor(within / 4), Math.min(1.08, wave.objectiveFactor)),
-            seeds: 4,
+            target: scaleCount(24 + phase * 4 + Math.floor(within / 3), wave.objectiveFactor),
+            seeds: 3 + (phase >= 1 ? 1 : 0),
             pattern,
           },
           collect: [{ kind: firstKind, count: scaleCount(5 + phase + Math.floor(within / 6), Math.min(1, wave.objectiveFactor)) }],
@@ -681,14 +683,14 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 870) {
     return buildSpec({
-      levelNumber, start: 851, chapter: "bloom-ground-remix", baseTarget: 21000, targetStep: 95, baseMoves: 42,
+      levelNumber, start: 851, chapter: "bloom-ground-remix", baseTarget: 22000, targetStep: 105, baseMoves: 37,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
         return objective({
           blooms: { pairs: wave.difficulty === "relief" ? 2 : 3, pattern },
           ground: {
-            target: scaleCount(15 + phase * 2 + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)),
-            seeds: 4,
+            target: scaleCount(21 + phase * 3 + Math.floor(within / 4), wave.objectiveFactor),
+            seeds: 3 + (phase >= 1 ? 1 : 0),
             pattern,
           },
         });
@@ -697,12 +699,12 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 885) {
     return buildSpec({
-      levelNumber, start: 871, chapter: "ground-route-remix", baseTarget: 21400, targetStep: 100, baseMoves: 41,
+      levelNumber, start: 871, chapter: "ground-route-remix", baseTarget: 22400, targetStep: 110, baseMoves: 37,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         return objective({
           ground: {
-            target: scaleCount(18 + phase * 2 + Math.floor(within / 5), Math.min(1.05, wave.objectiveFactor)),
+            target: scaleCount(24 + phase * 3 + Math.floor(within / 4), wave.objectiveFactor),
             seeds: 4,
             pattern,
           },
@@ -713,13 +715,13 @@ function campaignSpec(levelNumber) {
     });
   }
   return buildSpec({
-    levelNumber, start: 886, chapter: "cognitive-spatial-remix", baseTarget: 21800, targetStep: 105, baseMoves: 43,
+    levelNumber, start: 886, chapter: "cognitive-spatial-remix", baseTarget: 23000, targetStep: 115, baseMoves: 39,
     objectiveFactory: ({ phase, within, wave }) => {
       const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
       const useRecall = within % 3 === 0;
       return objective({
         ground: {
-          target: scaleCount(16 + phase * 2 + Math.floor(within / 5), Math.min(1, wave.objectiveFactor)),
+          target: scaleCount(22 + phase * 3 + Math.floor(within / 4), wave.objectiveFactor),
           seeds: 4,
           pattern,
         },
