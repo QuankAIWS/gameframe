@@ -27,11 +27,13 @@ The campaign uses repeating ten-level tension waves. A typical wave opens with a
 
 The wave is intentionally data-driven rather than pretending level number itself is difficulty.
 
-### 4. Get more mileage from mechanics before inventing new ones
+### 4. Stable special toolkit, expanding board vocabulary
 
-A mechanic receives roughly thirty levels of focused runway before the next major objective family becomes central. Within those thirty levels the game varies geometry, objective counts, move pressure, special-piece interaction, and combinations with previously learned rules.
+Cascade keeps its permanent offensive toolkit small: Stripe, Bomb, Color Clearer, and Butterfly. Novelty should come primarily from board elements, objectives, geometry, and combinations rather than continually inventing new special pieces.
 
-The goal is not filler. The goal is to let a good match-3 player actually master the decision space created by a mechanic before the campaign moves on.
+Through roughly levels 600–1,500, a substantial new board/cognitive family can enter about every 75–100 levels, with smaller variants and combinations between introductions. Internal 30-level chapters organize teaching and map presentation; they do not impose a 30-level mechanic or generation cadence.
+
+The goal is not novelty for its own sake. Each new family must change player decisions and then recur often enough to become mastered vocabulary.
 
 ### 5. Rewards are earned through play
 
@@ -234,24 +236,32 @@ Progression Blitz slots continue through the campaign rather than disappearing a
 
 ### Quick Recall
 
-Quick Recall is a short sequence-memory intermission using Cascade's existing six tile identities.
+Quick Recall is the optional concentrated sequence-memory intermission using Cascade's existing six tile identities.
 
-- optional and non-failing
-- three rounds per session
-- sequence lengths 3, 4, and 5
-- each tile is shown briefly, then hidden
-- the player repeats the sequence from a six-tile palette
-- result records total accuracy, perfect rounds, best result, and 0–3 stars
-- Skip has no penalty
-- best-star improvements participate in the same earned-star hammer progression as the other bonus modes
+Current implementation remains non-failing and skippable. Future refinement should make it gentler and adaptive for older players:
+
+- begin around sequence lengths 2–3 for a new/struggling player;
+- increase toward 4–5 after demonstrated success;
+- provide an obvious re-show/clue affordance rather than punitive failure;
+- record assisted and unassisted accuracy separately;
+- keep feedback playful and non-diagnostic;
+- best-star improvements continue to participate in the earned-star hammer progression.
 
 Quick Recall offers also continue through the campaign. Current milestone levels are:
 
 `8, 24, 48, 72, 96, 126, 156, 186, 216, 246, 276, 306, 336, 366, 396, 426, 456, 486, 516, 546, 576`
 
-### Memory Fog — planned
+### Core cognitive mechanics
 
-A future match-3 bonus mode in which selected tile identities are visible for a short interval, hidden while the player continues to manipulate the board, then periodically revealed again. Difficulty should be tuned carefully so board motion remains trackable rather than arbitrary.
+The current cognitive-health design is maintained in `planning/cascade-cognitive-health-and-engagement.md`.
+
+Memory is no longer limited to optional side modes. The main campaign will introduce fixed, recoverable memory mechanics beginning after level 700:
+
+- **Recall Locks** — remember a color + symbol condition tied to a fixed lock;
+- **Memory Blooms** — reveal and remember fixed matching-symbol pairs;
+- **Pattern Echo / Magic Melody** — later small sequence-memory pilot after the first two systems prove fun.
+
+The old moving-tile Memory Fog concept is superseded as the primary memory direction because fixed anchors are easier to understand, replay, simulate, and recover from after forgetting.
 
 ## Competition and leaderboard direction
 
@@ -347,7 +357,7 @@ Track enough to tune the game, not to manufacture pressure:
 - Blitz attempts, scores, and improvement rate
 - Quick Recall participation, accuracy, and improvement rate
 - Weekly Blitz participation and best-score spread
-- optional-memory-mode participation and performance once additional modes exist
+- cognitive-accent participation, mismatch/hint use, and performance once core memory mechanics exist
 
 ## Expansion beyond level 450
 
@@ -355,22 +365,21 @@ The immediate target is **3,000 levels inside a 10,000-level campaign horizon**.
 
 Mechanics should change the player's decision topology rather than simply adding hit points or larger collection counts. Once taught, a mechanic becomes part of the permanent global vocabulary and can combine with older systems.
 
-The current production roadmap is maintained in `planning/cascade-10000-campaign-roadmap.md`. The immediate mechanic families through level 3,000 are:
+The current production roadmap is maintained in `planning/cascade-10000-campaign-roadmap.md`, with older-player cognitive design in `planning/cascade-cognitive-health-and-engagement.md`.
 
-- drop/exit objects;
-- locks/cages;
-- spreading terrain or jam;
-- spreading/regrowing blockers;
-- color-conditional blockers;
-- generators/producers;
-- reveal/access systems such as curtains or gates;
-- portals;
-- conveyors or moving board elements;
-- special-only armor or charged devices;
-- alternating/toggle elements;
-- a 2,800–3,000 mastery arc built primarily from combinations of the established vocabulary.
+The planned progression through the level-1,000 checkpoint is:
 
-Optional attention and memory mechanics, including Memory Fog and Pattern Echo concepts, can enter as side modes or carefully scoped board mechanics after the foundational spatial systems are stable.
+- 601–650 advanced Drop;
+- 651–700 Locks/Cages;
+- 701–750 Recall Locks and lock mastery;
+- 751–800 Memory Blooms;
+- 801–850 Enchanted Ground / spread coverage;
+- 851–900 controlled cognitive/spatial recombination;
+- 901–950 Generators/Producers;
+- 951–1,000 color-conditional attention elements plus mature Recall-Lock combinations;
+- 1,001–1,050 mastery and a small Pattern Echo pilot only if earlier memory systems are enjoyable.
+
+Later foundational systems still include regrowing blockers, reveal/access systems, portals, conveyors, charged/special-only elements, toggles, and broader recombination.
 
 New mechanics should be implemented as reusable stateful board elements with explicit hooks for direct hits, adjacent matches, special hits, gravity, end-of-turn changes, spawning, movement, targeting, and objective completion. New content should extend the shared engine and profiler rather than create browser-only rules.
 
@@ -385,9 +394,9 @@ The practical production loop uses **150-level expansion/tuning batches**. Inter
 5. Human-like profiling, clean playtest analysis, paired-seed comparison, fragility scanning, and the 10,000-level difficulty horizon — current testing foundation.
 6. Add drop/exit goals as the first new board-element family and verify full runtime/simulator/telemetry parity — implemented through level 600.
 7. Finish the advanced drop slice through level 650 after profiling 451–600, then add locks/cages as the second new family.
-8. Add spreading terrain, regrowing blockers, color-conditional blockers, and producers in separate testable slices while expanding toward 1,500.
-9. Re-evaluate actual player data during the 1,000–1,500 range before generating the remainder of the first 3,000-level milestone.
-10. Add reveal/access systems, portals, conveyors, charged/special-only systems, and toggle mechanics while completing levels 1,500–3,000.
+8. Use level 1,000 as the first explicit cognitive-mechanic/player-data checkpoint; continue collecting through 1,500 before locking later cognitive density.
+9. From 1,051–1,700, add regrowing blockers, reveal/access systems, and deeper producer/dependency combinations in separate testable slices.
+10. Add portals, conveyors, charged/special-only systems, toggle mechanics, and cross-system mastery while completing levels 1,700–3,000.
 11. Perform a full 3,000-level player-data and content review before committing the 3,001–10,000 recipe mix.
-12. Memory Fog and other attention/memory variations remain candidates for distinctive later content or side modes.
+12. Cognitive-accent mechanics are part of the controlled main-campaign vocabulary; Quick Recall and Blitz remain optional concentrated memory/speed modes.
 13. VFX/presentation gets its own dedicated pass; spectacle should be preserved or increased rather than solved by simply reducing effects.

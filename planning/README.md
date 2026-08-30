@@ -18,6 +18,18 @@ related:
 
 # GameFrame Planning
 
+
+## Cascade Crush planning
+
+For Cascade campaign or level-generation work, use these current authorities:
+
+- [`cascade-10000-campaign-roadmap.md`](cascade-10000-campaign-roadmap.md) — campaign progression, difficulty horizon, and 150-level production cadence;
+- [`cascade-cognitive-health-and-engagement.md`](cascade-cognitive-health-and-engagement.md) — older-player cognitive-health, memory-mechanic, and engagement design;
+- [`cascade-testing-methodology.md`](cascade-testing-methodology.md) — simulator/persona, calibration, hidden-information, validation, and evidence policy;
+- [`casual-games-match3-foundation.md`](casual-games-match3-foundation.md) — current Cascade product/gameplay foundation.
+
+[`cascade-cognitive-design-and-playtesting.md`](cascade-cognitive-design-and-playtesting.md) is historical design material and is not operational authority.
+
 For RPG work, start with [`rpg-documentation-index.md`](rpg-documentation-index.md). It defines the canonical reading order and separates platform contracts, Monster Master authority, Arena rules, media/assets, deployment, and integration evidence.
 
 The controlling RPG architecture uses one **Campaign Architect**, one **Dungeon Master**, and one durable **CampaignPackage** handoff. Monster Master is the handcrafted gold-standard package used to prove that platform.

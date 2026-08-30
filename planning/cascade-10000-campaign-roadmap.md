@@ -33,70 +33,118 @@ New mechanics enter in teach/practice/mix/mastery arcs, then become ordinary par
 
 A new mechanic should earn its place by changing player decisions. Cosmetic variants or additional hit points do not count as new mechanic families.
 
+The cognitive-health and engagement contract is maintained in `planning/cascade-cognitive-health-and-engagement.md`. It is a canonical companion to this roadmap for older-player cognitive load, memory-mechanic design, engagement cadence, hidden-information simulation, and the 601–1,050 content mix.
+
 ### 451–650 — Drop / exit objects
 
-Primary new rule: some objective pieces must travel with gravity to designated exits.
+Primary rule: objective pieces travel with gravity to designated exits.
+
+Levels 451–600 established the mechanic. Levels 601–650 finish advanced Drop mastery and combinations before the next family becomes central.
 
 Decision changes:
 
 - board position matters independently of color;
 - clearing below an object can be more valuable than matching the object itself;
-- portals, conveyors, cages, and producers can later combine naturally with drop objectives.
+- Butterfly and other specials can help with useful support cells without solving future board states.
 
-Teaching structure:
+### 651–700 — Locks / cages
 
-- isolated drop object and obvious bottom exit;
-- multiple drop objects;
-- exits restricted to selected columns;
-- ice plus drop;
-- Butterfly/special interaction with drop-supporting cells;
-- chapter-end mixed mastery.
-
-### 651–850 — Locks / cages
-
-Primary new rule: a piece can be usable or visible while still constrained by a removable lock.
+Primary rule: a piece can remain visible while access or use is constrained by a removable lock.
 
 Decision changes:
 
 - access becomes an objective;
-- the player may need to clear a lock before a useful piece can participate normally;
-- cages combine well with collection, ice, drop objects, and specials.
+- freeing a useful piece can matter more than taking an immediate match;
+- locks combine naturally with collection, ice, Drop, and specials.
 
-The lock system should support layers and explicit damage rules rather than creating separate one-off cage types.
+The lock system supports layers and explicit damage rules rather than one-off blocker copies.
 
-### 851–1,050 — Spreading terrain / jam
+### 701–750 — Recall Locks and lock mastery
 
-Primary new rule: matches spread or clear a board-state underlay across cells.
+Recall Locks are a memory-bearing variant within the locks/cages family.
+
+A Recall Lock briefly reveals a redundant color + symbol condition, hides the cue, and is later opened by satisfying the remembered condition near its fixed board location.
+
+Design constraints:
+
+- debut only on relief/normal beats;
+- wrong-color actions do not erase unrelated progress;
+- early versions remain actionable immediately after reveal;
+- later versions may introduce a short prospective-memory delay;
+- cues are large, fixed, high-contrast, and never rely on subtle color alone.
+
+### 751–800 — Memory Blooms
+
+Primary new cognitive family: fixed magical Blooms contain hidden matching symbol pairs.
+
+Basic loop:
+
+- adjacent play opens a Bloom and reveals a bold symbol;
+- the matching partner remains hidden elsewhere in a fixed Bloom;
+- finding the pair collects both;
+- a mismatch briefly reveals the second symbol, then the Blooms close again without wiping unrelated board progress.
+
+Start with two pairs. Expand only after family play shows the mechanic remains enjoyable and legible.
+
+### 801–850 — Enchanted Ground / spread coverage
+
+Primary rule: matches spread or clear a board-state underlay across cells.
 
 Decision changes:
 
 - territory coverage matters;
-- the player must sometimes match in a location rather than merely collect a color;
-- existing specials become tools for rapid area control.
+- the player sometimes needs the right match in the right location;
+- specials become area-control tools.
 
-### 1,051–1,250 — Regrowing / spreading blockers
+Presentation should fit the fantasy/candy world rather than reading as generic “jam.”
 
-Primary new rule: an unresolved blocker can reproduce or reclaim cells at end of turn.
+### 851–900 — Cognitive + spatial recombination
+
+No foundational mechanic is required in this slice.
+
+Use controlled combinations of:
+
+- Memory Blooms;
+- Recall Locks;
+- Enchanted Ground;
+- Locks;
+- Drop;
+- Ice / collection;
+- established specials.
+
+Do not stack two unfamiliar cognitive systems with high raw move pressure.
+
+### 901–950 — Generators / producers
+
+Primary rule: board elements create objective pieces or blockers when activated.
 
 Decision changes:
 
-- urgency enters the puzzle;
-- allowing a threat to survive has an opportunity cost;
-- local tactics compete with long-term containment.
+- the player may need to manufacture the thing later collected or delivered;
+- activation order and producer access matter;
+- producer + lock + Drop combinations create dependency chains.
 
-Growth must be bounded and deterministic enough for the simulator to profile reliably.
+Producer output must be deterministic under board RNG and fully represented in simulator/replay tooling.
 
-### 1,251–1,450 — Color-conditional blockers
+### 951–1,000 — Color-conditional / attention elements
 
-Primary new rule: blocker state responds to specific tile colors or color classes.
+Primary rule: a fixed element responds to a visible or remembered color/symbol condition.
 
 Decision changes:
 
-- otherwise ordinary colors acquire situational value;
-- color clearers and Butterfly gain new tactical roles;
-- collection and blocker objectives can compete for the same colors.
+- ordinary colors acquire situational value;
+- visual search and selective attention become more important;
+- mature Recall-Lock combinations can coexist with non-memory color-conditional elements.
 
-### Player-data checkpoint A — approximately levels 1,000–1,500
+Level 1,000 is a major human-data and cognitive-mechanic checkpoint.
+
+### 1,001–1,050 — Mastery plus Pattern Echo pilot
+
+Use the remaining slice of the 901–1,050 production batch for recombination and review.
+
+Pattern Echo / Magic Melody may receive a small, low-pressure pilot only if Recall Locks and Memory Blooms show good family engagement. It presents a short 2–4 item color/symbol sequence and asks the player to advance it in order; wrong colors do not reset the sequence.
+
+### Player-data checkpoint A — level 1,000, with follow-up through 1,500
 
 Before generating the remainder of the 3,000-level milestone at scale:
 
@@ -109,71 +157,100 @@ Before generating the remainder of the 3,000-level milestone at scale:
 - preserve device-independent level difficulty;
 - use mobile segmentation only for UX/input diagnosis.
 
+At level 1,000, explicitly review both ordinary level difficulty and the new cognitive-accent mechanics: participation, clean first-pass rate, memory success/mismatch behavior, hint/re-show use, retries, stopping points, and direct family feedback. Continue collecting through 1,500 before locking later cognitive-mechanic density.
+
 This checkpoint is deliberately before the campaign reaches 3,000 so the second half can benefit from real play.
 
-### 1,451–1,700 — Generators / producers
+### 1,051–1,250 — Regrowing / spreading blockers
 
-Primary new rule: board elements create objective pieces or blockers when activated.
+Primary rule: an unresolved blocker can reproduce or reclaim cells at end of turn.
 
 Decision changes:
 
-- the player may need to manufacture the thing they later collect;
-- activation order and producer access matter;
-- producer + cage + drop combinations create dependency chains.
+- urgency and containment enter the puzzle;
+- allowing a threat to survive has an opportunity cost;
+- local tactics compete with long-term control.
 
-Producer output must be deterministic under the board RNG and fully understood by simulator/replay tooling.
+Growth must be bounded and deterministic enough for the simulator to profile reliably. This family should not be stacked with difficult memory tasks on introduction.
 
-### 1,701–1,950 — Reveal / access systems
+### 1,251–1,450 — Reveal / access systems
 
-Primary new rule: curtains, gates, covers, or similar elements hide or isolate regions until conditions are met.
+Primary rule: curtains, gates, covers, or similar elements hide or isolate board regions until conditions are met.
 
 Decision changes:
 
 - the available board changes during the level;
 - early moves can be about opening future space;
-- objectives can be staged without requiring a separate game scene.
+- objectives can be staged without requiring another scene.
 
-### 1,951–2,200 — Portals
+These systems can later support memory-aware variants, but their initial form should remain visually explicit.
 
-Primary new rule: gravity can transfer pieces between linked entry/exit cells.
+### 1,451–1,700 — Advanced producer / dependency chains
+
+Generators/Producers are already introduced around 901–950. This later slice deepens them rather than introducing them again.
+
+Use:
+
+- producer + cage dependencies;
+- producer + Drop routing;
+- producers that create required objectives;
+- controlled multi-step dependency chains.
+
+No new cognitive family is required here unless level-1,000 family data clearly supports one.
+
+### 1,701–1,950 — Portals
+
+Primary rule: gravity can transfer pieces between linked entry/exit cells.
 
 Decision changes:
 
 - board topology becomes non-Euclidean;
 - vertical planning no longer maps directly to screen position;
-- drop objects and producers gain substantially more depth.
+- Drop objects and producers gain substantially more depth.
 
 Portals must expose their routing graph to the simulator and level validator.
 
-### 2,201–2,450 — Conveyors / moving board elements
+### 1,951–2,200 — Conveyors / moving board elements
 
-Primary new rule: selected cells or occupants move automatically at turn boundaries.
+Primary rule: selected cells or occupants move automatically at turn boundaries.
 
 Decision changes:
 
 - board state changes even when the player does not directly touch an element;
 - timing and prediction become important;
-- moving objectives can create controlled dynamism without random hazards.
+- moving objectives create controlled dynamism without random hazards.
 
-### 2,451–2,650 — Special-only armor / charged devices
+### 2,201–2,450 — Special-only armor / charged devices
 
-Primary new rule: some elements require specials, combinations, or accumulated charge rather than ordinary matches.
+Primary rule: some elements require specials, combinations, or accumulated charge rather than ordinary matches.
 
 Decision changes:
 
 - special creation becomes mandatory rather than merely advantageous;
 - players must preserve and position specials deliberately;
-- Butterfly can remain useful without becoming a universal answer.
+- Butterfly remains useful without becoming a universal answer.
 
-### 2,651–2,800 — Toggle / alternating elements
+### 2,451–2,650 — Toggle / alternating elements
 
-Primary new rule: elements change state on a deterministic turn cadence or after specific actions.
+Primary rule: elements change state on a deterministic turn cadence or after specific actions.
 
 Decision changes:
 
 - timing joins color and position as a planning axis;
 - the same move can be good or bad depending on current state;
-- later conveyors/portals can interact with timing without introducing more raw blocker health.
+- the mechanic naturally exercises cognitive flexibility without becoming a memory test.
+
+### 2,651–2,800 — Cross-system mastery prelude
+
+Introduce few or no foundational mechanics.
+
+Use the established vocabulary to practice:
+
+- producer + portal routing;
+- Recall Locks with already-mastered spatial systems;
+- Ground + conveyors;
+- toggles + color conditions;
+- memory accents only when visual load remains manageable.
 
 ### 2,801–3,000 — First milestone mastery arc
 
@@ -193,23 +270,20 @@ The milestone capstones should feel earned through mastery, not through arbitrar
 
 ## Memory and attention mechanics
 
-Cascade should retain distinctive memory-oriented content, but memory should not replace the main match-3 loop.
+Memory and attention are now a controlled part of Cascade's core campaign identity rather than future optional-only concepts.
 
-Candidate systems:
+The canonical design is in `planning/cascade-cognitive-health-and-engagement.md`.
 
-### Memory Fog
+Campaign rules:
 
-A small set of cells briefly reveals underlying identity/state, then hides it while the board remains interactive. The hidden state must remain trackable despite board movement.
+- explicit cognitive-accent content normally occupies about 4–6 levels per 30-level chapter;
+- normal levels remain untimed;
+- new cognitive mechanics debut on relief/normal beats;
+- forgetting normally costs objective opportunity rather than causing punitive resets;
+- cues use redundant color + symbol coding and fixed high-contrast anchors;
+- human-like simulation must respect what the player has actually seen rather than reading hidden engine truth.
 
-### Pattern Echo
-
-Several cells or colors flash in a short sequence. Later progress is improved or required by hitting remembered locations or colors in order.
-
-### Recall Gates
-
-A reveal/access element briefly displays the condition required to reopen it, then hides that condition until the player acts.
-
-Memory mechanics should first appear as optional or low-stakes variants. Promote them into normal campaign vocabulary only if playtests show they remain fun rather than frustrating.
+Quick Recall remains an optional concentrated sequence-memory intermission. Blitz remains an optional processing-speed mode.
 
 ## 3,001–10,000 direction
 
@@ -299,9 +373,13 @@ Historical accepted checkpoint for Butterfly, early-campaign balance, testing in
 
 Drop/exit and cages are stable and reusable.
 
+### Checkpoint 1,000
+
+Run the first explicit cognitive-mechanic and player-data review before expanding the new vocabulary further.
+
 ### Checkpoint 1,500
 
-Run player-data checkpoint A and decide whether simulator/persona calibration needs adjustment.
+Recheck persona calibration, cognitive-accent density, and mechanic avoidance/engagement using the larger family sample.
 
 ### Checkpoint 2,200
 
@@ -331,6 +409,8 @@ Only after this review should the 3,001–10,000 recipe mix be locked in.
 
 1. 450-level Butterfly and human-testing foundation with the 10,000-level horizon — implemented.
 2. Drop/exit objectives end-to-end plus the 451–600 production batch — implemented, profiled, tuned, accepted, and archived.
-3. The next nominal production batch is 601–750 under the 150-level batch contract, carrying the roadmap from advanced drop work into locks/cages as appropriate.
-4. Continue subsequent mechanics and content in 150-level production batches toward the 3,000 milestone.
-5. Reassess batch policy only through an explicit later decision; do not silently revert to chapter-sized generation.
+3. Production batch 601–750: advanced Drop, Locks/Cages, then low-pressure Recall Locks.
+4. Production batch 751–900: Memory Blooms, Enchanted Ground, then controlled cognitive/spatial recombination.
+5. Production batch 901–1,050: Producers, color-conditional attention elements, level-1,000 player-data checkpoint, and a small Pattern Echo pilot only if earlier memory systems test well.
+6. Continue later mechanics in 150-level production batches, using level-1,000 and level-1,500 family data to decide cognitive-accent density.
+7. Reassess batch policy only through an explicit later decision; do not silently revert to chapter-sized generation.
