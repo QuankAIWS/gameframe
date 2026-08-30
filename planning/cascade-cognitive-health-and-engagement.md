@@ -255,6 +255,33 @@ Royal Match's obstacle variety works partly because clearing objects feels good,
 
 Memory success deserves the same treatment: paired Blooms burst together, Recall Locks open with a clear magical payoff, and remembered sequences resolve visibly.
 
+### Borrow streak motivation carefully
+
+Royal Match's Butler's Gift and Super Light Ball, and Candy Crush's Candy Necklace, all reward consecutive wins with escalating power and reset that power after failure.
+
+Cascade can borrow the **visible momentum and anticipation**, but should not make authored difficulty depend on a streak booster.
+
+Preferred direction for the family build:
+
+- show a celebratory win-streak / momentum meter;
+- make milestone rewards transparent and non-purchasable;
+- prefer stars, cosmetic map/garden progress, spectacle, or occasional earned hammer value over stacking several free starting specials;
+- if starting-special streak rewards are ever tested, profile levels both with and without them and keep the booster-free curve authoritative;
+- avoid harsh “lose everything” framing for older players.
+
+The retention goal is “I want to see what I unlock next,” not “I am afraid to stop or lose.”
+
+### Family meta-progression
+
+A lightweight shared **family garden / magical world restoration** layer is a strong future engagement candidate:
+
+- ordinary stars contribute to personal and shared visible progress;
+- weekly family goals can be cooperative rather than only competitive;
+- rewards can be cosmetic, celebratory, or modest gameplay inventory;
+- no ranking of cognitive scores or “brain performance.”
+
+This preserves the social reinforcement used by major match-3 games while fitting the private family product and avoiding monetization pressure.
+
 ### Preserve flow
 
 Candy Crush research supports challenge-skill balance, clear goals, feedback, and sense of control as contributors to flow and desire to continue.
