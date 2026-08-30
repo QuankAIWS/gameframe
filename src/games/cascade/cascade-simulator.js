@@ -468,9 +468,13 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
   const baseSeed = (Number(seed) >>> 0) || 1;
   const boardRng = createRng((baseSeed ^ (definition.level * 0x9e3779b1)) >>> 0);
   const decisionRng = createRng((baseSeed ^ 0xa5a5a5a5 ^ (definition.level * 0x85ebca6b)) >>> 0);
-  let board = createBoard({ rng: boardRng, rules: specialRules(definition.level) });
-  let specials = emptySpecials();
   let progress = createLevelProgress(definition);
+  let board = createBoard({
+    rng: boardRng,
+    rules: specialRules(definition.level),
+    locked: progress?.locks?.layers || [],
+  });
+  let specials = emptySpecials();
   let score = 0;
   let movesRemaining = definition.moves;
   let cascadeCount = 0;
