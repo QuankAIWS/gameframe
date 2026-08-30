@@ -17,7 +17,7 @@ import {
   objectiveComplete,
   resolveCascades,
 } from "../../../public/cascade-engine.js";
-import { chooseMove, profileCascadeLevels, profileCascadeMoveFragility, runCascadeLevel, targetFirstPassBand } from "./cascade-simulator.js";
+import { chooseMove, profileCascadeLevels, profileCascadeMoveFragility, runCascadeLevel, scoreVisibleMove, targetFirstPassBand } from "./cascade-simulator.js";
 import { analyzePlaytestExport } from "./cascade-playtest-analysis.js";
 
 test("Cascade ships 750 levels on a campaign model sized for 10000", () => {
@@ -341,6 +341,31 @@ test("human personas choose from visible board information without peeking at fu
     createRng(777),
   );
   assert.deepEqual(first, second);
+});
+
+test("human recall scoring uses remembered cues rather than hidden Recall Lock truth", () => {
+  const level = CASCADE_LEVELS[700];
+  const progress = createLevelProgress(level);
+  progress.locks.layers.fill(0);
+  progress.locks.requiredKinds.fill(-1);
+  progress.locks.layers[9] = 1;
+  progress.locks.requiredKinds[9] = 2;
+  progress.locks.recall = true;
+
+  const board = Array.from({ length: 64 }, (_, index) => (Math.floor(index / 8) + (index % 8) * 2) % 6);
+  board[2] = 2;
+  board[18] = 2;
+  board[10] = 3;
+  board[11] = 2;
+  const specials = Array(64).fill(null);
+  const move = { from: 10, to: 11, matched: 3, specialMove: false };
+
+  const forgotten = Array(64).fill(-1);
+  const remembered = Array(64).fill(-1);
+  remembered[9] = 2;
+
+  assert.equal(scoreVisibleMove("human-skilled", level, progress, board, specials, move, forgotten).features.recall, 0);
+  assert.equal(scoreVisibleMove("human-skilled", level, progress, board, specials, move, remembered).features.recall, 1);
 });
 
 test("campaign first-pass targets ramp gradually across the 10000-level horizon", () => {
