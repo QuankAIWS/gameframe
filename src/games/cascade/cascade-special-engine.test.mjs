@@ -163,7 +163,7 @@ test("hammer clears exposed candy normally once no ice remains", () => {
 });
 
 
-test("a 2x2 square creates a persistent Fish when the Fish rule is active", () => {
+test("a 2x2 square creates a persistent Butterfly when the homing rule is active", () => {
   const board = stableBoard();
   board[0] = 0;
   board[1] = 0;
@@ -179,7 +179,7 @@ test("a 2x2 square creates a persistent Fish when the Fish rule is active", () =
   assert.ok(result.specials.includes(SPECIAL.FISH));
 });
 
-test("Fish chooses a seeded random useful objective target without ranking deeper ice first", () => {
+test("Butterfly chooses a seeded random useful objective target without ranking deeper ice first", () => {
   const board = stableBoard();
   const specials = emptySpecials();
   const ice = Array(64).fill(0);
@@ -200,7 +200,27 @@ test("Fish chooses a seeded random useful objective target without ranking deepe
   assert.ok(result.transitions[0].triggeredSpecials.some((trigger) => trigger.special === SPECIAL.FISH));
 });
 
-test("Fish treats a drop support cell as a useful objective target", () => {
+test("Butterfly never falls back to generic cells while direct objective targets remain", () => {
+  const board = stableBoard();
+  const ice = Array(64).fill(0);
+  ice[10] = 1;
+  ice[63] = 1;
+
+  for (const seed of [1, 2, 3, 4, 5, 77, 12288]) {
+    const specials = emptySpecials();
+    specials[0] = SPECIAL.FISH;
+    const result = applySpecialHammer(board, specials, 0, createRng(seed), {
+      ice,
+      rules: { stripe: true, bomb: true, color: true, fish: true },
+    });
+    const trigger = result.transitions[0].triggeredSpecials.find((item) => item.special === SPECIAL.FISH);
+    assert.ok(trigger);
+    assert.equal(trigger.cleared.length, 1);
+    assert.ok([10, 63].includes(trigger.cleared[0]));
+  }
+});
+
+test("Butterfly treats a drop support cell as a useful objective target", () => {
   const board = stableBoard();
   const specials = emptySpecials();
   specials[0] = SPECIAL.FISH;
@@ -215,7 +235,7 @@ test("Fish treats a drop support cell as a useful objective target", () => {
   assert.ok(result.transitions[0].triggeredSpecials.some((trigger) => trigger.special === SPECIAL.FISH));
 });
 
-test("Fish combo targeting uses the seeded random useful target", () => {
+test("Butterfly combo targeting uses the seeded random useful target", () => {
   const board = stableBoard();
   const specials = emptySpecials();
   const ice = Array(64).fill(0);
@@ -235,7 +255,7 @@ test("Fish combo targeting uses the seeded random useful target", () => {
   assert.equal(result.transitions[0].iceHits.some((hit) => hit.index === 10), false);
 });
 
-test("Fish plus Fish sends three seeded random hits toward useful objectives", () => {
+test("Butterfly plus Butterfly sends three seeded random hits toward useful objectives", () => {
   const board = stableBoard();
   const specials = emptySpecials();
   const ice = Array(64).fill(0);

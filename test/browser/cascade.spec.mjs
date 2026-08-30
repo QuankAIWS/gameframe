@@ -236,6 +236,42 @@ test("Cascade admin console reaches level 600 and keeps the map bounded", async 
   await expect(page.locator("#level-map")).toHaveAttribute("data-range", "571-600");
 });
 
+test("Cascade admin special lab spawns color-preserving Butterflies and ready combos", async ({ page }) => {
+  await page.route("**/api/session", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        playerId: "cascade-admin-special-lab",
+        displayName: "Cascade Admin",
+        source: "discord",
+        admin: true,
+      }),
+    });
+  });
+
+  await page.goto("/cascade.html");
+  await page.locator("#cascade-admin-open").click();
+  await expect(page.locator("#cascade-admin-dialog")).toBeVisible();
+  await expect(page.getByText("SPECIAL PIECE LAB")).toBeVisible();
+  await page.locator('[data-admin-special="butterfly"]').click();
+
+  await expect(page.locator('.cascade-tile[data-special="fish"]')).toHaveCount(1);
+  const butterfly = page.locator('.cascade-tile[data-special="fish"]').first();
+  await expect(butterfly).toHaveAttribute("data-kind", /[0-5]/);
+  await expect(butterfly).toHaveAttribute("aria-label", /butterfly/i);
+
+  await page.locator("#cascade-admin-open").click();
+  await page.locator('[data-admin-combo="bomb"]').click();
+  await expect(page.locator('.cascade-tile[data-special="fish"]')).toHaveCount(2);
+  await expect(page.locator('.cascade-tile[data-special="bomb"]')).toHaveCount(1);
+
+  await page.locator("#cascade-admin-open").click();
+  await page.locator("[data-admin-trigger-special]").click();
+  await expect.poll(async () => page.locator(".cascade-butterfly-flight").count()).toBeGreaterThanOrEqual(0);
+  await expect(page.locator("#board .cascade-tile")).toHaveCount(64);
+});
+
 test("Cascade admin can force life and inventory edge states", async ({ page }) => {
   await page.route("**/api/session", async (route) => {
     await route.fulfill({

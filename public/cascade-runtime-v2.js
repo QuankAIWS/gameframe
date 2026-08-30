@@ -361,7 +361,7 @@ function specialName(value) {
   if (value === SPECIAL.STRIPE_H || value === SPECIAL.STRIPE_V) return "striped line clearer";
   if (value === SPECIAL.BOMB) return "burst bomb";
   if (value === SPECIAL.COLOR) return "color clearer";
-  if (value === SPECIAL.FISH) return "fish";
+  if (value === SPECIAL.FISH) return "butterfly";
   return "";
 }
 
@@ -422,7 +422,7 @@ function mapLabel(level) {
   if (level.level === 3) return "Bombs";
   if (level.level === 4) return "Combos";
   if (level.level === 5) return "Color";
-  if (level.level === 6) return "Fish";
+  if (level.level === 6) return "Butterfly";
   if (level.difficulty === "super-hard") return "Super hard";
   if (level.difficulty === "hard" || level.hard) return "Hard";
   const hasIce = Boolean(level.objective?.ice);
@@ -483,7 +483,7 @@ function renderHelp() {
   } else if (activeLevel.level === 5) {
     helpElement.textContent = "Match five to make a color clearer. Swap it with a color to sweep that color off the board.";
   } else if (activeLevel.level === 6) {
-    helpElement.textContent = "Make a 2×2 square of one color to create a Fish. Trigger it and it swims to something you still need.";
+    helpElement.textContent = "Make a 2×2 square of one color to create a Butterfly. Match or trigger it and it flutters to a random useful objective.";
   } else if (activeLevel.level === 451) {
     helpElement.textContent = "New objective: drop every diamond to its glowing exit. Clear pieces underneath so gravity carries it down.";
   } else {
@@ -491,7 +491,7 @@ function renderHelp() {
     if (activeLevel.objective?.drop) notes.push("clear below each diamond to drop it into its exit");
     if (activeLevel.objective?.ice) notes.push("crack every iced cell");
     if (activeLevel.objective?.collect?.length) notes.push("collect the required colors");
-    if (activeLevel.mechanics?.includes("fish")) notes.push("Fish can help clear useful objective cells");
+    if (activeLevel.mechanics?.includes("fish")) notes.push("Butterflies randomly seek useful objective cells");
     notes.push("build specials and combine them when you can");
     helpElement.textContent = `${notes.join(" · ")}.`;
   }
@@ -634,6 +634,62 @@ async function presentFallTransition(transition) {
   await sleep(PRESENTATION.landing);
 }
 
+function butterflyFlightElement(kind) {
+  const flight = document.createElement("span");
+  flight.className = "cascade-butterfly-flight";
+  flight.dataset.kind = String(kind);
+  flight.setAttribute("aria-hidden", "true");
+  flight.append(document.createElement("i"));
+  document.body.append(flight);
+  return flight;
+}
+
+function butterflyFlightKeyframes(from, to, ordinal = 0) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.max(1, Math.hypot(dx, dy));
+  const nx = -dy / length;
+  const ny = dx / length;
+  const direction = ordinal % 2 === 0 ? 1 : -1;
+  const sway = Math.min(44, Math.max(18, length * .12)) * direction;
+  return Array.from({ length: 7 }, (_, index) => {
+    const p = index / 6;
+    const envelope = Math.sin(Math.PI * p);
+    const flutter = Math.sin((p * Math.PI * 4.5) + ordinal * .8);
+    const bob = Math.sin((p * Math.PI * 6) + ordinal * 1.4);
+    const x = from.x + dx * p + nx * sway * envelope * flutter * .48;
+    const y = from.y + dy * p + ny * sway * envelope * flutter * .48 - 10 * envelope + bob * 5 * envelope;
+    return {
+      offset: p,
+      transform: `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${-10 + flutter * 13 + direction * 3}deg) scale(${p < .12 ? .78 + p * 2 : p > .86 ? 1 - (p - .86) * 1.8 : 1})`,
+      opacity: p < .04 ? 0 : p > .94 ? Math.max(0, (1 - p) / .06) : 1,
+    };
+  });
+}
+
+async function animateButterflyFlights(transition) {
+  if (reducedMotion) return;
+  const flights = (transition?.homingFlights || []).filter(({ from, target }) => Number.isInteger(from) && Number.isInteger(target) && from !== target);
+  if (!flights.length) return;
+  await Promise.all(flights.slice(0, 8).map(({ from, target }, ordinal) => {
+    const sourceTile = tileAt(from);
+    const targetTile = tileAt(target);
+    const sourceRect = sourceTile?.getBoundingClientRect?.();
+    const targetRect = targetTile?.getBoundingClientRect?.();
+    if (!sourceRect || !targetRect) return Promise.resolve();
+    const flight = butterflyFlightElement(Number(sourceTile.dataset.kind));
+    const source = { x: sourceRect.left + sourceRect.width / 2, y: sourceRect.top + sourceRect.height / 2 };
+    const destination = { x: targetRect.left + targetRect.width / 2, y: targetRect.top + targetRect.height / 2 };
+    const distance = Math.hypot(destination.x - source.x, destination.y - source.y);
+    const animation = flight.animate(butterflyFlightKeyframes(source, destination, ordinal), {
+      duration: Math.min(760, 430 + distance * .38 + ordinal * 22),
+      easing: "cubic-bezier(.22,.62,.25,1)",
+      fill: "forwards",
+    });
+    return animation.finished.catch(() => {}).finally(() => flight.remove());
+  }));
+}
+
 async function presentResolvedResult(result) {
   for (const transition of result.transitions) {
     if (mode === "normal") levelProgress.ice = transition.iceBefore.slice();
@@ -645,7 +701,7 @@ async function presentResolvedResult(result) {
     tiles.forEach((tile) => tile.classList.add("is-matched"));
     transition.triggeredSpecials?.forEach(({ index }) => tileAt(index)?.classList.add("is-special-triggered"));
     const anticipate = PRESENTATION.anticipateBase + Math.min(4, transition.cascade - 1) * PRESENTATION.anticipateCascadeStep;
-    await sleep(anticipate);
+    await Promise.all([sleep(anticipate), animateButterflyFlights(transition)]);
     const anchor = transition.matched[Math.floor(transition.matched.length / 2)] ?? 0;
     spawnScorePop(anchor, transition.gained, transition.cascade);
     presentation.transitionClear(transition);
@@ -1146,6 +1202,65 @@ window.cascadeResearch = Object.freeze({
       specials: specials.slice(),
       blitz: mode === "blitz" ? { id: blitzId, expired: blitzExpired, stats: { ...blitzStats } } : null,
     };
+  },
+  adminSpawnSpecial(type = "butterfly", count = 1) {
+    if (mode !== "normal" || locked) return [];
+    const mapped = type === "butterfly" ? SPECIAL.FISH : type;
+    if (!VALID_SPECIALS.has(mapped)) return [];
+    const blocked = new Set((levelProgress?.drop?.tokens || []).map((token) => Number(token.index)));
+    const candidates = board.map((kind, index) => ({ kind, index }))
+      .filter(({ kind, index }) => kind !== null && !specials[index] && !blocked.has(index) && Math.max(0, Number(levelProgress?.ice?.[index]) || 0) === 0)
+      .map(({ index }) => index);
+    const placed = [];
+    while (placed.length < Math.max(1, Math.min(8, Number(count) || 1)) && candidates.length) {
+      const index = candidates.splice(Math.floor(Math.random() * candidates.length), 1)[0];
+      specials[index] = mapped;
+      placed.push(index);
+    }
+    renderBoard(); renderStatus(); saveActiveRun();
+    return placed;
+  },
+  adminSpawnCombo(partner = "butterfly") {
+    if (mode !== "normal" || locked) return [];
+    const mappedPartner = partner === "butterfly" ? SPECIAL.FISH : partner;
+    if (!VALID_SPECIALS.has(mappedPartner)) return [];
+    const blocked = new Set((levelProgress?.drop?.tokens || []).map((token) => Number(token.index)));
+    const pairs = [];
+    for (let index = 0; index < board.length; index += 1) {
+      const right = index % BOARD_SIZE < BOARD_SIZE - 1 ? index + 1 : -1;
+      const down = index + BOARD_SIZE < board.length ? index + BOARD_SIZE : -1;
+      for (const neighbor of [right, down]) {
+        if (neighbor < 0 || specials[index] || specials[neighbor] || blocked.has(index) || blocked.has(neighbor)) continue;
+        if (Math.max(0, Number(levelProgress?.ice?.[index]) || 0) > 0 || Math.max(0, Number(levelProgress?.ice?.[neighbor]) || 0) > 0) continue;
+        pairs.push([index, neighbor]);
+      }
+    }
+    if (!pairs.length) return [];
+    const [first, second] = pairs[Math.floor(Math.random() * pairs.length)];
+    specials[first] = SPECIAL.FISH;
+    specials[second] = mappedPartner;
+    renderBoard(); renderStatus(); saveActiveRun();
+    return [first, second];
+  },
+  async adminTriggerFirstSpecial() {
+    if (mode !== "normal" || locked) return false;
+    const index = specials.findIndex(Boolean);
+    if (index < 0) return false;
+    locked = true;
+    selectedIndex = null;
+    const result = applySpecialHammer(board, specials, index, boardRng, {
+      ice: levelProgress.ice,
+      rules: currentRules(),
+      targetKinds: remainingTargetKinds(),
+      targetIndices: remainingDropSupportIndices(),
+    });
+    await presentResolvedResult(result);
+    board = result.board.slice();
+    specials = result.specials.slice();
+    saveActiveRun();
+    locked = false;
+    renderBoard(); renderStatus();
+    return true;
   },
   startBlitz(completedLevel = 5) {
     closeResultDialog();

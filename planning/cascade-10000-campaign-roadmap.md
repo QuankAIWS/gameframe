@@ -41,7 +41,7 @@ Teaching structure:
 - multiple drop objects;
 - exits restricted to selected columns;
 - ice plus drop;
-- Fish/special interaction with drop-supporting cells;
+- Butterfly/special interaction with drop-supporting cells;
 - chapter-end mixed mastery.
 
 ### 651–850 — Locks / cages
@@ -85,7 +85,7 @@ Primary new rule: blocker state responds to specific tile colors or color classe
 Decision changes:
 
 - otherwise ordinary colors acquire situational value;
-- color clearers and Fish gain new tactical roles;
+- color clearers and Butterfly gain new tactical roles;
 - collection and blocker objectives can compete for the same colors.
 
 ### Player-data checkpoint A — approximately levels 1,000–1,500
@@ -155,7 +155,7 @@ Decision changes:
 
 - special creation becomes mandatory rather than merely advantageous;
 - players must preserve and position specials deliberately;
-- Fish can remain useful without becoming a universal answer.
+- Butterfly can remain useful without becoming a universal answer.
 
 ### 2,651–2,800 — Toggle / alternating elements
 
@@ -177,7 +177,7 @@ Their job is to prove that the permanent vocabulary supports rich combinations:
 - cages + producers;
 - spreading terrain + conveyors;
 - color conditions + generators;
-- special-only armor + Fish/stripe/bomb planning;
+- special-only armor + Butterfly/stripe/bomb planning;
 - reveal systems feeding multi-step objectives;
 - controlled three-mechanic combinations where readability remains strong.
 
@@ -286,7 +286,7 @@ Acceptance criteria for a useful learned model:
 
 ### Checkpoint 450
 
-Current implementation slice. Validate Fish, early-campaign balance, testing infrastructure, and outlier handling.
+Current implementation slice. Validate Butterfly, early-campaign balance, testing infrastructure, and outlier handling.
 
 ### Checkpoint 850
 
@@ -322,7 +322,7 @@ Only after this review should the 3,001–10,000 recipe mix be locked in.
 
 ## Implementation order from the current branch
 
-1. 450-level Fish and human-testing foundation with the 10,000-level horizon — implemented.
+1. 450-level Butterfly and human-testing foundation with the 10,000-level horizon — implemented.
 2. Drop/exit objectives end-to-end plus levels 451–600 — current expansion.
 3. Profile/tune levels 451–600, then finish the advanced drop slice through level 650 if the mechanic remains healthy.
 4. Implement locks/cages end-to-end on the same shared board-element contracts.

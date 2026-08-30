@@ -8,18 +8,18 @@ Scope: Cascade Crush level solvability, human-like simulation, and family-playte
 Cascade needs two different kinds of automated evidence:
 
 1. **Engine/solvability proof** — a strong agent should be able to finish every shipped level across sampled seeds without engine errors.
-2. **Human-difficulty estimation** — a separate, non-clairvoyant policy should estimate how demanding a level is for a real player without knowing future refills, Fish destinations, or cascades.
+2. **Human-difficulty estimation** — a separate, non-clairvoyant policy should estimate how demanding a level is for a real player without knowing future refills, Butterfly destinations, or cascades.
 
 Those jobs must not be collapsed into one bot.
 
 ## Current baseline
 
-The 450-level Fish build established the reference baseline before adding human-like personas:
+The 450-level Butterfly build established the reference baseline before adding human-like personas:
 
 - all 450 shipped levels execute successfully;
 - the lookahead strategy records at least one sampled win on every level;
 - no relief or ordinary-level cliff violates the current solver safety gate;
-- random Fish targeting restored more planning separation than the earlier deterministic best-target implementation.
+- random Butterfly targeting restored more planning separation than the earlier deterministic best-target implementation.
 
 The lookahead and greedy agents are still intentionally stronger than a human because they evaluate candidate moves by cloning the seeded game RNG and resolving the resulting future state. They are therefore upper-bound/search agents, not human proxies.
 

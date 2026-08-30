@@ -665,7 +665,7 @@ export function profileCascadeLevels({
   }
   return {
     generatedAt: new Date().toISOString(),
-    rules: "persistent-specials-v2-fish/campaign-wave-v2",
+    rules: "persistent-specials-v3-butterfly/campaign-wave-v2",
     runsPerLevel,
     humanRunsPerLevel,
     seedBase,

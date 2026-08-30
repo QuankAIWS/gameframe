@@ -45,7 +45,7 @@ The campaign system is deliberately sized for **10,000 levels** without requirin
 
 The immediate production milestone is **3,000 shipped levels**. That milestone is only the first large content tranche, not the mature endgame. The longer design horizon is 10,000 levels, with the option to extend beyond that or reskin/reframe the experience later without rebuilding the core campaign model.
 
-The currently shipped expansion target contains **600 levels**. Fish is part of the ordinary permanent special toolkit from the early campaign onward; levels 301–450 remain early-campaign fluency content, and levels 451–600 add the first new positional objective family: drop/exit objects. Levels 601–3000 remain the immediate expansion target, and levels 3001–10000 remain the long-horizon campaign.
+The currently shipped expansion target contains **600 levels**. Butterfly is part of the ordinary permanent special toolkit from the early campaign onward; levels 301–450 remain early-campaign fluency content, and levels 451–600 add the first new positional objective family: drop/exit objects. Levels 601–3000 remain the immediate expansion target, and levels 3001–10000 remain the long-horizon campaign.
 
 The player-facing level map renders only the current 30-level chapter rather than every campaign level. This prevents the UI and DOM size from growing linearly as the campaign expands.
 
@@ -81,16 +81,16 @@ A T or L intersection creates a bomb. Activating it clears a 3 × 3 area.
 
 A five-or-more straight match creates a color clearer. Swapping it with a normal tile clears that tile's color from the board.
 
-### Fish
+### Butterfly
 
-Starting at level 6, a 2 × 2 square of one color creates a persistent Fish.
+Starting at level 6, a 2 × 2 square of one color creates a persistent Butterfly.
 
-- when triggered, Fish randomly chooses among unfinished board-objective targets;
+- when triggered, Butterfly randomly chooses among unfinished board-objective targets;
 - ice cells and still-needed collection colors are useful targets;
-- when several useful targets exist, Fish does not rank them by depth, position, or mathematical value;
-- Fish + Fish sends multiple useful-target hits without replacement;
-- Fish + stripe, Fish + bomb, and Fish + color clearer redirect stronger effects toward useful objective locations;
-- Fish is a normal special piece, not a chapter theme or a special class of level.
+- when several useful targets exist, Butterfly does not rank them by depth, position, or mathematical value;
+- Butterfly + Butterfly sends multiple useful-target hits without replacement;
+- Butterfly + stripe, Butterfly + bomb, and Butterfly + color clearer redirect stronger effects toward useful objective locations;
+- Butterfly is a normal special piece, not a chapter theme or a special class of level.
 
 ### Combinations
 
@@ -101,10 +101,10 @@ Adjacent specials can be swapped together for stronger effects. Initial supporte
 - bomb + bomb
 - color clearer + another special
 - color clearer + color clearer
-- Fish + Fish
-- Fish + stripe
-- Fish + bomb
-- Fish + color clearer
+- Butterfly + Butterfly
+- Butterfly + stripe
+- Butterfly + bomb
+- Butterfly + color clearer
 
 Specials hit by another special can trigger recursively.
 
@@ -117,18 +117,18 @@ The opening six levels introduce the permanent rules rather than treating them a
 3. **Level 3 — Bombs:** create a T/L bomb.
 4. **Level 4 — Combos:** place two specials beside each other and combine them.
 5. **Level 5 — Color:** create and use the color clearer.
-6. **Level 6 — Fish:** make a 2 × 2 square and learn that Fish targets something useful.
+6. **Level 6 — Butterfly:** make a 2 × 2 square and learn that Butterfly targets something useful.
 
-After level 6, stripes, bombs, color clearers, and Fish are all ordinary tools throughout the campaign.
+After level 6, stripes, bombs, color clearers, and Butterfly are all ordinary tools throughout the campaign.
 
 ## 600-level campaign architecture
 
-The first 600 levels share one permanent special vocabulary. Fish is backdated into the established campaign rather than defining a separate era. From level 451 onward, drop/exit objects join that permanent vocabulary. Chapters are organized around objectives, geometry, and difficulty—not around a single featured special.
+The first 600 levels share one permanent special vocabulary. Butterfly is backdated into the established campaign rather than defining a separate era. From level 451 onward, drop/exit objects join that permanent vocabulary. Chapters are organized around objectives, geometry, and difficulty—not around a single featured special.
 
 | Levels | Chapter | Primary job |
 |---|---|---|
 | 1–5 | Onboarding | Teach match-3, stripes, bombs, combos, and the color clearer |
-| 6–30 | Special mastery | Introduce Fish at level 6, then learn positioning, saving, targeting, triggering, and combining the full special toolkit |
+| 6–30 | Special mastery | Introduce Butterfly at level 6, then learn positioning, saving, targeting, triggering, and combining the full special toolkit |
 | 31–60 | Ice | Learn single-layer blocker clearing across different board patterns |
 | 61–90 | Collection | Learn single-color collection pressure |
 | 91–120 | Mixed | Combine single-layer ice with collection |
@@ -148,7 +148,7 @@ The first 600 levels share one permanent special vocabulary. Fish is backdated i
 | 451–480 | Drop intro | Learn to clear below drop objects and deliver them to exits |
 | 481–510 | Drop + ice | Combine positional dropping with single-layer blockers |
 | 511–540 | Drop + collection | Balance drop progress against color collection |
-| 541–570 | Drop + layered ice | Use specials and Fish to create vertical progress through layered blockers |
+| 541–570 | Drop + layered ice | Use specials and Butterfly to create vertical progress through layered blockers |
 | 571–600 | Drop mastery | Combine drop goals with the established collection/ice vocabulary |
 
 The chapter boundary is a design tool, not a promise that every level in a chapter looks alike. Each chapter contains three ten-level difficulty waves and varies target pressure, objective counts, patterns, colors, and move budgets.
@@ -283,7 +283,7 @@ Useful ranking surfaces now or later:
 
 The automated players use the same persistent-special engine as the browser game. Every shipped campaign level is exercised by the lookahead bot, and CI samples random, visible-only human personas, greedy, and lookahead strategies.
 
-The human-casual and human-skilled personas are deliberately non-clairvoyant: they score only the board state visible before the move and never resolve candidate refills, Fish destinations, or cascades before choosing. Greedy and lookahead remain clairvoyant upper-bound/search agents. The detailed contract and calibration plan lives in `planning/cascade-testing-methodology.md`.
+The human-casual and human-skilled personas are deliberately non-clairvoyant: they score only the board state visible before the move and never resolve candidate refills, Butterfly destinations, or cascades before choosing. Greedy and lookahead remain clairvoyant upper-bound/search agents. The detailed contract and calibration plan lives in `planning/cascade-testing-methodology.md`.
 
 The profiler records:
 
@@ -381,7 +381,7 @@ The practical authoring loop is: define a chapter recipe, generate multiple cand
 1. Persistent stripe/bomb/color special engine and combinations — implemented.
 2. Original 300-level campaign, Blitz, Quick Recall, Weekly Blitz, telemetry, and automated profiling — implemented.
 3. Family playtest pass through the original campaign — collected and used for difficulty/geometry calibration.
-4. Fish added to the permanent toolkit and backdated into the established campaign; levels 301–450 extend the same vocabulary — implemented.
+4. Butterfly added to the permanent toolkit and backdated into the established campaign; levels 301–450 extend the same vocabulary — implemented.
 5. Human-like profiling, clean playtest analysis, paired-seed comparison, fragility scanning, and the 10,000-level difficulty horizon — current testing foundation.
 6. Add drop/exit goals as the first new board-element family and verify full runtime/simulator/telemetry parity — implemented through level 600.
 7. Finish the advanced drop slice through level 650 after profiling 451–600, then add locks/cages as the second new family.
