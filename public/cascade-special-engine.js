@@ -11,6 +11,9 @@ import {
   createRng,
   describeLevelObjective,
   dropSupportIndices,
+  ordinaryLockTargetIndices,
+  normalizeLockProgress,
+  chipLockProgress,
   findMatchGroups,
   objectiveComplete,
 } from "./cascade-engine.js";
@@ -28,6 +31,8 @@ export {
   createRng,
   describeLevelObjective,
   dropSupportIndices,
+  ordinaryLockTargetIndices,
+  normalizeLockProgress,
   objectiveComplete,
 };
 
@@ -128,35 +133,43 @@ function chipIce(ice, indices) {
   return { before, after, hits };
 }
 
-function collapseState(board, specials, rng) {
+function collapseState(board, specials, rng, locked = []) {
   const nextBoard = board.slice();
   const nextSpecials = specials.slice();
   const falls = [];
   const spawns = [];
 
-  for (let col = 0; col < BOARD_SIZE; col += 1) {
+  const compactSegment = (col, top, bottom) => {
+    if (top > bottom) return;
     const kept = [];
-    for (let row = BOARD_SIZE - 1; row >= 0; row -= 1) {
+    for (let row = bottom; row >= top; row -= 1) {
       const from = row * BOARD_SIZE + col;
       if (nextBoard[from] !== null) kept.push({ from, kind: nextBoard[from], special: nextSpecials[from] });
     }
-
-    for (let row = BOARD_SIZE - 1; row >= 0; row -= 1) {
+    for (let row = bottom; row >= top; row -= 1) {
       const to = row * BOARD_SIZE + col;
-      const offset = BOARD_SIZE - 1 - row;
+      const offset = bottom - row;
       const existing = kept[offset];
       if (existing) {
         nextBoard[to] = existing.kind;
         nextSpecials[to] = existing.special;
-        if (existing.from !== to) {
-          falls.push({ from: existing.from, to, kind: existing.kind, special: existing.special });
-        }
+        if (existing.from !== to) falls.push({ from: existing.from, to, kind: existing.kind, special: existing.special });
       } else {
         const kind = Math.floor(rng.next() * TILE_KINDS);
         nextBoard[to] = kind;
         nextSpecials[to] = null;
         spawns.push({ to, kind, special: null, spawnOffset: offset - kept.length + 1 });
       }
+    }
+  };
+
+  for (let col = 0; col < BOARD_SIZE; col += 1) {
+    let bottom = BOARD_SIZE - 1;
+    for (let row = BOARD_SIZE - 1; row >= -1; row -= 1) {
+      const index = row >= 0 ? row * BOARD_SIZE + col : -1;
+      if (row >= 0 && Math.max(0, Number(locked?.[index]) || 0) <= 0) continue;
+      compactSegment(col, row + 1, bottom);
+      bottom = row - 1;
     }
   }
 
@@ -190,9 +203,9 @@ function findSquareGroups(board) {
   return groups;
 }
 
-export function findSpecialMatchGroups(board, specials = [], rules = {}) {
-  const matchable = board.map((kind, index) => specials[index] === SPECIAL.COLOR ? null : kind);
-  const groups = findMatchGroups(matchable);
+export function findSpecialMatchGroups(board, specials = [], rules = {}, locked = []) {
+  const matchable = board.map((kind, index) => specials[index] === SPECIAL.COLOR || Number(locked?.[index]) > 0 ? null : kind);
+  const groups = findMatchGroups(matchable, locked);
   if (rules?.fish === true) groups.push(...findSquareGroups(matchable));
   return groups;
 }
@@ -346,28 +359,28 @@ function expandTriggeredSpecials({ board, specials, seedIndices, protectedIndice
   return { clear, triggered };
 }
 
-function hasOrdinaryLegalMove(board, specials, rules = {}) {
+function hasOrdinaryLegalMove(board, specials, rules = {}, locked = []) {
   for (let index = 0; index < board.length; index += 1) {
     const right = colOf(index) < BOARD_SIZE - 1 ? index + 1 : -1;
     const down = index + BOARD_SIZE < board.length ? index + BOARD_SIZE : -1;
     for (const neighbor of [right, down]) {
-      if (neighbor < 0) continue;
+      if (neighbor < 0 || Number(locked?.[index]) > 0 || Number(locked?.[neighbor]) > 0) continue;
       const swappedBoard = swapPair(board, index, neighbor);
       const swappedSpecials = swapPair(specials, index, neighbor);
-      if (findSpecialMatchGroups(swappedBoard, swappedSpecials, rules).length) return true;
+      if (findSpecialMatchGroups(swappedBoard, swappedSpecials, rules, locked).length) return true;
     }
   }
   return false;
 }
 
-function hasPlayableMove(board, specials, rules = {}) {
-  if (hasOrdinaryLegalMove(board, specials, rules)) return true;
+function hasPlayableMove(board, specials, rules = {}, locked = []) {
+  if (hasOrdinaryLegalMove(board, specials, rules, locked)) return true;
   for (let index = 0; index < board.length; index += 1) {
-    if (specials[index] === SPECIAL.COLOR) return true;
+    if (Number(locked?.[index]) <= 0 && specials[index] === SPECIAL.COLOR) return true;
     const right = colOf(index) < BOARD_SIZE - 1 ? index + 1 : -1;
     const down = index + BOARD_SIZE < board.length ? index + BOARD_SIZE : -1;
     for (const neighbor of [right, down]) {
-      if (neighbor >= 0 && specials[index] && specials[neighbor]) return true;
+      if (neighbor >= 0 && Number(locked?.[index]) <= 0 && Number(locked?.[neighbor]) <= 0 && specials[index] && specials[neighbor]) return true;
     }
   }
   return false;
@@ -465,6 +478,7 @@ function colorSwapClear(board, specials, from, to) {
 
 export function resolveSpecialCascades(board, specials, rng, {
   ice = [],
+  locks = null,
   targetKinds = [],
   targetIndices = [],
   startingCascade = 1,
@@ -476,6 +490,7 @@ export function resolveSpecialCascades(board, specials, rng, {
   let currentBoard = board.slice();
   let currentSpecials = normalizeSpecials(specials);
   let currentIce = normalizeIce(ice);
+  let currentLocks = normalizeLockProgress(locks);
   let cascade = startingCascade;
   let scoreGained = 0;
   const transitions = [];
@@ -486,7 +501,7 @@ export function resolveSpecialCascades(board, specials, rng, {
   let forcedStep = forced;
 
   while (true) {
-    const groups = forcedStep ? [] : findSpecialMatchGroups(currentBoard, currentSpecials, rules);
+    const groups = forcedStep ? [] : findSpecialMatchGroups(currentBoard, currentSpecials, rules, currentLocks.layers);
     if (!forcedStep && !groups.length) break;
 
     const before = currentBoard.slice();
@@ -507,8 +522,12 @@ export function resolveSpecialCascades(board, specials, rng, {
       targetIndices,
       rng,
     });
-    const matched = [...expanded.clear].sort((a, b) => a - b);
+    const requestedClear = [...expanded.clear].sort((a, b) => a - b);
+    const lockChip = chipLockProgress(currentLocks, before, requestedClear);
+    const matched = requestedClear.filter((index) => Number(currentLocks.layers[index]) <= 0);
     const matchedForProgress = [...new Set([...matched, ...creationIndices])].sort((a, b) => a - b);
+    const locksBefore = currentLocks;
+    currentLocks = lockChip.after;
     const transitionCounts = kindCounts(before, matchedForProgress);
     addKindCounts(clearedKindCounts, transitionCounts);
     const chipped = chipIce(currentIce, matchedForProgress);
@@ -531,7 +550,7 @@ export function resolveSpecialCascades(board, specials, rng, {
     scoreGained += gained;
     specialCreatedCount += creations.length;
     specialTriggeredCount += expanded.triggered.length;
-    const collapsed = collapseState(clearedBoard, clearedSpecials, rng);
+    const collapsed = collapseState(clearedBoard, clearedSpecials, rng, currentLocks.layers);
 
     transitions.push({
       type: forcedStep ? "special-combo" : "cascade",
@@ -558,6 +577,9 @@ export function resolveSpecialCascades(board, specials, rng, {
       iceBefore: chipped.before,
       iceAfter: chipped.after,
       iceHits: chipped.hits,
+      locksBefore,
+      locksAfter: currentLocks,
+      lockHits: lockChip.hits,
     });
 
     currentBoard = collapsed.board;
@@ -570,7 +592,7 @@ export function resolveSpecialCascades(board, specials, rng, {
 
   let shuffled = false;
   let shuffle = null;
-  if (!hasPlayableMove(currentBoard, currentSpecials, rules)) {
+  if (!hasPlayableMove(currentBoard, currentSpecials, rules, currentLocks.layers)) {
     const before = currentBoard.slice();
     currentBoard = createBoard({ rng, rules });
     currentSpecials = emptySpecials();
@@ -582,6 +604,7 @@ export function resolveSpecialCascades(board, specials, rng, {
     board: currentBoard,
     specials: currentSpecials,
     ice: currentIce,
+    locks: currentLocks,
     scoreGained,
     transitions,
     clearedKindCounts,
@@ -596,8 +619,12 @@ export function resolveSpecialCascades(board, specials, rng, {
 
 export function applySpecialSwap(board, specials, from, to, rng, options = {}) {
   const cleanSpecials = normalizeSpecials(specials);
+  const cleanLocks = normalizeLockProgress(options.locks);
   if (!adjacent(from, to)) {
-    return { legal: false, reason: "not_adjacent", board: board.slice(), specials: cleanSpecials, ice: normalizeIce(options.ice), scoreGained: 0, transitions: [] };
+    return { legal: false, reason: "not_adjacent", board: board.slice(), specials: cleanSpecials, ice: normalizeIce(options.ice), locks: cleanLocks, scoreGained: 0, transitions: [] };
+  }
+  if (cleanLocks.layers[from] > 0 || cleanLocks.layers[to] > 0) {
+    return { legal: false, reason: "locked", board: board.slice(), specials: cleanSpecials, ice: normalizeIce(options.ice), locks: cleanLocks, scoreGained: 0, transitions: [] };
   }
 
   const swappedBoard = swapPair(board, from, to);
@@ -616,13 +643,14 @@ export function applySpecialSwap(board, specials, from, to, rng, options = {}) {
     };
   }
 
-  if (!findSpecialMatchGroups(swappedBoard, swappedSpecials, options.rules).length) {
+  if (!findSpecialMatchGroups(swappedBoard, swappedSpecials, options.rules, cleanLocks.layers).length) {
     return {
       legal: false,
       reason: "no_match",
       board: board.slice(),
       specials: cleanSpecials,
       ice: normalizeIce(options.ice),
+      locks: cleanLocks,
       swapped: swappedBoard,
       swappedSpecials,
       scoreGained: 0,
@@ -643,8 +671,59 @@ export function applySpecialSwap(board, specials, from, to, rng, options = {}) {
 export function applySpecialHammer(board, specials, index, rng, options = {}) {
   const cleanSpecials = normalizeSpecials(specials);
   const cleanIce = normalizeIce(options.ice);
+  const cleanLocks = normalizeLockProgress(options.locks);
   if (index < 0 || index >= board.length) {
-    return { legal: false, reason: "invalid_index", board: board.slice(), specials: cleanSpecials, ice: cleanIce, scoreGained: 0, transitions: [] };
+    return { legal: false, reason: "invalid_index", board: board.slice(), specials: cleanSpecials, ice: cleanIce, locks: cleanLocks, scoreGained: 0, transitions: [] };
+  }
+
+  if (cleanLocks.layers[index] > 0) {
+    const chippedLocks = chipLockProgress(cleanLocks, board, [index], { allowRecallDirect: true });
+    const clearedKindCounts = Array(TILE_KINDS).fill(0);
+    const before = board.slice();
+    const specialsBefore = cleanSpecials.slice();
+    const transition = {
+      type: "special-combo",
+      combo: "hammer-lock",
+      cascade: 1,
+      groups: [],
+      matched: [index],
+      matchedForProgress: [],
+      gained: 80,
+      before,
+      specialsBefore,
+      cleared: before.slice(),
+      clearedSpecials: specialsBefore.slice(),
+      after: before.slice(),
+      specialsAfter: specialsBefore.slice(),
+      falls: [],
+      spawns: [],
+      createdSpecials: [],
+      triggeredSpecials: [],
+      clearedKindCounts: clearedKindCounts.slice(),
+      iceBefore: cleanIce.slice(),
+      iceAfter: cleanIce.slice(),
+      iceHits: [],
+      locksBefore: cleanLocks,
+      locksAfter: chippedLocks.after,
+      lockHits: chippedLocks.hits,
+    };
+    return {
+      legal: true,
+      index,
+      board: before,
+      specials: specialsBefore,
+      ice: cleanIce,
+      locks: chippedLocks.after,
+      scoreGained: transition.gained,
+      transitions: [transition],
+      clearedKindCounts,
+      iceHitCount: 0,
+      specialCreatedCount: 0,
+      specialTriggeredCount: 0,
+      shuffled: false,
+      shuffle: null,
+      maxCascade: 1,
+    };
   }
 
   if (cleanIce[index] > 0) {
@@ -674,6 +753,9 @@ export function applySpecialHammer(board, specials, index, rng, options = {}) {
       iceBefore: chipped.before,
       iceAfter: chipped.after,
       iceHits: chipped.hits,
+      locksBefore: cleanLocks,
+      locksAfter: cleanLocks,
+      lockHits: [],
     };
     return {
       legal: true,
@@ -681,6 +763,7 @@ export function applySpecialHammer(board, specials, index, rng, options = {}) {
       board: before,
       specials: specialsBefore,
       ice: chipped.after,
+      locks: cleanLocks,
       scoreGained: transition.gained,
       transitions: [transition],
       clearedKindCounts,
