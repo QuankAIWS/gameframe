@@ -1,7 +1,7 @@
 # Cascade Cognitive Design Notes
 
 Status: historical product-design notes; **not authoritative for current level generation, difficulty calibration, bot behavior, or production cadence**  
-Scope: retained cognitive/presentation ideas from the first 20-level era
+Scope: retained cognitive/presentation ideas from the early prototype era
 
 Current operational authority:
 - `planning/cascade-10000-campaign-roadmap.md` — campaign progression and 150-level production-batch policy
