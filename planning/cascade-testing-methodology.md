@@ -261,6 +261,35 @@ The shipping gate remains conservative:
 
 After sufficient replayable human data exists, human-persona envelopes can become authoring warnings first. They should become hard CI gates only after the model has demonstrated useful agreement with real players.
 
+## Hidden-information and cognitive-mechanic simulation
+
+Memory mechanics introduce a hard observation boundary.
+
+The authoritative engine may know every hidden symbol or condition. Human-like policies may not.
+
+Requirements:
+
+- human-casual and human-skilled receive only cues that have actually been revealed to the player;
+- the simulator records reveal events, currently remembered cues, and move delay since reveal;
+- human personas use an explicit imperfect-memory state rather than reading hidden board truth;
+- greedy/lookahead may access hidden truth only when clearly labeled as oracle/upper-bound solvability evidence;
+- replay telemetry must reconstruct what was visible before each human decision;
+- clue/re-show usage is recorded explicitly.
+
+Cognitive-mechanic analysis should track:
+
+- recall/pair accuracy;
+- mismatch and recovery;
+- cue-to-response delay;
+- number of concurrent remembered items;
+- hint/re-show usage;
+- abandonment/retry behavior;
+- interaction with normal level success.
+
+A memory-assisted attempt remains valid gameplay, but assisted and unassisted outcomes must be separated when estimating the intrinsic cognitive demand of a memory mechanic.
+
+Cognitive-persona metrics remain advisory until calibrated against actual family traces. They must not become hard CI gates merely because the engine can model hidden information.
+
 ## Data interpretation boundary
 
 Automated difficulty is one input, not the final product decision.
