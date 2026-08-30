@@ -5,6 +5,7 @@ Scope: retained cognitive/presentation ideas from the early prototype era
 
 Current operational authority:
 - `planning/cascade-10000-campaign-roadmap.md` — campaign progression and 150-level production-batch policy
+- `planning/cascade-cognitive-health-and-engagement.md` — current older-player cognitive-health and engagement design
 - `planning/cascade-testing-methodology.md` — current simulator, personas, calibration, validation, and archive policy
 
 Do not use this file to infer current level counts, bot architecture, generation batch size, or implementation order.
