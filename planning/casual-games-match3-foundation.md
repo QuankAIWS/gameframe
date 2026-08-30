@@ -374,7 +374,7 @@ Optional attention and memory mechanics, including Memory Fog and Pattern Echo c
 
 New mechanics should be implemented as reusable stateful board elements with explicit hooks for direct hits, adjacent matches, special hits, gravity, end-of-turn changes, spawning, movement, targeting, and objective completion. New content should extend the shared engine and profiler rather than create browser-only rules.
 
-The practical authoring loop is: define a chapter recipe, generate multiple candidate levels, batch-profile player personas and seeds, reject impossible/trivial/brittle/luck-dominated candidates, retain varied survivors, then recalibrate against family play traces at campaign checkpoints. Desktop and mobile use the same authored difficulty; device-specific telemetry is reserved for diagnosing interaction and readability problems.
+The practical production loop uses **150-level expansion/tuning batches**. Internally, those batches can be organized into 30-level chapters for teaching arcs and map presentation, but chapter size does not define generation cadence. Generate the full batch, profile the new range across player personas and seeds, reject or tune impossible/trivial/brittle/luck-dominated outliers, validate the exact head, archive accepted evidence, then recalibrate against family play traces at campaign checkpoints. Desktop and mobile use the same authored difficulty; device-specific telemetry is reserved for diagnosing interaction and readability problems.
 
 ## Current development order
 

@@ -94,6 +94,14 @@ Durable encounter→match restart/reconnect authority, shared-team tactical cont
 - GitHub Actions artifacts are transient, not the historical record. Meaningful Cascade bot baselines, calibration profiles, fragility reports, and human-playtest snapshots must be copied to the private archive with the GameFrame commit and workflow/run provenance before transient artifacts expire.
 - Raw Cascade player telemetry, stable player IDs, session IDs, and other private player-level records must stay in private storage. Public GameFrame may retain aggregate or anonymized analysis only.
 
+## Cascade level-generation authority
+
+- For Cascade campaign expansion, read `planning/cascade-10000-campaign-roadmap.md` and `planning/cascade-testing-methodology.md` before inferring generation cadence or difficulty policy.
+- The current production expansion unit is **150 levels per generation/tuning pass**. The 451–600 accepted expansion is the reference workflow.
+- `CHAPTER_SIZE = 30`, 30-level map windows, and 30-level chapter recipes are internal organization/presentation structures only. They do **not** mean agents should generate or tune only 30 levels at a time.
+- `planning/cascade-cognitive-design-and-playtesting.md` is historical product-design material and is not authoritative for current bot architecture, level counts, generation cadence, difficulty calibration, or implementation order.
+- Do not revive superseded prototype-era or chapter-sized production guidance from repository history unless the user explicitly asks for historical context.
+
 ## Cascade public-safe difficulty mirror
 
 - `data/cascade/difficulty-archive/` is the public-safe compact mirror used for repository-local comparisons and CI integrity checks; it is **not** the canonical historical store.
