@@ -113,6 +113,23 @@ function installConsole(identity) {
       </section>
 
       <section class="cascade-admin-section">
+        <small>SPECIAL PIECE LAB</small>
+        <p>Drop test specials onto safe cells, build Butterfly combos instantly, or trigger the first special without spending a hammer.</p>
+        <div class="cascade-admin-control-grid cascade-admin-special-grid">
+          <button type="button" data-admin-special="butterfly">Spawn Butterfly</button>
+          <button type="button" data-admin-special="stripe-h">Spawn stripe</button>
+          <button type="button" data-admin-special="bomb">Spawn bomb</button>
+          <button type="button" data-admin-special="color">Spawn color orb</button>
+          <button type="button" data-admin-special-count="4">4 random specials</button>
+          <button type="button" data-admin-combo="butterfly">Butterfly + Butterfly</button>
+          <button type="button" data-admin-combo="stripe-h">Butterfly + stripe</button>
+          <button type="button" data-admin-combo="bomb">Butterfly + bomb</button>
+          <button type="button" data-admin-combo="color">Butterfly + color</button>
+          <button type="button" data-admin-trigger-special>Trigger first special</button>
+        </div>
+      </section>
+
+      <section class="cascade-admin-section">
         <small>LIVES</small>
         <p>Force recharge and lockout states.</p>
         <div class="cascade-admin-control-grid cascade-admin-control-grid-four">
@@ -228,6 +245,40 @@ function installConsole(identity) {
     dialog.close();
     window.cascadeResearch?.startBlitz?.(5);
   });
+
+  function runSpecialLab(action, message) {
+    dialog.close();
+    window.setTimeout(async () => {
+      try {
+        await action();
+      } finally {
+        status.textContent = message;
+      }
+    }, 40);
+  }
+
+  dialog.querySelectorAll("[data-admin-special]").forEach((button) => {
+    button.addEventListener("click", () => runSpecialLab(
+      () => window.cascadeResearch?.adminSpawnSpecial?.(button.dataset.adminSpecial, 1),
+      `Spawned ${button.textContent.replace("Spawn ", "")}.`,
+    ));
+  });
+
+  dialog.querySelector("[data-admin-special-count]").addEventListener("click", () => runSpecialLab(() => {
+    ["butterfly", "stripe-h", "bomb", "color"].forEach((type) => window.cascadeResearch?.adminSpawnSpecial?.(type, 1));
+  }, "Spawned four test specials."));
+
+  dialog.querySelectorAll("[data-admin-combo]").forEach((button) => {
+    button.addEventListener("click", () => runSpecialLab(
+      () => window.cascadeResearch?.adminSpawnCombo?.(button.dataset.adminCombo),
+      "Spawned Butterfly combo.",
+    ));
+  });
+
+  dialog.querySelector("[data-admin-trigger-special]").addEventListener("click", () => runSpecialLab(
+    () => window.cascadeResearch?.adminTriggerFirstSpecial?.(),
+    "Triggered first test special.",
+  ));
 
   command.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
