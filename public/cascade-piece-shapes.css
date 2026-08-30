@@ -548,3 +548,134 @@
     animation-duration: 1ms !important;
   }
 }
+
+
+/* Memory Blooms / Enchanted Ground ---------------------------------------- */
+
+.cascade-ground-mark {
+  position: absolute;
+  z-index: 2;
+  inset: 3%;
+  pointer-events: none;
+  border-radius: 24%;
+  border: clamp(2px, .45vw, 4px) solid rgba(92, 211, 201, .72);
+  background:
+    radial-gradient(circle at 16% 18%, rgba(255,255,255,.98) 0 3%, transparent 4%),
+    radial-gradient(circle at 82% 24%, rgba(255,255,255,.9) 0 2.5%, transparent 3.5%),
+    radial-gradient(circle at 24% 82%, rgba(255,247,176,.92) 0 2.5%, transparent 3.5%),
+    radial-gradient(circle at 80% 78%, rgba(255,255,255,.92) 0 2%, transparent 3%),
+    linear-gradient(145deg, rgba(131, 239, 213, .2), rgba(124, 165, 245, .12));
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.54),
+    inset 0 0 13px rgba(103, 234, 211, .32),
+    0 0 8px rgba(96, 210, 214, .28);
+}
+
+.cascade-tile.has-enchanted-ground .cascade-ground-mark::after {
+  content: "✦";
+  position: absolute;
+  right: 5%;
+  bottom: 1%;
+  color: rgba(255,255,255,.95);
+  font-size: clamp(.55rem, 2.1vw, 1rem);
+  text-shadow: 0 0 5px rgba(78,194,207,.9);
+}
+
+.cascade-tile.has-memory-bloom::before {
+  transform: scale(.64);
+  filter:
+    drop-shadow(0 2px 0 rgba(255,255,255,.55))
+    drop-shadow(0 4px 4px rgba(82,57,113,.16))
+    saturate(.86);
+}
+
+.cascade-bloom-mark {
+  position: absolute;
+  z-index: 8;
+  left: 10%;
+  top: 8%;
+  width: 80%;
+  height: 82%;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #8f4c9b;
+  font-size: clamp(1.55rem, 6vw, 2.8rem);
+  font-weight: 1000;
+  line-height: 1;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,253,222,.98) 0 15%, transparent 16%),
+    radial-gradient(ellipse at 50% 16%, rgba(255,160,210,.94) 0 22%, transparent 23%),
+    radial-gradient(ellipse at 84% 50%, rgba(246,143,220,.92) 0 22%, transparent 23%),
+    radial-gradient(ellipse at 50% 84%, rgba(198,147,242,.92) 0 22%, transparent 23%),
+    radial-gradient(ellipse at 16% 50%, rgba(255,183,222,.94) 0 22%, transparent 23%);
+  filter:
+    drop-shadow(0 2px 0 rgba(255,255,255,.8))
+    drop-shadow(0 5px 6px rgba(108,60,128,.26));
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 8px rgba(255,255,255,.94);
+  transition: transform .18s ease, filter .18s ease;
+}
+
+.cascade-bloom-mark.is-revealed {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 24%, transparent 25%),
+    radial-gradient(ellipse at 50% 14%, rgba(255,195,229,.96) 0 24%, transparent 25%),
+    radial-gradient(ellipse at 86% 50%, rgba(249,170,225,.94) 0 24%, transparent 25%),
+    radial-gradient(ellipse at 50% 86%, rgba(216,174,249,.94) 0 24%, transparent 25%),
+    radial-gradient(ellipse at 14% 50%, rgba(255,205,233,.96) 0 24%, transparent 25%);
+  transform: scale(1.06);
+  filter:
+    drop-shadow(0 2px 0 rgba(255,255,255,.9))
+    drop-shadow(0 0 10px rgba(239,153,229,.6))
+    drop-shadow(0 6px 7px rgba(108,60,128,.22));
+}
+
+.cascade-bloom-peek {
+  position: absolute;
+  z-index: 12;
+  inset: 10%;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 239, 250, .96);
+  color: #70407d;
+  font-size: clamp(1.45rem, 6vw, 2.7rem);
+  font-weight: 1000;
+  box-shadow:
+    inset 0 0 0 3px rgba(255,255,255,.9),
+    0 0 0 3px rgba(224,150,225,.45),
+    0 0 12px rgba(224,150,225,.5);
+}
+
+.cascade-tile.is-bloom-match .cascade-bloom-mark,
+.cascade-tile.is-bloom-match .cascade-bloom-peek {
+  animation: cascade-bloom-success .3s ease-out both;
+}
+
+.cascade-tile.is-bloom-mismatch .cascade-bloom-peek {
+  animation: cascade-bloom-mismatch .58s ease-in-out both;
+}
+
+@keyframes cascade-bloom-success {
+  0% { transform: scale(.86) rotate(-4deg); }
+  70% { transform: scale(1.18) rotate(3deg); filter: brightness(1.18); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes cascade-bloom-mismatch {
+  0%, 100% { transform: translateX(0) scale(.96); }
+  28% { transform: translateX(-4%) scale(1); }
+  58% { transform: translateX(4%) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade-bloom-mark,
+  .cascade-bloom-peek {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
