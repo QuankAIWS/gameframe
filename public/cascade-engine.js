@@ -1186,17 +1186,25 @@ export function applyLevelProgress(levelDefinition, progress, result) {
   };
   addKindCounts(next.collected, result?.clearedKindCounts);
   const steps = Array.isArray(result?.transitions) ? result.transitions : result?.cleared ? [result] : [];
+  const bloomEvents = [];
+  const groundSpread = [];
   if (result?.hammer?.cleared) {
     next.drop = dropStepProgress(next.drop, result.hammer);
     next.blooms = advanceBloomProgress(next.blooms, result.hammer.matchedForProgress || result.hammer.matched || []);
+    bloomEvents.push(...next.blooms.lastEvents);
     next.ground = advanceGroundProgress(next.ground, result.hammer.matchedForProgress || result.hammer.matched || []);
+    groundSpread.push(...next.ground.lastSpread);
   }
   for (const step of steps) {
     next.drop = dropStepProgress(next.drop, step);
     const clearIndices = step.matchedForProgress || step.matched || [];
     next.blooms = advanceBloomProgress(next.blooms, clearIndices);
+    bloomEvents.push(...next.blooms.lastEvents);
     next.ground = advanceGroundProgress(next.ground, clearIndices);
+    groundSpread.push(...next.ground.lastSpread);
   }
+  next.blooms.lastEvents = bloomEvents;
+  next.ground.lastSpread = [...new Set(groundSpread)];
   return next;
 }
 
