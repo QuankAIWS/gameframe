@@ -255,7 +255,7 @@
  * stays visible at a smaller scale so its color family still reads immediately.
  * data-special="fish" remains the persisted engine token for save compatibility. */
 .cascade-tile[data-special="fish"]::before {
-  transform: scale(.48);
+  transform: scale(.42);
   filter:
     drop-shadow(0 2px 0 rgba(255,255,255,.72))
     drop-shadow(0 4px 5px rgba(82,57,113,.16))
@@ -263,54 +263,39 @@
 }
 
 .cascade-tile[data-special="fish"] .cascade-special-mark {
+  --butterfly-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M48 49C43 20 29 5 14 7C1 9 -2 24 6 36C10 42 16 46 24 49C14 52 8 58 7 67C5 80 15 91 28 87C39 83 45 69 48 56Z'/%3E%3Cpath fill='black' d='M52 49C57 20 71 5 86 7C99 9 102 24 94 36C90 42 84 46 76 49C86 52 92 58 93 67C95 80 85 91 72 87C61 83 55 69 52 56Z'/%3E%3Cpath fill='black' d='M47 20C47 15 44 11 40 9L42 6C47 9 50 13 50 18C50 13 53 9 58 6L60 9C56 11 53 15 53 20Z'/%3E%3Cpath fill='black' d='M46 23C46 18 54 18 54 23L55 66C55 75 45 75 45 66Z'/%3E%3C/svg%3E");
   position: absolute;
   z-index: 4;
-  left: 45%;
-  top: 24%;
-  width: 10%;
-  height: 52%;
+  left: 12%;
+  top: 10%;
+  width: 76%;
+  height: 78%;
   inset: auto;
   overflow: visible;
-  border: 2px solid rgba(82,57,113,.36);
-  border-radius: 50% 50% 58% 58%;
+  border: 0;
+  border-radius: 0;
   background-color: var(--tile, #ff5ca8);
   background-image:
-    radial-gradient(circle at 38% 18%, rgba(255,255,255,.98) 0 10%, transparent 11%),
-    linear-gradient(180deg, rgba(255,255,255,.74), transparent 42%, rgba(74,42,91,.12));
-  box-shadow: 0 0 0 1px rgba(255,255,255,.72), 0 4px 7px rgba(82,57,113,.25);
+    radial-gradient(circle at 28% 25%, rgba(255,255,255,.96) 0 5%, transparent 6%),
+    radial-gradient(circle at 72% 25%, rgba(255,255,255,.96) 0 5%, transparent 6%),
+    radial-gradient(circle at 31% 70%, rgba(255,238,250,.60) 0 6%, transparent 7%),
+    radial-gradient(circle at 69% 70%, rgba(255,238,250,.60) 0 6%, transparent 7%),
+    linear-gradient(160deg, rgba(255,255,255,.34), transparent 43%, rgba(74,42,91,.12));
+  -webkit-mask: var(--butterfly-mask) center / contain no-repeat;
+  mask: var(--butterfly-mask) center / contain no-repeat;
+  filter:
+    drop-shadow(0 0 1px rgba(255,255,255,.98))
+    drop-shadow(0 3px 3px rgba(82,57,113,.30))
+    brightness(1.08)
+    saturate(1.05);
   opacity: 1;
+  transform-origin: center;
+  animation: cascade-butterfly-idle 900ms ease-in-out infinite alternate;
 }
 
 .cascade-tile[data-special="fish"] .cascade-special-mark::before,
 .cascade-tile[data-special="fish"] .cascade-special-mark::after {
-  content: "";
-  position: absolute;
-  top: -7%;
-  width: 345%;
-  height: 116%;
-  border: 2px solid rgba(94,61,117,.46);
-  background-color: var(--tile, #ff5ca8);
-  background-image:
-    radial-gradient(circle at 34% 24%, rgba(255,255,255,.98) 0 8%, transparent 9%),
-    radial-gradient(circle at 48% 70%, rgba(255,236,250,.78) 0 11%, transparent 12%),
-    linear-gradient(150deg, rgba(255,255,255,.42), transparent 48%, rgba(74,42,91,.14));
-  box-shadow:
-    inset 0 -4px 0 rgba(82,57,113,.13),
-    0 2px 5px rgba(82,57,113,.23),
-    0 0 7px rgba(255,255,255,.22);
-  clip-path: polygon(100% 48%, 82% 25%, 67% 8%, 40% 0, 14% 12%, 0 33%, 8% 49%, 28% 55%, 10% 70%, 18% 92%, 45% 100%, 70% 88%, 88% 67%, 100% 55%);
-}
-
-.cascade-tile[data-special="fish"] .cascade-special-mark::before {
-  right: 64%;
-  transform-origin: 100% 54%;
-  animation: cascade-butterfly-wing-left 980ms ease-in-out infinite alternate;
-}
-
-.cascade-tile[data-special="fish"] .cascade-special-mark::after {
-  left: 64%;
-  transform-origin: 0 54%;
-  animation: cascade-butterfly-wing-right 980ms ease-in-out infinite alternate;
+  content: none;
 }
 
 .cascade-tile[data-special="fish"].is-special-triggered .cascade-special-mark {
@@ -322,51 +307,38 @@
   z-index: 110;
   left: 0;
   top: 0;
-  width: clamp(44px, 9.5vw, 68px);
-  height: clamp(40px, 8.8vw, 64px);
+  width: clamp(46px, 10vw, 70px);
+  height: clamp(42px, 9.2vw, 66px);
   pointer-events: none;
   filter: drop-shadow(0 4px 6px rgba(82,57,113,.28));
   will-change: transform, opacity;
 }
 
 .cascade-butterfly-flight i {
+  --butterfly-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='black' d='M48 49C43 20 29 5 14 7C1 9 -2 24 6 36C10 42 16 46 24 49C14 52 8 58 7 67C5 80 15 91 28 87C39 83 45 69 48 56Z'/%3E%3Cpath fill='black' d='M52 49C57 20 71 5 86 7C99 9 102 24 94 36C90 42 84 46 76 49C86 52 92 58 93 67C95 80 85 91 72 87C61 83 55 69 52 56Z'/%3E%3Cpath fill='black' d='M47 20C47 15 44 11 40 9L42 6C47 9 50 13 50 18C50 13 53 9 58 6L60 9C56 11 53 15 53 20Z'/%3E%3Cpath fill='black' d='M46 23C46 18 54 18 54 23L55 66C55 75 45 75 45 66Z'/%3E%3C/svg%3E");
   position: absolute;
-  left: 46%;
-  top: 19%;
-  width: 8%;
-  height: 62%;
-  border-radius: 50%;
+  inset: 0;
+  display: block;
   background-color: var(--butterfly-color, #ff5ca8);
-  background-image: linear-gradient(180deg, rgba(255,255,255,.95), transparent 42%, rgba(74,42,91,.14));
-  box-shadow: 0 0 0 1px rgba(255,255,255,.8);
+  background-image:
+    radial-gradient(circle at 28% 25%, rgba(255,255,255,.98) 0 5%, transparent 6%),
+    radial-gradient(circle at 72% 25%, rgba(255,255,255,.98) 0 5%, transparent 6%),
+    radial-gradient(circle at 31% 70%, rgba(255,238,250,.68) 0 6%, transparent 7%),
+    radial-gradient(circle at 69% 70%, rgba(255,238,250,.68) 0 6%, transparent 7%),
+    linear-gradient(160deg, rgba(255,255,255,.36), transparent 43%, rgba(74,42,91,.14));
+  -webkit-mask: var(--butterfly-mask) center / contain no-repeat;
+  mask: var(--butterfly-mask) center / contain no-repeat;
+  filter:
+    drop-shadow(0 0 1px rgba(255,255,255,.98))
+    drop-shadow(0 3px 3px rgba(82,57,113,.34))
+    brightness(1.08);
+  transform-origin: center;
+  animation: cascade-butterfly-flight-flap 150ms ease-in-out infinite alternate;
 }
 
 .cascade-butterfly-flight::before,
 .cascade-butterfly-flight::after {
-  content: "";
-  position: absolute;
-  top: -2%;
-  width: 52%;
-  height: 92%;
-  border: 2px solid rgba(94,61,117,.46);
-  background-color: var(--butterfly-color, #ff5ca8);
-  background-image:
-    radial-gradient(circle at 35% 24%, rgba(255,255,255,.98) 0 8%, transparent 9%),
-    radial-gradient(circle at 48% 70%, rgba(255,236,250,.82) 0 11%, transparent 12%),
-    linear-gradient(150deg, rgba(255,255,255,.42), transparent 48%, rgba(74,42,91,.14));
-  clip-path: polygon(100% 48%, 82% 25%, 67% 8%, 40% 0, 14% 12%, 0 33%, 8% 49%, 28% 55%, 10% 70%, 18% 92%, 45% 100%, 70% 88%, 88% 67%, 100% 55%);
-}
-
-.cascade-butterfly-flight::before {
-  right: 50%;
-  transform-origin: 100% 52%;
-  animation: cascade-butterfly-flight-wing 150ms ease-in-out infinite alternate;
-}
-
-.cascade-butterfly-flight::after {
-  left: 50%;
-  transform-origin: 0 52%;
-  animation: cascade-butterfly-flight-wing-right 150ms ease-in-out infinite alternate;
+  content: none;
 }
 
 .cascade-butterfly-flight[data-kind="0"] { --butterfly-color: #ff5ca8; }
@@ -376,24 +348,14 @@
 .cascade-butterfly-flight[data-kind="4"] { --butterfly-color: #a56af4; }
 .cascade-butterfly-flight[data-kind="5"] { --butterfly-color: #ff914d; }
 
-@keyframes cascade-butterfly-wing-left {
-  from { transform: rotate(-27deg) scaleX(.76); }
-  to { transform: rotate(-10deg) scaleX(1.04); }
+@keyframes cascade-butterfly-idle {
+  from { transform: translateY(1px) scaleX(.88) rotate(-1deg); }
+  to { transform: translateY(-1px) scaleX(1) rotate(1deg); }
 }
 
-@keyframes cascade-butterfly-wing-right {
-  from { transform: scaleX(-.76) rotate(-27deg); }
-  to { transform: scaleX(-1.04) rotate(-10deg); }
-}
-
-@keyframes cascade-butterfly-flight-wing {
-  from { transform: scaleX(.56) rotate(-12deg); }
-  to { transform: scaleX(1.04) rotate(7deg); }
-}
-
-@keyframes cascade-butterfly-flight-wing-right {
-  from { transform: scaleX(-.56) rotate(-12deg); }
-  to { transform: scaleX(-1.04) rotate(7deg); }
+@keyframes cascade-butterfly-flight-flap {
+  from { transform: scaleX(.62) scaleY(.98); }
+  to { transform: scaleX(1) scaleY(1.02); }
 }
 
 @keyframes cascade-butterfly-launch {
@@ -403,10 +365,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cascade-tile[data-special="fish"] .cascade-special-mark::before,
-  .cascade-tile[data-special="fish"] .cascade-special-mark::after,
-  .cascade-butterfly-flight::before,
-  .cascade-butterfly-flight::after {
+  .cascade-tile[data-special="fish"] .cascade-special-mark,
+  .cascade-butterfly-flight i {
     animation-duration: 1ms !important;
   }
 }
