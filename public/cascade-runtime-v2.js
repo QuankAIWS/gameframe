@@ -13,6 +13,7 @@ import {
   createRng,
   describeLevelObjective,
   dropSupportIndices,
+  ordinaryLockTargetIndices,
   emptySpecials,
   objectiveComplete,
 } from "./cascade-special-engine.js";
@@ -25,13 +26,14 @@ const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
 const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
-const ACTIVE_RUN_VERSION = 1;
+const ACTIVE_RUN_VERSION = 2;
 const BOARD_CELL_COUNT = BOARD_SIZE * BOARD_SIZE;
 const VALID_SPECIALS = new Set(Object.values(SPECIAL));
 const BLITZ_SECONDS = 30;
 const BLITZ_AFTER_LEVELS = Object.freeze(new Set([
   5, 12, 20, 30, 45, 60, 75, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290,
   310, 330, 350, 370, 390, 410, 430, 450, 470, 490, 510, 530, 550, 570, 590,
+  610, 630, 650, 670, 690, 710, 730,
 ]));
 const LEVEL_MAP_WINDOW = 30;
 const PRESENTATION = Object.freeze({
@@ -158,6 +160,10 @@ let blitzReturningLevel = 1;
 let blitzId = "";
 let blitzStats = { matches: 0, specials: 0, cascades: 0 };
 let finishingBlitz = false;
+let recallCueRevealUntil = 0;
+let recallHintIndex = -1;
+let recallHintUntil = 0;
+const RECALL_SYMBOLS = Object.freeze(["♥", "◆", "★", "●", "✦", "✿"]);
 
 function saveState() {
   localStorage.setItem(STATE_KEY, JSON.stringify(state));
@@ -191,6 +197,15 @@ function saveActiveRun() {
             exits: (levelProgress.drop.exits || []).slice(),
           }
         : null,
+      locks: levelProgress?.locks
+        ? {
+            total: Number(levelProgress.locks.total) || 0,
+            opened: Number(levelProgress.locks.opened) || 0,
+            layers: (levelProgress.locks.layers || []).slice(),
+            requiredKinds: (levelProgress.locks.requiredKinds || []).slice(),
+            recall: levelProgress.locks.recall === true,
+          }
+        : null,
     },
     rngState: boardRng.snapshot(),
     savedAt: Date.now(),
@@ -200,7 +215,7 @@ function saveActiveRun() {
 function loadActiveRun(levelNumber) {
   try {
     const parsed = JSON.parse(localStorage.getItem(ACTIVE_RUN_KEY) || "null");
-    if (!parsed || typeof parsed !== "object" || parsed.version !== ACTIVE_RUN_VERSION) return null;
+    if (!parsed || typeof parsed !== "object" || ![1, ACTIVE_RUN_VERSION].includes(Number(parsed.version))) return null;
     if (Number(parsed.level) !== Number(levelNumber)) return null;
     const level = levels[levelNumber - 1];
     if (!level) return null;
@@ -224,6 +239,7 @@ function loadActiveRun(levelNumber) {
       collected,
       ice,
       drop: parsed.levelProgress?.drop,
+      locks: parsed.levelProgress?.locks,
     }, {});
     return {
       board: savedBoard,
@@ -352,9 +368,29 @@ function remainingTargetKinds() {
     .map((goal) => goal.kind);
 }
 
-function remainingDropSupportIndices() {
+function remainingButterflyTargetIndices() {
   if (mode !== "normal") return [];
-  return dropSupportIndices(levelProgress);
+  return [...new Set([
+    ...dropSupportIndices(levelProgress),
+    ...ordinaryLockTargetIndices(levelProgress),
+  ])];
+}
+
+function recallCueVisible(index) {
+  if (Date.now() < recallCueRevealUntil) return true;
+  return index === recallHintIndex && Date.now() < recallHintUntil;
+}
+
+function revealRecallCue(index, duration = 1200) {
+  recallHintIndex = index;
+  recallHintUntil = Date.now() + duration;
+  renderBoard();
+  window.setTimeout(() => {
+    if (recallHintIndex === index && Date.now() >= recallHintUntil) {
+      recallHintIndex = -1;
+      renderBoard();
+    }
+  }, duration + 40);
 }
 
 function specialName(value) {
@@ -373,6 +409,9 @@ function renderBoard() {
     const iceLayers = mode === "normal" ? Math.max(0, Number(levelProgress?.ice?.[index]) || 0) : 0;
     const dropToken = mode === "normal" ? (levelProgress?.drop?.tokens || []).find((token) => Number(token.index) === index) : null;
     const dropExit = mode === "normal" && (levelProgress?.drop?.exits || []).includes(index);
+    const lockLayers = mode === "normal" ? Math.max(0, Number(levelProgress?.locks?.layers?.[index]) || 0) : 0;
+    const recallKind = mode === "normal" ? Number(levelProgress?.locks?.requiredKinds?.[index]) : -1;
+    const cueVisible = lockLayers > 0 && recallKind >= 0 && recallCueVisible(index);
     tile.type = "button";
     tile.className = "cascade-tile";
     tile.dataset.kind = String(kind);
@@ -407,8 +446,23 @@ function renderBoard() {
       dropMark.textContent = "◆";
       tile.append(dropMark);
     }
+    if (lockLayers > 0) {
+      tile.dataset.lock = String(lockLayers);
+      tile.classList.add("has-lock", recallKind >= 0 ? "has-recall-lock" : "has-cage");
+      const lockMark = document.createElement("span");
+      lockMark.className = "cascade-lock-mark";
+      lockMark.setAttribute("aria-hidden", "true");
+      if (recallKind >= 0) {
+        lockMark.dataset.recallKind = String(recallKind);
+        lockMark.classList.toggle("is-revealed", cueVisible);
+        lockMark.textContent = cueVisible ? RECALL_SYMBOLS[recallKind] : "⌾";
+      } else {
+        lockMark.textContent = lockLayers > 1 ? "✦" : "";
+      }
+      tile.append(lockMark);
+    }
     tile.setAttribute("role", "gridcell");
-    tile.setAttribute("aria-label", `Tile ${index + 1}${special ? `, ${specialName(special)}` : ""}${iceLayers ? `, ${iceLayers} ice ${iceLayers === 1 ? "layer" : "layers"}` : ""}${dropToken ? ", drop object" : ""}${dropExit ? ", drop exit" : ""}`);
+    tile.setAttribute("aria-label", `Tile ${index + 1}${special ? `, ${specialName(special)}` : ""}${iceLayers ? `, ${iceLayers} ice ${iceLayers === 1 ? "layer" : "layers"}` : ""}${dropToken ? ", drop object" : ""}${dropExit ? ", drop exit" : ""}${lockLayers ? recallKind >= 0 ? cueVisible ? `, recall lock wants ${["pink","cyan","yellow","green","purple","orange"][recallKind]}` : ", recall lock, cue hidden" : `, cage ${lockLayers === 1 ? "locked" : "double locked"}` : ""}`);
     if (selectedIndex === index) tile.classList.add("is-selected");
     if (hammerMode) tile.classList.add("is-hammer-target");
     tile.addEventListener("click", () => onTileClick(index));
@@ -428,6 +482,8 @@ function mapLabel(level) {
   const hasIce = Boolean(level.objective?.ice);
   const hasCollect = Boolean(level.objective?.collect?.length);
   const hasDrop = Boolean(level.objective?.drop);
+  const hasLocks = Boolean(level.objective?.locks);
+  if (hasLocks) return level.objective.locks.recall ? "Recall lock" : "Cages";
   if (hasDrop && (hasIce || hasCollect)) return "Drop mix";
   if (hasDrop) return "Drop";
   if (hasIce && hasCollect) return "Mix";
@@ -486,9 +542,15 @@ function renderHelp() {
     helpElement.textContent = "Make a 2×2 square of one color to create a Butterfly. Match or trigger it and it flutters to a random useful objective.";
   } else if (activeLevel.level === 451) {
     helpElement.textContent = "New objective: drop every diamond to its glowing exit. Clear pieces underneath so gravity carries it down.";
+  } else if (activeLevel.level === 651) {
+    helpElement.textContent = "New objective: open every cage. Caged candies stay fixed and cannot be swapped. Clear beside a cage or hit it with a special to crack it.";
+  } else if (activeLevel.level === 701) {
+    helpElement.textContent = "Memory challenge: each magic lock briefly shows the color-symbol it wants. Remember it, then clear that color beside the lock. Tap a closed lock anytime for a quick clue.";
   } else {
     const notes = [];
     if (activeLevel.objective?.drop) notes.push("clear below each diamond to drop it into its exit");
+    if (activeLevel.objective?.locks?.recall) notes.push("remember each magic lock cue and clear that color beside it");
+    else if (activeLevel.objective?.locks) notes.push("clear beside every cage to open it");
     if (activeLevel.objective?.ice) notes.push("crack every iced cell");
     if (activeLevel.objective?.collect?.length) notes.push("collect the required colors");
     if (activeLevel.mechanics?.includes("fish")) notes.push("Butterflies randomly seek useful objective cells");
@@ -692,7 +754,10 @@ async function animateButterflyFlights(transition) {
 
 async function presentResolvedResult(result) {
   for (const transition of result.transitions) {
-    if (mode === "normal") levelProgress.ice = transition.iceBefore.slice();
+    if (mode === "normal") {
+      levelProgress.ice = transition.iceBefore.slice();
+      if (transition.locksBefore) levelProgress.locks = transition.locksBefore;
+    }
     board = transition.before.slice();
     specials = transition.specialsBefore.slice();
     renderBoard();
@@ -727,6 +792,8 @@ async function presentResolvedResult(result) {
       combo: transition.combo || null,
       iceHits: transition.iceHits.length,
       dropsDelivered: Number(levelProgress?.drop?.delivered || 0),
+      lockHits: transition.lockHits?.length || 0,
+      locksOpened: Number(levelProgress?.locks?.opened || 0),
     });
     await presentFallTransition(transition);
     await sleep(PRESENTATION.betweenCascades);
@@ -749,7 +816,10 @@ async function presentResolvedResult(result) {
     board = result.board.slice();
     specials = result.specials.slice();
   }
-  if (mode === "normal") levelProgress.ice = result.ice.slice();
+  if (mode === "normal") {
+    levelProgress.ice = result.ice.slice();
+    if (result.locks) levelProgress.locks = result.locks;
+  }
   renderBoard();
   renderStatus();
 }
@@ -984,9 +1054,10 @@ async function onTileClick(index) {
     await sleep(120);
     const result = applySpecialHammer(board, specials, index, boardRng, {
       ice: levelProgress.ice,
+      locks: levelProgress.locks,
       rules: currentRules(),
       targetKinds: remainingTargetKinds(),
-      targetIndices: remainingDropSupportIndices(),
+      targetIndices: remainingButterflyTargetIndices(),
     });
     await presentResolvedResult(result);
     locked = false;
@@ -995,6 +1066,20 @@ async function onTileClick(index) {
     track("booster_used", { booster: "hammer" });
     await checkNormalLevelEnd();
     if (!locked) renderStatus();
+    return;
+  }
+
+  const lockLayers = mode === "normal" ? Math.max(0, Number(levelProgress?.locks?.layers?.[index]) || 0) : 0;
+  const recallKind = mode === "normal" ? Number(levelProgress?.locks?.requiredKinds?.[index]) : -1;
+  if (lockLayers > 0 && !hammerMode) {
+    selectedIndex = null;
+    if (recallKind >= 0) {
+      revealRecallCue(index);
+      track("recall_hint", { index });
+    } else {
+      tileAt(index)?.classList.add("is-lock-nudge");
+      window.setTimeout(() => tileAt(index)?.classList.remove("is-lock-nudge"), 280);
+    }
     return;
   }
 
@@ -1019,8 +1104,10 @@ async function onTileClick(index) {
   locked = true;
   const result = applySpecialSwap(board, specials, first, index, boardRng, {
     ice: mode === "normal" ? levelProgress.ice : [],
+    locks: mode === "normal" ? levelProgress.locks : null,
     rules: currentRules(),
     targetKinds: remainingTargetKinds(),
+    targetIndices: remainingButterflyTargetIndices(),
   });
   if (!result.legal) {
     if (result.swapped) {
@@ -1077,6 +1164,9 @@ function startLevel(levelNumber = state.level, { resume = false } = {}) {
   hammerMode = false;
   locked = false;
 
+  recallCueRevealUntil = 0;
+  recallHintIndex = -1;
+  recallHintUntil = 0;
   const savedRun = resume ? loadActiveRun(state.level) : null;
   if (savedRun) {
     levelProgress = savedRun.levelProgress;
@@ -1095,10 +1185,18 @@ function startLevel(levelNumber = state.level, { resume = false } = {}) {
 
   clearActiveRun();
   levelProgress = createLevelProgress(activeLevel);
+  if (activeLevel.objective?.locks?.recall) {
+    recallCueRevealUntil = Date.now() + 4200;
+    window.setTimeout(() => renderBoard(), 4250);
+  }
   score = 0;
   movesRemaining = activeLevel.moves;
   boardRng = createRng(((activeLevel.level * 0x9e3779b1) ^ Date.now()) >>> 0);
-  board = createBoard({ rng: boardRng, rules: currentRules() });
+  board = createBoard({
+    rng: boardRng,
+    rules: currentRules(),
+    locked: levelProgress?.locks?.layers || [],
+  });
   specials = emptySpecials();
   saveState();
   saveActiveRun();
@@ -1131,7 +1229,7 @@ function startBlitz(completedLevel) {
   selectedIndex = null;
   hammerMode = false;
   locked = true;
-  levelProgress = { collected: [], ice: [], drop: { delivered: 0, total: 0, tokens: [], exits: [] } };
+  levelProgress = { collected: [], ice: [], drop: { delivered: 0, total: 0, tokens: [], exits: [] }, locks: { total: 0, opened: 0, layers: Array(BOARD_CELL_COUNT).fill(0), requiredKinds: Array(BOARD_CELL_COUNT).fill(-1), recall: false } };
   boardRng = createRng(((completedLevel * 0x85ebca6b) ^ Date.now()) >>> 0);
   board = createBoard({ rng: boardRng, rules: currentRules() });
   specials = emptySpecials();
@@ -1209,7 +1307,7 @@ window.cascadeResearch = Object.freeze({
     if (!VALID_SPECIALS.has(mapped)) return [];
     const blocked = new Set((levelProgress?.drop?.tokens || []).map((token) => Number(token.index)));
     const candidates = board.map((kind, index) => ({ kind, index }))
-      .filter(({ kind, index }) => kind !== null && !specials[index] && !blocked.has(index) && Math.max(0, Number(levelProgress?.ice?.[index]) || 0) === 0)
+      .filter(({ kind, index }) => kind !== null && !specials[index] && !blocked.has(index) && Math.max(0, Number(levelProgress?.ice?.[index]) || 0) === 0 && Math.max(0, Number(levelProgress?.locks?.layers?.[index]) || 0) === 0)
       .map(({ index }) => index);
     const placed = [];
     while (placed.length < Math.max(1, Math.min(8, Number(count) || 1)) && candidates.length) {
@@ -1232,6 +1330,7 @@ window.cascadeResearch = Object.freeze({
       for (const neighbor of [right, down]) {
         if (neighbor < 0 || specials[index] || specials[neighbor] || blocked.has(index) || blocked.has(neighbor)) continue;
         if (Math.max(0, Number(levelProgress?.ice?.[index]) || 0) > 0 || Math.max(0, Number(levelProgress?.ice?.[neighbor]) || 0) > 0) continue;
+        if (Math.max(0, Number(levelProgress?.locks?.layers?.[index]) || 0) > 0 || Math.max(0, Number(levelProgress?.locks?.layers?.[neighbor]) || 0) > 0) continue;
         pairs.push([index, neighbor]);
       }
     }
@@ -1250,9 +1349,10 @@ window.cascadeResearch = Object.freeze({
     selectedIndex = null;
     const result = applySpecialHammer(board, specials, index, boardRng, {
       ice: levelProgress.ice,
+      locks: levelProgress.locks,
       rules: currentRules(),
       targetKinds: remainingTargetKinds(),
-      targetIndices: remainingDropSupportIndices(),
+      targetIndices: remainingButterflyTargetIndices(),
     });
     await presentResolvedResult(result);
     board = result.board.slice();

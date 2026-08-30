@@ -17,15 +17,15 @@ import {
   objectiveComplete,
   resolveCascades,
 } from "../../../public/cascade-engine.js";
-import { chooseMove, profileCascadeLevels, profileCascadeMoveFragility, runCascadeLevel, targetFirstPassBand } from "./cascade-simulator.js";
+import { chooseMove, profileCascadeLevels, profileCascadeMoveFragility, runCascadeLevel, scoreVisibleMove, targetFirstPassBand } from "./cascade-simulator.js";
 import { analyzePlaytestExport } from "./cascade-playtest-analysis.js";
 
-test("Cascade ships 600 levels on a campaign model sized for 10000", () => {
-  assert.equal(LEVEL_COUNT, 600);
+test("Cascade ships 750 levels on a campaign model sized for 10000", () => {
+  assert.equal(LEVEL_COUNT, 750);
   assert.equal(CAMPAIGN_CAPACITY, 10000);
   assert.equal(CAMPAIGN_MILESTONE, 3000);
   assert.equal(CHAPTER_SIZE, 30);
-  assert.equal(CASCADE_LEVELS.length, 600);
+  assert.equal(CASCADE_LEVELS.length, 750);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
   assert.equal(CASCADE_LEVELS[0].moves, 20);
   assert.equal(CASCADE_LEVELS[4].target, 2375);
@@ -343,6 +343,31 @@ test("human personas choose from visible board information without peeking at fu
   assert.deepEqual(first, second);
 });
 
+test("human recall scoring uses remembered cues rather than hidden Recall Lock truth", () => {
+  const level = CASCADE_LEVELS[700];
+  const progress = createLevelProgress(level);
+  progress.locks.layers.fill(0);
+  progress.locks.requiredKinds.fill(-1);
+  progress.locks.layers[9] = 1;
+  progress.locks.requiredKinds[9] = 2;
+  progress.locks.recall = true;
+
+  const board = Array.from({ length: 64 }, (_, index) => (Math.floor(index / 8) + (index % 8) * 2) % 6);
+  board[2] = 2;
+  board[18] = 2;
+  board[10] = 3;
+  board[11] = 2;
+  const specials = Array(64).fill(null);
+  const move = { from: 10, to: 11, matched: 3, specialMove: false };
+
+  const forgotten = Array(64).fill(-1);
+  const remembered = Array(64).fill(-1);
+  remembered[9] = 2;
+
+  assert.equal(scoreVisibleMove("human-skilled", level, progress, board, specials, move, forgotten).features.recall, 0);
+  assert.equal(scoreVisibleMove("human-skilled", level, progress, board, specials, move, remembered).features.recall, 1);
+});
+
 test("campaign first-pass targets ramp gradually across the 10000-level horizon", () => {
   assert.equal(targetFirstPassBand(300, "normal"), null);
 
@@ -361,8 +386,41 @@ test("campaign first-pass targets ramp gradually across the 10000-level horizon"
   assert.ok(milestone.min > mature.min);
 });
 
-test("all 600 levels exercise the objective-aware lookahead bot without engine errors", () => {
-  for (const level of CASCADE_LEVELS) {
+test("levels 601-750 advance from Drop mastery into Cages and Recall Locks", () => {
+  const level601 = CASCADE_LEVELS[600];
+  const level651 = CASCADE_LEVELS[650];
+  const level701 = CASCADE_LEVELS[700];
+  const level750 = CASCADE_LEVELS[749];
+
+  assert.equal(level601.chapter, "drop-precision-mastery");
+  assert.ok(level601.objective.drop);
+  assert.equal(level651.chapter, "lock-intro");
+  assert.ok(level651.objective.locks);
+  assert.equal(level651.objective.locks.recall, false);
+  assert.ok(level651.mechanics.includes("locks"));
+  assert.equal(level701.chapter, "recall-lock-intro");
+  assert.equal(level701.objective.locks.recall, true);
+  assert.ok(level701.mechanics.includes("recall-locks"));
+  assert.equal(level750.chapter, "recall-lock-mix");
+
+  const cageProgress = createLevelProgress(level651);
+  assert.equal(cageProgress.locks.total > 0, true);
+  assert.equal(cageProgress.locks.layers.filter((layer) => layer > 0).length, cageProgress.locks.total);
+
+  const recallProgress = createLevelProgress(level701);
+  const recallCells = recallProgress.locks.layers.flatMap((layer, index) => layer > 0 ? [index] : []);
+  assert.ok(recallCells.length >= 2);
+  assert.ok(recallCells.every((index) => recallProgress.locks.requiredKinds[index] >= 0));
+});
+
+test("representative campaign sentinels exercise the objective-aware lookahead bot without engine errors", () => {
+  const sentinelLevels = [
+    1, 6, 30, 31, 60, 61, 90, 91, 120, 150, 180, 210, 240, 270, 300,
+    301, 330, 360, 390, 420, 450, 451, 480, 510, 540, 570, 600,
+    601, 630, 650, 651, 680, 700, 701, 730, 750,
+  ];
+  for (const levelNumber of sentinelLevels) {
+    const level = CASCADE_LEVELS[levelNumber - 1];
     const run = runCascadeLevel({ level, seed: 1000 + level.level, strategy: "lookahead" });
     assert.ok(run.moveHistory.length > 0, `lookahead made no moves on level ${level.level}`);
     assert.ok(run.maxCascade >= 1, `lookahead saw no cascade on level ${level.level}`);
@@ -397,9 +455,14 @@ test("move fragility profiling uses paired seeds across plus/minus one move", ()
   }
 });
 
-test("sample profiling covers all 600 levels and records solver and human-persona sensitivity", () => {
-  const report = profileCascadeLevels({ runsPerLevel: 1, humanRunsPerLevel: 1 });
-  assert.equal(report.levels.length, 600);
+test("bounded sample profiling records solver and human-persona sensitivity", () => {
+  const report = profileCascadeLevels({
+    levelDefinitions: CASCADE_LEVELS.slice(720, 750),
+    runsPerLevel: 1,
+    humanRunsPerLevel: 1,
+  });
+  assert.equal(report.levels.length, 30);
+  assert.deepEqual(report.levelRange, { from: 721, to: 750 });
   for (const level of report.levels) {
     assert.ok(level.strategies.random);
     assert.ok(level.strategies["human-casual"]);
@@ -408,11 +471,9 @@ test("sample profiling covers all 600 levels and records solver and human-person
     assert.ok(level.strategies.lookahead);
     assert.equal(typeof level.strategies.lookahead.objectiveFailureRate, "number");
     assert.equal(typeof level.humanSkillSpread, "number");
+    assert.ok(level.targetFirstPassBand);
   }
-  assert.equal(report.levels[299].targetFirstPassBand, null);
-  assert.ok(report.levels[300].targetFirstPassBand);
-  const laterRun = report.levels.slice(30);
-  assert.ok(laterRun.some((level) => level.skillSensitivity !== 0));
+  assert.ok(report.levels.some((level) => level.skillSensitivity !== 0));
 });
 
 test("playtest analysis excludes hammer-assisted attempts from intrinsic difficulty", () => {

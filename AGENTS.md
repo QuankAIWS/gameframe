@@ -97,6 +97,7 @@ Durable encounter→match restart/reconnect authority, shared-team tactical cont
 ## Cascade level-generation authority
 
 - For Cascade campaign expansion, read `planning/cascade-10000-campaign-roadmap.md`, `planning/cascade-cognitive-health-and-engagement.md`, and `planning/cascade-testing-methodology.md` before inferring generation cadence, cognitive design, or difficulty policy.
+- Before broad new Cascade cognitive-health or competitive-match-3 research, read and extend `planning/research/cascade-cognitive-health-research.md` and `planning/research/cascade-match3-engagement-research.md`; do not discard the retained evidence base and start from zero unless freshness or a new research question requires it.
 - The current production expansion unit is **150 levels per generation/tuning pass**. The 451–600 accepted expansion is the reference workflow.
 - `CHAPTER_SIZE = 30`, 30-level map windows, and 30-level chapter recipes are internal organization/presentation structures only. They do **not** mean agents should generate or tune only 30 levels at a time.
 - `planning/cascade-cognitive-design-and-playtesting.md` is historical product-design material and is not authoritative for current bot architecture, level counts, generation cadence, difficulty calibration, or implementation order.

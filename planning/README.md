@@ -25,6 +25,8 @@ For Cascade campaign or level-generation work, use these current authorities:
 
 - [`cascade-10000-campaign-roadmap.md`](cascade-10000-campaign-roadmap.md) — campaign progression, difficulty horizon, and 150-level production cadence;
 - [`cascade-cognitive-health-and-engagement.md`](cascade-cognitive-health-and-engagement.md) — older-player cognitive-health, memory-mechanic, and engagement design;
+- [`research/cascade-cognitive-health-research.md`](research/cascade-cognitive-health-research.md) — retained health/cognition evidence and open research questions;
+- [`research/cascade-match3-engagement-research.md`](research/cascade-match3-engagement-research.md) — retained Candy Crush / Royal Match engagement and mechanic research;
 - [`cascade-testing-methodology.md`](cascade-testing-methodology.md) — simulator/persona, calibration, hidden-information, validation, and evidence policy;
 - [`casual-games-match3-foundation.md`](casual-games-match3-foundation.md) — current Cascade product/gameplay foundation.
 

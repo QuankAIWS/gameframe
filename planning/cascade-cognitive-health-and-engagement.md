@@ -424,6 +424,13 @@ Cascade is moving toward the intended product when:
 - player feedback and behavior, not theoretical cognitive value alone, determine whether a cognitive mechanic survives.
 
 
+## Living research references
+
+Future research work should extend these two retained evidence files before repeating broad searches:
+
+- `planning/research/cascade-cognitive-health-research.md` — older-adult cognition, training, usability, and evidence boundaries;
+- `planning/research/cascade-match3-engagement-research.md` — Candy Crush / Royal Match engagement, mechanic, and content-architecture research.
+
 ## Research references
 
 Health/cognition sources:

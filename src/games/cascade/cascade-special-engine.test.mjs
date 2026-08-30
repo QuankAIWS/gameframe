@@ -163,6 +163,83 @@ test("hammer clears exposed candy normally once no ice remains", () => {
 });
 
 
+test("a caged candy cannot be swapped until its cage opens", () => {
+  const board = stableBoard();
+  const locks = {
+    total: 1,
+    opened: 0,
+    layers: Array(64).fill(0),
+    requiredKinds: Array(64).fill(-1),
+    recall: false,
+  };
+  locks.layers[9] = 1;
+
+  const result = applySpecialSwap(board, emptySpecials(), 9, 10, createRng(28), {
+    locks,
+    rules: { stripe: true, bomb: true, color: true, fish: true },
+  });
+
+  assert.equal(result.legal, false);
+  assert.equal(result.reason, "locked");
+  assert.equal(result.locks.layers[9], 1);
+});
+
+test("ordinary cages absorb a direct special hit before the candy can clear", () => {
+  const board = stableBoard();
+  const original = board[9];
+  const locks = {
+    total: 1,
+    opened: 0,
+    layers: Array(64).fill(0),
+    requiredKinds: Array(64).fill(-1),
+    recall: false,
+  };
+  locks.layers[9] = 1;
+
+  const result = resolveSpecialCascades(board, emptySpecials(), createRng(29), {
+    locks,
+    forced: { kind: "test-lock-hit", indices: [9], colorTarget: null },
+    rules: { stripe: true, bomb: true, color: true, fish: true },
+  });
+
+  assert.equal(result.transitions[0].lockHits.length, 1);
+  assert.equal(result.transitions[0].matched.includes(9), false);
+  assert.equal(result.locks.layers[9], 0);
+  assert.equal(result.transitions[0].cleared[9], original);
+});
+
+test("Recall Locks open only from the remembered adjacent color", () => {
+  const board = stableBoard();
+  const locks = {
+    total: 1,
+    opened: 0,
+    layers: Array(64).fill(0),
+    requiredKinds: Array(64).fill(-1),
+    recall: true,
+  };
+  locks.layers[9] = 1;
+  board[8] = 2;
+  board[10] = 3;
+  locks.requiredKinds[9] = 2;
+
+  const wrong = resolveSpecialCascades(board, emptySpecials(), createRng(30), {
+    locks,
+    forced: { kind: "wrong-recall-color", indices: [10], colorTarget: null },
+    rules: { stripe: true, bomb: true, color: true, fish: true },
+  });
+  assert.equal(wrong.locks.layers[9], 1);
+  assert.equal(wrong.transitions[0].lockHits.length, 0);
+
+  const right = resolveSpecialCascades(board, emptySpecials(), createRng(31), {
+    locks,
+    forced: { kind: "right-recall-color", indices: [8], colorTarget: null },
+    rules: { stripe: true, bomb: true, color: true, fish: true },
+  });
+  assert.equal(right.locks.layers[9], 0);
+  assert.equal(right.transitions[0].lockHits.length, 1);
+  assert.equal(right.transitions[0].lockHits[0].requiredKind, 2);
+});
+
 test("a 2x2 square creates a persistent Butterfly when the homing rule is active", () => {
   const board = stableBoard();
   board[0] = 0;

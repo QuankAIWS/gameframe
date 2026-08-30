@@ -11,6 +11,7 @@ import {
   emptySpecials,
   findSpecialMatchGroups,
   objectiveComplete,
+  ordinaryLockTargetIndices,
 } from "../../../public/cascade-special-engine.js";
 import { objectiveRemaining } from "../../../public/cascade-engine.js";
 
@@ -18,6 +19,7 @@ export const HUMAN_PERSONAS = Object.freeze({
   "human-casual": Object.freeze({
     temperature: 3.4,
     lapseRate: 0.12,
+    recallRetention: 0.72,
     weights: Object.freeze({
       match: 0.55,
       ice: 1.15,
@@ -27,11 +29,14 @@ export const HUMAN_PERSONAS = Object.freeze({
       specialActivation: 0.65,
       combo: 1.45,
       colorObjective: 1.25,
+      lock: 1.3,
+      recall: 1.45,
     }),
   }),
   "human-skilled": Object.freeze({
     temperature: 1.35,
     lapseRate: 0.03,
+    recallRetention: 0.92,
     weights: Object.freeze({
       match: 0.35,
       ice: 2.05,
@@ -41,6 +46,8 @@ export const HUMAN_PERSONAS = Object.freeze({
       specialActivation: 1.05,
       combo: 2.35,
       colorObjective: 2.4,
+      lock: 2.4,
+      recall: 2.8,
     }),
   }),
 });
@@ -172,13 +179,13 @@ function swap(values, a, b) {
   [values[a], values[b]] = [values[b], values[a]];
 }
 
-function listPlayableMoves(board, specials, rules = {}) {
+function listPlayableMoves(board, specials, rules = {}, locked = []) {
   const moves = [];
   for (let index = 0; index < board.length; index += 1) {
     const right = index % 8 < 7 ? index + 1 : -1;
     const down = index + 8 < board.length ? index + 8 : -1;
     for (const neighbor of [right, down]) {
-      if (neighbor < 0) continue;
+      if (neighbor < 0 || Number(locked?.[index]) > 0 || Number(locked?.[neighbor]) > 0) continue;
       const a = specials[index];
       const b = specials[neighbor];
       if (a === SPECIAL.COLOR || b === SPECIAL.COLOR || (a && b)) {
@@ -186,7 +193,7 @@ function listPlayableMoves(board, specials, rules = {}) {
         continue;
       }
       swap(board, index, neighbor);
-      const groups = findSpecialMatchGroups(board, specials, rules);
+      const groups = findSpecialMatchGroups(board, specials, rules, locked);
       swap(board, index, neighbor);
       if (groups.length) {
         moves.push({
@@ -205,6 +212,23 @@ function remainingTargetKinds(level, progress) {
   return (level.objective?.collect || [])
     .filter((goal) => Number(progress?.collected?.[goal.kind] || 0) < goal.count)
     .map((goal) => goal.kind);
+}
+
+function initialRecallKnowledge(personaName, progress, decisionRng) {
+  const persona = HUMAN_PERSONAS[personaName];
+  if (!persona || progress?.locks?.recall !== true) return null;
+  const knowledge = Array(64).fill(-1);
+  const layers = progress?.locks?.layers || [];
+  const requiredKinds = progress?.locks?.requiredKinds || [];
+  for (let index = 0; index < layers.length; index += 1) {
+    if (Number(layers[index]) <= 0) continue;
+    const requiredKind = Number(requiredKinds[index]);
+    if (!Number.isInteger(requiredKind) || requiredKind < 0 || requiredKind >= TILE_KINDS) continue;
+    // Every cue is visibly shown at level start. Human-like personas retain only
+    // a seeded subset; they do not read hidden engine truth again after it hides.
+    if (decisionRng.next() <= Number(persona.recallRetention || 0)) knowledge[index] = requiredKind;
+  }
+  return knowledge;
 }
 
 function dropDistance(progress) {
@@ -228,6 +252,9 @@ function objectiveAdvanceValue(level, before, after) {
   const afterDrops = Number(after?.drop?.delivered || 0);
   value += Math.max(0, afterDrops - beforeDrops) * 420;
   value += Math.max(0, dropDistance(before) - dropDistance(after)) * 170;
+  const beforeLocks = (before?.locks?.layers || []).reduce((sum, layer) => sum + Math.max(0, Number(layer) || 0), 0);
+  const afterLocks = (after?.locks?.layers || []).reduce((sum, layer) => sum + Math.max(0, Number(layer) || 0), 0);
+  value += Math.max(0, beforeLocks - afterLocks) * 300;
   return value;
 }
 
@@ -244,7 +271,7 @@ function comboStrength(a, b) {
   return 2.6;
 }
 
-function visibleMoveFeatures(level, progress, board, specials, move) {
+function visibleMoveFeatures(level, progress, board, specials, move, recallKnowledge = null) {
   const swappedBoard = board.slice();
   const swappedSpecials = specials.slice();
   swap(swappedBoard, move.from, move.to);
@@ -262,6 +289,8 @@ function visibleMoveFeatures(level, progress, board, specials, move) {
     specialActivation: 0,
     combo: 0,
     colorObjective: 0,
+    lock: 0,
+    recall: 0,
   };
 
   if (a === SPECIAL.COLOR || b === SPECIAL.COLOR) {
@@ -282,7 +311,7 @@ function visibleMoveFeatures(level, progress, board, specials, move) {
     return features;
   }
 
-  const groups = findSpecialMatchGroups(swappedBoard, swappedSpecials, specialRules(level.level));
+  const groups = findSpecialMatchGroups(swappedBoard, swappedSpecials, specialRules(level.level), progress?.locks?.layers || []);
   const matched = new Set(groups.flatMap((group) => group.indices));
   features.match = Math.min(10, matched.size);
 
@@ -291,6 +320,30 @@ function visibleMoveFeatures(level, progress, board, specials, move) {
     if (Number(progress?.ice?.[index] || 0) > 0) features.ice += 1;
     if (neededKinds.has(swappedBoard[index])) features.collection += 1;
     if (dropSupports.has(index)) features.drop += 1;
+  }
+
+  const lockLayers = progress?.locks?.layers || [];
+  const requiredKinds = progress?.locks?.requiredKinds || [];
+  for (let lockIndex = 0; lockIndex < lockLayers.length; lockIndex += 1) {
+    if (Number(lockLayers[lockIndex]) <= 0) continue;
+    const row = Math.floor(lockIndex / 8);
+    const col = lockIndex % 8;
+    const neighbors = [];
+    if (row > 0) neighbors.push(lockIndex - 8);
+    if (row < 7) neighbors.push(lockIndex + 8);
+    if (col > 0) neighbors.push(lockIndex - 1);
+    if (col < 7) neighbors.push(lockIndex + 1);
+    const matchedNeighbors = neighbors.filter((index) => matched.has(index));
+    if (!matchedNeighbors.length) continue;
+    const authoredRequiredKind = Number(requiredKinds[lockIndex]);
+    if (authoredRequiredKind >= 0) {
+      const rememberedKind = recallKnowledge
+        ? Number(recallKnowledge[lockIndex])
+        : authoredRequiredKind;
+      if (rememberedKind >= 0 && matchedNeighbors.some((index) => swappedBoard[index] === rememberedKind)) features.recall += 1;
+    } else {
+      features.lock += 1;
+    }
   }
 
   const lineGroups = groups.filter((group) => group.orientation === "row" || group.orientation === "column");
@@ -316,10 +369,10 @@ function visibleMoveFeatures(level, progress, board, specials, move) {
   return features;
 }
 
-export function scoreVisibleMove(personaName, level, progress, board, specials, move) {
+export function scoreVisibleMove(personaName, level, progress, board, specials, move, recallKnowledge = null) {
   const persona = HUMAN_PERSONAS[personaName];
   if (!persona) throw new Error(`Unknown Cascade human persona: ${personaName}`);
-  const features = visibleMoveFeatures(level, progress, board, specials, move);
+  const features = visibleMoveFeatures(level, progress, board, specials, move, recallKnowledge);
   const value = Object.entries(features).reduce(
     (sum, [key, featureValue]) => sum + (featureValue * Number(persona.weights[key] || 0)),
     0,
@@ -327,13 +380,13 @@ export function scoreVisibleMove(personaName, level, progress, board, specials, 
   return { value, features };
 }
 
-function chooseHuman(personaName, level, progress, board, specials, moves, decisionRng) {
+function chooseHuman(personaName, level, progress, board, specials, moves, decisionRng, recallKnowledge = null) {
   const persona = HUMAN_PERSONAS[personaName];
   if (decisionRng.next() < persona.lapseRate) return chooseRandom(moves, decisionRng);
 
   const candidates = moves.map((move) => ({
     move,
-    ...scoreVisibleMove(personaName, level, progress, board, specials, move),
+    ...scoreVisibleMove(personaName, level, progress, board, specials, move, recallKnowledge),
   }));
   const maxValue = Math.max(...candidates.map((candidate) => candidate.value));
   const weighted = candidates.map((candidate) => ({
@@ -354,8 +407,9 @@ function evaluateImmediate(level, progress, board, specials, move, boardRng) {
   const result = applySpecialSwap(board, specials, move.from, move.to, trialRng, {
     rules: specialRules(level.level),
     ice: progress.ice,
+    locks: progress.locks,
     targetKinds: remainingTargetKinds(level, progress),
-    targetIndices: dropSupportIndices(progress),
+    targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress)])],
   });
   if (!result.legal) return null;
   const nextProgress = applySpecialLevelProgress(level, progress, result);
@@ -399,7 +453,12 @@ function chooseLookahead(level, progress, board, specials, moves, boardRng) {
 
   let best = null;
   for (const candidate of firstPass) {
-    const nextMoves = listPlayableMoves(candidate.result.board.slice(), candidate.result.specials, specialRules(level.level));
+    const nextMoves = listPlayableMoves(
+      candidate.result.board.slice(),
+      candidate.result.specials,
+      specialRules(level.level),
+      candidate.progress?.locks?.layers || [],
+    );
     let futureBest = 0;
     for (const nextMove of nextMoves) {
       const nextEval = evaluateImmediate(
@@ -420,13 +479,13 @@ function chooseLookahead(level, progress, board, specials, moves, boardRng) {
   return best?.move ?? chooseGreedy(level, progress, board, specials, moves, boardRng);
 }
 
-export function chooseMove(strategy, level, progress, board, specials, moves, boardRng, decisionRng) {
+export function chooseMove(strategy, level, progress, board, specials, moves, boardRng, decisionRng, recallKnowledge = null) {
   if (!STRATEGIES.has(strategy)) throw new Error(`Unknown Cascade bot strategy: ${strategy}`);
   if (!moves.length) return null;
   if (strategy === "random") return chooseRandom(moves, decisionRng);
   if (strategy === "greedy") return chooseGreedy(level, progress, board, specials, moves, boardRng);
   if (strategy === "lookahead") return chooseLookahead(level, progress, board, specials, moves, boardRng);
-  return chooseHuman(strategy, level, progress, board, specials, moves, decisionRng);
+  return chooseHuman(strategy, level, progress, board, specials, moves, decisionRng, recallKnowledge);
 }
 
 export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
@@ -436,9 +495,16 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
   const baseSeed = (Number(seed) >>> 0) || 1;
   const boardRng = createRng((baseSeed ^ (definition.level * 0x9e3779b1)) >>> 0);
   const decisionRng = createRng((baseSeed ^ 0xa5a5a5a5 ^ (definition.level * 0x85ebca6b)) >>> 0);
-  let board = createBoard({ rng: boardRng, rules: specialRules(definition.level) });
-  let specials = emptySpecials();
   let progress = createLevelProgress(definition);
+  let board = createBoard({
+    rng: boardRng,
+    rules: specialRules(definition.level),
+    locked: progress?.locks?.layers || [],
+  });
+  let specials = emptySpecials();
+  const recallKnowledge = HUMAN_PERSONAS[strategy]
+    ? initialRecallKnowledge(strategy, progress, decisionRng)
+    : null;
   let score = 0;
   let movesRemaining = definition.moves;
   let cascadeCount = 0;
@@ -450,28 +516,34 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
   let comboCount = 0;
   let iceHitCount = 0;
   let dropDeliveredCount = 0;
+  let lockHitCount = 0;
+  let locksOpenedCount = 0;
   const collectedTotals = Array(TILE_KINDS).fill(0);
   const moveHistory = [];
 
   while (movesRemaining > 0 && !objectiveComplete(definition, progress, score)) {
-    const legalMoves = listPlayableMoves(board.slice(), specials, specialRules(definition.level));
+    const legalMoves = listPlayableMoves(board.slice(), specials, specialRules(definition.level), progress?.locks?.layers || []);
     branchingTotal += legalMoves.length;
     if (!legalMoves.length) throw new Error(`Cascade special engine returned a board with no playable moves at level ${definition.level}`);
 
-    const move = chooseMove(strategy, definition, progress, board, specials, legalMoves, boardRng, decisionRng);
+    const move = chooseMove(strategy, definition, progress, board, specials, legalMoves, boardRng, decisionRng, recallKnowledge);
     const result = applySpecialSwap(board, specials, move.from, move.to, boardRng, {
       rules: specialRules(definition.level),
       ice: progress.ice,
+      locks: progress.locks,
       targetKinds: remainingTargetKinds(definition, progress),
-      targetIndices: dropSupportIndices(progress),
+      targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress)])],
     });
     if (!result.legal) throw new Error(`Cascade bot selected an illegal move ${move.from}->${move.to}`);
 
     movesRemaining -= 1;
     score += result.scoreGained;
     const deliveredBefore = Number(progress?.drop?.delivered || 0);
+    const openedBefore = Number(progress?.locks?.opened || 0);
     progress = applySpecialLevelProgress(definition, progress, result);
     dropDeliveredCount += Math.max(0, Number(progress?.drop?.delivered || 0) - deliveredBefore);
+    locksOpenedCount += Math.max(0, Number(progress?.locks?.opened || 0) - openedBefore);
+    lockHitCount += result.transitions.reduce((sum, transition) => sum + (transition.lockHits?.length || 0), 0);
     cascadeCount += result.transitions.length;
     maxCascade = Math.max(maxCascade, result.maxCascade);
     specialCreatedCount += result.specialCreatedCount || 0;
@@ -493,6 +565,8 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
       comboCount: result.transitions.filter((transition) => Boolean(transition.combo)).length,
       iceHitCount: result.iceHitCount || 0,
       dropsDelivered: Number(progress?.drop?.delivered || 0),
+      lockHits: result.transitions.reduce((sum, transition) => sum + (transition.lockHits?.length || 0), 0),
+      locksOpened: Number(progress?.locks?.opened || 0),
       shuffled: result.shuffled,
       score,
       movesRemaining,
@@ -523,6 +597,8 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     comboCount,
     iceHitCount,
     dropDeliveredCount,
+    lockHitCount,
+    locksOpenedCount,
     collectedTotals,
     objectiveRemaining: remaining,
     objectiveComplete: win,

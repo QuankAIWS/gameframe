@@ -106,6 +106,45 @@ test("Cascade introduces readable drop objectives at level 451", async ({ page }
   expect(exported.progress.drop.tokens).toHaveLength(1);
 });
 
+test("Cascade introduces real Cages at level 651", async ({ page }) => {
+  await installLevelFixture(page, 651);
+  await page.goto("/cascade.html?cascadeTestLevel=651");
+
+  await expect(page.locator("#level-number")).toHaveText("651");
+  await expect(page.locator("#objective-label")).toContainText("locks");
+  await expect(page.locator(".cascade-tile.has-cage")).not.toHaveCount(0);
+  await expect(page.locator(".cascade-help")).toContainText("Caged candies stay fixed");
+
+  const locked = page.locator(".cascade-tile.has-cage").first();
+  await locked.click();
+  await expect(locked).not.toHaveClass(/is-selected/);
+
+  const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
+  expect(exported.level.chapter).toBe("lock-intro");
+  expect(exported.progress.locks.total).toBeGreaterThan(0);
+  expect(exported.progress.locks.recall).toBe(false);
+});
+
+test("Cascade introduces low-pressure Recall Locks at level 701", async ({ page }) => {
+  await installLevelFixture(page, 701);
+  await page.goto("/cascade.html?cascadeTestLevel=701");
+
+  await expect(page.locator("#level-number")).toHaveText("701");
+  await expect(page.locator("#objective-label")).toContainText("recall locks");
+  await expect(page.locator(".cascade-tile.has-recall-lock")).not.toHaveCount(0);
+  await expect(page.locator(".cascade-lock-mark.is-revealed")).not.toHaveCount(0);
+  await expect(page.locator(".cascade-help")).toContainText("briefly shows the color-symbol");
+
+  const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
+  expect(exported.level.chapter).toBe("recall-lock-intro");
+  expect(exported.progress.locks.recall).toBe(true);
+  const locked = exported.progress.locks.layers
+    .map((layer, index) => layer > 0 ? index : -1)
+    .filter((index) => index >= 0);
+  expect(locked.length).toBeGreaterThanOrEqual(2);
+  expect(locked.every((index) => exported.progress.locks.requiredKinds[index] >= 0)).toBe(true);
+});
+
 test("Cascade has no IOU ledger, purchase path, or fake currency surface", async ({ page }) => {
   await page.goto("/cascade.html");
   await expect(page.locator("#iou-total, #ledger-dialog, #reset-ledger")).toHaveCount(0);
@@ -212,7 +251,7 @@ test("Cascade admin can launch a standalone non-failing Blitz round", async ({ p
   await expect(page.locator("#blitz-overlay")).toBeVisible();
 });
 
-test("Cascade admin console reaches level 600 and keeps the map bounded", async ({ page }) => {
+test("Cascade admin console reaches level 750 and keeps the map bounded", async ({ page }) => {
   await page.route("**/api/session", async (route) => {
     await route.fulfill({
       status: 200,
@@ -229,11 +268,11 @@ test("Cascade admin console reaches level 600 and keeps the map bounded", async 
   await page.goto("/cascade.html");
   await page.locator("#cascade-admin-open").click();
   await expect(page.locator("#cascade-admin-dialog")).toBeVisible();
-  await page.locator("#cascade-admin-command").fill("go to level 600");
+  await page.locator("#cascade-admin-command").fill("go to level 750");
   await page.locator("[data-admin-run]").click();
-  await expect(page.locator("#level-number")).toHaveText("600");
+  await expect(page.locator("#level-number")).toHaveText("750");
   await expect(page.locator("#level-map > li")).toHaveCount(30);
-  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "571-600");
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "721-750");
 });
 
 test("Cascade admin special lab spawns color-preserving Butterflies and ready combos", async ({ page }) => {

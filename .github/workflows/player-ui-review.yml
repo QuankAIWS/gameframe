@@ -235,7 +235,7 @@ jobs:
     needs: scope
     if: needs.scope.outputs.cascadeProfile == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Check out candidate
         uses: actions/checkout@v4
@@ -250,7 +250,7 @@ jobs:
         run: |
           npm run cascade:test
           node --test src/games/cascade/cascade-special-engine.test.mjs
-      - name: Cascade 600-level solver and human difficulty profile
+      - name: Cascade 750-level solver and human difficulty profile
         run: npm run cascade:profile -- --runs=6 --json=cascade-profile.json
       - name: Upload Cascade difficulty profile
         if: always()
@@ -276,8 +276,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Profile levels 451-600 with larger human sample
-        run: npm run cascade:profile -- --from=451 --to=600 --runs=8 --human-runs=20 --json=cascade-profile-deep.json
+      - name: Profile levels 601-750 with larger human sample
+        run: npm run cascade:profile -- --from=601 --to=750 --runs=8 --human-runs=20 --json=cascade-profile-deep.json
       - name: Upload expansion Cascade difficulty profile
         if: always()
         uses: actions/upload-artifact@v4
@@ -302,8 +302,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Scan levels 451-600 move fragility
-        run: npm run cascade:fragility -- --from=451 --to=600 --runs=12 --strategy=human-skilled | tee cascade-fragility.txt
+      - name: Scan levels 601-750 move fragility
+        run: npm run cascade:fragility -- --from=601 --to=750 --runs=12 --strategy=human-skilled | tee cascade-fragility.txt
       - name: Upload Cascade fragility report
         if: always()
         uses: actions/upload-artifact@v4

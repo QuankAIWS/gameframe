@@ -434,3 +434,117 @@
     transition: none;
   }
 }
+
+
+/* Cages / Recall Locks -------------------------------------------------------
+ * A cage is a fixed board-cell constraint. The candy stays visible underneath
+ * so color and family identity remain legible for older players, while the
+ * surrounding frame clearly communicates that the piece cannot move yet.
+ */
+.cascade-lock-mark {
+  position: absolute;
+  z-index: 7;
+  inset: 8%;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  border: clamp(2px, .42vw, 4px) solid rgba(116, 73, 139, .92);
+  border-radius: 22%;
+  background:
+    linear-gradient(90deg, transparent 0 17%, rgba(255,255,255,.72) 18% 23%, transparent 24% 47%, rgba(255,255,255,.72) 48% 53%, transparent 54% 77%, rgba(255,255,255,.72) 78% 83%, transparent 84%),
+    linear-gradient(0deg, transparent 0 17%, rgba(128,78,151,.34) 18% 23%, transparent 24% 77%, rgba(128,78,151,.34) 78% 83%, transparent 84%),
+    rgba(255, 239, 252, .13);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.78),
+    0 0 0 1px rgba(86,52,105,.34),
+    0 3px 7px rgba(72,45,83,.28);
+}
+
+.cascade-tile[data-lock="2"] .cascade-lock-mark {
+  border-width: clamp(3px, .55vw, 5px);
+  box-shadow:
+    inset 0 0 0 3px rgba(255,255,255,.8),
+    inset 0 0 0 6px rgba(168,104,193,.28),
+    0 0 0 1px rgba(86,52,105,.4),
+    0 4px 8px rgba(72,45,83,.32);
+}
+
+.cascade-tile.has-lock::before {
+  transform: scale(.78);
+  filter:
+    drop-shadow(0 2px 0 rgba(255,255,255,.52))
+    drop-shadow(0 4px 4px rgba(82,57,113,.18))
+    saturate(.92);
+}
+
+.cascade-tile.has-recall-lock .cascade-lock-mark {
+  --recall-color: #9f6bb4;
+  --recall-soft: #f4ddfb;
+  inset: 5%;
+  border-width: clamp(2px, .48vw, 4px);
+  border-radius: 38% 38% 24% 24%;
+  border-color: rgba(177, 93, 187, .92);
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255,255,255,.96) 0 9%, transparent 10%),
+    linear-gradient(145deg, rgba(255,232,250,.8), rgba(201,158,229,.46));
+  color: #68416f;
+  font-size: clamp(1.2rem, 5.4vw, 2.45rem);
+  font-weight: 1000;
+  text-shadow:
+    0 1px 0 #fff,
+    0 0 8px rgba(255,255,255,.96);
+}
+
+.cascade-tile.has-recall-lock .cascade-lock-mark::after {
+  content: "";
+  position: absolute;
+  left: 26%;
+  right: 26%;
+  bottom: 10%;
+  height: 17%;
+  border-radius: 999px;
+  background: rgba(111,66,130,.42);
+  box-shadow: 0 1px 0 rgba(255,255,255,.8);
+}
+
+.cascade-tile.has-recall-lock .cascade-lock-mark.is-revealed {
+  border-color: var(--recall-color);
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255,255,255,.98) 0 10%, transparent 11%),
+    linear-gradient(145deg, color-mix(in srgb, var(--recall-soft) 82%, white), color-mix(in srgb, var(--recall-color) 34%, white));
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.86),
+    0 0 0 2px color-mix(in srgb, var(--recall-color) 36%, white),
+    0 0 10px color-mix(in srgb, var(--recall-color) 48%, transparent),
+    0 4px 7px rgba(72,45,83,.24);
+  animation: cascade-recall-cue 860ms ease-in-out infinite alternate;
+}
+
+.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="0"] { --recall-color: #e33d91; --recall-soft: #ffd1e9; color: #b52270; }
+.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="1"] { --recall-color: #20b8d6; --recall-soft: #c9f5ff; color: #0f7892; }
+.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="2"] { --recall-color: #f0c52d; --recall-soft: #fff1a8; color: #8a6900; }
+.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="3"] { --recall-color: #58c969; --recall-soft: #d6f7d7; color: #287d39; }
+.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="4"] { --recall-color: #a06ce0; --recall-soft: #ead8ff; color: #6535ae; }
+.cascade-tile.has-recall-lock .cascade-lock-mark[data-recall-kind="5"] { --recall-color: #f28a45; --recall-soft: #ffe0c7; color: #a94d18; }
+
+.cascade-tile.is-lock-nudge .cascade-lock-mark {
+  animation: cascade-lock-nudge .28s ease-out;
+}
+
+@keyframes cascade-lock-nudge {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(-5%); }
+  65% { transform: translateX(5%); }
+}
+
+@keyframes cascade-recall-cue {
+  from { transform: scale(.96); filter: brightness(1); }
+  to { transform: scale(1.04); filter: brightness(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade-tile.has-recall-lock .cascade-lock-mark.is-revealed,
+  .cascade-tile.is-lock-nudge .cascade-lock-mark {
+    animation-duration: 1ms !important;
+  }
+}

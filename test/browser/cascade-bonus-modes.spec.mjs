@@ -17,7 +17,7 @@ test("Quick Recall uses an accessible pace, shows entered colors, and stores a b
   await page.waitForTimeout(3_000);
   await expect(choices).toBeHidden();
 
-  for (const [round, length] of [3, 4, 5].entries()) {
+  for (const [round, length] of [2, 3, 4].entries()) {
     await expect(choices).toBeVisible({ timeout: 8_000 });
     const buttons = choices.locator("button");
     await expect(buttons).toHaveCount(6);
@@ -46,7 +46,7 @@ test("Quick Recall uses an accessible pace, shows entered colors, and stores a b
     };
   }, PERFORMANCE_KEY);
   expect(stored.seen).toBe(true);
-  expect(stored.best.total).toBe(12);
+  expect(stored.best.total).toBe(9);
   expect(stored.best.correct).toBeGreaterThanOrEqual(0);
   expect(stored.stars).toBeGreaterThanOrEqual(0);
 });
