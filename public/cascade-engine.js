@@ -132,7 +132,21 @@ const LATE_LEVEL_TUNING = Object.freeze({
   449: Object.freeze({ moveDelta: 2, collectDelta: -2, iceDelta: -2, pattern: "center" }),
   565: Object.freeze({ moveDelta: 1, iceDelta: -2, pattern: "center" }),
   570: Object.freeze({ moveDelta: 1, iceDelta: -3, pattern: "center" }),
+  611: Object.freeze({ moveDelta: 1, pattern: "center" }),
+  621: Object.freeze({ moveDelta: 2 }),
+  623: Object.freeze({ moveDelta: 1, pattern: "center" }),
+  629: Object.freeze({ moveDelta: 1, pattern: "center" }),
+  641: Object.freeze({ moveDelta: 1 }),
+  648: Object.freeze({ moveDelta: 1 }),
   700: Object.freeze({ moveDelta: 1 }),
+  713: Object.freeze({ lockPattern: "center" }),
+  718: Object.freeze({ lockPattern: "center" }),
+  724: Object.freeze({ lockPattern: "center" }),
+  729: Object.freeze({ lockPattern: "center" }),
+  734: Object.freeze({ lockPattern: "center" }),
+  742: Object.freeze({ collectDelta: -1, lockPattern: "center" }),
+  745: Object.freeze({ moveDelta: 1, lockPattern: "center" }),
+  747: Object.freeze({ moveDelta: 1, collectDelta: -2, lockPattern: "center" }),
 });
 
 function lateLevelTuning(levelNumber) {
@@ -141,7 +155,7 @@ function lateLevelTuning(levelNumber) {
 
 function applyLateObjectiveTuning(levelNumber, levelObjective) {
   const tuning = lateLevelTuning(levelNumber);
-  if (!tuning.collectDelta && !tuning.iceDelta && !tuning.pattern) return levelObjective;
+  if (!tuning.collectDelta && !tuning.iceDelta && !tuning.pattern && !tuning.lockDelta && !tuning.lockPattern) return levelObjective;
   return objective({
     collect: (levelObjective?.collect || []).map((goal) => ({
       kind: goal.kind,
@@ -155,7 +169,13 @@ function applyLateObjectiveTuning(levelNumber, levelObjective) {
         }
       : null,
     drop: levelObjective?.drop ? { ...levelObjective.drop } : null,
-    locks: levelObjective?.locks ? { ...levelObjective.locks } : null,
+    locks: levelObjective?.locks
+      ? {
+          ...levelObjective.locks,
+          count: Math.max(1, levelObjective.locks.count + Number(tuning.lockDelta || 0)),
+          pattern: tuning.lockPattern || levelObjective.locks.pattern,
+        }
+      : null,
   });
 }
 
@@ -537,7 +557,13 @@ function campaignSpec(levelNumber) {
         const firstTeachingWave = phase === 0;
         const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
         const isRecall = !(firstTeachingWave && pressureBeat);
-        const recallCount = phase === 0 ? 2 : phase === 1 ? (within >= 5 ? 3 : 2) : 3;
+        const recallCount = wave.difficulty === "relief"
+          ? 2
+          : phase === 0
+            ? 2
+            : phase === 1
+              ? (within >= 5 ? 3 : 2)
+              : 3;
         return objective({
           locks: {
             count: isRecall ? recallCount : 5,
@@ -555,7 +581,7 @@ function campaignSpec(levelNumber) {
       const [firstKind] = twoKinds(levelNumber, 2);
       const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
       return objective({
-        locks: { count: phase === 0 ? 2 : 3, layers: 1, pattern, recall: true },
+        locks: { count: wave.difficulty === "relief" ? 2 : phase === 0 ? 2 : 3, layers: 1, pattern, recall: true },
         collect: [{ kind: firstKind, count: scaleCount(5 + phase + Math.floor(within / 6), Math.min(1, wave.objectiveFactor)) }],
         drop: phase >= 1 && within >= 7 ? dropObjective(levelNumber, 1, phase) : null,
       });
