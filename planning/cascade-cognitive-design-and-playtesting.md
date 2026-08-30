@@ -1,7 +1,13 @@
-# Cascade Cognitive Design + Automated Playtesting
+# Cascade Cognitive Design Notes
 
-Status: design direction after first 20-level human playthrough  
-Scope: Cascade presentation, cognitive variety, level design, automated difficulty profiling, and human calibration
+Status: historical product-design notes; **not authoritative for current level generation, difficulty calibration, bot behavior, or production cadence**  
+Scope: retained cognitive/presentation ideas from the first 20-level era
+
+Current operational authority:
+- `planning/cascade-10000-campaign-roadmap.md` — campaign progression and 150-level production-batch policy
+- `planning/cascade-testing-methodology.md` — current simulator, personas, calibration, validation, and archive policy
+
+Do not use this file to infer current level counts, bot architecture, generation batch size, or implementation order.
 
 ## Product direction
 
@@ -105,197 +111,8 @@ A promising mechanic is a move-to-move **tempo chain**:
 
 This creates a video-game-combo feeling while exercising quick visual search and decision-making.
 
-## Automated playtester: purpose
+## Historical boundary
 
-The bot is not primarily an opponent. It is a **level-analysis instrument**.
+The original automated-playtester architecture, first-20-level acceptance criteria, batch-profiler implementation plan, and early level-authoring workflow have been removed from this document because they were superseded by the current Cascade roadmap and testing methodology.
 
-Its first job is to answer:
-
-- Can this level be completed at all under its rules?
-- How often does a competent automated player complete it?
-- How many moves does completion usually require?
-- How much does luck / refill variance affect the outcome?
-- Which mechanics cause failure?
-- How many meaningful choices does the board present?
-- How often do cascades occur?
-- How often does the board deadlock and require reshuffling?
-- Is a new level genuinely harder, or merely noisier?
-
-The initial acceptance target is simple: the automated player should be capable of completing the current first 20 levels. That establishes a baseline comparable with the completed human playthrough.
-
-## Automated playtester architecture
-
-### Slice 1 — extract a pure deterministic rules engine
-
-Move the board rules out of `public/cascade.js` into a reusable module with no DOM, animation, localStorage, or timers.
-
-The pure engine should expose operations such as:
-
-- create board from seed;
-- enumerate legal swaps;
-- apply swap;
-- find matches;
-- resolve gravity and refill;
-- resolve full cascade chain;
-- apply booster action;
-- compute score changes;
-- evaluate win / loss;
-- return a complete state transition record.
-
-Browser Cascade then becomes a presentation/controller layer over the same engine the bot uses.
-
-This is the most important architectural step. We do not want a second approximation of Cascade rules living in the test bot.
-
-### Slice 2 — build deterministic simulation harness
-
-A headless simulator should accept:
-
-- level definition;
-- random seed;
-- player strategy;
-- maximum actions;
-- optional booster policy.
-
-It should return a structured run record containing:
-
-- win / loss;
-- final score;
-- moves used / remaining;
-- score deficit on failure;
-- move history;
-- cascade count and maximum cascade depth;
-- special-piece usage later;
-- board shuffles;
-- branching factor per turn;
-- elapsed simulated decisions;
-- any rule or state anomaly.
-
-### Slice 3 — establish bot skill tiers
-
-Use multiple strategies instead of one supposedly perfect bot.
-
-**Random-legal baseline**  
-Chooses any legal move. Useful as a floor and sanity check.
-
-**Greedy bot**  
-Scores every immediately legal move and chooses the best immediate result. This approximates a player who recognizes obvious opportunities but does not plan far ahead.
-
-**Lookahead bot**  
-Searches several moves ahead with a heuristic that values objective progress, special-piece creation, board quality, and expected cascade potential.
-
-**Strong search bot**  
-Later use beam search, Monte Carlo Tree Search, or sampled rollouts where refill randomness makes exact search impractical.
-
-Difficulty should be described against **several bot tiers**, not one solver. A level that destroys the greedy bot but is trivial for shallow lookahead is exercising planning in a useful way.
-
-### Slice 4 — batch level profiler
-
-Run each level across many seeds and each bot tier.
-
-Produce metrics such as:
-
-- win rate;
-- median and percentile moves-to-win;
-- average score margin on wins;
-- average score deficit on losses;
-- variance across seeds;
-- average legal moves per state;
-- frequency of forced / nearly forced choices;
-- cascade frequency and depth distribution;
-- shuffle frequency;
-- booster dependency;
-- estimated planning sensitivity: gap between greedy and lookahead performance.
-
-The profiler should emit JSON first and a human-readable report second.
-
-### Slice 5 — difficulty classification
-
-From the profiler, assign each level a provisional difficulty signature rather than a single opaque number.
-
-Example dimensions:
-
-- pass probability;
-- luck sensitivity;
-- planning demand;
-- speed demand;
-- visual-search demand;
-- objective complexity;
-- cascade opportunity;
-- booster pressure.
-
-This will become more valuable as Cascade gains timed modes, blockers, collection goals, special pieces, and memory / switching mechanics.
-
-### Slice 6 — calibrate bots against humans
-
-Human telemetry should remain distinct from bot telemetry but use compatible level/result records.
-
-Compare:
-
-- bot win rates vs human win rates;
-- bot and human moves-to-win;
-- failure margins;
-- retry behavior;
-- booster use;
-- time per move once timing telemetry exists;
-- which levels produce long pauses;
-- which mechanics produce repeated failures;
-- cascade frequency and response to high-cascade boards.
-
-The important calibration is not "make the bot human." It is learning what bot metrics predict the experience of actual players.
-
-Initial reference points can be:
-
-1. random baseline;
-2. greedy bot;
-3. lookahead bot;
-4. completed first-20-level human baseline;
-5. later family playtester traces.
-
-### Slice 7 — use the profiler during level authoring
-
-Every authored level should be batch-simulated before it is treated as a candidate level.
-
-A level authoring loop becomes:
-
-1. design mechanic / objective;
-2. generate or author candidate level;
-3. run bot profiler over many seeds;
-4. reject impossible, trivial, or excessively luck-dependent variants;
-5. human playtest survivors;
-6. compare actual player traces to bot prediction;
-7. update tuning heuristics;
-8. ship / iterate.
-
-## Bot limits
-
-- Do not let the bot define "fun" by itself.
-- Do not assume one automated strategy represents every player.
-- Do not mix animation timing into deterministic game-state correctness.
-- Do not duplicate browser rules in a separate simulator implementation.
-
-The bot is a measurement tool. Human traces and human reactions remain the authority on whether Cascade actually feels good.
-
-## Recommended implementation order
-
-1. **Separate simulation from presentation** in the current Cascade implementation.
-2. **Improve cascade presentation** using the new transition records so each clear / fall / secondary clear can animate distinctly.
-3. **Build the pure rules engine and headless simulation harness.**
-4. **Implement random + greedy bots.** Confirm they can exercise the current 20 levels without runtime errors.
-5. **Implement lookahead / rollout bot** and establish a competent baseline capable of clearing the current run.
-6. **Create the batch profiler and JSON difficulty report.**
-7. **Add special pieces and new objective families** through the pure engine, with bot coverage from day one.
-8. **Add tempo-chain and timed level prototypes**, recording reaction time / move timing separately from simulation rules.
-9. **Collect family traces** and start fitting bot metrics to observed human difficulty.
-10. **Author the first real tuned level set** using bot screening plus human playtests.
-
-## Near-term success criteria
-
-The next technical milestone is complete when:
-
-- the browser game and bot share one authoritative rules engine;
-- the current 20 levels can be simulated headlessly across many seeds;
-- at least random, greedy, and lookahead strategies exist;
-- the strongest initial bot can complete all 20 current levels on at least some seeds and has measurable per-level win rates;
-- a batch command produces a difficulty report for all 20 levels;
-- browser gameplay still behaves the same except for intentionally improved cascade presentation;
-- the architecture is ready for blockers, collection objectives, special pieces, and timed / tempo-chain mechanics without rewriting the simulator.
+The cognitive-design ideas above remain as historical/product inspiration only.
