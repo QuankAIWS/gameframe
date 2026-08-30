@@ -20,12 +20,12 @@ import {
 import { chooseMove, profileCascadeLevels, profileCascadeMoveFragility, runCascadeLevel, targetFirstPassBand } from "./cascade-simulator.js";
 import { analyzePlaytestExport } from "./cascade-playtest-analysis.js";
 
-test("Cascade ships 600 levels on a campaign model sized for 10000", () => {
-  assert.equal(LEVEL_COUNT, 600);
+test("Cascade ships 750 levels on a campaign model sized for 10000", () => {
+  assert.equal(LEVEL_COUNT, 750);
   assert.equal(CAMPAIGN_CAPACITY, 10000);
   assert.equal(CAMPAIGN_MILESTONE, 3000);
   assert.equal(CHAPTER_SIZE, 30);
-  assert.equal(CASCADE_LEVELS.length, 600);
+  assert.equal(CASCADE_LEVELS.length, 750);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
   assert.equal(CASCADE_LEVELS[0].moves, 20);
   assert.equal(CASCADE_LEVELS[4].target, 2375);
@@ -361,7 +361,34 @@ test("campaign first-pass targets ramp gradually across the 10000-level horizon"
   assert.ok(milestone.min > mature.min);
 });
 
-test("all 600 levels exercise the objective-aware lookahead bot without engine errors", () => {
+test("levels 601-750 advance from Drop mastery into Cages and Recall Locks", () => {
+  const level601 = CASCADE_LEVELS[600];
+  const level651 = CASCADE_LEVELS[650];
+  const level701 = CASCADE_LEVELS[700];
+  const level750 = CASCADE_LEVELS[749];
+
+  assert.equal(level601.chapter, "drop-precision-mastery");
+  assert.ok(level601.objective.drop);
+  assert.equal(level651.chapter, "lock-intro");
+  assert.ok(level651.objective.locks);
+  assert.equal(level651.objective.locks.recall, false);
+  assert.ok(level651.mechanics.includes("locks"));
+  assert.equal(level701.chapter, "recall-lock-intro");
+  assert.equal(level701.objective.locks.recall, true);
+  assert.ok(level701.mechanics.includes("recall-locks"));
+  assert.equal(level750.chapter, "recall-lock-mix");
+
+  const cageProgress = createLevelProgress(level651);
+  assert.equal(cageProgress.locks.total > 0, true);
+  assert.equal(cageProgress.locks.layers.filter((layer) => layer > 0).length, cageProgress.locks.total);
+
+  const recallProgress = createLevelProgress(level701);
+  const recallCells = recallProgress.locks.layers.flatMap((layer, index) => layer > 0 ? [index] : []);
+  assert.ok(recallCells.length >= 2);
+  assert.ok(recallCells.every((index) => recallProgress.locks.requiredKinds[index] >= 0));
+});
+
+test("all 750 levels exercise the objective-aware lookahead bot without engine errors", () => {
   for (const level of CASCADE_LEVELS) {
     const run = runCascadeLevel({ level, seed: 1000 + level.level, strategy: "lookahead" });
     assert.ok(run.moveHistory.length > 0, `lookahead made no moves on level ${level.level}`);
@@ -397,9 +424,9 @@ test("move fragility profiling uses paired seeds across plus/minus one move", ()
   }
 });
 
-test("sample profiling covers all 600 levels and records solver and human-persona sensitivity", () => {
+test("sample profiling covers all 750 levels and records solver and human-persona sensitivity", () => {
   const report = profileCascadeLevels({ runsPerLevel: 1, humanRunsPerLevel: 1 });
-  assert.equal(report.levels.length, 600);
+  assert.equal(report.levels.length, 750);
   for (const level of report.levels) {
     assert.ok(level.strategies.random);
     assert.ok(level.strategies["human-casual"]);
