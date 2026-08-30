@@ -17,7 +17,7 @@
 }
 
 .cascade-admin-dialog {
-  width: min(560px, calc(100% - 28px));
+  width: min(680px, calc(100% - 28px));
   max-height: min(86vh, 820px);
   padding: 0;
   border: 1px solid rgba(255, 216, 77, .28);
@@ -178,5 +178,22 @@
 
   .cascade-admin-control-grid-four {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.cascade-admin-special-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cascade-admin-special-grid button:first-child,
+.cascade-admin-special-grid button:nth-child(6) {
+  border-color: rgba(255, 142, 192, .48);
+  background: linear-gradient(135deg, rgba(255,92,168,.12), rgba(165,106,244,.11));
+  color: #ffb9da;
+}
+
+@media (min-width: 620px) {
+  .cascade-admin-special-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
