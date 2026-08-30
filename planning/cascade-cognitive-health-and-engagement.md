@@ -19,7 +19,7 @@ The intended experience is a familiar, highly replayable Candy Crush / Royal Mat
 - inhibition / restraint;
 - optional processing-speed play.
 
-Do not market or present Cascade as a treatment, diagnostic, dementia-prevention product, or proof that a player's cognition is improving. The evidence for cognitive training in older adults supports modest, domain-specific benefits and cognitive stimulation, not broad guaranteed transfer.
+Do not market or present Cascade as a treatment, diagnostic, dementia-prevention product, or proof that a player's cognition is improving. The evidence for cognitive training in older adults supports modest, domain-specific benefits and cognitive stimulation, not broad guaranteed transfer. Cognitive play is also only one part of healthy aging; it does not replace physical activity, social connection, hearing care, sleep, or management of cardiovascular/metabolic risk.
 
 The health-oriented design goal is therefore:
 
@@ -373,3 +373,22 @@ Cascade is moving toward the intended product when:
 - family telemetry shows continued participation rather than avoidance of cognitive-accent levels;
 - ordinary levels remain beatable without assumed boosters;
 - player feedback and behavior, not theoretical cognitive value alone, determine whether a cognitive mechanic survives.
+
+
+## Research references
+
+Health/cognition sources:
+
+- World Health Organization. *Risk reduction of cognitive decline and dementia: WHO guidelines, second edition* (2026). https://www.who.int/publications/i/item/9789240123557
+- Bonnechère B, et al. *Game-based brain training for improving cognitive function in community-dwelling older adults: A systematic review and meta-regression.* PMID 32980574.
+- Rebok GW, et al. *Ten-year effects of the ACTIVE cognitive training trial on cognition and everyday functioning in older adults.* PMID 24417410.
+- Tse ZCK, et al. *Prospective Memory Training in Older Adults: A Systematic Review and Meta-Analysis.* PMID 35543836.
+- *Evaluating the User Experience and Usability of Game-Based Cognitive Assessments for Older People: Systematic Review.* PMCID PMC12198696.
+
+Engagement/match-3 sources:
+
+- Larche CJ, Dixon MJ. *The relationship between the skill-challenge balance, game expertise, flow and the urge to keep playing complex mobile games.* PMID 33027060.
+- Royal Match Help Center. *Creating and Using the Power-Ups.* https://dreamgames.helpshift.com/hc/en/3-royal-match/faq/6-creating-and-using-the-power-ups/
+- Mobile Game Scope. *Introducing New Obstacle In Royal Match.* Industry deconstruction used only as observational evidence for obstacle-introduction cadence, not as an authoritative Royal Match design specification. https://www.mobilegamescope.com/deconstructions/introducing-new-obstacle-in-royal-match
+
+These references inform design direction; family telemetry and direct player feedback remain the authority for whether a mechanic belongs in Cascade.
