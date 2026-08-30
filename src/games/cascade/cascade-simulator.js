@@ -19,6 +19,7 @@ export const HUMAN_PERSONAS = Object.freeze({
   "human-casual": Object.freeze({
     temperature: 3.4,
     lapseRate: 0.12,
+    recallRetention: 0.72,
     weights: Object.freeze({
       match: 0.55,
       ice: 1.15,
@@ -35,6 +36,7 @@ export const HUMAN_PERSONAS = Object.freeze({
   "human-skilled": Object.freeze({
     temperature: 1.35,
     lapseRate: 0.03,
+    recallRetention: 0.92,
     weights: Object.freeze({
       match: 0.35,
       ice: 2.05,
@@ -212,6 +214,23 @@ function remainingTargetKinds(level, progress) {
     .map((goal) => goal.kind);
 }
 
+function initialRecallKnowledge(personaName, progress, decisionRng) {
+  const persona = HUMAN_PERSONAS[personaName];
+  if (!persona || progress?.locks?.recall !== true) return null;
+  const knowledge = Array(64).fill(-1);
+  const layers = progress?.locks?.layers || [];
+  const requiredKinds = progress?.locks?.requiredKinds || [];
+  for (let index = 0; index < layers.length; index += 1) {
+    if (Number(layers[index]) <= 0) continue;
+    const requiredKind = Number(requiredKinds[index]);
+    if (!Number.isInteger(requiredKind) || requiredKind < 0 || requiredKind >= TILE_KINDS) continue;
+    // Every cue is visibly shown at level start. Human-like personas retain only
+    // a seeded subset; they do not read hidden engine truth again after it hides.
+    if (decisionRng.next() <= Number(persona.recallRetention || 0)) knowledge[index] = requiredKind;
+  }
+  return knowledge;
+}
+
 function dropDistance(progress) {
   return (progress?.drop?.tokens || []).reduce((sum, token) => {
     const row = Math.floor(Number(token.index) / 8);
@@ -252,7 +271,7 @@ function comboStrength(a, b) {
   return 2.6;
 }
 
-function visibleMoveFeatures(level, progress, board, specials, move) {
+function visibleMoveFeatures(level, progress, board, specials, move, recallKnowledge = null) {
   const swappedBoard = board.slice();
   const swappedSpecials = specials.slice();
   swap(swappedBoard, move.from, move.to);
@@ -316,9 +335,12 @@ function visibleMoveFeatures(level, progress, board, specials, move) {
     if (col < 7) neighbors.push(lockIndex + 1);
     const matchedNeighbors = neighbors.filter((index) => matched.has(index));
     if (!matchedNeighbors.length) continue;
-    const requiredKind = Number(requiredKinds[lockIndex]);
-    if (requiredKind >= 0) {
-      if (matchedNeighbors.some((index) => swappedBoard[index] === requiredKind)) features.recall += 1;
+    const authoredRequiredKind = Number(requiredKinds[lockIndex]);
+    if (authoredRequiredKind >= 0) {
+      const rememberedKind = recallKnowledge
+        ? Number(recallKnowledge[lockIndex])
+        : authoredRequiredKind;
+      if (rememberedKind >= 0 && matchedNeighbors.some((index) => swappedBoard[index] === rememberedKind)) features.recall += 1;
     } else {
       features.lock += 1;
     }
@@ -347,10 +369,10 @@ function visibleMoveFeatures(level, progress, board, specials, move) {
   return features;
 }
 
-export function scoreVisibleMove(personaName, level, progress, board, specials, move) {
+export function scoreVisibleMove(personaName, level, progress, board, specials, move, recallKnowledge = null) {
   const persona = HUMAN_PERSONAS[personaName];
   if (!persona) throw new Error(`Unknown Cascade human persona: ${personaName}`);
-  const features = visibleMoveFeatures(level, progress, board, specials, move);
+  const features = visibleMoveFeatures(level, progress, board, specials, move, recallKnowledge);
   const value = Object.entries(features).reduce(
     (sum, [key, featureValue]) => sum + (featureValue * Number(persona.weights[key] || 0)),
     0,
@@ -358,13 +380,13 @@ export function scoreVisibleMove(personaName, level, progress, board, specials, 
   return { value, features };
 }
 
-function chooseHuman(personaName, level, progress, board, specials, moves, decisionRng) {
+function chooseHuman(personaName, level, progress, board, specials, moves, decisionRng, recallKnowledge = null) {
   const persona = HUMAN_PERSONAS[personaName];
   if (decisionRng.next() < persona.lapseRate) return chooseRandom(moves, decisionRng);
 
   const candidates = moves.map((move) => ({
     move,
-    ...scoreVisibleMove(personaName, level, progress, board, specials, move),
+    ...scoreVisibleMove(personaName, level, progress, board, specials, move, recallKnowledge),
   }));
   const maxValue = Math.max(...candidates.map((candidate) => candidate.value));
   const weighted = candidates.map((candidate) => ({
@@ -431,7 +453,12 @@ function chooseLookahead(level, progress, board, specials, moves, boardRng) {
 
   let best = null;
   for (const candidate of firstPass) {
-    const nextMoves = listPlayableMoves(candidate.result.board.slice(), candidate.result.specials, specialRules(level.level));
+    const nextMoves = listPlayableMoves(
+      candidate.result.board.slice(),
+      candidate.result.specials,
+      specialRules(level.level),
+      candidate.progress?.locks?.layers || [],
+    );
     let futureBest = 0;
     for (const nextMove of nextMoves) {
       const nextEval = evaluateImmediate(
@@ -452,13 +479,13 @@ function chooseLookahead(level, progress, board, specials, moves, boardRng) {
   return best?.move ?? chooseGreedy(level, progress, board, specials, moves, boardRng);
 }
 
-export function chooseMove(strategy, level, progress, board, specials, moves, boardRng, decisionRng) {
+export function chooseMove(strategy, level, progress, board, specials, moves, boardRng, decisionRng, recallKnowledge = null) {
   if (!STRATEGIES.has(strategy)) throw new Error(`Unknown Cascade bot strategy: ${strategy}`);
   if (!moves.length) return null;
   if (strategy === "random") return chooseRandom(moves, decisionRng);
   if (strategy === "greedy") return chooseGreedy(level, progress, board, specials, moves, boardRng);
   if (strategy === "lookahead") return chooseLookahead(level, progress, board, specials, moves, boardRng);
-  return chooseHuman(strategy, level, progress, board, specials, moves, decisionRng);
+  return chooseHuman(strategy, level, progress, board, specials, moves, decisionRng, recallKnowledge);
 }
 
 export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
@@ -475,6 +502,9 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     locked: progress?.locks?.layers || [],
   });
   let specials = emptySpecials();
+  const recallKnowledge = HUMAN_PERSONAS[strategy]
+    ? initialRecallKnowledge(strategy, progress, decisionRng)
+    : null;
   let score = 0;
   let movesRemaining = definition.moves;
   let cascadeCount = 0;
@@ -496,7 +526,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     branchingTotal += legalMoves.length;
     if (!legalMoves.length) throw new Error(`Cascade special engine returned a board with no playable moves at level ${definition.level}`);
 
-    const move = chooseMove(strategy, definition, progress, board, specials, legalMoves, boardRng, decisionRng);
+    const move = chooseMove(strategy, definition, progress, board, specials, legalMoves, boardRng, decisionRng, recallKnowledge);
     const result = applySpecialSwap(board, specials, move.from, move.to, boardRng, {
       rules: specialRules(definition.level),
       ice: progress.ice,
