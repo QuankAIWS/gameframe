@@ -26,14 +26,14 @@ const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
 const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
-const ACTIVE_RUN_VERSION = 2;
+const ACTIVE_RUN_VERSION = 3;
 const BOARD_CELL_COUNT = BOARD_SIZE * BOARD_SIZE;
 const VALID_SPECIALS = new Set(Object.values(SPECIAL));
 const BLITZ_SECONDS = 30;
 const BLITZ_AFTER_LEVELS = Object.freeze(new Set([
   5, 12, 20, 30, 45, 60, 75, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290,
   310, 330, 350, 370, 390, 410, 430, 450, 470, 490, 510, 530, 550, 570, 590,
-  610, 630, 650, 670, 690, 710, 730,
+  610, 630, 650, 670, 690, 710, 730, 750, 770, 790, 810, 830, 850, 870, 890,
 ]));
 const LEVEL_MAP_WINDOW = 30;
 const PRESENTATION = Object.freeze({
@@ -206,6 +206,21 @@ function saveActiveRun() {
             recall: levelProgress.locks.recall === true,
           }
         : null,
+      blooms: levelProgress?.blooms
+        ? {
+            totalPairs: Number(levelProgress.blooms.totalPairs) || 0,
+            collectedPairs: Number(levelProgress.blooms.collectedPairs) || 0,
+            activeIndex: Number(levelProgress.blooms.activeIndex),
+            symbols: (levelProgress.blooms.symbols || []).slice(),
+          }
+        : null,
+      ground: levelProgress?.ground
+        ? {
+            target: Number(levelProgress.ground.target) || 0,
+            covered: (levelProgress.ground.covered || []).slice(),
+            count: Number(levelProgress.ground.count) || 0,
+          }
+        : null,
     },
     rngState: boardRng.snapshot(),
     savedAt: Date.now(),
@@ -215,7 +230,7 @@ function saveActiveRun() {
 function loadActiveRun(levelNumber) {
   try {
     const parsed = JSON.parse(localStorage.getItem(ACTIVE_RUN_KEY) || "null");
-    if (!parsed || typeof parsed !== "object" || ![1, ACTIVE_RUN_VERSION].includes(Number(parsed.version))) return null;
+    if (!parsed || typeof parsed !== "object" || ![1, 2, ACTIVE_RUN_VERSION].includes(Number(parsed.version))) return null;
     if (Number(parsed.level) !== Number(levelNumber)) return null;
     const level = levels[levelNumber - 1];
     if (!level) return null;
@@ -240,6 +255,8 @@ function loadActiveRun(levelNumber) {
       ice,
       drop: parsed.levelProgress?.drop,
       locks: parsed.levelProgress?.locks,
+      blooms: parsed.levelProgress?.blooms,
+      ground: parsed.levelProgress?.ground,
     }, {});
     return {
       board: savedBoard,
@@ -412,6 +429,9 @@ function renderBoard() {
     const lockLayers = mode === "normal" ? Math.max(0, Number(levelProgress?.locks?.layers?.[index]) || 0) : 0;
     const recallKind = mode === "normal" ? Number(levelProgress?.locks?.requiredKinds?.[index]) : -1;
     const cueVisible = lockLayers > 0 && recallKind >= 0 && recallCueVisible(index);
+    const bloomSymbol = mode === "normal" ? Number(levelProgress?.blooms?.symbols?.[index]) : -1;
+    const bloomActive = bloomSymbol >= 0 && Number(levelProgress?.blooms?.activeIndex) === index;
+    const groundCovered = mode === "normal" && levelProgress?.ground?.covered?.[index] === true;
     tile.type = "button";
     tile.className = "cascade-tile";
     tile.dataset.kind = String(kind);
@@ -446,6 +466,25 @@ function renderBoard() {
       dropMark.textContent = "◆";
       tile.append(dropMark);
     }
+    if (groundCovered) {
+      tile.dataset.ground = "true";
+      tile.classList.add("has-enchanted-ground");
+      const groundMark = document.createElement("span");
+      groundMark.className = "cascade-ground-mark";
+      groundMark.setAttribute("aria-hidden", "true");
+      tile.append(groundMark);
+    }
+    if (bloomSymbol >= 0) {
+      tile.dataset.bloom = String(bloomSymbol);
+      tile.classList.add("has-memory-bloom");
+      const bloomMark = document.createElement("span");
+      bloomMark.className = "cascade-bloom-mark";
+      bloomMark.dataset.bloomSymbol = String(bloomSymbol);
+      bloomMark.classList.toggle("is-revealed", bloomActive);
+      bloomMark.setAttribute("aria-hidden", "true");
+      bloomMark.textContent = bloomActive ? RECALL_SYMBOLS[bloomSymbol] : "✿";
+      tile.append(bloomMark);
+    }
     if (lockLayers > 0) {
       tile.dataset.lock = String(lockLayers);
       tile.classList.add("has-lock", recallKind >= 0 ? "has-recall-lock" : "has-cage");
@@ -462,7 +501,7 @@ function renderBoard() {
       tile.append(lockMark);
     }
     tile.setAttribute("role", "gridcell");
-    tile.setAttribute("aria-label", `Tile ${index + 1}${special ? `, ${specialName(special)}` : ""}${iceLayers ? `, ${iceLayers} ice ${iceLayers === 1 ? "layer" : "layers"}` : ""}${dropToken ? ", drop object" : ""}${dropExit ? ", drop exit" : ""}${lockLayers ? recallKind >= 0 ? cueVisible ? `, recall lock wants ${["pink","cyan","yellow","green","purple","orange"][recallKind]}` : ", recall lock, cue hidden" : `, cage ${lockLayers === 1 ? "locked" : "double locked"}` : ""}`);
+    tile.setAttribute("aria-label", `Tile ${index + 1}${special ? `, ${specialName(special)}` : ""}${iceLayers ? `, ${iceLayers} ice ${iceLayers === 1 ? "layer" : "layers"}` : ""}${dropToken ? ", drop object" : ""}${dropExit ? ", drop exit" : ""}${groundCovered ? ", enchanted ground" : ""}${bloomSymbol >= 0 ? bloomActive ? `, open memory bloom showing ${RECALL_SYMBOLS[bloomSymbol]}` : ", closed memory bloom" : ""}${lockLayers ? recallKind >= 0 ? cueVisible ? `, recall lock wants ${["pink","cyan","yellow","green","purple","orange"][recallKind]}` : ", recall lock, cue hidden" : `, cage ${lockLayers === 1 ? "locked" : "double locked"}` : ""}`);
     if (selectedIndex === index) tile.classList.add("is-selected");
     if (hammerMode) tile.classList.add("is-hammer-target");
     tile.addEventListener("click", () => onTileClick(index));
@@ -483,6 +522,11 @@ function mapLabel(level) {
   const hasCollect = Boolean(level.objective?.collect?.length);
   const hasDrop = Boolean(level.objective?.drop);
   const hasLocks = Boolean(level.objective?.locks);
+  const hasBlooms = Boolean(level.objective?.blooms);
+  const hasGround = Boolean(level.objective?.ground);
+  if (hasBlooms && hasGround) return "Bloom + magic";
+  if (hasBlooms) return "Memory bloom";
+  if (hasGround) return "Magic ground";
   if (hasLocks) return level.objective.locks.recall ? "Recall lock" : "Cages";
   if (hasDrop && (hasIce || hasCollect)) return "Drop mix";
   if (hasDrop) return "Drop";
@@ -546,9 +590,15 @@ function renderHelp() {
     helpElement.textContent = "New objective: open every cage. Caged candies stay fixed and cannot be swapped. Clear beside a cage or hit it with a special to crack it.";
   } else if (activeLevel.level === 701) {
     helpElement.textContent = "Memory challenge: each magic lock briefly shows the color-symbol it wants. Remember it, then clear that color beside the lock. Tap a closed lock anytime for a quick clue.";
+  } else if (activeLevel.level === 751) {
+    helpElement.textContent = "New memory objective: clear beside a flower to reveal its symbol. Find the matching flower pair. A wrong pair simply closes again and gives you another clue.";
+  } else if (activeLevel.level === 801) {
+    helpElement.textContent = "New objective: spread the sparkling magic ground. Make clears that touch glowing ground and the magic spreads through that clear.";
   } else {
     const notes = [];
     if (activeLevel.objective?.drop) notes.push("clear below each diamond to drop it into its exit");
+    if (activeLevel.objective?.blooms) notes.push("reveal flowers and remember matching symbol pairs");
+    if (activeLevel.objective?.ground) notes.push("make clears that touch sparkling ground to spread the magic");
     if (activeLevel.objective?.locks?.recall) notes.push("remember each magic lock cue and clear that color beside it");
     else if (activeLevel.objective?.locks) notes.push("clear beside every cage to open it");
     if (activeLevel.objective?.ice) notes.push("crack every iced cell");
@@ -752,6 +802,29 @@ async function animateButterflyFlights(transition) {
   }));
 }
 
+async function presentBloomFeedback(events = []) {
+  if (!events.length) return;
+  const temp = [];
+  for (const event of events) {
+    for (let offset = 0; offset < (event.indices || []).length; offset += 1) {
+      const index = event.indices[offset];
+      const tile = tileAt(index);
+      if (!tile) continue;
+      tile.classList.add(event.type === "match" ? "is-bloom-match" : event.type === "mismatch" ? "is-bloom-mismatch" : "is-bloom-open");
+      if (event.type === "mismatch") {
+        const mark = document.createElement("span");
+        mark.className = "cascade-bloom-peek";
+        mark.textContent = RECALL_SYMBOLS[event.symbols?.[offset] ?? event.symbol ?? 0];
+        mark.setAttribute("aria-hidden", "true");
+        tile.append(mark);
+        temp.push(mark);
+      }
+    }
+  }
+  await sleep(events.some((event) => event.type === "mismatch") ? 620 : 260);
+  temp.forEach((element) => element.remove());
+}
+
 async function presentResolvedResult(result) {
   for (const transition of result.transitions) {
     if (mode === "normal") {
@@ -777,7 +850,13 @@ async function presentResolvedResult(result) {
     flashBoard(transition.cascade);
     await sleep(PRESENTATION.clear);
     score += transition.gained;
-    if (mode === "normal") levelProgress = applySpecialLevelProgress(activeLevel, levelProgress, transition);
+    if (mode === "normal") {
+      levelProgress = applySpecialLevelProgress(activeLevel, levelProgress, transition);
+      if (levelProgress?.blooms?.lastEvents?.length || levelProgress?.ground?.lastSpread?.length) {
+        renderBoard();
+        await presentBloomFeedback(levelProgress?.blooms?.lastEvents || []);
+      }
+    }
     if (mode === "blitz") {
       blitzStats.matches += Math.max(1, transition.groups?.length || 0);
       blitzStats.specials += transition.createdSpecials?.length || 0;
@@ -794,6 +873,10 @@ async function presentResolvedResult(result) {
       dropsDelivered: Number(levelProgress?.drop?.delivered || 0),
       lockHits: transition.lockHits?.length || 0,
       locksOpened: Number(levelProgress?.locks?.opened || 0),
+      bloomPairs: Number(levelProgress?.blooms?.collectedPairs || 0),
+      bloomEvents: levelProgress?.blooms?.lastEvents?.length || 0,
+      groundCovered: Number(levelProgress?.ground?.count || 0),
+      groundSpread: levelProgress?.ground?.lastSpread?.length || 0,
     });
     await presentFallTransition(transition);
     await sleep(PRESENTATION.betweenCascades);
@@ -1229,7 +1312,14 @@ function startBlitz(completedLevel) {
   selectedIndex = null;
   hammerMode = false;
   locked = true;
-  levelProgress = { collected: [], ice: [], drop: { delivered: 0, total: 0, tokens: [], exits: [] }, locks: { total: 0, opened: 0, layers: Array(BOARD_CELL_COUNT).fill(0), requiredKinds: Array(BOARD_CELL_COUNT).fill(-1), recall: false } };
+  levelProgress = {
+    collected: [],
+    ice: [],
+    drop: { delivered: 0, total: 0, tokens: [], exits: [] },
+    locks: { total: 0, opened: 0, layers: Array(BOARD_CELL_COUNT).fill(0), requiredKinds: Array(BOARD_CELL_COUNT).fill(-1), recall: false },
+    blooms: { totalPairs: 0, collectedPairs: 0, activeIndex: -1, symbols: Array(BOARD_CELL_COUNT).fill(-1), lastEvents: [] },
+    ground: { target: 0, covered: Array(BOARD_CELL_COUNT).fill(false), count: 0, lastSpread: [] },
+  };
   boardRng = createRng(((completedLevel * 0x85ebca6b) ^ Date.now()) >>> 0);
   board = createBoard({ rng: boardRng, rules: currentRules() });
   specials = emptySpecials();
