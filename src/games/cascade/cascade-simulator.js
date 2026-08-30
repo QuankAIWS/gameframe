@@ -7,6 +7,7 @@ import {
   createBoard,
   createLevelProgress,
   createRng,
+  dropSupportIndices,
   emptySpecials,
   findSpecialMatchGroups,
   objectiveComplete,
@@ -21,6 +22,7 @@ export const HUMAN_PERSONAS = Object.freeze({
       match: 0.55,
       ice: 1.15,
       collection: 0.95,
+      drop: 1.35,
       specialCreation: 1.05,
       specialActivation: 0.65,
       combo: 1.45,
@@ -34,6 +36,7 @@ export const HUMAN_PERSONAS = Object.freeze({
       match: 0.35,
       ice: 2.05,
       collection: 1.75,
+      drop: 2.45,
       specialCreation: 1.75,
       specialActivation: 1.05,
       combo: 2.35,
@@ -204,6 +207,13 @@ function remainingTargetKinds(level, progress) {
     .map((goal) => goal.kind);
 }
 
+function dropDistance(progress) {
+  return (progress?.drop?.tokens || []).reduce((sum, token) => {
+    const row = Math.floor(Number(token.index) / 8);
+    return sum + Math.max(0, 7 - row);
+  }, 0);
+}
+
 function objectiveAdvanceValue(level, before, after) {
   let value = 0;
   for (const goal of level.objective?.collect || []) {
@@ -214,6 +224,10 @@ function objectiveAdvanceValue(level, before, after) {
   const beforeIce = (before?.ice || []).reduce((sum, layers) => sum + Math.max(0, Number(layers) || 0), 0);
   const afterIce = (after?.ice || []).reduce((sum, layers) => sum + Math.max(0, Number(layers) || 0), 0);
   value += Math.max(0, beforeIce - afterIce) * 190;
+  const beforeDrops = Number(before?.drop?.delivered || 0);
+  const afterDrops = Number(after?.drop?.delivered || 0);
+  value += Math.max(0, afterDrops - beforeDrops) * 420;
+  value += Math.max(0, dropDistance(before) - dropDistance(after)) * 170;
   return value;
 }
 
@@ -243,6 +257,7 @@ function visibleMoveFeatures(level, progress, board, specials, move) {
     match: 0,
     ice: 0,
     collection: 0,
+    drop: 0,
     specialCreation: 0,
     specialActivation: 0,
     combo: 0,
@@ -271,9 +286,11 @@ function visibleMoveFeatures(level, progress, board, specials, move) {
   const matched = new Set(groups.flatMap((group) => group.indices));
   features.match = Math.min(10, matched.size);
 
+  const dropSupports = new Set(dropSupportIndices(progress));
   for (const index of matched) {
     if (Number(progress?.ice?.[index] || 0) > 0) features.ice += 1;
     if (neededKinds.has(swappedBoard[index])) features.collection += 1;
+    if (dropSupports.has(index)) features.drop += 1;
   }
 
   const lineGroups = groups.filter((group) => group.orientation === "row" || group.orientation === "column");
@@ -338,6 +355,7 @@ function evaluateImmediate(level, progress, board, specials, move, boardRng) {
     rules: specialRules(level.level),
     ice: progress.ice,
     targetKinds: remainingTargetKinds(level, progress),
+    targetIndices: dropSupportIndices(progress),
   });
   if (!result.legal) return null;
   const nextProgress = applySpecialLevelProgress(level, progress, result);
@@ -431,6 +449,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
   let specialTriggeredCount = 0;
   let comboCount = 0;
   let iceHitCount = 0;
+  let dropDeliveredCount = 0;
   const collectedTotals = Array(TILE_KINDS).fill(0);
   const moveHistory = [];
 
@@ -444,12 +463,15 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
       rules: specialRules(definition.level),
       ice: progress.ice,
       targetKinds: remainingTargetKinds(definition, progress),
+      targetIndices: dropSupportIndices(progress),
     });
     if (!result.legal) throw new Error(`Cascade bot selected an illegal move ${move.from}->${move.to}`);
 
     movesRemaining -= 1;
     score += result.scoreGained;
+    const deliveredBefore = Number(progress?.drop?.delivered || 0);
     progress = applySpecialLevelProgress(definition, progress, result);
+    dropDeliveredCount += Math.max(0, Number(progress?.drop?.delivered || 0) - deliveredBefore);
     cascadeCount += result.transitions.length;
     maxCascade = Math.max(maxCascade, result.maxCascade);
     specialCreatedCount += result.specialCreatedCount || 0;
@@ -470,6 +492,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
       specialTriggeredCount: result.specialTriggeredCount || 0,
       comboCount: result.transitions.filter((transition) => Boolean(transition.combo)).length,
       iceHitCount: result.iceHitCount || 0,
+      dropsDelivered: Number(progress?.drop?.delivered || 0),
       shuffled: result.shuffled,
       score,
       movesRemaining,
@@ -499,6 +522,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     specialTriggeredCount,
     comboCount,
     iceHitCount,
+    dropDeliveredCount,
     collectedTotals,
     objectiveRemaining: remaining,
     objectiveComplete: win,
@@ -538,6 +562,7 @@ function summarizeRuns(level, strategy, runs) {
     averageSpecialsTriggered: runs.reduce((sum, run) => sum + run.specialTriggeredCount, 0) / runs.length,
     averageSpecialCombos: runs.reduce((sum, run) => sum + run.comboCount, 0) / runs.length,
     averageIceHits: runs.reduce((sum, run) => sum + run.iceHitCount, 0) / runs.length,
+    averageDropsDelivered: runs.reduce((sum, run) => sum + run.dropDeliveredCount, 0) / runs.length,
     maxCascade: Math.max(...runs.map((run) => run.maxCascade)),
     averageBranching: runs.reduce((sum, run) => sum + run.averageBranching, 0) / runs.length,
     shuffleRate: runs.filter((run) => run.shuffles > 0).length / runs.length,

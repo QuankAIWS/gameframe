@@ -18,6 +18,9 @@ on:
       - "scripts/cascade-persona-calibrate.mjs"
       - "scripts/cascade-fragility.mjs"
       - "scripts/cascade-playtest-analyze.mjs"
+      - "scripts/cascade-archive-profile.mjs"
+      - "scripts/cascade-archive-check.mjs"
+      - "data/cascade/difficulty-archive/**"
       - "planning/cascade-testing-methodology.md"
       - "src/browser/player-*"
       - "src/browser/monster-master*"
@@ -60,6 +63,7 @@ jobs:
       casual: ${{ steps.classify.outputs.casual }}
       cascadeUi: ${{ steps.classify.outputs.cascadeUi }}
       cascadeProfile: ${{ steps.classify.outputs.cascadeProfile }}
+      cascadeArchive: ${{ steps.classify.outputs.cascadeArchive }}
       cascadeTelemetry: ${{ steps.classify.outputs.cascadeTelemetry }}
       monsterMaster: ${{ steps.classify.outputs.monsterMaster }}
       playerPlatform: ${{ steps.classify.outputs.playerPlatform }}
@@ -96,7 +100,8 @@ jobs:
           echo "- shared shell: ${{ steps.classify.outputs.shell }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Casual Games: ${{ steps.classify.outputs.casual }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Cascade UI: ${{ steps.classify.outputs.cascadeUi }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Cascade 450-level solver + human profile: ${{ steps.classify.outputs.cascadeProfile }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Cascade 600-level solver + human profile: ${{ steps.classify.outputs.cascadeProfile }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Cascade difficulty archive: ${{ steps.classify.outputs.cascadeArchive }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Cascade telemetry: ${{ steps.classify.outputs.cascadeTelemetry }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Monster Master: ${{ steps.classify.outputs.monsterMaster }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Player Platform: ${{ steps.classify.outputs.playerPlatform }}" >> "$GITHUB_STEP_SUMMARY"
@@ -208,6 +213,24 @@ jobs:
           if-no-files-found: warn
           retention-days: 10
 
+  cascade-archive:
+    needs: scope
+    if: needs.scope.outputs.cascadeArchive == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - name: Validate Cascade difficulty archive
+        run: |
+          node --check scripts/cascade-archive-profile.mjs
+          node --check scripts/cascade-archive-check.mjs
+          npm run cascade:archive:check
+
   cascade-profile:
     needs: scope
     if: needs.scope.outputs.cascadeProfile == 'true'
@@ -227,7 +250,7 @@ jobs:
         run: |
           npm run cascade:test
           node --test src/games/cascade/cascade-special-engine.test.mjs
-      - name: Cascade 450-level solver and human difficulty profile
+      - name: Cascade 600-level solver and human difficulty profile
         run: npm run cascade:profile -- --runs=6 --json=cascade-profile.json
       - name: Upload Cascade difficulty profile
         if: always()
@@ -253,8 +276,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Profile post-300 expansion with larger human sample
-        run: npm run cascade:profile -- --from=301 --to=450 --runs=8 --human-runs=20 --json=cascade-profile-deep.json
+      - name: Profile levels 451-600 with larger human sample
+        run: npm run cascade:profile -- --from=451 --to=600 --runs=8 --human-runs=20 --json=cascade-profile-deep.json
       - name: Upload expansion Cascade difficulty profile
         if: always()
         uses: actions/upload-artifact@v4
@@ -279,8 +302,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Scan post-300 expansion move fragility
-        run: npm run cascade:fragility -- --from=301 --to=450 --runs=12 --strategy=human-skilled | tee cascade-fragility.txt
+      - name: Scan levels 451-600 move fragility
+        run: npm run cascade:fragility -- --from=451 --to=600 --runs=12 --strategy=human-skilled | tee cascade-fragility.txt
       - name: Upload Cascade fragility report
         if: always()
         uses: actions/upload-artifact@v4

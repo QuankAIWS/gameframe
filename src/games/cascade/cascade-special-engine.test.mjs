@@ -200,6 +200,21 @@ test("Fish chooses a seeded random useful objective target without ranking deepe
   assert.ok(result.transitions[0].triggeredSpecials.some((trigger) => trigger.special === SPECIAL.FISH));
 });
 
+test("Fish treats a drop support cell as a useful objective target", () => {
+  const board = stableBoard();
+  const specials = emptySpecials();
+  specials[0] = SPECIAL.FISH;
+
+  const result = applySpecialHammer(board, specials, 0, createRng(77), {
+    targetIndices: [63],
+    rules: { stripe: true, bomb: true, color: true, fish: true },
+  });
+
+  assert.equal(result.legal, true);
+  assert.ok(result.transitions[0].matched.includes(63));
+  assert.ok(result.transitions[0].triggeredSpecials.some((trigger) => trigger.special === SPECIAL.FISH));
+});
+
 test("Fish combo targeting uses the seeded random useful target", () => {
   const board = stableBoard();
   const specials = emptySpecials();

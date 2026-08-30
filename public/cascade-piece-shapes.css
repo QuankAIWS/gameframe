@@ -155,6 +155,72 @@
     drop-shadow(0 7px 7px rgba(82,57,113,.2));
 }
 
+/* Drop objectives sit above the candy face while keeping the entire tile as
+ * the hit target. The object is deliberately large and high-contrast for phone
+ * play; the exit stays low in the cell so the two markers never read as one.
+ */
+.cascade-drop-object,
+.cascade-drop-exit {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.cascade-drop-object {
+  left: 31%;
+  top: 23%;
+  width: 38%;
+  aspect-ratio: 1;
+  border: 2px solid rgba(87, 55, 42, .62);
+  border-radius: 24% 24% 48% 48%;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255,255,255,.98) 0 10%, transparent 11%),
+    linear-gradient(145deg, #fff3a4, #ffbd3e 52%, #ff7d49);
+  color: #6b3c32;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.9),
+    0 0 10px rgba(255,185,61,.74),
+    0 4px 6px rgba(69,44,67,.3);
+  transform: rotate(45deg);
+  text-shadow: none;
+}
+
+.cascade-drop-object::before {
+  content: "↓";
+  transform: rotate(-45deg);
+  font-size: clamp(.72rem, 2.2vw, 1.05rem);
+}
+
+.cascade-drop-object {
+  font-size: 0;
+}
+
+.cascade-drop-exit {
+  left: 18%;
+  right: 18%;
+  bottom: 2%;
+  height: 18%;
+  border: 2px solid rgba(65, 191, 219, .8);
+  border-radius: 999px;
+  background: rgba(192, 249, 255, .74);
+  color: #17667b;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.86),
+    0 0 9px rgba(65, 212, 242, .72);
+  font-size: clamp(.7rem, 2vw, 1rem);
+}
+
+.cascade-tile.has-drop-object::before {
+  filter:
+    drop-shadow(0 2px 0 rgba(255,255,255,.5))
+    drop-shadow(0 5px 5px rgba(82,57,113,.2))
+    brightness(.88);
+}
+
 /* Stripes are clipped to the same family silhouette. A striped heart remains a
  * heart, a striped diamond remains a diamond, etc. Bombs sit on top of the base
  * family silhouette and therefore inherit it naturally.

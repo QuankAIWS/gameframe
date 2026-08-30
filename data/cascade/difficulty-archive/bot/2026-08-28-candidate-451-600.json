@@ -1,0 +1,2290 @@
+{
+  "archiveSchemaVersion": 1,
+  "archiveType": "cascade-bot-profile-log-snapshot",
+  "status": "candidate",
+  "label": "drop-expansion-candidate-451-600-twenty-human-seed",
+  "provenance": {
+    "workflowRunId": 33207449713,
+    "workflowJobId": 98972137995,
+    "headSha": "9df9d91d237b0975bee7b338342c0d15bf33aae9",
+    "capturedFrom": "GitHub Actions job log",
+    "sourceHeader": "Cascade difficulty profile · L451-600 · persistent specials + campaign waves · 8 solver seeds · 20 human-persona seeds"
+  },
+  "sampling": {
+    "solverSeeds": 8,
+    "humanPersonaSeeds": 20
+  },
+  "levelRange": {
+    "from": 451,
+    "to": 600,
+    "count": 150
+  },
+  "levels": [
+    {
+      "level": 451,
+      "moves": 29,
+      "target": 12900,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.75,
+        "human-casual": 0.85,
+        "human-skilled": 1,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.25,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 452,
+      "moves": 28,
+      "target": 14300,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.75,
+        "human-casual": 0.95,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.25,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 453,
+      "moves": 28,
+      "target": 15000,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.88,
+        "human-casual": 0.75,
+        "human-skilled": 0.8,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.13,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 454,
+      "moves": 27,
+      "target": 15700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.8,
+        "human-skilled": 0.8,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 455,
+      "moves": 26,
+      "target": 17100,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0.63,
+        "human-casual": 0.5,
+        "human-skilled": 0.75,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.38,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 456,
+      "moves": 29,
+      "target": 14000,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.75,
+        "human-casual": 0.9,
+        "human-skilled": 1,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.25,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 457,
+      "moves": 28,
+      "target": 15700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.6,
+        "human-skilled": 0.95,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 458,
+      "moves": 27,
+      "target": 16600,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.88,
+        "human-casual": 0.5,
+        "human-skilled": 1,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.13,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 459,
+      "moves": 27,
+      "target": 17500,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.5,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 460,
+      "moves": 26,
+      "target": 19000,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0.75,
+        "human-casual": 0.4,
+        "human-skilled": 0.7,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.25,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 461,
+      "moves": 29,
+      "target": 13800,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.35,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 462,
+      "moves": 28,
+      "target": 15200,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.75,
+        "human-casual": 0.7,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.25,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 463,
+      "moves": 28,
+      "target": 16000,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.6,
+        "human-skilled": 0.8,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 464,
+      "moves": 27,
+      "target": 16800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.55,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 465,
+      "moves": 26,
+      "target": 18200,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.25,
+        "human-skilled": 0.6,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 466,
+      "moves": 29,
+      "target": 14900,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.63,
+        "human-casual": 0.6,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.38,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 467,
+      "moves": 28,
+      "target": 16700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.7,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 468,
+      "moves": 27,
+      "target": 17700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.55,
+        "human-skilled": 0.7,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 469,
+      "moves": 27,
+      "target": 18700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.25,
+        "human-skilled": 0.65,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 470,
+      "moves": 26,
+      "target": 20200,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.25,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 471,
+      "moves": 29,
+      "target": 14700,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.45,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 472,
+      "moves": 28,
+      "target": 16200,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.3,
+        "human-skilled": 0.75,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 473,
+      "moves": 28,
+      "target": 17000,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.75,
+        "human-casual": 0.4,
+        "human-skilled": 0.8,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.25,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 474,
+      "moves": 27,
+      "target": 17800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.63,
+        "human-casual": 0.5,
+        "human-skilled": 0.65,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.38,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 475,
+      "moves": 26,
+      "target": 19400,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.3,
+        "human-skilled": 0.65,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 476,
+      "moves": 29,
+      "target": 15900,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.3,
+        "human-skilled": 0.6,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 477,
+      "moves": 28,
+      "target": 17800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.63,
+        "human-casual": 0.85,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.38,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 478,
+      "moves": 27,
+      "target": 18800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.25,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 479,
+      "moves": 27,
+      "target": 19800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.2,
+        "human-skilled": 0.4,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 480,
+      "moves": 26,
+      "target": 21400,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.2,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 481,
+      "moves": 31,
+      "target": 13400,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.85,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 482,
+      "moves": 30,
+      "target": 14800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.5,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 483,
+      "moves": 30,
+      "target": 15600,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.85,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 484,
+      "moves": 29,
+      "target": 16300,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.75,
+        "human-casual": 0.7,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.25,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 485,
+      "moves": 28,
+      "target": 17700,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.3,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 486,
+      "moves": 31,
+      "target": 14500,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.55,
+        "human-skilled": 0.8,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 487,
+      "moves": 30,
+      "target": 16300,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.5,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 488,
+      "moves": 29,
+      "target": 17200,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.5,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 489,
+      "moves": 29,
+      "target": 18200,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.65,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 490,
+      "moves": 28,
+      "target": 19700,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.35,
+        "human-skilled": 0.7,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 491,
+      "moves": 31,
+      "target": 14300,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.63,
+        "human-casual": 0.8,
+        "human-skilled": 1,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.38,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 492,
+      "moves": 30,
+      "target": 15800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.63,
+        "human-casual": 0.55,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.38,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 493,
+      "moves": 30,
+      "target": 16600,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.55,
+        "human-skilled": 0.8,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 494,
+      "moves": 29,
+      "target": 17400,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.75,
+        "human-casual": 0.65,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.25,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 495,
+      "moves": 28,
+      "target": 18900,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.5,
+        "human-skilled": 0.75,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 496,
+      "moves": 31,
+      "target": 15500,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.65,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 497,
+      "moves": 30,
+      "target": 17300,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.3,
+        "human-skilled": 0.75,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 498,
+      "moves": 29,
+      "target": 18300,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.5,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 499,
+      "moves": 29,
+      "target": 19300,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.4,
+        "human-skilled": 0.75,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 500,
+      "moves": 28,
+      "target": 20900,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.65,
+        "human-skilled": 0.65,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 501,
+      "moves": 31,
+      "target": 15200,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.35,
+        "human-skilled": 0.75,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 502,
+      "moves": 30,
+      "target": 16700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.35,
+        "human-skilled": 0.7,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 503,
+      "moves": 30,
+      "target": 17600,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.25,
+        "human-skilled": 0.85,
+        "greedy": 0.75,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 504,
+      "moves": 29,
+      "target": 18400,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.35,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 505,
+      "moves": 28,
+      "target": 20000,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.1,
+        "human-skilled": 0.35,
+        "greedy": 0.75,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 506,
+      "moves": 31,
+      "target": 16400,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.4,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 507,
+      "moves": 30,
+      "target": 18400,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.3,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 508,
+      "moves": 29,
+      "target": 19400,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.4,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 509,
+      "moves": 29,
+      "target": 20500,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.2,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 510,
+      "moves": 28,
+      "target": 22100,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.1,
+        "human-skilled": 0.45,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 511,
+      "moves": 31,
+      "target": 13900,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.75,
+        "human-casual": 0.8,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.25,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 512,
+      "moves": 30,
+      "target": 15400,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.63,
+        "human-casual": 0.85,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.38,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 513,
+      "moves": 30,
+      "target": 16100,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.45,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 514,
+      "moves": 29,
+      "target": 16900,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.5,
+        "human-skilled": 0.7,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 515,
+      "moves": 28,
+      "target": 18400,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.7,
+        "human-skilled": 0.7,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 516,
+      "moves": 31,
+      "target": 15100,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.85,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 517,
+      "moves": 30,
+      "target": 16900,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.75,
+        "human-casual": 0.6,
+        "human-skilled": 1,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.25,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 518,
+      "moves": 29,
+      "target": 17900,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.15,
+        "human-skilled": 0.65,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 519,
+      "moves": 29,
+      "target": 18900,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.5,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 520,
+      "moves": 28,
+      "target": 20400,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.45,
+        "human-skilled": 0.65,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 521,
+      "moves": 31,
+      "target": 14900,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.4,
+        "human-skilled": 0.8,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 522,
+      "moves": 30,
+      "target": 16400,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.7,
+        "human-skilled": 0.8,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 523,
+      "moves": 30,
+      "target": 17200,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.5,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 524,
+      "moves": 29,
+      "target": 18000,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.65,
+        "human-skilled": 0.85,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 525,
+      "moves": 28,
+      "target": 19600,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.25,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 526,
+      "moves": 31,
+      "target": 16100,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.75,
+        "human-casual": 0.9,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.25,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 527,
+      "moves": 30,
+      "target": 18000,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.55,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 528,
+      "moves": 29,
+      "target": 19000,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.65,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 529,
+      "moves": 29,
+      "target": 20100,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.25,
+        "human-skilled": 0.75,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 530,
+      "moves": 28,
+      "target": 21700,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.2,
+        "human-skilled": 0.65,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 531,
+      "moves": 31,
+      "target": 15800,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.4,
+        "human-skilled": 0.7,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 532,
+      "moves": 30,
+      "target": 17400,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.45,
+        "human-skilled": 0.8,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 533,
+      "moves": 30,
+      "target": 18300,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.4,
+        "human-skilled": 0.65,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 534,
+      "moves": 29,
+      "target": 19100,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.25,
+        "human-skilled": 0.7,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 535,
+      "moves": 28,
+      "target": 20800,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.1,
+        "human-skilled": 0.45,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 536,
+      "moves": 31,
+      "target": 17000,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.45,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 537,
+      "moves": 30,
+      "target": 19100,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.2,
+        "human-skilled": 0.65,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 538,
+      "moves": 29,
+      "target": 20200,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.45,
+        "human-skilled": 0.5,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 539,
+      "moves": 29,
+      "target": 21300,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.15,
+        "human-skilled": 0.75,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 540,
+      "moves": 28,
+      "target": 23000,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.4,
+        "human-skilled": 0.55,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 541,
+      "moves": 32,
+      "target": 14400,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.88,
+        "human-casual": 0.65,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.13,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 542,
+      "moves": 31,
+      "target": 15900,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.3,
+        "human-skilled": 0.75,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 543,
+      "moves": 31,
+      "target": 16700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.7,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 544,
+      "moves": 30,
+      "target": 17500,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.65,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 545,
+      "moves": 29,
+      "target": 19100,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.3,
+        "human-skilled": 0.85,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 546,
+      "moves": 32,
+      "target": 15600,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.5,
+        "human-skilled": 0.9,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 547,
+      "moves": 31,
+      "target": 17500,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.55,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 548,
+      "moves": 30,
+      "target": 18500,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.8,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 549,
+      "moves": 30,
+      "target": 19600,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.55,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 550,
+      "moves": 29,
+      "target": 21200,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.3,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 551,
+      "moves": 32,
+      "target": 15400,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.88,
+        "human-casual": 0.7,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.13,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 552,
+      "moves": 31,
+      "target": 17000,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.45,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 553,
+      "moves": 31,
+      "target": 17800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.4,
+        "human-skilled": 0.75,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 554,
+      "moves": 30,
+      "target": 18700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.4,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 555,
+      "moves": 29,
+      "target": 20300,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.25,
+        "human-skilled": 0.8,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 556,
+      "moves": 32,
+      "target": 16700,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.7,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 557,
+      "moves": 31,
+      "target": 18700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.15,
+        "human-skilled": 0.45,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 558,
+      "moves": 30,
+      "target": 19700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.55,
+        "human-skilled": 0.75,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 559,
+      "moves": 30,
+      "target": 20800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.7,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 560,
+      "moves": 29,
+      "target": 22500,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.35,
+        "human-skilled": 0.55,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 561,
+      "moves": 32,
+      "target": 16400,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.25,
+        "human-skilled": 0.75,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 562,
+      "moves": 31,
+      "target": 18000,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.5,
+        "human-skilled": 0.9,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 563,
+      "moves": 31,
+      "target": 18900,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.2,
+        "human-skilled": 0.7,
+        "greedy": 0.75,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 564,
+      "moves": 30,
+      "target": 19800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.25,
+        "human-skilled": 0.8,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 565,
+      "moves": 30,
+      "target": 21600,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.25,
+        "human-skilled": 0.45,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 566,
+      "moves": 32,
+      "target": 17700,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.63,
+        "human-casual": 0.2,
+        "human-skilled": 0.75,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.38,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 567,
+      "moves": 31,
+      "target": 19800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.15,
+        "human-skilled": 0.55,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 568,
+      "moves": 30,
+      "target": 20900,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.35,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 569,
+      "moves": 30,
+      "target": 22100,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.2,
+        "human-skilled": 0.55,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 570,
+      "moves": 30,
+      "target": 23800,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.3,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 571,
+      "moves": 33,
+      "target": 15100,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.88,
+        "human-casual": 0.85,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.13,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 572,
+      "moves": 32,
+      "target": 16700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.75,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 573,
+      "moves": 32,
+      "target": 17500,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.7,
+        "human-skilled": 0.8,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 574,
+      "moves": 31,
+      "target": 18400,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.5,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 0.88
+      },
+      "skillSensitivity": 0.38,
+      "objectiveFailureRate": 0.13
+    },
+    {
+      "level": 575,
+      "moves": 30,
+      "target": 20000,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.6,
+        "human-skilled": 0.75,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 576,
+      "moves": 33,
+      "target": 16400,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.5,
+        "human-casual": 0.8,
+        "human-skilled": 0.95,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.5,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 577,
+      "moves": 32,
+      "target": 18300,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.75,
+        "human-skilled": 0.8,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 578,
+      "moves": 31,
+      "target": 19400,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.4,
+        "human-skilled": 0.75,
+        "greedy": 0.75,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 579,
+      "moves": 31,
+      "target": 20500,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.35,
+        "human-skilled": 0.8,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 580,
+      "moves": 30,
+      "target": 22100,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0.38,
+        "human-casual": 0.45,
+        "human-skilled": 0.65,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.63,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 581,
+      "moves": 33,
+      "target": 16100,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.63,
+        "human-casual": 0.6,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.38,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 582,
+      "moves": 32,
+      "target": 17800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.4,
+        "human-skilled": 0.9,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 583,
+      "moves": 32,
+      "target": 18700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.55,
+        "human-skilled": 0.8,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 584,
+      "moves": 31,
+      "target": 19600,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.3,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 585,
+      "moves": 30,
+      "target": 21300,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.5,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 586,
+      "moves": 33,
+      "target": 17400,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.35,
+        "human-skilled": 0.8,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 587,
+      "moves": 32,
+      "target": 19500,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.55,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 588,
+      "moves": 31,
+      "target": 20600,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.3,
+        "human-skilled": 0.65,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 589,
+      "moves": 31,
+      "target": 21800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.35,
+        "human-skilled": 0.85,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 590,
+      "moves": 30,
+      "target": 23500,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.2,
+        "human-skilled": 0.8,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 591,
+      "moves": 34,
+      "target": 17100,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.25,
+        "human-skilled": 0.75,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 592,
+      "moves": 32,
+      "target": 18900,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.5,
+        "human-skilled": 0.9,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 593,
+      "moves": 32,
+      "target": 19800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.4,
+        "human-skilled": 0.5,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 594,
+      "moves": 32,
+      "target": 20800,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.4,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 0.88
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0.13
+    },
+    {
+      "level": 595,
+      "moves": 30,
+      "target": 22600,
+      "difficulty": "hard",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.15,
+        "human-skilled": 0.45,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 596,
+      "moves": 34,
+      "target": 18500,
+      "difficulty": "relief",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.4,
+        "human-skilled": 0.75,
+        "greedy": 0.88,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 597,
+      "moves": 32,
+      "target": 20700,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.1,
+        "human-skilled": 0.7,
+        "greedy": 0.75,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 598,
+      "moves": 31,
+      "target": 21900,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0.13,
+        "human-casual": 0.4,
+        "human-skilled": 0.6,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.88,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 599,
+      "moves": 32,
+      "target": 23100,
+      "difficulty": "normal",
+      "winRate": {
+        "random": 0,
+        "human-casual": 0.15,
+        "human-skilled": 0.4,
+        "greedy": 0.75,
+        "lookahead": 1
+      },
+      "skillSensitivity": 1,
+      "objectiveFailureRate": 0
+    },
+    {
+      "level": 600,
+      "moves": 30,
+      "target": 24900,
+      "difficulty": "super-hard",
+      "winRate": {
+        "random": 0.25,
+        "human-casual": 0.05,
+        "human-skilled": 0.5,
+        "greedy": 1,
+        "lookahead": 1
+      },
+      "skillSensitivity": 0.75,
+      "objectiveFailureRate": 0
+    }
+  ],
+  "chapterSummary": [
+    "drop-intro         L451-480 · random 45% · casual 51% · skilled 79% · lookahead 100% · worst 100% · objective fail 0%",
+    "drop-ice           L481-510 · random 33% · casual 47% · skilled 78% · lookahead 100% · worst 100% · objective fail 0%",
+    "drop-collection    L511-540 · random 29% · casual 47% · skilled 77% · lookahead 100% · worst 100% · objective fail 0%",
+    "drop-layered       L541-570 · random 25% · casual 42% · skilled 77% · lookahead 100% · worst 100% · objective fail 0%",
+    "drop-mastery       L571-600 · random 25% · casual 44% · skilled 74% · lookahead 99% · worst 88% · objective fail 1%"
+  ],
+  "finalSummary": [
+    "Lookahead can clear all 150 levels in the sampled seeds: yes",
+    "L451-600 levels with random < lookahead: 150/150",
+    "L451-600 levels with greedy < lookahead: 35/150",
+    "Family-beta relief cliffs (<50% lookahead): none",
+    "Family-beta normal cliffs (<33% lookahead): none",
+    "Human-skilled target bands are advisory until telemetry calibration: 150 post-300 expansion levels tracked",
+    "Human-skilled below target band: 70; above target band: 18"
+  ]
+}

@@ -5,10 +5,12 @@ import {
   TILE_LABELS,
   CASCADE_LEVELS,
   adjacent,
+  applyLevelProgress,
   createBoard,
   createLevelProgress,
   createRng,
   describeLevelObjective,
+  dropSupportIndices,
   findMatchGroups,
   objectiveComplete,
 } from "./cascade-engine.js";
@@ -20,10 +22,12 @@ export {
   TILE_LABELS,
   CASCADE_LEVELS,
   adjacent,
+  applyLevelProgress,
   createBoard,
   createLevelProgress,
   createRng,
   describeLevelObjective,
+  dropSupportIndices,
   objectiveComplete,
 };
 
@@ -256,9 +260,10 @@ function dominantKind(board) {
   return best;
 }
 
-function fishTargets(board, sourceIndex, { ice = [], targetKinds = [], count = 1, exclude = [], rng = null } = {}) {
+function fishTargets(board, sourceIndex, { ice = [], targetKinds = [], targetIndices = [], count = 1, exclude = [], rng = null } = {}) {
   const blocked = new Set([sourceIndex, ...exclude]);
   const neededKinds = new Set((targetKinds || []).filter((kind) => Number.isInteger(kind) && kind >= 0 && kind < TILE_KINDS));
+  const neededIndices = new Set((targetIndices || []).filter((index) => Number.isInteger(index) && index >= 0 && index < board.length));
   const available = [];
   const useful = [];
 
@@ -267,7 +272,8 @@ function fishTargets(board, sourceIndex, { ice = [], targetKinds = [], count = 1
     available.push(index);
     const hasIce = Math.max(0, Number(ice?.[index]) || 0) > 0;
     const neededColor = neededKinds.has(board[index]);
-    if (hasIce || neededColor) useful.push(index);
+    const supportsDrop = neededIndices.has(index);
+    if (hasIce || neededColor || supportsDrop) useful.push(index);
   }
 
   const selected = [];
@@ -307,7 +313,7 @@ function specialBlast(index, special, board, colorTarget = null, targeting = {})
   return [];
 }
 
-function expandTriggeredSpecials({ board, specials, seedIndices, protectedIndices = [], colorTarget = null, ice = [], targetKinds = [], rng = null }) {
+function expandTriggeredSpecials({ board, specials, seedIndices, protectedIndices = [], colorTarget = null, ice = [], targetKinds = [], targetIndices = [], rng = null }) {
   const clear = new Set(seedIndices);
   const protectedSet = new Set(protectedIndices);
   const queue = [...clear];
@@ -320,7 +326,7 @@ function expandTriggeredSpecials({ board, specials, seedIndices, protectedIndice
     seen.add(index);
     const special = specials[index];
     if (!special) continue;
-    const blast = specialBlast(index, special, board, colorTarget, { ice, targetKinds, rng });
+    const blast = specialBlast(index, special, board, colorTarget, { ice, targetKinds, targetIndices, rng });
     triggered.push({ index, special, cleared: blast.slice() });
     for (const target of blast) {
       if (protectedSet.has(target)) continue;
@@ -367,25 +373,25 @@ function comboClear(board, specials, from, to, options = {}) {
   if (!a || !b) return null;
 
   if (a === SPECIAL.FISH && b === SPECIAL.FISH) {
-    const targets = fishTargets(board, to, { ice: options.ice, targetKinds: options.targetKinds, count: 3, exclude: [from, to], rng: options.rng });
+    const targets = fishTargets(board, to, { ice: options.ice, targetKinds: options.targetKinds, targetIndices: options.targetIndices, count: 3, exclude: [from, to], rng: options.rng });
     return { kind: "fish+fish", indices: [...new Set([from, to, ...targets])], colorTarget: null };
   }
   if ((a === SPECIAL.FISH && b === SPECIAL.BOMB) || (b === SPECIAL.FISH && a === SPECIAL.BOMB)) {
     const fishIndex = a === SPECIAL.FISH ? from : to;
-    const target = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 1, exclude: [from, to], rng: options.rng })[0] ?? fishIndex;
+    const target = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, targetIndices: options.targetIndices, count: 1, exclude: [from, to], rng: options.rng })[0] ?? fishIndex;
     return { kind: "fish+bomb", indices: [...new Set([from, to, ...areaAround(target, 1)])], colorTarget: null };
   }
   const fishStripes = [SPECIAL.STRIPE_H, SPECIAL.STRIPE_V];
   if ((a === SPECIAL.FISH && fishStripes.includes(b)) || (b === SPECIAL.FISH && fishStripes.includes(a))) {
     const fishIndex = a === SPECIAL.FISH ? from : to;
     const stripe = a === SPECIAL.FISH ? b : a;
-    const target = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 1, exclude: [from, to], rng: options.rng })[0] ?? fishIndex;
+    const target = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, targetIndices: options.targetIndices, count: 1, exclude: [from, to], rng: options.rng })[0] ?? fishIndex;
     const line = stripe === SPECIAL.STRIPE_H ? rowIndices(rowOf(target)) : colIndices(colOf(target));
     return { kind: "fish+stripe", indices: [...new Set([from, to, ...line])], colorTarget: null };
   }
   if ((a === SPECIAL.FISH && b === SPECIAL.COLOR) || (b === SPECIAL.FISH && a === SPECIAL.COLOR)) {
     const fishIndex = a === SPECIAL.FISH ? from : to;
-    const targets = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, count: 5, exclude: [from, to], rng: options.rng });
+    const targets = fishTargets(board, fishIndex, { ice: options.ice, targetKinds: options.targetKinds, targetIndices: options.targetIndices, count: 5, exclude: [from, to], rng: options.rng });
     return { kind: "fish+color", indices: [...new Set([from, to, ...targets])], colorTarget: null };
   }
 
@@ -444,6 +450,7 @@ function colorSwapClear(board, specials, from, to) {
 export function resolveSpecialCascades(board, specials, rng, {
   ice = [],
   targetKinds = [],
+  targetIndices = [],
   startingCascade = 1,
   from = null,
   to = null,
@@ -481,6 +488,7 @@ export function resolveSpecialCascades(board, specials, rng, {
       colorTarget: forcedStep?.colorTarget ?? null,
       ice: currentIce,
       targetKinds,
+      targetIndices,
       rng,
     });
     const matched = [...expanded.clear].sort((a, b) => a - b);
@@ -675,10 +683,5 @@ export function applySpecialHammer(board, specials, index, rng, options = {}) {
 }
 
 export function applySpecialLevelProgress(levelDefinition, progress, result) {
-  const next = {
-    collected: Array.from({ length: TILE_KINDS }, (_, kind) => Math.max(0, Number(progress?.collected?.[kind]) || 0)),
-    ice: normalizeIce(result?.iceAfter ?? result?.ice ?? progress?.ice),
-  };
-  addKindCounts(next.collected, result?.clearedKindCounts);
-  return next;
+  return applyLevelProgress(levelDefinition, progress, result);
 }

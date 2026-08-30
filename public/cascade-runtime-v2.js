@@ -12,6 +12,7 @@ import {
   createLevelProgress,
   createRng,
   describeLevelObjective,
+  dropSupportIndices,
   emptySpecials,
   objectiveComplete,
 } from "./cascade-special-engine.js";
@@ -30,7 +31,7 @@ const VALID_SPECIALS = new Set(Object.values(SPECIAL));
 const BLITZ_SECONDS = 30;
 const BLITZ_AFTER_LEVELS = Object.freeze(new Set([
   5, 12, 20, 30, 45, 60, 75, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290,
-  310, 330, 350, 370, 390, 410, 430,
+  310, 330, 350, 370, 390, 410, 430, 450, 470, 490, 510, 530, 550, 570, 590,
 ]));
 const LEVEL_MAP_WINDOW = 30;
 const PRESENTATION = Object.freeze({
@@ -182,6 +183,14 @@ function saveActiveRun() {
     levelProgress: {
       collected: Array.isArray(levelProgress?.collected) ? levelProgress.collected.slice() : [],
       ice: Array.isArray(levelProgress?.ice) ? levelProgress.ice.slice() : [],
+      drop: levelProgress?.drop
+        ? {
+            delivered: Number(levelProgress.drop.delivered) || 0,
+            total: Number(levelProgress.drop.total) || 0,
+            tokens: (levelProgress.drop.tokens || []).map((token) => ({ ...token })),
+            exits: (levelProgress.drop.exits || []).slice(),
+          }
+        : null,
     },
     rngState: boardRng.snapshot(),
     savedAt: Date.now(),
@@ -211,12 +220,17 @@ function loadActiveRun(levelNumber) {
     const ice = parsed.levelProgress.ice.map((value) => Math.max(0, Math.floor(Number(value) || 0)));
     const rngState = Number(parsed.rngState) >>> 0;
     if (!rngState) return null;
+    const restoredProgress = applySpecialLevelProgress(level, {
+      collected,
+      ice,
+      drop: parsed.levelProgress?.drop,
+    }, {});
     return {
       board: savedBoard,
       specials: parsed.specials.slice(),
       score: savedScore,
       movesRemaining: savedMoves,
-      levelProgress: { collected, ice },
+      levelProgress: restoredProgress,
       rngState,
       savedAt: Number(parsed.savedAt) || 0,
     };
@@ -338,6 +352,11 @@ function remainingTargetKinds() {
     .map((goal) => goal.kind);
 }
 
+function remainingDropSupportIndices() {
+  if (mode !== "normal") return [];
+  return dropSupportIndices(levelProgress);
+}
+
 function specialName(value) {
   if (value === SPECIAL.STRIPE_H || value === SPECIAL.STRIPE_V) return "striped line clearer";
   if (value === SPECIAL.BOMB) return "burst bomb";
@@ -352,6 +371,8 @@ function renderBoard() {
     const tile = document.createElement("button");
     const special = specials[index];
     const iceLayers = mode === "normal" ? Math.max(0, Number(levelProgress?.ice?.[index]) || 0) : 0;
+    const dropToken = mode === "normal" ? (levelProgress?.drop?.tokens || []).find((token) => Number(token.index) === index) : null;
+    const dropExit = mode === "normal" && (levelProgress?.drop?.exits || []).includes(index);
     tile.type = "button";
     tile.className = "cascade-tile";
     tile.dataset.kind = String(kind);
@@ -368,8 +389,26 @@ function renderBoard() {
       tile.dataset.ice = String(iceLayers);
       tile.classList.add("has-ice", iceLayers > 1 ? "ice-2" : "ice-1");
     }
+    if (dropExit) {
+      tile.dataset.dropExit = "true";
+      tile.classList.add("has-drop-exit");
+      const exitMark = document.createElement("span");
+      exitMark.className = "cascade-drop-exit";
+      exitMark.setAttribute("aria-hidden", "true");
+      exitMark.textContent = "⇩";
+      tile.append(exitMark);
+    }
+    if (dropToken) {
+      tile.dataset.dropObject = String(dropToken.id);
+      tile.classList.add("has-drop-object");
+      const dropMark = document.createElement("span");
+      dropMark.className = "cascade-drop-object";
+      dropMark.setAttribute("aria-hidden", "true");
+      dropMark.textContent = "◆";
+      tile.append(dropMark);
+    }
     tile.setAttribute("role", "gridcell");
-    tile.setAttribute("aria-label", `Tile ${index + 1}${special ? `, ${specialName(special)}` : ""}${iceLayers ? `, ${iceLayers} ice ${iceLayers === 1 ? "layer" : "layers"}` : ""}`);
+    tile.setAttribute("aria-label", `Tile ${index + 1}${special ? `, ${specialName(special)}` : ""}${iceLayers ? `, ${iceLayers} ice ${iceLayers === 1 ? "layer" : "layers"}` : ""}${dropToken ? ", drop object" : ""}${dropExit ? ", drop exit" : ""}`);
     if (selectedIndex === index) tile.classList.add("is-selected");
     if (hammerMode) tile.classList.add("is-hammer-target");
     tile.addEventListener("click", () => onTileClick(index));
@@ -388,6 +427,9 @@ function mapLabel(level) {
   if (level.difficulty === "hard" || level.hard) return "Hard";
   const hasIce = Boolean(level.objective?.ice);
   const hasCollect = Boolean(level.objective?.collect?.length);
+  const hasDrop = Boolean(level.objective?.drop);
+  if (hasDrop && (hasIce || hasCollect)) return "Drop mix";
+  if (hasDrop) return "Drop";
   if (hasIce && hasCollect) return "Mix";
   if (hasIce) return level.objective.ice.layers > 1 ? "Deep ice" : "Ice";
   if (hasCollect) return level.objective.collect.length > 1 ? "Dual" : "Collect";
@@ -442,11 +484,14 @@ function renderHelp() {
     helpElement.textContent = "Match five to make a color clearer. Swap it with a color to sweep that color off the board.";
   } else if (activeLevel.level === 6) {
     helpElement.textContent = "Make a 2×2 square of one color to create a Fish. Trigger it and it swims to something you still need.";
+  } else if (activeLevel.level === 451) {
+    helpElement.textContent = "New objective: drop every diamond to its glowing exit. Clear pieces underneath so gravity carries it down.";
   } else {
     const notes = [];
+    if (activeLevel.objective?.drop) notes.push("clear below each diamond to drop it into its exit");
     if (activeLevel.objective?.ice) notes.push("crack every iced cell");
     if (activeLevel.objective?.collect?.length) notes.push("collect the required colors");
-    if (activeLevel.mechanics?.includes("fish")) notes.push("make 2×2 Fish for useful objective hits");
+    if (activeLevel.mechanics?.includes("fish")) notes.push("Fish can help clear useful objective cells");
     notes.push("build specials and combine them when you can");
     helpElement.textContent = `${notes.join(" · ")}.`;
   }
@@ -625,6 +670,7 @@ async function presentResolvedResult(result) {
       specialTriggered: transition.triggeredSpecials?.length || 0,
       combo: transition.combo || null,
       iceHits: transition.iceHits.length,
+      dropsDelivered: Number(levelProgress?.drop?.delivered || 0),
     });
     await presentFallTransition(transition);
     await sleep(PRESENTATION.betweenCascades);
@@ -884,6 +930,7 @@ async function onTileClick(index) {
       ice: levelProgress.ice,
       rules: currentRules(),
       targetKinds: remainingTargetKinds(),
+      targetIndices: remainingDropSupportIndices(),
     });
     await presentResolvedResult(result);
     locked = false;
@@ -1028,7 +1075,7 @@ function startBlitz(completedLevel) {
   selectedIndex = null;
   hammerMode = false;
   locked = true;
-  levelProgress = { collected: [], ice: [] };
+  levelProgress = { collected: [], ice: [], drop: { delivered: 0, total: 0, tokens: [], exits: [] } };
   boardRng = createRng(((completedLevel * 0x85ebca6b) ^ Date.now()) >>> 0);
   board = createBoard({ rng: boardRng, rules: currentRules() });
   specials = emptySpecials();

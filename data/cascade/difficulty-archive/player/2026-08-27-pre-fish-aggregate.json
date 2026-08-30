@@ -1,0 +1,125 @@
+{
+  "archiveSchemaVersion": 1,
+  "archiveType": "cascade-player-aggregate",
+  "status": "historical",
+  "label": "pre-fish-family-playtest-aggregate",
+  "provenance": {
+    "originalFileName": "cascade-crush-playtest-2026-08-27T17-23-21.933Z.json",
+    "sourceSha256": "50cb04c3ca58de0f91e6bfe235a47004887852ef0be5e3d94a731eb24b651989",
+    "sourceBytes": 24171217,
+    "sourceSchemaVersion": 1,
+    "sourceGeneratedAt": "2026-08-27T17:23:19.328Z",
+    "rawSourceCommitted": false,
+    "rawSourcePolicy": "GameFrame is public. Raw telemetry contains player/session/attempt/device metadata and must remain outside this repository."
+  },
+  "classification": {
+    "preFish": true,
+    "fishRuleObserved": false,
+    "maxObservedLevel": 296,
+    "anonymousPlayerTraces": 5
+  },
+  "policy": {
+    "hammerAssistedAttemptsExcludedFromIntrinsicDifficulty": true,
+    "cleanFirstPassDefinition": "First resolved normal attempt per anonymous player trace and level; exclude the observation if that first resolved attempt used a hammer.",
+    "invalidSwapsUsedAsSkillSignal": false,
+    "playerIdentifiersArchived": false
+  },
+  "totals": {
+    "normalAttempts": 799,
+    "resolvedAttempts": 775,
+    "wins": 660,
+    "failed": 115,
+    "incomplete": 24,
+    "hammerAssistedAttempts": 37,
+    "hammerAssistedResolved": 36,
+    "unassistedResolvedAttempts": 739,
+    "unassistedResolvedWins": 628,
+    "unassistedResolvedWinRate": 0.8497970230040596,
+    "cleanFirstPassEligible": 557,
+    "cleanFirstPassWins": 491,
+    "cleanFirstPassRate": 0.881508078994614
+  },
+  "byDifficulty": {
+    "relief": {
+      "eligible": 115,
+      "wins": 111,
+      "cleanFirstPassRate": 0.9652173913043478
+    },
+    "normal": {
+      "eligible": 334,
+      "wins": 298,
+      "cleanFirstPassRate": 0.8922155688622755
+    },
+    "hard": {
+      "eligible": 55,
+      "wins": 44,
+      "cleanFirstPassRate": 0.8
+    },
+    "super-hard": {
+      "eligible": 53,
+      "wins": 38,
+      "cleanFirstPassRate": 0.7169811320754716
+    }
+  },
+  "byChapter": {
+    "onboarding": {
+      "eligible": 25,
+      "wins": 25,
+      "cleanFirstPassRate": 1
+    },
+    "special-mastery": {
+      "eligible": 91,
+      "wins": 91,
+      "cleanFirstPassRate": 1
+    },
+    "ice": {
+      "eligible": 58,
+      "wins": 47,
+      "cleanFirstPassRate": 0.8103448275862069
+    },
+    "collection": {
+      "eligible": 59,
+      "wins": 48,
+      "cleanFirstPassRate": 0.8135593220338984
+    },
+    "mixed": {
+      "eligible": 55,
+      "wins": 49,
+      "cleanFirstPassRate": 0.8909090909090909
+    },
+    "dual-collection": {
+      "eligible": 58,
+      "wins": 58,
+      "cleanFirstPassRate": 1
+    },
+    "layered-ice": {
+      "eligible": 59,
+      "wins": 47,
+      "cleanFirstPassRate": 0.7966101694915254
+    },
+    "layered-mix": {
+      "eligible": 60,
+      "wins": 52,
+      "cleanFirstPassRate": 0.8666666666666667
+    },
+    "precision": {
+      "eligible": 36,
+      "wins": 28,
+      "cleanFirstPassRate": 0.7777777777777778
+    },
+    "heavy-remix": {
+      "eligible": 30,
+      "wins": 22,
+      "cleanFirstPassRate": 0.7333333333333333
+    },
+    "expert-remix": {
+      "eligible": 26,
+      "wins": 24,
+      "cleanFirstPassRate": 0.9230769230769231
+    }
+  },
+  "notes": [
+    "The raw export contained known hammer-bank testing contamination. Hammer-assisted attempts are excluded from intrinsic difficulty.",
+    "This public snapshot intentionally omits display names, player IDs, session IDs, attempt IDs, event streams, and device metadata."
+  ]
+}

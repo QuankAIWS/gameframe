@@ -29,3 +29,9 @@ visual-results/
 # Local editor and operating-system files
 *.local
 .DS_Store
+
+# Local Cascade telemetry/profile working files (public-safe snapshots belong under data/cascade/difficulty-archive)
+/cascade-crush-playtest-*.json
+/cascade-crush-diagnostics-*.json
+/cascade-profile*.json
+/cascade-fragility*.txt

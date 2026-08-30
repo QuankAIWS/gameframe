@@ -94,6 +94,15 @@ Durable encounter→match restart/reconnect authority, shared-team tactical cont
 - GitHub Actions artifacts are transient, not the historical record. Meaningful Cascade bot baselines, calibration profiles, fragility reports, and human-playtest snapshots must be copied to the private archive with the GameFrame commit and workflow/run provenance before transient artifacts expire.
 - Raw Cascade player telemetry, stable player IDs, session IDs, and other private player-level records must stay in private storage. Public GameFrame may retain aggregate or anonymized analysis only.
 
+## Cascade public-safe difficulty mirror
+
+- `data/cascade/difficulty-archive/` is the public-safe compact mirror used for repository-local comparisons and CI integrity checks; it is **not** the canonical historical store.
+- The canonical long-term Cascade evidence archive remains the private `QuankAIWS/rpg-gm-runtime/archive/cascade-testing/` store.
+- Accepted bot-profile/fragility snapshots may be committed to the public mirror when they contain no private player data. Meaningful accepted evidence must also be retained in the private canonical archive with exact GameFrame commit and workflow provenance.
+- Sanitized anonymous player aggregates may live in the public mirror only when identities, session/attempt/event IDs, device metadata, and raw event streams are absent. The private raw source, when available, stays in the canonical private archive.
+- Never overwrite historical snapshots. Mark candidate evidence as candidate until the corresponding code is accepted.
+- Run `npm run cascade:archive:check` after public-mirror edits. Use `npm run cascade:archive -- --profile=... --out=...` to compact generated profiles.
+
 ## Development and validation posture
 
 - Develop consequential work on a dedicated branch.

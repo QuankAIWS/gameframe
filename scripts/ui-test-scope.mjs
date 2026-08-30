@@ -81,6 +81,12 @@ function isCascadeUiFile(file) {
     || /^test\/visual\/cascade.*\.spec\.mjs$/.test(file);
 }
 
+function isCascadeArchiveFile(file) {
+  return file === "scripts/cascade-archive-profile.mjs"
+    || file === "scripts/cascade-archive-check.mjs"
+    || file.startsWith("data/cascade/difficulty-archive/");
+}
+
 function isCascadeProfileFile(file) {
   return file === "scripts/cascade-profile.mjs"
     || file === "scripts/cascade-profile-compare.mjs"
@@ -131,6 +137,7 @@ export function classifyUiTestScope(paths) {
     casual: false,
     cascadeUi: false,
     cascadeProfile: false,
+    cascadeArchive: false,
     cascadeTelemetry: false,
     monsterMaster: false,
     playerPlatform: false,
@@ -150,6 +157,7 @@ export function classifyUiTestScope(paths) {
     if (isCasualFile(file)) scope.casual = true;
     if (isCascadeUiFile(file)) scope.cascadeUi = true;
     if (isCascadeProfileFile(file)) scope.cascadeProfile = true;
+    if (isCascadeArchiveFile(file)) scope.cascadeArchive = true;
     if (isCascadeTelemetryFile(file)) scope.cascadeTelemetry = true;
     if (isMonsterMasterFile(file)) scope.monsterMaster = true;
     if (exactPlayerFiles.has(file)) scope.playerPlatform = true;
@@ -174,6 +182,7 @@ async function main() {
         casual: true,
         cascadeUi: true,
         cascadeProfile: true,
+        cascadeArchive: true,
         cascadeTelemetry: true,
         monsterMaster: true,
         playerPlatform: true,

@@ -1,0 +1,1371 @@
+{
+  "archiveSchemaVersion": 1,
+  "archiveType": "cascade-fragility-log-snapshot",
+  "status": "candidate",
+  "label": "drop-expansion-candidate-451-600-fragility",
+  "provenance": {
+    "workflowRunId": 33207449713,
+    "workflowJobId": 98972137999,
+    "headSha": "9df9d91d237b0975bee7b338342c0d15bf33aae9",
+    "capturedFrom": "GitHub Actions job log",
+    "sourceHeader": "Cascade move fragility · human-skilled · 12 paired seeds/variant · levels 451-600"
+  },
+  "levelRange": {
+    "from": 451,
+    "to": 600,
+    "count": 150
+  },
+  "brittleLevels": [],
+  "levels": [
+    {
+      "level": 451,
+      "difficulty": "relief",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 452,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 453,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 454,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 455,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.67,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 456,
+      "difficulty": "relief",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 457,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 458,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 1,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 459,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 460,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.5,
+      "authoredWinRate": 0.5,
+      "plusOneWinRate": 0.5,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 461,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 462,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 463,
+      "difficulty": "normal",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 464,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 465,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.33,
+      "authoredWinRate": 0.42,
+      "plusOneWinRate": 0.42,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 466,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 1,
+      "swing": 0.17,
+      "brittle": false
+    },
+    {
+      "level": 467,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 468,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.75,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 469,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.5,
+      "authoredWinRate": 0.5,
+      "plusOneWinRate": 0.5,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 470,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 471,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 472,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.75,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 473,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 474,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 475,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.67,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 476,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.58,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 477,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 478,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.67,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 479,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.5,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.67,
+      "swing": 0.17,
+      "brittle": false
+    },
+    {
+      "level": 480,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.42,
+      "authoredWinRate": 0.5,
+      "plusOneWinRate": 0.58,
+      "swing": 0.17,
+      "brittle": false
+    },
+    {
+      "level": 481,
+      "difficulty": "relief",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 482,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 483,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 484,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 485,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.83,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 486,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 487,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 488,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 489,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 490,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 491,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 492,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 493,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 494,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 495,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.67,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 496,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 497,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.67,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 498,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 1,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 499,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.92,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 500,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.42,
+      "authoredWinRate": 0.42,
+      "plusOneWinRate": 0.42,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 501,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 502,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 503,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.5,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.58,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 504,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.83,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 505,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.67,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 506,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.83,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 507,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.42,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.58,
+      "swing": 0.17,
+      "brittle": false
+    },
+    {
+      "level": 508,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 509,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.42,
+      "authoredWinRate": 0.42,
+      "plusOneWinRate": 0.42,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 510,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 511,
+      "difficulty": "relief",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 512,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.92,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 513,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 1,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 514,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.42,
+      "authoredWinRate": 0.42,
+      "plusOneWinRate": 0.5,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 515,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 516,
+      "difficulty": "relief",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 517,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 518,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 519,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.92,
+      "swing": 0.25,
+      "brittle": false
+    },
+    {
+      "level": 520,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 521,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 522,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 523,
+      "difficulty": "normal",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 524,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 525,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0.17,
+      "brittle": false
+    },
+    {
+      "level": 526,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 527,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 528,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.67,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 529,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 530,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.75,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 531,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 532,
+      "difficulty": "normal",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 533,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 534,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.5,
+      "authoredWinRate": 0.5,
+      "plusOneWinRate": 0.5,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 535,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.75,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 536,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.67,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 537,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 538,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.42,
+      "authoredWinRate": 0.42,
+      "plusOneWinRate": 0.58,
+      "swing": 0.17,
+      "brittle": false
+    },
+    {
+      "level": 539,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.67,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 540,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.42,
+      "authoredWinRate": 0.5,
+      "plusOneWinRate": 0.5,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 541,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 542,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 543,
+      "difficulty": "normal",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 544,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 545,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 546,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 547,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 548,
+      "difficulty": "normal",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 549,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 550,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.5,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.67,
+      "swing": 0.17,
+      "brittle": false
+    },
+    {
+      "level": 551,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 552,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.5,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.58,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 553,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.75,
+      "swing": 0.17,
+      "brittle": false
+    },
+    {
+      "level": 554,
+      "difficulty": "normal",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 555,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 556,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 557,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.5,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.58,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 558,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.67,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 559,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 560,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.92,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 561,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 562,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 563,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 564,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.75,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 565,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.75,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 566,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.83,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.83,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 567,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.83,
+      "swing": 0.25,
+      "brittle": false
+    },
+    {
+      "level": 568,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.92,
+      "swing": 0.17,
+      "brittle": false
+    },
+    {
+      "level": 569,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.58,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 570,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.33,
+      "authoredWinRate": 0.33,
+      "plusOneWinRate": 0.42,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 571,
+      "difficulty": "relief",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 572,
+      "difficulty": "normal",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 573,
+      "difficulty": "normal",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 574,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.92,
+      "swing": 0.25,
+      "brittle": false
+    },
+    {
+      "level": 575,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 576,
+      "difficulty": "relief",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 577,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 578,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.83,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 579,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 580,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.83,
+      "plusOneWinRate": 0.92,
+      "swing": 0.17,
+      "brittle": false
+    },
+    {
+      "level": 581,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 582,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.67,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 583,
+      "difficulty": "normal",
+      "minusOneWinRate": 1,
+      "authoredWinRate": 1,
+      "plusOneWinRate": 1,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 584,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.67,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 585,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.92,
+      "swing": 0.33,
+      "brittle": false
+    },
+    {
+      "level": 586,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 587,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 588,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.58,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 589,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.67,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 590,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.42,
+      "authoredWinRate": 0.5,
+      "plusOneWinRate": 0.5,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 591,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 592,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.75,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 1,
+      "swing": 0.25,
+      "brittle": false
+    },
+    {
+      "level": 593,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 594,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.67,
+      "authoredWinRate": 0.75,
+      "plusOneWinRate": 0.75,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 595,
+      "difficulty": "hard",
+      "minusOneWinRate": 0.5,
+      "authoredWinRate": 0.5,
+      "plusOneWinRate": 0.58,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 596,
+      "difficulty": "relief",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 0.92,
+      "swing": 0,
+      "brittle": false
+    },
+    {
+      "level": 597,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.58,
+      "authoredWinRate": 0.67,
+      "plusOneWinRate": 0.75,
+      "swing": 0.17,
+      "brittle": false
+    },
+    {
+      "level": 598,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.92,
+      "authoredWinRate": 0.92,
+      "plusOneWinRate": 1,
+      "swing": 0.08,
+      "brittle": false
+    },
+    {
+      "level": 599,
+      "difficulty": "normal",
+      "minusOneWinRate": 0.5,
+      "authoredWinRate": 0.58,
+      "plusOneWinRate": 0.67,
+      "swing": 0.17,
+      "brittle": false
+    },
+    {
+      "level": 600,
+      "difficulty": "super-hard",
+      "minusOneWinRate": 0.5,
+      "authoredWinRate": 0.5,
+      "plusOneWinRate": 0.67,
+      "swing": 0.17,
+      "brittle": false
+    }
+  ]
+}

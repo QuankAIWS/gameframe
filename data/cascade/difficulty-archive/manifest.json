@@ -1,0 +1,150 @@
+{
+  "archiveSchemaVersion": 1,
+  "purpose": "Public-safe compact mirror of Cascade difficulty evidence for repository-local comparison and CI integrity; canonical long-term history is private.",
+  "publicRepository": true,
+  "rawPlayerTelemetryAllowed": false,
+  "entries": [
+    {
+      "path": "bot/2026-08-20-pre-fish-1-300.json",
+      "status": "historical",
+      "label": "pre-fish-1-300-six-seed-sweep",
+      "kind": "profile",
+      "levelRange": {
+        "from": 1,
+        "to": 300,
+        "count": 300
+      },
+      "workflowRunId": 32412022965,
+      "workflowJobId": 96564454189,
+      "headSha": "deb94d8e655da4c7148d7dd143d78e7de751e788"
+    },
+    {
+      "path": "bot/2026-08-27-first-human-persona-1-450.json",
+      "status": "historical",
+      "label": "first-human-persona-1-450",
+      "kind": "profile",
+      "levelRange": {
+        "from": 1,
+        "to": 450,
+        "count": 450
+      },
+      "workflowRunId": 33115564608,
+      "workflowJobId": 98669338573,
+      "headSha": "2c08dfe14db56b9d1769076a327b1873d9be298e"
+    },
+    {
+      "path": "bot/2026-08-28-pre-retune-301-450.json",
+      "status": "historical",
+      "label": "pre-retune-301-450-twenty-human-seed",
+      "kind": "profile",
+      "levelRange": {
+        "from": 301,
+        "to": 450,
+        "count": 150
+      },
+      "workflowRunId": 33197069089,
+      "workflowJobId": 98936894387,
+      "headSha": "971b19670baa88cc451e192459f86ea4a68111a3"
+    },
+    {
+      "path": "player/2026-08-27-pre-fish-aggregate.json",
+      "status": "historical",
+      "label": "pre-fish-family-playtest-aggregate",
+      "kind": "player-aggregate",
+      "levelRange": {
+        "from": 1,
+        "to": 296,
+        "count": 296
+      },
+      "workflowRunId": null,
+      "workflowJobId": null,
+      "headSha": null
+    },
+    {
+      "path": "bot/2026-08-28-accepted-1-450.json",
+      "status": "accepted",
+      "label": "accepted-1-450",
+      "kind": "profile",
+      "levelRange": {
+        "from": 1,
+        "to": 450,
+        "count": 450
+      },
+      "workflowRunId": 33202830417,
+      "workflowJobId": 98956364677,
+      "headSha": "6b38c2304783f2086d19f17910baf575e7dad3a4"
+    },
+    {
+      "path": "bot/2026-08-28-accepted-301-450.json",
+      "status": "accepted",
+      "label": "accepted-301-450-twenty-human-seed",
+      "kind": "profile",
+      "levelRange": {
+        "from": 301,
+        "to": 450,
+        "count": 150
+      },
+      "workflowRunId": 33202830417,
+      "workflowJobId": 98956364596,
+      "headSha": "6b38c2304783f2086d19f17910baf575e7dad3a4"
+    },
+    {
+      "path": "bot/2026-08-28-accepted-301-450-fragility.json",
+      "status": "accepted",
+      "label": "accepted-301-450-fragility",
+      "kind": "fragility",
+      "levelRange": {
+        "from": 301,
+        "to": 450,
+        "count": 150
+      },
+      "workflowRunId": 33202830417,
+      "workflowJobId": 98956364716,
+      "headSha": "6b38c2304783f2086d19f17910baf575e7dad3a4"
+    },
+    {
+      "path": "bot/2026-08-28-candidate-1-600.json",
+      "status": "candidate",
+      "label": "drop-expansion-candidate-1-600",
+      "kind": "profile",
+      "levelRange": {
+        "from": 1,
+        "to": 600,
+        "count": 600
+      },
+      "workflowRunId": 33207449713,
+      "workflowJobId": 98972138010,
+      "headSha": "9df9d91d237b0975bee7b338342c0d15bf33aae9"
+    },
+    {
+      "path": "bot/2026-08-28-candidate-451-600.json",
+      "status": "candidate",
+      "label": "drop-expansion-candidate-451-600-twenty-human-seed",
+      "kind": "profile",
+      "levelRange": {
+        "from": 451,
+        "to": 600,
+        "count": 150
+      },
+      "workflowRunId": 33207449713,
+      "workflowJobId": 98972137995,
+      "headSha": "9df9d91d237b0975bee7b338342c0d15bf33aae9"
+    },
+    {
+      "path": "bot/2026-08-28-candidate-451-600-fragility.json",
+      "status": "candidate",
+      "label": "drop-expansion-candidate-451-600-fragility",
+      "kind": "fragility",
+      "levelRange": {
+        "from": 451,
+        "to": 600,
+        "count": 150
+      },
+      "workflowRunId": 33207449713,
+      "workflowJobId": 98972137999,
+      "headSha": "9df9d91d237b0975bee7b338342c0d15bf33aae9"
+    }
+  ],
+  "canonicalPrivateArchive": "QuankAIWS/rpg-gm-runtime:archive/cascade-testing/",
+  "publicMirror": true
+}

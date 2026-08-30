@@ -11,6 +11,7 @@ import {
   createBoard,
   createLevelProgress,
   createRng,
+  dropSupportIndices,
   findMatches,
   listLegalMoves,
   objectiveComplete,
@@ -19,12 +20,12 @@ import {
 import { chooseMove, profileCascadeLevels, profileCascadeMoveFragility, runCascadeLevel, targetFirstPassBand } from "./cascade-simulator.js";
 import { analyzePlaytestExport } from "./cascade-playtest-analysis.js";
 
-test("Cascade ships 450 levels on a campaign model sized for 10000", () => {
-  assert.equal(LEVEL_COUNT, 450);
+test("Cascade ships 600 levels on a campaign model sized for 10000", () => {
+  assert.equal(LEVEL_COUNT, 600);
   assert.equal(CAMPAIGN_CAPACITY, 10000);
   assert.equal(CAMPAIGN_MILESTONE, 3000);
   assert.equal(CHAPTER_SIZE, 30);
-  assert.equal(CASCADE_LEVELS.length, 450);
+  assert.equal(CASCADE_LEVELS.length, 600);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
   assert.equal(CASCADE_LEVELS[0].moves, 20);
   assert.equal(CASCADE_LEVELS[4].target, 2375);
@@ -78,6 +79,18 @@ test("Cascade ships 450 levels on a campaign model sized for 10000", () => {
   assert.equal(CASCADE_LEVELS[420].chapter, "veteran-remix");
   assert.equal(CASCADE_LEVELS[449].chapter, "veteran-capstone");
   assert.equal(CASCADE_LEVELS[449].difficulty, "super-hard");
+  assert.equal(CASCADE_LEVELS[450].chapter, "drop-intro");
+  assert.ok(CASCADE_LEVELS[450].mechanics.includes("drop"));
+  assert.equal(CASCADE_LEVELS[450].objective.drop.count, 1);
+  assert.equal(CASCADE_LEVELS[480].chapter, "drop-ice");
+  assert.ok(CASCADE_LEVELS[480].objective.drop);
+  assert.ok(CASCADE_LEVELS[480].objective.ice);
+  assert.equal(CASCADE_LEVELS[510].chapter, "drop-collection");
+  assert.ok(CASCADE_LEVELS[510].objective.collect.length > 0);
+  assert.equal(CASCADE_LEVELS[540].chapter, "drop-layered");
+  assert.equal(CASCADE_LEVELS[540].objective.ice.layers, 2);
+  assert.equal(CASCADE_LEVELS[570].chapter, "drop-mastery");
+  assert.ok(CASCADE_LEVELS[599].objective.drop.count >= 3);
   assert.equal(CASCADE_LEVELS[449].objective.collect.length, 2);
   assert.equal(CASCADE_LEVELS[449].objective.ice.layers, 2);
 });
@@ -89,6 +102,68 @@ test("levels 301-450 stay in the early-campaign difficulty band while preserving
   assert.equal(CASCADE_LEVELS[390].moves, 28, "advanced mix gets one additional early-campaign move");
   assert.equal(CASCADE_LEVELS[420].moves, 28, "veteran remix gets one additional early-campaign move");
   assert.equal(CASCADE_LEVELS[449].moves, 26, "the level-450 capstone should not use mature-campaign pressure");
+});
+
+test("the first 150 drop levels teach with at most three objects and reachable starting depth", () => {
+  for (const definition of CASCADE_LEVELS.slice(450, 600)) {
+    assert.ok(definition.objective.drop, `level ${definition.level} should include a drop objective`);
+    assert.ok(definition.objective.drop.count >= 1 && definition.objective.drop.count <= 3);
+    const progress = createLevelProgress(definition);
+    assert.equal(progress.drop.total, definition.objective.drop.count);
+    for (const token of progress.drop.tokens) {
+      const row = Math.floor(token.index / 8);
+      assert.ok(row >= 3 && row <= 5, `level ${definition.level} drop token should start in the teaching depth band`);
+      assert.equal(token.index % 8, token.exit % 8);
+    }
+  }
+});
+
+test("drop objectives descend through cleared support cells and complete at exits", () => {
+  const definition = CASCADE_LEVELS[450];
+  const progress = createLevelProgress(definition);
+  assert.equal(progress.drop.total, 1);
+  assert.equal(progress.drop.delivered, 0);
+  assert.equal(progress.drop.tokens.length, 1);
+
+  const token = progress.drop.tokens[0];
+  const col = token.index % 8;
+  const startRow = Math.floor(token.index / 8);
+  const support = token.index + 8;
+  assert.deepEqual(dropSupportIndices(progress), [support]);
+
+  const before = Array.from({ length: 64 }, (_, index) => index % 6);
+  const cleared = before.slice();
+  cleared[support] = null;
+  const after = before.slice();
+  const advanced = applyLevelProgress(definition, progress, {
+    clearedKindCounts: Array(6).fill(0),
+    before,
+    cleared,
+    after,
+    iceAfter: progress.ice,
+  });
+  assert.equal(Math.floor(advanced.drop.tokens[0].index / 8), startRow + 1);
+
+  let current = advanced;
+  while (current.drop.tokens.length) {
+    const moving = current.drop.tokens[0];
+    const row = Math.floor(moving.index / 8);
+    const nextIndex = moving.index + 8;
+    const stepBefore = Array.from({ length: 64 }, (_, index) => index % 6);
+    const stepCleared = stepBefore.slice();
+    if (row < 7) stepCleared[nextIndex] = null;
+    current = applyLevelProgress(definition, current, {
+      clearedKindCounts: Array(6).fill(0),
+      before: stepBefore,
+      cleared: stepCleared,
+      after: stepBefore,
+      iceAfter: current.ice,
+    });
+  }
+
+  assert.equal(current.drop.delivered, 1);
+  assert.equal(objectiveComplete(definition, current, definition.target), true);
+  assert.equal(col, current.drop.exits[0] % 8);
 });
 
 test("late-campaign outlier smoothing preserves the wave while fixing profiler walls", () => {
@@ -114,6 +189,15 @@ test("late-campaign outlier smoothing preserves the wave while fixing profiler w
   assert.equal(CASCADE_LEVELS[448].objective.collect[0].count, 15, "level 449 should reduce collection pressure");
   assert.equal(CASCADE_LEVELS[448].objective.ice.count, 6, "level 449 should reduce diagonal-ice pressure");
   assert.equal(CASCADE_LEVELS[448].objective.ice.pattern, "center");
+});
+
+test("drop-layered walls receive targeted geometry compensation", () => {
+  assert.equal(CASCADE_LEVELS[564].objective.ice.pattern, "center");
+  assert.ok(CASCADE_LEVELS[564].objective.ice.count <= 6);
+  assert.ok(CASCADE_LEVELS[564].moves >= 30);
+  assert.equal(CASCADE_LEVELS[569].objective.ice.pattern, "center");
+  assert.ok(CASCADE_LEVELS[569].objective.ice.count <= 6);
+  assert.ok(CASCADE_LEVELS[569].moves >= 30);
 });
 
 test("difficulty uses repeating tension waves instead of a monotonic staircase", () => {
@@ -277,7 +361,7 @@ test("campaign first-pass targets ramp gradually across the 10000-level horizon"
   assert.ok(milestone.min > mature.min);
 });
 
-test("all 450 levels exercise the objective-aware lookahead bot without engine errors", () => {
+test("all 600 levels exercise the objective-aware lookahead bot without engine errors", () => {
   for (const level of CASCADE_LEVELS) {
     const run = runCascadeLevel({ level, seed: 1000 + level.level, strategy: "lookahead" });
     assert.ok(run.moveHistory.length > 0, `lookahead made no moves on level ${level.level}`);
@@ -313,9 +397,9 @@ test("move fragility profiling uses paired seeds across plus/minus one move", ()
   }
 });
 
-test("sample profiling covers all 450 levels and records solver and human-persona sensitivity", () => {
+test("sample profiling covers all 600 levels and records solver and human-persona sensitivity", () => {
   const report = profileCascadeLevels({ runsPerLevel: 1, humanRunsPerLevel: 1 });
-  assert.equal(report.levels.length, 450);
+  assert.equal(report.levels.length, 600);
   for (const level of report.levels) {
     assert.ok(level.strategies.random);
     assert.ok(level.strategies["human-casual"]);
