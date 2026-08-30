@@ -251,51 +251,146 @@
   );
 }
 
-/* Fish is a large, literal smart-target marker so it remains obvious on phones
- * and to older eyes while the candy family underneath is still visible. */
+/* Butterfly is the player-facing 2×2 homing special. The underlying candy
+ * stays visible at a smaller scale so its color family still reads immediately.
+ * data-special="fish" remains the persisted engine token for save compatibility. */
+.cascade-tile[data-special="fish"]::before {
+  transform: scale(.66);
+  filter: drop-shadow(0 2px 0 rgba(255,255,255,.66)) drop-shadow(0 4px 5px rgba(82,57,113,.18));
+}
+
 .cascade-tile[data-special="fish"] .cascade-special-mark {
   position: absolute;
-  z-index: 3;
-  left: 20%;
-  top: 31%;
-  width: 58%;
-  height: 34%;
+  z-index: 4;
+  left: 44%;
+  top: 27%;
+  width: 12%;
+  height: 46%;
   inset: auto;
   overflow: visible;
-  border: 2px solid rgba(72, 61, 113, .46);
-  border-radius: 52% 64% 64% 52%;
-  background:
-    linear-gradient(155deg, rgba(255,255,255,.96) 0 18%, #a8f3ff 36%, #67d8f2 63%, #ffd86d 100%);
-  box-shadow:
-    inset 0 -3px 0 rgba(66,112,151,.2),
-    0 0 0 1px rgba(255,255,255,.72),
-    0 3px 6px rgba(82,57,113,.28);
-  transform: rotate(-7deg);
+  border: 2px solid rgba(82,57,113,.36);
+  border-radius: 50% 50% 58% 58%;
+  background: radial-gradient(circle at 38% 18%, rgba(255,255,255,.98) 0 10%, transparent 11%), linear-gradient(180deg, rgba(255,255,255,.8), var(--tile-a) 38%, var(--tile-b));
+  box-shadow: 0 0 0 1px rgba(255,255,255,.72), 0 4px 7px rgba(82,57,113,.25);
   opacity: 1;
 }
 
-.cascade-tile[data-special="fish"] .cascade-special-mark::before {
-  content: "";
-  position: absolute;
-  left: -31%;
-  top: 4%;
-  width: 38%;
-  height: 90%;
-  background: linear-gradient(135deg, #7ee5f7, #ffd86d);
-  clip-path: polygon(100% 50%, 0 0, 18% 50%, 0 100%);
-  filter: drop-shadow(-1px 2px 1px rgba(82,57,113,.22));
-}
-
+.cascade-tile[data-special="fish"] .cascade-special-mark::before,
 .cascade-tile[data-special="fish"] .cascade-special-mark::after {
   content: "";
   position: absolute;
-  right: 14%;
-  top: 24%;
-  width: 12%;
-  aspect-ratio: 1;
+  top: -5%;
+  width: 245%;
+  height: 84%;
+  border: 2px solid rgba(255,255,255,.78);
+  background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.92) 0 9%, transparent 10%), linear-gradient(145deg, color-mix(in srgb, var(--tile-a) 82%, white), var(--tile-b));
+  box-shadow: inset 0 -3px 0 rgba(82,57,113,.12), 0 2px 5px rgba(82,57,113,.2);
+  clip-path: polygon(50% 2%, 82% 12%, 100% 38%, 91% 66%, 64% 88%, 48% 100%, 24% 77%, 5% 54%, 9% 25%, 30% 8%);
+}
+
+.cascade-tile[data-special="fish"] .cascade-special-mark::before {
+  right: 72%;
+  transform-origin: 100% 54%;
+  animation: cascade-butterfly-wing-left 980ms ease-in-out infinite alternate;
+}
+
+.cascade-tile[data-special="fish"] .cascade-special-mark::after {
+  left: 72%;
+  transform-origin: 0 54%;
+  animation: cascade-butterfly-wing-right 980ms ease-in-out infinite alternate;
+}
+
+.cascade-tile[data-special="fish"].is-special-triggered .cascade-special-mark {
+  animation: cascade-butterfly-launch .28s ease-out both;
+}
+
+.cascade-butterfly-flight {
+  position: fixed;
+  z-index: 110;
+  left: 0;
+  top: 0;
+  width: clamp(26px, 4.6vw, 48px);
+  height: clamp(26px, 4.6vw, 48px);
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(82,57,113,.28));
+  will-change: transform, opacity;
+}
+
+.cascade-butterfly-flight i {
+  position: absolute;
+  left: 43%;
+  top: 20%;
+  width: 14%;
+  height: 58%;
   border-radius: 50%;
-  background: #2d2440;
-  box-shadow: 0 0 0 2px rgba(255,255,255,.92);
+  background: linear-gradient(180deg, #fff, var(--tile-a, #ff5eaa) 38%, var(--tile-b, #d53d86));
+  box-shadow: 0 0 0 1px rgba(255,255,255,.8);
+}
+
+.cascade-butterfly-flight::before,
+.cascade-butterfly-flight::after {
+  content: "";
+  position: absolute;
+  top: 4%;
+  width: 49%;
+  height: 73%;
+  border: 2px solid rgba(255,255,255,.82);
+  background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.96) 0 8%, transparent 9%), linear-gradient(145deg, color-mix(in srgb, var(--tile-a, #ff5eaa) 82%, white), var(--tile-b, #d53d86));
+  clip-path: polygon(50% 2%, 82% 12%, 100% 38%, 91% 66%, 64% 88%, 48% 100%, 24% 77%, 5% 54%, 9% 25%, 30% 8%);
+}
+
+.cascade-butterfly-flight::before {
+  right: 51%;
+  transform-origin: 100% 55%;
+  animation: cascade-butterfly-flight-wing 150ms ease-in-out infinite alternate;
+}
+
+.cascade-butterfly-flight::after {
+  left: 51%;
+  transform-origin: 0 55%;
+  animation: cascade-butterfly-flight-wing-right 150ms ease-in-out infinite alternate;
+}
+
+.cascade-butterfly-flight[data-kind="0"] { --tile-a: #ff8fc5; --tile-b: #e84994; }
+.cascade-butterfly-flight[data-kind="1"] { --tile-a: #8eecff; --tile-b: #38bcdc; }
+.cascade-butterfly-flight[data-kind="2"] { --tile-a: #ffe982; --tile-b: #f4b932; }
+.cascade-butterfly-flight[data-kind="3"] { --tile-a: #9ce9a7; --tile-b: #4fbc68; }
+.cascade-butterfly-flight[data-kind="4"] { --tile-a: #c39aff; --tile-b: #8c58dc; }
+.cascade-butterfly-flight[data-kind="5"] { --tile-a: #ffc184; --tile-b: #f07a3e; }
+
+@keyframes cascade-butterfly-wing-left {
+  from { transform: rotate(-27deg) scaleX(.76); }
+  to { transform: rotate(-10deg) scaleX(1.04); }
+}
+
+@keyframes cascade-butterfly-wing-right {
+  from { transform: scaleX(-.76) rotate(-27deg); }
+  to { transform: scaleX(-1.04) rotate(-10deg); }
+}
+
+@keyframes cascade-butterfly-flight-wing {
+  from { transform: scaleX(.56) rotate(-12deg); }
+  to { transform: scaleX(1.04) rotate(7deg); }
+}
+
+@keyframes cascade-butterfly-flight-wing-right {
+  from { transform: scaleX(-.56) rotate(-12deg); }
+  to { transform: scaleX(-1.04) rotate(7deg); }
+}
+
+@keyframes cascade-butterfly-launch {
+  0% { transform: translateY(0) scale(1); }
+  55% { transform: translateY(-8%) scale(1.18) rotate(-4deg); }
+  100% { transform: translateY(-14%) scale(.82) rotate(5deg); opacity: .2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade-tile[data-special="fish"] .cascade-special-mark::before,
+  .cascade-tile[data-special="fish"] .cascade-special-mark::after,
+  .cascade-butterfly-flight::before,
+  .cascade-butterfly-flight::after {
+    animation-duration: 1ms !important;
+  }
 }
 
 /* The color clearer is intentionally the one exception: it is a unique rainbow
