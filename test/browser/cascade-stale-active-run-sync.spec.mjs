@@ -162,15 +162,18 @@ test("a veteran active run and open Memory Bloom survive same-frontier reconcili
     await page.goto("/cascade.html");
     await expect(page.locator("#level-number")).toHaveText("751", { timeout: 8_000 });
     await waitForActiveRun(page, 751);
-    const before = await page.evaluate(({ activeRunKey }) => {
+    const before = await page.evaluate(() => {
       const run = window.cascadeResearch.exportActiveRun();
-      const bloomIndex = run.levelProgress.blooms.symbols.findIndex((symbol) => symbol >= 0);
+      const live = window.cascadeResearch.exportLevel();
+      const bloomIndex = live.progress.blooms.symbols.findIndex((symbol) => symbol >= 0);
       if (bloomIndex < 0) throw new Error("Expected level 751 to contain a Memory Bloom");
-      run.levelProgress.blooms.activeIndex = bloomIndex;
-      localStorage.setItem(activeRunKey, JSON.stringify(run));
+      live.progress.blooms.activeIndex = bloomIndex;
       return { run, bloomIndex };
-    }, { activeRunKey: ACTIVE_RUN_KEY });
+    });
 
+    // The runtime owns active-run persistence and commits the live state on
+    // pagehide. Exercise that production path rather than editing storage
+    // behind the runtime and having pagehide correctly overwrite the edit.
     await page.reload();
     await expect(page.locator("#level-number")).toHaveText("751", { timeout: 8_000 });
     await waitForActiveRun(page, 751);
