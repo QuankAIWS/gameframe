@@ -117,9 +117,9 @@ Use controlled combinations of:
 
 Do not stack two unfamiliar cognitive systems with high raw move pressure.
 
-### 901–950 — Generators / producers
+### 901–950 — Crystal Producers / generators
 
-Primary rule: board elements create objective pieces or blockers when activated.
+Primary rule: fixed Crystal Producers manufacture objective crystals when clears activate them.
 
 Decision changes:
 
@@ -127,11 +127,11 @@ Decision changes:
 - activation order and producer access matter;
 - producer + lock + Drop combinations create dependency chains.
 
-Producer output must be deterministic under board RNG and fully represented in simulator/replay tooling.
+Producer placement and output must be deterministic under board RNG and fully represented in simulator/replay tooling. The implemented Producer uses a visible remaining-charge count; each qualifying adjacent/direct clear spends one charge and manufactures one crystal.
 
-### 951–1,000 — Color-conditional / attention elements
+### 951–1,000 — Color Wards / visible attention elements
 
-Primary rule: a fixed element responds to a visible or remembered color/symbol condition.
+Primary rule: a fixed Color Ward visibly shows the color-symbol it wants and opens when that color is cleared beside it. This is a selective-attention rule, not a hidden-memory test.
 
 Decision changes:
 
@@ -139,7 +139,7 @@ Decision changes:
 - visual search and selective attention become more important;
 - mature Recall-Lock combinations can coexist with non-memory color-conditional elements.
 
-Level 1,000 is a major human-data and cognitive-mechanic checkpoint.
+Level 1,000 is a major human-data and cognitive-mechanic checkpoint. The owner explicitly requested stopping the current production pass at 1,000, so 901–1,000 is a 100-level milestone slice; 1,001–1,050 remains the unfinished tail of the normal 150-level production batch.
 
 ### 1,001–1,050 — Mastery plus Pattern Echo pilot
 
