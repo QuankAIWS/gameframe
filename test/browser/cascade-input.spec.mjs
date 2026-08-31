@@ -81,6 +81,15 @@ test("Cascade visibly picks up a dragged tile, supports cancellation, and preser
   await expect(page.locator(".is-drag-origin, .is-drag-target")).toHaveCount(0);
   await expect(page.locator(".cascade-drag-ghost")).toHaveCount(0, { timeout: 1_000 });
 
+  // A legal opening move can legitimately clear an early level. If that
+  // happens, finish the victory choice before checking ordinary board controls;
+  // the Hammer is correctly disabled while the result is modal.
+  const continueButton = page.locator("#result-actions button").filter({ hasText: "Continue" });
+  if (await continueButton.isVisible().catch(() => false)) {
+    await continueButton.click();
+    await expect(page.locator("#result-dialog")).not.toBeVisible({ timeout: 8_000 });
+  }
+
   // The score/move counters update before cascade presentation finishes. The
   // unified cabinet deliberately allows a longer reward presentation, so wait for
   // the real unlocked control state before proving click-then-click still works.
