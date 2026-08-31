@@ -178,11 +178,11 @@ async function captureButterflyFeedback(page, viewport, label) {
 
   const targetTile = page.locator(`.cascade-tile[data-index="${targetIndex}"]`);
   await expect(targetTile).toHaveClass(/is-butterfly-targeted/, { timeout: 2_500 });
-  await page.screenshot({ path: `${output}/cascade-butterfly-feedback-${label}-target.png`, fullPage: true });
+  await page.locator("#board").screenshot({ path: `${output}/cascade-butterfly-feedback-${label}-target.png` });
 
   const impact = page.locator(`.cascade-butterfly-impact[data-target="${targetIndex}"]`);
   await expect(impact).toBeVisible({ timeout: 2_500 });
-  await page.screenshot({ path: `${output}/cascade-butterfly-feedback-${label}-impact.png`, fullPage: true });
+  await page.locator("#board").screenshot({ path: `${output}/cascade-butterfly-feedback-${label}-impact.png` });
 }
 
 test("Cascade Butterfly feedback is readable across four stages on mobile", async ({ page }) => {
