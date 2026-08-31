@@ -29,7 +29,9 @@ Unless explicitly changed by a later decision, agents should plan, generate, pro
 
 ## Immediate milestone architecture: levels 451–3,000
 
-New mechanics enter in teach/practice/mix/mastery arcs, then become ordinary parts of the global vocabulary.
+New mechanics enter in teach/practice/mix/mastery arcs, then become ordinary parts of the global vocabulary. Dedicated foundation arcs may be intentionally dense while a mechanic is being learned; the lower steady-state cognitive-accent density applies after that family is established.
+
+Accepted historical level definitions must not drift as a side effect of adding later mechanics. A deliberate rebalance of an older shipped range is valid, but it must be intentional, appear in the change-aware CI planner's changed-level report, and receive the corresponding changed-range profile/fragility validation.
 
 A new mechanic should earn its place by changing player decisions. Cosmetic variants or additional hit points do not count as new mechanic families.
 
