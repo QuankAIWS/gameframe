@@ -611,7 +611,9 @@ function campaignSpec(levelNumber) {
     return buildSpec({
       levelNumber, start: 701, chapter: "recall-lock-intro", baseTarget: 19000, targetStep: 90, baseMoves: 37,
       objectiveFactory: ({ phase, within, wave }) => {
-        const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+        const pattern = (wave.difficulty === "relief" || wave.difficulty === "normal")
+          ? "center"
+          : latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
         const firstTeachingWave = phase === 0;
         const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
         const isRecall = !(firstTeachingWave && pressureBeat);
@@ -765,7 +767,7 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 930) {
     return buildSpec({
-      levelNumber, start: 901, chapter: "producer-intro", baseTarget: 23500, targetStep: 115, baseMoves: 36,
+      levelNumber, start: 901, chapter: "producer-intro", baseTarget: 23500, targetStep: 115, baseMoves: 37,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
         const firstTeachingWave = phase === 0;
@@ -781,8 +783,8 @@ function campaignSpec(levelNumber) {
         }
         return objective({
           producers: {
-            count: wave.difficulty === "relief" ? 3 : phase >= 2 ? 5 : 4,
-            charges: wave.difficulty === "relief" ? 1 : phase >= 1 ? 2 : 1,
+            count: wave.difficulty === "relief" ? 2 : 3,
+            charges: 1,
             pattern,
           },
         });
@@ -791,14 +793,14 @@ function campaignSpec(levelNumber) {
   }
   if (levelNumber <= 950) {
     return buildSpec({
-      levelNumber, start: 931, chapter: "producer-routing", baseTarget: 24200, targetStep: 120, baseMoves: 38,
+      levelNumber, start: 931, chapter: "producer-routing", baseTarget: 24200, targetStep: 120, baseMoves: 40,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         const routeDrops = within >= 5 && within % 2 === 1;
         return objective({
           producers: {
-            count: wave.difficulty === "relief" ? 3 : 4 + (phase >= 1 ? 1 : 0),
-            charges: wave.difficulty === "super-hard" ? 3 : 2,
+            count: wave.difficulty === "relief" ? 2 : 3,
+            charges: wave.difficulty === "super-hard" ? 2 : 1,
             pattern,
           },
           locks: routeDrops ? null : {
@@ -822,15 +824,15 @@ function campaignSpec(levelNumber) {
         if (firstTeachingWave && pressureBeat) {
           return objective({
             producers: {
-              count: 4,
-              charges: 2,
+              count: 2,
+              charges: 1,
               pattern,
             },
           });
         }
         return objective({
           colorWards: {
-            count: wave.difficulty === "relief" ? 3 : phase >= 2 ? 6 : 4 + (within >= 6 ? 1 : 0),
+            count: wave.difficulty === "relief" ? 2 : (wave.difficulty === "normal" ? 3 : 4),
             pattern,
           },
         });
@@ -840,21 +842,23 @@ function campaignSpec(levelNumber) {
   return buildSpec({
     levelNumber, start: 981, chapter: "attention-remix", baseTarget: 25500, targetStep: 125, baseMoves: 39,
     objectiveFactory: ({ phase, within, wave }) => {
-      const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+      const pattern = (wave.difficulty === "relief" || wave.difficulty === "normal")
+        ? "center"
+        : latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
       const useRecall = within % 4 === 0 && wave.difficulty !== "super-hard";
-      const useProducer = within % 3 === 1;
+      const useProducer = levelNumber === 1000 || within % 3 === 1;
       return objective({
         colorWards: {
-          count: wave.difficulty === "relief" ? 3 : 5 + (phase >= 1 ? 1 : 0),
+          count: wave.difficulty === "relief" ? 2 : (wave.difficulty === "normal" ? 3 : 4),
           pattern,
         },
         producers: useProducer ? {
-          count: wave.difficulty === "relief" ? 2 : 3,
-          charges: 2,
+          count: 2,
+          charges: 1,
           pattern,
         } : null,
         locks: useRecall ? {
-          count: wave.difficulty === "relief" ? 2 : 3,
+          count: 2,
           layers: 1,
           pattern,
           recall: true,
