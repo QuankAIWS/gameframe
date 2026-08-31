@@ -55,8 +55,8 @@ const PRESENTATION = Object.freeze({
 const BUTTERFLY_PRESENTATION = Object.freeze({
   launch: 220,
   flightBase: 760,
-  targetLead: 190,
-  impact: 220,
+  targetLead: 260,
+  impact: 260,
   stagger: 70,
 });
 
