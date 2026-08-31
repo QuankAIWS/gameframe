@@ -55,8 +55,8 @@ const PRESENTATION = Object.freeze({
 const BUTTERFLY_PRESENTATION = Object.freeze({
   launch: 220,
   flightBase: 760,
-  targetLead: 260,
-  impact: 260,
+  targetLead: 320,
+  impact: 380,
   stagger: 70,
 });
 
@@ -917,7 +917,6 @@ async function animateButterflyFlights(transition) {
     await sleepRaw(220);
     impacts.forEach((impact) => impact.remove());
     flights.forEach(({ targetTile }) => targetTile.classList.remove("is-butterfly-targeted", "is-butterfly-hit"));
-    sourceTiles.forEach((tile) => tile.classList.remove("is-butterfly-launching"));
     return;
   }
 
@@ -954,7 +953,6 @@ async function animateButterflyFlights(transition) {
     targetTile.classList.remove("is-butterfly-targeted", "is-butterfly-hit");
   }));
 
-  sourceTiles.forEach((tile) => tile.classList.remove("is-butterfly-launching"));
 }
 
 async function presentBloomFeedback(events = []) {
