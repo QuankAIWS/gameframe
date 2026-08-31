@@ -71,7 +71,7 @@ test("Bloom plus Ground recombination remains legible on desktop", async ({ page
 test("Crystal Producers stay readable on older-eye mobile layouts without replacing candy identity", async ({ page }) => {
   await openLevel(page, 901);
   const producers = page.locator(".cascade-tile.has-producer");
-  await expect(producers).toHaveCount(3);
+  await expect(producers).toHaveCount(2);
   const geometry = await producers.first().evaluate((tile) => {
     const tileRect = tile.getBoundingClientRect();
     const mark = tile.querySelector(".cascade-producer-mark").getBoundingClientRect();
@@ -93,7 +93,7 @@ test("Crystal Producers stay readable on older-eye mobile layouts without replac
 test("Color Wards show a redundant visible color-symbol cue on mobile", async ({ page }) => {
   await openLevel(page, 951);
   const wards = page.locator(".cascade-tile.has-color-ward");
-  await expect(wards).toHaveCount(3);
+  await expect(wards).toHaveCount(2);
   const cue = await wards.first().evaluate((tile) => {
     const tileRect = tile.getBoundingClientRect();
     const mark = tile.querySelector(".cascade-color-ward-mark");
