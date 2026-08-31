@@ -818,7 +818,9 @@ function campaignSpec(levelNumber) {
     return buildSpec({
       levelNumber, start: 951, chapter: "color-ward-intro", baseTarget: 24800, targetStep: 120, baseMoves: 36,
       objectiveFactory: ({ phase, within, wave }) => {
-        const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+        const pattern = (wave.difficulty === "relief" || wave.difficulty === "normal")
+          ? "center"
+          : latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
         const firstTeachingWave = phase === 0;
         const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
         if (firstTeachingWave && pressureBeat) {
