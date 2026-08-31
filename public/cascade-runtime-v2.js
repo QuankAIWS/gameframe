@@ -229,7 +229,9 @@ function saveActiveRun() {
         ? {
             total: Number(levelProgress.producers.total) || 0,
             produced: Number(levelProgress.producers.produced) || 0,
+            collected: Number(levelProgress.producers.collected) || 0,
             remaining: (levelProgress.producers.remaining || []).slice(),
+            crystals: (levelProgress.producers.crystals || []).slice(),
           }
         : null,
       colorWards: levelProgress?.colorWards
@@ -459,7 +461,10 @@ function renderBoard() {
     const groundCovered = mode === "normal" && levelProgress?.ground?.covered?.[index] === true;
     const groundNew = groundCovered && (levelProgress?.ground?.lastSpread || []).includes(index);
     const producerCharges = mode === "normal" ? Math.max(0, Number(levelProgress?.producers?.remaining?.[index]) || 0) : 0;
+    const producerCrystal = mode === "normal" && levelProgress?.producers?.crystals?.[index] === true;
+    const producerActive = producerCharges > 0 || producerCrystal;
     const producerTriggered = mode === "normal" && (levelProgress?.producers?.lastTriggered || []).includes(index);
+    const producerCollected = mode === "normal" && (levelProgress?.producers?.lastCollected || []).includes(index);
     const wardKind = mode === "normal" ? Number(levelProgress?.colorWards?.requiredKinds?.[index]) : -1;
     const wardOpened = mode === "normal" && (levelProgress?.colorWards?.lastOpened || []).includes(index);
     tile.type = "button";
@@ -505,19 +510,23 @@ function renderBoard() {
       groundMark.setAttribute("aria-hidden", "true");
       tile.append(groundMark);
     }
-    if (producerCharges > 0) {
+    if (producerActive) {
       tile.dataset.producerCharges = String(producerCharges);
       tile.classList.add("has-producer");
+      if (producerCrystal) tile.classList.add("has-producer-crystal");
       if (producerTriggered) tile.classList.add("is-producer-triggered");
+      if (producerCollected) tile.classList.add("is-producer-collected");
       const producerMark = document.createElement("span");
       producerMark.className = "cascade-producer-mark";
       producerMark.setAttribute("aria-hidden", "true");
-      producerMark.textContent = "✹";
-      const chargeMark = document.createElement("span");
-      chargeMark.className = "cascade-producer-charge";
-      chargeMark.setAttribute("aria-hidden", "true");
-      chargeMark.textContent = String(producerCharges);
-      producerMark.append(chargeMark);
+      producerMark.textContent = producerCrystal ? "◆" : "✹";
+      if (producerCharges > 0) {
+        const chargeMark = document.createElement("span");
+        chargeMark.className = "cascade-producer-charge";
+        chargeMark.setAttribute("aria-hidden", "true");
+        chargeMark.textContent = String(producerCharges);
+        producerMark.append(chargeMark);
+      }
       tile.append(producerMark);
     }
     if (wardKind >= 0) {
@@ -559,7 +568,7 @@ function renderBoard() {
       tile.append(lockMark);
     }
     tile.setAttribute("role", "gridcell");
-    tile.setAttribute("aria-label", `Tile ${index + 1}${special ? `, ${specialName(special)}` : ""}${iceLayers ? `, ${iceLayers} ice ${iceLayers === 1 ? "layer" : "layers"}` : ""}${dropToken ? ", drop object" : ""}${dropExit ? ", drop exit" : ""}${groundCovered ? ", enchanted ground" : ""}${producerCharges ? `, crystal producer with ${producerCharges} ${producerCharges === 1 ? "charge" : "charges"} left` : ""}${wardKind >= 0 ? `, color ward wants ${["pink","cyan","yellow","green","purple","orange"][wardKind]}` : ""}${bloomSymbol >= 0 ? bloomActive ? `, open memory bloom showing ${RECALL_SYMBOLS[bloomSymbol]}` : ", closed memory bloom" : ""}${lockLayers ? recallKind >= 0 ? cueVisible ? `, recall lock wants ${["pink","cyan","yellow","green","purple","orange"][recallKind]}` : ", recall lock, cue hidden" : `, cage ${lockLayers === 1 ? "locked" : "double locked"}` : ""}`);
+    tile.setAttribute("aria-label", `Tile ${index + 1}${special ? `, ${specialName(special)}` : ""}${iceLayers ? `, ${iceLayers} ice ${iceLayers === 1 ? "layer" : "layers"}` : ""}${dropToken ? ", drop object" : ""}${dropExit ? ", drop exit" : ""}${groundCovered ? ", enchanted ground" : ""}${producerActive ? producerCrystal ? `, crystal forge holding a crystal with ${producerCharges} charges left` : `, crystal forge with ${producerCharges} ${producerCharges === 1 ? "charge" : "charges"} left` : ""}${wardKind >= 0 ? `, color ward wants ${["pink","cyan","yellow","green","purple","orange"][wardKind]}` : ""}${bloomSymbol >= 0 ? bloomActive ? `, open memory bloom showing ${RECALL_SYMBOLS[bloomSymbol]}` : ", closed memory bloom" : ""}${lockLayers ? recallKind >= 0 ? cueVisible ? `, recall lock wants ${["pink","cyan","yellow","green","purple","orange"][recallKind]}` : ", recall lock, cue hidden" : `, cage ${lockLayers === 1 ? "locked" : "double locked"}` : ""}`);
     if (selectedIndex === index) tile.classList.add("is-selected");
     if (hammerMode) tile.classList.add("is-hammer-target");
     tile.addEventListener("click", () => onTileClick(index));
@@ -658,7 +667,7 @@ function renderHelp() {
   } else if (activeLevel.level === 801) {
     helpElement.textContent = "New objective: spread the sparkling magic ground. Make clears that touch glowing ground and the magic spreads through that clear.";
   } else if (activeLevel.level === 901) {
-    helpElement.textContent = "New objective: charge every crystal forge. Clear a candy beside a glowing forge and it makes one crystal. Keep feeding each forge until its charge number reaches zero.";
+    helpElement.textContent = "New objective: use every crystal forge. Clear beside a forge to make a crystal, then clear that forge tile later to collect it. Repeat until every forge charge is used and every crystal is collected.";
   } else if (activeLevel.level === 951) {
     helpElement.textContent = "New attention objective: each color ward shows the color-symbol it wants. Clear that visible color beside the ward to open it. No memorizing required.";
   } else {
@@ -666,7 +675,7 @@ function renderHelp() {
     if (activeLevel.objective?.drop) notes.push("clear below each diamond to drop it into its exit");
     if (activeLevel.objective?.blooms) notes.push("reveal flowers and remember matching symbol pairs");
     if (activeLevel.objective?.ground) notes.push("make clears that touch sparkling ground to spread the magic");
-    if (activeLevel.objective?.producers) notes.push("clear beside each crystal forge until all its charges are spent");
+    if (activeLevel.objective?.producers) notes.push("feed crystal forges, then clear each produced crystal from its forge");
     if (activeLevel.objective?.colorWards) notes.push("clear each visible ward color beside its matching ward");
     if (activeLevel.objective?.locks?.recall) notes.push("remember each magic lock cue and clear that color beside it");
     else if (activeLevel.objective?.locks) notes.push("clear beside every cage to open it");
@@ -950,7 +959,9 @@ async function presentResolvedResult(result) {
       groundCovered: Number(levelProgress?.ground?.count || 0),
       groundSpread: levelProgress?.ground?.lastSpread?.length || 0,
       crystalsMade: Number(levelProgress?.producers?.produced || 0),
+      crystalsCollected: Number(levelProgress?.producers?.collected || 0),
       producerTriggers: levelProgress?.producers?.lastTriggered?.length || 0,
+      producerCollections: levelProgress?.producers?.lastCollected?.length || 0,
       colorWardsOpened: Number(levelProgress?.colorWards?.opened || 0),
       colorWardOpenings: levelProgress?.colorWards?.lastOpened?.length || 0,
     });
@@ -1395,7 +1406,7 @@ function startBlitz(completedLevel) {
     locks: { total: 0, opened: 0, layers: Array(BOARD_CELL_COUNT).fill(0), requiredKinds: Array(BOARD_CELL_COUNT).fill(-1), recall: false },
     blooms: { totalPairs: 0, collectedPairs: 0, activeIndex: -1, symbols: Array(BOARD_CELL_COUNT).fill(-1), lastEvents: [] },
     ground: { target: 0, covered: Array(BOARD_CELL_COUNT).fill(false), count: 0, lastSpread: [] },
-    producers: { total: 0, produced: 0, remaining: Array(BOARD_CELL_COUNT).fill(0), lastTriggered: [] },
+    producers: { total: 0, produced: 0, collected: 0, remaining: Array(BOARD_CELL_COUNT).fill(0), crystals: Array(BOARD_CELL_COUNT).fill(false), lastTriggered: [], lastCollected: [] },
     colorWards: { total: 0, opened: 0, requiredKinds: Array(BOARD_CELL_COUNT).fill(-1), lastOpened: [] },
   };
   boardRng = createRng(((completedLevel * 0x85ebca6b) ^ Date.now()) >>> 0);
