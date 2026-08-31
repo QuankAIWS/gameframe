@@ -1,6 +1,6 @@
 # Testing Strategy
 
-Validation is layered so ordinary game development does not require a live Scribbles Runtime deployment or routine GitHub Actions execution.
+Validation is layered so ordinary game development does not require a live Scribbles Runtime deployment or an exhaustive GitHub Actions run on every edit.
 
 The target posture is that deployment canaries confirm environment integration. They should not be the first place ordinary game-rule, browser-flow, reconnect, or agent-contract defects are discovered.
 
@@ -13,8 +13,8 @@ Scribbles GameFrame uses three repository and environment verification tiers.
 - All active implementation work occurs on a dedicated feature branch with a draft pull request.
 - Development work uses targeted tests during iteration and the complete `npm run validate` suite before a branch head is represented as locally verified.
 - Local verification must identify the exact tested commit SHA, execution environment, and commands used.
-- Pushing commits or updating an ordinary pull request does not start GitHub Actions.
-- Local verification is the normal development gate and may be repeated as often as needed without consuming canonical GitHub-hosted validation runs.
+- Pull requests that touch routed UI/game surfaces may start the scoped `Feature UI Review` workflow automatically. That workflow is change-sensitive and is not the canonical full-repository validation marker.
+- Local verification remains the normal iteration gate and may be repeated as often as needed without deliberately starting canonical full-repository validation.
 - Browser screenshots, traces, and reports produced locally are development evidence, not canonical GitHub evidence.
 
 ### Canonical merge verification
@@ -29,6 +29,11 @@ Scribbles GameFrame uses three repository and environment verification tiers.
 - Any commit added after the canonical pass invalidates that pass and requires another local and canonical run.
 - The GitHub Actions result is the durable repository record; local reports remain supporting development evidence.
 - Stable visual-regression baselines should be generated and accepted in the canonical environment when environment-dependent rendering makes cross-machine comparison noisy.
+
+### Scheduled campaign regression exception
+
+Cascade Crush has an explicit scaling exception to the no-routine-schedule posture: `.github/workflows/cascade-nightly.yml` may run a sharded full-campaign deterministic profile at 06:00 UTC after recent balance-relevant Cascade development. It is a regression safety net, not a pull-request merge gate and not a substitute for `Canonical Validation`. Manual dispatch remains available for major checkpoints.
+
 
 ### External canary verification
 
