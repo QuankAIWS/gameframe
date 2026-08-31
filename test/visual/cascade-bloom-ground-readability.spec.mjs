@@ -3,7 +3,6 @@ import { mkdir } from "node:fs/promises";
 
 const output = "visual-results/player-ui-review";
 const stateKey = "scribbles-gameframe.cascade-state:v1";
-const activeRunKey = "scribbles-gameframe.cascade-active-run:v1";
 
 async function openLevel(page, level, viewport = { width: 1440, height: 960 }) {
   await mkdir(output, { recursive: true });
@@ -42,11 +41,13 @@ test("Cascade open Memory Bloom shows redundant symbol and color", async ({ page
   const bloomIndex = exported.progress.blooms.symbols.findIndex((symbol) => symbol >= 0);
   expect(bloomIndex).toBeGreaterThanOrEqual(0);
 
-  await page.evaluate(({ key, index }) => {
-    const run = window.cascadeResearch.exportActiveRun();
-    run.levelProgress.blooms.activeIndex = index;
-    localStorage.setItem(key, JSON.stringify(run));
-  }, { key: activeRunKey, index: bloomIndex });
+  await page.evaluate((index) => {
+    const live = window.cascadeResearch.exportLevel();
+    live.progress.blooms.activeIndex = index;
+  }, bloomIndex);
+  // Reload through the production pagehide persistence path. Mutating only
+  // localStorage here is invalid because the runtime correctly commits its
+  // live in-memory run during pagehide.
   await page.reload();
 
   const open = page.locator(".cascade-tile.has-memory-bloom .cascade-bloom-mark.is-revealed");
