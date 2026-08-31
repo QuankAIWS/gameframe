@@ -432,6 +432,7 @@ function renderBoard() {
     const bloomSymbol = mode === "normal" ? Number(levelProgress?.blooms?.symbols?.[index]) : -1;
     const bloomActive = bloomSymbol >= 0 && Number(levelProgress?.blooms?.activeIndex) === index;
     const groundCovered = mode === "normal" && levelProgress?.ground?.covered?.[index] === true;
+    const groundNew = groundCovered && (levelProgress?.ground?.lastSpread || []).includes(index);
     tile.type = "button";
     tile.className = "cascade-tile";
     tile.dataset.kind = String(kind);
@@ -469,6 +470,7 @@ function renderBoard() {
     if (groundCovered) {
       tile.dataset.ground = "true";
       tile.classList.add("has-enchanted-ground");
+      if (groundNew) tile.classList.add("is-ground-new");
       const groundMark = document.createElement("span");
       groundMark.className = "cascade-ground-mark";
       groundMark.setAttribute("aria-hidden", "true");
@@ -811,17 +813,20 @@ async function presentBloomFeedback(events = []) {
       const tile = tileAt(index);
       if (!tile) continue;
       tile.classList.add(event.type === "match" ? "is-bloom-match" : event.type === "mismatch" ? "is-bloom-mismatch" : "is-bloom-open");
-      if (event.type === "mismatch") {
+      if (event.type === "mismatch" || event.type === "match") {
         const mark = document.createElement("span");
         mark.className = "cascade-bloom-peek";
-        mark.textContent = RECALL_SYMBOLS[event.symbols?.[offset] ?? event.symbol ?? 0];
+        if (event.type === "match") mark.classList.add("is-success");
+        const symbol = event.symbols?.[offset] ?? event.symbol ?? 0;
+        mark.dataset.bloomSymbol = String(symbol);
+        mark.textContent = RECALL_SYMBOLS[symbol];
         mark.setAttribute("aria-hidden", "true");
         tile.append(mark);
         temp.push(mark);
       }
     }
   }
-  await sleep(events.some((event) => event.type === "mismatch") ? 620 : 260);
+  await sleep(events.some((event) => event.type === "mismatch") ? 620 : events.some((event) => event.type === "match") ? 420 : 260);
   temp.forEach((element) => element.remove());
 }
 
