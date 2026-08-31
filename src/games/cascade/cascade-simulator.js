@@ -313,9 +313,9 @@ function updateBloomKnowledge(personaName, knowledge, progress, decisionRng) {
   }
   const activeIndex = Number(progress.blooms.activeIndex);
   if (Number.isInteger(activeIndex) && activeIndex >= 0 && activeIndex < knowledge.length && currentSymbols[activeIndex] >= 0) {
-    if (knowledge[activeIndex] < 0 && decisionRng.next() <= Number(persona.recallRetention || 0)) {
-      knowledge[activeIndex] = Number(currentSymbols[activeIndex]);
-    }
+    // The active Bloom is visibly open on the board; memory decay applies only
+    // after a cue closes, not while the player is still looking at it.
+    knowledge[activeIndex] = Number(currentSymbols[activeIndex]);
   }
   return knowledge;
 }
