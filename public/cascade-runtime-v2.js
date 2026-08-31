@@ -52,6 +52,14 @@ const PRESENTATION = Object.freeze({
   shuffle: 220,
 });
 
+const BUTTERFLY_PRESENTATION = Object.freeze({
+  launch: 220,
+  flightBase: 760,
+  targetLead: 190,
+  impact: 220,
+  stagger: 70,
+});
+
 const $ = (selector) => document.querySelector(selector);
 const boardElement = $("#board");
 const levelNumberElement = $("#level-number");
@@ -383,6 +391,10 @@ function presentationMs(value) {
 
 function sleep(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, presentationMs(ms)));
+}
+
+function sleepRaw(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function rulesForLevel(levelNumber) {
@@ -822,14 +834,29 @@ async function presentFallTransition(transition) {
   await sleep(PRESENTATION.landing);
 }
 
-function butterflyFlightElement(kind) {
+function butterflyFlightElement(kind, from, target) {
   const flight = document.createElement("span");
   flight.className = "cascade-butterfly-flight";
   flight.dataset.kind = String(kind);
+  flight.dataset.from = String(from);
+  flight.dataset.target = String(target);
   flight.setAttribute("aria-hidden", "true");
   flight.append(document.createElement("i"));
   document.body.append(flight);
   return flight;
+}
+
+function butterflyImpactElement(targetTile, target) {
+  const rect = targetTile?.getBoundingClientRect?.();
+  if (!rect) return null;
+  const impact = document.createElement("span");
+  impact.className = "cascade-butterfly-impact";
+  impact.dataset.target = String(target);
+  impact.setAttribute("aria-hidden", "true");
+  impact.style.left = `${rect.left + rect.width / 2}px`;
+  impact.style.top = `${rect.top + rect.height / 2}px`;
+  document.body.append(impact);
+  return impact;
 }
 
 function butterflyFlightKeyframes(from, to, ordinal = 0) {
@@ -839,43 +866,95 @@ function butterflyFlightKeyframes(from, to, ordinal = 0) {
   const nx = -dy / length;
   const ny = dx / length;
   const direction = ordinal % 2 === 0 ? 1 : -1;
-  const sway = Math.min(44, Math.max(18, length * .12)) * direction;
-  return Array.from({ length: 7 }, (_, index) => {
-    const p = index / 6;
-    const envelope = Math.sin(Math.PI * p);
-    const flutter = Math.sin((p * Math.PI * 4.5) + ordinal * .8);
-    const bob = Math.sin((p * Math.PI * 6) + ordinal * 1.4);
-    const x = from.x + dx * p + nx * sway * envelope * flutter * .48;
-    const y = from.y + dy * p + ny * sway * envelope * flutter * .48 - 10 * envelope + bob * 5 * envelope;
+  const loop = Math.min(70, Math.max(30, length * .15)) * direction;
+  const lift = Math.min(72, Math.max(34, length * .16));
+  const frame = (offset, progress, side, rise, rotate, scale, opacity = 1) => {
+    const x = from.x + dx * progress + nx * loop * side;
+    const y = from.y + dy * progress + ny * loop * side - lift * rise;
     return {
-      offset: p,
-      transform: `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${-10 + flutter * 13 + direction * 3}deg) scale(${p < .12 ? .78 + p * 2 : p > .86 ? 1 - (p - .86) * 1.8 : 1})`,
-      opacity: p < .04 ? 0 : p > .94 ? Math.max(0, (1 - p) / .06) : 1,
+      offset,
+      transform: `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) rotate(${rotate}deg) scale(${scale})`,
+      opacity,
     };
-  });
+  };
+  return [
+    frame(0, 0, 0, 0, -8 + direction * 3, .78, .72),
+    frame(.14, .02, .48, .82, -18 * direction, 1.12),
+    frame(.30, .05, 1, 1.16, 16 * direction, 1.38),
+    frame(.45, .08, -.58, .78, -14 * direction, 1.28),
+    frame(.60, .27, .30, .50, 12 * direction, 1.20),
+    frame(.77, .62, -.14, .20, -8 * direction, 1.12),
+    frame(.90, .86, .04, .05, 8 * direction, 1.20),
+    frame(1, 1, 0, 0, 0, .76, .96),
+  ];
 }
 
 async function animateButterflyFlights(transition) {
-  if (reducedMotion) return;
-  const flights = (transition?.homingFlights || []).filter(({ from, target }) => Number.isInteger(from) && Number.isInteger(target) && from !== target);
+  const flights = (transition?.homingFlights || [])
+    .filter(({ from, target }) => Number.isInteger(from) && Number.isInteger(target) && from !== target)
+    .slice(0, 8)
+    .map(({ from, target }) => ({
+      from,
+      target,
+      sourceTile: tileAt(from),
+      targetTile: tileAt(target),
+    }))
+    .filter(({ sourceTile, targetTile }) => sourceTile && targetTile);
+
   if (!flights.length) return;
-  await Promise.all(flights.slice(0, 8).map(({ from, target }, ordinal) => {
-    const sourceTile = tileAt(from);
-    const targetTile = tileAt(target);
-    const sourceRect = sourceTile?.getBoundingClientRect?.();
-    const targetRect = targetTile?.getBoundingClientRect?.();
-    if (!sourceRect || !targetRect) return Promise.resolve();
-    const flight = butterflyFlightElement(Number(sourceTile.dataset.kind));
+
+  const sourceTiles = [...new Set(flights.map(({ sourceTile }) => sourceTile))];
+  sourceTiles.forEach((tile) => tile.classList.add("is-butterfly-launching"));
+
+  if (reducedMotion) {
+    await sleepRaw(160);
+    flights.forEach(({ targetTile }) => targetTile.classList.add("is-butterfly-targeted"));
+    await sleepRaw(260);
+    const impacts = flights.map(({ targetTile, target }) => {
+      targetTile.classList.add("is-butterfly-hit");
+      return butterflyImpactElement(targetTile, target);
+    }).filter(Boolean);
+    await sleepRaw(220);
+    impacts.forEach((impact) => impact.remove());
+    flights.forEach(({ targetTile }) => targetTile.classList.remove("is-butterfly-targeted", "is-butterfly-hit"));
+    sourceTiles.forEach((tile) => tile.classList.remove("is-butterfly-launching"));
+    return;
+  }
+
+  await sleep(BUTTERFLY_PRESENTATION.launch);
+
+  await Promise.all(flights.map(async ({ from, target, sourceTile, targetTile }, ordinal) => {
+    const sourceRect = sourceTile.getBoundingClientRect();
+    const targetRect = targetTile.getBoundingClientRect();
     const source = { x: sourceRect.left + sourceRect.width / 2, y: sourceRect.top + sourceRect.height / 2 };
     const destination = { x: targetRect.left + targetRect.width / 2, y: targetRect.top + targetRect.height / 2 };
     const distance = Math.hypot(destination.x - source.x, destination.y - source.y);
+    const flight = butterflyFlightElement(Number(sourceTile.dataset.kind), from, target);
+    const duration = presentationMs(Math.min(1180, BUTTERFLY_PRESENTATION.flightBase + distance * .34));
+    const delay = presentationMs(ordinal * BUTTERFLY_PRESENTATION.stagger);
+    const targetLead = presentationMs(BUTTERFLY_PRESENTATION.targetLead);
+    const targetTimer = window.setTimeout(() => {
+      targetTile.classList.add("is-butterfly-targeted");
+    }, delay + Math.max(0, duration - targetLead));
+
     const animation = flight.animate(butterflyFlightKeyframes(source, destination, ordinal), {
-      duration: Math.min(760, 430 + distance * .38 + ordinal * 22),
-      easing: "cubic-bezier(.22,.62,.25,1)",
+      duration,
+      delay,
+      easing: "cubic-bezier(.2,.68,.2,1)",
       fill: "forwards",
     });
-    return animation.finished.catch(() => {}).finally(() => flight.remove());
+
+    await animation.finished.catch(() => {});
+    window.clearTimeout(targetTimer);
+    targetTile.classList.add("is-butterfly-targeted", "is-butterfly-hit");
+    flight.remove();
+    const impact = butterflyImpactElement(targetTile, target);
+    await sleep(BUTTERFLY_PRESENTATION.impact);
+    impact?.remove();
+    targetTile.classList.remove("is-butterfly-targeted", "is-butterfly-hit");
   }));
+
+  sourceTiles.forEach((tile) => tile.classList.remove("is-butterfly-launching"));
 }
 
 async function presentBloomFeedback(events = []) {
