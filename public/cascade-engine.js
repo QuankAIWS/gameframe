@@ -834,7 +834,7 @@ function campaignSpec(levelNumber) {
         }
         return objective({
           colorWards: {
-            count: wave.difficulty === "relief" ? 2 : (wave.difficulty === "normal" ? 3 : 4),
+            count: wave.difficulty === "relief" ? 2 : (wave.difficulty === "super-hard" ? 4 : 3),
             pattern,
           },
         });
@@ -847,7 +847,7 @@ function campaignSpec(levelNumber) {
       const pattern = (wave.difficulty === "relief" || wave.difficulty === "normal")
         ? "center"
         : latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
-      const useRecall = within % 4 === 0 && wave.difficulty !== "super-hard";
+      const useRecall = within % 4 === 0 && wave.difficulty !== "super-hard" && wave.difficulty !== "hard";
       const useProducer = levelNumber === 1000 || within % 3 === 1;
       return objective({
         colorWards: {
