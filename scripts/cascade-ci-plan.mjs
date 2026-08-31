@@ -14,6 +14,17 @@ function readFlag(name) {
   return process.argv.find((arg) => arg.startsWith(prefix))?.slice(prefix.length) || null;
 }
 
+function canonicalLevelValue(value) {
+  if (Array.isArray(value)) return value.map(canonicalLevelValue);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([, child]) => child !== null && child !== undefined)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, child]) => [key, canonicalLevelValue(child)]),
+  );
+}
+
 export function changedLevelRange(baseLevels, headLevels, seam = PROFILE_SEAM) {
   const base = Array.from(baseLevels || []);
   const head = Array.from(headLevels || []);
@@ -21,7 +32,9 @@ export function changedLevelRange(baseLevels, headLevels, seam = PROFILE_SEAM) {
   const length = Math.max(base.length, head.length);
 
   for (let index = 0; index < length; index += 1) {
-    if (JSON.stringify(base[index] ?? null) !== JSON.stringify(head[index] ?? null)) {
+    const before = canonicalLevelValue(base[index] ?? null);
+    const after = canonicalLevelValue(head[index] ?? null);
+    if (JSON.stringify(before) !== JSON.stringify(after)) {
       changed.push(index + 1);
     }
   }
@@ -114,7 +127,7 @@ async function main() {
   }
 
   const canary = changedFiles.some(isCascadeBalanceSemanticFile) || range.changed;
-  await emit({
+  const plan = {
     canary,
     deep: range.changed,
     changedLevelCount: range.changedLevelCount,
@@ -125,7 +138,9 @@ async function main() {
       : canary
         ? "balance-semantics-canary"
         : "no-balance-profile",
-  }, outputPath);
+  };
+  console.log(`Cascade CI plan: ${JSON.stringify(plan)}`);
+  await emit(plan, outputPath);
 }
 
 const entrypoint = process.argv[1] ? pathToFileURL(process.argv[1]).href : "";
