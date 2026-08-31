@@ -6,6 +6,7 @@ const none = {
   shell: false,
   casual: false,
   cascadeUi: false,
+  cascadeContracts: false,
   cascadeProfile: false,
   cascadeArchive: false,
   cascadeTelemetry: false,
@@ -31,14 +32,21 @@ test("Cascade browser input and presentation changes do not run the solver/perso
   ]), { ...none, cascadeUi: true });
 });
 
-test("Cascade analysis tools and methodology changes add the profile gate", () => {
+test("Cascade profile and fragility tooling changes add only the profile gate", () => {
+  assert.deepEqual(classifyUiTestScope([
+    "scripts/cascade-profile.mjs",
+    "scripts/cascade-profile-selection.mjs",
+    "scripts/cascade-fragility.mjs",
+  ]), { ...none, cascadeProfile: true });
+});
+
+test("Cascade analysis reports and methodology docs do not wake gameplay profiles", () => {
   assert.deepEqual(classifyUiTestScope([
     "scripts/cascade-profile-compare.mjs",
     "scripts/cascade-persona-calibrate.mjs",
-    "scripts/cascade-fragility.mjs",
     "scripts/cascade-playtest-analyze.mjs",
     "planning/cascade-testing-methodology.md",
-  ]), { ...none, cascadeProfile: true });
+  ]), none);
 });
 
 test("Cascade difficulty archive changes run only the lightweight archive gate", () => {
@@ -49,10 +57,23 @@ test("Cascade difficulty archive changes run only the lightweight archive gate",
   ]), { ...none, cascadeArchive: true });
 });
 
-test("Cascade simulator and game mechanics changes add the profile gate", () => {
+test("Cascade simulator changes run a bot canary without browser UI", () => {
+  assert.deepEqual(classifyUiTestScope([
+    "src/games/cascade/cascade-simulator.js",
+  ]), { ...none, cascadeProfile: true });
+});
+
+test("Cascade engine contracts stay fast when only contract tests change", () => {
   assert.deepEqual(classifyUiTestScope([
     "src/games/cascade/cascade-engine.test.mjs",
-  ]), { ...none, cascadeUi: true, cascadeProfile: true });
+    "src/games/cascade/cascade-special-engine.test.mjs",
+  ]), { ...none, cascadeContracts: true });
+});
+
+test("Cascade engine changes fan out to UI, contracts, and bot planning", () => {
+  assert.deepEqual(classifyUiTestScope([
+    "public/cascade-engine.js",
+  ]), { ...none, cascadeUi: true, cascadeContracts: true, cascadeProfile: true });
 });
 
 test("Cascade telemetry stays separate from the solver/persona profile", () => {
