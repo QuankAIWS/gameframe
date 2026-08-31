@@ -9,6 +9,8 @@ import {
   LEVEL_COUNT,
   advanceBloomProgress,
   advanceGroundProgress,
+  advanceProducerProgress,
+  advanceColorWardProgress,
   applyLevelProgress,
   applySwap,
   createBoard,
@@ -30,12 +32,12 @@ test("Cascade cloud progression ceiling matches the shipped campaign", () => {
   assert.equal(Number(match[1]), LEVEL_COUNT);
 });
 
-test("Cascade ships 900 levels on a campaign model sized for 10000", () => {
-  assert.equal(LEVEL_COUNT, 900);
+test("Cascade ships 1000 levels on a campaign model sized for 10000", () => {
+  assert.equal(LEVEL_COUNT, 1000);
   assert.equal(CAMPAIGN_CAPACITY, 10000);
   assert.equal(CAMPAIGN_MILESTONE, 3000);
   assert.equal(CHAPTER_SIZE, 30);
-  assert.equal(CASCADE_LEVELS.length, 900);
+  assert.equal(CASCADE_LEVELS.length, 1000);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
   assert.equal(CASCADE_LEVELS[0].moves, 20);
   assert.equal(CASCADE_LEVELS[4].target, 2375);
@@ -447,6 +449,72 @@ test("levels 751-900 introduce Memory Blooms, Enchanted Ground, and controlled r
   assert.ok(level851.objective.blooms);
   assert.ok(level851.objective.ground);
   assert.equal(level900.chapter, "cognitive-spatial-remix");
+});
+
+test("levels 901-1000 introduce Producers, visible Color Wards, and the level-1000 checkpoint", () => {
+  const level901 = CASCADE_LEVELS[900];
+  const level905 = CASCADE_LEVELS[904];
+  const level931 = CASCADE_LEVELS[930];
+  const level951 = CASCADE_LEVELS[950];
+  const level955 = CASCADE_LEVELS[954];
+  const level981 = CASCADE_LEVELS[980];
+  const level1000 = CASCADE_LEVELS[999];
+
+  assert.equal(level901.chapter, "producer-intro");
+  assert.ok(level901.objective.producers);
+  assert.ok(level901.mechanics.includes("producers"));
+  assert.equal(level905.objective.producers, null);
+  assert.ok(level905.objective.ground);
+
+  assert.equal(level931.chapter, "producer-routing");
+  assert.ok(level931.objective.producers);
+
+  assert.equal(level951.chapter, "color-ward-intro");
+  assert.ok(level951.objective.colorWards);
+  assert.ok(level951.mechanics.includes("color-wards"));
+  assert.equal(level955.objective.colorWards, null);
+  assert.ok(level955.objective.producers);
+
+  assert.equal(level981.chapter, "attention-remix");
+  assert.ok(level981.objective.colorWards);
+  assert.equal(level1000.level, 1000);
+  assert.equal(level1000.chapter, "attention-remix");
+  assert.ok(level1000.objective.colorWards);
+});
+
+test("Producer charges and visible Color Wards advance deterministically from adjacent clears", () => {
+  const producerLevel = CASCADE_LEVELS[900];
+  const producerProgress = createLevelProgress(producerLevel);
+  const producerIndex = producerProgress.producers.remaining.findIndex((charges) => charges > 0);
+  assert.ok(producerIndex >= 0);
+  const producerRow = Math.floor(producerIndex / 8);
+  const producerCol = producerIndex % 8;
+  const producerNeighbor = producerRow > 0
+    ? producerIndex - 8
+    : producerCol < 7
+      ? producerIndex + 1
+      : producerIndex + 8;
+  const producerAfter = advanceProducerProgress(producerProgress.producers, [producerNeighbor]);
+  assert.equal(producerAfter.produced, 1);
+  assert.equal(producerAfter.remaining[producerIndex], producerProgress.producers.remaining[producerIndex] - 1);
+
+  const wardLevel = CASCADE_LEVELS[950];
+  const wardProgress = createLevelProgress(wardLevel);
+  const wardIndex = wardProgress.colorWards.requiredKinds.findIndex((kind) => kind >= 0);
+  assert.ok(wardIndex >= 0);
+  const requiredKind = wardProgress.colorWards.requiredKinds[wardIndex];
+  const wardRow = Math.floor(wardIndex / 8);
+  const wardCol = wardIndex % 8;
+  const wardNeighbor = wardRow > 0
+    ? wardIndex - 8
+    : wardCol < 7
+      ? wardIndex + 1
+      : wardIndex + 8;
+  const board = Array(64).fill((requiredKind + 1) % 6);
+  board[wardNeighbor] = requiredKind;
+  const wardAfter = advanceColorWardProgress(wardProgress.colorWards, board, [wardNeighbor]);
+  assert.equal(wardAfter.opened, 1);
+  assert.equal(wardAfter.requiredKinds[wardIndex], -1);
 });
 
 test("human Bloom scoring uses remembered symbols rather than hidden pair truth", () => {
