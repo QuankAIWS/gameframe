@@ -138,3 +138,135 @@ body[data-cascade-effects="reduced"] .cascade-cell-coating.is-shattering {
     inset: 3px;
   }
 }
+
+
+/* Level 901+: fixed crystal forges sit above candy without replacing candy identity. */
+.cascade-producer-mark,
+.cascade-color-ward-mark {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  top: 50%;
+  width: 78%;
+  height: 78%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.cascade-producer-mark {
+  border: 4px solid rgba(255, 220, 92, .98);
+  border-radius: 24%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(30, 18, 52, .20) 0 38%, rgba(255, 214, 76, .14) 39% 58%, rgba(18, 10, 35, .46) 59% 100%);
+  color: #fff6b7;
+  font-size: clamp(22px, 4.4vw, 34px);
+  font-weight: 900;
+  text-shadow: 0 2px 2px rgba(29, 13, 42, .8), 0 0 8px rgba(255, 226, 112, .92);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, .34),
+    0 0 0 2px rgba(91, 42, 125, .72),
+    0 0 12px rgba(255, 208, 62, .62);
+}
+
+.cascade-producer-charge {
+  position: absolute;
+  right: -9%;
+  bottom: -9%;
+  min-width: 1.35em;
+  height: 1.35em;
+  padding: 0 .16em;
+  display: grid;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #4b226f;
+  color: #fff;
+  font-size: .48em;
+  line-height: 1;
+  text-shadow: none;
+  box-shadow: 0 1px 5px rgba(0,0,0,.5);
+}
+
+.cascade-tile.is-producer-triggered .cascade-producer-mark {
+  animation: cascade-producer-pulse 520ms cubic-bezier(.2,.9,.25,1) both;
+}
+
+.cascade-color-ward-mark {
+  border: 5px solid rgba(255,255,255,.98);
+  border-radius: 50%;
+  background: rgba(15, 10, 31, .36);
+  font-size: clamp(22px, 4.2vw, 32px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 2px 3px rgba(0,0,0,.82), 0 0 7px currentColor;
+  box-shadow:
+    inset 0 0 0 4px var(--ward-color, #fff),
+    0 0 0 2px rgba(18, 10, 34, .82),
+    0 0 12px var(--ward-color, rgba(255,255,255,.7));
+}
+
+.cascade-color-ward-mark.kind-0 { --ward-color: #ff5da8; }
+.cascade-color-ward-mark.kind-1 { --ward-color: #46d9ed; }
+.cascade-color-ward-mark.kind-2 { --ward-color: #ffd84d; }
+.cascade-color-ward-mark.kind-3 { --ward-color: #69d16f; }
+.cascade-color-ward-mark.kind-4 { --ward-color: #a56af4; }
+.cascade-color-ward-mark.kind-5 { --ward-color: #ff9f43; }
+
+.cascade-tile.is-color-ward-opened::before {
+  content: "✓";
+  position: absolute;
+  z-index: 12;
+  inset: 18%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,.92);
+  color: #3d9a55;
+  font-size: clamp(24px, 5vw, 38px);
+  font-weight: 1000;
+  pointer-events: none;
+  animation: cascade-ward-open 560ms ease-out both;
+}
+
+@keyframes cascade-producer-pulse {
+  0% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+  45% { transform: translate(-50%, -50%) scale(1.12); filter: brightness(1.55); }
+  100% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+}
+
+@keyframes cascade-ward-open {
+  0% { transform: scale(.7); opacity: 0; }
+  35% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+
+body[data-cascade-effects="reduced"] .cascade-tile.is-producer-triggered .cascade-producer-mark,
+body[data-cascade-effects="reduced"] .cascade-tile.is-color-ward-opened::before {
+  animation-duration: 1ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade-tile.is-producer-triggered .cascade-producer-mark,
+  .cascade-tile.is-color-ward-opened::before {
+    animation-duration: 1ms !important;
+  }
+}
+
+@media (max-width: 650px) {
+  .cascade-producer-mark,
+  .cascade-color-ward-mark {
+    width: 82%;
+    height: 82%;
+  }
+
+  .cascade-producer-mark {
+    border-width: 3px;
+  }
+
+  .cascade-color-ward-mark {
+    border-width: 4px;
+  }
+}
