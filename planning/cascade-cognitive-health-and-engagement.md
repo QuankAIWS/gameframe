@@ -160,8 +160,9 @@ Basic rule:
 1. A match beside a closed Bloom opens it and reveals a bold symbol.
 2. The revealed symbol has a matching partner hidden in another fixed Bloom.
 3. Opening the matching partner collects both.
-4. Opening a nonmatching partner gives a short, clear reveal, then both close again.
+4. Opening a nonmatching partner gives a short, clear reveal of both symbols, then both close again.
 5. Previously seen locations remain the player's information; the game does not secretly move the pairs.
+6. Large specials may reveal a Bloom, but only one Bloom interaction advances per cascade step so spectacle cannot bypass the memory task.
 
 Start with two pairs and large distinct symbols. Later use three or four pairs.
 
@@ -394,7 +395,8 @@ Memory mechanics require an observation/memory boundary:
 
 - the player policy receives only cues that were actually revealed;
 - the simulator records reveal events and move-count delay since each cue;
-- human-casual and human-skilled personas maintain imperfect memory state rather than reading hidden engine data;
+- human-casual and human-skilled personas maintain imperfect Recall-Lock and Memory-Bloom state rather than reading hidden engine data;
+- an actively open Bloom is treated as visible with certainty; retention uncertainty begins after its cue closes;
 - lookahead/oracle agents may use hidden truth only as an explicit upper-bound solvability layer;
 - replay telemetry must be able to reconstruct what the human had seen before each decision.
 

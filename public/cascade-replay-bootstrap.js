@@ -16,7 +16,7 @@
   function levelNumber(value, fallback = 0) {
     const numeric = Math.floor(Number(value));
     if (!Number.isFinite(numeric)) return fallback;
-    return Math.max(0, Math.min(300, numeric));
+    return Math.max(0, numeric);
   }
 
   function storedFrontier() {

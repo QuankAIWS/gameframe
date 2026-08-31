@@ -251,7 +251,37 @@ test("Cascade admin can launch a standalone non-failing Blitz round", async ({ p
   await expect(page.locator("#blitz-overlay")).toBeVisible();
 });
 
-test("Cascade admin console reaches level 750 and keeps the map bounded", async ({ page }) => {
+test("Cascade introduces Memory Blooms at level 751", async ({ page }) => {
+  await installLevelFixture(page, 751);
+  await page.goto("/cascade.html?cascadeTestLevel=751");
+
+  await expect(page.locator("#level-number")).toHaveText("751");
+  await expect(page.locator("#objective-label")).toContainText("blooms");
+  await expect(page.locator(".cascade-tile.has-memory-bloom")).toHaveCount(4);
+  await expect(page.locator(".cascade-help")).toContainText("matching flower pair");
+
+  const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
+  expect(exported.level.chapter).toBe("memory-bloom-intro");
+  expect(exported.progress.blooms.totalPairs).toBe(2);
+  expect(exported.progress.blooms.symbols.filter((symbol) => symbol >= 0)).toHaveLength(4);
+});
+
+test("Cascade introduces Enchanted Ground at level 801", async ({ page }) => {
+  await installLevelFixture(page, 801);
+  await page.goto("/cascade.html?cascadeTestLevel=801");
+
+  await expect(page.locator("#level-number")).toHaveText("801");
+  await expect(page.locator("#objective-label")).toContainText("magic ground");
+  await expect(page.locator(".cascade-tile.has-enchanted-ground")).toHaveCount(3);
+  await expect(page.locator(".cascade-help")).toContainText("spread the sparkling magic ground");
+
+  const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
+  expect(exported.level.chapter).toBe("enchanted-ground-intro");
+  expect(exported.progress.ground.count).toBe(3);
+  expect(exported.progress.ground.target).toBeGreaterThan(3);
+});
+
+test("Cascade admin console reaches level 900 and keeps the map bounded", async ({ page }) => {
   await page.route("**/api/session", async (route) => {
     await route.fulfill({
       status: 200,
@@ -268,11 +298,11 @@ test("Cascade admin console reaches level 750 and keeps the map bounded", async 
   await page.goto("/cascade.html");
   await page.locator("#cascade-admin-open").click();
   await expect(page.locator("#cascade-admin-dialog")).toBeVisible();
-  await page.locator("#cascade-admin-command").fill("go to level 750");
+  await page.locator("#cascade-admin-command").fill("go to level 900");
   await page.locator("[data-admin-run]").click();
-  await expect(page.locator("#level-number")).toHaveText("750");
+  await expect(page.locator("#level-number")).toHaveText("900");
   await expect(page.locator("#level-map > li")).toHaveCount(30);
-  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "721-750");
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "871-900");
 });
 
 test("Cascade admin special lab spawns color-preserving Butterflies and ready combos", async ({ page }) => {

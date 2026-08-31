@@ -97,6 +97,22 @@ test("Cascade progression round-trips through authenticated edge GET and POST ro
   assert.equal(written.cascade.starsByLevel["5"], 3);
   assert.equal(written.cascade.starsByLevel["12"], 2);
 
+  const veteranWriteResponse = await worker.fetch(
+    new Request("https://gameframe.cc/api/me/cascade/progression", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        highestCompletedLevel: 750,
+        starsByLevel: { "750": 3 },
+      }),
+    }),
+    env,
+  );
+  assert.equal(veteranWriteResponse.status, 200);
+  const veteranWritten = await json(veteranWriteResponse);
+  assert.equal(veteranWritten.cascade.highestCompletedLevel, 750);
+  assert.equal(veteranWritten.cascade.starsByLevel["750"], 3);
+
   const readBackResponse = await worker.fetch(
     new Request("https://gameframe.cc/api/me/progression"),
     env,
@@ -104,9 +120,10 @@ test("Cascade progression round-trips through authenticated edge GET and POST ro
   assert.equal(readBackResponse.status, 200);
   const readBack = await json(readBackResponse);
   assert.equal(readBack.playerId, playerId);
-  assert.equal(readBack.cascade.highestCompletedLevel, 12);
+  assert.equal(readBack.cascade.highestCompletedLevel, 750);
   assert.equal(readBack.cascade.starsByLevel["5"], 3);
   assert.equal(readBack.cascade.starsByLevel["12"], 2);
+  assert.equal(readBack.cascade.starsByLevel["750"], 3);
 
   const monotonicResponse = await worker.fetch(
     new Request("https://gameframe.cc/api/me/cascade/progression", {
@@ -121,7 +138,7 @@ test("Cascade progression round-trips through authenticated edge GET and POST ro
   );
   assert.equal(monotonicResponse.status, 200);
   const monotonic = await json(monotonicResponse);
-  assert.equal(monotonic.cascade.highestCompletedLevel, 12);
+  assert.equal(monotonic.cascade.highestCompletedLevel, 750);
   assert.equal(monotonic.cascade.starsByLevel["5"], 3);
   assert.equal(monotonic.cascade.starsByLevel["7"], 3);
   assert.equal(monotonic.cascade.starsByLevel["12"], 2);

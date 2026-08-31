@@ -7,7 +7,7 @@ export const GAMER_XP_RULES = Object.freeze({
   weeklyBlitzParticipation: 50,
 });
 
-export const MAX_CASCADE_LEVEL = 300;
+export const MAX_CASCADE_LEVEL = 900; // Keep aligned with public/cascade-engine.js LEVEL_COUNT; guarded by tests.
 
 export interface LifetimeGameRecord {
   played: number;
