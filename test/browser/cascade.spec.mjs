@@ -287,7 +287,7 @@ test("Cascade introduces readable crystal Producers at level 901", async ({ page
 
   await expect(page.locator("#level-number")).toHaveText("901");
   await expect(page.locator("#objective-label")).toContainText("forge crystals 0/2");
-  await expect(page.locator(".cascade-tile.has-producer")).toHaveCount(3);
+  await expect(page.locator(".cascade-tile.has-producer")).toHaveCount(2);
   await expect(page.locator(".cascade-help")).toContainText("use every crystal forge");
 
   const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
