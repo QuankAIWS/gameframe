@@ -21,7 +21,7 @@ test("Cascade Crush resolves a legal move through the animated presentation laye
 
   await expect(page.getByRole("heading", { name: "Cascade Crush", exact: true })).toBeVisible();
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
-  await expect(page.locator("#level-map > li")).toHaveCount(10);
+  await expect(page.locator("#level-map > li")).toHaveCount(30);
   await expect(page.locator("#level-map")).toHaveAttribute("data-range", "1-30");
 
   const move = await page.evaluate(async () => {
@@ -332,7 +332,7 @@ test("Cascade admin console reaches level 1000 and keeps the map bounded", async
   await page.locator("#cascade-admin-command").fill("go to level 1000");
   await page.locator("[data-admin-run]").click();
   await expect(page.locator("#level-number")).toHaveText("1000");
-  await expect(page.locator("#level-map > li")).toHaveCount(30);
+  await expect(page.locator("#level-map > li")).toHaveCount(10);
   await expect(page.locator("#level-map")).toHaveAttribute("data-range", "991-1000");
 });
 
