@@ -77,26 +77,29 @@ Design constraints:
 
 Primary new cognitive family: fixed magical Blooms contain hidden matching symbol pairs.
 
-Basic loop:
+Implemented production contract:
 
-- adjacent play opens a Bloom and reveals a bold symbol;
+- adjacent/direct clears advance one Bloom interaction per cascade step;
+- an opened Bloom remains visibly open with a large color + symbol cue;
 - the matching partner remains hidden elsewhere in a fixed Bloom;
-- finding the pair collects both;
-- a mismatch briefly reveals the second symbol, then the Blooms close again without wiping unrelated board progress.
+- finding the remembered pair collects both;
+- a mismatch briefly reveals both symbols, then closes them again without wiping unrelated board progress;
+- board-wide specials may help reveal Blooms but cannot automatically resolve several pairs in one clear.
 
-Start with two pairs. Expand only after family play shows the mechanic remains enjoyable and legible.
+Start with two pairs. Mature levels may use three; do not exceed four without family evidence supporting it.
 
 ### 801–850 — Enchanted Ground / spread coverage
 
-Primary rule: matches spread or clear a board-state underlay across cells.
+Primary rule: a persistent sparkling underlay spreads through a clear only when that clear already touches covered magic.
 
 Decision changes:
 
 - territory coverage matters;
 - the player sometimes needs the right match in the right location;
-- specials become area-control tools.
+- line/bomb/color clears become area-control tools when they intersect existing Ground;
+- single-target helpers do not automatically solve the coverage objective.
 
-Presentation should fit the fantasy/candy world rather than reading as generic “jam.”
+Presentation is magical/fantasy ground rather than generic “jam,” and must remain readable beneath the candy.
 
 ### 851–900 — Cognitive + spatial recombination
 
