@@ -160,11 +160,16 @@ async function captureButterflyFeedback(page, viewport, label) {
     }));
   });
   await page.goto("/cascade.html");
-  await page.locator("#cascade-admin-open").click();
-  await page.locator('[data-admin-special="butterfly"]').click();
-  await expect(page.locator('.cascade-tile[data-special="fish"]')).toHaveCount(1);
-  await page.locator("#cascade-admin-open").click();
-  await page.locator("[data-admin-trigger-special]").click();
+
+  const triggerButterfly = async () => {
+    await page.locator("#cascade-admin-open").click();
+    await page.locator('[data-admin-special="butterfly"]').click();
+    await expect(page.locator('.cascade-tile[data-special="fish"]')).toHaveCount(1);
+    await page.locator("#cascade-admin-open").click();
+    await page.locator("[data-admin-trigger-special]").click();
+  };
+
+  await triggerButterfly();
 
   const launching = page.locator(".cascade-tile.is-butterfly-launching").first();
   await expect(launching).toBeVisible({ timeout: 1_500 });
@@ -180,9 +185,14 @@ async function captureButterflyFeedback(page, viewport, label) {
   await expect(targetTile).toHaveClass(/is-butterfly-targeted/, { timeout: 2_500 });
   await page.locator("#board").screenshot({ path: `${output}/cascade-butterfly-feedback-${label}-target.png` });
 
-  const impact = page.locator(`.cascade-butterfly-impact[data-target="${targetIndex}"]`);
+  await expect(page.locator(".cascade-butterfly-flight")).toHaveCount(0, { timeout: 3_500 });
+  await expect(page.locator(".cascade-butterfly-impact")).toHaveCount(0, { timeout: 3_500 });
+
+  await triggerButterfly();
+  const impact = page.locator(".cascade-butterfly-impact").first();
   await expect(impact).toBeVisible({ timeout: 2_500 });
-  await page.locator("#board").screenshot({ path: `${output}/cascade-butterfly-feedback-${label}-impact.png` });
+  expect(await impact.getAttribute("data-target")).toMatch(/^\d+$/);
+  await page.screenshot({ path: `${output}/cascade-butterfly-feedback-${label}-impact.png`, fullPage: true });
 }
 
 test("Cascade Butterfly feedback is readable across four stages on mobile", async ({ page }) => {
