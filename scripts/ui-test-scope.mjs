@@ -76,7 +76,6 @@ function isCascadeUiFile(file) {
     && file !== "public/cascade-telemetry-sync.js"
     && file !== "public/cascade-diagnostics-sync.js";
   return publicCascade
-    || file.startsWith("src/games/cascade/")
     || /^test\/browser\/cascade.*\.spec\.mjs$/.test(file)
     || /^test\/visual\/cascade.*\.spec\.mjs$/.test(file);
 }
@@ -87,14 +86,21 @@ function isCascadeArchiveFile(file) {
     || file.startsWith("data/cascade/difficulty-archive/");
 }
 
+function isCascadeContractFile(file) {
+  return file === "public/cascade-engine.js"
+    || file === "public/cascade-special-engine.js"
+    || file === "src/games/cascade/cascade-engine.test.mjs"
+    || file === "src/games/cascade/cascade-special-engine.test.mjs";
+}
+
 function isCascadeProfileFile(file) {
-  return file === "scripts/cascade-profile.mjs"
-    || file === "scripts/cascade-profile-compare.mjs"
-    || file === "scripts/cascade-persona-calibrate.mjs"
-    || file === "scripts/cascade-fragility.mjs"
-    || file === "scripts/cascade-playtest-analyze.mjs"
-    || file === "planning/cascade-testing-methodology.md"
-    || file.startsWith("src/games/cascade/");
+  return file === "public/cascade-engine.js"
+    || file === "public/cascade-special-engine.js"
+    || file === "src/games/cascade/cascade-simulator.js"
+    || file === "scripts/cascade-profile.mjs"
+    || file === "scripts/cascade-profile-selection.mjs"
+    || file === "scripts/cascade-ci-plan.mjs"
+    || file === "scripts/cascade-fragility.mjs";
 }
 
 function isOthelloShellFile(file) {
@@ -136,6 +142,7 @@ export function classifyUiTestScope(paths) {
     shell: false,
     casual: false,
     cascadeUi: false,
+    cascadeContracts: false,
     cascadeProfile: false,
     cascadeArchive: false,
     cascadeTelemetry: false,
@@ -156,6 +163,7 @@ export function classifyUiTestScope(paths) {
     if (exactShellFiles.has(file) || isOthelloShellFile(file) || isFamilyAuthFile(file)) scope.shell = true;
     if (isCasualFile(file)) scope.casual = true;
     if (isCascadeUiFile(file)) scope.cascadeUi = true;
+    if (isCascadeContractFile(file)) scope.cascadeContracts = true;
     if (isCascadeProfileFile(file)) scope.cascadeProfile = true;
     if (isCascadeArchiveFile(file)) scope.cascadeArchive = true;
     if (isCascadeTelemetryFile(file)) scope.cascadeTelemetry = true;
@@ -181,6 +189,7 @@ async function main() {
         shell: true,
         casual: true,
         cascadeUi: true,
+        cascadeContracts: true,
         cascadeProfile: true,
         cascadeArchive: true,
         cascadeTelemetry: true,
