@@ -368,8 +368,49 @@ test("Cascade admin special lab spawns color-preserving Butterflies and ready co
 
   await page.locator("#cascade-admin-open").click();
   await page.locator("[data-admin-trigger-special]").click();
-  await expect.poll(async () => page.locator(".cascade-butterfly-flight").count()).toBeGreaterThanOrEqual(0);
+
+  const flight = page.locator(".cascade-butterfly-flight").first();
+  await expect(flight).toBeVisible({ timeout: 1_500 });
+  const sourceIndex = await flight.getAttribute("data-from");
+  const targetIndex = await flight.getAttribute("data-target");
+  expect(sourceIndex).toMatch(/^\\d+$/);
+  expect(targetIndex).toMatch(/^\\d+$/);
+  expect(targetIndex).not.toBe(sourceIndex);
+
+  const targetTile = page.locator(`.cascade-tile[data-index="${targetIndex}"]`);
+  await expect(targetTile).toHaveClass(/is-butterfly-targeted/, { timeout: 2_500 });
+  const impact = page.locator(`.cascade-butterfly-impact[data-target="${targetIndex}"]`);
+  await expect(impact).toBeVisible({ timeout: 2_500 });
+  await expect(flight).toHaveCount(0, { timeout: 3_500 });
+  await expect(impact).toHaveCount(0, { timeout: 3_500 });
   await expect(page.locator("#board .cascade-tile")).toHaveCount(64);
+});
+
+test("Cascade Butterfly keeps source-to-target feedback with reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.route("**/api/session", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        playerId: "cascade-admin-butterfly-reduced-motion",
+        displayName: "Cascade Admin",
+        source: "discord",
+        admin: true,
+      }),
+    });
+  });
+
+  await page.goto("/cascade.html");
+  await page.locator("#cascade-admin-open").click();
+  await page.locator('[data-admin-special="butterfly"]').click();
+  await page.locator("#cascade-admin-open").click();
+  await page.locator("[data-admin-trigger-special]").click();
+
+  await expect(page.locator(".cascade-butterfly-flight")).toHaveCount(0);
+  await expect(page.locator(".cascade-tile.is-butterfly-targeted")).toBeVisible({ timeout: 1_500 });
+  await expect(page.locator(".cascade-butterfly-impact")).toBeVisible({ timeout: 1_500 });
+  await expect(page.locator(".cascade-butterfly-impact")).toHaveCount(0, { timeout: 2_500 });
 });
 
 test("Cascade admin can force life and inventory edge states", async ({ page }) => {
