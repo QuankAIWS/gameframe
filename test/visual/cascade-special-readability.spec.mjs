@@ -173,7 +173,7 @@ async function captureButterflyFeedback(page, viewport, label) {
   const flight = page.locator(".cascade-butterfly-flight").first();
   await expect(flight).toBeVisible({ timeout: 1_500 });
   const targetIndex = await flight.getAttribute("data-target");
-  expect(targetIndex).toMatch(/^\\d+$/);
+  expect(targetIndex).toMatch(/^\d+$/);
   await page.screenshot({ path: `${output}/cascade-butterfly-feedback-${label}-flight.png`, fullPage: true });
 
   const targetTile = page.locator(`.cascade-tile[data-index="${targetIndex}"]`);
