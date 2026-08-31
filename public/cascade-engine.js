@@ -1100,14 +1100,17 @@ function bloomTriggerIndices(clearIndices, blooms) {
 export function advanceBloomProgress(value, clearIndices) {
   const next = normalizeBloomProgress(value);
   const events = [];
-  for (const index of bloomTriggerIndices(clearIndices, next)) {
-    if (next.symbols[index] < 0) continue;
-    if (next.activeIndex < 0) {
-      next.activeIndex = index;
-      events.push({ type: "open", index, symbol: next.symbols[index], indices: [index], symbols: [next.symbols[index]] });
-      continue;
-    }
-    if (next.activeIndex === index) continue;
+  // One Bloom interaction per cascade step keeps large specials useful without
+  // allowing a single board-wide clear to auto-solve the memory objective.
+  const index = bloomTriggerIndices(clearIndices, next)[0];
+  if (!Number.isInteger(index) || next.symbols[index] < 0) {
+    next.lastEvents = events;
+    return next;
+  }
+  if (next.activeIndex < 0) {
+    next.activeIndex = index;
+    events.push({ type: "open", index, symbol: next.symbols[index], indices: [index], symbols: [next.symbols[index]] });
+  } else if (next.activeIndex !== index) {
     const first = next.activeIndex;
     const firstSymbol = next.symbols[first];
     const secondSymbol = next.symbols[index];
