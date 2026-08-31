@@ -1,6 +1,6 @@
 export const BOARD_SIZE = 8;
 export const TILE_KINDS = 6;
-export const LEVEL_COUNT = 900;
+export const LEVEL_COUNT = 1000;
 export const CAMPAIGN_CAPACITY = 10000;
 export const CAMPAIGN_MILESTONE = 3000;
 export const CHAPTER_SIZE = 30;
@@ -42,6 +42,8 @@ function mechanicsForLevel(levelNumber) {
   if (levelNumber >= 701) mechanics.push("recall-locks");
   if (levelNumber >= 751) mechanics.push("memory-blooms");
   if (levelNumber >= 801) mechanics.push("enchanted-ground");
+  if (levelNumber >= 901) mechanics.push("producers");
+  if (levelNumber >= 951) mechanics.push("color-wards");
   return mechanics;
 }
 
@@ -49,7 +51,7 @@ function collectGoal(kind, count) {
   return Object.freeze({ kind, count });
 }
 
-function objective({ collect = [], ice = null, drop = null, locks = null, blooms = null, ground = null } = {}) {
+function objective({ collect = [], ice = null, drop = null, locks = null, blooms = null, ground = null, producers = null, colorWards = null } = {}) {
   return Object.freeze({
     collect: Object.freeze(collect.map((item) => collectGoal(item.kind, item.count))),
     ice: ice ? Object.freeze({ ...ice }) : null,
@@ -79,6 +81,19 @@ function objective({ collect = [], ice = null, drop = null, locks = null, blooms
           target: Math.max(4, Math.min(BOARD_SIZE * BOARD_SIZE, Math.floor(Number(ground.target) || 16))),
           seeds: Math.max(1, Math.min(8, Math.floor(Number(ground.seeds) || 3))),
           pattern: String(ground.pattern || "center"),
+        })
+      : null,
+    producers: producers
+      ? Object.freeze({
+          count: Math.max(1, Math.min(8, Math.floor(Number(producers.count) || 3))),
+          charges: Math.max(1, Math.min(4, Math.floor(Number(producers.charges) || 2))),
+          pattern: String(producers.pattern || "center"),
+        })
+      : null,
+    colorWards: colorWards
+      ? Object.freeze({
+          count: Math.max(1, Math.min(10, Math.floor(Number(colorWards.count) || 4))),
+          pattern: String(colorWards.pattern || "center"),
         })
       : null,
   });
@@ -208,6 +223,8 @@ function applyLateObjectiveTuning(levelNumber, levelObjective) {
       : null,
     blooms: levelObjective?.blooms ? { ...levelObjective.blooms } : null,
     ground: levelObjective?.ground ? { ...levelObjective.ground } : null,
+    producers: levelObjective?.producers ? { ...levelObjective.producers } : null,
+    colorWards: levelObjective?.colorWards ? { ...levelObjective.colorWards } : null,
   });
 }
 
@@ -266,6 +283,8 @@ function compoundGeometryMoveBonus(levelObjective, difficulty) {
   }
   // Do not stack an extra Ground move subsidy on top of a memory subsidy.
   if (levelObjective?.ground && !memoryHeavy && difficulty === "relief") bonus += 1;
+  if (levelObjective?.producers && difficulty === "relief") bonus += 1;
+  if (levelObjective?.colorWards && difficulty === "relief") bonus += 1;
   return bonus;
 }
 
@@ -726,19 +745,120 @@ function campaignSpec(levelNumber) {
       },
     });
   }
+  if (levelNumber <= 900) {
+    return buildSpec({
+      levelNumber, start: 886, chapter: "cognitive-spatial-remix", baseTarget: 23000, targetStep: 115, baseMoves: 39,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+        const useRecall = within % 3 === 0;
+        return objective({
+          ground: {
+            target: scaleCount(22 + phase * 3 + Math.floor(within / 4), wave.objectiveFactor),
+            seeds: 4,
+            pattern,
+          },
+          blooms: useRecall ? null : { pairs: wave.difficulty === "relief" ? 2 : 3, pattern },
+          locks: useRecall ? { count: wave.difficulty === "relief" ? 2 : 3, layers: 1, pattern, recall: true } : null,
+        });
+      },
+    });
+  }
+  if (levelNumber <= 930) {
+    return buildSpec({
+      levelNumber, start: 901, chapter: "producer-intro", baseTarget: 23500, targetStep: 115, baseMoves: 36,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+        const firstTeachingWave = phase === 0;
+        const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        if (firstTeachingWave && pressureBeat) {
+          return objective({
+            ground: {
+              target: scaleCount(24 + Math.floor(within / 3), wave.objectiveFactor),
+              seeds: 4,
+              pattern,
+            },
+          });
+        }
+        return objective({
+          producers: {
+            count: wave.difficulty === "relief" ? 3 : phase >= 2 ? 5 : 4,
+            charges: wave.difficulty === "relief" ? 1 : phase >= 1 ? 2 : 1,
+            pattern,
+          },
+        });
+      },
+    });
+  }
+  if (levelNumber <= 950) {
+    return buildSpec({
+      levelNumber, start: 931, chapter: "producer-routing", baseTarget: 24200, targetStep: 120, baseMoves: 38,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        const routeDrops = within >= 5 && within % 2 === 1;
+        return objective({
+          producers: {
+            count: wave.difficulty === "relief" ? 3 : 4 + (phase >= 1 ? 1 : 0),
+            charges: wave.difficulty === "super-hard" ? 3 : 2,
+            pattern,
+          },
+          locks: routeDrops ? null : {
+            count: scaleCount(3 + phase + Math.floor(within / 6), Math.min(1, wave.objectiveFactor)),
+            layers: 1,
+            pattern,
+            recall: false,
+          },
+          drop: routeDrops ? dropObjective(levelNumber, wave.difficulty === "super-hard" ? 2 : 1, phase) : null,
+        });
+      },
+    });
+  }
+  if (levelNumber <= 980) {
+    return buildSpec({
+      levelNumber, start: 951, chapter: "color-ward-intro", baseTarget: 24800, targetStep: 120, baseMoves: 36,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+        const firstTeachingWave = phase === 0;
+        const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        if (firstTeachingWave && pressureBeat) {
+          return objective({
+            producers: {
+              count: 4,
+              charges: 2,
+              pattern,
+            },
+          });
+        }
+        return objective({
+          colorWards: {
+            count: wave.difficulty === "relief" ? 3 : phase >= 2 ? 6 : 4 + (within >= 6 ? 1 : 0),
+            pattern,
+          },
+        });
+      },
+    });
+  }
   return buildSpec({
-    levelNumber, start: 886, chapter: "cognitive-spatial-remix", baseTarget: 23000, targetStep: 115, baseMoves: 39,
+    levelNumber, start: 981, chapter: "attention-remix", baseTarget: 25500, targetStep: 125, baseMoves: 39,
     objectiveFactory: ({ phase, within, wave }) => {
       const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
-      const useRecall = within % 3 === 0;
+      const useRecall = within % 4 === 0 && wave.difficulty !== "super-hard";
+      const useProducer = within % 3 === 1;
       return objective({
-        ground: {
-          target: scaleCount(22 + phase * 3 + Math.floor(within / 4), wave.objectiveFactor),
-          seeds: 4,
+        colorWards: {
+          count: wave.difficulty === "relief" ? 3 : 5 + (phase >= 1 ? 1 : 0),
           pattern,
         },
-        blooms: useRecall ? null : { pairs: wave.difficulty === "relief" ? 2 : 3, pattern },
-        locks: useRecall ? { count: wave.difficulty === "relief" ? 2 : 3, layers: 1, pattern, recall: true } : null,
+        producers: useProducer ? {
+          count: wave.difficulty === "relief" ? 2 : 3,
+          charges: 2,
+          pattern,
+        } : null,
+        locks: useRecall ? {
+          count: wave.difficulty === "relief" ? 2 : 3,
+          layers: 1,
+          pattern,
+          recall: true,
+        } : null,
       });
     },
   });
@@ -1184,12 +1304,137 @@ export function advanceGroundProgress(value, clearIndices) {
   return next;
 }
 
+function occupiedObjectiveCells(dropProgress, lockProgress, bloomProgress, producerProgress = null) {
+  return new Set([
+    ...(dropProgress?.tokens || []).map((token) => Number(token.index)),
+    ...(dropProgress?.exits || []).map(Number),
+    ...(lockProgress?.layers || []).flatMap((layer, index) => Number(layer) > 0 ? [index] : []),
+    ...(bloomProgress?.symbols || []).flatMap((symbol, index) => Number(symbol) >= 0 ? [index] : []),
+    ...(producerProgress?.remaining || []).flatMap((charges, index) => Number(charges) > 0 ? [index] : []),
+  ]);
+}
+
+function createProducerProgress(levelDefinition, dropProgress = null, lockProgress = null, bloomProgress = null) {
+  const spec = levelDefinition?.objective?.producers;
+  const remaining = Array(BOARD_SIZE * BOARD_SIZE).fill(0);
+  if (!spec?.count) return { total: 0, produced: 0, remaining, lastTriggered: [] };
+  const blocked = occupiedObjectiveCells(dropProgress, lockProgress, bloomProgress);
+  const cells = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
+    const row = Math.floor(index / BOARD_SIZE);
+    const col = index % BOARD_SIZE;
+    return { index, score: patternScore(spec.pattern, row, col) };
+  }).filter(({ index }) => !blocked.has(index));
+  cells.sort((a, b) => a.score - b.score || ((a.index * 41 + levelDefinition.level * 23) % 89) - ((b.index * 41 + levelDefinition.level * 23) % 89));
+  const count = Math.min(cells.length, Math.max(1, Math.floor(Number(spec.count) || 1)));
+  const charges = Math.max(1, Math.min(4, Math.floor(Number(spec.charges) || 1)));
+  for (const { index } of cells.slice(0, count)) remaining[index] = charges;
+  return { total: count * charges, produced: 0, remaining, lastTriggered: [] };
+}
+
+export function normalizeProducerProgress(value) {
+  const remaining = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => Math.max(0, Math.min(4, Math.floor(Number(value?.remaining?.[index]) || 0))));
+  const remainingTotal = remaining.reduce((sum, charges) => sum + charges, 0);
+  const authoredTotal = Math.max(0, Math.floor(Number(value?.total) || remainingTotal));
+  return {
+    total: authoredTotal,
+    produced: Math.max(0, Math.min(authoredTotal, Math.floor(Number(value?.produced) || (authoredTotal - remainingTotal)))),
+    remaining,
+    lastTriggered: Array.isArray(value?.lastTriggered) ? value.lastTriggered.filter((index) => Number.isInteger(index) && index >= 0 && index < remaining.length) : [],
+  };
+}
+
+export function producerSupportIndices(progress) {
+  const producers = normalizeProducerProgress(progress?.producers);
+  return [...new Set(producers.remaining.flatMap((charges, index) => Number(charges) > 0 ? adjacentIndices(index) : []))];
+}
+
+export function advanceProducerProgress(value, clearIndices) {
+  const next = normalizeProducerProgress(value);
+  if (!next.total) return next;
+  const clearSet = new Set((clearIndices || []).filter((index) => Number.isInteger(index) && index >= 0 && index < BOARD_SIZE * BOARD_SIZE));
+  const triggered = [];
+  for (let index = 0; index < next.remaining.length; index += 1) {
+    if (next.remaining[index] <= 0) continue;
+    if (!clearSet.has(index) && !adjacentIndices(index).some((neighbor) => clearSet.has(neighbor))) continue;
+    next.remaining[index] -= 1;
+    next.produced = Math.min(next.total, next.produced + 1);
+    triggered.push(index);
+  }
+  next.lastTriggered = triggered;
+  return next;
+}
+
+function createColorWardProgress(levelDefinition, dropProgress = null, lockProgress = null, bloomProgress = null, producerProgress = null) {
+  const spec = levelDefinition?.objective?.colorWards;
+  const requiredKinds = Array(BOARD_SIZE * BOARD_SIZE).fill(-1);
+  if (!spec?.count) return { total: 0, opened: 0, requiredKinds, lastOpened: [] };
+  const blocked = occupiedObjectiveCells(dropProgress, lockProgress, bloomProgress, producerProgress);
+  const cells = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
+    const row = Math.floor(index / BOARD_SIZE);
+    const col = index % BOARD_SIZE;
+    return { index, score: patternScore(spec.pattern, row, col) };
+  }).filter(({ index }) => !blocked.has(index));
+  cells.sort((a, b) => a.score - b.score || ((a.index * 43 + levelDefinition.level * 29) % 97) - ((b.index * 43 + levelDefinition.level * 29) % 97));
+  const count = Math.min(cells.length, Math.max(1, Math.floor(Number(spec.count) || 1)));
+  for (let slot = 0; slot < count; slot += 1) {
+    const index = cells[slot].index;
+    requiredKinds[index] = (levelDefinition.level + slot * 2 + Math.floor(index / BOARD_SIZE) + index) % TILE_KINDS;
+  }
+  return { total: count, opened: 0, requiredKinds, lastOpened: [] };
+}
+
+export function normalizeColorWardProgress(value) {
+  const requiredKinds = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
+    const kind = Math.floor(Number(value?.requiredKinds?.[index]));
+    return Number.isInteger(kind) && kind >= 0 && kind < TILE_KINDS ? kind : -1;
+  });
+  const remaining = requiredKinds.filter((kind) => kind >= 0).length;
+  const total = Math.max(0, Math.floor(Number(value?.total) || remaining));
+  return {
+    total,
+    opened: Math.max(0, Math.min(total, Math.floor(Number(value?.opened) || (total - remaining)))),
+    requiredKinds,
+    lastOpened: Array.isArray(value?.lastOpened) ? value.lastOpened.filter((index) => Number.isInteger(index) && index >= 0 && index < requiredKinds.length) : [],
+  };
+}
+
+export function colorWardSupportIndices(progress) {
+  const wards = normalizeColorWardProgress(progress?.colorWards);
+  return [...new Set(wards.requiredKinds.flatMap((kind, index) => kind >= 0 ? adjacentIndices(index) : []))];
+}
+
+export function colorWardTargetKinds(progress) {
+  const wards = normalizeColorWardProgress(progress?.colorWards);
+  return [...new Set(wards.requiredKinds.filter((kind) => kind >= 0))];
+}
+
+export function advanceColorWardProgress(value, boardBefore, clearIndices, { allowDirect = false } = {}) {
+  const next = normalizeColorWardProgress(value);
+  if (!next.total) return next;
+  const clearSet = new Set((clearIndices || []).filter((index) => Number.isInteger(index) && index >= 0 && index < BOARD_SIZE * BOARD_SIZE));
+  const opened = [];
+  for (let index = 0; index < next.requiredKinds.length; index += 1) {
+    const requiredKind = next.requiredKinds[index];
+    if (requiredKind < 0) continue;
+    const direct = allowDirect && clearSet.has(index);
+    const matchingNeighbor = adjacentIndices(index).some((neighbor) => clearSet.has(neighbor) && Number(boardBefore?.[neighbor]) === requiredKind);
+    if (!direct && !matchingNeighbor) continue;
+    next.requiredKinds[index] = -1;
+    next.opened = Math.min(next.total, next.opened + 1);
+    opened.push(index);
+  }
+  next.lastOpened = opened;
+  return next;
+}
+
 export function createLevelProgress(levelDefinition) {
   const drop = createDropProgress(levelDefinition);
   const locks = createLockProgress(levelDefinition, drop);
   const blooms = createBloomProgress(levelDefinition, drop, locks);
   const ground = createGroundProgress(levelDefinition, drop, locks, blooms);
-  return { collected: Array(TILE_KINDS).fill(0), ice: createIceBoard(levelDefinition), drop, locks, blooms, ground };
+  const producers = createProducerProgress(levelDefinition, drop, locks, blooms);
+  const colorWards = createColorWardProgress(levelDefinition, drop, locks, blooms, producers);
+  return { collected: Array(TILE_KINDS).fill(0), ice: createIceBoard(levelDefinition), drop, locks, blooms, ground, producers, colorWards };
 }
 
 export function applyLevelProgress(levelDefinition, progress, result) {
@@ -1200,17 +1445,26 @@ export function applyLevelProgress(levelDefinition, progress, result) {
     locks: normalizeLockProgress(result?.locksAfter ?? result?.locks ?? progress?.locks),
     blooms: normalizeBloomProgress(progress?.blooms),
     ground: normalizeGroundProgress(progress?.ground),
+    producers: normalizeProducerProgress(progress?.producers),
+    colorWards: normalizeColorWardProgress(progress?.colorWards),
   };
   addKindCounts(next.collected, result?.clearedKindCounts);
   const steps = Array.isArray(result?.transitions) ? result.transitions : result?.cleared ? [result] : [];
   const bloomEvents = [];
   const groundSpread = [];
+  const producerTriggers = [];
+  const wardOpenings = [];
   if (result?.hammer?.cleared) {
+    const clearIndices = result.hammer.matchedForProgress || result.hammer.matched || [];
     next.drop = dropStepProgress(next.drop, result.hammer);
-    next.blooms = advanceBloomProgress(next.blooms, result.hammer.matchedForProgress || result.hammer.matched || []);
+    next.blooms = advanceBloomProgress(next.blooms, clearIndices);
     bloomEvents.push(...next.blooms.lastEvents);
-    next.ground = advanceGroundProgress(next.ground, result.hammer.matchedForProgress || result.hammer.matched || []);
+    next.ground = advanceGroundProgress(next.ground, clearIndices);
     groundSpread.push(...next.ground.lastSpread);
+    next.producers = advanceProducerProgress(next.producers, clearIndices);
+    producerTriggers.push(...next.producers.lastTriggered);
+    next.colorWards = advanceColorWardProgress(next.colorWards, result.hammer.before, clearIndices, { allowDirect: true });
+    wardOpenings.push(...next.colorWards.lastOpened);
   }
   for (const step of steps) {
     next.drop = dropStepProgress(next.drop, step);
@@ -1219,9 +1473,15 @@ export function applyLevelProgress(levelDefinition, progress, result) {
     bloomEvents.push(...next.blooms.lastEvents);
     next.ground = advanceGroundProgress(next.ground, clearIndices);
     groundSpread.push(...next.ground.lastSpread);
+    next.producers = advanceProducerProgress(next.producers, clearIndices);
+    producerTriggers.push(...next.producers.lastTriggered);
+    next.colorWards = advanceColorWardProgress(next.colorWards, step.before, clearIndices);
+    wardOpenings.push(...next.colorWards.lastOpened);
   }
   next.blooms.lastEvents = bloomEvents;
   next.ground.lastSpread = [...new Set(groundSpread)];
+  next.producers.lastTriggered = [...new Set(producerTriggers)];
+  next.colorWards.lastOpened = [...new Set(wardOpenings)];
   return next;
 }
 
@@ -1233,6 +1493,8 @@ export function objectiveComplete(levelDefinition, progress, score) {
   if (levelDefinition.objective?.locks && (progress?.locks?.layers || []).some((layer) => Number(layer) > 0)) return false;
   if (levelDefinition.objective?.blooms && Number(progress?.blooms?.collectedPairs || 0) < Number(levelDefinition.objective.blooms.pairs || 0)) return false;
   if (levelDefinition.objective?.ground && Number(progress?.ground?.count || 0) < Number(levelDefinition.objective.ground.target || 0)) return false;
+  if (levelDefinition.objective?.producers && Number(progress?.producers?.produced || 0) < Number(progress?.producers?.total || 0)) return false;
+  if (levelDefinition.objective?.colorWards && (progress?.colorWards?.requiredKinds || []).some((kind) => Number(kind) >= 0)) return false;
   return true;
 }
 
@@ -1264,6 +1526,14 @@ export function objectiveRemaining(levelDefinition, progress, score) {
     const count = Math.max(0, Number(levelDefinition.objective.ground.target || 0) - Number(progress?.ground?.count || 0));
     if (count > 0) remaining.push({ type: "ground", count });
   }
+  if (levelDefinition.objective?.producers) {
+    const count = Math.max(0, Number(progress?.producers?.total || 0) - Number(progress?.producers?.produced || 0));
+    if (count > 0) remaining.push({ type: "producer", count });
+  }
+  if (levelDefinition.objective?.colorWards) {
+    const count = (progress?.colorWards?.requiredKinds || []).filter((kind) => Number(kind) >= 0).length;
+    if (count > 0) remaining.push({ type: "color-ward", count });
+  }
   return remaining;
 }
 
@@ -1292,6 +1562,15 @@ export function describeLevelObjective(levelDefinition, progress, score = 0) {
   if (levelDefinition.objective?.ground) {
     const current = Math.min(Number(levelDefinition.objective.ground.target || 0), Number(progress?.ground?.count || 0));
     parts.push(`magic ground ${current}/${levelDefinition.objective.ground.target}`);
+  }
+  if (levelDefinition.objective?.producers) {
+    const current = Math.min(Number(progress?.producers?.total || 0), Number(progress?.producers?.produced || 0));
+    parts.push(`crystals made ${current}/${Number(progress?.producers?.total || 0)}`);
+  }
+  if (levelDefinition.objective?.colorWards) {
+    const total = Number(progress?.colorWards?.total || 0);
+    const opened = Math.min(total, Number(progress?.colorWards?.opened || 0));
+    parts.push(`color wards ${opened}/${total}`);
   }
   return parts.join(" · ");
 }
