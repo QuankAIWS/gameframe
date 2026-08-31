@@ -66,3 +66,56 @@ test("Bloom plus Ground recombination remains legible on desktop", async ({ page
   await expect(page.locator(".cascade-tile.has-enchanted-ground").first()).toBeVisible();
   await page.screenshot({ path: `${output}/cascade-bloom-ground-remix-desktop.png`, fullPage: true });
 });
+
+
+test("Crystal Producers stay readable on older-eye mobile layouts without replacing candy identity", async ({ page }) => {
+  await openLevel(page, 901);
+  const producers = page.locator(".cascade-tile.has-producer");
+  await expect(producers).toHaveCount(2);
+  const geometry = await producers.first().evaluate((tile) => {
+    const tileRect = tile.getBoundingClientRect();
+    const mark = tile.querySelector(".cascade-producer-mark").getBoundingClientRect();
+    const charge = tile.querySelector(".cascade-producer-charge").getBoundingClientRect();
+    const candy = getComputedStyle(tile, "::before");
+    return {
+      tileWidth: tileRect.width,
+      markWidth: mark.width,
+      chargeWidth: charge.width,
+      candyWidth: Number.parseFloat(candy.width),
+    };
+  });
+  expect(geometry.markWidth).toBeGreaterThan(geometry.tileWidth * .75);
+  expect(geometry.chargeWidth).toBeGreaterThan(12);
+  expect(geometry.candyWidth).toBeGreaterThan(geometry.tileWidth * .5);
+  await page.screenshot({ path: `${output}/cascade-producers-mobile.png`, fullPage: true });
+});
+
+test("Color Wards show a redundant visible color-symbol cue on mobile", async ({ page }) => {
+  await openLevel(page, 951);
+  const wards = page.locator(".cascade-tile.has-color-ward");
+  await expect(wards).toHaveCount(2);
+  const cue = await wards.first().evaluate((tile) => {
+    const tileRect = tile.getBoundingClientRect();
+    const mark = tile.querySelector(".cascade-color-ward-mark");
+    const markRect = mark.getBoundingClientRect();
+    return {
+      tileWidth: tileRect.width,
+      markWidth: markRect.width,
+      text: mark.textContent,
+      kind: mark.dataset.wardKind,
+      fontSize: Number.parseFloat(getComputedStyle(mark).fontSize),
+    };
+  });
+  expect(cue.markWidth).toBeGreaterThan(cue.tileWidth * .75);
+  expect(["♥", "◆", "★", "●", "✦", "✿"]).toContain(cue.text);
+  expect(Number(cue.kind)).toBeGreaterThanOrEqual(0);
+  expect(cue.fontSize).toBeGreaterThanOrEqual(18);
+  await page.screenshot({ path: `${output}/cascade-color-wards-mobile.png`, fullPage: true });
+});
+
+test("Producer plus Color Ward recombination remains legible on desktop", async ({ page }) => {
+  await openLevel(page, 982, { width: 1440, height: 960 });
+  await expect(page.locator(".cascade-tile.has-producer").first()).toBeVisible();
+  await expect(page.locator(".cascade-tile.has-color-ward").first()).toBeVisible();
+  await page.screenshot({ path: `${output}/cascade-producer-ward-remix-desktop.png`, fullPage: true });
+});

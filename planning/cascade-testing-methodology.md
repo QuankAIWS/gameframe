@@ -229,6 +229,19 @@ For each accepted bounded level batch:
 
 At larger campaign sizes, normal validation should profile the **new/changed range** and representative sentinel levels from older mechanic families. Full historical sweeps are reserved for major checkpoints, consequential rule changes, or sentinel drift suggesting broad regression.
 
+### Scaled CI policy
+
+Cascade validation is deliberately tiered so campaign growth does not turn every pull request into an exhaustive simulation:
+
+1. **Fast contracts and UI:** engine/persistent-special contracts, browser journeys, persistence coverage, and visual review run only when their own implementation surfaces change.
+2. **Campaign canary:** balance-semantic changes run a deterministic evenly spaced campaign sample rather than every shipped level. This is the broad historical smoke test for solver/simulator regressions.
+3. **Changed-range deep profile:** when generated level definitions actually change, CI compares base and head `CASCADE_LEVELS`, finds the changed level numbers, and profiles that range with a 30-level seam on each side. The same range receives the human-skilled move-fragility scan.
+4. **Broad rebalance exception:** if a real rebalance changes a wide historical range, the changed-range gate is allowed to become correspondingly expensive. That cost is justified because the balance itself changed.
+5. **Nightly exhaustive regression:** `.github/workflows/cascade-nightly.yml` runs at 06:00 UTC and can also be dispatched manually. Scheduled execution skips when no balance-relevant Cascade work landed in the preceding 30 hours. When it runs, the full campaign is split into eight contiguous GitHub-hosted shards so wall-clock time stays bounded as the campaign grows.
+6. **Telemetry calibration:** persona calibration against real player data remains an explicit milestone/weekly/on-demand activity. Do not retrain or retune human-like personas from every small family-play sample.
+
+Pull-request canary and changed-range artifacts are diagnostic evidence. Nightly shard artifacts retain only short-term execution evidence. Accepted milestone baselines, meaningful regressions, and calibration checkpoints are the items promoted into the canonical private archive; routine nightlies are not permanent history.
+
 Fast engine/unit contracts must follow the same scaling principle. They should exercise representative mechanic/chapter sentinels rather than independently simulating every shipped level when the dedicated full-campaign profile job already provides that coverage. Avoid duplicating the complete campaign sweep inside both the contract step and the profile step; this keeps validation runtime bounded as Cascade grows toward 1,000+ levels.
 
 The production expansion cadence is defined by `planning/cascade-10000-campaign-roadmap.md`; the current default is **150 levels per generation/tuning pass**. A 30-level chapter or map window is an internal content/UI structure and must not be interpreted as the validation or generation batch size.

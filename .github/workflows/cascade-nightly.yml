@@ -1,0 +1,96 @@
+name: Cascade Nightly Campaign Regression
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cascade-nightly-campaign-regression
+  cancel-in-progress: true
+
+jobs:
+  recent-balance-work:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Decide whether exhaustive bot regression is useful
+        id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        shell: bash
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if git log --since="30 hours ago" --name-only --pretty=format: -- \
+            public/cascade-engine.js \
+            public/cascade-special-engine.js \
+            src/games/cascade \
+            scripts/cascade-profile.mjs \
+            scripts/cascade-profile-selection.mjs \
+            scripts/cascade-fragility.mjs | grep -q '[^[:space:]]'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  contracts:
+    needs: recent-balance-work
+    if: needs.recent-balance-work.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Cascade engine and persistent-special contracts
+        run: |
+          npm run cascade:test
+          node --test src/games/cascade/cascade-special-engine.test.mjs
+
+  campaign-profile:
+    needs: [recent-balance-work, contracts]
+    if: needs.recent-balance-work.outputs.run == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run full-campaign shard ${{ matrix.shard }}
+        run: npm run cascade:profile -- --shard-index=${{ matrix.shard }} --shard-count=8 --runs=6 --json=cascade-nightly-shard-${{ matrix.shard }}.json
+      - name: Upload nightly profile shard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cascade-nightly-profile-${{ github.run_id }}-shard-${{ matrix.shard }}
+          path: cascade-nightly-shard-${{ matrix.shard }}.json
+          if-no-files-found: warn
+          retention-days: 14

@@ -8,6 +8,9 @@ import {
   createLevelProgress,
   createRng,
   dropSupportIndices,
+  producerSupportIndices,
+  colorWardSupportIndices,
+  colorWardTargetKinds,
   emptySpecials,
   findSpecialMatchGroups,
   objectiveComplete,
@@ -37,6 +40,8 @@ export const HUMAN_PERSONAS = Object.freeze({
       bloomExplore: 1.1,
       bloomMatch: 2.2,
       ground: 1.35,
+      producer: 1.45,
+      colorWard: 1.65,
     }),
   }),
   "human-skilled": Object.freeze({
@@ -60,6 +65,8 @@ export const HUMAN_PERSONAS = Object.freeze({
       bloomExplore: 1.75,
       bloomMatch: 3.4,
       ground: 2.55,
+      producer: 2.85,
+      colorWard: 3.15,
     }),
   }),
 });
@@ -221,9 +228,12 @@ function listPlayableMoves(board, specials, rules = {}, locked = []) {
 }
 
 function remainingTargetKinds(level, progress) {
-  return (level.objective?.collect || [])
-    .filter((goal) => Number(progress?.collected?.[goal.kind] || 0) < goal.count)
-    .map((goal) => goal.kind);
+  return [...new Set([
+    ...(level.objective?.collect || [])
+      .filter((goal) => Number(progress?.collected?.[goal.kind] || 0) < goal.count)
+      .map((goal) => goal.kind),
+    ...colorWardTargetKinds(progress),
+  ])];
 }
 
 function initialRecallKnowledge(personaName, progress, decisionRng) {
@@ -327,6 +337,15 @@ function objectiveAdvanceValue(level, before, after) {
   const beforeGround = Number(before?.ground?.count || 0);
   const afterGround = Number(after?.ground?.count || 0);
   value += Math.max(0, afterGround - beforeGround) * 115;
+  const beforeProduced = Number(before?.producers?.produced || 0);
+  const afterProduced = Number(after?.producers?.produced || 0);
+  value += Math.max(0, afterProduced - beforeProduced) * 140;
+  const beforeProducerCollected = Number(before?.producers?.collected || 0);
+  const afterProducerCollected = Number(after?.producers?.collected || 0);
+  value += Math.max(0, afterProducerCollected - beforeProducerCollected) * 460;
+  const beforeWards = Number(before?.colorWards?.opened || 0);
+  const afterWards = Number(after?.colorWards?.opened || 0);
+  value += Math.max(0, afterWards - beforeWards) * 420;
   return value;
 }
 
@@ -366,6 +385,8 @@ function visibleMoveFeatures(level, progress, board, specials, move, recallKnowl
     bloomExplore: 0,
     bloomMatch: 0,
     ground: 0,
+    producer: 0,
+    colorWard: 0,
   };
 
   if (a === SPECIAL.COLOR || b === SPECIAL.COLOR) {
@@ -400,6 +421,39 @@ function visibleMoveFeatures(level, progress, board, specials, move, recallKnowl
   const groundCovered = progress?.ground?.covered || [];
   if (matched.size && [...matched].some((index) => groundCovered[index] === true)) {
     features.ground = [...matched].filter((index) => groundCovered[index] !== true).length;
+  }
+
+  const producerRemaining = progress?.producers?.remaining || [];
+  const producerCrystals = progress?.producers?.crystals || [];
+  for (let producerIndex = 0; producerIndex < producerRemaining.length; producerIndex += 1) {
+    const crystalReady = producerCrystals[producerIndex] === true;
+    if (crystalReady) {
+      if (matched.has(producerIndex)) features.producer += 1.6;
+      continue;
+    }
+    if (Number(producerRemaining[producerIndex]) <= 0) continue;
+    const row = Math.floor(producerIndex / 8);
+    const col = producerIndex % 8;
+    const neighbors = [];
+    if (row > 0) neighbors.push(producerIndex - 8);
+    if (row < 7) neighbors.push(producerIndex + 8);
+    if (col > 0) neighbors.push(producerIndex - 1);
+    if (col < 7) neighbors.push(producerIndex + 1);
+    if (matched.has(producerIndex) || neighbors.some((index) => matched.has(index))) features.producer += 1;
+  }
+
+  const wardKinds = progress?.colorWards?.requiredKinds || [];
+  for (let wardIndex = 0; wardIndex < wardKinds.length; wardIndex += 1) {
+    const requiredKind = Number(wardKinds[wardIndex]);
+    if (requiredKind < 0) continue;
+    const row = Math.floor(wardIndex / 8);
+    const col = wardIndex % 8;
+    const neighbors = [];
+    if (row > 0) neighbors.push(wardIndex - 8);
+    if (row < 7) neighbors.push(wardIndex + 8);
+    if (col > 0) neighbors.push(wardIndex - 1);
+    if (col < 7) neighbors.push(wardIndex + 1);
+    if (neighbors.some((index) => matched.has(index) && Number(swappedBoard[index]) === requiredKind)) features.colorWard += 1;
   }
 
   const bloomTargets = bloomTargetsForMatched(progress, matched);
@@ -505,7 +559,7 @@ function evaluateImmediate(level, progress, board, specials, move, boardRng) {
     ice: progress.ice,
     locks: progress.locks,
     targetKinds: remainingTargetKinds(level, progress),
-    targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress)])],
+    targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress), ...producerSupportIndices(progress), ...colorWardSupportIndices(progress)])],
   });
   if (!result.legal) return null;
   const nextProgress = applySpecialLevelProgress(level, progress, result);
@@ -619,6 +673,9 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
   let locksOpenedCount = 0;
   let bloomPairsCollected = 0;
   let groundSpreadCount = 0;
+  let crystalsMadeCount = 0;
+  let crystalsCollectedCount = 0;
+  let colorWardsOpenedCount = 0;
   const collectedTotals = Array(TILE_KINDS).fill(0);
   const moveHistory = [];
 
@@ -633,7 +690,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
       ice: progress.ice,
       locks: progress.locks,
       targetKinds: remainingTargetKinds(definition, progress),
-      targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress)])],
+      targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress), ...producerSupportIndices(progress), ...colorWardSupportIndices(progress)])],
     });
     if (!result.legal) throw new Error(`Cascade bot selected an illegal move ${move.from}->${move.to}`);
 
@@ -643,11 +700,17 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     const openedBefore = Number(progress?.locks?.opened || 0);
     const bloomPairsBefore = Number(progress?.blooms?.collectedPairs || 0);
     const groundBefore = Number(progress?.ground?.count || 0);
+    const producedBefore = Number(progress?.producers?.produced || 0);
+    const producerCollectedBefore = Number(progress?.producers?.collected || 0);
+    const wardsBefore = Number(progress?.colorWards?.opened || 0);
     progress = applySpecialLevelProgress(definition, progress, result);
     dropDeliveredCount += Math.max(0, Number(progress?.drop?.delivered || 0) - deliveredBefore);
     locksOpenedCount += Math.max(0, Number(progress?.locks?.opened || 0) - openedBefore);
     bloomPairsCollected += Math.max(0, Number(progress?.blooms?.collectedPairs || 0) - bloomPairsBefore);
     groundSpreadCount += Math.max(0, Number(progress?.ground?.count || 0) - groundBefore);
+    crystalsMadeCount += Math.max(0, Number(progress?.producers?.produced || 0) - producedBefore);
+    crystalsCollectedCount += Math.max(0, Number(progress?.producers?.collected || 0) - producerCollectedBefore);
+    colorWardsOpenedCount += Math.max(0, Number(progress?.colorWards?.opened || 0) - wardsBefore);
     rememberBloomEvents(strategy, bloomKnowledge, progress?.blooms?.lastEvents || [], decisionRng);
     lockHitCount += result.transitions.reduce((sum, transition) => sum + (transition.lockHits?.length || 0), 0);
     cascadeCount += result.transitions.length;
@@ -676,6 +739,9 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
       bloomPairs: Number(progress?.blooms?.collectedPairs || 0),
       bloomEvents: progress?.blooms?.lastEvents?.length || 0,
       groundCovered: Number(progress?.ground?.count || 0),
+      crystalsMade: Number(progress?.producers?.produced || 0),
+      crystalsCollected: Number(progress?.producers?.collected || 0),
+      colorWardsOpened: Number(progress?.colorWards?.opened || 0),
       shuffled: result.shuffled,
       score,
       movesRemaining,
@@ -710,6 +776,9 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     locksOpenedCount,
     bloomPairsCollected,
     groundSpreadCount,
+    crystalsMadeCount,
+    crystalsCollectedCount,
+    colorWardsOpenedCount,
     collectedTotals,
     objectiveRemaining: remaining,
     objectiveComplete: win,

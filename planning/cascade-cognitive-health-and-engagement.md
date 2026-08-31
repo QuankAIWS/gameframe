@@ -110,13 +110,15 @@ Older-adult cognitive-training research also shows strong interest in performanc
 
 Every normal match-3 level already exercises visual search, planning, inhibition, and spatial reasoning. Explicit memory mechanics therefore do not need to dominate the campaign.
 
-After memory mechanics are introduced:
+After a cognitive family has completed its dedicated foundation/teaching arc:
 
-- target roughly **4–6 cognitive-accent levels per 30-level chapter** (about 13–20%);
-- normally place **1–2 cognitive-accent levels per ten-level tension wave**;
-- avoid more than two explicit memory-accent levels consecutively;
-- first-introduction chapters may temporarily use more frequent, easier exposures;
+- target roughly **4–6 steady-state cognitive-accent levels per 30-level chapter** (about 13–20%);
+- normally place **1–2 steady-state cognitive-accent levels per ten-level tension wave**;
+- avoid more than two explicit memory-accent levels consecutively in steady-state mixed chapters;
+- dedicated foundation arcs may temporarily use much more frequent, easier exposures so the player actually learns the new rule;
 - after mastery, recur old cognitive mechanics at spaced intervals and mix them with ordinary mechanics.
+
+The current foundation exceptions are intentional: 701–750 establishes Recall Locks, 751–800 establishes Memory Blooms, and 951–1,000 establishes visible Color Wards/attention play. Those ranges may be dense. The exception does **not** permit stacking an unfamiliar cognitive rule with raw failure pressure: first teaching waves still debut on relief/normal beats, cues remain redundant and readable, and post-foundation chapters should return toward the steady-state cadence.
 
 This is deliberately stronger than the current optional-only cognitive layer but far lighter than a dedicated brain-training application.
 
@@ -328,8 +330,8 @@ Memory Blooms debut only on relief/normal beats.
 
 ### 901–1,050
 
-- 901–950: Producers/Generators;
-- 951–1,000: color-conditional / attention elements and mature Recall-Lock combinations;
+- 901–950: Crystal Producers/Generators with visible charge counts, deterministic adjacent-clear activation, and a manufacture-then-collect dependency;
+- 951–1,000: visible Color Wards for selective attention, with mature Recall-Lock combinations used sparingly after the Ward rule is familiar;
 - 1,001–1,050: mastery/recombination and a small Pattern Echo pilot if Memory Blooms and Recall Locks test well.
 
 Level 1,000 remains a major human-data checkpoint inside this production batch rather than changing the 150-level generation cadence.

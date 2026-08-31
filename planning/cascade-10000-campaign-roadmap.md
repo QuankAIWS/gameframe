@@ -29,7 +29,9 @@ Unless explicitly changed by a later decision, agents should plan, generate, pro
 
 ## Immediate milestone architecture: levels 451–3,000
 
-New mechanics enter in teach/practice/mix/mastery arcs, then become ordinary parts of the global vocabulary.
+New mechanics enter in teach/practice/mix/mastery arcs, then become ordinary parts of the global vocabulary. Dedicated foundation arcs may be intentionally dense while a mechanic is being learned; the lower steady-state cognitive-accent density applies after that family is established.
+
+Accepted historical level definitions must not drift as a side effect of adding later mechanics. A deliberate rebalance of an older shipped range is valid, but it must be intentional, appear in the change-aware CI planner's changed-level report, and receive the corresponding changed-range profile/fragility validation.
 
 A new mechanic should earn its place by changing player decisions. Cosmetic variants or additional hit points do not count as new mechanic families.
 
@@ -117,9 +119,9 @@ Use controlled combinations of:
 
 Do not stack two unfamiliar cognitive systems with high raw move pressure.
 
-### 901–950 — Generators / producers
+### 901–950 — Crystal Producers / generators
 
-Primary rule: board elements create objective pieces or blockers when activated.
+Primary rule: fixed Crystal Producers manufacture objective crystals when clears activate them.
 
 Decision changes:
 
@@ -127,11 +129,11 @@ Decision changes:
 - activation order and producer access matter;
 - producer + lock + Drop combinations create dependency chains.
 
-Producer output must be deterministic under board RNG and fully represented in simulator/replay tooling.
+Producer placement and output must be deterministic under board RNG and fully represented in simulator/replay tooling. The implemented Producer uses a visible remaining-charge count. A qualifying adjacent/direct clear spends one charge and manufactures a crystal that remains on the forge; a later direct clear collects that crystal before the forge can finish its remaining production cycle.
 
-### 951–1,000 — Color-conditional / attention elements
+### 951–1,000 — Color Wards / visible attention elements
 
-Primary rule: a fixed element responds to a visible or remembered color/symbol condition.
+Primary rule: a fixed Color Ward visibly shows the color-symbol it wants and opens when that color is cleared beside it. This is a selective-attention rule, not a hidden-memory test.
 
 Decision changes:
 
@@ -139,7 +141,7 @@ Decision changes:
 - visual search and selective attention become more important;
 - mature Recall-Lock combinations can coexist with non-memory color-conditional elements.
 
-Level 1,000 is a major human-data and cognitive-mechanic checkpoint.
+Level 1,000 is a major human-data and cognitive-mechanic checkpoint. The owner explicitly requested stopping the current production pass at 1,000, so 901–1,000 is a 100-level milestone slice; 1,001–1,050 remains the unfinished tail of the normal 150-level production batch.
 
 ### 1,001–1,050 — Mastery plus Pattern Echo pilot
 

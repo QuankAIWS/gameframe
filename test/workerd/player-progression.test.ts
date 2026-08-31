@@ -33,17 +33,17 @@ function jsonRequest(path: string, body: Record<string, unknown>): Request {
 }
 
 describe("Gamer Level progression", () => {
-  it("accepts veteran Cascade progress through the current 900-level campaign", () => {
-    expect(MAX_CASCADE_LEVEL).toBe(900);
+  it("accepts veteran Cascade progress through the current 1000-level campaign", () => {
+    expect(MAX_CASCADE_LEVEL).toBe(1000);
 
     const base = emptyPlayerProgression("campaign-cap", 1_000);
     const progressed = applyCascadeProgression(base, {
-      highestCompletedLevel: 750,
-      starsByLevel: { "750": 3 },
+      highestCompletedLevel: 950,
+      starsByLevel: { "950": 3 },
       updatedAt: 2_000,
     });
-    expect(progressed.cascade.highestCompletedLevel).toBe(750);
-    expect(progressed.cascade.starsByLevel["750"]).toBe(3);
+    expect(progressed.cascade.highestCompletedLevel).toBe(950);
+    expect(progressed.cascade.starsByLevel["950"]).toBe(3);
   });
 
   it("uses a nonlinear level curve with a fast first level", () => {

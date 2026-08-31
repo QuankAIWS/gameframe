@@ -9,6 +9,7 @@ const QUICK_RECALL_AFTER_LEVELS = Object.freeze(new Set([
   8, 24, 48, 72, 96, 126, 156, 186, 216, 246, 276,
   306, 336, 366, 396, 426, 456, 486, 516, 546, 576,
   606, 636, 666, 696, 726, 756, 786, 816, 846, 876,
+  906, 936, 966, 996,
 ]));
 const RECALL_ROUNDS = Object.freeze([2, 3, 4]);
 const RECALL_PACE = Object.freeze([

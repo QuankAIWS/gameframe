@@ -281,7 +281,38 @@ test("Cascade introduces Enchanted Ground at level 801", async ({ page }) => {
   expect(exported.progress.ground.target).toBeGreaterThan(3);
 });
 
-test("Cascade admin console reaches level 900 and keeps the map bounded", async ({ page }) => {
+test("Cascade introduces readable crystal Producers at level 901", async ({ page }) => {
+  await installLevelFixture(page, 901);
+  await page.goto("/cascade.html?cascadeTestLevel=901");
+
+  await expect(page.locator("#level-number")).toHaveText("901");
+  await expect(page.locator("#objective-label")).toContainText("forge crystals 0/2");
+  await expect(page.locator(".cascade-tile.has-producer")).toHaveCount(2);
+  await expect(page.locator(".cascade-help")).toContainText("use every crystal forge");
+
+  const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
+  expect(exported.level.chapter).toBe("producer-intro");
+  expect(exported.progress.producers.total).toBe(2);
+  expect(exported.progress.producers.produced).toBe(0);
+  expect(exported.progress.producers.collected).toBe(0);
+});
+
+test("Cascade introduces visible Color Wards at level 951", async ({ page }) => {
+  await installLevelFixture(page, 951);
+  await page.goto("/cascade.html?cascadeTestLevel=951");
+
+  await expect(page.locator("#level-number")).toHaveText("951");
+  await expect(page.locator("#objective-label")).toContainText("color wards 0/2");
+  await expect(page.locator(".cascade-tile.has-color-ward")).toHaveCount(2);
+  await expect(page.locator(".cascade-help")).toContainText("color-symbol it wants");
+
+  const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
+  expect(exported.level.chapter).toBe("color-ward-intro");
+  expect(exported.progress.colorWards.total).toBe(2);
+  expect(exported.progress.colorWards.requiredKinds.filter((kind) => kind >= 0)).toHaveLength(2);
+});
+
+test("Cascade admin console reaches level 1000 and keeps the map bounded", async ({ page }) => {
   await page.route("**/api/session", async (route) => {
     await route.fulfill({
       status: 200,
@@ -298,11 +329,11 @@ test("Cascade admin console reaches level 900 and keeps the map bounded", async 
   await page.goto("/cascade.html");
   await page.locator("#cascade-admin-open").click();
   await expect(page.locator("#cascade-admin-dialog")).toBeVisible();
-  await page.locator("#cascade-admin-command").fill("go to level 900");
+  await page.locator("#cascade-admin-command").fill("go to level 1000");
   await page.locator("[data-admin-run]").click();
-  await expect(page.locator("#level-number")).toHaveText("900");
-  await expect(page.locator("#level-map > li")).toHaveCount(30);
-  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "871-900");
+  await expect(page.locator("#level-number")).toHaveText("1000");
+  await expect(page.locator("#level-map > li")).toHaveCount(10);
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "991-1000");
 });
 
 test("Cascade admin special lab spawns color-preserving Butterflies and ready combos", async ({ page }) => {
