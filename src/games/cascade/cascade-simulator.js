@@ -339,7 +339,10 @@ function objectiveAdvanceValue(level, before, after) {
   value += Math.max(0, afterGround - beforeGround) * 115;
   const beforeProduced = Number(before?.producers?.produced || 0);
   const afterProduced = Number(after?.producers?.produced || 0);
-  value += Math.max(0, afterProduced - beforeProduced) * 360;
+  value += Math.max(0, afterProduced - beforeProduced) * 140;
+  const beforeProducerCollected = Number(before?.producers?.collected || 0);
+  const afterProducerCollected = Number(after?.producers?.collected || 0);
+  value += Math.max(0, afterProducerCollected - beforeProducerCollected) * 460;
   const beforeWards = Number(before?.colorWards?.opened || 0);
   const afterWards = Number(after?.colorWards?.opened || 0);
   value += Math.max(0, afterWards - beforeWards) * 420;
@@ -421,7 +424,13 @@ function visibleMoveFeatures(level, progress, board, specials, move, recallKnowl
   }
 
   const producerRemaining = progress?.producers?.remaining || [];
+  const producerCrystals = progress?.producers?.crystals || [];
   for (let producerIndex = 0; producerIndex < producerRemaining.length; producerIndex += 1) {
+    const crystalReady = producerCrystals[producerIndex] === true;
+    if (crystalReady) {
+      if (matched.has(producerIndex)) features.producer += 1.6;
+      continue;
+    }
     if (Number(producerRemaining[producerIndex]) <= 0) continue;
     const row = Math.floor(producerIndex / 8);
     const col = producerIndex % 8;
@@ -665,6 +674,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
   let bloomPairsCollected = 0;
   let groundSpreadCount = 0;
   let crystalsMadeCount = 0;
+  let crystalsCollectedCount = 0;
   let colorWardsOpenedCount = 0;
   const collectedTotals = Array(TILE_KINDS).fill(0);
   const moveHistory = [];
@@ -691,6 +701,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     const bloomPairsBefore = Number(progress?.blooms?.collectedPairs || 0);
     const groundBefore = Number(progress?.ground?.count || 0);
     const producedBefore = Number(progress?.producers?.produced || 0);
+    const producerCollectedBefore = Number(progress?.producers?.collected || 0);
     const wardsBefore = Number(progress?.colorWards?.opened || 0);
     progress = applySpecialLevelProgress(definition, progress, result);
     dropDeliveredCount += Math.max(0, Number(progress?.drop?.delivered || 0) - deliveredBefore);
@@ -698,6 +709,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     bloomPairsCollected += Math.max(0, Number(progress?.blooms?.collectedPairs || 0) - bloomPairsBefore);
     groundSpreadCount += Math.max(0, Number(progress?.ground?.count || 0) - groundBefore);
     crystalsMadeCount += Math.max(0, Number(progress?.producers?.produced || 0) - producedBefore);
+    crystalsCollectedCount += Math.max(0, Number(progress?.producers?.collected || 0) - producerCollectedBefore);
     colorWardsOpenedCount += Math.max(0, Number(progress?.colorWards?.opened || 0) - wardsBefore);
     rememberBloomEvents(strategy, bloomKnowledge, progress?.blooms?.lastEvents || [], decisionRng);
     lockHitCount += result.transitions.reduce((sum, transition) => sum + (transition.lockHits?.length || 0), 0);
@@ -728,6 +740,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
       bloomEvents: progress?.blooms?.lastEvents?.length || 0,
       groundCovered: Number(progress?.ground?.count || 0),
       crystalsMade: Number(progress?.producers?.produced || 0),
+      crystalsCollected: Number(progress?.producers?.collected || 0),
       colorWardsOpened: Number(progress?.colorWards?.opened || 0),
       shuffled: result.shuffled,
       score,
@@ -764,6 +777,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
     bloomPairsCollected,
     groundSpreadCount,
     crystalsMadeCount,
+    crystalsCollectedCount,
     colorWardsOpenedCount,
     collectedTotals,
     objectiveRemaining: remaining,
