@@ -1,6 +1,8 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   GAMER_XP_RULES,
+  MAX_CASCADE_LEVEL,
   applyCascadeProgression,
   applyCompletedMatch,
   applyScoredProgression,
@@ -32,6 +34,22 @@ function jsonRequest(path: string, body: Record<string, unknown>): Request {
 }
 
 describe("Gamer Level progression", () => {
+  it("keeps the cloud Cascade progression cap aligned with the shipped campaign", () => {
+    const engineSource = readFileSync(new URL("../../public/cascade-engine.js", import.meta.url), "utf8");
+    const shipped = engineSource.match(/export const LEVEL_COUNT = (\\d+);/);
+    expect(shipped).not.toBeNull();
+    expect(MAX_CASCADE_LEVEL).toBe(Number(shipped?.[1]));
+
+    const base = emptyPlayerProgression("campaign-cap", 1_000);
+    const progressed = applyCascadeProgression(base, {
+      highestCompletedLevel: 750,
+      starsByLevel: { "750": 3 },
+      updatedAt: 2_000,
+    });
+    expect(progressed.cascade.highestCompletedLevel).toBe(750);
+    expect(progressed.cascade.starsByLevel["750"]).toBe(3);
+  });
+
   it("uses a nonlinear level curve with a fast first level", () => {
     expect(xpRequiredForLevel(1)).toBe(0);
     expect(xpRequiredForLevel(2)).toBe(100);
