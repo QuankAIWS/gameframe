@@ -373,8 +373,8 @@ test("Cascade admin special lab spawns color-preserving Butterflies and ready co
   await expect(flight).toBeVisible({ timeout: 1_500 });
   const sourceIndex = await flight.getAttribute("data-from");
   const targetIndex = await flight.getAttribute("data-target");
-  expect(sourceIndex).toMatch(/^\\d+$/);
-  expect(targetIndex).toMatch(/^\\d+$/);
+  expect(sourceIndex).toMatch(/^\d+$/);
+  expect(targetIndex).toMatch(/^\d+$/);
   expect(targetIndex).not.toBe(sourceIndex);
 
   const targetTile = page.locator(`.cascade-tile[data-index="${targetIndex}"]`);
