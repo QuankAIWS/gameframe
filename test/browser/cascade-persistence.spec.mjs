@@ -70,6 +70,52 @@ test("Cascade resumes the exact settled normal-level board after a page reload",
   await expect.poll(() => page.evaluate(() => window.cascadeResearch.exportEvents().filter((event) => event.type === "level_resume").length)).toBeGreaterThan(0);
 });
 
+test("Cascade preserves a manufactured Producer crystal across a page reload", async ({ page }) => {
+  await installState(page, { level: 901 });
+  await page.goto("/cascade.html");
+  await expect(page.locator("#level-number")).toHaveText("901");
+
+  const seeded = await page.evaluate(() => {
+    const progress = window.cascadeResearch.exportLevel().progress.producers;
+    const index = progress.remaining.findIndex((charges) => charges > 0);
+    if (index < 0) throw new Error("Expected level 901 to contain a Producer");
+    progress.remaining[index] -= 1;
+    progress.produced += 1;
+    progress.crystals[index] = true;
+    return index;
+  });
+
+  await page.reload();
+  await expect(page.locator("#level-number")).toHaveText("901");
+  await expect(page.locator(`.cascade-tile[data-index="${seeded}"].has-producer-crystal`)).toBeVisible();
+  const restored = await page.evaluate(() => window.cascadeResearch.exportLevel().progress.producers);
+  expect(restored.produced).toBe(1);
+  expect(restored.collected).toBe(0);
+  expect(restored.crystals[seeded]).toBe(true);
+});
+
+test("Cascade preserves opened Color Wards across a page reload", async ({ page }) => {
+  await installState(page, { level: 951 });
+  await page.goto("/cascade.html");
+  await expect(page.locator("#level-number")).toHaveText("951");
+
+  const opened = await page.evaluate(() => {
+    const progress = window.cascadeResearch.exportLevel().progress.colorWards;
+    const index = progress.requiredKinds.findIndex((kind) => kind >= 0);
+    if (index < 0) throw new Error("Expected level 951 to contain a Color Ward");
+    progress.requiredKinds[index] = -1;
+    progress.opened += 1;
+    return index;
+  });
+
+  await page.reload();
+  await expect(page.locator("#level-number")).toHaveText("951");
+  await expect(page.locator(`.cascade-tile[data-index="${opened}"].has-color-ward`)).toHaveCount(0);
+  const restored = await page.evaluate(() => window.cascadeResearch.exportLevel().progress.colorWards);
+  expect(restored.opened).toBe(1);
+  expect(restored.requiredKinds[opened]).toBe(-1);
+});
+
 test("Cascade allows spending multiple owned hammers in the same level without spending moves", async ({ page }) => {
   await installState(page, { level: 300, hammers: 2 });
   await page.goto("/cascade.html");
