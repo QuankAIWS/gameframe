@@ -1317,7 +1317,8 @@ function occupiedObjectiveCells(dropProgress, lockProgress, bloomProgress, produ
 function createProducerProgress(levelDefinition, dropProgress = null, lockProgress = null, bloomProgress = null) {
   const spec = levelDefinition?.objective?.producers;
   const remaining = Array(BOARD_SIZE * BOARD_SIZE).fill(0);
-  if (!spec?.count) return { total: 0, produced: 0, remaining, lastTriggered: [] };
+  const crystals = Array(BOARD_SIZE * BOARD_SIZE).fill(false);
+  if (!spec?.count) return { total: 0, produced: 0, collected: 0, remaining, crystals, lastTriggered: [], lastCollected: [] };
   const blocked = occupiedObjectiveCells(dropProgress, lockProgress, bloomProgress);
   const cells = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
     const row = Math.floor(index / BOARD_SIZE);
@@ -1328,24 +1329,36 @@ function createProducerProgress(levelDefinition, dropProgress = null, lockProgre
   const count = Math.min(cells.length, Math.max(1, Math.floor(Number(spec.count) || 1)));
   const charges = Math.max(1, Math.min(4, Math.floor(Number(spec.charges) || 1)));
   for (const { index } of cells.slice(0, count)) remaining[index] = charges;
-  return { total: count * charges, produced: 0, remaining, lastTriggered: [] };
+  return { total: count * charges, produced: 0, collected: 0, remaining, crystals, lastTriggered: [], lastCollected: [] };
 }
 
 export function normalizeProducerProgress(value) {
   const remaining = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => Math.max(0, Math.min(4, Math.floor(Number(value?.remaining?.[index]) || 0))));
+  const crystals = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => value?.crystals?.[index] === true);
   const remainingTotal = remaining.reduce((sum, charges) => sum + charges, 0);
   const authoredTotal = Math.max(0, Math.floor(Number(value?.total) || remainingTotal));
+  const produced = Math.max(0, Math.min(authoredTotal, Math.floor(Number(value?.produced) || (authoredTotal - remainingTotal))));
+  const waiting = crystals.filter(Boolean).length;
+  const collected = Math.max(0, Math.min(produced, Math.floor(Number(value?.collected) || Math.max(0, produced - waiting))));
   return {
     total: authoredTotal,
-    produced: Math.max(0, Math.min(authoredTotal, Math.floor(Number(value?.produced) || (authoredTotal - remainingTotal)))),
+    produced,
+    collected,
     remaining,
+    crystals,
     lastTriggered: Array.isArray(value?.lastTriggered) ? value.lastTriggered.filter((index) => Number.isInteger(index) && index >= 0 && index < remaining.length) : [],
+    lastCollected: Array.isArray(value?.lastCollected) ? value.lastCollected.filter((index) => Number.isInteger(index) && index >= 0 && index < remaining.length) : [],
   };
 }
 
 export function producerSupportIndices(progress) {
   const producers = normalizeProducerProgress(progress?.producers);
-  return [...new Set(producers.remaining.flatMap((charges, index) => Number(charges) > 0 ? adjacentIndices(index) : []))];
+  const targets = [];
+  for (let index = 0; index < producers.remaining.length; index += 1) {
+    if (producers.crystals[index]) targets.push(index);
+    if (producers.remaining[index] > 0 && !producers.crystals[index]) targets.push(...adjacentIndices(index));
+  }
+  return [...new Set(targets)];
 }
 
 export function advanceProducerProgress(value, clearIndices) {
@@ -1353,14 +1366,22 @@ export function advanceProducerProgress(value, clearIndices) {
   if (!next.total) return next;
   const clearSet = new Set((clearIndices || []).filter((index) => Number.isInteger(index) && index >= 0 && index < BOARD_SIZE * BOARD_SIZE));
   const triggered = [];
+  const collected = [];
   for (let index = 0; index < next.remaining.length; index += 1) {
-    if (next.remaining[index] <= 0) continue;
+    if (next.crystals[index] && clearSet.has(index)) {
+      next.crystals[index] = false;
+      next.collected = Math.min(next.total, next.collected + 1);
+      collected.push(index);
+    }
+    if (next.remaining[index] <= 0 || next.crystals[index]) continue;
     if (!clearSet.has(index) && !adjacentIndices(index).some((neighbor) => clearSet.has(neighbor))) continue;
     next.remaining[index] -= 1;
     next.produced = Math.min(next.total, next.produced + 1);
+    next.crystals[index] = true;
     triggered.push(index);
   }
   next.lastTriggered = triggered;
+  next.lastCollected = collected;
   return next;
 }
 
@@ -1493,7 +1514,7 @@ export function objectiveComplete(levelDefinition, progress, score) {
   if (levelDefinition.objective?.locks && (progress?.locks?.layers || []).some((layer) => Number(layer) > 0)) return false;
   if (levelDefinition.objective?.blooms && Number(progress?.blooms?.collectedPairs || 0) < Number(levelDefinition.objective.blooms.pairs || 0)) return false;
   if (levelDefinition.objective?.ground && Number(progress?.ground?.count || 0) < Number(levelDefinition.objective.ground.target || 0)) return false;
-  if (levelDefinition.objective?.producers && Number(progress?.producers?.produced || 0) < Number(progress?.producers?.total || 0)) return false;
+  if (levelDefinition.objective?.producers && Number(progress?.producers?.collected || 0) < Number(progress?.producers?.total || 0)) return false;
   if (levelDefinition.objective?.colorWards && (progress?.colorWards?.requiredKinds || []).some((kind) => Number(kind) >= 0)) return false;
   return true;
 }
@@ -1527,7 +1548,7 @@ export function objectiveRemaining(levelDefinition, progress, score) {
     if (count > 0) remaining.push({ type: "ground", count });
   }
   if (levelDefinition.objective?.producers) {
-    const count = Math.max(0, Number(progress?.producers?.total || 0) - Number(progress?.producers?.produced || 0));
+    const count = Math.max(0, Number(progress?.producers?.total || 0) - Number(progress?.producers?.collected || 0));
     if (count > 0) remaining.push({ type: "producer", count });
   }
   if (levelDefinition.objective?.colorWards) {
@@ -1564,8 +1585,8 @@ export function describeLevelObjective(levelDefinition, progress, score = 0) {
     parts.push(`magic ground ${current}/${levelDefinition.objective.ground.target}`);
   }
   if (levelDefinition.objective?.producers) {
-    const current = Math.min(Number(progress?.producers?.total || 0), Number(progress?.producers?.produced || 0));
-    parts.push(`crystals made ${current}/${Number(progress?.producers?.total || 0)}`);
+    const current = Math.min(Number(progress?.producers?.total || 0), Number(progress?.producers?.collected || 0));
+    parts.push(`forge crystals ${current}/${Number(progress?.producers?.total || 0)}`);
   }
   if (levelDefinition.objective?.colorWards) {
     const total = Number(progress?.colorWards?.total || 0);
