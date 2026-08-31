@@ -144,13 +144,13 @@ test("Cascade Butterfly remains color-readable on a phone-sized board", async ({
   await page.screenshot({ path: `${output}/cascade-butterfly-special-mobile.png`, fullPage: true });
 });
 
-test("Cascade Butterfly admin trigger exposes the flutter flight", async ({ page }) => {
+async function captureButterflyFeedback(page, viewport, label) {
   await mkdir(output, { recursive: true });
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize(viewport);
   await page.route("**/api/session", async (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
-    body: JSON.stringify({ playerId: "visual-butterfly-admin", displayName: "Cascade Admin", source: "discord", admin: true }),
+    body: JSON.stringify({ playerId: `visual-butterfly-${label}`, displayName: "Cascade Admin", source: "discord", admin: true }),
   }));
   await page.addInitScript(() => {
     localStorage.setItem("scribbles-gameframe.cascade-sound:v1", "off");
@@ -165,8 +165,32 @@ test("Cascade Butterfly admin trigger exposes the flutter flight", async ({ page
   await expect(page.locator('.cascade-tile[data-special="fish"]')).toHaveCount(1);
   await page.locator("#cascade-admin-open").click();
   await page.locator("[data-admin-trigger-special]").click();
-  await expect(page.locator(".cascade-butterfly-flight")).toBeVisible({ timeout: 1500 });
-  await page.screenshot({ path: `${output}/cascade-butterfly-flight-mobile.png`, fullPage: true });
+
+  const launching = page.locator(".cascade-tile.is-butterfly-launching").first();
+  await expect(launching).toBeVisible({ timeout: 1_500 });
+  await page.screenshot({ path: `${output}/cascade-butterfly-feedback-${label}-launch.png`, fullPage: true });
+
+  const flight = page.locator(".cascade-butterfly-flight").first();
+  await expect(flight).toBeVisible({ timeout: 1_500 });
+  const targetIndex = await flight.getAttribute("data-target");
+  expect(targetIndex).toMatch(/^\\d+$/);
+  await page.screenshot({ path: `${output}/cascade-butterfly-feedback-${label}-flight.png`, fullPage: true });
+
+  const targetTile = page.locator(`.cascade-tile[data-index="${targetIndex}"]`);
+  await expect(targetTile).toHaveClass(/is-butterfly-targeted/, { timeout: 2_500 });
+  await page.screenshot({ path: `${output}/cascade-butterfly-feedback-${label}-target.png`, fullPage: true });
+
+  const impact = page.locator(`.cascade-butterfly-impact[data-target="${targetIndex}"]`);
+  await expect(impact).toBeVisible({ timeout: 2_500 });
+  await page.screenshot({ path: `${output}/cascade-butterfly-feedback-${label}-impact.png`, fullPage: true });
+}
+
+test("Cascade Butterfly feedback is readable across four stages on mobile", async ({ page }) => {
+  await captureButterflyFeedback(page, { width: 390, height: 844 }, "mobile");
+});
+
+test("Cascade Butterfly feedback is readable across four stages on desktop", async ({ page }) => {
+  await captureButterflyFeedback(page, { width: 1440, height: 960 }, "desktop");
 });
 
 test("Cascade lower-left bomb leaves every desktop candy family visible", async ({ page }) => {
