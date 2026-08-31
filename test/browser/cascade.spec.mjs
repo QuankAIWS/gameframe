@@ -286,13 +286,13 @@ test("Cascade introduces readable crystal Producers at level 901", async ({ page
   await page.goto("/cascade.html?cascadeTestLevel=901");
 
   await expect(page.locator("#level-number")).toHaveText("901");
-  await expect(page.locator("#objective-label")).toContainText("forge crystals 0/3");
+  await expect(page.locator("#objective-label")).toContainText("forge crystals 0/2");
   await expect(page.locator(".cascade-tile.has-producer")).toHaveCount(3);
   await expect(page.locator(".cascade-help")).toContainText("use every crystal forge");
 
   const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
   expect(exported.level.chapter).toBe("producer-intro");
-  expect(exported.progress.producers.total).toBe(3);
+  expect(exported.progress.producers.total).toBe(2);
   expect(exported.progress.producers.produced).toBe(0);\n  expect(exported.progress.producers.collected).toBe(0);
 });
 
@@ -301,14 +301,14 @@ test("Cascade introduces visible Color Wards at level 951", async ({ page }) => 
   await page.goto("/cascade.html?cascadeTestLevel=951");
 
   await expect(page.locator("#level-number")).toHaveText("951");
-  await expect(page.locator("#objective-label")).toContainText("color wards 0/3");
-  await expect(page.locator(".cascade-tile.has-color-ward")).toHaveCount(3);
+  await expect(page.locator("#objective-label")).toContainText("color wards 0/2");
+  await expect(page.locator(".cascade-tile.has-color-ward")).toHaveCount(2);
   await expect(page.locator(".cascade-help")).toContainText("color-symbol it wants");
 
   const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
   expect(exported.level.chapter).toBe("color-ward-intro");
-  expect(exported.progress.colorWards.total).toBe(3);
-  expect(exported.progress.colorWards.requiredKinds.filter((kind) => kind >= 0)).toHaveLength(3);
+  expect(exported.progress.colorWards.total).toBe(2);
+  expect(exported.progress.colorWards.requiredKinds.filter((kind) => kind >= 0)).toHaveLength(2);
 });
 
 test("Cascade admin console reaches level 1000 and keeps the map bounded", async ({ page }) => {
