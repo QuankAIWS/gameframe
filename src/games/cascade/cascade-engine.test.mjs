@@ -441,6 +441,30 @@ test("levels 751-900 introduce Memory Blooms, Enchanted Ground, and controlled r
   assert.equal(level900.chapter, "cognitive-spatial-remix");
 });
 
+test("human Bloom scoring uses remembered symbols rather than hidden pair truth", () => {
+  const level = CASCADE_LEVELS[750];
+  const progress = createLevelProgress(level);
+  progress.blooms.symbols.fill(-1);
+  progress.blooms.symbols[9] = 2;
+  progress.blooms.symbols[54] = 2;
+  progress.blooms.activeIndex = 9;
+
+  const board = Array.from({ length: 64 }, (_, index) => (Math.floor(index / 8) + (index % 8) * 2) % 6);
+  board[53] = 1;
+  board[61] = 1;
+  board[62] = 1;
+  const specials = Array(64).fill(null);
+  const move = { from: 53, to: 61, matched: 3, specialMove: false };
+
+  const forgotten = Array(64).fill(-1);
+  forgotten[9] = 2;
+  const remembered = forgotten.slice();
+  remembered[54] = 2;
+
+  assert.equal(scoreVisibleMove("human-skilled", level, progress, board, specials, move, null, forgotten).features.bloomMatch, 0);
+  assert.equal(scoreVisibleMove("human-skilled", level, progress, board, specials, move, null, remembered).features.bloomMatch, 1);
+});
+
 test("Memory Blooms reveal, mismatch safely, and collect only matching fixed pairs", () => {
   const value = {
     totalPairs: 2,
