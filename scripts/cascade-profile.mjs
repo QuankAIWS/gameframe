@@ -1,12 +1,21 @@
 import { writeFile } from "node:fs/promises";
 import { CASCADE_LEVELS } from "../public/cascade-engine.js";
 import { profileCascadeLevels } from "../src/games/cascade/cascade-simulator.js";
+import { selectContiguousShard, selectEvenlySpaced } from "./cascade-profile-selection.mjs";
 
 function readNumberFlag(name, fallback) {
   const prefix = `--${name}=`;
   const raw = process.argv.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
   const parsed = Number(raw);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+}
+
+function readNonNegativeNumberFlag(name, fallback = null) {
+  const prefix = `--${name}=`;
+  const raw = process.argv.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
+  if (raw === undefined) return fallback;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : fallback;
 }
 
 function readStringFlag(name) {
@@ -19,12 +28,34 @@ const humanRunsPerLevel = readNumberFlag("human-runs", Math.max(1, Math.floor(ru
 const fromLevel = Math.max(1, readNumberFlag("from", 1));
 const toLevel = Math.min(CASCADE_LEVELS.length, readNumberFlag("to", CASCADE_LEVELS.length));
 if (toLevel < fromLevel) throw new Error(`Invalid Cascade profile range: ${fromLevel}-${toLevel}`);
-const levelDefinitions = CASCADE_LEVELS.slice(fromLevel - 1, toLevel);
+const requestedDefinitions = CASCADE_LEVELS.slice(fromLevel - 1, toLevel);
+const shardCount = readNumberFlag("shard-count", 1);
+const shardIndex = readNonNegativeNumberFlag("shard-index");
+const sampleCount = readNonNegativeNumberFlag("sample-count", 0);
+let levelDefinitions = requestedDefinitions;
+if (shardIndex !== null) levelDefinitions = selectContiguousShard(levelDefinitions, shardIndex, shardCount);
+if (sampleCount > 0) levelDefinitions = selectEvenlySpaced(levelDefinitions, sampleCount);
+if (!levelDefinitions.length) throw new Error("Cascade profile selection produced no levels");
+
 const jsonPath = readStringFlag("json");
 const report = profileCascadeLevels({ levelDefinitions, runsPerLevel, humanRunsPerLevel });
+report.selection = {
+  requestedFrom: fromLevel,
+  requestedTo: toLevel,
+  selectedCount: levelDefinitions.length,
+  selectedLevels: levelDefinitions.map((level) => level.level),
+  sampleCount,
+  shardIndex,
+  shardCount: shardIndex === null ? null : shardCount,
+};
 const percent = (value) => `${Math.round(value * 100)}%`;
+const selectionLabel = shardIndex === null
+  ? sampleCount > 0
+    ? `sample ${levelDefinitions.length}/${requestedDefinitions.length}`
+    : `${levelDefinitions.length} levels`
+  : `shard ${shardIndex + 1}/${shardCount} · ${levelDefinitions.length} levels`;
 
-console.log(`Cascade difficulty profile · L${fromLevel}-${toLevel} · persistent specials + campaign waves · ${runsPerLevel} solver seeds · ${humanRunsPerLevel} human-persona seeds`);
+console.log(`Cascade difficulty profile · L${fromLevel}-${toLevel} · ${selectionLabel} · persistent specials + campaign waves · ${runsPerLevel} solver seeds · ${humanRunsPerLevel} human-persona seeds`);
 console.log("Lvl Mv Target Difficulty  Random Casual Skill  Greedy Look   Gap  ObjFail Ice Made Trig Combo");
 for (const level of report.levels) {
   const random = level.strategies.random;
