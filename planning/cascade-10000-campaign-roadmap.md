@@ -127,7 +127,7 @@ Decision changes:
 - activation order and producer access matter;
 - producer + lock + Drop combinations create dependency chains.
 
-Producer placement and output must be deterministic under board RNG and fully represented in simulator/replay tooling. The implemented Producer uses a visible remaining-charge count; each qualifying adjacent/direct clear spends one charge and manufactures one crystal.
+Producer placement and output must be deterministic under board RNG and fully represented in simulator/replay tooling. The implemented Producer uses a visible remaining-charge count. A qualifying adjacent/direct clear spends one charge and manufactures a crystal that remains on the forge; a later direct clear collects that crystal before the forge can finish its remaining production cycle.
 
 ### 951–1,000 — Color Wards / visible attention elements
 
