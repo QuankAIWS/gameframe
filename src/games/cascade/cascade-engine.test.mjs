@@ -450,9 +450,10 @@ test("human Bloom scoring uses remembered symbols rather than hidden pair truth"
   progress.blooms.activeIndex = 9;
 
   const board = Array.from({ length: 64 }, (_, index) => (Math.floor(index / 8) + (index % 8) * 2) % 6);
-  board[53] = 1;
+  board[51] = 1;
+  board[52] = 1;
+  board[53] = 2;
   board[61] = 1;
-  board[62] = 1;
   const specials = Array(64).fill(null);
   const move = { from: 53, to: 61, matched: 3, specialMove: false };
 
@@ -483,7 +484,7 @@ test("Memory Blooms reveal, mismatch safely, and collect only matching fixed pai
   assert.equal(first.collectedPairs, 0);
   assert.equal(first.lastEvents[0].type, "open");
 
-  const mismatch = advanceBloomProgress(first, [17]);
+  const mismatch = advanceBloomProgress(first, [19]);
   assert.equal(mismatch.activeIndex, -1);
   assert.equal(mismatch.collectedPairs, 0);
   assert.equal(mismatch.lastEvents.at(-1).type, "mismatch");
@@ -497,6 +498,24 @@ test("Memory Blooms reveal, mismatch safely, and collect only matching fixed pai
   assert.equal(matched.lastEvents.at(-1).type, "match");
   assert.equal(matched.symbols[9], -1);
   assert.equal(matched.symbols[54], -1);
+});
+
+test("one cascade step advances only one Memory Bloom even when a large clear touches several", () => {
+  const value = {
+    totalPairs: 2,
+    collectedPairs: 0,
+    activeIndex: -1,
+    symbols: Array(64).fill(-1),
+    lastEvents: [],
+  };
+  value.symbols[9] = 2;
+  value.symbols[18] = 4;
+
+  const advanced = advanceBloomProgress(value, [17]);
+  assert.equal(advanced.activeIndex, 9);
+  assert.equal(advanced.lastEvents.length, 1);
+  assert.equal(advanced.lastEvents[0].type, "open");
+  assert.equal(advanced.symbols[18], 4);
 });
 
 test("Enchanted Ground spreads only when a clear touches existing magic", () => {
