@@ -85,6 +85,11 @@ test("Cascade visibly picks up a dragged tile, supports cancellation, and preser
   // happens, finish the victory choice before checking ordinary board controls;
   // the Hammer is correctly disabled while the result is modal.
   const continueButton = page.locator("#result-actions button").filter({ hasText: "Continue" });
+  const hammerButton = page.locator("#booster-hammer");
+  await expect.poll(async () => (
+    await continueButton.isVisible().catch(() => false)
+      || await hammerButton.isEnabled().catch(() => false)
+  ), { timeout: 15_000 }).toBe(true);
   if (await continueButton.isVisible().catch(() => false)) {
     await continueButton.click();
     await expect(page.locator("#result-dialog")).not.toBeVisible({ timeout: 8_000 });
@@ -93,7 +98,7 @@ test("Cascade visibly picks up a dragged tile, supports cancellation, and preser
   // The score/move counters update before cascade presentation finishes. The
   // unified cabinet deliberately allows a longer reward presentation, so wait for
   // the real unlocked control state before proving click-then-click still works.
-  await expect(page.locator("#booster-hammer")).toBeEnabled({ timeout: 15_000 });
+  await expect(hammerButton).toBeEnabled({ timeout: 15_000 });
   await page.locator(".cascade-tile").first().click();
   await expect(page.locator(".cascade-tile").first()).toHaveClass(/is-selected/);
 });
