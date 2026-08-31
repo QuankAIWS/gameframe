@@ -1,3 +1,4 @@
+import { LEVEL_COUNT } from "./cascade-engine.js";
 import { gameFrameOptionalFetch, tryGameFrameIdentity } from "./gameframe-auth.js";
 
 const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
@@ -15,7 +16,7 @@ const storage = window.localStorage;
 const query = new URLSearchParams(window.location.search);
 const requestedReplayLevel = (() => {
   const value = Math.floor(Number(query.get("replay")));
-  return Number.isInteger(value) && value >= 1 && value <= 300 ? value : 0;
+  return Number.isInteger(value) && value >= 1 && value <= LEVEL_COUNT ? value : 0;
 })();
 let lastSubmitted = "";
 let syncPending = false;
@@ -64,7 +65,7 @@ function resetNetworkBackoff() {
 function normalizedLevel(value, fallback = 1) {
   const level = Math.floor(Number(value));
   if (!Number.isFinite(level)) return fallback;
-  return Math.max(1, Math.min(300, level));
+  return Math.max(1, Math.min(LEVEL_COUNT, level));
 }
 
 function normalizedStars(value) {
@@ -73,7 +74,7 @@ function normalizedStars(value) {
   for (const [rawLevel, rawStars] of Object.entries(value)) {
     const level = Number(rawLevel);
     const stars = Number(rawStars);
-    if (!Number.isInteger(level) || level < 1 || level > 300 || !Number.isFinite(stars)) continue;
+    if (!Number.isInteger(level) || level < 1 || level > LEVEL_COUNT || !Number.isFinite(stars)) continue;
     const best = Math.max(0, Math.min(3, Math.floor(stars)));
     if (best) starsByLevel[String(level)] = best;
   }
@@ -83,7 +84,7 @@ function normalizedStars(value) {
 function normalizedProgression(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return {
-    highestCompletedLevel: Math.max(0, Math.min(300, Math.floor(Number(value.highestCompletedLevel) || 0))),
+    highestCompletedLevel: Math.max(0, Math.min(LEVEL_COUNT, Math.floor(Number(value.highestCompletedLevel) || 0))),
     starsByLevel: normalizedStars(value.starsByLevel),
   };
 }
@@ -134,7 +135,7 @@ function mergeProgression(local, server) {
   return {
     highestCompletedLevel: Math.max(
       local.highestCompletedLevel,
-      Math.max(0, Math.min(300, Math.floor(Number(server?.highestCompletedLevel) || 0))),
+      Math.max(0, Math.min(LEVEL_COUNT, Math.floor(Number(server?.highestCompletedLevel) || 0))),
     ),
     starsByLevel,
   };
@@ -177,7 +178,7 @@ function hydrationPolicy(server, ownership) {
   // An active run is only current while the authenticated account has not
   // completed that level elsewhere. Once the server has completed this level,
   // keeping the saved board would pin the browser behind the canonical frontier.
-  const serverHighestCompleted = Math.max(0, Math.min(300, Math.floor(Number(server?.highestCompletedLevel) || 0)));
+  const serverHighestCompleted = Math.max(0, Math.min(LEVEL_COUNT, Math.floor(Number(server?.highestCompletedLevel) || 0)));
   const staleActiveRun = serverHighestCompleted >= activeRun.activeRunLevel;
   return {
     preserveLevel: !staleActiveRun,
@@ -190,7 +191,7 @@ function applyCanonicalToLocal(canonical, { preserveLevel = false, replace = fal
   const rawPerformance = readJson(PERFORMANCE_KEY) || {};
   const { performance, hadLegacyHammerBank } = stripLegacyHammerBank(rawPerformance);
   const currentLevel = normalizedLevel(state.level);
-  const canonicalLevel = Math.min(300, canonical.highestCompletedLevel + 1);
+  const canonicalLevel = Math.min(LEVEL_COUNT, canonical.highestCompletedLevel + 1);
   const nextLevel = preserveLevel
     ? currentLevel
     : replace
