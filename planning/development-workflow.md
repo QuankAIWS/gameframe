@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository uses local verification for routine iteration and deliberately triggered GitHub-hosted validation for completed feature candidates and major milestones. Development should maximize deterministic, service, Workers-runtime, browser, and visual confidence before deployment. Deployment canaries confirm environment integration; they are not the normal debugging loop.
+This repository uses local verification for routine iteration, scoped GitHub-hosted feature review for routed UI/game changes, and deliberately triggered canonical validation for completed feature candidates and major milestones. Development should maximize deterministic, service, Workers-runtime, browser, and visual confidence before deployment. Deployment canaries confirm environment integration; they are not the normal debugging loop.
 
 Public GameFrame code must not execute on persistent self-hosted runners.
 
@@ -15,7 +15,7 @@ Public GameFrame code must not execute on persistent self-hosted runners.
 5. Run browser interaction and screenshot checks when the change affects the public client.
 6. Before each push described as locally verified, run `npm run validate` against the exact commit that will be pushed.
 7. Record the validated head SHA, environment, commands, result, and evidence class in the pull request.
-8. Continue development without starting GitHub Actions.
+8. Continue development without deliberately starting canonical validation. A routed `Feature UI Review` may run automatically on relevant pull-request updates.
 
 ## Final feature candidate
 
@@ -63,7 +63,7 @@ Standalone GameFrame, Discord, and mock-agent canaries may be completed before t
 
 The canonical workflow may be started only by manual dispatch or the explicit `canonical-validation` pull-request label. The only permitted pull-request event is `labeled`.
 
-Do not add `push`, `schedule`, `opened`, `synchronize`, `ready_for_review`, or other routine triggers without an explicit workflow-policy decision.
+Do not add `push`, `schedule`, `opened`, `synchronize`, `ready_for_review`, or other routine triggers without an explicit workflow-policy decision. The current explicit exception is the change-scoped `Feature UI Review` pull-request workflow plus the sharded Cascade nightly regression at 06:00 UTC; neither replaces manually triggered `Canonical Validation`.
 
 Public repository workflows must use GitHub-hosted runners. Do not target persistent self-hosted runners from GameFrame workflows, including for pull requests, branches, manual dispatches, or reusable workflows.
 
