@@ -188,6 +188,10 @@ async function captureButterflyFeedback(page, viewport, label) {
   await expect(page.locator(".cascade-butterfly-flight")).toHaveCount(0, { timeout: 3_500 });
   await expect(page.locator(".cascade-butterfly-impact")).toHaveCount(0, { timeout: 3_500 });
 
+  await page.evaluate(() => localStorage.removeItem("scribbles-gameframe.cascade-active-run:v1"));
+  await page.reload();
+  await expect(page.locator(".cascade-tile")).toHaveCount(64);
+
   await triggerButterfly();
   const impact = page.locator(".cascade-butterfly-impact").first();
   await expect(impact).toBeVisible({ timeout: 2_500 });
