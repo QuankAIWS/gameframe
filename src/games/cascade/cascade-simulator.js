@@ -31,6 +31,9 @@ export const HUMAN_PERSONAS = Object.freeze({
       colorObjective: 1.25,
       lock: 1.3,
       recall: 1.45,
+      bloomExplore: 0.95,
+      bloomMatch: 2.25,
+      ground: 1.2,
       bloomExplore: 1.1,
       bloomMatch: 2.2,
       ground: 1.35,
@@ -51,6 +54,9 @@ export const HUMAN_PERSONAS = Object.freeze({
       colorObjective: 2.4,
       lock: 2.4,
       recall: 2.8,
+      bloomExplore: 1.35,
+      bloomMatch: 3.6,
+      ground: 2.15,
       bloomExplore: 1.75,
       bloomMatch: 3.4,
       ground: 2.55,
@@ -283,6 +289,48 @@ function bloomTargetsForMatched(progress, matched) {
   return targets;
 }
 
+function initialBloomKnowledge(progress) {
+  return progress?.blooms?.totalPairs ? Array(64).fill(-1) : null;
+}
+
+function updateBloomKnowledge(personaName, knowledge, progress, decisionRng) {
+  const persona = HUMAN_PERSONAS[personaName];
+  if (!persona || !knowledge || !progress?.blooms) return knowledge;
+  const currentSymbols = progress.blooms.symbols || [];
+  for (let index = 0; index < knowledge.length; index += 1) {
+    if (currentSymbols[index] < 0) knowledge[index] = -1;
+  }
+  for (const event of progress.blooms.lastEvents || []) {
+    const indices = event.indices || [];
+    const symbols = event.symbols || [];
+    for (let offset = 0; offset < indices.length; offset += 1) {
+      const index = Number(indices[offset]);
+      const symbol = Number(symbols[offset] ?? event.symbol);
+      if (!Number.isInteger(index) || index < 0 || index >= knowledge.length) continue;
+      if (!Number.isInteger(symbol) || symbol < 0 || symbol >= TILE_KINDS) continue;
+      if (event.type === "match" || decisionRng.next() <= Number(persona.recallRetention || 0)) knowledge[index] = symbol;
+    }
+  }
+  const activeIndex = Number(progress.blooms.activeIndex);
+  if (Number.isInteger(activeIndex) && activeIndex >= 0 && activeIndex < knowledge.length && currentSymbols[activeIndex] >= 0) {
+    if (knowledge[activeIndex] < 0 && decisionRng.next() <= Number(persona.recallRetention || 0)) {
+      knowledge[activeIndex] = Number(currentSymbols[activeIndex]);
+    }
+  }
+  return knowledge;
+}
+
+function adjacentBoardIndices(index) {
+  const row = Math.floor(index / 8);
+  const col = index % 8;
+  const out = [];
+  if (row > 0) out.push(index - 8);
+  if (row < 7) out.push(index + 8);
+  if (col > 0) out.push(index - 1);
+  if (col < 7) out.push(index + 1);
+  return out;
+}
+
 function dropDistance(progress) {
   return (progress?.drop?.tokens || []).reduce((sum, token) => {
     const row = Math.floor(Number(token.index) / 8);
@@ -426,6 +474,29 @@ function visibleMoveFeatures(level, progress, board, specials, move, recallKnowl
     } else {
       features.lock += 1;
     }
+  }
+
+  const bloomSymbols = progress?.blooms?.symbols || [];
+  const activeBloomIndex = Number(progress?.blooms?.activeIndex);
+  const activeBloomSymbol = bloomKnowledge && activeBloomIndex >= 0 ? Number(bloomKnowledge[activeBloomIndex]) : -1;
+  const triggeredBlooms = new Set();
+  for (let bloomIndex = 0; bloomIndex < bloomSymbols.length; bloomIndex += 1) {
+    if (Number(bloomSymbols[bloomIndex]) < 0) continue;
+    if (matched.has(bloomIndex) || adjacentBoardIndices(bloomIndex).some((index) => matched.has(index))) triggeredBlooms.add(bloomIndex);
+  }
+  for (const bloomIndex of triggeredBlooms) {
+    if (bloomIndex === activeBloomIndex) continue;
+    const known = bloomKnowledge ? Number(bloomKnowledge[bloomIndex]) : -1;
+    if (activeBloomSymbol >= 0 && known === activeBloomSymbol) features.bloomMatch += 1;
+    else if (known < 0) features.bloomExplore += 1;
+    else if (activeBloomIndex < 0) features.bloomExplore += 0.35;
+  }
+
+  const coveredGround = progress?.ground?.covered || [];
+  const touchesGround = [...matched].some((index) => coveredGround[index] === true);
+  if (touchesGround) {
+    features.ground += [...matched].filter((index) => coveredGround[index] !== true).length;
+    features.ground += [...matched].filter((index) => coveredGround[index] === true).length * 0.25;
   }
 
   const lineGroups = groups.filter((group) => group.orientation === "row" || group.orientation === "column");
