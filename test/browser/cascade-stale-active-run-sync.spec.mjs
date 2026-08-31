@@ -140,12 +140,12 @@ test("a saved active run is discarded when another device has completed past it"
   }
 });
 
-test("a current active run survives reconciliation at the same canonical frontier", async ({ browser }, testInfo) => {
+test("a veteran active run and open Memory Bloom survive same-frontier reconciliation and reload", async ({ browser }, testInfo) => {
   const playerId = "discord:current-active-run-player";
   const server = {
     progression: {
-      highestCompletedLevel: 9,
-      starsByLevel: { "9": 2 },
+      highestCompletedLevel: 750,
+      starsByLevel: { "750": 2 },
     },
   };
   const counters = { reads: 0, writes: 0 };
@@ -156,25 +156,30 @@ test("a current active run survives reconciliation at the same canonical frontie
   const page = await context.newPage();
 
   try {
-    await installLocalFrontier(page, playerId, 10, { "9": 2 });
+    await installLocalFrontier(page, playerId, 751, { "750": 2 });
     await installProgressionRoutes(context, playerId, server, counters);
 
     await page.goto("/cascade.html");
-    await expect(page.locator("#level-number")).toHaveText("10", { timeout: 8_000 });
-    await waitForActiveRun(page, 10);
-    const before = await page.evaluate(() => window.cascadeResearch.exportActiveRun());
-    await page.evaluate(() => { window.__cascadeActiveRunSentinel = "preserved"; });
+    await expect(page.locator("#level-number")).toHaveText("751", { timeout: 8_000 });
+    await waitForActiveRun(page, 751);
+    const before = await page.evaluate(({ activeRunKey }) => {
+      const run = window.cascadeResearch.exportActiveRun();
+      const bloomIndex = run.levelProgress.blooms.symbols.findIndex((symbol) => symbol >= 0);
+      if (bloomIndex < 0) throw new Error("Expected level 751 to contain a Memory Bloom");
+      run.levelProgress.blooms.activeIndex = bloomIndex;
+      localStorage.setItem(activeRunKey, JSON.stringify(run));
+      return { run, bloomIndex };
+    }, { activeRunKey: ACTIVE_RUN_KEY });
 
-    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-    await page.waitForTimeout(750);
+    await page.reload();
+    await expect(page.locator("#level-number")).toHaveText("751", { timeout: 8_000 });
+    await waitForActiveRun(page, 751);
+    await expect(page.locator(".cascade-tile.has-memory-bloom .cascade-bloom-mark.is-revealed")).toHaveCount(1);
 
-    const after = await page.evaluate(() => ({
-      sentinel: window.__cascadeActiveRunSentinel ?? null,
-      activeRun: window.cascadeResearch.exportActiveRun(),
-    }));
-    expect(after.sentinel).toBe("preserved");
-    expect(after.activeRun.level).toBe(10);
-    expect(after.activeRun.board).toEqual(before.board);
+    const after = await page.evaluate(() => window.cascadeResearch.exportActiveRun());
+    expect(after.level).toBe(751);
+    expect(after.board).toEqual(before.run.board);
+    expect(after.levelProgress.blooms.activeIndex).toBe(before.bloomIndex);
     expect(counters.writes).toBe(0);
   } finally {
     await context.close();
