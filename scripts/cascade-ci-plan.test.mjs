@@ -18,6 +18,17 @@ test("changed level planning adds a 30-level seam around an edited range", () =>
   });
 });
 
+test("additive null objective fields do not mark old levels as semantically changed", () => {
+  const base = [{ level: 1, objective: { collect: [] } }];
+  const head = [{ level: 1, objective: { collect: [], producers: null, colorWards: undefined } }];
+  assert.deepEqual(changedLevelRange(base, head), {
+    changed: false,
+    changedLevelCount: 0,
+    profileFrom: 1,
+    profileTo: 1,
+  });
+});
+
 test("campaign growth profiles the new tail plus the historical seam", () => {
   const base = Array.from({ length: 900 }, (_, index) => level(index + 1));
   const head = Array.from({ length: 1000 }, (_, index) => level(index + 1));
