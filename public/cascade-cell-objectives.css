@@ -270,3 +270,26 @@ body[data-cascade-effects="reduced"] .cascade-tile.is-color-ward-opened::before 
     border-width: 4px;
   }
 }
+
+
+.cascade-tile.has-producer-crystal .cascade-producer-mark {
+  color: #e8fbff;
+  border-color: rgba(126, 236, 255, .98);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255,255,255,.3) 0 18%, rgba(77, 224, 255, .24) 19% 48%, rgba(30, 18, 52, .52) 49% 100%);
+  text-shadow: 0 2px 2px rgba(29, 13, 42, .82), 0 0 10px rgba(107, 235, 255, .98);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, .42),
+    0 0 0 2px rgba(91, 42, 125, .76),
+    0 0 14px rgba(92, 229, 255, .72);
+}
+
+.cascade-tile.is-producer-collected .cascade-producer-mark {
+  animation: cascade-producer-collect 480ms ease-out both;
+}
+
+@keyframes cascade-producer-collect {
+  0% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+  42% { transform: translate(-50%, -50%) scale(1.16); filter: brightness(1.8); }
+  100% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+}
