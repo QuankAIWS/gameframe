@@ -496,7 +496,12 @@ test("Producer charges and visible Color Wards advance deterministically from ad
       : producerIndex + 8;
   const producerAfter = advanceProducerProgress(producerProgress.producers, [producerNeighbor]);
   assert.equal(producerAfter.produced, 1);
+  assert.equal(producerAfter.collected, 0);
+  assert.equal(producerAfter.crystals[producerIndex], true);
   assert.equal(producerAfter.remaining[producerIndex], producerProgress.producers.remaining[producerIndex] - 1);
+  const producerCollected = advanceProducerProgress(producerAfter, [producerIndex]);
+  assert.equal(producerCollected.collected, 1);
+  assert.equal(producerCollected.crystals[producerIndex], false);
 
   const wardLevel = CASCADE_LEVELS[950];
   const wardProgress = createLevelProgress(wardLevel);
