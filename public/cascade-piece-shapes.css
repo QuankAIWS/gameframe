@@ -691,3 +691,48 @@
     transition-duration: 1ms !important;
   }
 }
+
+
+.cascade-bloom-mark[data-bloom-symbol="0"],
+.cascade-bloom-peek[data-bloom-symbol="0"] { --bloom-color: #e33d91; --bloom-soft: #ffd4e9; color: #a91d65; }
+.cascade-bloom-mark[data-bloom-symbol="1"],
+.cascade-bloom-peek[data-bloom-symbol="1"] { --bloom-color: #20b8d6; --bloom-soft: #d4f7ff; color: #0d728c; }
+.cascade-bloom-mark[data-bloom-symbol="2"],
+.cascade-bloom-peek[data-bloom-symbol="2"] { --bloom-color: #e2b51d; --bloom-soft: #fff2ae; color: #7e6100; }
+.cascade-bloom-mark[data-bloom-symbol="3"],
+.cascade-bloom-peek[data-bloom-symbol="3"] { --bloom-color: #58c969; --bloom-soft: #d8f7dc; color: #27793a; }
+.cascade-bloom-mark[data-bloom-symbol="4"],
+.cascade-bloom-peek[data-bloom-symbol="4"] { --bloom-color: #9f69df; --bloom-soft: #eadcff; color: #6030a8; }
+.cascade-bloom-mark[data-bloom-symbol="5"],
+.cascade-bloom-peek[data-bloom-symbol="5"] { --bloom-color: #f18a45; --bloom-soft: #ffe0c7; color: #9c4617; }
+
+.cascade-bloom-mark.is-revealed {
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.84),
+    0 0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white),
+    0 0 12px color-mix(in srgb, var(--bloom-color, #d47ac7) 48%, transparent);
+}
+
+.cascade-bloom-peek {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255,255,255,.98) 0 14%, transparent 15%),
+    linear-gradient(145deg, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white), color-mix(in srgb, var(--bloom-color, #d47ac7) 26%, white));
+  border: 3px solid color-mix(in srgb, var(--bloom-color, #d47ac7) 58%, white);
+}
+
+.cascade-bloom-peek.is-success {
+  box-shadow:
+    inset 0 0 0 3px rgba(255,255,255,.9),
+    0 0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 45%, white),
+    0 0 16px color-mix(in srgb, var(--bloom-color, #d47ac7) 58%, transparent);
+}
+
+.cascade-tile.is-ground-new .cascade-ground-mark {
+  animation: cascade-ground-spread .44s ease-out both;
+}
+
+@keyframes cascade-ground-spread {
+  0% { transform: scale(.72); opacity: .45; filter: brightness(1.28) saturate(1.2); }
+  70% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
