@@ -110,13 +110,15 @@ Older-adult cognitive-training research also shows strong interest in performanc
 
 Every normal match-3 level already exercises visual search, planning, inhibition, and spatial reasoning. Explicit memory mechanics therefore do not need to dominate the campaign.
 
-After memory mechanics are introduced:
+After a cognitive family has completed its dedicated foundation/teaching arc:
 
-- target roughly **4–6 cognitive-accent levels per 30-level chapter** (about 13–20%);
-- normally place **1–2 cognitive-accent levels per ten-level tension wave**;
-- avoid more than two explicit memory-accent levels consecutively;
-- first-introduction chapters may temporarily use more frequent, easier exposures;
+- target roughly **4–6 steady-state cognitive-accent levels per 30-level chapter** (about 13–20%);
+- normally place **1–2 steady-state cognitive-accent levels per ten-level tension wave**;
+- avoid more than two explicit memory-accent levels consecutively in steady-state mixed chapters;
+- dedicated foundation arcs may temporarily use much more frequent, easier exposures so the player actually learns the new rule;
 - after mastery, recur old cognitive mechanics at spaced intervals and mix them with ordinary mechanics.
+
+The current foundation exceptions are intentional: 701–750 establishes Recall Locks, 751–800 establishes Memory Blooms, and 951–1,000 establishes visible Color Wards/attention play. Those ranges may be dense. The exception does **not** permit stacking an unfamiliar cognitive rule with raw failure pressure: first teaching waves still debut on relief/normal beats, cues remain redundant and readable, and post-foundation chapters should return toward the steady-state cadence.
 
 This is deliberately stronger than the current optional-only cognitive layer but far lighter than a dedicated brain-training application.
 
