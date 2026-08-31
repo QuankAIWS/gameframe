@@ -293,7 +293,8 @@ test("Cascade introduces readable crystal Producers at level 901", async ({ page
   const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
   expect(exported.level.chapter).toBe("producer-intro");
   expect(exported.progress.producers.total).toBe(2);
-  expect(exported.progress.producers.produced).toBe(0);\n  expect(exported.progress.producers.collected).toBe(0);
+  expect(exported.progress.producers.produced).toBe(0);
+  expect(exported.progress.producers.collected).toBe(0);
 });
 
 test("Cascade introduces visible Color Wards at level 951", async ({ page }) => {
