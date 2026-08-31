@@ -15,8 +15,7 @@ import {
   dropSupportIndices,
   ordinaryLockTargetIndices,
   producerSupportIndices,
-  colorWardSupportIndices,
-  colorWardTargetKinds,
+  colorWardButterflyTargetIndices,
   emptySpecials,
   objectiveComplete,
 } from "./cascade-special-engine.js";
@@ -406,7 +405,6 @@ function remainingTargetKinds() {
     ...(activeLevel.objective?.collect || [])
       .filter((goal) => Number(levelProgress?.collected?.[goal.kind] || 0) < goal.count)
       .map((goal) => goal.kind),
-    ...colorWardTargetKinds(levelProgress),
   ])];
 }
 
@@ -416,7 +414,7 @@ function remainingButterflyTargetIndices() {
     ...dropSupportIndices(levelProgress),
     ...ordinaryLockTargetIndices(levelProgress),
     ...producerSupportIndices(levelProgress),
-    ...colorWardSupportIndices(levelProgress),
+    ...colorWardButterflyTargetIndices(levelProgress, board),
   ])];
 }
 

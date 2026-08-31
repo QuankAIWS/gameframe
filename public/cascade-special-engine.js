@@ -15,6 +15,7 @@ import {
   producerSupportIndices,
   colorWardSupportIndices,
   colorWardTargetKinds,
+  colorWardButterflyTargetIndices,
   normalizeLockProgress,
   chipLockProgress,
   findMatchGroups,
@@ -38,6 +39,7 @@ export {
   producerSupportIndices,
   colorWardSupportIndices,
   colorWardTargetKinds,
+  colorWardButterflyTargetIndices,
   normalizeLockProgress,
   objectiveComplete,
 };

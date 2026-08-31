@@ -6,6 +6,7 @@ import {
   applySpecialSwap,
   createRng,
   emptySpecials,
+  colorWardButterflyTargetIndices,
   findSpecialMatchGroups,
   resolveSpecialCascades,
 } from "../../../public/cascade-special-engine.js";
@@ -295,6 +296,21 @@ test("Butterfly never falls back to generic cells while direct objective targets
     assert.equal(trigger.cleared.length, 1);
     assert.ok([10, 63].includes(trigger.cleared[0]));
   }
+});
+
+test("Color Ward Butterfly targets preserve the required neighbor/color pairing", () => {
+  const board = stableBoard();
+  const requiredKinds = Array(64).fill(-1);
+  requiredKinds[9] = 4;
+  for (const index of [1, 8, 10, 17]) board[index] = 1;
+  board[10] = 4;
+  board[40] = 4;
+
+  const targets = colorWardButterflyTargetIndices({
+    colorWards: { total: 1, opened: 0, requiredKinds, lastOpened: [] },
+  }, board);
+
+  assert.deepEqual(targets, [10]);
 });
 
 test("Butterfly treats a drop support cell as a useful objective target", () => {

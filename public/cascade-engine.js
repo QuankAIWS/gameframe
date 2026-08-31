@@ -1435,6 +1435,19 @@ export function colorWardTargetKinds(progress) {
   return [...new Set(wards.requiredKinds.filter((kind) => kind >= 0))];
 }
 
+export function colorWardButterflyTargetIndices(progress, board) {
+  const wards = normalizeColorWardProgress(progress?.colorWards);
+  const targets = [];
+  for (let wardIndex = 0; wardIndex < wards.requiredKinds.length; wardIndex += 1) {
+    const requiredKind = wards.requiredKinds[wardIndex];
+    if (requiredKind < 0) continue;
+    for (const neighbor of adjacentIndices(wardIndex)) {
+      if (Number(board?.[neighbor]) === requiredKind) targets.push(neighbor);
+    }
+  }
+  return [...new Set(targets)];
+}
+
 export function advanceColorWardProgress(value, boardBefore, clearIndices, { allowDirect = false } = {}) {
   const next = normalizeColorWardProgress(value);
   if (!next.total) return next;
