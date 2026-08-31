@@ -328,8 +328,8 @@ Memory Blooms debut only on relief/normal beats.
 
 ### 901–1,050
 
-- 901–950: Producers/Generators;
-- 951–1,000: color-conditional / attention elements and mature Recall-Lock combinations;
+- 901–950: Crystal Producers/Generators with visible charge counts and deterministic adjacent-clear activation;
+- 951–1,000: visible Color Wards for selective attention, with mature Recall-Lock combinations used sparingly after the Ward rule is familiar;
 - 1,001–1,050: mastery/recombination and a small Pattern Echo pilot if Memory Blooms and Recall Locks test well.
 
 Level 1,000 remains a major human-data checkpoint inside this production batch rather than changing the 150-level generation cadence.
