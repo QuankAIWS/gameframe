@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   CAMPAIGN_CAPACITY,
   CAMPAIGN_MILESTONE,
@@ -21,6 +22,13 @@ import {
 } from "../../../public/cascade-engine.js";
 import { chooseMove, profileCascadeLevels, profileCascadeMoveFragility, runCascadeLevel, scoreVisibleMove, targetFirstPassBand } from "./cascade-simulator.js";
 import { analyzePlaytestExport } from "./cascade-playtest-analysis.js";
+
+test("Cascade cloud progression ceiling matches the shipped campaign", () => {
+  const progressionSource = readFileSync(new URL("../../cloudflare/player-progression.ts", import.meta.url), "utf8");
+  const match = progressionSource.match(/export const MAX_CASCADE_LEVEL = (\d+)/);
+  assert.ok(match, "player-progression.ts must expose MAX_CASCADE_LEVEL");
+  assert.equal(Number(match[1]), LEVEL_COUNT);
+});
 
 test("Cascade ships 900 levels on a campaign model sized for 10000", () => {
   assert.equal(LEVEL_COUNT, 900);
