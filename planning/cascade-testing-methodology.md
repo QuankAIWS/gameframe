@@ -290,6 +290,8 @@ Cognitive-mechanic analysis should track:
 
 A memory-assisted attempt remains valid gameplay, but assisted and unassisted outcomes must be separated when estimating the intrinsic cognitive demand of a memory mechanic.
 
+For Memory Blooms specifically, human-like policies may know which board cells contain closed Blooms because those flowers are visible, but they may not inspect a closed Bloom's hidden symbol. They may use symbols only after reveal and according to the persona's retained-memory state. An actively open Bloom is visible information, not a memory guess. Greedy/lookahead may access hidden pair truth only as explicitly labeled oracle evidence.
+
 Cognitive-persona metrics remain advisory until calibrated against actual family traces. They must not become hard CI gates merely because the engine can model hidden information.
 
 ## Data interpretation boundary
