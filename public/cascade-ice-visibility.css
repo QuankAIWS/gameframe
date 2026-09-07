@@ -41,8 +41,9 @@ body.cascade-route .cascade-board .cascade-tile[data-kind="4"][data-ice] {
 }
 
 body.cascade-route .cascade-board .cascade-tile[data-kind="5"][data-ice] {
-  --ice-color-aura: rgba(255,145,77,.33);
-  --ice-color-halo: rgba(255,145,77,.13);
+  /* Red-orange reinforcement prevents frozen orange from collapsing toward yellow. */
+  --ice-color-aura: rgba(239,84,42,.37);
+  --ice-color-halo: rgba(239,84,42,.15);
 }
 
 /* One fixed, very light frost density for every durability. */
