@@ -265,7 +265,7 @@ function boardStackLayout(compact) {
     minimumFaceUp: compact ? 20 : 24,
     desiredFaceDown: compact ? 8 : 11,
     minimumFaceDown: compact ? 4 : 6,
-    cardHeight: compact ? 80 : 112,
+    cardHeight: compact ? 80 : 132,
   };
 }
 
