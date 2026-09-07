@@ -149,8 +149,6 @@ test("Spider Solitaire keeps every covered desktop rank visible in a long in-pro
   const stackEvidence = await page.evaluate(() => {
     const nav = document.querySelector("#gameframe-destination-bar").getBoundingClientRect();
     const shell = document.querySelector(".spider-shell").getBoundingClientRect();
-    const nav = document.querySelector("#gameframe-destination-bar").getBoundingClientRect();
-    const shell = document.querySelector(".spider-shell").getBoundingClientRect();
     const scroller = document.querySelector(".spider-board-scroller").getBoundingClientRect();
     const cards = [...document.querySelector(".spider-column").querySelectorAll(".spider-card.is-face-up")];
     return {
