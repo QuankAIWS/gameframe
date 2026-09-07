@@ -164,7 +164,7 @@
 
   body.cascade-route .cascade-status > div:nth-child(4) strong {
     color: #fff8c9;
-    font-size: 1.72rem;
+    font-size: max(1.78rem, 28px);
   }
 
   body.cascade-route #lives {
@@ -643,7 +643,7 @@
   }
 
   body.cascade-route .cascade-status > div:nth-child(4) strong {
-    font-size: 1.58rem;
+    font-size: max(1.78rem, 28px);
   }
 
   body.cascade-route #lives {
@@ -728,7 +728,7 @@
   }
 
   body.cascade-route .cascade-status > div:nth-child(4) strong {
-    font-size: 1.42rem;
+    font-size: max(1.78rem, 28px);
   }
 
   body.cascade-route #lives {
