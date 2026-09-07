@@ -124,7 +124,7 @@ export function createCardFace(card, {
     rank.setAttribute("text-anchor", "start");
   }
 
-  const suitSize = Math.max(7, Math.min(12, Math.round(Number(rankSize) * 0.26)));
+  const suitSize = Math.max(8, Math.min(12, Math.round(Number(rankSize) * 0.26)));
   const suit = createText("card-kit-suit", cardSuitMark(card.suit));
   suit.style.fontSize = `${suitSize}px`;
   suit.setAttribute("x", "96%");
