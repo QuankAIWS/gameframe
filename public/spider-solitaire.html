@@ -2,62 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#071018">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b8f31">
   <title>Spider Solitaire · Scribbles GameFrame</title>
   <link rel="stylesheet" href="/spider-solitaire.css">
 </head>
 <body class="spider-solitaire-route" data-gameframe-menu-game="spider">
   <main class="spider-shell">
-    <header class="spider-hero">
-      <div>
-        <p class="spider-kicker">SOLITAIRE // 104-CARD TABLE</p>
-        <h1>Spider Solitaire</h1>
-        <p>Build same-suit runs from King to Ace. Complete all eight runs to clear the table.</p>
+    <header class="spider-header">
+      <div class="spider-brand-row">
+        <div>
+          <p class="spider-kicker">CLASSIC TABLE</p>
+          <h1>Spider Solitaire</h1>
+        </div>
+        <div class="spider-deal-id" aria-label="Current deal identifier">
+          <small>DEAL</small>
+          <strong id="deal-id">—</strong>
+        </div>
       </div>
-      <div class="spider-deal-id" aria-label="Current deal identifier">
-        <small>DEAL</small>
-        <strong id="deal-id">—</strong>
-      </div>
+
+      <section class="spider-toolbar" aria-label="Spider Solitaire controls">
+        <label class="spider-difficulty">
+          <span>Difficulty</span>
+          <select id="difficulty">
+            <option value="1">1 suit · Easy</option>
+            <option value="2">2 suits · Standard</option>
+            <option value="4">4 suits · Expert</option>
+          </select>
+        </label>
+        <button id="new-game" type="button">New</button>
+        <button id="restart-game" type="button">Restart</button>
+        <button id="undo" type="button">Undo</button>
+      </section>
     </header>
 
-    <section class="spider-toolbar" aria-label="Spider Solitaire controls">
-      <label class="spider-difficulty">
-        <span>Difficulty</span>
-        <select id="difficulty">
-          <option value="1">1 suit · Easy</option>
-          <option value="2">2 suits · Standard</option>
-          <option value="4">4 suits · Expert</option>
-        </select>
-      </label>
-      <button id="new-game" type="button">New deal</button>
-      <button id="restart-game" type="button">Restart deal</button>
-      <button id="undo" type="button">Undo</button>
-      <span class="spider-toolbar-spacer"></span>
-      <div class="spider-stat"><small>MOVES</small><strong id="move-count">0</strong></div>
-      <div class="spider-stat"><small>STOCK</small><strong id="stock-count">5</strong></div>
-      <div class="spider-stat"><small>RUNS</small><strong id="run-count">0 / 8</strong></div>
+    <section class="spider-scorebar" aria-label="Game status">
+      <div class="spider-stat"><small>Moves:</small><strong id="move-count">0</strong></div>
+      <div class="spider-stat"><small>Stock:</small><strong id="stock-count">5</strong></div>
+      <div class="spider-stat"><small>Runs:</small><strong id="run-count">0 / 8</strong></div>
     </section>
 
-    <section class="spider-status-row">
-      <p id="status" role="status" aria-live="polite">Choose a face-up card or same-suit sequence.</p>
-      <div id="completed-runs" class="completed-runs" aria-label="Completed runs"></div>
-    </section>
+    <section class="spider-table-surface">
+      <div class="spider-tray" aria-label="Completed runs and draw pile">
+        <div id="completed-runs" class="completed-runs" aria-label="Completed runs"></div>
+        <button id="deal-stock" class="stock-button" type="button" aria-label="Deal one card to each tableau column">
+          <span id="stock-pile" class="stock-pile" aria-hidden="true"></span>
+          <span class="stock-copy">
+            <strong>Deal</strong>
+            <small id="stock-help">5 deals remaining</small>
+          </span>
+        </button>
+      </div>
 
-    <section class="spider-board-scroller" aria-label="Spider Solitaire table">
-      <div id="spider-board" class="spider-board"></div>
-    </section>
+      <section class="spider-status-row">
+        <p id="status" role="status" aria-live="polite">Choose a face-up card or same-suit sequence.</p>
+        <p class="spider-rule-note">Fill empty columns before dealing stock.</p>
+      </section>
 
-    <footer class="spider-stock-rail">
-      <button id="deal-stock" class="stock-button" type="button" aria-label="Deal one card to each tableau column">
-        <span id="stock-pile" class="stock-pile" aria-hidden="true"></span>
-        <span>
-          <strong>Deal stock</strong>
-          <small id="stock-help">5 deals remaining</small>
-        </span>
-      </button>
-      <p>Stock cannot be dealt while any tableau column is empty.</p>
-    </footer>
+      <section class="spider-board-scroller" aria-label="Spider Solitaire table">
+        <div id="spider-board" class="spider-board"></div>
+      </section>
+    </section>
   </main>
 
   <div id="win-dialog" class="spider-win" hidden>

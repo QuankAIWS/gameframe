@@ -37,6 +37,41 @@ test("Spider Solitaire loads, persists a stock deal, and restarts the same seede
 });
 
 
+test("Spider Solitaire presents the classic felt table on desktop", async ({ page }) => {
+  await mkdir("visual-results/player-ui-review", { recursive: true });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/spider-solitaire.html");
+  await page.evaluate((key) => localStorage.removeItem(key), saveKey);
+  await page.reload();
+
+  await expect(page.locator(".spider-scorebar")).toBeVisible();
+  await expect(page.locator(".completed-slot")).toHaveCount(8);
+  await expect(page.locator("#stock-pile .stock-card-back")).toHaveCount(5);
+
+  const presentation = await page.evaluate(() => {
+    const body = getComputedStyle(document.body);
+    const faceUp = getComputedStyle(document.querySelector(".spider-card.is-face-up"));
+    const faceDown = getComputedStyle(document.querySelector(".spider-card.is-face-down"));
+    return {
+      bodyBackground: body.backgroundImage,
+      faceUpBackground: faceUp.backgroundImage,
+      faceDownBackground: faceDown.backgroundImage,
+      boardWidth: document.querySelector("#spider-board").getBoundingClientRect().width,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(presentation.bodyBackground).toContain("gradient");
+  expect(presentation.faceUpBackground).toContain("gradient");
+  expect(presentation.faceDownBackground).toContain("gradient");
+  expect(presentation.boardWidth).toBeLessThanOrEqual(presentation.viewportWidth);
+
+  await page.screenshot({
+    path: "visual-results/player-ui-review/spider-solitaire-desktop-1280x900.png",
+    fullPage: true,
+  });
+});
+
 test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered ranks readable", async ({ page }) => {
   await mkdir("visual-results/player-ui-review", { recursive: true });
   await page.setViewportSize({ width: 360, height: 800 });
