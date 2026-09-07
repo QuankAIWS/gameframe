@@ -680,6 +680,13 @@
 }
 
 
+
+@media (max-width: 700px) and (orientation: portrait) and (min-height: 760px) {
+  body.cascade-route .cascade-board-wrap {
+    margin-top: clamp(12px, 3dvh, 26px);
+  }
+}
+
 @media (max-width: 700px) and (orientation: portrait) and (max-height: 680px) {
   body.cascade-route .cascade-shell {
     padding-top: 2px;
