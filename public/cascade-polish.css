@@ -4,7 +4,7 @@
   --cascade-cream: #fffaf1;
   --cascade-card: rgba(255, 255, 255, .9);
   --cascade-line: rgba(92, 67, 132, .15);
-  --cascade-pink: #ff5eaa;
+  --cascade-pink: #ff3fac;
   --cascade-blue: #44c9ee;
   --cascade-yellow: #ffd34e;
   --cascade-green: #69d877;
@@ -322,8 +322,8 @@ body.cascade-route::after {
 }
 
 .cascade-tile[data-kind="0"] {
-  --tile-a: #ff83bf;
-  --tile-b: #f83f98;
+  --tile-a: #ff72c5;
+  --tile-b: #ff1593;
   --tile-mark: "♥";
   border-radius: 50%;
 }
