@@ -36,6 +36,7 @@ on:
       - "test/browser/casual-games.spec.mjs"
       - "test/browser/cascade*.spec.mjs"
       - "test/browser/game-hub-navigation.spec.mjs"
+      - "test/browser/card-kit.spec.mjs"
       - "test/browser/spider-solitaire.spec.mjs"
       - "test/browser/player-platform.spec.mjs"
       - "test/browser/monster-master*.spec.mjs"
@@ -137,14 +138,16 @@ jobs:
           node --check public/gameframe-nav.js
       - name: Shared navigation browser journey
         run: npx playwright test test/browser/game-hub-navigation.spec.mjs --config playwright.config.mjs
-      - name: Spider Solitaire browser journey
-        run: npx playwright test test/browser/spider-solitaire.spec.mjs --config playwright.config.mjs
-      - name: Upload Spider Solitaire screenshots
+      - name: CardKit and Spider Solitaire browser journeys
+        run: npx playwright test test/browser/card-kit.spec.mjs test/browser/spider-solitaire.spec.mjs --config playwright.config.mjs
+      - name: Upload CardKit and Spider Solitaire screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: spider-solitaire-ui-review-${{ github.run_id }}
-          path: visual-results/spider-solitaire-review
+          name: card-kit-spider-ui-review-${{ github.run_id }}
+          path: |
+            visual-results/card-kit-review
+            visual-results/spider-solitaire-review
           if-no-files-found: warn
           retention-days: 7
       - name: Shared shell visual regressions
@@ -156,6 +159,7 @@ jobs:
           name: shared-shell-ui-review-${{ github.run_id }}
           path: |
             visual-results/player-ui-review
+            visual-results/card-kit-review
             visual-results/spider-solitaire-review
             test-results/**/*.png
           if-no-files-found: warn
