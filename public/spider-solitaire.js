@@ -340,14 +340,14 @@ function renderBoard() {
     });
     const coveredRankSize = rankSizeForReveal(reveals.faceUp, {
       minimum: compact ? 20 : 23,
-      maximum: compact ? 28 : 39,
-      verticalSafety: compact ? 4 : 5,
+      maximum: compact ? 27 : 37,
+      verticalSafety: compact ? 5 : 6,
     });
     let top = reveals.topStart;
     cards.forEach((card, cardIndex) => {
       const last = cardIndex === cards.length - 1;
       column.append(renderCard(card, columnIndex, cardIndex, top, {
-        rankSize: last ? (compact ? 30 : 46) : coveredRankSize,
+        rankSize: last ? (compact ? 29 : 44) : coveredRankSize,
         rankAlign: compact && state.difficulty === 1 ? "center" : "start",
         topCard: last,
       }));
