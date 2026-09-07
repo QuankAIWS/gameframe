@@ -128,7 +128,7 @@ test("the Games catalog opens Role-Playing Games, Battle Simulator, Casual Games
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
   await expect(page.locator(".mode-grid")).toBeHidden();
   await expect(page.locator("#lobby .section-label")).toHaveText("GAMES");
-  await expect(page.locator(".game-grid .game-card")).toHaveCount(6);
+  await expect(page.locator(".game-grid .game-card")).toHaveCount(7);
   await expect(page.locator("#gameframe-destination-bar [data-gameframe-games]")).toHaveClass(/is-active/);
 
   const rpgCard = page.locator("#game-card-role-playing-games");
@@ -176,6 +176,17 @@ test("the Games catalog opens Role-Playing Games, Battle Simulator, Casual Games
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
   await expect(page.locator("#level-stars")).toBeVisible();
   await expect(page.locator("#iou-total")).toHaveCount(0);
+
+  await page.goto("/?catalog=1&player=hub-navigation-test");
+  const spiderCard = page.locator("#game-card-spider-solitaire");
+  await expect(spiderCard).toContainText("Spider Solitaire");
+  await expect(spiderCard).toHaveAttribute("href", "/spider-solitaire.html");
+  await expect(spiderCard.locator(".game-card-play")).toHaveText("Open");
+  await spiderCard.click();
+  await expect(page).toHaveURL(/\/spider-solitaire\.html$/);
+  await expect(page.locator("[data-gameframe-destination-title]")).toHaveText("SPIDER SOLITAIRE");
+  await expect(page.locator("#gameframe-destination-bar [data-gameframe-games]")).toHaveClass(/is-active/);
+  await expect(page.locator("#spider-board .spider-column")).toHaveCount(10);
 
   await page.goto("/?catalog=1&player=hub-navigation-test");
   await expect(page.locator("#game-card-tic-tac-toe")).toContainText("CPU Opponent");
