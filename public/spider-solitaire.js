@@ -284,7 +284,7 @@ function renderBoard() {
     cards.forEach((card, cardIndex) => {
       column.append(renderCard(card, columnIndex, cardIndex, top));
       const isLast = cardIndex === cards.length - 1;
-      if (!isLast) top += card.faceUp ? (compact ? 21 : 30) : (compact ? 9 : 15);
+      if (!isLast) top += card.faceUp ? (compact ? 21 : 36) : (compact ? 9 : 15);
     });
     column.style.minHeight = `${Math.max(compact ? 430 : 520, top + (compact ? 88 : 132))}px`;
     board.append(column);
