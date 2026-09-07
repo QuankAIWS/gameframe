@@ -50,6 +50,7 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   await expect(page.locator(".spider-tray")).toBeHidden();
   await expect(page.locator(".spider-desktop-run-slot")).toHaveCount(8);
   await expect(page.locator("#stock-pile .stock-card-back")).toHaveCount(5);
+  await expect(page.locator("#completed-runs .completed-slot")).toHaveText(["", "", "", "", "", "", "", ""]);
 
   const presentation = await page.evaluate(() => {
     const body = getComputedStyle(document.body);
