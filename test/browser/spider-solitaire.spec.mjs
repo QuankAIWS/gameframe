@@ -8,7 +8,7 @@ test("Spider Solitaire loads, persists a stock deal, and restarts the same seede
   await page.evaluate((key) => localStorage.removeItem(key), saveKey);
   await page.reload();
 
-  await expect(page.locator(".spider-desktop-bar h1")).toHaveText("Spider Solitaire");
+  await expect(page.locator(".spider-page-heading")).toHaveText("Spider Solitaire");
   await expect(page.locator("#spider-board .spider-column")).toHaveCount(10);
   await expect(page.locator("#spider-board .spider-card")).toHaveCount(54);
   await expect(page.locator("#spider-board .spider-card.is-face-up")).toHaveCount(10);
@@ -27,7 +27,7 @@ test("Spider Solitaire loads, persists a stock deal, and restarts the same seede
   await expect(page.locator("#stock-count")).toHaveText("4");
   await expect(page.locator("#move-count")).toHaveText("1");
   await expect(page.locator("#deal-id")).toHaveText(dealId);
-  await expect(page.getByRole("status")).toContainText("Saved deal resumed");
+  await expect(page.locator("#status")).toContainText("Saved deal resumed");
 
   await page.locator("#desktop-restart-game").click();
   await expect(page.locator("#stock-count")).toHaveText("5");
@@ -94,7 +94,7 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   expect(presentation.shellRight).toBeGreaterThanOrEqual(presentation.viewportWidth - 1);
   expect(presentation.shellTop).toBeGreaterThanOrEqual(presentation.navBottom - 1);
   expect(presentation.desktopBarTop).toBeGreaterThanOrEqual(presentation.navBottom - 1);
-  expect(presentation.desktopBarHeight).toBeLessThanOrEqual(52);
+  expect(presentation.desktopBarHeight).toBeLessThanOrEqual(48);
   expect(presentation.shellBottom).toBeLessThanOrEqual(presentation.viewportHeight + 1);
   expect(presentation.scrollerBottom).toBeLessThanOrEqual(presentation.viewportHeight + 1);
   expect(presentation.surfaceRight).toBeGreaterThanOrEqual(presentation.viewportWidth - 1);
