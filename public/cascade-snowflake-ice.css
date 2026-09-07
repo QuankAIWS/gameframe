@@ -168,12 +168,12 @@
 }
 
 .cascade-tile[data-kind="5"] {
-  --tile-mark-color: #c5531f;
-  --tile-mark-accent: #ffd0ae;
-  --tile-mark-shadow: rgba(145,55,17,.23);
-  --tile-glow: rgba(255,125,59,.47);
-  --tile-glow-mid: rgba(255,125,59,.23);
-  --tile-glow-soft: rgba(255,125,59,.10);
+  --tile-mark-color: #a93618;
+  --tile-mark-accent: #ffc3a5;
+  --tile-mark-shadow: rgba(126,40,18,.25);
+  --tile-glow: rgba(233,83,36,.47);
+  --tile-glow-mid: rgba(233,83,36,.23);
+  --tile-glow-soft: rgba(233,83,36,.10);
 }
 
 /* Ambient life is event-style rather than perpetual. The scheduler gives at

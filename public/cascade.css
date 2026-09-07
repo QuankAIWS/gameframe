@@ -226,7 +226,7 @@ button { font: inherit; }
 .cascade-tile[data-kind="2"] { --tile: #ffd84d; }
 .cascade-tile[data-kind="3"] { --tile: #83ef7b; }
 .cascade-tile[data-kind="4"] { --tile: #a982ff; }
-.cascade-tile[data-kind="5"] { --tile: #ff8b4d; }
+.cascade-tile[data-kind="5"] { --tile: #f45f2a; }
 
 .cascade-help {
   margin: 9px 5px 0;
