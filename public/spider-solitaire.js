@@ -240,14 +240,14 @@ function renderStockPile() {
 
 function boardStackLayout(compact) {
   const availableHeight = Math.max(compact ? 300 : 340, boardScroller.clientHeight || (compact ? 560 : 620));
-  const topStart = compact ? 1 : 3;
-  const bottomPad = compact ? 3 : 5;
-  const desiredFaceUp = compact ? 25 : 34;
-  const minimumFaceUp = compact ? 22 : 30;
+  const topStart = 1;
+  const bottomPad = compact ? 3 : 2;
+  const desiredFaceUp = compact ? 26 : 33;
+  const minimumFaceUp = compact ? 23 : 30;
   const desiredFaceDown = compact ? 8 : 12;
   const minimumFaceDown = compact ? 5 : 7;
-  const baseCardHeight = compact ? 80 : 118;
-  const minimumCardHeight = compact ? 58 : 60;
+  const baseCardHeight = compact ? 80 : 112;
+  const minimumCardHeight = compact ? 58 : 34;
 
   let cardHeight = baseCardHeight;
   for (const cards of state.tableau) {
