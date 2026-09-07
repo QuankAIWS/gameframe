@@ -26,6 +26,7 @@ const stockCount = document.querySelector("#stock-count");
 const runCount = document.querySelector("#run-count");
 const stockHelp = document.querySelector("#stock-help");
 const stockPile = document.querySelector("#stock-pile");
+const boardScroller = document.querySelector(".spider-board-scroller");
 const mobileTableauQuery = window.matchMedia("(max-width: 850px)");
 const dealId = document.querySelector("#deal-id");
 const status = document.querySelector("#status");
@@ -237,9 +238,95 @@ function renderStockPile() {
   }
 }
 
+function boardStackLayout(compact) {
+  const availableHeight = Math.max(compact ? 300 : 340, boardScroller.clientHeight || (compact ? 560 : 620));
+  const topStart = compact ? 1 : 3;
+  const bottomPad = compact ? 3 : 5;
+  const desiredFaceUp = compact ? 25 : 34;
+  const minimumFaceUp = compact ? 22 : 30;
+  const desiredFaceDown = compact ? 8 : 12;
+  const minimumFaceDown = compact ? 5 : 7;
+  const baseCardHeight = compact ? 80 : 118;
+  const minimumCardHeight = compact ? 58 : 60;
+
+  let cardHeight = baseCardHeight;
+  for (const cards of state.tableau) {
+    const gaps = cards.slice(0, -1);
+    const faceUpCount = gaps.filter((card) => card.faceUp).length;
+    const faceDownCount = gaps.length - faceUpCount;
+    const roomForCard = availableHeight
+      - topStart
+      - bottomPad
+      - (faceUpCount * minimumFaceUp)
+      - (faceDownCount * minimumFaceDown);
+    cardHeight = Math.min(cardHeight, Math.max(minimumCardHeight, roomForCard));
+  }
+
+  return {
+    availableHeight,
+    topStart,
+    bottomPad,
+    desiredFaceUp,
+    minimumFaceUp,
+    desiredFaceDown,
+    minimumFaceDown,
+    minimumCardHeight,
+    cardHeight: Math.floor(cardHeight),
+  };
+}
+
+function columnReveals(cards, layout) {
+  const gaps = cards.slice(0, -1);
+  const faceUpCount = gaps.filter((card) => card.faceUp).length;
+  const faceDownCount = gaps.length - faceUpCount;
+  const roomForGaps = Math.max(
+    0,
+    layout.availableHeight - layout.topStart - layout.bottomPad - layout.cardHeight,
+  );
+
+  let faceUp = layout.desiredFaceUp;
+  let faceDown = layout.desiredFaceDown;
+  let excess = (faceUpCount * faceUp) + (faceDownCount * faceDown) - roomForGaps;
+
+  if (excess > 0 && faceDownCount > 0) {
+    const reducible = (faceDown - layout.minimumFaceDown) * faceDownCount;
+    const reduction = Math.min(excess, reducible);
+    faceDown -= reduction / faceDownCount;
+    excess -= reduction;
+  }
+
+  if (excess > 0 && faceUpCount > 0) {
+    const reducible = (faceUp - layout.minimumFaceUp) * faceUpCount;
+    const reduction = Math.min(excess, reducible);
+    faceUp -= reduction / faceUpCount;
+    excess -= reduction;
+  }
+
+  if (excess > 0 && faceDownCount > 0) {
+    const reducible = Math.max(0, faceDown - 2) * faceDownCount;
+    const reduction = Math.min(excess, reducible);
+    faceDown -= reduction / faceDownCount;
+    excess -= reduction;
+  }
+
+  if (excess > 0 && faceUpCount > 0) {
+    const emergencyMinimum = mobileTableauQuery.matches ? 18 : 26;
+    const reducible = Math.max(0, faceUp - emergencyMinimum) * faceUpCount;
+    const reduction = Math.min(excess, reducible);
+    faceUp -= reduction / faceUpCount;
+  }
+
+  return {
+    faceUp: Math.max(1, faceUp),
+    faceDown: Math.max(1, faceDown),
+  };
+}
+
 function renderBoard() {
   board.replaceChildren();
   const compact = mobileTableauQuery.matches;
+  const layout = boardStackLayout(compact);
+  board.style.setProperty("--card-height", `${layout.cardHeight}px`);
   const validDestinations = selection
     ? new Set(validSpiderDestinations(state, selection.columnIndex, selection.cardIndex))
     : new Set();
@@ -280,13 +367,14 @@ function renderBoard() {
       column.append(empty);
     }
 
-    let top = compact ? 3 : 14;
+    const reveals = columnReveals(cards, layout);
+    let top = layout.topStart;
     cards.forEach((card, cardIndex) => {
       column.append(renderCard(card, columnIndex, cardIndex, top));
-      const isLast = cardIndex === cards.length - 1;
-      if (!isLast) top += card.faceUp ? (compact ? 21 : 36) : (compact ? 9 : 15);
+      if (cardIndex < cards.length - 1) {
+        top += card.faceUp ? reveals.faceUp : reveals.faceDown;
+      }
     });
-    column.style.minHeight = `${Math.max(compact ? 430 : 520, top + (compact ? 88 : 132))}px`;
     board.append(column);
   });
 }
@@ -325,6 +413,12 @@ dealButton.addEventListener("click", () => {
 });
 winNewGame.addEventListener("click", () => startNewGame(state.difficulty));
 mobileTableauQuery.addEventListener?.("change", () => render());
+
+let resizeFrame = 0;
+window.addEventListener("resize", () => {
+  window.cancelAnimationFrame(resizeFrame);
+  resizeFrame = window.requestAnimationFrame(() => renderBoard());
+});
 
 difficulty.addEventListener("change", () => {
   setStatus(`Difficulty set to ${difficulty.value} suit${difficulty.value === "1" ? "" : "s"}. Press New deal to reshuffle.`);
