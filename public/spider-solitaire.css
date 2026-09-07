@@ -767,6 +767,55 @@ body.gameframe-has-destination-bar .spider-shell {
 .spider-win-card p { color: rgba(255,255,255,.78); }
 .spider-win-card button { margin-top: 9px; }
 
+/* desktop-flow-final */
+
+@media (min-width: 851px) {
+  .spider-header,
+  .spider-scorebar,
+  .spider-tray {
+    display: none;
+  }
+
+  .spider-status-row {
+    position: absolute;
+    z-index: 30;
+    top: 54px;
+    left: 10px;
+    min-height: 0;
+    padding: 0;
+    pointer-events: none;
+  }
+
+  .spider-status-row #status {
+    display: none;
+    max-width: min(520px, 60vw);
+    padding: 5px 8px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 7px;
+    background: rgba(3,52,18,.88);
+    box-shadow: 0 6px 16px rgba(0,0,0,.22);
+  }
+
+  .spider-status-row #status[data-tone="error"],
+  .spider-status-row #status[data-tone="success"] {
+    display: block;
+  }
+
+  .spider-rule-note {
+    display: none;
+  }
+
+  .spider-table-surface {
+    position: relative;
+    border-top: 1px solid rgba(255,255,255,.18);
+  }
+
+  .spider-board {
+    padding: 5px 8px 8px;
+  }
+}
+
+
 @media (max-width: 850px) {
   :root {
     --card-width: 100%;
