@@ -114,7 +114,7 @@ export function createCardFace(card, {
   const rank = createText("card-kit-rank", label);
   rank.dataset.wide = wide ? "true" : "false";
   rank.style.fontSize = `${resolvedRankSize}px`;
-  rank.setAttribute("y", String(Math.round(resolvedRankSize * 0.76) + 5));
+  rank.setAttribute("y", String(Math.round(resolvedRankSize * 0.76) + 3));
   if (rankAlign === "center") {
     rank.setAttribute("x", "50%");
     rank.setAttribute("text-anchor", "middle");
