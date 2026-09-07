@@ -9,7 +9,7 @@
   --text: #f8fff9;
   --muted: rgba(242, 255, 245, 0.74);
   --red: #d91f3a;
-  --black: #10285a;
+  --black: #101318;
   --card-width: 88px;
   --card-height: 118px;
 }
@@ -432,7 +432,7 @@ body.gameframe-has-destination-bar .spider-shell {
 
 .spider-card.is-face-up {
   color: var(--black);
-  background: linear-gradient(145deg, #ffffff 0%, #fafafa 67%, #ecebe7 100%);
+  background: #fff;
 }
 
 .spider-card.is-face-up.is-red { color: var(--red); }
@@ -472,12 +472,40 @@ body.gameframe-has-destination-bar .spider-shell {
 }
 
 .card-rank {
-  font-size: 1.7rem;
-  line-height: .88;
-  letter-spacing: -.055em;
+  display: inline-block;
+  font-size: 2.15rem;
+  line-height: .72;
+  letter-spacing: -.065em;
 }
 
-.card-suit { font-size: 1.28rem; }
+.card-suit { font-size: 1.05rem; }
+
+
+.spider-board[data-difficulty="1"] .card-corner {
+  top: 1px;
+  left: 5px;
+  right: 5px;
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.spider-board[data-difficulty="1"] .card-rank {
+  transform: scaleX(.94);
+  transform-origin: left center;
+}
+
+.spider-board[data-difficulty="1"] .card-suit {
+  position: absolute;
+  top: 2px;
+  right: 1px;
+  font-size: .7rem;
+  line-height: 1;
+  opacity: .88;
+}
+
+.spider-board[data-difficulty="1"] .card-center {
+  display: none;
+}
 
 .card-center {
   position: absolute;
@@ -539,27 +567,24 @@ body.gameframe-has-destination-bar .spider-shell {
   }
 
   .spider-brand-row {
-    min-height: 39px;
-    padding: 4px 8px 3px;
+    display: none;
   }
 
   .spider-kicker { display: none; }
-  .spider-brand-row h1 { font-size: 1.08rem; }
-  .spider-deal-id { min-width: 82px; }
-  .spider-deal-id strong { font-size: .68rem; }
 
   .spider-toolbar {
     display: grid;
     grid-template-columns: minmax(0, 1.55fr) repeat(3, minmax(0, .7fr));
-    gap: 3px;
-    min-height: 34px;
-    padding: 3px 4px 4px;
+    gap: 4px;
+    min-height: 46px;
+    padding: 3px 4px;
     border-left: 0;
-    border-top: 1px solid rgba(255,255,255,.10);
+    border-top: 0;
   }
 
   .spider-difficulty {
     min-width: 0;
+    min-height: 40px;
     gap: 4px;
     padding: 3px 4px 3px 6px;
   }
@@ -576,8 +601,9 @@ body.gameframe-has-destination-bar .spider-shell {
 
   .spider-toolbar button {
     min-width: 0;
+    min-height: 40px;
     padding: 5px 2px;
-    font-size: .68rem;
+    font-size: .72rem;
   }
 
   .spider-scorebar {
@@ -737,12 +763,35 @@ body.gameframe-has-destination-bar .spider-shell {
   }
 
   .card-rank {
-    font-size: 1.10rem;
-    line-height: .88;
-    letter-spacing: -.06em;
+    font-size: 1.34rem;
+    line-height: .78;
+    letter-spacing: -.075em;
   }
 
-  .card-suit { font-size: .72rem; }
+  .card-suit { font-size: .66rem; }
+
+  .spider-board[data-difficulty="1"] .card-corner {
+    top: 1px;
+    left: 1px;
+    right: 1px;
+    height: 20px;
+    justify-content: center;
+  }
+
+  .spider-board[data-difficulty="1"] .card-rank {
+    font-size: 1.42rem;
+    line-height: .76;
+    transform: scaleX(.88);
+    transform-origin: center;
+  }
+
+  .spider-board[data-difficulty="1"] .card-suit {
+    top: 1px;
+    right: 1px;
+    font-size: .46rem;
+    opacity: .86;
+  }
+
   .card-center { display: none; }
 }
 
@@ -753,12 +802,12 @@ body.gameframe-has-destination-bar .spider-shell {
   .spider-stat strong { font-size: .84rem; }
   .completed-runs { gap: 2px; }
   .completed-slot { max-width: 28px; height: 40px; }
-  .card-rank { font-size: 1.08rem; }
-  .card-suit { font-size: .70rem; }
+  .card-rank { font-size: 1.30rem; }
+  .card-suit { font-size: .64rem; }
+  .spider-board[data-difficulty="1"] .card-rank { font-size: 1.38rem; }
 }
 
 @media (max-width: 360px) {
-  .spider-brand-row h1 { font-size: 1.04rem; }
   .spider-difficulty span { display: none; }
   .spider-toolbar { grid-template-columns: 1.45fr repeat(3, minmax(0, .75fr)); }
   .completed-slot { max-width: 26px; height: 38px; }
