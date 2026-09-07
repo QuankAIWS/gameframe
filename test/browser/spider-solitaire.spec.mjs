@@ -44,6 +44,7 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   await page.evaluate((key) => localStorage.removeItem(key), saveKey);
   await page.reload();
 
+  await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
   await expect(page.locator(".spider-scorebar")).toBeVisible();
   await expect(page.locator(".completed-slot")).toHaveCount(8);
   await expect(page.locator("#stock-pile .stock-card-back")).toHaveCount(5);
@@ -52,8 +53,10 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
     const body = getComputedStyle(document.body);
     const faceUp = getComputedStyle(document.querySelector(".spider-card.is-face-up"));
     const faceDown = getComputedStyle(document.querySelector(".spider-card.is-face-down"));
+    const navRect = document.querySelector("#gameframe-destination-bar").getBoundingClientRect();
     const shellRect = document.querySelector(".spider-shell").getBoundingClientRect();
     const surfaceRect = document.querySelector(".spider-table-surface").getBoundingClientRect();
+    const scrollerRect = document.querySelector(".spider-board-scroller").getBoundingClientRect();
     return {
       bodyBackground: body.backgroundImage,
       faceUpBackground: faceUp.backgroundImage,
@@ -63,8 +66,12 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
       viewportHeight: window.innerHeight,
       shellLeft: shellRect.left,
       shellRight: shellRect.right,
+      navBottom: navRect.bottom,
+      shellTop: shellRect.top,
+      shellBottom: shellRect.bottom,
       shellHeight: shellRect.height,
       surfaceRight: surfaceRect.right,
+      scrollerBottom: scrollerRect.bottom,
       documentWidth: document.documentElement.scrollWidth,
       documentHeight: document.documentElement.scrollHeight,
     };
@@ -77,7 +84,9 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   expect(presentation.shellLeft).toBeGreaterThanOrEqual(-1);
   expect(presentation.shellRight).toBeLessThanOrEqual(presentation.viewportWidth + 1);
   expect(presentation.shellRight).toBeGreaterThanOrEqual(presentation.viewportWidth - 1);
-  expect(presentation.shellHeight).toBeGreaterThanOrEqual(presentation.viewportHeight);
+  expect(presentation.shellTop).toBeGreaterThanOrEqual(presentation.navBottom - 1);
+  expect(presentation.shellBottom).toBeLessThanOrEqual(presentation.viewportHeight + 1);
+  expect(presentation.scrollerBottom).toBeLessThanOrEqual(presentation.viewportHeight + 1);
   expect(presentation.surfaceRight).toBeGreaterThanOrEqual(presentation.viewportWidth - 1);
   expect(presentation.documentWidth).toBeLessThanOrEqual(presentation.viewportWidth + 1);
   expect(presentation.documentHeight).toBeLessThanOrEqual(presentation.viewportHeight + 1);
@@ -114,7 +123,7 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
 
   await page.screenshot({
     path: "visual-results/spider-solitaire-review/spider-solitaire-desktop-1366x768.png",
-    fullPage: true,
+    fullPage: false,
   });
 });
 
@@ -138,6 +147,8 @@ test("Spider Solitaire keeps every covered desktop rank visible in a long in-pro
   await page.reload();
 
   const stackEvidence = await page.evaluate(() => {
+    const nav = document.querySelector("#gameframe-destination-bar").getBoundingClientRect();
+    const shell = document.querySelector(".spider-shell").getBoundingClientRect();
     const scroller = document.querySelector(".spider-board-scroller").getBoundingClientRect();
     const cards = [...document.querySelector(".spider-column").querySelectorAll(".spider-card.is-face-up")];
     return {
@@ -145,6 +156,9 @@ test("Spider Solitaire keeps every covered desktop rank visible in a long in-pro
       documentHeight: document.documentElement.scrollHeight,
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
+      navBottom: nav.bottom,
+      shellTop: shell.top,
+      shellBottom: shell.bottom,
       lastBottom: cards.at(-1).getBoundingClientRect().bottom,
       scrollerBottom: scroller.bottom,
       cards: cards.slice(0, -1).map((card, index) => {
@@ -170,6 +184,9 @@ test("Spider Solitaire keeps every covered desktop rank visible in a long in-pro
   expect(stackEvidence.cards.length).toBeGreaterThanOrEqual(17);
   expect(stackEvidence.documentWidth).toBeLessThanOrEqual(stackEvidence.viewportWidth + 1);
   expect(stackEvidence.documentHeight).toBeLessThanOrEqual(stackEvidence.viewportHeight + 1);
+  expect(stackEvidence.shellTop).toBeGreaterThanOrEqual(stackEvidence.navBottom - 1);
+  expect(stackEvidence.shellBottom).toBeLessThanOrEqual(stackEvidence.viewportHeight + 1);
+  expect(stackEvidence.scrollerBottom).toBeLessThanOrEqual(stackEvidence.viewportHeight + 1);
   expect(stackEvidence.lastBottom).toBeLessThanOrEqual(stackEvidence.scrollerBottom + 1);
   for (const card of stackEvidence.cards) {
     expect(card.rank).toMatch(/^(A|[2-9]|10|J|Q|K)$/);
@@ -180,7 +197,7 @@ test("Spider Solitaire keeps every covered desktop rank visible in a long in-pro
 
   await page.screenshot({
     path: "visual-results/spider-solitaire-review/spider-solitaire-desktop-long-stack-1366x768.png",
-    fullPage: true,
+    fullPage: false,
   });
 });
 
@@ -192,14 +209,20 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
   await page.reload();
 
   const before = await page.evaluate(() => {
+    const navRect = document.querySelector("#gameframe-destination-bar").getBoundingClientRect();
     const shellRect = document.querySelector(".spider-shell").getBoundingClientRect();
+    const scrollerRect = document.querySelector(".spider-board-scroller").getBoundingClientRect();
     return {
       bodyWidth: document.documentElement.scrollWidth,
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
+      navBottom: navRect.bottom,
       shellLeft: shellRect.left,
       shellRight: shellRect.right,
+      shellTop: shellRect.top,
+      shellBottom: shellRect.bottom,
       shellHeight: shellRect.height,
+      scrollerBottom: scrollerRect.bottom,
       scrollerWidth: document.querySelector(".spider-board-scroller").scrollWidth,
       scrollerClientWidth: document.querySelector(".spider-board-scroller").clientWidth,
       documentHeight: document.documentElement.scrollHeight,
@@ -215,7 +238,9 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
   expect(before.shellLeft).toBeGreaterThanOrEqual(-1);
   expect(before.shellRight).toBeGreaterThanOrEqual(before.viewportWidth - 1);
   expect(before.shellRight).toBeLessThanOrEqual(before.viewportWidth + 1);
-  expect(before.shellHeight).toBeGreaterThanOrEqual(before.viewportHeight);
+  expect(before.shellTop).toBeGreaterThanOrEqual(before.navBottom - 1);
+  expect(before.shellBottom).toBeLessThanOrEqual(before.viewportHeight + 1);
+  expect(before.scrollerBottom).toBeLessThanOrEqual(before.viewportHeight + 1);
   expect(before.scrollerWidth).toBeLessThanOrEqual(before.scrollerClientWidth + 1);
   expect(before.columns).toHaveLength(10);
   expect(before.columns[0].left).toBeGreaterThanOrEqual(-1);
@@ -257,7 +282,7 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
 
   await page.screenshot({
     path: "visual-results/spider-solitaire-review/spider-solitaire-mobile-360x800.png",
-    fullPage: true,
+    fullPage: false,
   });
 });
 
@@ -281,6 +306,8 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
   await page.reload();
 
   const evidence = await page.evaluate(() => {
+    const nav = document.querySelector("#gameframe-destination-bar").getBoundingClientRect();
+    const shell = document.querySelector(".spider-shell").getBoundingClientRect();
     const scroller = document.querySelector(".spider-board-scroller").getBoundingClientRect();
     const cards = [...document.querySelector(".spider-column").querySelectorAll(".spider-card.is-face-up")];
     return {
@@ -288,6 +315,9 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
       documentHeight: document.documentElement.scrollHeight,
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
+      navBottom: nav.bottom,
+      shellTop: shell.top,
+      shellBottom: shell.bottom,
       lastBottom: cards.at(-1).getBoundingClientRect().bottom,
       scrollerBottom: scroller.bottom,
       cards: cards.slice(0, -1).map((card, index) => {
@@ -305,6 +335,9 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
   expect(evidence.cards.length).toBeGreaterThanOrEqual(19);
   expect(evidence.documentWidth).toBeLessThanOrEqual(evidence.viewportWidth + 1);
   expect(evidence.documentHeight).toBeLessThanOrEqual(evidence.viewportHeight + 1);
+  expect(evidence.shellTop).toBeGreaterThanOrEqual(evidence.navBottom - 1);
+  expect(evidence.shellBottom).toBeLessThanOrEqual(evidence.viewportHeight + 1);
+  expect(evidence.scrollerBottom).toBeLessThanOrEqual(evidence.viewportHeight + 1);
   expect(evidence.lastBottom).toBeLessThanOrEqual(evidence.scrollerBottom + 1);
   for (const card of evidence.cards) {
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
@@ -313,6 +346,6 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
 
   await page.screenshot({
     path: "visual-results/spider-solitaire-review/spider-solitaire-mobile-long-stack-360x800.png",
-    fullPage: true,
+    fullPage: false,
   });
 });

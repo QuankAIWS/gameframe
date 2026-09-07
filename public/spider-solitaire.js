@@ -415,10 +415,17 @@ winNewGame.addEventListener("click", () => startNewGame(state.difficulty));
 mobileTableauQuery.addEventListener?.("change", () => render());
 
 let resizeFrame = 0;
-window.addEventListener("resize", () => {
+function scheduleBoardRender() {
+  if (!state) return;
   window.cancelAnimationFrame(resizeFrame);
   resizeFrame = window.requestAnimationFrame(() => renderBoard());
-});
+}
+
+window.addEventListener("resize", scheduleBoardRender);
+window.addEventListener("gameframe:destination-bar-ready", scheduleBoardRender);
+
+const boardResizeObserver = new ResizeObserver(scheduleBoardRender);
+boardResizeObserver.observe(boardScroller);
 
 difficulty.addEventListener("change", () => {
   setStatus(`Difficulty set to ${difficulty.value} suit${difficulty.value === "1" ? "" : "s"}. Press New deal to reshuffle.`);

@@ -54,6 +54,11 @@ button { color: inherit; }
   flex-direction: column;
 }
 
+body.gameframe-has-destination-bar .spider-shell {
+  height: calc(100dvh - var(--gameframe-destination-height, 72px));
+  max-height: calc(100dvh - var(--gameframe-destination-height, 72px));
+}
+
 .spider-header {
   flex: 0 0 auto;
   display: grid;
@@ -468,6 +473,7 @@ button { color: inherit; }
 
 .card-rank {
   font-size: 1.7rem;
+  line-height: .88;
   letter-spacing: -.055em;
 }
 
@@ -732,6 +738,7 @@ button { color: inherit; }
 
   .card-rank {
     font-size: 1.10rem;
+    line-height: .88;
     letter-spacing: -.06em;
   }
 
