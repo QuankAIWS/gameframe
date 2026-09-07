@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071018">
+  <title>Spider Solitaire · Scribbles GameFrame</title>
+  <link rel="stylesheet" href="/spider-solitaire.css">
+</head>
+<body class="spider-solitaire-route" data-gameframe-menu-game="spider">
+  <main class="spider-shell">
+    <header class="spider-hero">
+      <div>
+        <p class="spider-kicker">SOLITAIRE // 104-CARD TABLE</p>
+        <h1>Spider Solitaire</h1>
+        <p>Build same-suit runs from King to Ace. Complete all eight runs to clear the table.</p>
+      </div>
+      <div class="spider-deal-id" aria-label="Current deal identifier">
+        <small>DEAL</small>
+        <strong id="deal-id">—</strong>
+      </div>
+    </header>
+
+    <section class="spider-toolbar" aria-label="Spider Solitaire controls">
+      <label class="spider-difficulty">
+        <span>Difficulty</span>
+        <select id="difficulty">
+          <option value="1">1 suit · Easy</option>
+          <option value="2">2 suits · Standard</option>
+          <option value="4">4 suits · Expert</option>
+        </select>
+      </label>
+      <button id="new-game" type="button">New deal</button>
+      <button id="restart-game" type="button">Restart deal</button>
+      <button id="undo" type="button">Undo</button>
+      <span class="spider-toolbar-spacer"></span>
+      <div class="spider-stat"><small>MOVES</small><strong id="move-count">0</strong></div>
+      <div class="spider-stat"><small>STOCK</small><strong id="stock-count">5</strong></div>
+      <div class="spider-stat"><small>RUNS</small><strong id="run-count">0 / 8</strong></div>
+    </section>
+
+    <section class="spider-status-row">
+      <p id="status" role="status" aria-live="polite">Choose a face-up card or same-suit sequence.</p>
+      <div id="completed-runs" class="completed-runs" aria-label="Completed runs"></div>
+    </section>
+
+    <section class="spider-board-scroller" aria-label="Spider Solitaire table">
+      <div id="spider-board" class="spider-board"></div>
+    </section>
+
+    <footer class="spider-stock-rail">
+      <button id="deal-stock" class="stock-button" type="button" aria-label="Deal one card to each tableau column">
+        <span class="stock-card-back" aria-hidden="true"></span>
+        <span>
+          <strong>Deal stock</strong>
+          <small id="stock-help">5 deals remaining</small>
+        </span>
+      </button>
+      <p>Stock cannot be dealt while any tableau column is empty.</p>
+    </footer>
+  </main>
+
+  <div id="win-dialog" class="spider-win" hidden>
+    <div class="spider-win-card" role="dialog" aria-modal="true" aria-labelledby="win-title">
+      <small>TABLE CLEARED</small>
+      <h2 id="win-title">Spider complete</h2>
+      <p id="win-summary">Eight runs completed.</p>
+      <button id="win-new-game" type="button">Play another deal</button>
+    </div>
+  </div>
+
+  <script type="module" src="/gameframe-nav.js"></script>
+  <script type="module" src="/spider-solitaire.js"></script>
+</body>
+</html>

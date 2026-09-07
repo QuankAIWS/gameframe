@@ -74,11 +74,12 @@ async function openPlayerHub(page, viewport) {
   await expectDestinationBar(page, "hub");
   await expect(page.locator(".hero")).toBeHidden();
   await expect(page.locator("#lobby .section-label")).toHaveText("GAMES");
-  await expect(page.locator(".game-grid .game-card")).toHaveCount(6);
-  await expect(page.locator(".game-card-play")).toHaveCount(6);
+  await expect(page.locator(".game-grid .game-card")).toHaveCount(7);
+  await expect(page.locator(".game-card-play")).toHaveCount(7);
   await expect(page.locator('.game-card[href="/gameframe-rpg.html"]')).toHaveCount(1);
   await expect(page.locator('.game-card[href="/battle-simulator.html"]')).toHaveCount(1);
   await expect(page.locator('.game-card[href="/casual-games.html"]')).toHaveCount(1);
+  await expect(page.locator('.game-card[href="/spider-solitaire.html"]')).toHaveCount(1);
   await expect(page.locator('.game-card[href="/monster-master-rpg.html?campaign=monster-master-staging"]')).toHaveCount(0);
   await expect(page.locator('.game-card[href="/monster-master.html"]')).toHaveCount(0);
   await expect(page.locator('.game-card[href="/othello.html"]')).toHaveCount(1);
@@ -87,6 +88,7 @@ async function openPlayerHub(page, viewport) {
   await expect(page.locator("#game-card-role-playing-games")).toContainText("Role-Playing Games");
   await expect(page.locator("#game-card-battle-simulator")).toContainText("Battle Simulator");
   await expect(page.locator("#game-card-casual-games")).toContainText("Casual Games");
+  await expect(page.locator("#game-card-spider-solitaire")).toContainText("Spider Solitaire");
   await expect(page.locator(".mode-grid")).toBeHidden();
   await expect(page.locator("#open-tactical-canary")).toHaveCount(0);
   await expect(page.getByText("Combat Canary", { exact: true })).toHaveCount(0);

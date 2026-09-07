@@ -28,6 +28,7 @@ Games
 │   └── Monster Master RPG / future campaigns
 ├── Battle Simulator
 │   └── Monster Master Arena Battles / future Battle Packs
+├── Spider Solitaire
 ├── Clockwork Checkers
 ├── Othello
 └── Tic-Tac-Toe
@@ -40,6 +41,10 @@ Games
 The repository contains transport-neutral deterministic game definitions, revisioned authoritative sessions, idempotent action handling, replayable history/snapshots, server-derived identity/seat authorization, Cloudflare Worker/Durable Object adapters, Discord/session boundaries, authenticated invitations, responsive browser/Pixi surfaces, and automated browser/Workers/visual review coverage.
 
 ## Game proofs
+
+### Spider Solitaire
+
+GameFrame includes a local deterministic Spider Solitaire proof with 1-, 2-, and 4-suit deals, seeded shuffles, standard 104-card tableau/stock rules, automatic King-to-Ace run collection, undo/restart, and browser save/resume.
 
 ### Tic-Tac-Toe / American Checkers / tactical foundation
 

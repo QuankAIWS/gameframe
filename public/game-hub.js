@@ -52,6 +52,14 @@ const games = [
     accent: "casual",
   },
   {
+    id: "spider-solitaire",
+    href: "/spider-solitaire.html",
+    kicker: "SOLITAIRE",
+    title: "Spider Solitaire",
+    description: "Build eight same-suit King-to-Ace runs across 1, 2, or 4-suit deals.",
+    accent: "spider",
+  },
+  {
     id: "othello",
     href: "/othello.html",
     kicker: "STRATEGY",
@@ -127,6 +135,19 @@ function artwork(game) {
       </span>
     `;
   }
+  if (game.accent === "spider") {
+    return `
+      <span class="game-card-visual" aria-hidden="true"
+        style="background:radial-gradient(circle at 50% 45%,rgba(103,231,255,.16),transparent 42%),linear-gradient(145deg,#171428,#071821 76%);">
+        <span style="position:absolute;inset:14%;display:flex;align-items:center;justify-content:center;gap:5%;transform:rotate(-5deg);">
+          <i style="width:24%;height:72%;border-radius:7px;background:#edf8ff;border:1px solid rgba(255,255,255,.7);box-shadow:0 10px 18px rgba(0,0,0,.35);"></i>
+          <i style="width:24%;height:78%;border-radius:7px;background:#edf8ff;border:1px solid rgba(255,255,255,.7);box-shadow:0 10px 18px rgba(0,0,0,.35);"></i>
+          <i style="width:24%;height:72%;border-radius:7px;background:#edf8ff;border:1px solid rgba(255,255,255,.7);box-shadow:0 10px 18px rgba(0,0,0,.35);"></i>
+        </span>
+        <span class="game-card-visual-mark" style="border-color:rgba(103,231,255,.58);color:#67e7ff;">♠</span>
+      </span>
+    `;
+  }
   if (game.accent === "monster") {
     return `
       <span class="game-card-visual game-card-visual-monster" aria-hidden="true">
@@ -177,6 +198,7 @@ function createLibraryCard(game) {
   card.className = `game-card game-hub-${game.accent}`;
   card.href = game.href;
   if (game.accent === "casual") card.style.setProperty("--hub-accent", "#ffd84d");
+  if (game.accent === "spider") card.style.setProperty("--hub-accent", "#67e7ff");
   card.setAttribute("aria-label", `Open ${game.title}`);
   card.innerHTML = `
     ${artwork(game)}

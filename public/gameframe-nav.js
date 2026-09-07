@@ -43,6 +43,7 @@ function gameLabel() {
   const menuTheme = document.body.dataset.gameframeMenuGame;
   if (menuTheme === "tic") return "TIC-TAC-TOE";
   if (menuTheme === "checkers") return "CLOCKWORK CHECKERS";
+  if (menuTheme === "spider") return "SPIDER SOLITAIRE";
   const pathname = window.location.pathname;
   if (pathname === "/") {
     return new URLSearchParams(window.location.search).get("catalog") === "1" ? "GAMES" : "";
@@ -52,6 +53,7 @@ function gameLabel() {
   if (pathname === "/profile.html") return "PROFILE";
   if (pathname === "/admin.html") return "ADMIN";
   if (pathname === "/casual-games.html") return "CASUAL GAMES";
+  if (pathname.includes("spider-solitaire")) return "SPIDER SOLITAIRE";
   if (pathname.includes("monster-master-rpg")) return "MONSTER MASTER RPG";
   if (pathname.includes("monster-master")) return "MONSTER MASTER";
   if (pathname.includes("othello")) return "OTHELLO";
@@ -185,7 +187,9 @@ function syncDestinationBar() {
     && !document.body.classList.contains("tic-tac-toe-noir-running")
     && Boolean(document.querySelector("#lobby") && !document.querySelector("#lobby")?.hidden)
     && !document.body.classList.contains("gameframe-game-menu");
-  const atGames = (rootLobbyVisible && params.get("catalog") === "1") || pathname === "/casual-games.html";
+  const atGames = (rootLobbyVisible && params.get("catalog") === "1")
+    || pathname === "/casual-games.html"
+    || pathname === "/spider-solitaire.html";
   const atHome = rootLobbyVisible && !atGames;
   bar.querySelector("[data-gameframe-home]")?.classList.toggle("is-active", atHome);
   bar.querySelector("[data-gameframe-games]")?.classList.toggle("is-active", atGames);
