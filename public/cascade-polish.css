@@ -357,8 +357,9 @@ body.cascade-route::after {
 }
 
 .cascade-tile[data-kind="5"] {
-  --tile-a: #ffb26c;
-  --tile-b: #ff7d3b;
+  /* Keep orange perceptually separate from yellow after bright ice/frost overlays. */
+  --tile-a: #ff8a4a;
+  --tile-b: #e95324;
   --tile-mark: "✺";
   border-radius: 50% 50% 40% 40% / 34% 34% 58% 58%;
 }
