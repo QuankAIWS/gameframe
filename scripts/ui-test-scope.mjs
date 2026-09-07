@@ -108,6 +108,11 @@ function isOthelloShellFile(file) {
     || /^test\/browser\/othello.*\.spec\.mjs$/.test(file);
 }
 
+function isSpiderShellFile(file) {
+  return /^public\/spider-solitaire[^/]*\.(?:html|css|js)$/.test(file)
+    || file === "test/browser/spider-solitaire.spec.mjs";
+}
+
 function isRpgFile(file) {
   return /^public\/monster-master-rpg[^/]*\.(?:html|css|js)$/.test(file)
     || /^test\/browser\/monster-master-rpg.*\.spec\.mjs$/.test(file)
@@ -160,7 +165,7 @@ export function classifyUiTestScope(paths) {
       continue;
     }
 
-    if (exactShellFiles.has(file) || isOthelloShellFile(file) || isFamilyAuthFile(file)) scope.shell = true;
+    if (exactShellFiles.has(file) || isOthelloShellFile(file) || isSpiderShellFile(file) || isFamilyAuthFile(file)) scope.shell = true;
     if (isCasualFile(file)) scope.casual = true;
     if (isCascadeUiFile(file)) scope.cascadeUi = true;
     if (isCascadeContractFile(file)) scope.cascadeContracts = true;
