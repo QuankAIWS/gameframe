@@ -902,18 +902,34 @@ body.gameframe-has-destination-bar .spider-shell {
   }
 
   .spider-status-row {
-    min-height: 23px;
-    gap: 4px;
-    padding: 1px 5px 2px;
+    position: absolute;
+    z-index: 40;
+    top: 101px;
+    left: 4px;
+    right: 4px;
+    min-height: 0;
+    padding: 0;
+    pointer-events: none;
   }
 
   #status {
-    flex: 1;
-    min-width: 0;
+    display: none;
+    width: fit-content;
+    max-width: calc(100vw - 8px);
     overflow: hidden;
-    font-size: .74rem;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    padding: 7px 9px;
+    border: 1px solid rgba(255,255,255,.24);
+    border-radius: 7px;
+    background: rgba(3,52,18,.94);
+    box-shadow: 0 5px 14px rgba(0,0,0,.25);
+    font-size: .84rem;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  #status[data-tone="error"],
+  #status[data-tone="success"] {
+    display: block;
   }
 
   .spider-rule-note { display: none; }
