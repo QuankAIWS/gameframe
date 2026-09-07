@@ -18,7 +18,7 @@ test("Spider Solitaire loads, persists a stock deal, and restarts the same seede
   const dealId = (await page.locator("#deal-id").textContent())?.trim();
   expect(dealId).toBeTruthy();
 
-  await page.locator("#deal-stock").click();
+  await page.locator("#desktop-deal-stock").click();
   await expect(page.locator("#stock-count")).toHaveText("4");
   await expect(page.locator("#move-count")).toHaveText("1");
   await expect(page.locator("#spider-board .spider-card")).toHaveCount(64);
@@ -29,7 +29,7 @@ test("Spider Solitaire loads, persists a stock deal, and restarts the same seede
   await expect(page.locator("#deal-id")).toHaveText(dealId);
   await expect(page.getByRole("status")).toContainText("Saved deal resumed");
 
-  await page.locator("#restart-game").click();
+  await page.locator("#desktop-restart-game").click();
   await expect(page.locator("#stock-count")).toHaveText("5");
   await expect(page.locator("#move-count")).toHaveText("0");
   await expect(page.locator("#spider-board .spider-card")).toHaveCount(54);
@@ -101,7 +101,7 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   expect(presentation.documentWidth).toBeLessThanOrEqual(presentation.viewportWidth + 1);
   expect(presentation.documentHeight).toBeLessThanOrEqual(presentation.viewportHeight + 1);
 
-  await page.locator("#deal-stock").click();
+  await page.locator("#desktop-deal-stock").click();
   await expect(page.locator("#stock-count")).toHaveText("4");
 
   const exposedDesktopRanks = await page.evaluate(() => {
@@ -199,7 +199,7 @@ test("Spider Solitaire keeps every covered desktop rank visible in a long in-pro
   expect(stackEvidence.shellBottom).toBeLessThanOrEqual(stackEvidence.viewportHeight + 1);
   expect(stackEvidence.scrollerBottom).toBeLessThanOrEqual(stackEvidence.viewportHeight + 1);
   expect(stackEvidence.lastBottom).toBeLessThanOrEqual(stackEvidence.scrollerBottom + 1);
-  expect(stackEvidence.lastHeight).toBeGreaterThanOrEqual(110);
+  expect(stackEvidence.lastHeight).toBeGreaterThanOrEqual(130);
   for (const card of stackEvidence.cards) {
     expect(card.rank).toMatch(/^(A|[2-9]|10|J|Q|K)$/);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
