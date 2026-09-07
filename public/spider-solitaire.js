@@ -179,7 +179,7 @@ function renderCompletedRuns() {
       slot.textContent = suitMarks[suit];
       slot.title = `Completed ${suit} run`;
     } else {
-      slot.textContent = "·";
+      slot.textContent = "A";
       slot.setAttribute("aria-hidden", "true");
     }
     completedRuns.append(slot);
@@ -280,13 +280,13 @@ function renderBoard() {
       column.append(empty);
     }
 
-    let top = compact ? 20 : 34;
+    let top = compact ? 3 : 14;
     cards.forEach((card, cardIndex) => {
       column.append(renderCard(card, columnIndex, cardIndex, top));
       const isLast = cardIndex === cards.length - 1;
-      if (!isLast) top += card.faceUp ? (compact ? 21 : 28) : (compact ? 9 : 14);
+      if (!isLast) top += card.faceUp ? (compact ? 21 : 30) : (compact ? 9 : 15);
     });
-    column.style.minHeight = `${Math.max(compact ? 420 : 500, top + (compact ? 86 : 130))}px`;
+    column.style.minHeight = `${Math.max(compact ? 430 : 520, top + (compact ? 88 : 132))}px`;
     board.append(column);
   });
 }
