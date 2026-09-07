@@ -36,7 +36,7 @@ const desktopCards = [7, 10, 1, 2, 12, 3, 11, 7, 10, 10, 2, 10, 13, 12, 4, 5, 12
   .map((rank) => card(rank));
 const desktopLayout = fitCardStack({
   cards: desktopCards,
-  availableHeight: 510,
+  availableHeight: desktopStack.clientHeight || 510,
   cardHeight: 132,
   topStart: 5,
   bottomPad: 10,
