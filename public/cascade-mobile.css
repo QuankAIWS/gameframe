@@ -91,9 +91,18 @@
      two more tiny dashboard cards. */
   body.cascade-route .cascade-status {
     display: grid;
-    grid-template-columns: minmax(72px, .82fr) minmax(92px, 1fr) minmax(128px, 1.32fr);
-    gap: 4px;
-    margin: 0 2px 4px;
+    grid-template-columns: minmax(76px, .82fr) minmax(76px, .82fr) minmax(136px, 1.42fr);
+    gap: 0;
+    margin: 0 4px 4px;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,.9);
+    border-radius: 17px;
+    background:
+      radial-gradient(circle at 82% -35%, rgba(255,92,168,.2), transparent 56%),
+      linear-gradient(155deg, rgba(85,48,118,.98), rgba(48,31,73,.99));
+    box-shadow:
+      0 5px 14px rgba(67,40,91,.16),
+      inset 0 1px 0 rgba(255,255,255,.16);
   }
 
   body.cascade-route .cascade-status > div {
@@ -102,15 +111,12 @@
     justify-items: center;
     gap: 1px;
     min-width: 0;
-    min-height: 62px;
-    padding: 6px 7px;
-    border: 2px solid rgba(255,255,255,.8);
-    border-radius: 16px;
-    background:
-      linear-gradient(155deg, rgba(76,45,105,.96), rgba(48,32,73,.97));
-    box-shadow:
-      0 5px 12px rgba(67, 40, 91, .18),
-      inset 0 1px 0 rgba(255,255,255,.14);
+    min-height: 54px;
+    padding: 4px 7px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
     color: #fff;
     text-align: center;
   }
@@ -121,36 +127,51 @@
   }
 
   body.cascade-route .cascade-status > div:nth-child(4) {
+    grid-column: 1;
+    grid-row: 1;
+    border-right: 1px solid rgba(255,255,255,.13);
     background:
-      radial-gradient(circle at 50% -30%, rgba(255,216,77,.24), transparent 65%),
-      linear-gradient(155deg, #71479d, #4a326f);
+      radial-gradient(circle at 50% -38%, rgba(255,216,77,.2), transparent 66%);
+  }
+
+  body.cascade-route .cascade-status > div:nth-child(1) {
+    grid-column: 2;
+    grid-row: 1;
+    border-right: 1px solid rgba(255,255,255,.13);
+  }
+
+  body.cascade-route .cascade-status > div:nth-child(5) {
+    grid-column: 3;
+    grid-row: 1;
+    background: linear-gradient(180deg, rgba(255,92,168,.05), rgba(255,92,168,.1));
   }
 
   body.cascade-route .cascade-status small {
-    color: rgba(255,255,255,.82);
-    font-size: .72rem;
+    color: rgba(255,255,255,.8);
+    font-size: .66rem;
     font-weight: 950;
     line-height: 1;
-    letter-spacing: .09em;
+    letter-spacing: .08em;
   }
 
   body.cascade-route .cascade-status strong {
     color: #fff;
-    font-size: 1.48rem;
+    font-size: 1.34rem;
     font-weight: 1000;
-    line-height: .98;
-    text-shadow: 0 2px 2px rgba(31, 18, 48, .24);
+    line-height: .96;
+    text-shadow: 0 2px 2px rgba(31,18,48,.24);
   }
 
   body.cascade-route .cascade-status > div:nth-child(4) strong {
-    font-size: 2rem;
+    color: #fff8c9;
+    font-size: max(1.78rem, 28px);
   }
 
   body.cascade-route #lives {
     width: 100%;
     min-width: 0;
-    font-size: 1.2rem;
-    letter-spacing: .02em;
+    font-size: 1.04rem;
+    letter-spacing: 0;
     white-space: nowrap;
     overflow: visible;
   }
@@ -167,7 +188,9 @@
     flex-direction: column;
     align-items: stretch;
     min-height: 0;
+    height: 100%;
     gap: 4px;
+    overflow: hidden;
   }
 
   body.cascade-route .cascade-board-wrap {
@@ -184,26 +207,28 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    min-height: 46px;
+    min-height: 40px;
     margin: 0 4px 4px;
-    padding: 5px 10px;
-    gap: 8px;
-    border: 2px solid rgba(255,255,255,.82);
-    border-radius: 15px;
-    background: rgba(255,255,255,.91);
+    padding: 4px 9px;
+    gap: 7px;
+    border: 2px solid rgba(255,255,255,.86);
+    border-radius: 14px;
+    background: rgba(255,255,255,.93);
     color: #5d4376;
-    font-size: 1rem;
-    font-weight: 850;
-    line-height: 1.18;
-    box-shadow: 0 4px 12px rgba(87, 54, 112, .1);
+    font-size: .96rem;
+    font-weight: 900;
+    line-height: 1.12;
+    box-shadow: 0 4px 10px rgba(87,54,112,.08);
   }
 
   body.cascade-route #objective-label {
-    display: block;
-    overflow: visible;
-    text-overflow: clip;
+    display: -webkit-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: normal;
-    text-wrap: balance;
+    text-wrap: pretty;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   body.cascade-route #combo-label {
@@ -263,11 +288,12 @@
     align-items: stretch;
     width: min(100%, 430px);
     min-height: 0;
-    margin: 0 auto;
+    margin: auto auto 0;
     gap: 4px;
-    padding: 0 2px;
+    padding: 4px 2px 0;
     border: 0;
-    background: transparent;
+    background:
+      linear-gradient(180deg, rgba(247,236,255,0), rgba(247,236,255,.2));
     box-shadow: none;
   }
 
@@ -465,8 +491,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    min-height: 70px;
-    padding: 12px 14px 10px 18px;
+    min-height: 62px;
+    padding: 9px 12px 8px 16px;
     border-bottom: 1px solid rgba(102,66,132,.1);
     background: rgba(255,255,255,.7);
   }
@@ -483,7 +509,7 @@
   .cascade-mobile-menu-header h2 {
     margin: 0;
     color: #5b3f78;
-    font-size: 1.45rem;
+    font-size: 1.32rem;
     line-height: 1;
   }
 
@@ -504,20 +530,28 @@
 
   .cascade-mobile-menu-content {
     display: grid;
-    gap: 10px;
-    padding: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 9px;
+    padding: 10px 12px;
     overflow: auto;
+  }
+
+  .cascade-mobile-menu-content #cascade-feedback-card {
+    grid-column: 1 / -1;
   }
 
   .cascade-mobile-menu-content .cascade-card {
     display: grid !important;
-    gap: 8px;
+    align-content: start;
+    gap: 6px;
+    min-width: 0;
     min-height: 0;
-    padding: 14px;
+    padding: 12px;
     border: 2px solid rgba(113,74,145,.1);
-    border-radius: 18px;
-    background: rgba(255,255,255,.82);
-    box-shadow: 0 4px 12px rgba(83,52,105,.07);
+    border-radius: 17px;
+    background: rgba(255,255,255,.84);
+    box-shadow: 0 4px 12px rgba(83,52,105,.06);
   }
 
   .cascade-mobile-menu-content .cascade-card > small {
@@ -528,14 +562,16 @@
   }
 
   .cascade-mobile-menu-content .cascade-card > strong {
-    font-size: 1.45rem;
+    font-size: 1.26rem;
   }
 
   .cascade-mobile-menu-content .cascade-card > span {
     display: block !important;
+    min-width: 0;
+    overflow-wrap: anywhere;
     color: #705e7e;
-    font-size: .98rem;
-    line-height: 1.35;
+    font-size: .9rem;
+    line-height: 1.3;
   }
 
   .cascade-mobile-menu-content .cascade-feedback-controls {
@@ -589,31 +625,36 @@
 
 @media (max-width: 370px) and (orientation: portrait) {
   body.cascade-route .cascade-status {
-    grid-template-columns: 68px minmax(86px, 1fr) minmax(120px, 1.25fr);
+    grid-template-columns: 68px 68px minmax(122px, 1fr);
+    margin-inline: 3px;
   }
 
   body.cascade-route .cascade-status > div {
-    min-height: 58px;
-    padding-inline: 5px;
+    min-height: 50px;
+    padding-inline: 4px;
   }
 
   body.cascade-route .cascade-status small {
-    font-size: .68rem;
+    font-size: .62rem;
   }
 
   body.cascade-route .cascade-status strong {
-    font-size: 1.35rem;
+    font-size: 1.22rem;
   }
 
   body.cascade-route .cascade-status > div:nth-child(4) strong {
-    font-size: 1.82rem;
+    font-size: max(1.78rem, 28px);
+  }
+
+  body.cascade-route #lives {
+    font-size: .94rem;
   }
 
   body.cascade-route .cascade-objective {
-    min-height: 44px;
-    margin-inline: 2px;
+    min-height: 38px;
+    margin-inline: 3px;
     padding-inline: 8px;
-    font-size: .96rem;
+    font-size: .9rem;
   }
 
   body.cascade-route .cascade-board {
@@ -635,6 +676,90 @@
     min-width: 46px;
     width: 46px;
     padding-inline: 5px;
+  }
+}
+
+
+
+@media (max-width: 700px) and (orientation: portrait) and (min-height: 760px) {
+  body.cascade-route .cascade-board-wrap {
+    margin-top: clamp(12px, 3dvh, 26px);
+  }
+}
+
+@media (max-width: 700px) and (orientation: portrait) and (max-height: 680px) {
+  body.cascade-route .cascade-shell {
+    padding-top: 2px;
+  }
+
+  body.cascade-route .cascade-status > div {
+    min-height: 48px;
+  }
+
+  body.cascade-route .cascade-objective {
+    min-height: 36px;
+    margin-bottom: 3px;
+    font-size: .88rem;
+  }
+
+  body.cascade-route .cascade-board {
+    width: min(calc(100vw - 8px - env(safe-area-inset-left) - env(safe-area-inset-right)), 342px);
+  }
+
+  body.cascade-route #booster-hammer,
+  body.cascade-route #cascade-weekly-card [data-weekly-start] {
+    min-height: 48px;
+  }
+
+  body.cascade-route .cascade-side {
+    width: min(100%, 342px);
+    padding-top: 3px;
+  }
+}
+
+@media (max-width: 700px) and (orientation: portrait) and (max-height: 600px) {
+  body.cascade-route .cascade-status {
+    border-radius: 14px;
+  }
+
+  body.cascade-route .cascade-status > div {
+    min-height: 44px;
+  }
+
+  body.cascade-route .cascade-status small {
+    font-size: .58rem;
+  }
+
+  body.cascade-route .cascade-status strong {
+    font-size: 1.12rem;
+  }
+
+  body.cascade-route .cascade-status > div:nth-child(4) strong {
+    font-size: max(1.78rem, 28px);
+  }
+
+  body.cascade-route #lives {
+    font-size: .88rem;
+  }
+
+  body.cascade-route .cascade-objective {
+    min-height: 34px;
+    padding-block: 3px;
+    font-size: .84rem;
+  }
+
+  body.cascade-route .cascade-board {
+    width: min(calc(100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)), 300px);
+    border-radius: 15px;
+  }
+
+  body.cascade-route #booster-hammer,
+  body.cascade-route #cascade-weekly-card [data-weekly-start] {
+    min-height: 46px;
+  }
+
+  body.cascade-route .cascade-side {
+    width: min(100%, 300px);
   }
 }
 

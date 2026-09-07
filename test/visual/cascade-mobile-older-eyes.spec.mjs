@@ -25,7 +25,7 @@ async function prepare(page) {
   });
 }
 
-async function assertPlaySurface(page, viewport) {
+async function assertPlaySurface(page, viewport, { minBoardWidth = viewport.width - 10 } = {}) {
   await page.setViewportSize(viewport);
   await page.goto("/cascade.html");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
@@ -37,16 +37,23 @@ async function assertPlaySurface(page, viewport) {
     const board = document.querySelector("#board").getBoundingClientRect();
     const hammer = document.querySelector("#booster-hammer").getBoundingClientRect();
     const blitz = document.querySelector("#cascade-weekly-card").getBoundingClientRect();
+    const status = document.querySelector(".cascade-status").getBoundingClientRect();
+    const statusStyle = getComputedStyle(document.querySelector(".cascade-status"));
     return {
       boardWidth: board.width,
       boardBottom: board.bottom,
       utilityBottom: Math.max(hammer.bottom, blitz.bottom),
+      statusHeight: status.height,
+      statusGap: statusStyle.gap,
       scrollHeight: document.documentElement.scrollHeight,
     };
   });
-  expect(bounds.boardWidth).toBeGreaterThanOrEqual(viewport.width - 10);
+  expect(bounds.boardWidth).toBeGreaterThanOrEqual(minBoardWidth);
   expect(bounds.boardBottom).toBeLessThan(viewport.height);
   expect(bounds.utilityBottom).toBeLessThanOrEqual(viewport.height + 1);
+  expect(viewport.height - bounds.utilityBottom).toBeLessThanOrEqual(10);
+  expect(bounds.statusHeight).toBeLessThanOrEqual(61);
+  expect(bounds.statusGap).toBe("0px");
   expect(bounds.scrollHeight).toBeLessThanOrEqual(viewport.height + 1);
 }
 
@@ -59,6 +66,20 @@ test("Cascade older-eye mobile composition keeps the board dominant at 390x844",
   await expect(page.locator("#cascade-mobile-menu")).toBeVisible();
   await expect(page.locator("#cascade-mobile-menu #cascade-feedback-card")).toBeVisible();
   await expect(page.locator("#cascade-mobile-menu #level-stars")).toBeVisible();
+
+  const drawerLayout = await page.evaluate(() => {
+    const performance = document.querySelector("#cascade-mobile-menu .cascade-performance-card").getBoundingClientRect();
+    const streak = document.querySelector("#cascade-mobile-menu #streak").closest(".cascade-card").getBoundingClientRect();
+    const settings = document.querySelector("#cascade-mobile-menu #cascade-feedback-card").getBoundingClientRect();
+    return {
+      sameRowDelta: Math.abs(performance.top - streak.top),
+      performanceWidth: performance.width,
+      settingsWidth: settings.width,
+    };
+  });
+  expect(drawerLayout.sameRowDelta).toBeLessThanOrEqual(2);
+  expect(drawerLayout.settingsWidth).toBeGreaterThan(drawerLayout.performanceWidth * 1.8);
+
   await page.screenshot({ path: `${output}/cascade-crush-mobile-game-menu-390x844.png`, fullPage: false });
 });
 
@@ -66,4 +87,11 @@ test("Cascade older-eye mobile composition keeps the complete play surface at 36
   await prepare(page);
   await assertPlaySurface(page, { width: 360, height: 800 });
   await page.screenshot({ path: `${output}/cascade-crush-older-eyes-360x800.png`, fullPage: false });
+});
+
+
+test("Cascade mobile composition remains complete with reduced browser viewport height", async ({ page }) => {
+  await prepare(page);
+  await assertPlaySurface(page, { width: 360, height: 640 }, { minBoardWidth: 330 });
+  await page.screenshot({ path: `${output}/cascade-crush-mobile-compact-360x640.png`, fullPage: false });
 });
