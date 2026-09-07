@@ -36,6 +36,7 @@ on:
       - "test/browser/casual-games.spec.mjs"
       - "test/browser/cascade*.spec.mjs"
       - "test/browser/game-hub-navigation.spec.mjs"
+      - "test/browser/spider-solitaire.spec.mjs"
       - "test/browser/player-platform.spec.mjs"
       - "test/browser/monster-master*.spec.mjs"
       - "test/browser/motion-polish.spec.mjs"
@@ -147,6 +148,7 @@ jobs:
           name: shared-shell-ui-review-${{ github.run_id }}
           path: |
             visual-results/player-ui-review
+            visual-results/spider-solitaire-review
             test-results/**/*.png
           if-no-files-found: warn
           retention-days: 7
