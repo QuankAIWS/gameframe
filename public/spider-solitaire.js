@@ -25,6 +25,8 @@ const moveCount = document.querySelector("#move-count");
 const stockCount = document.querySelector("#stock-count");
 const runCount = document.querySelector("#run-count");
 const stockHelp = document.querySelector("#stock-help");
+const stockPile = document.querySelector("#stock-pile");
+const mobileTableauQuery = window.matchMedia("(max-width: 850px)");
 const dealId = document.querySelector("#deal-id");
 const status = document.querySelector("#status");
 const completedRuns = document.querySelector("#completed-runs");
@@ -224,8 +226,20 @@ function renderCard(card, columnIndex, cardIndex, topOffset) {
   return button;
 }
 
+function renderStockPile() {
+  stockPile.replaceChildren();
+  const deals = state.stock.length / 10;
+  for (let index = 0; index < deals; index += 1) {
+    const back = document.createElement("span");
+    back.className = "stock-card-back";
+    back.style.setProperty("--stock-index", String(index));
+    stockPile.append(back);
+  }
+}
+
 function renderBoard() {
   board.replaceChildren();
+  const compact = mobileTableauQuery.matches;
   const validDestinations = selection
     ? new Set(validSpiderDestinations(state, selection.columnIndex, selection.cardIndex))
     : new Set();
@@ -266,13 +280,13 @@ function renderBoard() {
       column.append(empty);
     }
 
-    let top = 34;
+    let top = compact ? 20 : 34;
     cards.forEach((card, cardIndex) => {
       column.append(renderCard(card, columnIndex, cardIndex, top));
       const isLast = cardIndex === cards.length - 1;
-      if (!isLast) top += card.faceUp ? 28 : 14;
+      if (!isLast) top += card.faceUp ? (compact ? 21 : 28) : (compact ? 9 : 14);
     });
-    column.style.minHeight = `${Math.max(500, top + 130)}px`;
+    column.style.minHeight = `${Math.max(compact ? 420 : 500, top + (compact ? 86 : 130))}px`;
     board.append(column);
   });
 }
@@ -288,6 +302,7 @@ function render() {
   undoButton.disabled = history.length === 0;
   dealButton.disabled = !canDealSpiderStock(state);
   renderCompletedRuns();
+  renderStockPile();
   renderBoard();
 
   winDialog.hidden = state.status !== "won";
@@ -309,6 +324,8 @@ dealButton.addEventListener("click", () => {
   }
 });
 winNewGame.addEventListener("click", () => startNewGame(state.difficulty));
+mobileTableauQuery.addEventListener?.("change", () => render());
+
 difficulty.addEventListener("change", () => {
   setStatus(`Difficulty set to ${difficulty.value} suit${difficulty.value === "1" ? "" : "s"}. Press New deal to reshuffle.`);
 });

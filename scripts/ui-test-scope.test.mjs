@@ -101,6 +101,16 @@ test("Cascade progression sync stays in the player-platform lane", () => {
   });
 });
 
+test("Spider Solitaire browser and presentation changes route through the shell lane", () => {
+  assert.deepEqual(classifyUiTestScope([
+    "public/spider-solitaire.html",
+    "public/spider-solitaire.css",
+    "public/spider-solitaire.js",
+    "public/spider-solitaire-engine.js",
+    "test/browser/spider-solitaire.spec.mjs",
+  ]), { ...none, shell: true });
+});
+
 test("Othello and its shared-nav integration route through the shell lane", () => {
   assert.deepEqual(classifyUiTestScope([
     "public/othello-fidelity-app-4.js",
