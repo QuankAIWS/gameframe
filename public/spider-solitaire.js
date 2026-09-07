@@ -241,7 +241,7 @@ function renderStockPile() {
 function boardStackLayout(compact) {
   const availableHeight = Math.max(compact ? 300 : 340, boardScroller.clientHeight || (compact ? 560 : 620));
   const topStart = 1;
-  const bottomPad = compact ? 3 : 2;
+  const bottomPad = 3;
   const desiredFaceUp = compact ? 26 : 33;
   const minimumFaceUp = compact ? 23 : 30;
   const desiredFaceDown = compact ? 8 : 12;
