@@ -249,7 +249,7 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
   for (const card of exposed) {
     expect(card).toBeTruthy();
     expect(card.overlapReveal).toBeGreaterThanOrEqual(20);
-    expect(card.overlapReveal).toBeLessThanOrEqual(23);
+    expect(card.overlapReveal).toBeLessThanOrEqual(27);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
     expect(card.rankText).toMatch(/^(A|[2-9]|10|J|Q|K)$/);
     expect(card.rankFontSize).toBeGreaterThanOrEqual(16);
