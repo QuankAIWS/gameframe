@@ -627,7 +627,7 @@ body.gameframe-has-destination-bar .spider-shell {
   height: var(--card-height);
   transform: translateX(-50%);
   overflow: hidden;
-  padding: 5px;
+  padding: 0;
   border: 1px solid #b9bec6;
   border-radius: 7px;
   box-shadow: 0 3px 7px rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.85);
@@ -635,7 +635,7 @@ body.gameframe-has-destination-bar .spider-shell {
   cursor: default;
   user-select: none;
   touch-action: manipulation;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: Arial, Helvetica, ui-sans-serif, system-ui, sans-serif;
 }
 
 .spider-card.is-face-up {
@@ -664,64 +664,12 @@ body.gameframe-has-destination-bar .spider-shell {
   box-shadow: 0 3px 7px rgba(0,0,0,.27), inset 0 0 0 2px rgba(20,56,132,.42);
 }
 
-.card-corner {
-  position: absolute;
-  top: 2px;
-  left: 5px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 3px;
-  width: auto;
-  line-height: 1;
-  font-family: Arial, Helvetica, sans-serif;
-  font-weight: 900;
-  white-space: nowrap;
+.spider-card > .card-kit-face {
+  z-index: 1;
 }
 
-.card-rank {
-  display: inline-block;
-  font-size: 2.30rem;
-  line-height: .62;
-  letter-spacing: -.07em;
-}
-
-.card-suit { font-size: 1.05rem; }
-
-
-.spider-board[data-difficulty="1"] .card-corner {
-  top: 0;
-  left: 5px;
-  right: 5px;
-  justify-content: flex-start;
-  gap: 0;
-}
-
-.spider-board[data-difficulty="1"] .card-rank {
-  transform: scaleX(.94);
-  transform-origin: left center;
-}
-
-.spider-board[data-difficulty="1"] .card-suit {
-  position: absolute;
-  top: 2px;
-  right: 1px;
-  font-size: .7rem;
-  line-height: 1;
-  opacity: .88;
-}
-
-.spider-board[data-difficulty="1"] .card-center {
-  display: none;
-}
-
-.card-center {
-  position: absolute;
-  inset: 35% 0 auto;
-  text-align: center;
-  font-size: 2.55rem;
-  line-height: 1;
-  opacity: .95;
+.spider-card.is-selected > .card-kit-face {
+  inset: 3px;
 }
 
 .spider-win {
@@ -1027,53 +975,9 @@ body.gameframe-has-destination-bar .spider-shell {
     box-shadow: 0 2px 4px rgba(0,0,0,.24), inset 0 0 0 1px rgba(20,56,132,.42);
   }
 
-  .card-corner {
-    position: absolute;
-    top: 2px;
-    left: 1px;
-    right: 1px;
-    width: auto;
-    height: 21px;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    line-height: 1;
-    white-space: nowrap;
+  .spider-card > .card-kit-face {
+    inset: 1px;
   }
-
-  .card-rank {
-    font-size: 1.68rem;
-    line-height: .70;
-    letter-spacing: -.09em;
-  }
-
-  .card-suit { font-size: .66rem; }
-
-  .spider-board[data-difficulty="1"] .card-corner {
-    top: 1px;
-    left: 1px;
-    right: 1px;
-    height: 20px;
-    justify-content: center;
-  }
-
-  .spider-board[data-difficulty="1"] .card-rank {
-    font-size: 1.80rem;
-    line-height: .68;
-    transform: scaleX(.78);
-    transform-origin: center;
-  }
-
-  .spider-board[data-difficulty="1"] .card-suit {
-    top: 1px;
-    right: 1px;
-    font-size: .46rem;
-    opacity: .86;
-  }
-
-  .card-center { display: none; }
 }
 
 @media (max-width: 390px) {
@@ -1083,9 +987,6 @@ body.gameframe-has-destination-bar .spider-shell {
   .spider-stat strong { font-size: .84rem; }
   .completed-runs { gap: 2px; }
   .completed-slot { max-width: 28px; height: 40px; }
-  .card-rank { font-size: 1.62rem; }
-  .card-suit { font-size: .62rem; }
-  .spider-board[data-difficulty="1"] .card-rank { font-size: 1.76rem; }
 }
 
 @media (max-width: 360px) {
