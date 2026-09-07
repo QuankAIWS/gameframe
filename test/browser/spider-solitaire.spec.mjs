@@ -38,7 +38,7 @@ test("Spider Solitaire loads, persists a stock deal, and restarts the same seede
 
 
 test("Spider Solitaire presents the classic felt table on desktop", async ({ page }) => {
-  await mkdir("visual-results/player-ui-review", { recursive: true });
+  await mkdir("visual-results/spider-solitaire-review", { recursive: true });
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/spider-solitaire.html");
   await page.evaluate((key) => localStorage.removeItem(key), saveKey);
@@ -109,13 +109,13 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   }
 
   await page.screenshot({
-    path: "visual-results/player-ui-review/spider-solitaire-desktop-1280x900.png",
+    path: "visual-results/spider-solitaire-review/spider-solitaire-desktop-1280x900.png",
     fullPage: true,
   });
 });
 
 test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered ranks readable", async ({ page }) => {
-  await mkdir("visual-results/player-ui-review", { recursive: true });
+  await mkdir("visual-results/spider-solitaire-review", { recursive: true });
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/spider-solitaire.html");
   await page.evaluate((key) => localStorage.removeItem(key), saveKey);
@@ -181,7 +181,7 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
   }
 
   await page.screenshot({
-    path: "visual-results/player-ui-review/spider-solitaire-mobile-360x800.png",
+    path: "visual-results/spider-solitaire-review/spider-solitaire-mobile-360x800.png",
     fullPage: true,
   });
 });
