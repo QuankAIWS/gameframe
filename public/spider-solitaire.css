@@ -482,7 +482,7 @@ body.gameframe-has-destination-bar .spider-shell {
 
 
 .spider-board[data-difficulty="1"] .card-corner {
-  top: 1px;
+  top: 0;
   left: 5px;
   right: 5px;
   justify-content: flex-start;
@@ -576,7 +576,7 @@ body.gameframe-has-destination-bar .spider-shell {
     display: grid;
     grid-template-columns: minmax(0, 1.55fr) repeat(3, minmax(0, .7fr));
     gap: 4px;
-    min-height: 46px;
+    min-height: 50px;
     padding: 3px 4px;
     border-left: 0;
     border-top: 0;
@@ -584,7 +584,7 @@ body.gameframe-has-destination-bar .spider-shell {
 
   .spider-difficulty {
     min-width: 0;
-    min-height: 40px;
+    min-height: 44px;
     gap: 4px;
     padding: 3px 4px 3px 6px;
   }
@@ -596,14 +596,14 @@ body.gameframe-has-destination-bar .spider-shell {
   .spider-difficulty select {
     width: 100%;
     padding: 4px 3px;
-    font-size: .68rem;
+    font-size: .76rem;
   }
 
   .spider-toolbar button {
     min-width: 0;
-    min-height: 40px;
+    min-height: 44px;
     padding: 5px 2px;
-    font-size: .72rem;
+    font-size: .80rem;
   }
 
   .spider-scorebar {
@@ -613,8 +613,8 @@ body.gameframe-has-destination-bar .spider-shell {
   }
 
   .spider-stat { gap: 3px; }
-  .spider-stat small { font-size: .76rem; }
-  .spider-stat strong { font-size: .88rem; }
+  .spider-stat small { font-size: .82rem; }
+  .spider-stat strong { font-size: 1rem; }
 
   .spider-table-surface {
     min-height: 0;
@@ -682,7 +682,7 @@ body.gameframe-has-destination-bar .spider-shell {
     flex: 1;
     min-width: 0;
     overflow: hidden;
-    font-size: .66rem;
+    font-size: .74rem;
     white-space: nowrap;
     text-overflow: ellipsis;
   }
