@@ -8,7 +8,7 @@ test("Spider Solitaire loads, persists a stock deal, and restarts the same seede
   await page.evaluate((key) => localStorage.removeItem(key), saveKey);
   await page.reload();
 
-  await expect(page.getByRole("heading", { name: "Spider Solitaire" })).toBeVisible();
+  await expect(page.locator(".spider-desktop-bar h1")).toHaveText("Spider Solitaire");
   await expect(page.locator("#spider-board .spider-column")).toHaveCount(10);
   await expect(page.locator("#spider-board .spider-card")).toHaveCount(54);
   await expect(page.locator("#spider-board .spider-card.is-face-up")).toHaveCount(10);
