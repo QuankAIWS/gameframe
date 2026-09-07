@@ -6,7 +6,7 @@
   --c-text: #f7f7fb;
   --c-muted: #989eae;
   --c-yellow: #ffd84d;
-  --c-pink: #ff5ca8;
+  --c-pink: #ff3fac;
   --c-cyan: #59e1ef;
   --c-green: #83ef7b;
 }
@@ -221,7 +221,7 @@ button { font: inherit; }
 }
 .cascade-tile.is-hammer-target { cursor: crosshair; }
 
-.cascade-tile[data-kind="0"] { --tile: #ff5ca8; }
+.cascade-tile[data-kind="0"] { --tile: #ff3fac; }
 .cascade-tile[data-kind="1"] { --tile: #59e1ef; }
 .cascade-tile[data-kind="2"] { --tile: #ffd84d; }
 .cascade-tile[data-kind="3"] { --tile: #83ef7b; }
