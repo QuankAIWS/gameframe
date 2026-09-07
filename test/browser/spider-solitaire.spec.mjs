@@ -129,7 +129,7 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
     expect(card.overlapReveal).toBeGreaterThanOrEqual(40);
     expect(card.overlapReveal).toBeLessThanOrEqual(45);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
-    expect(card.rankFontSize).toBeGreaterThanOrEqual(card.rankText === "10" ? 28 : 34);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(34);
   }
 
   await page.screenshot({
@@ -205,7 +205,7 @@ test("Spider Solitaire keeps every covered desktop rank visible in a long in-pro
     expect(card.rank).toMatch(/^(A|[2-9]|10|J|Q|K)$/);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
     expect(card.suitBottom).toBeLessThanOrEqual(card.nextTop + 1);
-    expect(card.rankFontSize).toBeGreaterThanOrEqual(card.rank === "10" ? 18 : 23);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(23);
   }
 
   await page.screenshot({
@@ -290,7 +290,7 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
     expect(card.overlapReveal).toBeLessThanOrEqual(32);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
     expect(card.rankText).toMatch(/^(A|[2-9]|10|J|Q|K)$/);
-    expect(card.rankFontSize).toBeGreaterThanOrEqual(card.rankText === "10" ? 20 : 24);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(24);
   }
 
   await page.screenshot({
@@ -357,7 +357,7 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
   expect(evidence.lastHeight).toBeGreaterThanOrEqual(79);
   for (const card of evidence.cards) {
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
-    expect(card.rankFontSize).toBeGreaterThanOrEqual(card.rankText === "10" ? 17 : 20);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(20);
   }
 
   await page.screenshot({
