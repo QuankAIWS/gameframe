@@ -306,6 +306,8 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
   await page.reload();
 
   const evidence = await page.evaluate(() => {
+    const nav = document.querySelector("#gameframe-destination-bar").getBoundingClientRect();
+    const shell = document.querySelector(".spider-shell").getBoundingClientRect();
     const scroller = document.querySelector(".spider-board-scroller").getBoundingClientRect();
     const cards = [...document.querySelector(".spider-column").querySelectorAll(".spider-card.is-face-up")];
     return {
