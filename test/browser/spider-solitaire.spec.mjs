@@ -66,6 +66,36 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   expect(presentation.faceDownBackground).toContain("gradient");
   expect(presentation.boardWidth).toBeLessThanOrEqual(presentation.viewportWidth);
 
+  await page.locator("#deal-stock").click();
+  await expect(page.locator("#stock-count")).toHaveText("4");
+
+  const exposedDesktopRanks = await page.evaluate(() => {
+    return [...document.querySelectorAll(".spider-column")].map((column) => {
+      const faceUp = [...column.querySelectorAll(".spider-card.is-face-up")];
+      const covered = faceUp.at(-2);
+      const top = faceUp.at(-1);
+      if (!covered || !top) return null;
+      const coveredRect = covered.getBoundingClientRect();
+      const topRect = top.getBoundingClientRect();
+      const rank = covered.querySelector(".card-rank");
+      const rankRect = rank.getBoundingClientRect();
+      return {
+        overlapReveal: topRect.top - coveredRect.top,
+        rankBottom: rankRect.bottom,
+        nextTop: topRect.top,
+        rankFontSize: Number.parseFloat(getComputedStyle(rank).fontSize),
+      };
+    });
+  });
+
+  for (const card of exposedDesktopRanks) {
+    expect(card).toBeTruthy();
+    expect(card.overlapReveal).toBeGreaterThanOrEqual(35);
+    expect(card.overlapReveal).toBeLessThanOrEqual(37);
+    expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(24);
+  }
+
   await page.screenshot({
     path: "visual-results/player-ui-review/spider-solitaire-desktop-1280x900.png",
     fullPage: true,
