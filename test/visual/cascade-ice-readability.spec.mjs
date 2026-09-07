@@ -110,6 +110,65 @@ async function expectColorAura(tile) {
   expect(presentation.filter).toBe("none");
 }
 
+
+function rgbChannels(value) {
+  const hex = value.match(/^#([0-9a-f]{6})$/i);
+  if (hex) {
+    return [0, 2, 4].map((offset) => Number.parseInt(hex[1].slice(offset, offset + 2), 16));
+  }
+  return (value.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+}
+
+function rgbDistance(left, right) {
+  const a = rgbChannels(left);
+  const b = rgbChannels(right);
+  expect(a).toHaveLength(3);
+  expect(b).toHaveLength(3);
+  return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+}
+
+async function candyPalette(tile) {
+  return tile.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      tileA: style.getPropertyValue("--tile-a").trim(),
+      tileB: style.getPropertyValue("--tile-b").trim(),
+      aura: style.getPropertyValue("--ice-color-aura").trim(),
+    };
+  });
+}
+
+test("Cascade yellow and orange stay separated under ice", async ({ page }) => {
+  await openLevel(page, 181, { width: 390, height: 844 });
+
+  const coatings = page.locator(".cascade-cell-coating.ice-2");
+  await expect(coatings).toHaveCount(3);
+  const indexes = await coatings.evaluateAll((elements) => elements.slice(0, 2).map((element) => element.dataset.index));
+
+  const yellowTile = page.locator(`.cascade-board .cascade-tile[data-index="${indexes[0]}"]`);
+  const orangeTile = page.locator(`.cascade-board .cascade-tile[data-index="${indexes[1]}"]`);
+  await expect(yellowTile).toBeVisible();
+  await expect(orangeTile).toBeVisible();
+
+  await yellowTile.evaluate((tile) => {
+    tile.dataset.kind = "2";
+    tile.dataset.ice = "2";
+  });
+  await orangeTile.evaluate((tile) => {
+    tile.dataset.kind = "5";
+    tile.dataset.ice = "2";
+  });
+
+  const yellow = await candyPalette(yellowTile);
+  const orange = await candyPalette(orangeTile);
+
+  expect(rgbDistance(yellow.tileA, orange.tileA)).toBeGreaterThan(90);
+  expect(rgbDistance(yellow.tileB, orange.tileB)).toBeGreaterThan(90);
+  expect(rgbDistance(yellow.aura, orange.aura)).toBeGreaterThan(100);
+
+  await page.screenshot({ path: `${output}/cascade-crush-ice-yellow-orange-mobile.png`, fullPage: true });
+});
+
 test("Cascade one-layer ice keeps the candy color dominant", async ({ page }) => {
   await openLevel(page, 105);
 
