@@ -44,6 +44,15 @@ button, select { font: inherit; }
 button { color: inherit; }
 
 
+.spider-page-heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .spider-desktop-bar {
   display: none;
 }
@@ -51,12 +60,12 @@ button { color: inherit; }
 @media (min-width: 851px) {
   .spider-desktop-bar {
     flex: 0 0 auto;
-    min-height: 48px;
+    min-height: 44px;
     display: grid;
-    grid-template-columns: minmax(150px, auto) minmax(250px, 1fr) auto;
+    grid-template-columns: minmax(230px, 1fr) auto;
     align-items: center;
-    gap: 14px;
-    padding: 5px 10px;
+    gap: 12px;
+    padding: 4px 10px;
     border: 1px solid rgba(255,255,255,.18);
     border-bottom: 0;
     background:
@@ -64,33 +73,10 @@ button { color: inherit; }
     box-shadow: inset 0 1px rgba(255,255,255,.08);
   }
 
-  .spider-desktop-identity {
-    min-width: 0;
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    white-space: nowrap;
-  }
-
-  .spider-desktop-identity h1 {
-    margin: 0;
-    font-size: 1.02rem;
-    font-weight: 900;
-    letter-spacing: -.02em;
-  }
-
-  .spider-desktop-identity small {
-    color: rgba(255,255,255,.58);
-    font-size: .58rem;
-    font-weight: 800;
-    letter-spacing: .11em;
-    text-transform: uppercase;
-  }
-
   .spider-desktop-stats {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 24px;
     min-width: 0;
     font-variant-numeric: tabular-nums;
@@ -241,12 +227,11 @@ button { color: inherit; }
 
 @media (min-width: 851px) and (max-width: 1120px) {
   .spider-desktop-bar {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: minmax(190px, 1fr) auto;
     gap: 8px;
     padding-inline: 7px;
   }
 
-  .spider-desktop-identity small,
   .spider-desktop-runs,
   .spider-desktop-difficulty span {
     display: none;
@@ -766,6 +751,30 @@ body.gameframe-has-destination-bar .spider-shell {
 .spider-win-card h2 { margin: 5px 0 4px; font-size: 2rem; }
 .spider-win-card p { color: rgba(255,255,255,.78); }
 .spider-win-card button { margin-top: 9px; }
+
+
+@media (min-width: 851px) {
+  body.spider-solitaire-route {
+    --gameframe-destination-height: 58px;
+  }
+
+  body.spider-solitaire-route .gameframe-destination-bar {
+    min-height: var(--gameframe-destination-height);
+  }
+
+  body.spider-solitaire-route .gameframe-destination-brand {
+    padding: 5px 14px;
+  }
+
+  body.spider-solitaire-route .gameframe-destination-mark {
+    width: 40px;
+    height: 40px;
+  }
+
+  body.spider-solitaire-route .gameframe-has-destination-bar > .gameframe-session-badge {
+    top: 6px;
+  }
+}
 
 /* desktop-flow-final */
 
