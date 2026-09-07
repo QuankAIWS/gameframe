@@ -101,12 +101,18 @@ test("Cascade progression sync stays in the player-platform lane", () => {
   });
 });
 
-test("Spider Solitaire browser and presentation changes route through the shell lane", () => {
+test("Spider Solitaire and shared CardKit changes route through the shell lane", () => {
   assert.deepEqual(classifyUiTestScope([
+    "public/card-kit.js",
+    "public/card-kit.css",
+    "public/card-lab.html",
+    "public/card-lab.css",
+    "public/card-lab.js",
     "public/spider-solitaire.html",
     "public/spider-solitaire.css",
     "public/spider-solitaire.js",
     "public/spider-solitaire-engine.js",
+    "test/browser/card-kit.spec.mjs",
     "test/browser/spider-solitaire.spec.mjs",
   ]), { ...none, shell: true });
 });
