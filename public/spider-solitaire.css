@@ -420,16 +420,25 @@ button { color: inherit; }
 }
 
 .card-corner {
+  position: absolute;
+  top: 5px;
+  left: 5px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  width: 25px;
-  line-height: .88;
+  gap: 3px;
+  width: auto;
+  line-height: 1;
   font-weight: 900;
+  white-space: nowrap;
 }
 
-.card-rank { font-size: 1.22rem; }
-.card-suit { font-size: 1.15rem; }
+.card-rank {
+  font-size: 1.55rem;
+  letter-spacing: -.04em;
+}
+
+.card-suit { font-size: 1.25rem; }
 
 .card-center {
   position: absolute;
