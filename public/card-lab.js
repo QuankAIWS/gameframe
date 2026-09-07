@@ -29,7 +29,7 @@ function makeCard(cardData, {
 }
 
 for (let rank = 1; rank <= 13; rank += 1) {
-  rankGallery.append(makeCard(card(rank), { rankSize: 42, topCard: true }));
+  rankGallery.append(makeCard(card(rank), { rankSize: 40, topCard: true }));
 }
 
 const desktopCards = [7, 10, 1, 2, 12, 3, 11, 7, 10, 10, 2, 10, 13, 12, 4, 5, 12, 1]
@@ -48,7 +48,7 @@ const desktopLayout = fitCardStack({
 let desktopTop = desktopLayout.topStart;
 desktopCards.forEach((entry, index) => {
   const last = index === desktopCards.length - 1;
-  const rankSize = last ? 42 : rankSizeForReveal(desktopLayout.faceUp, { minimum: 22, maximum: 38, verticalSafety: 5 });
+  const rankSize = last ? 40 : rankSizeForReveal(desktopLayout.faceUp, { minimum: 22, maximum: 36, verticalSafety: 6 });
   const node = makeCard(entry, { rankSize, topCard: last });
   node.style.top = `${desktopTop}px`;
   node.style.zIndex = String(index + 1);
@@ -87,7 +87,7 @@ for (const ranks of columnRanks) {
   let top = layout.topStart;
   cards.forEach((entry, index) => {
     const last = index === cards.length - 1;
-    const rankSize = last ? 30 : rankSizeForReveal(layout.faceUp, { minimum: 21, maximum: 28, verticalSafety: 4 });
+    const rankSize = last ? 29 : rankSizeForReveal(layout.faceUp, { minimum: 21, maximum: 27, verticalSafety: 5 });
     const node = makeCard(entry, {
       rankSize,
       rankAlign: "center",
