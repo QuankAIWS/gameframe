@@ -9,6 +9,31 @@
 </head>
 <body class="spider-solitaire-route" data-gameframe-menu-game="spider">
   <main class="spider-shell">
+    <h1 class="spider-page-heading">Spider Solitaire</h1>
+    <section class="spider-desktop-bar" aria-label="Spider Solitaire controls and game status">
+      <div class="spider-desktop-stats" aria-label="Game status">
+        <span><small>Moves</small><strong id="desktop-move-count">0</strong></span>
+        <span><small>Stock</small><strong id="desktop-stock-count">5</strong></span>
+        <span><small>Runs</small><strong id="desktop-run-count">0 / 8</strong></span>
+      </div>
+
+      <div class="spider-desktop-actions">
+        <div id="desktop-completed-runs" class="spider-desktop-runs" aria-label="Completed runs"></div>
+        <button id="desktop-deal-stock" class="spider-desktop-deal" type="button">Deal</button>
+        <label class="spider-desktop-difficulty">
+          <span>Difficulty</span>
+          <select id="desktop-difficulty">
+            <option value="1">1 suit · Easy</option>
+            <option value="2">2 suits · Standard</option>
+            <option value="4">4 suits · Expert</option>
+          </select>
+        </label>
+        <button id="desktop-new-game" type="button">New</button>
+        <button id="desktop-restart-game" type="button">Restart</button>
+        <button id="desktop-undo" type="button">Undo</button>
+      </div>
+    </section>
+
     <header class="spider-header">
       <div class="spider-brand-row">
         <div>

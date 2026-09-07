@@ -8,7 +8,7 @@ test("Spider Solitaire loads, persists a stock deal, and restarts the same seede
   await page.evaluate((key) => localStorage.removeItem(key), saveKey);
   await page.reload();
 
-  await expect(page.getByRole("heading", { name: "Spider Solitaire" })).toBeVisible();
+  await expect(page.locator(".spider-page-heading")).toHaveText("Spider Solitaire");
   await expect(page.locator("#spider-board .spider-column")).toHaveCount(10);
   await expect(page.locator("#spider-board .spider-card")).toHaveCount(54);
   await expect(page.locator("#spider-board .spider-card.is-face-up")).toHaveCount(10);
@@ -18,7 +18,7 @@ test("Spider Solitaire loads, persists a stock deal, and restarts the same seede
   const dealId = (await page.locator("#deal-id").textContent())?.trim();
   expect(dealId).toBeTruthy();
 
-  await page.locator("#deal-stock").click();
+  await page.locator("#desktop-deal-stock").click();
   await expect(page.locator("#stock-count")).toHaveText("4");
   await expect(page.locator("#move-count")).toHaveText("1");
   await expect(page.locator("#spider-board .spider-card")).toHaveCount(64);
@@ -27,9 +27,9 @@ test("Spider Solitaire loads, persists a stock deal, and restarts the same seede
   await expect(page.locator("#stock-count")).toHaveText("4");
   await expect(page.locator("#move-count")).toHaveText("1");
   await expect(page.locator("#deal-id")).toHaveText(dealId);
-  await expect(page.getByRole("status")).toContainText("Saved deal resumed");
+  await expect(page.locator("#status")).toContainText("Saved deal resumed");
 
-  await page.locator("#restart-game").click();
+  await page.locator("#desktop-restart-game").click();
   await expect(page.locator("#stock-count")).toHaveText("5");
   await expect(page.locator("#move-count")).toHaveText("0");
   await expect(page.locator("#spider-board .spider-card")).toHaveCount(54);
@@ -45,8 +45,10 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   await page.reload();
 
   await expect(page.locator("#gameframe-destination-bar")).toBeVisible();
-  await expect(page.locator(".spider-scorebar")).toBeVisible();
-  await expect(page.locator(".completed-slot")).toHaveCount(8);
+  await expect(page.locator(".spider-desktop-bar")).toBeVisible();
+  await expect(page.locator(".spider-scorebar")).toBeHidden();
+  await expect(page.locator(".spider-tray")).toBeHidden();
+  await expect(page.locator(".spider-desktop-run-slot")).toHaveCount(8);
   await expect(page.locator("#stock-pile .stock-card-back")).toHaveCount(5);
 
   const presentation = await page.evaluate(() => {
@@ -54,6 +56,7 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
     const faceUp = getComputedStyle(document.querySelector(".spider-card.is-face-up"));
     const faceDown = getComputedStyle(document.querySelector(".spider-card.is-face-down"));
     const navRect = document.querySelector("#gameframe-destination-bar").getBoundingClientRect();
+    const desktopBarRect = document.querySelector(".spider-desktop-bar").getBoundingClientRect();
     const shellRect = document.querySelector(".spider-shell").getBoundingClientRect();
     const surfaceRect = document.querySelector(".spider-table-surface").getBoundingClientRect();
     const scrollerRect = document.querySelector(".spider-board-scroller").getBoundingClientRect();
@@ -68,6 +71,9 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
       shellLeft: shellRect.left,
       shellRight: shellRect.right,
       navBottom: navRect.bottom,
+      desktopBarTop: desktopBarRect.top,
+      desktopBarBottom: desktopBarRect.bottom,
+      desktopBarHeight: desktopBarRect.height,
       shellTop: shellRect.top,
       shellBottom: shellRect.bottom,
       shellHeight: shellRect.height,
@@ -87,13 +93,15 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   expect(presentation.shellRight).toBeLessThanOrEqual(presentation.viewportWidth + 1);
   expect(presentation.shellRight).toBeGreaterThanOrEqual(presentation.viewportWidth - 1);
   expect(presentation.shellTop).toBeGreaterThanOrEqual(presentation.navBottom - 1);
+  expect(presentation.desktopBarTop).toBeGreaterThanOrEqual(presentation.navBottom - 1);
+  expect(presentation.desktopBarHeight).toBeLessThanOrEqual(48);
   expect(presentation.shellBottom).toBeLessThanOrEqual(presentation.viewportHeight + 1);
   expect(presentation.scrollerBottom).toBeLessThanOrEqual(presentation.viewportHeight + 1);
   expect(presentation.surfaceRight).toBeGreaterThanOrEqual(presentation.viewportWidth - 1);
   expect(presentation.documentWidth).toBeLessThanOrEqual(presentation.viewportWidth + 1);
   expect(presentation.documentHeight).toBeLessThanOrEqual(presentation.viewportHeight + 1);
 
-  await page.locator("#deal-stock").click();
+  await page.locator("#desktop-deal-stock").click();
   await expect(page.locator("#stock-count")).toHaveText("4");
 
   const exposedDesktopRanks = await page.evaluate(() => {
@@ -191,7 +199,7 @@ test("Spider Solitaire keeps every covered desktop rank visible in a long in-pro
   expect(stackEvidence.shellBottom).toBeLessThanOrEqual(stackEvidence.viewportHeight + 1);
   expect(stackEvidence.scrollerBottom).toBeLessThanOrEqual(stackEvidence.viewportHeight + 1);
   expect(stackEvidence.lastBottom).toBeLessThanOrEqual(stackEvidence.scrollerBottom + 1);
-  expect(stackEvidence.lastHeight).toBeGreaterThanOrEqual(110);
+  expect(stackEvidence.lastHeight).toBeGreaterThanOrEqual(130);
   for (const card of stackEvidence.cards) {
     expect(card.rank).toMatch(/^(A|[2-9]|10|J|Q|K)$/);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
