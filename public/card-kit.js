@@ -110,16 +110,17 @@ export function createCardFace(card, {
   svg.setAttribute("focusable", "false");
 
   const wide = label === "10";
-  const resolvedRankSize = Math.max(12, Math.round(Number(rankSize) * (wide ? 0.82 : 1)));
+  const resolvedRankSize = Math.max(12, Math.round(Number(rankSize)));
   const rank = createText("card-kit-rank", label);
   rank.dataset.wide = wide ? "true" : "false";
   rank.style.fontSize = `${resolvedRankSize}px`;
   rank.setAttribute("y", String(Math.round(resolvedRankSize * 0.76) + 4));
+  if (wide) rank.setAttribute("transform", "scale(.78 1)");
   if (rankAlign === "center") {
-    rank.setAttribute("x", "50%");
+    rank.setAttribute("x", wide ? "64.1%" : "50%");
     rank.setAttribute("text-anchor", "middle");
   } else {
-    rank.setAttribute("x", "3");
+    rank.setAttribute("x", wide ? "4" : "3");
     rank.setAttribute("text-anchor", "start");
   }
 
