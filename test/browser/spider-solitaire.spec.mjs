@@ -52,12 +52,19 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
     const body = getComputedStyle(document.body);
     const faceUp = getComputedStyle(document.querySelector(".spider-card.is-face-up"));
     const faceDown = getComputedStyle(document.querySelector(".spider-card.is-face-down"));
+    const shellRect = document.querySelector(".spider-shell").getBoundingClientRect();
+    const surfaceRect = document.querySelector(".spider-table-surface").getBoundingClientRect();
     return {
       bodyBackground: body.backgroundImage,
       faceUpBackground: faceUp.backgroundImage,
       faceDownBackground: faceDown.backgroundImage,
       boardWidth: document.querySelector("#spider-board").getBoundingClientRect().width,
       viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      shellLeft: shellRect.left,
+      shellRight: shellRect.right,
+      shellHeight: shellRect.height,
+      surfaceRight: surfaceRect.right,
     };
   });
 
@@ -65,6 +72,11 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   expect(presentation.faceUpBackground).toContain("gradient");
   expect(presentation.faceDownBackground).toContain("gradient");
   expect(presentation.boardWidth).toBeLessThanOrEqual(presentation.viewportWidth);
+  expect(presentation.shellLeft).toBeGreaterThanOrEqual(-1);
+  expect(presentation.shellRight).toBeLessThanOrEqual(presentation.viewportWidth + 1);
+  expect(presentation.shellRight).toBeGreaterThanOrEqual(presentation.viewportWidth - 1);
+  expect(presentation.shellHeight).toBeGreaterThanOrEqual(presentation.viewportHeight);
+  expect(presentation.surfaceRight).toBeGreaterThanOrEqual(presentation.viewportWidth - 1);
 
   await page.locator("#deal-stock").click();
   await expect(page.locator("#stock-count")).toHaveText("4");
@@ -109,18 +121,29 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
   await page.evaluate((key) => localStorage.removeItem(key), saveKey);
   await page.reload();
 
-  const before = await page.evaluate(() => ({
-    bodyWidth: document.documentElement.scrollWidth,
-    viewportWidth: window.innerWidth,
-    scrollerWidth: document.querySelector(".spider-board-scroller").scrollWidth,
-    scrollerClientWidth: document.querySelector(".spider-board-scroller").clientWidth,
-    columns: [...document.querySelectorAll(".spider-column")].map((column) => {
-      const rect = column.getBoundingClientRect();
-      return { left: rect.left, right: rect.right, width: rect.width };
-    }),
-  }));
+  const before = await page.evaluate(() => {
+    const shellRect = document.querySelector(".spider-shell").getBoundingClientRect();
+    return {
+      bodyWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      shellLeft: shellRect.left,
+      shellRight: shellRect.right,
+      shellHeight: shellRect.height,
+      scrollerWidth: document.querySelector(".spider-board-scroller").scrollWidth,
+      scrollerClientWidth: document.querySelector(".spider-board-scroller").clientWidth,
+      columns: [...document.querySelectorAll(".spider-column")].map((column) => {
+        const rect = column.getBoundingClientRect();
+        return { left: rect.left, right: rect.right, width: rect.width };
+      }),
+    };
+  });
 
   expect(before.bodyWidth).toBeLessThanOrEqual(before.viewportWidth + 1);
+  expect(before.shellLeft).toBeGreaterThanOrEqual(-1);
+  expect(before.shellRight).toBeGreaterThanOrEqual(before.viewportWidth - 1);
+  expect(before.shellRight).toBeLessThanOrEqual(before.viewportWidth + 1);
+  expect(before.shellHeight).toBeGreaterThanOrEqual(before.viewportHeight);
   expect(before.scrollerWidth).toBeLessThanOrEqual(before.scrollerClientWidth + 1);
   expect(before.columns).toHaveLength(10);
   expect(before.columns[0].left).toBeGreaterThanOrEqual(-1);
