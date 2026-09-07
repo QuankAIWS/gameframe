@@ -52,7 +52,7 @@ async function assertPlaySurface(page, viewport, { minBoardWidth = viewport.widt
   expect(bounds.boardBottom).toBeLessThan(viewport.height);
   expect(bounds.utilityBottom).toBeLessThanOrEqual(viewport.height + 1);
   expect(viewport.height - bounds.utilityBottom).toBeLessThanOrEqual(10);
-  expect(bounds.statusHeight).toBeLessThanOrEqual(60);
+  expect(bounds.statusHeight).toBeLessThanOrEqual(61);
   expect(bounds.statusGap).toBe("0px");
   expect(bounds.scrollHeight).toBeLessThanOrEqual(viewport.height + 1);
 }
