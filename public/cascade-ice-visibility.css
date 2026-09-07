@@ -16,8 +16,8 @@ body.cascade-route .cascade-board .cascade-tile[data-ice] {
 }
 
 body.cascade-route .cascade-board .cascade-tile[data-kind="0"][data-ice] {
-  --ice-color-aura: rgba(255,94,170,.32);
-  --ice-color-halo: rgba(255,94,170,.13);
+  --ice-color-aura: rgba(255,48,172,.36);
+  --ice-color-halo: rgba(255,48,172,.15);
 }
 
 body.cascade-route .cascade-board .cascade-tile[data-kind="1"][data-ice] {
