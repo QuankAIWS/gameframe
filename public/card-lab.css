@@ -1,0 +1,155 @@
+:root {
+  color-scheme: dark;
+  font-family: Arial, Helvetica, ui-sans-serif, system-ui, sans-serif;
+  background: #072814;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: #f7fff8;
+  background:
+    radial-gradient(circle at 50% -15%, rgba(255,255,255,.09), transparent 32%),
+    linear-gradient(180deg, #0b8f31, #076b26);
+}
+
+.card-lab-shell {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.card-lab-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 14px;
+}
+
+.card-lab-header p,
+.card-lab-section-heading p {
+  margin: 0;
+  color: rgba(255,255,255,.68);
+}
+
+.card-lab-header p {
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.card-lab-header h1 {
+  margin: 3px 0 0;
+  font-size: 2rem;
+}
+
+.card-lab-header > span {
+  color: rgba(255,255,255,.74);
+  font-size: .82rem;
+}
+
+.card-lab-panel {
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 12px;
+  background: rgba(0,0,0,.12);
+  box-shadow: inset 0 1px rgba(255,255,255,.06), 0 14px 34px rgba(0,0,0,.12);
+}
+
+.card-lab-section-heading {
+  margin-bottom: 12px;
+}
+
+.card-lab-section-heading h2 {
+  margin: 0 0 3px;
+  font-size: 1rem;
+}
+
+.card-lab-section-heading p {
+  font-size: .78rem;
+}
+
+.card-lab-rank-gallery {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.card-lab-card {
+  position: relative;
+  height: 132px;
+  overflow: hidden;
+  border: 1px solid #b9bec6;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 4px 9px rgba(0,0,0,.26), inset 0 1px rgba(255,255,255,.86);
+}
+
+.card-lab-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, .75fr) minmax(0, 1.25fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.card-lab-stack {
+  position: relative;
+  height: 510px;
+  border-radius: 9px;
+  background: rgba(0,0,0,.05);
+}
+
+.card-lab-stack .card-lab-card {
+  position: absolute;
+  left: 50%;
+  width: 102px;
+  transform: translateX(-50%);
+}
+
+.card-lab-phone-tableau {
+  width: 360px;
+  max-width: 100%;
+  min-height: 510px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 1px;
+  padding: 2px;
+  border-radius: 8px;
+  background: rgba(0,0,0,.06);
+}
+
+.card-lab-phone-column {
+  position: relative;
+  min-width: 0;
+}
+
+.card-lab-phone-column .card-lab-card {
+  position: absolute;
+  left: 50%;
+  width: calc(100% - 1px);
+  height: 80px;
+  transform: translateX(-50%);
+  border-radius: 4px;
+}
+
+@media (max-width: 760px) {
+  .card-lab-shell { padding: 10px 6px; }
+  .card-lab-header { align-items: start; flex-direction: column; gap: 5px; }
+  .card-lab-header h1 { font-size: 1.45rem; }
+  .card-lab-header > span { font-size: .72rem; }
+  .card-lab-panel { padding: 9px 5px; border-radius: 8px; }
+  .card-lab-rank-gallery {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .card-lab-rank-gallery .card-lab-card {
+    height: 94px;
+  }
+  .card-lab-grid { grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+  .card-lab-stack { height: 430px; }
+  .card-lab-phone-tableau { min-height: 430px; }
+}
