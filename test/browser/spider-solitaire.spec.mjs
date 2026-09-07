@@ -114,6 +114,55 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   });
 });
 
+test("Spider Solitaire keeps every covered desktop rank visible in a long in-progress stack", async ({ page }) => {
+  await mkdir("visual-results/spider-solitaire-review", { recursive: true });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/spider-solitaire.html");
+  await page.evaluate((key) => {
+    const saved = JSON.parse(localStorage.getItem(key));
+    for (const column of saved.state.tableau) {
+      for (const card of column) card.faceUp = true;
+    }
+    localStorage.setItem(key, JSON.stringify(saved));
+  }, saveKey);
+  await page.reload();
+
+  const stackEvidence = await page.evaluate(() => {
+    return [...document.querySelectorAll(".spider-column")].map((column) => {
+      const cards = [...column.querySelectorAll(".spider-card.is-face-up")];
+      return cards.slice(0, -1).map((card, index) => {
+        const next = cards[index + 1];
+        const cardRect = card.getBoundingClientRect();
+        const nextRect = next.getBoundingClientRect();
+        const rank = card.querySelector(".card-rank");
+        const suit = card.querySelector(".card-suit");
+        const rankRect = rank.getBoundingClientRect();
+        const suitRect = suit.getBoundingClientRect();
+        return {
+          rank: rank.textContent,
+          reveal: nextRect.top - cardRect.top,
+          rankBottom: rankRect.bottom,
+          suitBottom: suitRect.bottom,
+          nextTop: nextRect.top,
+        };
+      });
+    });
+  });
+
+  expect(stackEvidence.flat().length).toBeGreaterThan(30);
+  for (const card of stackEvidence.flat()) {
+    expect(card.rank).toMatch(/^(A|[2-9]|10|J|Q|K)$/);
+    expect(card.reveal).toBeGreaterThanOrEqual(35);
+    expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
+    expect(card.suitBottom).toBeLessThanOrEqual(card.nextTop + 1);
+  }
+
+  await page.screenshot({
+    path: "visual-results/spider-solitaire-review/spider-solitaire-desktop-long-stack-1280x900.png",
+    fullPage: true,
+  });
+});
+
 test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered ranks readable", async ({ page }) => {
   await mkdir("visual-results/spider-solitaire-review", { recursive: true });
   await page.setViewportSize({ width: 360, height: 800 });
