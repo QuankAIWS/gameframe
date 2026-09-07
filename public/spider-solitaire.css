@@ -996,3 +996,59 @@ body.gameframe-has-destination-bar .spider-shell {
   .stock-pile { width: 48px; min-width: 48px; }
   .stock-card-back { width: 31px; height: 40px; }
 }
+
+
+@media (max-width: 720px) {
+  body.spider-solitaire-route {
+    --gameframe-destination-height: 48px;
+  }
+
+  body.spider-solitaire-route .gameframe-destination-bar {
+    grid-template-columns: minmax(0, 1fr) 52px;
+    min-height: var(--gameframe-destination-height);
+  }
+
+  body.spider-solitaire-route .gameframe-destination-brand {
+    min-width: 0;
+    justify-content: flex-start;
+    gap: 7px;
+    padding: 4px 7px;
+  }
+
+  body.spider-solitaire-route .gameframe-destination-mark {
+    width: 36px;
+    height: 36px;
+  }
+
+  body.spider-solitaire-route .gameframe-destination-copy {
+    display: grid;
+  }
+
+  body.spider-solitaire-route .gameframe-platform-name {
+    font-size: .42rem;
+    letter-spacing: .12em;
+  }
+
+  body.spider-solitaire-route .gameframe-destination-brand [data-gameframe-destination-title] {
+    font-size: .70rem;
+    letter-spacing: .025em;
+  }
+
+  body.spider-solitaire-route .gameframe-destination-links {
+    display: none;
+  }
+
+  body.spider-solitaire-route .gameframe-destination-session-space {
+    width: 52px;
+    border-left: 1px solid rgba(154, 177, 185, .08);
+  }
+
+  body.spider-solitaire-route.gameframe-has-destination-bar > .gameframe-session-badge {
+    top: 4px;
+    right: 4px;
+    width: 44px;
+    max-width: 44px;
+    padding: 3px;
+  }
+}
+
