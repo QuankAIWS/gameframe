@@ -32,7 +32,9 @@ test("Spider Solitaire is a GameFrame-local deterministic game with resumable br
   assert.match(browser, /restartSameDeal/);
   assert.match(browser, /dragstart/);
   assert.match(browser, /validSpiderDestinations/);
-  assert.match(styles, /overflow-x: auto/);
+  assert.match(html, /href="\/card-kit\.css"/);
+  assert.match(browser, /from "\.\/card-kit\.js"/);
+  assert.match(styles, /html, body \{[\s\S]*overflow: hidden/);
   assert.match(styles, /is-valid-destination/);
 
   assert.match(hub, /id: "spider-solitaire"/);
