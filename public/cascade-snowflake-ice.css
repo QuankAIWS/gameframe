@@ -123,12 +123,12 @@
 }
 
 .cascade-tile[data-kind="0"] {
-  --tile-mark-color: #c62d79;
-  --tile-mark-accent: #ffb7d8;
-  --tile-mark-shadow: rgba(126,27,76,.25);
-  --tile-glow: rgba(248,63,152,.46);
-  --tile-glow-mid: rgba(248,63,152,.22);
-  --tile-glow-soft: rgba(248,63,152,.10);
+  --tile-mark-color: #b91472;
+  --tile-mark-accent: #ffc1e2;
+  --tile-mark-shadow: rgba(128,18,78,.26);
+  --tile-glow: rgba(255,21,147,.48);
+  --tile-glow-mid: rgba(255,21,147,.24);
+  --tile-glow-soft: rgba(255,21,147,.11);
 }
 
 .cascade-tile[data-kind="1"] {
