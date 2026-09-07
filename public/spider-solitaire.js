@@ -239,39 +239,15 @@ function renderStockPile() {
 }
 
 function boardStackLayout(compact) {
-  const availableHeight = Math.max(compact ? 300 : 340, boardScroller.clientHeight || (compact ? 560 : 620));
-  const topStart = 1;
-  const bottomPad = 3;
-  const desiredFaceUp = compact ? 26 : 33;
-  const minimumFaceUp = compact ? 23 : 30;
-  const desiredFaceDown = compact ? 8 : 12;
-  const minimumFaceDown = compact ? 5 : 7;
-  const baseCardHeight = compact ? 80 : 112;
-  const minimumCardHeight = compact ? 58 : 34;
-
-  let cardHeight = baseCardHeight;
-  for (const cards of state.tableau) {
-    const gaps = cards.slice(0, -1);
-    const faceUpCount = gaps.filter((card) => card.faceUp).length;
-    const faceDownCount = gaps.length - faceUpCount;
-    const roomForCard = availableHeight
-      - topStart
-      - bottomPad
-      - (faceUpCount * minimumFaceUp)
-      - (faceDownCount * minimumFaceDown);
-    cardHeight = Math.min(cardHeight, Math.max(minimumCardHeight, roomForCard));
-  }
-
   return {
-    availableHeight,
-    topStart,
-    bottomPad,
-    desiredFaceUp,
-    minimumFaceUp,
-    desiredFaceDown,
-    minimumFaceDown,
-    minimumCardHeight,
-    cardHeight: Math.floor(cardHeight),
+    availableHeight: Math.max(compact ? 300 : 340, boardScroller.clientHeight || (compact ? 560 : 620)),
+    topStart: 1,
+    bottomPad: compact ? 7 : 9,
+    desiredFaceUp: compact ? 28 : 34,
+    minimumFaceUp: compact ? 20 : 24,
+    desiredFaceDown: compact ? 8 : 11,
+    minimumFaceDown: compact ? 4 : 6,
+    cardHeight: compact ? 80 : 112,
   };
 }
 
@@ -302,18 +278,13 @@ function columnReveals(cards, layout) {
     excess -= reduction;
   }
 
-  if (excess > 0 && faceDownCount > 0) {
-    const reducible = Math.max(0, faceDown - 2) * faceDownCount;
-    const reduction = Math.min(excess, reducible);
-    faceDown -= reduction / faceDownCount;
-    excess -= reduction;
-  }
-
-  if (excess > 0 && faceUpCount > 0) {
-    const emergencyMinimum = mobileTableauQuery.matches ? 18 : 26;
-    const reducible = Math.max(0, faceUp - emergencyMinimum) * faceUpCount;
-    const reduction = Math.min(excess, reducible);
-    faceUp -= reduction / faceUpCount;
+  // Absolute no-scroll fallback for pathological columns: keep full card height,
+  // then proportionally compress overlap rather than turning the final card into a strip.
+  if (excess > 0) {
+    const weightedGapCount = (faceUpCount * 2) + faceDownCount;
+    const unit = weightedGapCount > 0 ? roomForGaps / weightedGapCount : 0;
+    faceUp = unit * 2;
+    faceDown = unit;
   }
 
   return {
@@ -326,6 +297,7 @@ function renderBoard() {
   board.replaceChildren();
   const compact = mobileTableauQuery.matches;
   const layout = boardStackLayout(compact);
+  board.dataset.difficulty = String(state.difficulty);
   board.style.setProperty("--card-height", `${layout.cardHeight}px`);
   const validDestinations = selection
     ? new Set(validSpiderDestinations(state, selection.columnIndex, selection.cardIndex))

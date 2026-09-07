@@ -60,6 +60,7 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
     return {
       bodyBackground: body.backgroundImage,
       faceUpBackground: faceUp.backgroundImage,
+      faceUpBackgroundColor: faceUp.backgroundColor,
       faceDownBackground: faceDown.backgroundImage,
       boardWidth: document.querySelector("#spider-board").getBoundingClientRect().width,
       viewportWidth: window.innerWidth,
@@ -78,7 +79,8 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   });
 
   expect(presentation.bodyBackground).toContain("gradient");
-  expect(presentation.faceUpBackground).toContain("gradient");
+  expect(presentation.faceUpBackground).toBe("none");
+  expect(presentation.faceUpBackgroundColor).toBe("rgb(255, 255, 255)");
   expect(presentation.faceDownBackground).toContain("gradient");
   expect(presentation.boardWidth).toBeLessThanOrEqual(presentation.viewportWidth);
   expect(presentation.shellLeft).toBeGreaterThanOrEqual(-1);
@@ -118,7 +120,7 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
     expect(card.overlapReveal).toBeGreaterThanOrEqual(29);
     expect(card.overlapReveal).toBeLessThanOrEqual(35);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
-    expect(card.rankFontSize).toBeGreaterThanOrEqual(27);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(34);
   }
 
   await page.screenshot({
@@ -160,6 +162,7 @@ test("Spider Solitaire keeps every covered desktop rank visible in a long in-pro
       shellTop: shell.top,
       shellBottom: shell.bottom,
       lastBottom: cards.at(-1).getBoundingClientRect().bottom,
+      lastHeight: cards.at(-1).getBoundingClientRect().height,
       scrollerBottom: scroller.bottom,
       cards: cards.slice(0, -1).map((card, index) => {
         const next = cards[index + 1];
@@ -188,6 +191,7 @@ test("Spider Solitaire keeps every covered desktop rank visible in a long in-pro
   expect(stackEvidence.shellBottom).toBeLessThanOrEqual(stackEvidence.viewportHeight + 1);
   expect(stackEvidence.scrollerBottom).toBeLessThanOrEqual(stackEvidence.viewportHeight + 1);
   expect(stackEvidence.lastBottom).toBeLessThanOrEqual(stackEvidence.scrollerBottom + 1);
+  expect(stackEvidence.lastHeight).toBeGreaterThanOrEqual(110);
   for (const card of stackEvidence.cards) {
     expect(card.rank).toMatch(/^(A|[2-9]|10|J|Q|K)$/);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
@@ -274,10 +278,10 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
   for (const card of exposed) {
     expect(card).toBeTruthy();
     expect(card.overlapReveal).toBeGreaterThanOrEqual(20);
-    expect(card.overlapReveal).toBeLessThanOrEqual(27);
+    expect(card.overlapReveal).toBeLessThanOrEqual(29);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
     expect(card.rankText).toMatch(/^(A|[2-9]|10|J|Q|K)$/);
-    expect(card.rankFontSize).toBeGreaterThanOrEqual(16);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(28);
   }
 
   await page.screenshot({
@@ -319,6 +323,7 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
       shellTop: shell.top,
       shellBottom: shell.bottom,
       lastBottom: cards.at(-1).getBoundingClientRect().bottom,
+      lastHeight: cards.at(-1).getBoundingClientRect().height,
       scrollerBottom: scroller.bottom,
       cards: cards.slice(0, -1).map((card, index) => {
         const next = cards[index + 1];
@@ -339,13 +344,44 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
   expect(evidence.shellBottom).toBeLessThanOrEqual(evidence.viewportHeight + 1);
   expect(evidence.scrollerBottom).toBeLessThanOrEqual(evidence.viewportHeight + 1);
   expect(evidence.lastBottom).toBeLessThanOrEqual(evidence.scrollerBottom + 1);
+  expect(evidence.lastHeight).toBeGreaterThanOrEqual(79);
   for (const card of evidence.cards) {
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
-    expect(card.rankFontSize).toBeGreaterThanOrEqual(16);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(28);
   }
 
   await page.screenshot({
     path: "visual-results/spider-solitaire-review/spider-solitaire-mobile-long-stack-360x800.png",
     fullPage: false,
   });
+});
+
+
+test("one-suit Spider prioritizes giant ranks with a small spade cue", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto("/spider-solitaire.html");
+  await page.evaluate((key) => localStorage.removeItem(key), saveKey);
+  await page.reload();
+
+  const face = await page.evaluate(() => {
+    const board = document.querySelector("#spider-board");
+    const card = document.querySelector(".spider-card.is-face-up");
+    const rank = card.querySelector(".card-rank");
+    const suit = card.querySelector(".card-suit");
+    const rankStyle = getComputedStyle(rank);
+    const suitStyle = getComputedStyle(suit);
+    return {
+      difficulty: board.dataset.difficulty,
+      rankSize: Number.parseFloat(rankStyle.fontSize),
+      suitSize: Number.parseFloat(suitStyle.fontSize),
+      suitText: suit.textContent,
+      centerVisible: getComputedStyle(card.querySelector(".card-center")).display !== "none",
+    };
+  });
+
+  expect(face.difficulty).toBe("1");
+  expect(face.rankSize).toBeGreaterThanOrEqual(28);
+  expect(face.suitSize).toBeLessThanOrEqual(9);
+  expect(face.suitText).toBe("♠");
+  expect(face.centerVisible).toBe(false);
 });
