@@ -34,6 +34,15 @@ const completedRuns = document.querySelector("#completed-runs");
 const winDialog = document.querySelector("#win-dialog");
 const winSummary = document.querySelector("#win-summary");
 const winNewGame = document.querySelector("#win-new-game");
+const desktopDifficulty = document.querySelector("#desktop-difficulty");
+const desktopNewGameButton = document.querySelector("#desktop-new-game");
+const desktopRestartButton = document.querySelector("#desktop-restart-game");
+const desktopUndoButton = document.querySelector("#desktop-undo");
+const desktopDealButton = document.querySelector("#desktop-deal-stock");
+const desktopMoveCount = document.querySelector("#desktop-move-count");
+const desktopStockCount = document.querySelector("#desktop-stock-count");
+const desktopRunCount = document.querySelector("#desktop-run-count");
+const desktopCompletedRuns = document.querySelector("#desktop-completed-runs");
 
 let state;
 let history = [];
@@ -168,23 +177,32 @@ function onColumnClick(columnIndex, event) {
   if (state.tableau[columnIndex].length === 0) setStatus("Select a movable card or sequence, then tap this empty column.");
 }
 
-function renderCompletedRuns() {
-  completedRuns.replaceChildren();
+function renderCompletedRunsInto(container, compact = false) {
+  if (!container) return;
+  container.replaceChildren();
   for (let index = 0; index < 8; index += 1) {
     const slot = document.createElement("span");
-    slot.className = "completed-slot";
+    slot.className = compact ? "spider-desktop-run-slot" : "completed-slot";
     const suit = state.completedRuns[index];
     if (suit) {
       slot.classList.add("is-filled");
-      if (suit === "hearts" || suit === "diamonds") slot.classList.add("is-red");
+      if (!compact && (suit === "hearts" || suit === "diamonds")) slot.classList.add("is-red");
       slot.textContent = suitMarks[suit];
       slot.title = `Completed ${suit} run`;
+    } else if (compact) {
+      slot.textContent = "";
+      slot.setAttribute("aria-hidden", "true");
     } else {
       slot.textContent = "A";
       slot.setAttribute("aria-hidden", "true");
     }
-    completedRuns.append(slot);
+    container.append(slot);
   }
+}
+
+function renderCompletedRuns() {
+  renderCompletedRunsInto(completedRuns);
+  renderCompletedRunsInto(desktopCompletedRuns, true);
 }
 
 function renderCard(card, columnIndex, cardIndex, topOffset) {
@@ -353,14 +371,21 @@ function renderBoard() {
 
 function render() {
   difficulty.value = String(state.difficulty);
+  if (desktopDifficulty) desktopDifficulty.value = String(state.difficulty);
   moveCount.textContent = String(state.moveCount);
+  if (desktopMoveCount) desktopMoveCount.textContent = String(state.moveCount);
   const deals = state.stock.length / 10;
   stockCount.textContent = String(deals);
+  if (desktopStockCount) desktopStockCount.textContent = String(deals);
   runCount.textContent = `${state.completedRuns.length} / 8`;
+  if (desktopRunCount) desktopRunCount.textContent = `${state.completedRuns.length} / 8`;
   stockHelp.textContent = `${deals} deal${deals === 1 ? "" : "s"} remaining`;
   dealId.textContent = state.seed.replaceAll("-", "").slice(0, 10).toUpperCase();
   undoButton.disabled = history.length === 0;
-  dealButton.disabled = !canDealSpiderStock(state);
+  if (desktopUndoButton) desktopUndoButton.disabled = history.length === 0;
+  const canDeal = canDealSpiderStock(state);
+  dealButton.disabled = !canDeal;
+  if (desktopDealButton) desktopDealButton.disabled = !canDeal;
   renderCompletedRuns();
   renderStockPile();
   renderBoard();
@@ -373,16 +398,22 @@ function render() {
   window.gameFrameDestinationBar?.sync?.();
 }
 
-newGameButton.addEventListener("click", () => startNewGame(Number(difficulty.value)));
-restartButton.addEventListener("click", restartSameDeal);
-undoButton.addEventListener("click", undo);
-dealButton.addEventListener("click", () => {
+function dealStock() {
   try {
     commit(dealSpiderStock(state), "Stock dealt: one face-up card added to each column.");
   } catch (error) {
     setStatus(error instanceof Error ? error.message : "Stock cannot be dealt.", "error");
   }
-});
+}
+
+newGameButton.addEventListener("click", () => startNewGame(Number(difficulty.value)));
+desktopNewGameButton?.addEventListener("click", () => startNewGame(Number(desktopDifficulty?.value || state.difficulty)));
+restartButton.addEventListener("click", restartSameDeal);
+desktopRestartButton?.addEventListener("click", restartSameDeal);
+undoButton.addEventListener("click", undo);
+desktopUndoButton?.addEventListener("click", undo);
+dealButton.addEventListener("click", dealStock);
+desktopDealButton?.addEventListener("click", dealStock);
 winNewGame.addEventListener("click", () => startNewGame(state.difficulty));
 mobileTableauQuery.addEventListener?.("change", () => render());
 
@@ -399,8 +430,18 @@ window.addEventListener("gameframe:destination-bar-ready", scheduleBoardRender);
 const boardResizeObserver = new ResizeObserver(scheduleBoardRender);
 boardResizeObserver.observe(boardScroller);
 
+function announceDifficulty(value) {
+  setStatus(`Difficulty set to ${value} suit${value === "1" ? "" : "s"}. Press New deal to reshuffle.`);
+}
+
 difficulty.addEventListener("change", () => {
-  setStatus(`Difficulty set to ${difficulty.value} suit${difficulty.value === "1" ? "" : "s"}. Press New deal to reshuffle.`);
+  if (desktopDifficulty) desktopDifficulty.value = difficulty.value;
+  announceDifficulty(difficulty.value);
+});
+
+desktopDifficulty?.addEventListener("change", () => {
+  difficulty.value = desktopDifficulty.value;
+  announceDifficulty(desktopDifficulty.value);
 });
 
 document.addEventListener("keydown", (event) => {
