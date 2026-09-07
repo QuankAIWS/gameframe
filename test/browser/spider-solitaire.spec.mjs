@@ -60,6 +60,7 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
     return {
       bodyBackground: body.backgroundImage,
       faceUpBackground: faceUp.backgroundImage,
+      faceUpBackgroundColor: faceUp.backgroundColor,
       faceDownBackground: faceDown.backgroundImage,
       boardWidth: document.querySelector("#spider-board").getBoundingClientRect().width,
       viewportWidth: window.innerWidth,
@@ -78,7 +79,8 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   });
 
   expect(presentation.bodyBackground).toContain("gradient");
-  expect(presentation.faceUpBackground).toContain("gradient");
+  expect(presentation.faceUpBackground).toBe("none");
+  expect(presentation.faceUpBackgroundColor).toBe("rgb(255, 255, 255)");
   expect(presentation.faceDownBackground).toContain("gradient");
   expect(presentation.boardWidth).toBeLessThanOrEqual(presentation.viewportWidth);
   expect(presentation.shellLeft).toBeGreaterThanOrEqual(-1);
@@ -276,10 +278,10 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
   for (const card of exposed) {
     expect(card).toBeTruthy();
     expect(card.overlapReveal).toBeGreaterThanOrEqual(20);
-    expect(card.overlapReveal).toBeLessThanOrEqual(27);
+    expect(card.overlapReveal).toBeLessThanOrEqual(29);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
     expect(card.rankText).toMatch(/^(A|[2-9]|10|J|Q|K)$/);
-    expect(card.rankFontSize).toBeGreaterThanOrEqual(22);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(28);
   }
 
   await page.screenshot({
@@ -345,7 +347,7 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
   expect(evidence.lastHeight).toBeGreaterThanOrEqual(79);
   for (const card of evidence.cards) {
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
-    expect(card.rankFontSize).toBeGreaterThanOrEqual(22);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(28);
   }
 
   await page.screenshot({
@@ -378,7 +380,7 @@ test("one-suit Spider prioritizes giant ranks with a small spade cue", async ({ 
   });
 
   expect(face.difficulty).toBe("1");
-  expect(face.rankSize).toBeGreaterThanOrEqual(22);
+  expect(face.rankSize).toBeGreaterThanOrEqual(28);
   expect(face.suitSize).toBeLessThanOrEqual(9);
   expect(face.suitText).toBe("♠");
   expect(face.centerVisible).toBe(false);
