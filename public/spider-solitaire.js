@@ -198,7 +198,8 @@ function renderCompletedRunsInto(container, compact = false) {
       slot.textContent = "";
       slot.setAttribute("aria-hidden", "true");
     } else {
-      slot.textContent = "A";
+      slot.classList.add("is-empty");
+      slot.textContent = "";
       slot.setAttribute("aria-hidden", "true");
     }
     container.append(slot);
