@@ -125,12 +125,22 @@ export function createCardFace(card, {
     rank.setAttribute("text-anchor", "start");
   }
 
-  const suitSize = Math.max(8, Math.min(12, Math.round(Number(rankSize) * 0.26)));
+  const prominentOneSuitCue = oneSuit && topCard;
+  const suitSize = prominentOneSuitCue
+    ? Math.max(18, Math.min(26, Math.round(Number(rankSize) * 0.68)))
+    : Math.max(8, Math.min(12, Math.round(Number(rankSize) * 0.26)));
   const suit = createText("card-kit-suit", cardSuitMark(card.suit));
   suit.style.fontSize = `${suitSize}px`;
-  suit.setAttribute("x", "96%");
-  suit.setAttribute("y", String(Math.max(9, Math.round(suitSize * 0.95))));
-  suit.setAttribute("text-anchor", "end");
+  if (prominentOneSuitCue) {
+    suit.setAttribute("x", "50%");
+    suit.setAttribute("y", "70%");
+    suit.setAttribute("text-anchor", "middle");
+    suit.dataset.presentation = "prominent";
+  } else {
+    suit.setAttribute("x", "96%");
+    suit.setAttribute("y", String(Math.max(9, Math.round(suitSize * 0.95))));
+    suit.setAttribute("text-anchor", "end");
+  }
 
   svg.append(rank, suit);
   face.append(svg);

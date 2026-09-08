@@ -48,6 +48,9 @@ test("Spider Solitaire is a GameFrame-local deterministic game with resumable br
   assert.match(styles, /var\(--card-table-felt\)/);
   assert.match(styles, /prefers-reduced-motion/);
   assert.match(styles, /content: "♠"/);
+  assert.match(styles, /#restart-game::before/);
+  assert.match(styles, /stock-card-back:last-child::after/);
+  assert.doesNotMatch(styles, /\\.stock-card-back \\{\\s*position: relative/);
   assert.match(cardTableTheme, /card-table-theme-classic-plus/);
   assert.match(cardTableTheme, /--card-table-cream: #f7f2e6/);
   assert.match(cardTableTheme, /--card-table-focus: #ffe17a/);

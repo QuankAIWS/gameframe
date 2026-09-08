@@ -278,11 +278,18 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
     const navRect = document.querySelector("#gameframe-destination-bar").getBoundingClientRect();
     const shellRect = document.querySelector(".spider-shell").getBoundingClientRect();
     const scrollerRect = document.querySelector(".spider-board-scroller").getBoundingClientRect();
+    const toolbar = document.querySelector(".spider-toolbar");
+    const toolbarRect = toolbar.getBoundingClientRect();
+    const controls = [...toolbar.querySelectorAll("button, .spider-difficulty")];
     return {
       bodyWidth: document.documentElement.scrollWidth,
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
       navBottom: navRect.bottom,
+      navHeight: navRect.height,
+      toolbarHeight: toolbarRect.height,
+      controlHeights: controls.map((control) => control.getBoundingClientRect().height),
+      toolbarBackground: getComputedStyle(toolbar).backgroundImage,
       shellLeft: shellRect.left,
       shellRight: shellRect.right,
       shellTop: shellRect.top,
@@ -301,6 +308,10 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
 
   expect(before.bodyWidth).toBeLessThanOrEqual(before.viewportWidth + 1);
   expect(before.documentHeight).toBeLessThanOrEqual(before.viewportHeight + 1);
+  expect(before.navHeight).toBeLessThanOrEqual(49);
+  expect(before.toolbarHeight).toBeLessThanOrEqual(52);
+  expect(Math.min(...before.controlHeights)).toBeGreaterThanOrEqual(44);
+  expect(before.toolbarBackground).toContain("gradient");
   expect(before.shellLeft).toBeGreaterThanOrEqual(-1);
   expect(before.shellRight).toBeGreaterThanOrEqual(before.viewportWidth - 1);
   expect(before.shellRight).toBeLessThanOrEqual(before.viewportWidth + 1);
@@ -316,6 +327,41 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
   await page.locator("#deal-stock").click();
   await expect(page.locator("#stock-count")).toHaveText("4");
   await expect(page.locator("#stock-pile .stock-card-back")).toHaveCount(4);
+
+  const stockEvidence = await page.evaluate(() => {
+    const pile = document.querySelector("#stock-pile");
+    const pileRect = pile.getBoundingClientRect();
+    const cards = [...pile.querySelectorAll(".stock-card-back")];
+    return {
+      pileLeft: pileRect.left,
+      pileRight: pileRect.right,
+      pileWidth: pileRect.width,
+      cards: cards.map((card) => {
+        const rect = card.getBoundingClientRect();
+        return {
+          left: rect.left,
+          right: rect.right,
+          width: rect.width,
+          height: rect.height,
+          position: getComputedStyle(card).position,
+        };
+      }),
+      topSpade: getComputedStyle(cards.at(-1), "::after").content,
+      topSpadeDisplay: getComputedStyle(cards.at(-1), "::after").display,
+      buriedSpadeDisplay: getComputedStyle(cards[0], "::after").display,
+    };
+  });
+
+  expect(stockEvidence.pileWidth).toBeLessThanOrEqual(54);
+  expect(stockEvidence.cards).toHaveLength(4);
+  expect(stockEvidence.cards.every((card) => card.position === "absolute")).toBe(true);
+  expect(stockEvidence.cards[0].left).toBeGreaterThanOrEqual(stockEvidence.pileLeft - 1);
+  expect(stockEvidence.cards.at(-1).right).toBeLessThanOrEqual(stockEvidence.pileRight + 1);
+  expect(stockEvidence.cards.at(-1).left - stockEvidence.cards[0].left).toBeGreaterThanOrEqual(11);
+  expect(stockEvidence.cards.at(-1).left - stockEvidence.cards[0].left).toBeLessThanOrEqual(13);
+  expect(stockEvidence.topSpade).toContain("♠");
+  expect(stockEvidence.topSpadeDisplay).not.toBe("none");
+  expect(stockEvidence.buriedSpadeDisplay).toBe("none");
 
   const exposed = await page.evaluate(() => {
     return [...document.querySelectorAll(".spider-column")].map((column) => {
@@ -420,7 +466,7 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
 });
 
 
-test("one-suit Spider prioritizes giant ranks with a small spade cue", async ({ page }) => {
+test("one-suit Spider prioritizes giant ranks with a prominent spade cue", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/spider-solitaire.html");
   await page.evaluate((key) => localStorage.removeItem(key), saveKey);
@@ -439,6 +485,9 @@ test("one-suit Spider prioritizes giant ranks with a small spade cue", async ({ 
       rankSize: Number.parseFloat(rankStyle.fontSize),
       suitSize: Number.parseFloat(suitStyle.fontSize),
       suitText: suit.textContent,
+      suitPresentation: suit.dataset.presentation || "",
+      suitX: suit.getAttribute("x"),
+      suitY: suit.getAttribute("y"),
       oneSuitClass: face.classList.contains("is-one-suit"),
       faceChildCount: face.querySelectorAll("text").length,
     };
@@ -446,8 +495,12 @@ test("one-suit Spider prioritizes giant ranks with a small spade cue", async ({ 
 
   expect(face.difficulty).toBe("1");
   expect(face.rankSize).toBeGreaterThanOrEqual(24);
-  expect(face.suitSize).toBeLessThanOrEqual(9);
+  expect(face.suitSize).toBeGreaterThanOrEqual(18);
+  expect(face.suitSize).toBeLessThanOrEqual(26);
   expect(face.suitText).toBe("♠");
+  expect(face.suitPresentation).toBe("prominent");
+  expect(face.suitX).toBe("50%");
+  expect(face.suitY).toBe("70%");
   expect(face.oneSuitClass).toBe(true);
   expect(face.faceChildCount).toBe(2);
 });
