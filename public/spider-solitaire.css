@@ -980,6 +980,11 @@ body.gameframe-has-destination-bar .spider-shell {
     box-shadow: 0 2px 4px rgba(0,0,0,.25), inset 0 1px rgba(255,255,255,.78);
   }
 
+  .spider-table-surface::after {
+    top: 64%;
+    font-size: clamp(7rem, 36vw, 9rem);
+  }
+
   .spider-card.is-selected {
     box-shadow: 0 0 0 1.5px #ffd84d, 0 3px 7px rgba(0,0,0,.28);
     transform: translateX(-50%) translateY(-2px);
@@ -1125,19 +1130,20 @@ body.spider-solitaire-route {
 
 .spider-desktop-actions button,
 .spider-desktop-difficulty {
-  border-color: rgba(225,229,230,.72);
-  color: var(--card-table-charcoal);
+  border-color: rgba(225,229,230,.38);
+  color: #f7f2e6;
   background:
-    linear-gradient(180deg, #fffdf7 0%, var(--card-table-cream) 58%, var(--card-table-cream-deep) 100%);
+    linear-gradient(180deg, #343a3f 0%, #23292d 58%, #171b1e 100%);
   box-shadow:
-    inset 0 1px rgba(255,255,255,.95),
-    0 1px 2px rgba(0,0,0,.30);
+    inset 0 1px rgba(255,255,255,.09),
+    0 1px 2px rgba(0,0,0,.36);
 }
 
 .spider-desktop-actions button:hover,
 .spider-desktop-actions button:focus-visible {
-  border-color: #fff;
-  background: linear-gradient(180deg, #fff 0%, #fbf5e9 60%, #e7dcc8 100%);
+  border-color: rgba(215,189,120,.78);
+  color: #fffdf7;
+  background: linear-gradient(180deg, #3b4348 0%, #252c30 100%);
 }
 
 .spider-desktop-actions button:focus-visible,
@@ -1152,7 +1158,7 @@ body.spider-solitaire-route {
 }
 
 .spider-desktop-difficulty span {
-  color: rgba(23,26,29,.72);
+  color: rgba(247,242,230,.68);
 }
 
 .spider-desktop-difficulty select {
@@ -1271,6 +1277,29 @@ body.spider-solitaire-route {
     inset 0 -22px 54px rgba(0,0,0,.12);
 }
 
+.spider-table-surface::after {
+  content: "♠";
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: 58%;
+  transform: translate(-50%, -50%);
+  color: rgba(1, 45, 24, .22);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(7rem, 19vw, 14rem);
+  line-height: 1;
+  text-shadow: 0 1px rgba(255,255,255,.025);
+  pointer-events: none;
+  user-select: none;
+}
+
+.spider-tray,
+.spider-status-row,
+.spider-board-scroller {
+  position: relative;
+  z-index: 1;
+}
+
 .spider-tray {
   border-bottom: 1px solid rgba(225,229,230,.16);
   box-shadow: inset 0 -1px rgba(0,0,0,.12);
@@ -1289,6 +1318,14 @@ body.spider-solitaire-route {
   box-shadow:
     inset 0 0 0 1px rgba(0,0,0,.10),
     inset 0 1px rgba(255,255,255,.035);
+}
+
+.completed-slot.is-empty::after {
+  content: "♠";
+  color: rgba(247,242,230,.16);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .78em;
+  line-height: 1;
 }
 
 .completed-slot.is-filled,
@@ -1408,8 +1445,12 @@ body.spider-solitaire-route .card-kit-face.is-top-card::after {
   opacity: .09;
 }
 
+body.spider-solitaire-route .card-kit-face.is-one-suit.is-top-card::before {
+  display: none;
+}
+
 body.spider-solitaire-route .card-kit-face.is-one-suit.is-top-card::after {
-  opacity: .07;
+  opacity: 0;
 }
 
 .spider-column.is-valid-destination {
@@ -1514,10 +1555,32 @@ body.spider-solitaire-route .card-kit-face.is-one-suit.is-top-card::after {
   }
 
   .spider-toolbar button {
-    font-size: .80rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 2px 2px 3px;
+    font-size: .76rem;
     font-weight: 900;
+    line-height: 1.02;
     text-shadow: 0 1px 1px rgba(0,0,0,.52);
   }
+
+  #new-game::before,
+  #restart-game::before,
+  #undo::before {
+    display: block;
+    min-height: 16px;
+    color: #f4ead0;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: .95;
+  }
+
+  #new-game::before { content: "+"; }
+  #restart-game::before { content: "↻"; }
+  #undo::before { content: "↶"; }
 
   .spider-toolbar button:hover,
   .spider-toolbar button:focus-visible {
