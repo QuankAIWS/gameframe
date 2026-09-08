@@ -94,6 +94,22 @@ The matrix is risk-based rather than combinatorial. Every meaningful player cont
 | Local two-player | Independent seats alternate and resume | Two-context | Covered |
 | Mobile match | Tap piece and destination without overflow | Mobile interaction | Layout covered; explicit touch journey pending |
 
+## Spider Solitaire journeys
+
+Spider is a local deterministic card game with dedicated routed **Feature UI Review** screenshot evidence in addition to ordinary browser interaction coverage.
+
+| State | Control or transition | Required evidence | Status |
+|---|---|---|---|
+| Fresh local deal | Load seeded table with ten tableau columns and five stock deals | Interaction | Covered |
+| Active local deal | Deal stock, persist, reload, and restart the same seed | Interaction | Covered |
+| Existing local play | Recover evidence-bounded Spider progress into Gamer Level without double-paying reload | Interaction; service-backed progression boundary | Covered |
+| Desktop table | Preserve clean white faces, large rank-first CardKit presentation, and bounded ten-column table | Interaction; Feature UI Review screenshot | Covered and visually reviewed at 1024×576, 1280×720, 1366×768, and 1920×1080 |
+| Desktop stress stack | Keep every covered rank visible and the final card inside the viewport | Interaction; Feature UI Review screenshot | Covered and visually reviewed at 1366×768 |
+| Mobile table | Fit all ten columns without horizontal or vertical page scrolling and keep covered ranks readable | Mobile; Feature UI Review screenshot | Covered and visually reviewed at 360×800 |
+| Mobile stress stack | Keep a long in-progress stack inside the viewport with old-eyes ranks visible | Mobile; Feature UI Review screenshot | Covered and visually reviewed at 360×800 |
+| One-suit play | Prioritize the rank while retaining a small spade cue | Mobile interaction/presentation | Covered |
+| Classic Plus presentation | Use shared card-table tokens while keeping decorative personality out of the rank/suit information surface | Interaction; Feature UI Review screenshot | Covered and visually reviewed |
+
 ## Tactical Movement journeys
 
 | State | Control or transition | Required evidence | Status |
