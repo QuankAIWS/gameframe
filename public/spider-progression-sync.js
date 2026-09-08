@@ -4,6 +4,7 @@ const PENDING_KEY = "scribbles-gameframe.spider-progression-pending:v1";
 const QUEUE_LIMIT = 64;
 const query = new URLSearchParams(window.location.search);
 let identityPromise = null;
+let installedIdentity = null;
 let syncPending = false;
 
 function readQueue() {
@@ -64,10 +65,19 @@ function queueKey(snapshot) {
 }
 
 async function identity() {
+  if (installedIdentity) return installedIdentity;
   if (!identityPromise) {
     identityPromise = tryGameFrameIdentity({
       preferredDevelopmentPlayerId: query.get("player"),
-    }).catch(() => null);
+    })
+      .then((value) => {
+        if (value) installedIdentity = value;
+        return value;
+      })
+      .catch(() => null)
+      .finally(() => {
+        identityPromise = null;
+      });
   }
   return identityPromise;
 }
@@ -115,7 +125,7 @@ export async function flushSpiderProgression() {
         return;
       }
       if (response.status === 401) {
-        identityPromise = Promise.resolve(null);
+        installedIdentity = null;
         return;
       }
       if (!response.ok) return;
