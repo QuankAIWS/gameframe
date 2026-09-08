@@ -5,6 +5,9 @@ export const GAMER_XP_RULES = Object.freeze({
   cascadeLevelClear: 100,
   cascadeBestStar: 20,
   weeklyBlitzParticipation: 50,
+  spiderMeaningfulPlay: 10,
+  spiderCompletedRun: 5,
+  spiderWin: 50,
 });
 
 export const MAX_CASCADE_LEVEL = 1000; // Keep aligned with public/cascade-engine.js LEVEL_COUNT; guarded by tests.
@@ -86,6 +89,13 @@ export interface ScoredProgressionInput {
   modeId: string;
   score: number;
   firstParticipation: boolean;
+  updatedAt?: number;
+}
+
+export type SpiderSolitaireAccomplishmentKind = "played" | "run" | "won";
+
+export interface SpiderSolitaireAccomplishmentInput {
+  kind: SpiderSolitaireAccomplishmentKind;
   updatedAt?: number;
 }
 
@@ -245,6 +255,27 @@ export function applyCompletedMatch(
     ...record,
     games: { ...record.games, [input.gameId]: current },
   }, xpGain, now);
+}
+
+export function applySpiderSolitaireAccomplishment(
+  record: PlayerProgressionRecord,
+  input: SpiderSolitaireAccomplishmentInput,
+): PlayerProgressionRecord {
+  const now = positiveTimestamp(input.updatedAt, Date.now());
+  if (input.kind === "played") {
+    return withXp(record, GAMER_XP_RULES.spiderMeaningfulPlay, now);
+  }
+  if (input.kind === "run") {
+    return withXp(record, GAMER_XP_RULES.spiderCompletedRun, now);
+  }
+
+  const current = cloneGameRecord(record.games["spider-solitaire"]);
+  current.played += 1;
+  current.wins += 1;
+  return withXp({
+    ...record,
+    games: { ...record.games, "spider-solitaire": current },
+  }, GAMER_XP_RULES.spiderWin, now);
 }
 
 export function revertCompletedMatch(
