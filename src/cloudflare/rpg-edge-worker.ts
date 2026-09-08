@@ -31,6 +31,7 @@ import {
   readPlayerProgression,
   readPublicPlayerProfile,
   recordCascadeProgression,
+  recordSpiderProgression,
   submitScoredResult,
   touchPlayerDirectory,
   updatePlayerPreferences,
@@ -228,6 +229,12 @@ export function createRpgEdgeGameFrameWorker(options: RpgEdgeWorkerOptions = {})
           const principal = await authenticatorFor(env).authenticate(request);
           const body = await readJson(request);
           return json(200, await recordCascadeProgression(env, principal.playerId, body));
+        }
+
+        if (request.method === "POST" && url.pathname === "/api/me/spider/progression") {
+          const principal = await authenticatorFor(env).authenticate(request);
+          const body = await readJson(request);
+          return json(200, await recordSpiderProgression(env, principal.playerId, body));
         }
 
         if (request.method === "POST" && url.pathname === "/api/me/cascade/telemetry") {
