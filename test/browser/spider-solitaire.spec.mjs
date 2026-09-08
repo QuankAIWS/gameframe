@@ -466,7 +466,7 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
 });
 
 
-test("one-suit Spider prioritizes giant ranks with a small spade cue", async ({ page }) => {
+test("one-suit Spider prioritizes giant ranks with a prominent spade cue", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/spider-solitaire.html");
   await page.evaluate((key) => localStorage.removeItem(key), saveKey);
@@ -495,12 +495,12 @@ test("one-suit Spider prioritizes giant ranks with a small spade cue", async ({ 
 
   expect(face.difficulty).toBe("1");
   expect(face.rankSize).toBeGreaterThanOrEqual(24);
-  expect(face.suitSize).toBeGreaterThanOrEqual(16);
-  expect(face.suitSize).toBeLessThanOrEqual(24);
+  expect(face.suitSize).toBeGreaterThanOrEqual(18);
+  expect(face.suitSize).toBeLessThanOrEqual(26);
   expect(face.suitText).toBe("♠");
   expect(face.suitPresentation).toBe("prominent");
   expect(face.suitX).toBe("50%");
-  expect(face.suitY).toBe("76%");
+  expect(face.suitY).toBe("70%");
   expect(face.oneSuitClass).toBe(true);
   expect(face.faceChildCount).toBe(2);
 });
