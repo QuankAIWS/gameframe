@@ -1102,7 +1102,7 @@ body.spider-solitaire-route {
 }
 
 .spider-card.is-face-up {
-  background: linear-gradient(155deg, #ffffff 0%, #ffffff 72%, #f5f4ef 100%);
+  background: #fff;
 }
 
 .spider-card.is-face-down,
