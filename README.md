@@ -44,7 +44,7 @@ The repository contains transport-neutral deterministic game definitions, revisi
 
 ### Spider Solitaire
 
-GameFrame includes a local deterministic Spider Solitaire proof with 1-, 2-, and 4-suit deals, seeded shuffles, standard 104-card tableau/stock rules, automatic King-to-Ace run collection, undo/restart, and browser save/resume.
+GameFrame includes a local deterministic Spider Solitaire proof with 1-, 2-, and 4-suit deals, seeded shuffles, standard 104-card tableau/stock rules, automatic King-to-Ace run collection, undo/restart, and browser save/resume. Meaningful Spider play also contributes to the signed-in player's durable Gamer Level through idempotent per-deal milestones; a bounded browser queue preserves unsynced progress without making the progression service a playability dependency.
 
 Traditional card presentation is shared through **CardKit**, a browser-facing layer for rank/suit rendering and reusable stack geometry. Game-specific rules stay in `src/games/*`; CardKit does not become a second rules engine.
 
