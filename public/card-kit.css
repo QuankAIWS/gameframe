@@ -47,3 +47,30 @@
 .card-kit-face.is-one-suit .card-kit-suit {
   opacity: .72;
 }
+
+
+.card-kit-face-svg {
+  position: relative;
+  z-index: 1;
+}
+
+.card-kit-face.is-top-card::after {
+  content: attr(data-suit-mark);
+  position: absolute;
+  z-index: 0;
+  right: 7%;
+  bottom: 3%;
+  color: currentColor;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.35rem, 70cqw, 4.6rem);
+  line-height: .82;
+  opacity: .075;
+}
+
+.card-kit-face.is-top-card .card-kit-suit {
+  opacity: .98;
+}
+
+.card-kit-face.is-one-suit.is-top-card::after {
+  opacity: .055;
+}
