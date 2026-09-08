@@ -171,6 +171,34 @@ export async function recordCascadeProgression(
   return progression;
 }
 
+export async function recordSpiderProgression(
+  env: GameFrameWorkerEnv,
+  playerId: string,
+  value: Record<string, unknown>,
+) {
+  const result = await internalJson<{
+    progression: PublicPlayerProgression;
+    awarded: boolean;
+    awardedMilestones: string[];
+    xpAwarded: number;
+  }>(
+    await playerStub(env, playerId).fetch(new Request("https://player.internal/player/progression/spider", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        playerId,
+        dealId: value.dealId,
+        difficulty: value.difficulty,
+        moveCount: value.moveCount,
+        completedRuns: value.completedRuns,
+        won: value.won,
+      }),
+    })),
+  );
+  await publishPlayerProgression(env, result.progression);
+  return result;
+}
+
 export async function submitScoredResult(
   env: GameFrameWorkerEnv,
   playerId: string,
