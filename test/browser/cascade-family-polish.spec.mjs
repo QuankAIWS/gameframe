@@ -19,7 +19,8 @@ async function expectFourLivesAfterSafeReload(page) {
   // Locator assertions survive that navigation; page.evaluate polling does not.
   // A legal move can generate a long cascade/presentation chain on a busy CI
   // runner, so keep this bounded but allow the full committed move to settle.
-  await expect(page.locator("#lives")).toHaveText("♥♥♥♥", { timeout: 12_000 });
+  await expect(page.locator("#lives")).toHaveAttribute("data-lives", "4", { timeout: 20_000 });
+  await expect(page.locator("#lives")).toHaveText("♥♥♥♥");
   expect(await page.evaluate((key) => Number(JSON.parse(localStorage.getItem(key))?.lives || 0), stateKey)).toBe(4);
 }
 

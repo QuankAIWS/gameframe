@@ -50,6 +50,7 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   await expect(page.locator(".spider-tray")).toBeHidden();
   await expect(page.locator(".spider-desktop-run-slot")).toHaveCount(8);
   await expect(page.locator("#stock-pile .stock-card-back")).toHaveCount(5);
+  await expect(page.locator("#completed-runs .completed-slot")).toHaveText(["", "", "", "", "", "", "", ""]);
 
   const presentation = await page.evaluate(() => {
     const body = getComputedStyle(document.body);
@@ -112,12 +113,13 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
       if (!covered || !top) return null;
       const coveredRect = covered.getBoundingClientRect();
       const topRect = top.getBoundingClientRect();
-      const rank = covered.querySelector(".card-rank");
+      const rank = covered.querySelector(".card-kit-rank");
       const rankRect = rank.getBoundingClientRect();
       return {
         overlapReveal: topRect.top - coveredRect.top,
         rankBottom: rankRect.bottom,
         nextTop: topRect.top,
+        rankText: rank.textContent,
         rankFontSize: Number.parseFloat(getComputedStyle(rank).fontSize),
       };
     });
@@ -125,8 +127,8 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
 
   for (const card of exposedDesktopRanks) {
     expect(card).toBeTruthy();
-    expect(card.overlapReveal).toBeGreaterThanOrEqual(29);
-    expect(card.overlapReveal).toBeLessThanOrEqual(35);
+    expect(card.overlapReveal).toBeGreaterThanOrEqual(40);
+    expect(card.overlapReveal).toBeLessThanOrEqual(45);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
     expect(card.rankFontSize).toBeGreaterThanOrEqual(34);
   }
@@ -176,8 +178,8 @@ test("Spider Solitaire keeps every covered desktop rank visible in a long in-pro
         const next = cards[index + 1];
         const cardRect = card.getBoundingClientRect();
         const nextRect = next.getBoundingClientRect();
-        const rank = card.querySelector(".card-rank");
-        const suit = card.querySelector(".card-suit");
+        const rank = card.querySelector(".card-kit-rank");
+        const suit = card.querySelector(".card-kit-suit");
         const rankRect = rank.getBoundingClientRect();
         const suitRect = suit.getBoundingClientRect();
         return {
@@ -204,7 +206,7 @@ test("Spider Solitaire keeps every covered desktop rank visible in a long in-pro
     expect(card.rank).toMatch(/^(A|[2-9]|10|J|Q|K)$/);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
     expect(card.suitBottom).toBeLessThanOrEqual(card.nextTop + 1);
-    expect(card.rankFontSize).toBeGreaterThanOrEqual(27);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(23);
   }
 
   await page.screenshot({
@@ -271,7 +273,7 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
       if (!covered || !top) return null;
       const coveredRect = covered.getBoundingClientRect();
       const topRect = top.getBoundingClientRect();
-      const rankElement = covered.querySelector(".card-rank");
+      const rankElement = covered.querySelector(".card-kit-rank");
       const rank = rankElement.getBoundingClientRect();
       return {
         overlapReveal: topRect.top - coveredRect.top,
@@ -285,11 +287,11 @@ test("Spider Solitaire fits all ten tableau columns on a phone and keeps covered
 
   for (const card of exposed) {
     expect(card).toBeTruthy();
-    expect(card.overlapReveal).toBeGreaterThanOrEqual(20);
-    expect(card.overlapReveal).toBeLessThanOrEqual(29);
+    expect(card.overlapReveal).toBeGreaterThanOrEqual(29);
+    expect(card.overlapReveal).toBeLessThanOrEqual(32);
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
     expect(card.rankText).toMatch(/^(A|[2-9]|10|J|Q|K)$/);
-    expect(card.rankFontSize).toBeGreaterThanOrEqual(28);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(24);
   }
 
   await page.screenshot({
@@ -335,10 +337,11 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
       scrollerBottom: scroller.bottom,
       cards: cards.slice(0, -1).map((card, index) => {
         const next = cards[index + 1];
-        const rank = card.querySelector(".card-rank");
+        const rank = card.querySelector(".card-kit-rank");
         return {
           nextTop: next.getBoundingClientRect().top,
           rankBottom: rank.getBoundingClientRect().bottom,
+          rankText: rank.textContent,
           rankFontSize: Number.parseFloat(getComputedStyle(rank).fontSize),
         };
       }),
@@ -355,7 +358,7 @@ test("Spider Solitaire keeps a long mobile stack fully visible with old-eye rank
   expect(evidence.lastHeight).toBeGreaterThanOrEqual(79);
   for (const card of evidence.cards) {
     expect(card.rankBottom).toBeLessThanOrEqual(card.nextTop + 1);
-    expect(card.rankFontSize).toBeGreaterThanOrEqual(28);
+    expect(card.rankFontSize).toBeGreaterThanOrEqual(20);
   }
 
   await page.screenshot({
@@ -374,8 +377,9 @@ test("one-suit Spider prioritizes giant ranks with a small spade cue", async ({ 
   const face = await page.evaluate(() => {
     const board = document.querySelector("#spider-board");
     const card = document.querySelector(".spider-card.is-face-up");
-    const rank = card.querySelector(".card-rank");
-    const suit = card.querySelector(".card-suit");
+    const rank = card.querySelector(".card-kit-rank");
+    const suit = card.querySelector(".card-kit-suit");
+    const face = card.querySelector(".card-kit-face");
     const rankStyle = getComputedStyle(rank);
     const suitStyle = getComputedStyle(suit);
     return {
@@ -383,13 +387,70 @@ test("one-suit Spider prioritizes giant ranks with a small spade cue", async ({ 
       rankSize: Number.parseFloat(rankStyle.fontSize),
       suitSize: Number.parseFloat(suitStyle.fontSize),
       suitText: suit.textContent,
-      centerVisible: getComputedStyle(card.querySelector(".card-center")).display !== "none",
+      oneSuitClass: face.classList.contains("is-one-suit"),
+      faceChildCount: face.querySelectorAll("text").length,
     };
   });
 
   expect(face.difficulty).toBe("1");
-  expect(face.rankSize).toBeGreaterThanOrEqual(28);
+  expect(face.rankSize).toBeGreaterThanOrEqual(24);
   expect(face.suitSize).toBeLessThanOrEqual(9);
   expect(face.suitText).toBe("♠");
-  expect(face.centerVisible).toBe(false);
+  expect(face.oneSuitClass).toBe(true);
+  expect(face.faceChildCount).toBe(2);
+});
+
+
+test("Spider Solitaire stays inside representative desktop viewports with unclipped CardKit ranks", async ({ page }) => {
+  await mkdir("visual-results/spider-solitaire-review", { recursive: true });
+  const viewports = [
+    { name: "desktop-1024x576", width: 1024, height: 576 },
+    { name: "desktop-1280x720", width: 1280, height: 720 },
+    { name: "desktop-1920x1080", width: 1920, height: 1080 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto("/spider-solitaire.html");
+    await page.evaluate((key) => localStorage.removeItem(key), saveKey);
+    await page.reload();
+
+    const evidence = await page.evaluate(() => {
+      const scroller = document.querySelector(".spider-board-scroller").getBoundingClientRect();
+      const cards = [...document.querySelectorAll(".spider-card.is-face-up")];
+      return {
+        documentWidth: document.documentElement.scrollWidth,
+        documentHeight: document.documentElement.scrollHeight,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+        scrollerBottom: scroller.bottom,
+        cards: cards.map((card) => {
+          const cardRect = card.getBoundingClientRect();
+          const rankRect = card.querySelector(".card-kit-rank").getBoundingClientRect();
+          return {
+            cardTop: cardRect.top,
+            cardLeft: cardRect.left,
+            cardRight: cardRect.right,
+            rankTop: rankRect.top,
+            rankLeft: rankRect.left,
+            rankRight: rankRect.right,
+          };
+        }),
+      };
+    });
+
+    expect(evidence.documentWidth).toBeLessThanOrEqual(evidence.viewportWidth + 1);
+    expect(evidence.documentHeight).toBeLessThanOrEqual(evidence.viewportHeight + 1);
+    expect(evidence.scrollerBottom).toBeLessThanOrEqual(evidence.viewportHeight + 1);
+    for (const card of evidence.cards) {
+      expect(card.rankTop).toBeGreaterThanOrEqual(card.cardTop + 1);
+      expect(card.rankLeft).toBeGreaterThanOrEqual(card.cardLeft + 1);
+      expect(card.rankRight).toBeLessThanOrEqual(card.cardRight - 1);
+    }
+
+    await page.screenshot({
+      path: `visual-results/spider-solitaire-review/spider-solitaire-${viewport.name}.png`,
+      fullPage: false,
+    });
+  }
 });

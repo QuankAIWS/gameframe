@@ -1124,6 +1124,7 @@ window.addEventListener("resize", drawScene);
 window.addEventListener("beforeunload", stopProjection);
 
 await detectRuntime();
+setBusy(false);
 const requestedMatch = urlState.get("match") ?? (!explicitDevelopmentSeat ? localStorage.getItem(recentMatchStorageKey) : null);
 if (requestedMatch) await loadMatch(requestedMatch);
 else lobbyMessage.textContent = "Choose an opponent to begin the first Monster Master duel.";

@@ -53,6 +53,8 @@ There is no compatibility requirement for the retired built-in `theo` seat. Game
 - GameFrame validates identity, revision, turn ownership, and legal actions before committing state.
 - HTTP owns commands. WebSockets are projection-only.
 - Tactical renderers consume authoritative state but own only camera, interpolation, hover, previews, and transient animation.
+- Card games keep deterministic rules/state in `src/games/*`. Shared CardKit presentation may own card-face semantics and layout geometry, but it must not acquire game-rule, turn, scoring, hidden-information, or persistence authority.
+- `public/card-kit.js` and `public/card-kit.css` are the shared browser card-presentation substrate; `/card-lab.html` is a development/review surface, not a game.
 - Monster Master Arena Battles and Monster Master RPG may reuse platform infrastructure without collapsing tactical rules and campaign narration into one authority.
 
 ## RPG boundary
@@ -128,6 +130,7 @@ Durable encounter→match restart/reconnect authority, shared-team tactical cont
 - Canonical validation is deliberate and exact-head.
 - Any commit after a canonical pass invalidates that pass.
 - Use the separate visual-review lane when screenshots are required; a successful capture is not visual approval.
+- For CardKit or traditional-card presentation work, inspect the actual Card Lab and game screenshots across representative mobile/desktop viewports before approval. Do not merge visible clipping, malformed rank placement, or distorted full-card proportions merely because geometry assertions pass.
 - Do not claim GitHub Actions, Cloudflare, Discord, Scribbles Runtime, or deployed behavior that was not actually exercised.
 
 ## Regression rule

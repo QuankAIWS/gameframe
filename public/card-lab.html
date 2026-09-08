@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CardKit Lab · GameFrame</title>
+  <link rel="stylesheet" href="/card-kit.css">
+  <link rel="stylesheet" href="/card-lab.css">
+</head>
+<body>
+  <main class="card-lab-shell">
+    <header class="card-lab-header">
+      <div>
+        <p>GAMEFRAME DEVELOPMENT SURFACE</p>
+        <h1>CardKit Lab</h1>
+      </div>
+      <span>Shared card faces · stack geometry · old-eyes review</span>
+    </header>
+
+    <section class="card-lab-panel">
+      <div class="card-lab-section-heading">
+        <h2>One-suit old-eyes faces</h2>
+        <p>Every rank, with the rank carrying the visual hierarchy and the spade reduced to a cue.</p>
+      </div>
+      <div id="rank-gallery" class="card-lab-rank-gallery"></div>
+    </section>
+
+    <section class="card-lab-grid">
+      <article class="card-lab-panel">
+        <div class="card-lab-section-heading">
+          <h2>Desktop stack</h2>
+          <p>Full final card, readable covered ranks.</p>
+        </div>
+        <div id="desktop-stack" class="card-lab-stack card-lab-stack-desktop"></div>
+      </article>
+
+      <article class="card-lab-panel">
+        <div class="card-lab-section-heading">
+          <h2>Phone-width tableau sample</h2>
+          <p>Ten narrow columns without sacrificing rank recognition.</p>
+        </div>
+        <div id="phone-tableau" class="card-lab-phone-tableau"></div>
+      </article>
+    </section>
+  </main>
+  <script type="module" src="/card-lab.js"></script>
+</body>
+</html>

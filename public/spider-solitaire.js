@@ -1,4 +1,12 @@
 import {
+  cardRankLabel,
+  cardSuitMark,
+  fitCardStack,
+  rankSizeForReveal,
+  renderCardFace,
+} from "./card-kit.js";
+
+import {
   applySpiderMove,
   canDealSpiderStock,
   canMoveSpiderSequence,
@@ -12,9 +20,6 @@ import {
 
 const SAVE_KEY = "scribbles-gameframe.spider-solitaire:v1";
 const HISTORY_LIMIT = 120;
-const rankLabels = Object.freeze({ 1: "A", 11: "J", 12: "Q", 13: "K" });
-const suitMarks = Object.freeze({ spades: "♠", hearts: "♥", diamonds: "♦", clubs: "♣" });
-
 const board = document.querySelector("#spider-board");
 const difficulty = document.querySelector("#difficulty");
 const newGameButton = document.querySelector("#new-game");
@@ -126,7 +131,7 @@ function undo() {
 }
 
 function rankLabel(rank) {
-  return rankLabels[rank] || String(rank);
+  return cardRankLabel(rank);
 }
 
 function selectableStart(columnIndex, cardIndex) {
@@ -187,13 +192,14 @@ function renderCompletedRunsInto(container, compact = false) {
     if (suit) {
       slot.classList.add("is-filled");
       if (!compact && (suit === "hearts" || suit === "diamonds")) slot.classList.add("is-red");
-      slot.textContent = suitMarks[suit];
+      slot.textContent = cardSuitMark(suit);
       slot.title = `Completed ${suit} run`;
     } else if (compact) {
       slot.textContent = "";
       slot.setAttribute("aria-hidden", "true");
     } else {
-      slot.textContent = "A";
+      slot.classList.add("is-empty");
+      slot.textContent = "";
       slot.setAttribute("aria-hidden", "true");
     }
     container.append(slot);
@@ -205,10 +211,14 @@ function renderCompletedRuns() {
   renderCompletedRunsInto(desktopCompletedRuns, true);
 }
 
-function renderCard(card, columnIndex, cardIndex, topOffset) {
+function renderCard(card, columnIndex, cardIndex, topOffset, {
+  rankSize,
+  rankAlign,
+  topCard,
+} = {}) {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = `spider-card ${card.faceUp ? "is-face-up" : "is-face-down"}`;
+  button.className = `spider-card card-kit-card ${card.faceUp ? "is-face-up" : "is-face-down"}`;
   button.style.top = `${topOffset}px`;
   button.style.zIndex = String(20 + cardIndex);
   button.dataset.cardId = card.id;
@@ -228,7 +238,12 @@ function renderCard(card, columnIndex, cardIndex, topOffset) {
   if (selection?.columnIndex === columnIndex && cardIndex >= selection.cardIndex) button.classList.add("is-selected");
   button.draggable = movable;
   button.setAttribute("aria-label", `${rankLabel(card.rank)} of ${card.suit}, column ${columnIndex + 1}${movable ? ", movable" : ""}`);
-  button.innerHTML = `<span class="card-corner"><span class="card-rank">${rankLabel(card.rank)}</span><span class="card-suit">${suitMarks[card.suit]}</span></span><span class="card-center" aria-hidden="true">${suitMarks[card.suit]}</span>`;
+  renderCardFace(button, card, {
+    oneSuit: state.difficulty === 1,
+    rankSize,
+    rankAlign,
+    topCard,
+  });
   button.addEventListener("click", () => onCardClick(columnIndex, cardIndex));
   button.addEventListener("dragstart", (event) => {
     if (!movable) { event.preventDefault(); return; }
@@ -244,7 +259,6 @@ function renderCard(card, columnIndex, cardIndex, topOffset) {
   });
   return button;
 }
-
 function renderStockPile() {
   stockPile.replaceChildren();
   const deals = state.stock.length / 10;
@@ -259,58 +273,15 @@ function renderStockPile() {
 function boardStackLayout(compact) {
   return {
     availableHeight: Math.max(compact ? 300 : 340, boardScroller.clientHeight || (compact ? 560 : 620)),
-    topStart: 1,
-    bottomPad: compact ? 7 : 9,
-    desiredFaceUp: compact ? 28 : 34,
-    minimumFaceUp: compact ? 20 : 24,
-    desiredFaceDown: compact ? 8 : 11,
+    topStart: compact ? 4 : 5,
+    bottomPad: compact ? 8 : 12,
+    desiredFaceUp: compact ? 31 : 44,
+    minimumFaceUp: compact ? 22 : 27,
+    desiredFaceDown: compact ? 8 : 12,
     minimumFaceDown: compact ? 4 : 6,
     cardHeight: compact ? 80 : 132,
   };
 }
-
-function columnReveals(cards, layout) {
-  const gaps = cards.slice(0, -1);
-  const faceUpCount = gaps.filter((card) => card.faceUp).length;
-  const faceDownCount = gaps.length - faceUpCount;
-  const roomForGaps = Math.max(
-    0,
-    layout.availableHeight - layout.topStart - layout.bottomPad - layout.cardHeight,
-  );
-
-  let faceUp = layout.desiredFaceUp;
-  let faceDown = layout.desiredFaceDown;
-  let excess = (faceUpCount * faceUp) + (faceDownCount * faceDown) - roomForGaps;
-
-  if (excess > 0 && faceDownCount > 0) {
-    const reducible = (faceDown - layout.minimumFaceDown) * faceDownCount;
-    const reduction = Math.min(excess, reducible);
-    faceDown -= reduction / faceDownCount;
-    excess -= reduction;
-  }
-
-  if (excess > 0 && faceUpCount > 0) {
-    const reducible = (faceUp - layout.minimumFaceUp) * faceUpCount;
-    const reduction = Math.min(excess, reducible);
-    faceUp -= reduction / faceUpCount;
-    excess -= reduction;
-  }
-
-  // Absolute no-scroll fallback for pathological columns: keep full card height,
-  // then proportionally compress overlap rather than turning the final card into a strip.
-  if (excess > 0) {
-    const weightedGapCount = (faceUpCount * 2) + faceDownCount;
-    const unit = weightedGapCount > 0 ? roomForGaps / weightedGapCount : 0;
-    faceUp = unit * 2;
-    faceDown = unit;
-  }
-
-  return {
-    faceUp: Math.max(1, faceUp),
-    faceDown: Math.max(1, faceDown),
-  };
-}
-
 function renderBoard() {
   board.replaceChildren();
   const compact = mobileTableauQuery.matches;
@@ -357,11 +328,31 @@ function renderBoard() {
       column.append(empty);
     }
 
-    const reveals = columnReveals(cards, layout);
-    let top = layout.topStart;
+    const reveals = fitCardStack({
+      cards,
+      availableHeight: layout.availableHeight,
+      cardHeight: layout.cardHeight,
+      topStart: layout.topStart,
+      bottomPad: layout.bottomPad,
+      desiredFaceUp: layout.desiredFaceUp,
+      minimumFaceUp: layout.minimumFaceUp,
+      desiredFaceDown: layout.desiredFaceDown,
+      minimumFaceDown: layout.minimumFaceDown,
+    });
+    const coveredRankSize = rankSizeForReveal(reveals.faceUp, {
+      minimum: compact ? 20 : 23,
+      maximum: compact ? 27 : 37,
+      verticalSafety: compact ? 5 : 6,
+    });
+    let top = reveals.topStart;
     cards.forEach((card, cardIndex) => {
-      column.append(renderCard(card, columnIndex, cardIndex, top));
-      if (cardIndex < cards.length - 1) {
+      const last = cardIndex === cards.length - 1;
+      column.append(renderCard(card, columnIndex, cardIndex, top, {
+        rankSize: last ? (compact ? 29 : 44) : coveredRankSize,
+        rankAlign: compact && state.difficulty === 1 ? "center" : "start",
+        topCard: last,
+      }));
+      if (!last) {
         top += card.faceUp ? reveals.faceUp : reveals.faceDown;
       }
     });

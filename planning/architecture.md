@@ -82,6 +82,26 @@ The versioned decision-provider boundary is generic. A future named agent connec
 
 GameFrame validates the returned action before commit. A future Scribbles Runtime connector may use this boundary for Theo, but Theo is not registered implicitly and cannot acquire hidden or Dungeon-Master-only information.
 
+## Traditional card presentation boundary
+
+Traditional card games may share **CardKit** for browser card-face rendering and stack/layout geometry. CardKit is presentation infrastructure, not a generic card-game rules engine.
+
+```text
+game-specific deterministic rules/state
+        ↓
+card model / observation
+        ↓
+CardKit face semantics + geometry
+        ↓
+DOM/SVG renderer
+        ↓
+optional Pixi renderer backend later
+```
+
+Spider Solitaire remains authoritative in its own deterministic rules engine. A future Hearts, Spades, Blackjack, FreeCell, or other card game should reuse CardKit presentation only where the visual/interaction primitive is actually shared.
+
+PixiJS may be used as an additional renderer for animation-heavy card surfaces without moving legal-action, turn, scoring, hidden-information, or persistence authority into Pixi.
+
 ## RPG boundary
 
 The RPG lifecycle crosses two separate authorities:

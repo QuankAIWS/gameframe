@@ -59,14 +59,14 @@ test("the illustration layer exposes one authoritative asset-ownership helper fo
 });
 
 
-test("illustrated HUD synchronization respects inspection, authored facing, and authoritative stats", () => {
+test("illustrated HUD synchronization respects inspection and authored facing while presentation stays visual-only", () => {
   assert.match(source, /\[data-turn-unit-id\]\.is-inspected/);
   assert.match(source, /authoredFacing:\s*"right"/);
   assert.match(source, /token\.dataset\.flipped = String/);
-  assert.match(source, /selectedPresentation\.summary/);
-  assert.match(source, /selectedUnit\.maxHealth/);
-  assert.match(source, /selectedUnit\.movement/);
-  assert.match(source, /selectedUnit\.initiative/);
+  assert.match(source, /const selectedUnit = selectedPresentationUnit\(view\)/);
+  assert.match(source, /setPortraitArt\(hudPortrait, selectedUnit\)/);
+  assert.doesNotMatch(source, /hud\.textContent\s*=/);
+  assert.doesNotMatch(source, /selectedPresentation\.summary/);
   assert.doesNotMatch(source, /"voidshard-reaver-v1": Object\.freeze/);
   assert.doesNotMatch(source, /"mossmaw-colossus-v1": Object\.freeze/);
 });

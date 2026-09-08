@@ -1,0 +1,49 @@
+.card-kit-card {
+  container-type: inline-size;
+}
+
+.card-kit-face {
+  position: absolute;
+  inset: 2px;
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+  color: #101318;
+}
+
+.card-kit-face.is-red {
+  color: #c81931;
+}
+
+.card-kit-face-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.card-kit-rank,
+.card-kit-suit {
+  fill: currentColor;
+  text-rendering: geometricPrecision;
+}
+
+.card-kit-rank {
+  font-family: Arial, Helvetica, ui-sans-serif, system-ui, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.055em;
+}
+
+.card-kit-rank[data-wide="true"] {
+  letter-spacing: -0.095em;
+}
+
+.card-kit-suit {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  opacity: .86;
+}
+
+.card-kit-face.is-one-suit .card-kit-suit {
+  opacity: .72;
+}

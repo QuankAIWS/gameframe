@@ -204,8 +204,12 @@ test("Cascade progression is monotonic, drives Gamer Level, and is visible throu
   await page.goto("/leaderboard.html?player=profile-viewer");
   await expect(page.getByRole("heading", { name: "Leaderboard" })).toBeVisible();
   const gamerRows = page.locator("#leaderboard-list .gamer-level-row");
-  await expect(gamerRows.first().locator(".gamer-level-value strong")).toHaveText(String(imported.gamerLevel));
-  await expect(gamerRows.first().getByRole("link")).toHaveAttribute("href", "/profile.html?view=cascade-mom");
+  const cascadeMomRow = gamerRows.filter({
+    has: page.locator('a[href="/profile.html?view=cascade-mom"]'),
+  });
+  await expect(cascadeMomRow).toHaveCount(1);
+  await expect(cascadeMomRow.locator(".gamer-level-value strong")).toHaveText(String(imported.gamerLevel));
+  await expect(cascadeMomRow.getByRole("link")).toHaveAttribute("href", "/profile.html?view=cascade-mom");
 });
 
 test("Games, Matches, Leaderboard, and Profile are first-class destination bar links", async ({ page }) => {

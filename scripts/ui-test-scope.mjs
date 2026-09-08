@@ -109,8 +109,8 @@ function isOthelloShellFile(file) {
 }
 
 function isSpiderShellFile(file) {
-  return /^public\/spider-solitaire[^/]*\.(?:html|css|js)$/.test(file)
-    || file === "test/browser/spider-solitaire.spec.mjs";
+  return /^public\/(?:spider-solitaire|card-(?:kit|lab))[^/]*\.(?:html|css|js)$/.test(file)
+    || /^test\/browser\/(?:spider-solitaire|card-kit).*\.spec\.mjs$/.test(file);
 }
 
 function isRpgFile(file) {

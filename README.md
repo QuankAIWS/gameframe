@@ -46,6 +46,8 @@ The repository contains transport-neutral deterministic game definitions, revisi
 
 GameFrame includes a local deterministic Spider Solitaire proof with 1-, 2-, and 4-suit deals, seeded shuffles, standard 104-card tableau/stock rules, automatic King-to-Ace run collection, undo/restart, and browser save/resume.
 
+Traditional card presentation is shared through **CardKit**, a browser-facing layer for rank/suit rendering and reusable stack geometry. Game-specific rules stay in `src/games/*`; CardKit does not become a second rules engine.
+
 ### Tic-Tac-Toe / American Checkers / tactical foundation
 
 GameFrame includes deterministic standalone proofs for ordinary board games and tactical movement/combat, including human/bot and human/human flows, persistence/recovery, browser controls, and player-specific observations.
@@ -171,7 +173,8 @@ Useful local surfaces:
 - `/monster-master.html` — Monster Master Arena Battles;
 - `/monster-master-rpg.html` — Monster Master RPG;
 - `/gameframe-rpg.html` — Role-Playing Games launcher;
-- `/battle-simulator.html` — Battle Simulator launcher.
+- `/battle-simulator.html` — Battle Simulator launcher;
+- `/card-lab.html` — CardKit visual-development surface.
 
 ## Repository map
 
