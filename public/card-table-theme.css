@@ -1,0 +1,32 @@
+/* Shared traditional-card table presentation tokens.
+   Game rules, layout geometry, persistence, and interaction authority stay game-specific. */
+
+.card-table-theme-classic-plus {
+  --card-table-felt: #0b7038;
+  --card-table-felt-bright: #118847;
+  --card-table-felt-deep: #064925;
+  --card-table-felt-shadow: #033319;
+
+  --card-table-cream: #f7f2e6;
+  --card-table-cream-deep: #ded4c1;
+  --card-table-paper: #ffffff;
+  --card-table-paper-edge: #c9c5bb;
+
+  --card-table-charcoal: #171a1d;
+  --card-table-charcoal-soft: #272c30;
+  --card-table-steel: #8f989f;
+  --card-table-steel-light: #e1e5e6;
+
+  --card-table-red: #b42b2d;
+  --card-table-pinstripe: #a13a32;
+  --card-table-gold: #d5b15b;
+  --card-table-focus: #ffe17a;
+
+  --card-table-white-text: #fbfff9;
+  --card-table-muted-text: rgba(248, 251, 247, .72);
+
+  --card-table-shadow-soft: rgba(0, 0, 0, .24);
+  --card-table-shadow-strong: rgba(0, 0, 0, .38);
+  --card-table-chrome-line: rgba(231, 235, 236, .58);
+  --card-table-chrome-glint: rgba(255, 255, 255, .20);
+}

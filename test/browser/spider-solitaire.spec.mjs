@@ -90,9 +90,14 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   await expect(page.locator("#completed-runs .completed-slot")).toHaveText(["", "", "", "", "", "", "", ""]);
 
   const presentation = await page.evaluate(() => {
-    const body = getComputedStyle(document.body);
-    const faceUp = getComputedStyle(document.querySelector(".spider-card.is-face-up"));
-    const faceDown = getComputedStyle(document.querySelector(".spider-card.is-face-down"));
+    const bodyElement = document.body;
+    const body = getComputedStyle(bodyElement);
+    const faceUpCard = document.querySelector(".spider-card.is-face-up");
+    const faceDownCard = document.querySelector(".spider-card.is-face-down");
+    const topFace = document.querySelector(".card-kit-face.is-top-card");
+    const faceUp = getComputedStyle(faceUpCard);
+    const faceDown = getComputedStyle(faceDownCard);
+    const desktopBar = getComputedStyle(document.querySelector(".spider-desktop-bar"));
     const navRect = document.querySelector("#gameframe-destination-bar").getBoundingClientRect();
     const desktopBarRect = document.querySelector(".spider-desktop-bar").getBoundingClientRect();
     const shellRect = document.querySelector(".spider-shell").getBoundingClientRect();
@@ -100,9 +105,14 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
     const scrollerRect = document.querySelector(".spider-board-scroller").getBoundingClientRect();
     return {
       bodyBackground: body.backgroundImage,
+      themeClass: bodyElement.classList.contains("card-table-theme-classic-plus"),
+      creamToken: body.getPropertyValue("--card-table-cream").trim(),
       faceUpBackground: faceUp.backgroundImage,
       faceUpBackgroundColor: faceUp.backgroundColor,
       faceDownBackground: faceDown.backgroundImage,
+      faceDownBadge: getComputedStyle(faceDownCard, "::after").content,
+      topFaceDecorationOpacity: Number.parseFloat(getComputedStyle(topFace, "::before").opacity),
+      desktopBarBackground: desktopBar.backgroundImage,
       boardWidth: document.querySelector("#spider-board").getBoundingClientRect().width,
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
@@ -123,6 +133,11 @@ test("Spider Solitaire presents the classic felt table on desktop", async ({ pag
   });
 
   expect(presentation.bodyBackground).toContain("gradient");
+  expect(presentation.themeClass).toBe(true);
+  expect(presentation.creamToken).toBe("#f7f2e6");
+  expect(presentation.desktopBarBackground).toContain("gradient");
+  expect(presentation.faceDownBadge).toContain("♠");
+  expect(presentation.topFaceDecorationOpacity).toBeLessThanOrEqual(0.05);
   expect(presentation.faceUpBackground).toBe("none");
   expect(presentation.faceUpBackgroundColor).toBe("rgb(255, 255, 255)");
   expect(presentation.faceDownBackground).toContain("gradient");

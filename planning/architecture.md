@@ -106,21 +106,25 @@ Historical credit is evidence-bounded. Existing browser save/undo state may be m
 
 ## Traditional card presentation boundary
 
-Traditional card games may share **CardKit** for browser card-face rendering and stack/layout geometry. CardKit is presentation infrastructure, not a generic card-game rules engine.
+Traditional card games may share **CardKit** for browser card-face rendering and stack/layout geometry. CardKit is presentation infrastructure, not a generic card-game rules engine. Reusable table material and accessibility-oriented presentation tokens live separately in `public/card-table-theme.css`; a game opts into a theme without moving its layout, rules, interaction, or persistence into that stylesheet.
 
 ```text
 game-specific deterministic rules/state
         ↓
 card model / observation
         ↓
-CardKit face semantics + geometry
+CardKit face semantics + stack geometry
+        ↓
+game-specific composition + shared card-table theme tokens
         ↓
 DOM/SVG renderer
         ↓
 optional Pixi renderer backend later
 ```
 
-Spider Solitaire remains authoritative in its own deterministic rules engine. A future Hearts, Spades, Blackjack, FreeCell, or other card game should reuse CardKit presentation only where the visual/interaction primitive is actually shared.
+The first shared token set is **Classic Plus**: high-contrast paper cards, deep felt, restrained chrome/cream controls, a muted vintage pinstripe accent, and explicit focus colors. Spider uses those tokens while keeping active card faces white and rank-first. Decorative personality belongs around the information surface—table material, card backs, run trays, controls, and terminal presentation—and must not reduce rank/suit legibility.
+
+Spider Solitaire remains authoritative in its own deterministic rules engine. A future Solitaire, Hearts, Spades, Blackjack, FreeCell, or other traditional card game should reuse CardKit and the shared table tokens only where the visual/interaction primitive is actually shared.
 
 PixiJS may be used as an additional renderer for animation-heavy card surfaces without moving legal-action, turn, scoring, hidden-information, or persistence authority into Pixi.
 

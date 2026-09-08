@@ -11,6 +11,7 @@ test("Spider Solitaire is a GameFrame-local deterministic game with resumable br
   const browser = await read("public/spider-solitaire.js");
   const progressionSync = await read("public/spider-progression-sync.js");
   const styles = await read("public/spider-solitaire.css");
+  const cardTableTheme = await read("public/card-table-theme.css");
   const hub = await read("public/game-hub.js");
   const navigation = await read("public/gameframe-nav.js");
   const packageJson = JSON.parse(await read("package.json"));
@@ -38,10 +39,18 @@ test("Spider Solitaire is a GameFrame-local deterministic game with resumable br
   assert.match(progressionSync, /spider-progression-pending:v1/);
   assert.match(progressionSync, /tryGameFrameIdentity/);
   assert.match(html, /id="win-progression"/);
+  assert.match(html, /href="\/card-table-theme\.css"/);
   assert.match(html, /href="\/card-kit\.css"/);
+  assert.match(html, /card-table-theme-classic-plus/);
   assert.match(browser, /from "\.\/card-kit\.js"/);
   assert.match(styles, /html, body \{[\s\S]*overflow: hidden/);
   assert.match(styles, /is-valid-destination/);
+  assert.match(styles, /var\(--card-table-felt\)/);
+  assert.match(styles, /prefers-reduced-motion/);
+  assert.match(styles, /content: "♠"/);
+  assert.match(cardTableTheme, /card-table-theme-classic-plus/);
+  assert.match(cardTableTheme, /--card-table-cream: #f7f2e6/);
+  assert.match(cardTableTheme, /--card-table-focus: #ffe17a/);
 
   assert.match(hub, /id: "spider-solitaire"/);
   assert.match(hub, /href: "\/spider-solitaire\.html"/);
