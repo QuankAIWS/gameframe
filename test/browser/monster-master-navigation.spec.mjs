@@ -36,6 +36,8 @@ test("returns from Monster Master through the universal destination bar", async 
 
 test("opens and closes Monster Master diagnostics", async ({ page }) => {
   await page.goto("/monster-master.html?player=monster-diagnostics");
+  await expect(page.locator("#monster-master-lobby-message")).toContainText("Choose an opponent");
+  await expect(page.locator("#monster-master-bot")).toBeEnabled();
   await page.locator("#monster-master-bot").click();
   await expect(page.locator("#monster-master-match")).toBeVisible();
 
