@@ -9,6 +9,7 @@ test("Spider Solitaire is a GameFrame-local deterministic game with resumable br
   const browserEngine = await read("public/spider-solitaire-engine.js");
   const html = await read("public/spider-solitaire.html");
   const browser = await read("public/spider-solitaire.js");
+  const progressionSync = await read("public/spider-progression-sync.js");
   const styles = await read("public/spider-solitaire.css");
   const hub = await read("public/game-hub.js");
   const navigation = await read("public/gameframe-nav.js");
@@ -32,6 +33,11 @@ test("Spider Solitaire is a GameFrame-local deterministic game with resumable br
   assert.match(browser, /restartSameDeal/);
   assert.match(browser, /dragstart/);
   assert.match(browser, /validSpiderDestinations/);
+  assert.match(browser, /queueSpiderProgression/);
+  assert.match(progressionSync, /\/api\/me\/spider\/progression/);
+  assert.match(progressionSync, /spider-progression-pending:v1/);
+  assert.match(progressionSync, /tryGameFrameIdentity/);
+  assert.match(html, /id="win-progression"/);
   assert.match(html, /href="\/card-kit\.css"/);
   assert.match(browser, /from "\.\/card-kit\.js"/);
   assert.match(styles, /html, body \{[\s\S]*overflow: hidden/);
@@ -41,5 +47,6 @@ test("Spider Solitaire is a GameFrame-local deterministic game with resumable br
   assert.match(hub, /href: "\/spider-solitaire\.html"/);
   assert.match(navigation, /SPIDER SOLITAIRE/);
   assert.match(packageJson.scripts["check:spider-solitaire"], /--check/);
+  assert.match(packageJson.scripts["check:browser"], /public\/spider-progression-sync\.js/);
   assert.match(packageJson.scripts["check:browser"], /public\/spider-solitaire\.js/);
 });
