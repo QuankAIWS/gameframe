@@ -127,13 +127,13 @@ export function createCardFace(card, {
 
   const prominentOneSuitCue = oneSuit && topCard;
   const suitSize = prominentOneSuitCue
-    ? Math.max(16, Math.min(24, Math.round(Number(rankSize) * 0.62)))
+    ? Math.max(18, Math.min(26, Math.round(Number(rankSize) * 0.68)))
     : Math.max(8, Math.min(12, Math.round(Number(rankSize) * 0.26)));
   const suit = createText("card-kit-suit", cardSuitMark(card.suit));
   suit.style.fontSize = `${suitSize}px`;
   if (prominentOneSuitCue) {
     suit.setAttribute("x", "50%");
-    suit.setAttribute("y", "76%");
+    suit.setAttribute("y", "70%");
     suit.setAttribute("text-anchor", "middle");
     suit.dataset.presentation = "prominent";
   } else {
