@@ -39,11 +39,13 @@ test("Spider Solitaire is a GameFrame-local deterministic game with resumable br
   assert.match(progressionSync, /spider-progression-pending:v1/);
   assert.match(progressionSync, /tryGameFrameIdentity/);
   assert.match(html, /id="win-progression"/);
+  assert.match(html, /href="\/card-table-theme\.css"/);
   assert.match(html, /href="\/card-kit\.css"/);
+  assert.match(html, /card-table-theme-classic-plus/);
   assert.match(browser, /from "\.\/card-kit\.js"/);
   assert.match(styles, /html, body \{[\s\S]*overflow: hidden/);
   assert.match(styles, /is-valid-destination/);
-  assert.match(styles, /var\\(--card-table-felt\\)/);
+  assert.match(styles, /var\(--card-table-felt\)/);
   assert.match(styles, /prefers-reduced-motion/);
   assert.match(styles, /content: "♠"/);
   assert.match(cardTableTheme, /card-table-theme-classic-plus/);
