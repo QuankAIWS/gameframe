@@ -35,9 +35,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
           cache: npm
@@ -51,7 +51,7 @@ jobs:
         run: xvfb-run -a npx playwright test test/browser/cascade-compositor-black-flash.spec.mjs test/browser/cascade-compositor-isolation.spec.mjs test/browser/cascade-render-lifecycle.spec.mjs --config playwright.config.mjs --headed
       - name: Upload compositor probe frames
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cascade-compositor-probe-${{ github.run_id }}
           path: test-results/**/*.png

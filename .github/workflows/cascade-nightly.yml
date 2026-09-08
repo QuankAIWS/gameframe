@@ -19,7 +19,7 @@ jobs:
       run: ${{ steps.decide.outputs.run }}
     steps:
       - name: Check out main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Decide whether exhaustive bot regression is useful
@@ -52,9 +52,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
           cache: npm
@@ -76,9 +76,9 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Check out main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
           cache: npm
@@ -88,7 +88,7 @@ jobs:
         run: npm run cascade:profile -- --shard-index=${{ matrix.shard }} --shard-count=8 --runs=6 --json=cascade-nightly-shard-${{ matrix.shard }}.json
       - name: Upload nightly profile shard
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cascade-nightly-profile-${{ github.run_id }}-shard-${{ matrix.shard }}
           path: cascade-nightly-shard-${{ matrix.shard }}.json
