@@ -82,6 +82,28 @@ The versioned decision-provider boundary is generic. A future named agent connec
 
 GameFrame validates the returned action before commit. A future Scribbles Runtime connector may use this boundary for Theo, but Theo is not registered implicitly and cannot acquire hidden or Dungeon-Master-only information.
 
+## Local-game social progression
+
+Local deterministic games may contribute accomplishments to the durable player platform without moving game rules into the progression service.
+
+Spider Solitaire follows this boundary:
+
+```text
+local deterministic Spider state
+        ↓
+bounded deal-progress snapshot
+        ↓
+authenticated player boundary
+        ↓
+idempotent per-deal accomplishment markers
+        ↓
+Gamer XP + lifetime player projection
+```
+
+The browser never submits an XP amount. It submits bounded game evidence such as deal identity, move count, completed runs, and terminal status; the player platform owns award values and duplicate suppression. Progression is optional metadata: failed authentication, offline play, or a temporarily unavailable player platform must not prevent Spider from running locally. A bounded local pending ledger may replay snapshots later.
+
+Historical credit is evidence-bounded. Existing browser save/undo state may be migrated forward, but the platform must not fabricate prior deals that were already discarded before telemetry existed.
+
 ## Traditional card presentation boundary
 
 Traditional card games may share **CardKit** for browser card-face rendering and stack/layout geometry. CardKit is presentation infrastructure, not a generic card-game rules engine.
