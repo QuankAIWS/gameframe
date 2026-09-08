@@ -1066,7 +1066,9 @@ body.gameframe-has-destination-bar .spider-shell {
     max-width: 44px;
     padding: 3px;
   }
-}\n\n/* Classic Plus: older-player readability with restrained vintage-American character.
+}
+
+/* Classic Plus: older-player readability with restrained vintage-American character.
    Geometry remains governed above; this layer only changes presentation. */
 body.spider-solitaire-route {
   --felt: var(--card-table-felt);
@@ -1565,4 +1567,4 @@ body.spider-solitaire-route .card-kit-face.is-one-suit.is-top-card::after {
     border-color: #fff;
   }
 }
-\n
+
