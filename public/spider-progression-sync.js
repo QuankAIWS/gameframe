@@ -106,12 +106,14 @@ export function queueSpiderProgression(state, history = []) {
 
 export async function flushSpiderProgression() {
   if (syncPending) return;
+  let queue = readQueue();
+  if (!queue.length) return;
   const currentIdentity = await identity();
   if (!currentIdentity) return;
 
   syncPending = true;
   try {
-    let queue = readQueue();
+    queue = readQueue();
     while (queue.length) {
       const snapshot = queue[0];
       let response;
