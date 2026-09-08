@@ -3,6 +3,7 @@ import {
   applyCascadeProgression,
   applyCompletedMatch,
   applyScoredProgression,
+  applySpiderSolitaireAccomplishment,
   emptyPlayerProgression,
   publicPlayerProgression,
   revertCompletedMatch,
@@ -341,6 +342,9 @@ export class PlayerPlatformObjectRuntime {
       if (request.method === "POST" && url.pathname === "/player/progression/cascade") {
         return json(200, await this.#recordCascadeProgression(await readJson(request)));
       }
+      if (request.method === "POST" && url.pathname === "/player/progression/spider") {
+        return json(200, await this.#recordSpiderProgression(await readJson(request)));
+      }
       return json(404, { error: "not_found" });
     } catch (error) {
       return errorResponse(error);
@@ -614,6 +618,61 @@ export class PlayerPlatformObjectRuntime {
     if (firstParticipation) await this.#storage.put(markerKey(accomplishmentId), true);
     record = next;
     return { progression: publicPlayerProgression(record), awarded: firstParticipation };
+  }
+
+  async #recordSpiderProgression(body: Record<string, unknown>) {
+    const playerId = boundedText(body.playerId, "Progression player ID", 160);
+    const dealId = boundedText(body.dealId, "Spider deal ID", 160);
+    const difficulty = Math.floor(Number(body.difficulty));
+    if (![1, 2, 4].includes(difficulty)) {
+      throw Object.assign(new Error("Spider difficulty must be 1, 2, or 4 suits."), { code: "player_platform_invalid" });
+    }
+
+    const moveCount = Math.floor(Number(body.moveCount));
+    const completedRuns = Math.floor(Number(body.completedRuns));
+    if (!Number.isFinite(moveCount) || moveCount < 0 || moveCount > 1_000_000) {
+      throw Object.assign(new Error("Spider move count is invalid."), { code: "player_platform_invalid" });
+    }
+    if (!Number.isFinite(completedRuns) || completedRuns < 0 || completedRuns > 8) {
+      throw Object.assign(new Error("Spider completed-run count is invalid."), { code: "player_platform_invalid" });
+    }
+    const won = Boolean(body.won);
+    if (won && completedRuns !== 8) {
+      throw Object.assign(new Error("A Spider win requires eight completed runs."), { code: "player_platform_invalid" });
+    }
+
+    const initial = await this.#progression(playerId);
+    let progression = initial;
+    const awardedMilestones: string[] = [];
+    const award = async (
+      suffix: string,
+      kind: "played" | "run" | "won",
+    ) => {
+      const result = await this.#applyAccomplishment(
+        playerId,
+        `spider:${difficulty}:${dealId}:${suffix}`,
+        (record) => applySpiderSolitaireAccomplishment(record, { kind, updatedAt: Date.now() }),
+      );
+      progression = result.progression;
+      if (result.awarded) awardedMilestones.push(suffix);
+    };
+
+    if (moveCount > 0 || completedRuns > 0 || won) {
+      await award("played", "played");
+    }
+    for (let run = 1; run <= completedRuns; run += 1) {
+      await award(`run:${run}`, "run");
+    }
+    if (won) {
+      await award("won", "won");
+    }
+
+    return {
+      progression,
+      awarded: awardedMilestones.length > 0,
+      awardedMilestones,
+      xpAwarded: Math.max(0, progression.gamerXp - initial.gamerXp),
+    };
   }
 
   async #recordCascadeProgression(body: Record<string, unknown>) {

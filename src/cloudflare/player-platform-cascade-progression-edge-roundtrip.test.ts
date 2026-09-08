@@ -143,3 +143,69 @@ test("Cascade progression round-trips through authenticated edge GET and POST ro
   assert.equal(monotonic.cascade.starsByLevel["7"], 3);
   assert.equal(monotonic.cascade.starsByLevel["12"], 2);
 });
+
+
+test("Spider progression round-trips through the authenticated edge with duplicate suppression", async () => {
+  const playerId = "discord:edge-spider-player";
+  const matches = new PlayerPlatformNamespace();
+  const env = environment(matches);
+  const worker = createRpgEdgeGameFrameWorker({ authenticator: authenticator(playerId) });
+
+  const submit = (body: Record<string, unknown>) => worker.fetch(
+    new Request("https://gameframe.cc/api/me/spider/progression", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+    env,
+  );
+  const deal = {
+    dealId: "edge-spider-deal",
+    difficulty: 1,
+    moveCount: 1,
+    completedRuns: 0,
+    won: false,
+  };
+
+  const firstResponse = await submit(deal);
+  assert.equal(firstResponse.status, 200);
+  const first = await json(firstResponse);
+  assert.equal(first.awarded, true);
+  assert.equal(first.xpAwarded, 10);
+  assert.equal(first.progression.gamerXp, 10);
+
+  const duplicateResponse = await submit(deal);
+  assert.equal(duplicateResponse.status, 200);
+  const duplicate = await json(duplicateResponse);
+  assert.equal(duplicate.awarded, false);
+  assert.equal(duplicate.xpAwarded, 0);
+  assert.equal(duplicate.progression.gamerXp, 10);
+
+  const twoRunsResponse = await submit({ ...deal, completedRuns: 2 });
+  assert.equal(twoRunsResponse.status, 200);
+  const twoRuns = await json(twoRunsResponse);
+  assert.equal(twoRuns.xpAwarded, 10);
+  assert.equal(twoRuns.progression.gamerXp, 20);
+
+  const winResponse = await submit({ ...deal, completedRuns: 8, won: true });
+  assert.equal(winResponse.status, 200);
+  const won = await json(winResponse);
+  assert.equal(won.xpAwarded, 80);
+  assert.equal(won.progression.gamerXp, 100);
+  assert.deepEqual(won.progression.games["spider-solitaire"], {
+    played: 1,
+    wins: 1,
+    losses: 0,
+    draws: 0,
+  });
+
+  const readBackResponse = await worker.fetch(
+    new Request("https://gameframe.cc/api/me/progression"),
+    env,
+  );
+  assert.equal(readBackResponse.status, 200);
+  const readBack = await json(readBackResponse);
+  assert.equal(readBack.gamerXp, 100);
+  assert.equal(readBack.gamerLevel, 2);
+  assert.equal(readBack.games["spider-solitaire"].wins, 1);
+});

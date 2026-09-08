@@ -5,6 +5,10 @@ import {
   rankSizeForReveal,
   renderCardFace,
 } from "./card-kit.js";
+import {
+  installSpiderProgressionSync,
+  queueSpiderProgression,
+} from "./spider-progression-sync.js";
 
 import {
   applySpiderMove,
@@ -38,6 +42,7 @@ const status = document.querySelector("#status");
 const completedRuns = document.querySelector("#completed-runs");
 const winDialog = document.querySelector("#win-dialog");
 const winSummary = document.querySelector("#win-summary");
+const winProgression = document.querySelector("#win-progression");
 const winNewGame = document.querySelector("#win-new-game");
 const desktopDifficulty = document.querySelector("#desktop-difficulty");
 const desktopNewGameButton = document.querySelector("#desktop-new-game");
@@ -90,17 +95,30 @@ function remember() {
   if (history.length > HISTORY_LIMIT) history.shift();
 }
 
+function queueCurrentProgression() {
+  if (!state) return;
+  queueSpiderProgression(state, history);
+}
+
 function commit(nextState, message) {
+  const previousState = state;
   remember();
   state = nextState;
   selection = null;
   dragSelection = null;
   save();
+  const progressionAdvanced = (
+    (previousState.moveCount === 0 && state.moveCount > 0)
+    || state.completedRuns.length > previousState.completedRuns.length
+    || (previousState.status !== "won" && state.status === "won")
+  );
+  if (progressionAdvanced) queueCurrentProgression();
   setStatus(message, state.status === "won" ? "success" : "neutral");
   render();
 }
 
 function startNewGame(selectedDifficulty = Number(difficulty.value || state?.difficulty || 1)) {
+  queueCurrentProgression();
   state = createSpiderState({ difficulty: selectedDifficulty, seed: freshSeed() });
   history = [];
   selection = null;
@@ -111,6 +129,7 @@ function startNewGame(selectedDifficulty = Number(difficulty.value || state?.dif
 }
 
 function restartSameDeal() {
+  queueCurrentProgression();
   state = createSpiderState({ difficulty: state.difficulty, seed: state.seed });
   history = [];
   selection = null;
@@ -122,6 +141,7 @@ function restartSameDeal() {
 
 function undo() {
   if (!history.length) return;
+  queueCurrentProgression();
   state = history.pop();
   selection = null;
   dragSelection = null;
@@ -385,6 +405,8 @@ function render() {
   if (state.status === "won") {
     winSummary.textContent = `Eight runs completed in ${state.moveCount} moves.`;
     setStatus(`Table cleared in ${state.moveCount} moves.`, "success");
+  } else if (winProgression) {
+    winProgression.textContent = "Spider play adds to your Gamer Level.";
   }
   window.gameFrameDestinationBar?.sync?.();
 }
@@ -447,6 +469,18 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+window.addEventListener("gameframe:spider-progression", (event) => {
+  const result = event.detail?.result;
+  const progression = result?.progression;
+  if (!progression || !winProgression) return;
+  const gain = Math.max(0, Number(result.xpAwarded) || 0);
+  winProgression.textContent = gain > 0
+    ? `+${gain} Gamer XP saved · Gamer Level ${progression.gamerLevel}`
+    : `Gamer progress saved · Level ${progression.gamerLevel}`;
+});
+
+installSpiderProgressionSync();
+
 if (!load()) {
   state = createSpiderState({ difficulty: 1, seed: freshSeed() });
   save();
@@ -454,4 +488,5 @@ if (!load()) {
 } else {
   setStatus("Saved deal resumed.");
 }
+queueCurrentProgression();
 render();

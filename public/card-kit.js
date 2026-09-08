@@ -101,6 +101,7 @@ export function createCardFace(card, {
   if (topCard) face.classList.add("is-top-card");
   face.dataset.rank = label;
   face.dataset.suit = card.suit;
+  face.dataset.suitMark = cardSuitMark(card.suit);
 
   const svg = document.createElementNS(SVG_NS, "svg");
   svg.setAttribute("class", "card-kit-face-svg");

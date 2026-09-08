@@ -250,6 +250,13 @@ export function createGameFrameServer(
         return json(response, 200, players.recordCascadeProgression(principal.playerId, body));
       }
 
+      if (request.method === "POST" && url.pathname === "/api/me/spider/progression") {
+        const principal = await authenticator.authenticate(authenticationRequest(request, url));
+        players.register(principal);
+        const body = await readJson(request);
+        return json(response, 200, players.recordSpiderProgression(principal.playerId, body));
+      }
+
       if (request.method === "POST" && url.pathname === "/api/scores") {
         const principal = await authenticator.authenticate(authenticationRequest(request, url));
         players.register(principal);

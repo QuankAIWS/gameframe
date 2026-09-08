@@ -2,6 +2,8 @@ import { mkdir } from "node:fs/promises";
 import { test, expect } from "@playwright/test";
 
 const saveKey = "scribbles-gameframe.spider-solitaire:v1";
+const pendingProgressionKey = "scribbles-gameframe.spider-progression-pending:v1";
+const playerHeader = (playerId) => ({ "x-gameframe-player-id": playerId });
 
 test("Spider Solitaire loads, persists a stock deal, and restarts the same seeded deal", async ({ page }) => {
   await page.goto("/spider-solitaire.html");
@@ -36,6 +38,41 @@ test("Spider Solitaire loads, persists a stock deal, and restarts the same seede
   await expect(page.locator("#deal-id")).toHaveText(dealId);
 });
 
+
+test("Spider Solitaire recovers saved local play into Gamer Level without double-paying reloads", async ({ page }) => {
+  const playerId = "spider-retro-dad";
+  const context = page.context();
+  await page.goto("/spider-solitaire.html");
+  await page.evaluate(({ saveKey, pendingKey }) => {
+    localStorage.removeItem(saveKey);
+    localStorage.removeItem(pendingKey);
+  }, { saveKey, pendingKey: pendingProgressionKey });
+  await page.reload();
+
+  await context.setOffline(true);
+  await page.locator("#desktop-deal-stock").click();
+  await expect(page.locator("#move-count")).toHaveText("1");
+  await expect.poll(() => page.evaluate((key) => Boolean(localStorage.getItem(key)), pendingProgressionKey)).toBe(true);
+
+  await page.close();
+  await context.setOffline(false);
+  const recoveryPage = await context.newPage();
+  await recoveryPage.goto(`/spider-solitaire.html?player=${playerId}`);
+
+  await expect.poll(async () => {
+    const response = await recoveryPage.request.get("/api/me/progression", { headers: playerHeader(playerId) });
+    if (!response.ok()) return -1;
+    return (await response.json()).gamerXp;
+  }).toBe(10);
+
+  await expect.poll(() => recoveryPage.evaluate((key) => localStorage.getItem(key), pendingProgressionKey)).toBeNull();
+  await recoveryPage.reload();
+
+  const progressionResponse = await recoveryPage.request.get("/api/me/progression", { headers: playerHeader(playerId) });
+  expect(progressionResponse.ok()).toBe(true);
+  const progression = await progressionResponse.json();
+  expect(progression.gamerXp).toBe(10);
+});
 
 test("Spider Solitaire presents the classic felt table on desktop", async ({ page }) => {
   await mkdir("visual-results/spider-solitaire-review", { recursive: true });
