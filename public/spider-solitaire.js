@@ -101,12 +101,18 @@ function queueCurrentProgression() {
 }
 
 function commit(nextState, message) {
+  const previousState = state;
   remember();
   state = nextState;
   selection = null;
   dragSelection = null;
   save();
-  queueCurrentProgression();
+  const progressionAdvanced = (
+    (previousState.moveCount === 0 && state.moveCount > 0)
+    || state.completedRuns.length > previousState.completedRuns.length
+    || (previousState.status !== "won" && state.status === "won")
+  );
+  if (progressionAdvanced) queueCurrentProgression();
   setStatus(message, state.status === "won" ? "success" : "neutral");
   render();
 }
