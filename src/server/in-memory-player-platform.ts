@@ -4,6 +4,7 @@ import {
   applyCascadeProgression,
   applyCompletedMatch,
   applyScoredProgression,
+  applySpiderSolitaireAccomplishment,
   emptyPlayerProgression,
   publicPlayerProgression,
   type PlayerProgressionRecord,
@@ -85,6 +86,7 @@ export class InMemoryPlayerPlatform {
   readonly #progressions = new Map<string, PlayerProgressionRecord>();
   readonly #processedMatches = new Set<string>();
   readonly #scoredParticipations = new Set<string>();
+  readonly #spiderAccomplishments = new Set<string>();
 
   register(principal: AuthenticatedPrincipal): void {
     const now = Date.now();
@@ -143,6 +145,49 @@ export class InMemoryPlayerPlatform {
     });
     this.#progressions.set(playerId, next);
     return publicPlayerProgression(next);
+  }
+
+  recordSpiderProgression(playerId: string, value: Record<string, unknown>) {
+    const dealId = boundedText(value.dealId, "Spider deal ID", 160);
+    const difficulty = Math.floor(Number(value.difficulty));
+    const moveCount = Math.floor(Number(value.moveCount));
+    const completedRuns = Math.floor(Number(value.completedRuns));
+    const won = Boolean(value.won);
+    if (![1, 2, 4].includes(difficulty)) {
+      throw Object.assign(new Error("Spider difficulty must be 1, 2, or 4 suits."), { code: "bad_request" });
+    }
+    if (!Number.isFinite(moveCount) || moveCount < 0 || moveCount > 1_000_000) {
+      throw Object.assign(new Error("Spider move count is invalid."), { code: "bad_request" });
+    }
+    if (!Number.isFinite(completedRuns) || completedRuns < 0 || completedRuns > 8) {
+      throw Object.assign(new Error("Spider completed-run count is invalid."), { code: "bad_request" });
+    }
+    if (won && completedRuns !== 8) {
+      throw Object.assign(new Error("A Spider win requires eight completed runs."), { code: "bad_request" });
+    }
+
+    const initial = this.#progressions.get(playerId) ?? emptyPlayerProgression(playerId);
+    let current = initial;
+    const awardedMilestones: string[] = [];
+    const award = (suffix: string, kind: "played" | "run" | "won") => {
+      const key = `${playerId}\u0000${difficulty}\u0000${dealId}\u0000${suffix}`;
+      if (this.#spiderAccomplishments.has(key)) return;
+      current = applySpiderSolitaireAccomplishment(current, { kind, updatedAt: Date.now() });
+      this.#spiderAccomplishments.add(key);
+      awardedMilestones.push(suffix);
+    };
+
+    if (moveCount > 0 || completedRuns > 0 || won) award("played", "played");
+    for (let run = 1; run <= completedRuns; run += 1) award(`run:${run}`, "run");
+    if (won) award("won", "won");
+
+    this.#progressions.set(playerId, current);
+    return {
+      progression: publicPlayerProgression(current),
+      awarded: awardedMilestones.length > 0,
+      awardedMilestones,
+      xpAwarded: Math.max(0, current.gamerXp - initial.gamerXp),
+    };
   }
 
   submitScore(playerId: string, value: Record<string, unknown>) {
