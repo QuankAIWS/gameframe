@@ -5,6 +5,7 @@ import {
   applyCascadeProgression,
   applyCompletedMatch,
   applyScoredProgression,
+  applySpiderSolitaireAccomplishment,
   emptyPlayerProgression,
   gamerLevelSummary,
   xpRequiredForLevel,
@@ -123,6 +124,85 @@ describe("Gamer Level progression", () => {
     expect(improved.xpUpdatedAt).toBe(first.xpUpdatedAt);
     expect(improved.cascade.weeklyBlitzEntries).toBe(1);
     expect(improved.cascade.weeklyBlitzBestScore).toBe(15_500);
+  });
+
+  it("awards Spider play, runs, and a clear on the same 100 XP scale as a normal win", () => {
+    const base = emptyPlayerProgression("dad", 1_000);
+    const played = applySpiderSolitaireAccomplishment(base, { kind: "played", updatedAt: 2_000 });
+    const withRuns = Array.from({ length: 8 }).reduce(
+      (record) => applySpiderSolitaireAccomplishment(record, { kind: "run", updatedAt: 3_000 }),
+      played,
+    );
+    const won = applySpiderSolitaireAccomplishment(withRuns, { kind: "won", updatedAt: 4_000 });
+
+    expect(won.gamerXp).toBe(100);
+    expect(won.games["spider-solitaire"]).toEqual({ played: 1, wins: 1, losses: 0, draws: 0 });
+    expect(GAMER_XP_RULES.spiderMeaningfulPlay).toBe(10);
+    expect(GAMER_XP_RULES.spiderCompletedRun).toBe(5);
+    expect(GAMER_XP_RULES.spiderWin).toBe(50);
+  });
+
+  it("merges Spider deal snapshots monotonically without double-paying retries", async () => {
+    const runtime = new PlayerPlatformObjectRuntime(new MemoryStorage());
+    const base = {
+      playerId: "dad",
+      dealId: "saved-family-deal",
+      difficulty: 1,
+      moveCount: 24,
+      completedRuns: 2,
+      won: false,
+    };
+
+    const firstResponse = await runtime.fetch(jsonRequest("/player/progression/spider", base));
+    expect(firstResponse.status).toBe(200);
+    const first = await firstResponse.json() as {
+      awarded: boolean;
+      xpAwarded: number;
+      progression: { gamerXp: number };
+    };
+    expect(first.awarded).toBe(true);
+    expect(first.xpAwarded).toBe(20);
+    expect(first.progression.gamerXp).toBe(20);
+
+    const duplicateResponse = await runtime.fetch(jsonRequest("/player/progression/spider", base));
+    const duplicate = await duplicateResponse.json() as {
+      awarded: boolean;
+      xpAwarded: number;
+      progression: { gamerXp: number };
+    };
+    expect(duplicate.awarded).toBe(false);
+    expect(duplicate.xpAwarded).toBe(0);
+    expect(duplicate.progression.gamerXp).toBe(20);
+
+    const advancedResponse = await runtime.fetch(jsonRequest("/player/progression/spider", {
+      ...base,
+      completedRuns: 4,
+    }));
+    const advanced = await advancedResponse.json() as { xpAwarded: number; progression: { gamerXp: number } };
+    expect(advanced.xpAwarded).toBe(10);
+    expect(advanced.progression.gamerXp).toBe(30);
+
+    const winResponse = await runtime.fetch(jsonRequest("/player/progression/spider", {
+      ...base,
+      completedRuns: 8,
+      won: true,
+    }));
+    const won = await winResponse.json() as {
+      xpAwarded: number;
+      progression: { gamerXp: number; games: Record<string, { played: number; wins: number }> };
+    };
+    expect(won.xpAwarded).toBe(70);
+    expect(won.progression.gamerXp).toBe(100);
+    expect(won.progression.games["spider-solitaire"]).toMatchObject({ played: 1, wins: 1 });
+
+    const repeatedWinResponse = await runtime.fetch(jsonRequest("/player/progression/spider", {
+      ...base,
+      completedRuns: 8,
+      won: true,
+    }));
+    const repeatedWin = await repeatedWinResponse.json() as { xpAwarded: number; progression: { gamerXp: number } };
+    expect(repeatedWin.xpAwarded).toBe(0);
+    expect(repeatedWin.progression.gamerXp).toBe(100);
   });
 
   it("does not pay a completed match twice when the same match is re-indexed", async () => {
