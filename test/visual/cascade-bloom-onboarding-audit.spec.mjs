@@ -141,7 +141,9 @@ async function saveConfiguredRun(page, config = {}) {
       run.rngState = found.rngState;
     }
 
-    localStorage.setItem(activeRunKey, JSON.stringify(run));
+    window.addEventListener("pagehide", () => {
+      localStorage.setItem(activeRunKey, JSON.stringify(run));
+    }, { once: true });
     return { pairs, target };
   }, { activeRunKey: ACTIVE_RUN_KEY, config });
 }
@@ -212,7 +214,9 @@ async function configureStableAdjacentReveal(page, bloomIndex) {
         run.levelProgress.blooms.activeIndex = -1;
         run.levelProgress.blooms.collectedPairs = 0;
         run.levelProgress.blooms.lastEvents = [];
-        localStorage.setItem(activeRunKey, JSON.stringify(run));
+        window.addEventListener("pagehide", () => {
+          localStorage.setItem(activeRunKey, JSON.stringify(run));
+        }, { once: true });
         return { seed, move, clear, triggered };
       }
     }
@@ -525,7 +529,9 @@ test("all six revealed Bloom symbols are visually audited at mobile tile size", 
       const run = window.cascadeResearch.exportActiveRun();
       run.levelProgress.blooms.symbols[index] = symbol;
       run.levelProgress.blooms.activeIndex = index;
-      localStorage.setItem(activeRunKey, JSON.stringify(run));
+      window.addEventListener("pagehide", () => {
+        localStorage.setItem(activeRunKey, JSON.stringify(run));
+      }, { once: true });
     }, { activeRunKey: ACTIVE_RUN_KEY, index, symbol });
     await reloadRun(page);
 
