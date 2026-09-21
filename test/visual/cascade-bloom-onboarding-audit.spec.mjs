@@ -40,7 +40,7 @@ async function openLevel(page) {
   await mkdir(output, { recursive: true });
   await page.setViewportSize(VIEWPORT);
   await page.addInitScript(({ stateKey, tutorialKey, seen, level }) => {
-    localStorage.removeItem("scribbles-gameframe.cascade-active-run:v1");
+    if (!sessionStorage.getItem("scribbles-gameframe.bloom-audit-initialized")) {\n      localStorage.removeItem("scribbles-gameframe.cascade-active-run:v1");\n      sessionStorage.setItem("scribbles-gameframe.bloom-audit-initialized", "1");\n    }
     localStorage.setItem("scribbles-gameframe.cascade-sound:v1", "off");
     localStorage.setItem("scribbles-gameframe.cascade-effects:v1", "full");
     localStorage.setItem(tutorialKey, JSON.stringify({ enabled: true, seen }));
@@ -284,7 +284,7 @@ test("wrong second Bloom briefly reveals both symbols then closes both", async (
   await openLevel(page);
   const pairs = await pairData(page);
   const first = pairs[0].indices[0];
-  const wrong = pairs[1].indices[0];
+  const allBlooms = pairs.flatMap((pair) => pair.indices);\n  const wrong = pairs[1].indices.find((index) => triggerSet(index, allBlooms).length === 1) ?? pairs[1].indices.at(-1);
   await saveConfiguredRun(page, { active: "first", hammerTarget: wrong });
   await reloadRun(page);
   await screenshot(page, "07-before-mismatch");
@@ -297,6 +297,37 @@ test("wrong second Bloom briefly reveals both symbols then closes both", async (
   await screenshot(page, "09-after-mismatch-both-closed");
 
   console.log("BLOOM_AUDIT mismatch duration contract ms", 620);
+});
+
+test("aiming at Bloom 37 can be hijacked by adjacent lower-index Bloom 29", async ({ page }) => {
+  await openLevel(page);
+  const pairs = await pairData(page);
+  const [first, partner] = pairs[0].indices;
+  const adjacentWrong = pairs[1].indices.find((index) => triggerSet(index, pairs.flatMap((pair) => pair.indices)).includes(partner));
+  expect(adjacentWrong).toBe(37);
+
+  await saveConfiguredRun(page, { active: "first", hammerTarget: adjacentWrong });
+  await reloadRun(page);
+  await screenshot(page, "09a-before-aiming-at-adjacent-wrong-bloom-37");
+
+  await hammer(page, adjacentWrong);
+  await expect(page.locator(".cascade-bloom-peek.is-success")).toHaveCount(2, { timeout: 2500 });
+  await screenshot(page, "09b-aim-at-37-but-26-and-29-match-instead");
+  await expect(page.locator(".cascade-bloom-peek")).toHaveCount(0, { timeout: 2500 });
+
+  const after = await page.evaluate(() => window.cascadeResearch.exportLevel().progress.blooms);
+  console.log("BLOOM_AUDIT wrong-target hijack", JSON.stringify({
+    aimedAt: 37,
+    expectedWrongSymbol: pairs[1].symbol,
+    actualCollectedPairs: after.collectedPairs,
+    bloom37StillPresent: after.symbols[37] >= 0,
+    partner29Removed: after.symbols[29] < 0,
+  }));
+  expect(after.collectedPairs).toBe(1);
+  expect(after.symbols[adjacentWrong]).toBeGreaterThanOrEqual(0);
+  expect(after.symbols[first]).toBe(-1);
+  expect(after.symbols[partner]).toBe(-1);
+  await screenshot(page, "09c-after-wrong-target-hijack-pair-collected");
 });
 
 test("a remembered Bloom can be reopened after a mismatch", async ({ page }) => {
