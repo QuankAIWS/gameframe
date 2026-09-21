@@ -481,3 +481,64 @@ test("engine audit reports whether one player move can advance multiple Bloom in
   // one player move can advance the Bloom state more than once via cascades.
   expect(typeof result.found).toBe("boolean");
 });
+
+
+test("closed Blooms visibly leak hidden pair identity through computed glyph color", async ({ page }) => {
+  await openLevel(page);
+  const closed = await page.locator(".cascade-tile.has-memory-bloom .cascade-bloom-mark").evaluateAll((marks) =>
+    marks.map((mark) => ({
+      symbol: Number(mark.dataset.bloomSymbol),
+      text: mark.textContent,
+      color: getComputedStyle(mark).color,
+    })),
+  );
+  console.log("BLOOM_AUDIT closed hidden-color leak", JSON.stringify(closed));
+  expect(closed).toHaveLength(4);
+  expect(closed.every((item) => item.text === "✿")).toBe(true);
+
+  const bySymbol = new Map();
+  for (const item of closed) {
+    if (!bySymbol.has(item.symbol)) bySymbol.set(item.symbol, new Set());
+    bySymbol.get(item.symbol).add(item.color);
+  }
+  expect(bySymbol.size).toBe(2);
+  expect([...bySymbol.values()].every((colors) => colors.size === 1)).toBe(true);
+  expect(new Set(closed.map((item) => item.color)).size).toBeGreaterThan(1);
+
+  await screenshot(page, "20-closed-blooms-hidden-pairs-already-color-coded");
+
+  const blooms = page.locator(".cascade-tile.has-memory-bloom");
+  for (let index = 0; index < await blooms.count(); index += 1) {
+    const tile = blooms.nth(index);
+    const symbol = await tile.locator(".cascade-bloom-mark").getAttribute("data-bloom-symbol");
+    await tile.screenshot({ path: `${output}/cascade-bloom-full-20a-closed-${index + 1}-hidden-symbol-${symbol}.png` });
+  }
+});
+
+test("all six revealed Bloom symbols are visually audited at mobile tile size", async ({ page }) => {
+  await openLevel(page);
+  const pairs = await pairData(page);
+  const index = pairs[0].indices[0];
+
+  for (let symbol = 0; symbol < 6; symbol += 1) {
+    await page.evaluate(({ activeRunKey, index, symbol }) => {
+      const run = window.cascadeResearch.exportActiveRun();
+      run.levelProgress.blooms.symbols[index] = symbol;
+      run.levelProgress.blooms.activeIndex = index;
+      localStorage.setItem(activeRunKey, JSON.stringify(run));
+    }, { activeRunKey: ACTIVE_RUN_KEY, index, symbol });
+    await reloadRun(page);
+
+    const mark = page.locator(`#board .cascade-tile[data-index="${index}"] .cascade-bloom-mark.is-revealed`);
+    await expect(mark).toBeVisible();
+    const detail = await mark.evaluate((node) => ({
+      text: node.textContent,
+      color: getComputedStyle(node).color,
+      fontSize: getComputedStyle(node).fontSize,
+    }));
+    console.log("BLOOM_AUDIT revealed symbol", symbol, JSON.stringify(detail));
+    await page.locator(`#board .cascade-tile[data-index="${index}"]`).screenshot({
+      path: `${output}/cascade-bloom-full-21-revealed-symbol-${symbol}.png`,
+    });
+  }
+});
