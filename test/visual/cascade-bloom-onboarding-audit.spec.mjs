@@ -40,7 +40,10 @@ async function openLevel(page) {
   await mkdir(output, { recursive: true });
   await page.setViewportSize(VIEWPORT);
   await page.addInitScript(({ stateKey, tutorialKey, seen, level }) => {
-    if (!sessionStorage.getItem("scribbles-gameframe.bloom-audit-initialized")) {\n      localStorage.removeItem("scribbles-gameframe.cascade-active-run:v1");\n      sessionStorage.setItem("scribbles-gameframe.bloom-audit-initialized", "1");\n    }
+    if (!sessionStorage.getItem("scribbles-gameframe.bloom-audit-initialized")) {
+      localStorage.removeItem("scribbles-gameframe.cascade-active-run:v1");
+      sessionStorage.setItem("scribbles-gameframe.bloom-audit-initialized", "1");
+    }
     localStorage.setItem("scribbles-gameframe.cascade-sound:v1", "off");
     localStorage.setItem("scribbles-gameframe.cascade-effects:v1", "full");
     localStorage.setItem(tutorialKey, JSON.stringify({ enabled: true, seen }));
@@ -284,7 +287,8 @@ test("wrong second Bloom briefly reveals both symbols then closes both", async (
   await openLevel(page);
   const pairs = await pairData(page);
   const first = pairs[0].indices[0];
-  const allBlooms = pairs.flatMap((pair) => pair.indices);\n  const wrong = pairs[1].indices.find((index) => triggerSet(index, allBlooms).length === 1) ?? pairs[1].indices.at(-1);
+  const allBlooms = pairs.flatMap((pair) => pair.indices);
+  const wrong = pairs[1].indices.find((index) => triggerSet(index, allBlooms).length === 1) ?? pairs[1].indices.at(-1);
   await saveConfiguredRun(page, { active: "first", hammerTarget: wrong });
   await reloadRun(page);
   await screenshot(page, "07-before-mismatch");
