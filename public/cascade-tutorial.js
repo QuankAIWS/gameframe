@@ -1,5 +1,6 @@
 const TUTORIAL_KEY = "scribbles-gameframe.cascade-tutorial:v1";
 const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
+const BLOOM_SYMBOLS = Object.freeze(["♥", "◆", "★", "●", "✦", "✿"]);
 
 const tutorials = Object.freeze({
   match: Object.freeze({
@@ -81,6 +82,14 @@ const tutorials = Object.freeze({
     tip: "The timer starts only after you close this tip.",
     accent: "#44c9ee",
     visual: "weekly",
+  }),
+  "memory-bloom": Object.freeze({
+    kicker: "MEMORY BLOOM",
+    title: "Reveal one flower, then find its match.",
+    copy: "Make a clear on or directly beside a closed flower to reveal its symbol. Each move can reveal only one Bloom, even if cascades keep going.",
+    tip: "Remember the symbol, then clear a different flower. Matching symbols collect the pair. A wrong pair shows both symbols, then closes them again.",
+    accent: "#e85db0",
+    visual: "memory-bloom",
   }),
 });
 
@@ -171,6 +180,14 @@ function rowMarkup(kind, count, options = {}) {
   return Array.from({ length: count }, () => tileMarkup(kind, options)).join("");
 }
 
+function bloomTileMarkup(symbol = 3, { revealed = false } = {}) {
+  const bloomSymbol = Math.max(0, Math.min(BLOOM_SYMBOLS.length - 1, Math.floor(Number(symbol) || 0)));
+  const markClass = revealed ? "cascade-bloom-mark is-revealed" : "cascade-bloom-mark";
+  const symbolData = revealed ? ` data-bloom-symbol="${bloomSymbol}"` : "";
+  const text = revealed ? BLOOM_SYMBOLS[bloomSymbol] : "✿";
+  return `<i class="cascade-tile cascade-tutorial-game-tile has-memory-bloom" data-kind="3" data-bloom="true" aria-hidden="true"><span class="${markClass}"${symbolData} aria-hidden="true">${text}</span></i>`;
+}
+
 function levelData() {
   try {
     return window.cascadeResearch?.exportLevel?.()?.level || null;
@@ -217,6 +234,9 @@ function visualMarkup(kind) {
   }
   if (kind === "weekly") {
     return `<div class="cascade-card cascade-weekly-card cascade-tutorial-weekly-card"><small>WEEKLY BLITZ</small><strong>—</strong><span>Same board seed for everyone.</span><button type="button" tabindex="-1">Play weekly <b>30s</b></button></div>`;
+  }
+  if (kind === "memory-bloom") {
+    return `<div class="cascade-tutorial-equation"><div class="cascade-tutorial-board-sample">${tileMarkup(1)}${bloomTileMarkup(3)}</div><span class="cascade-tutorial-arrow">→</span>${bloomTileMarkup(3, { revealed: true })}</div><b class="cascade-tutorial-preview-caption">CLEAR ON OR BESIDE ✿ · MATCH THE SAME SYMBOL</b>`;
   }
   return tileMarkup(0);
 }
@@ -340,6 +360,7 @@ function scanMechanics() {
   if (board?.querySelector('[data-ice="2"]')) requestTip("layered-ice");
 
   if (Array.isArray(level?.objective?.collect) && level.objective.collect.length) requestTip("collect");
+  if (level?.objective?.blooms) requestTip("memory-bloom");
   if (Number(level?.objective?.ice?.layers) >= 2) requestTip("layered-ice");
   else if (level?.objective?.ice) requestTip("ice");
 
