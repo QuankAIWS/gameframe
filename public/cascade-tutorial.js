@@ -272,11 +272,11 @@ function bloomTileMarkup(symbol = 3, { revealed = false } = {}) {
   return `<i class="cascade-tile cascade-tutorial-game-tile has-memory-bloom" data-kind="3" data-bloom="true" aria-hidden="true"><span class="${markClass}"${symbolData} aria-hidden="true">${text}</span></i>`;
 }
 
-function objectiveTileMarkup(kind, { classes = [], attributes = "", markClass = "", markText = "", markInner = "" } = {}) {
+function objectiveTileMarkup(kind, { classes = [], attributes = "", markClass = "", markAttributes = "", markText = "", markInner = "" } = {}) {
   const tileKind = Math.max(0, Math.min(5, Math.floor(Number(kind) || 0)));
   const className = ["cascade-tile", "cascade-tutorial-game-tile", ...classes].join(" ");
   const mark = markClass
-    ? `<span class="${markClass}" aria-hidden="true">${markText}${markInner}</span>`
+    ? `<span class="${markClass}"${markAttributes ? ` ${markAttributes}` : ""} aria-hidden="true">${markText}${markInner}</span>`
     : "";
   return `<i class="${className}" data-kind="${tileKind}"${attributes ? ` ${attributes}` : ""} aria-hidden="true">${mark}</i>`;
 }
@@ -344,7 +344,7 @@ function visualMarkup(kind) {
     return `<div class="cascade-tutorial-objective-scene">${cage}<b class="cascade-tutorial-preview-caption">CLEAR BESIDE IT · 2 HITS SHOWN</b></div>`;
   }
   if (kind === "recall-lock") {
-    const recall = objectiveTileMarkup(1, { classes: ["has-lock", "has-recall-lock"], attributes: 'data-lock="1"', markClass: "cascade-lock-mark is-revealed", markText: "◆" });
+    const recall = objectiveTileMarkup(1, { classes: ["has-lock", "has-recall-lock"], attributes: 'data-lock="1"', markClass: "cascade-lock-mark is-revealed", markAttributes: 'data-recall-kind="1"', markText: "◆" });
     return `<div class="cascade-tutorial-objective-scene">${recall}<b class="cascade-tutorial-preview-caption">REMEMBER THE COLOR-SYMBOL</b></div>`;
   }
   if (kind === "enchanted-ground") {
