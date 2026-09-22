@@ -440,6 +440,13 @@
 }
 
 
+#cascade-help-toggle:disabled,
+#cascade-mobile-help-toggle:disabled {
+  opacity: .42;
+  cursor: not-allowed;
+  filter: saturate(.5);
+}
+
 #cascade-mobile-help-toggle {
   display: none;
 }
