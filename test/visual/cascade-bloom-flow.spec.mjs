@@ -288,7 +288,9 @@ test("Bloom flow 06 one cascading move can advance Blooms only once", async ({ p
   })).toEqual({ activeIndex: expected.activeIndex, collectedPairs: expected.collectedPairs });
 
   const actual = await page.evaluate(() => window.cascadeResearch.exportLevel().progress.blooms);
-  expect(actual.lastEvents).toEqual([]);
+  expect(actual.lastEvents).toHaveLength(1);
+  expect(actual.lastEvents[0].type).toBe(expected.event.type);
+  expect(actual.lastEvents[0].index).toBe(expected.event.index);
   await shot(page, "09-multi-cascade-stops-after-first-bloom");
 });
 
@@ -323,6 +325,10 @@ test("Bloom flow 08 final pair clears the level when score is already satisfied"
     hammerTarget: partner,
   });
   await hammer(page, partner);
-  await expect(page.locator("#result-dialog")).toBeVisible({ timeout: 5000 });
-  await shot(page, "12-level-clear");
+  const rewardStage = page.locator(".cascade-reward-stage");
+  await expect(rewardStage).toHaveClass(/is-active/, { timeout: 5000 });
+  await shot(page, "12-level-clear-reward");
+  await expect(page.locator("#result-dialog")).toBeVisible({ timeout: 12000 });
+  await expect(page.locator("#result-title")).toContainText("Level 753 cleared");
+  await shot(page, "13-level-clear-actions");
 });
