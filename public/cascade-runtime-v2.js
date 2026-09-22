@@ -552,12 +552,12 @@ function renderBoard() {
       tile.classList.add("is-color-ward-opened");
     }
     if (bloomSymbol >= 0) {
-      tile.dataset.bloom = String(bloomSymbol);
+      tile.dataset.bloom = "true";
       tile.classList.add("has-memory-bloom");
       const bloomMark = document.createElement("span");
       bloomMark.className = "cascade-bloom-mark";
-      bloomMark.dataset.bloomSymbol = String(bloomSymbol);
       bloomMark.classList.toggle("is-revealed", bloomActive);
+      if (bloomActive) bloomMark.dataset.bloomSymbol = String(bloomSymbol);
       bloomMark.setAttribute("aria-hidden", "true");
       bloomMark.textContent = bloomActive ? RECALL_SYMBOLS[bloomSymbol] : "✿";
       tile.append(bloomMark);
@@ -683,7 +683,7 @@ function renderHelp() {
   } else {
     const notes = [];
     if (activeLevel.objective?.drop) notes.push("clear below each diamond to drop it into its exit");
-    if (activeLevel.objective?.blooms) notes.push("reveal flowers and remember matching symbol pairs");
+    if (activeLevel.objective?.blooms) notes.push("clear on or beside one flower per move, then remember its matching symbol");
     if (activeLevel.objective?.ground) notes.push("make clears that touch sparkling ground to spread the magic");
     if (activeLevel.objective?.producers) notes.push("feed crystal forges, then clear each produced crystal from its forge");
     if (activeLevel.objective?.colorWards) notes.push("clear each visible ward color beside its matching ward");
@@ -958,6 +958,18 @@ async function animateButterflyFlights(transition) {
 async function presentBloomFeedback(events = []) {
   if (!events.length) return;
   const temp = [];
+  const eventTypes = new Set(events.map((event) => event.type));
+  if (eventTypes.has("mismatch")) {
+    comboLabelElement.textContent = "NOT A MATCH · REMEMBER BOTH";
+    comboLabelElement.classList.add("is-hot");
+  } else if (eventTypes.has("match")) {
+    comboLabelElement.textContent = "BLOOM PAIR!";
+    comboLabelElement.classList.add("is-hot");
+  } else if (eventTypes.has("repeat")) {
+    comboLabelElement.textContent = "THIS BLOOM IS OPEN · FIND ITS MATCH";
+  } else {
+    comboLabelElement.textContent = "REMEMBER THIS BLOOM";
+  }
   for (const event of events) {
     for (let offset = 0; offset < (event.indices || []).length; offset += 1) {
       const index = event.indices[offset];
@@ -977,11 +989,13 @@ async function presentBloomFeedback(events = []) {
       }
     }
   }
-  await sleep(events.some((event) => event.type === "mismatch") ? 620 : events.some((event) => event.type === "match") ? 420 : 260);
+  const hold = eventTypes.has("mismatch") ? 1300 : eventTypes.has("match") ? 700 : eventTypes.has("repeat") ? 700 : 520;
+  await sleep(hold);
   temp.forEach((element) => element.remove());
 }
 
 async function presentResolvedResult(result) {
+  let bloomInteractionConsumed = false;
   for (const transition of result.transitions) {
     if (mode === "normal") {
       levelProgress.ice = transition.iceBefore.slice();
@@ -1007,7 +1021,8 @@ async function presentResolvedResult(result) {
     await sleep(PRESENTATION.clear);
     score += transition.gained;
     if (mode === "normal") {
-      levelProgress = applySpecialLevelProgress(activeLevel, levelProgress, transition);
+      levelProgress = applySpecialLevelProgress(activeLevel, levelProgress, transition, { skipBlooms: bloomInteractionConsumed });
+      if (levelProgress?.blooms?.lastEvents?.length) bloomInteractionConsumed = true;
       if (levelProgress?.blooms?.lastEvents?.length || levelProgress?.ground?.lastSpread?.length) {
         renderBoard();
         await presentBloomFeedback(levelProgress?.blooms?.lastEvents || []);
