@@ -190,12 +190,6 @@ function hasSeen(id) {
 }
 
 function updateToggle() {
-  const button = document.querySelector("#cascade-tutorial-toggle");
-  if (button) {
-    button.textContent = state.enabled ? "💡 Auto tips on" : "💡 Auto tips off";
-    button.setAttribute("aria-pressed", String(state.enabled));
-    button.title = state.enabled ? "Turn off automatic first-time mechanic tips." : "Turn automatic mechanic tips back on.";
-  }
   const helpToggle = document.querySelector("[data-context-help-auto]");
   if (helpToggle) helpToggle.checked = state.enabled;
 }
@@ -219,30 +213,17 @@ function installControls() {
     window.setTimeout(installControls, 50);
     return;
   }
-  if (!document.querySelector("#cascade-tutorial-toggle")) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.id = "cascade-tutorial-toggle";
-    button.addEventListener("click", () => setEnabled(!state.enabled));
-    controls.append(button);
+  if (!document.querySelector("#cascade-help-toggle")) {
+    const helpButton = document.createElement("button");
+    helpButton.type = "button";
+    helpButton.id = "cascade-help-toggle";
+    helpButton.textContent = "? Help";
+    helpButton.title = "Explain the mechanics on this level.";
+    helpButton.setAttribute("aria-label", "Help for this level");
+    helpButton.addEventListener("click", openContextHelp);
+    controls.append(helpButton);
   }
   updateToggle();
-}
-
-function installDesktopHelpButton() {
-  if (document.querySelector("#cascade-help-toggle")) return;
-  const objective = document.querySelector(".cascade-objective");
-  if (!objective) {
-    window.setTimeout(installDesktopHelpButton, 50);
-    return;
-  }
-  const helpButton = document.createElement("button");
-  helpButton.type = "button";
-  helpButton.id = "cascade-help-toggle";
-  helpButton.textContent = "? Help";
-  helpButton.title = "Explain the mechanics on this level.";
-  helpButton.addEventListener("click", openContextHelp);
-  objective.append(helpButton);
 }
 
 function installMobileHelpButton() {
@@ -641,7 +622,6 @@ function interceptFirstAction(event) {
 }
 
 installControls();
-installDesktopHelpButton();
 installMobileHelpButton();
 document.addEventListener("click", interceptFirstAction, true);
 
