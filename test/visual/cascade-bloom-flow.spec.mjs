@@ -6,6 +6,7 @@ const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
 const TUTORIAL_KEY = "scribbles-gameframe.cascade-tutorial:v1";
 const RULES = Object.freeze({ stripe: true, bomb: true, color: true, fish: true });
+let configSerial = 0;
 
 const ALL_TUTORIALS_SEEN = Object.freeze({
   match: true,
@@ -58,6 +59,24 @@ async function bloomPairs(page) {
   });
 }
 
+async function reloadWithConfiguredRun(page, run, state) {
+  const marker = `bloom-flow-config-${configSerial += 1}`;
+  await page.addInitScript(({ activeRunKey, stateKey, runValue, stateValue, markerKey }) => {
+    if (sessionStorage.getItem(markerKey) === "applied") return;
+    sessionStorage.setItem(markerKey, "applied");
+    localStorage.setItem(activeRunKey, JSON.stringify(runValue));
+    localStorage.setItem(stateKey, JSON.stringify(stateValue));
+  }, {
+    activeRunKey: ACTIVE_RUN_KEY,
+    stateKey: STATE_KEY,
+    runValue: run,
+    stateValue: state,
+    markerKey: marker,
+  });
+  await page.reload();
+  await expect(page.locator("#level-number")).toHaveText("753");
+}
+
 async function configureHammerState(page, {
   activeIndex = -1,
   collectedPairs = 0,
@@ -65,7 +84,7 @@ async function configureHammerState(page, {
   score = null,
   hammerTarget,
 }) {
-  await page.evaluate(async ({ activeRunKey, stateKey, activeIndex, collectedPairs, removedIndices, score, hammerTarget, rules }) => {
+  const configured = await page.evaluate(async ({ activeRunKey, stateKey, activeIndex, collectedPairs, removedIndices, score, hammerTarget, rules }) => {
     const engine = await import("/cascade-engine.js");
     const special = await import("/cascade-special-engine.js");
     const run = window.cascadeResearch.exportActiveRun();
@@ -100,14 +119,12 @@ async function configureHammerState(page, {
     run.board = stable.board;
     run.specials = Array(64).fill(null);
     run.rngState = stable.rngState;
-    localStorage.setItem(activeRunKey, JSON.stringify(run));
 
     const state = JSON.parse(localStorage.getItem(stateKey) || "{}");
     state.hammers = 2;
-    localStorage.setItem(stateKey, JSON.stringify(state));
+    return { run, state };
   }, { activeRunKey: ACTIVE_RUN_KEY, stateKey: STATE_KEY, activeIndex, collectedPairs, removedIndices, score, hammerTarget, rules: RULES });
-  await page.reload();
-  await expect(page.locator("#level-number")).toHaveText("753");
+  await reloadWithConfiguredRun(page, configured.run, configured.state);
 }
 
 async function hammer(page, index) {
@@ -196,7 +213,7 @@ test("Bloom flow 05 matching symbols collect exactly one pair", async ({ page })
 
 test("Bloom flow 06 one cascading move can advance Blooms only once", async ({ page }) => {
   await openLevel753(page);
-  const setup = await page.evaluate(async ({ activeRunKey, stateKey, rules }) => {
+  const configured = await page.evaluate(async ({ activeRunKey, stateKey, rules }) => {
     const engine = await import("/cascade-engine.js");
     const special = await import("/cascade-special-engine.js");
     const run = window.cascadeResearch.exportActiveRun();
@@ -251,17 +268,16 @@ test("Bloom flow 06 one cascading move can advance Blooms only once", async ({ p
         run.levelProgress.blooms.activeIndex = -1;
         run.levelProgress.blooms.collectedPairs = 0;
         run.levelProgress.blooms.lastEvents = [];
-        localStorage.setItem(activeRunKey, JSON.stringify(run));
         const state = JSON.parse(localStorage.getItem(stateKey) || "{}");
         state.hammers = 2;
-        localStorage.setItem(stateKey, JSON.stringify(state));
-        return { seed, move, transitionCount: resolved.transitions.length, events };
+        return { run, state, setup: { seed, move, transitionCount: resolved.transitions.length, events } };
       }
     }
     throw new Error("No deterministic multi-Bloom cascade candidate found");
   }, { activeRunKey: ACTIVE_RUN_KEY, stateKey: STATE_KEY, rules: RULES });
 
-  await page.reload();
+  await reloadWithConfiguredRun(page, configured.run, configured.state);
+  const setup = configured.setup;
   await page.locator("#board .cascade-tile").nth(setup.move.from).click();
   await page.locator("#board .cascade-tile").nth(setup.move.to).click();
 
