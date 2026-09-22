@@ -1,6 +1,6 @@
 export const BOARD_SIZE = 8;
 export const TILE_KINDS = 6;
-export const LEVEL_COUNT = 1000;
+export const LEVEL_COUNT = 1050;
 export const CAMPAIGN_CAPACITY = 10000;
 export const CAMPAIGN_MILESTONE = 3000;
 export const CHAPTER_SIZE = 30;
@@ -309,6 +309,17 @@ function buildSpec({ levelNumber, start, chapter, baseTarget, targetStep, baseMo
     objective: levelObjective,
   };
 }
+
+const POST_1000_MEMORY_ACCENTS = new Map([
+  [1002, "recall"],
+  [1007, "bloom"],
+  [1013, "recall"],
+  [1018, "bloom"],
+  [1022, "recall"],
+  [1027, "bloom"],
+  [1033, "recall"],
+  [1048, "bloom"],
+]);
 
 function campaignSpec(levelNumber) {
   if (levelNumber <= 30) {
@@ -839,29 +850,100 @@ function campaignSpec(levelNumber) {
       },
     });
   }
+  if (levelNumber <= 1000) {
+    return buildSpec({
+      levelNumber, start: 981, chapter: "attention-remix", baseTarget: 25500, targetStep: 125, baseMoves: 39,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = (wave.difficulty === "relief" || wave.difficulty === "normal")
+          ? "center"
+          : latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
+        const useRecall = within % 4 === 0 && wave.difficulty !== "super-hard" && wave.difficulty !== "hard";
+        const useProducer = levelNumber === 1000 || within % 3 === 1;
+        return objective({
+          colorWards: {
+            count: wave.difficulty === "relief" ? 2 : (wave.difficulty === "normal" ? 3 : 4),
+            pattern,
+          },
+          producers: useProducer ? {
+            count: 2,
+            charges: 1,
+            pattern,
+          } : null,
+          locks: useRecall ? {
+            count: 2,
+            layers: 1,
+            pattern,
+            recall: true,
+          } : null,
+        });
+      },
+    });
+  }
+
+  if (levelNumber <= 1030) {
+    return buildSpec({
+      levelNumber, start: 1001, chapter: "post-milestone-mastery", baseTarget: 27600, targetStep: 95, baseMoves: 41,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "hard" : wave.difficulty);
+        const memoryAccent = POST_1000_MEMORY_ACCENTS.get(levelNumber) || null;
+        const route = within % 3;
+        return objective({
+          colorWards: route === 0 ? {
+            count: wave.difficulty === "relief" ? 2 : 3,
+            pattern,
+          } : null,
+          producers: route === 1 ? {
+            count: wave.difficulty === "relief" ? 2 : 3,
+            charges: 1,
+            pattern,
+          } : null,
+          drop: route === 2 ? dropObjective(levelNumber, wave.difficulty === "super-hard" ? 2 : 1, phase) : null,
+          locks: memoryAccent === "recall" ? {
+            count: 2,
+            layers: 1,
+            pattern,
+            recall: true,
+          } : null,
+          blooms: memoryAccent === "bloom" ? {
+            pairs: wave.difficulty === "relief" ? 2 : 3,
+            pattern,
+          } : null,
+        });
+      },
+    });
+  }
+
   return buildSpec({
-    levelNumber, start: 981, chapter: "attention-remix", baseTarget: 25500, targetStep: 125, baseMoves: 39,
+    levelNumber, start: 1031, chapter: "foundation-remix", baseTarget: 30400, targetStep: 100, baseMoves: 42,
     objectiveFactory: ({ phase, within, wave }) => {
-      const pattern = (wave.difficulty === "relief" || wave.difficulty === "normal")
-        ? "center"
-        : latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "normal" : wave.difficulty);
-      const useRecall = within % 4 === 0 && wave.difficulty !== "super-hard" && wave.difficulty !== "hard";
-      const useProducer = levelNumber === 1000 || within % 3 === 1;
+      const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "hard" : wave.difficulty);
+      const memoryAccent = POST_1000_MEMORY_ACCENTS.get(levelNumber) || null;
+      const groundLane = within % 2 === 0;
       return objective({
-        colorWards: {
-          count: wave.difficulty === "relief" ? 2 : (wave.difficulty === "normal" ? 3 : 4),
+        ground: groundLane ? {
+          target: scaleCount(22 + phase * 3 + Math.floor(within / 4), Math.min(1.06, wave.objectiveFactor)),
+          seeds: 4,
           pattern,
-        },
-        producers: useProducer ? {
-          count: 2,
+        } : null,
+        producers: groundLane ? {
+          count: wave.difficulty === "relief" ? 2 : 3,
           charges: 1,
           pattern,
         } : null,
-        locks: useRecall ? {
+        drop: groundLane ? null : dropObjective(levelNumber, wave.difficulty === "super-hard" ? 2 : 1, phase + 1),
+        colorWards: groundLane ? null : {
+          count: wave.difficulty === "relief" ? 2 : 3,
+          pattern,
+        },
+        locks: memoryAccent === "recall" ? {
           count: 2,
           layers: 1,
           pattern,
           recall: true,
+        } : null,
+        blooms: memoryAccent === "bloom" ? {
+          pairs: wave.difficulty === "relief" ? 2 : 3,
+          pattern,
         } : null,
       });
     },

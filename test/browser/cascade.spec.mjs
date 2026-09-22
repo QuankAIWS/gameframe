@@ -313,7 +313,7 @@ test("Cascade introduces visible Color Wards at level 951", async ({ page }) => 
   expect(exported.progress.colorWards.requiredKinds.filter((kind) => kind >= 0)).toHaveLength(2);
 });
 
-test("Cascade admin console reaches level 1000 and keeps the map bounded", async ({ page }) => {
+test("Cascade admin console reaches level 1000 and keeps a full map window", async ({ page }) => {
   await page.route("**/api/session", async (route) => {
     await route.fulfill({
       status: 200,
@@ -333,8 +333,8 @@ test("Cascade admin console reaches level 1000 and keeps the map bounded", async
   await page.locator("#cascade-admin-command").fill("go to level 1000");
   await page.locator("[data-admin-run]").click();
   await expect(page.locator("#level-number")).toHaveText("1000");
-  await expect(page.locator("#level-map > li")).toHaveCount(10);
-  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "991-1000");
+  await expect(page.locator("#level-map > li")).toHaveCount(30);
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "991-1020");
 });
 
 test("Cascade admin special lab spawns color-preserving Butterflies and ready combos", async ({ page }) => {

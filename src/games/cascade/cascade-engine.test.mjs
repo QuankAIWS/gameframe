@@ -32,12 +32,12 @@ test("Cascade cloud progression ceiling matches the shipped campaign", () => {
   assert.equal(Number(match[1]), LEVEL_COUNT);
 });
 
-test("Cascade ships 1000 levels on a campaign model sized for 10000", () => {
-  assert.equal(LEVEL_COUNT, 1000);
+test("Cascade ships 1050 levels on a campaign model sized for 10000", () => {
+  assert.equal(LEVEL_COUNT, 1050);
   assert.equal(CAMPAIGN_CAPACITY, 10000);
   assert.equal(CAMPAIGN_MILESTONE, 3000);
   assert.equal(CHAPTER_SIZE, 30);
-  assert.equal(CASCADE_LEVELS.length, 1000);
+  assert.equal(CASCADE_LEVELS.length, 1050);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
   assert.equal(CASCADE_LEVELS[0].moves, 20);
   assert.equal(CASCADE_LEVELS[4].target, 2375);
@@ -105,6 +105,43 @@ test("Cascade ships 1000 levels on a campaign model sized for 10000", () => {
   assert.ok(CASCADE_LEVELS[599].objective.drop.count >= 3);
   assert.equal(CASCADE_LEVELS[449].objective.collect.length, 2);
   assert.equal(CASCADE_LEVELS[449].objective.ice.layers, 2);
+});
+
+test("levels 1001-1050 form a readable mastery bridge with a 16 percent memory cadence", () => {
+  const bridge = CASCADE_LEVELS.slice(1000, 1050);
+  assert.equal(bridge.length, 50);
+  assert.equal(CASCADE_LEVELS[999].chapter, "attention-remix");
+  assert.equal(bridge[0].chapter, "post-milestone-mastery");
+  assert.equal(bridge[29].chapter, "post-milestone-mastery");
+  assert.equal(bridge[30].chapter, "foundation-remix");
+  assert.equal(bridge[49].chapter, "foundation-remix");
+
+  const memoryLevels = bridge.filter((definition) => definition.objective.blooms || definition.objective.locks?.recall);
+  assert.deepEqual(memoryLevels.map((definition) => definition.level), [1002, 1007, 1013, 1018, 1022, 1027, 1033, 1048]);
+  assert.equal(memoryLevels.length / bridge.length, 0.16);
+
+  for (const definition of memoryLevels) {
+    assert.ok(
+      definition.difficulty === "relief" || definition.difficulty === "normal",
+      `memory accent level ${definition.level} should stay off hard/super-hard beats`,
+    );
+  }
+
+  for (let index = 1; index < memoryLevels.length; index += 1) {
+    assert.ok(memoryLevels[index].level - memoryLevels[index - 1].level >= 4, "memory accents should remain spaced");
+  }
+
+  for (const definition of bridge) {
+    const activeFamilies = [
+      definition.objective.drop,
+      definition.objective.locks,
+      definition.objective.blooms,
+      definition.objective.ground,
+      definition.objective.producers,
+      definition.objective.colorWards,
+    ].filter(Boolean).length;
+    assert.ok(activeFamilies >= 1 && activeFamilies <= 3, `level ${definition.level} should remain readable`);
+  }
 });
 
 test("levels 301-450 stay in the early-campaign difficulty band while preserving outlier fixes", () => {
