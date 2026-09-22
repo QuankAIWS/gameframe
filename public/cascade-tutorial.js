@@ -584,6 +584,7 @@ function scanMechanics() {
   if (board?.querySelector('[data-special="stripe-h"], [data-special="stripe-v"]')) requestTip("stripe");
   if (board?.querySelector('[data-special="bomb"]')) requestTip("bomb");
   if (board?.querySelector('[data-special="color"]')) requestTip("color");
+  if (board?.querySelector('[data-special="fish"]')) requestTip("butterfly");
   if (board?.querySelector('[data-ice="1"]')) requestTip("ice");
   if (board?.querySelector('[data-ice="2"]')) requestTip("layered-ice");
 
