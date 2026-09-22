@@ -219,15 +219,6 @@ function installControls() {
     window.setTimeout(installControls, 50);
     return;
   }
-  if (!document.querySelector("#cascade-help-toggle")) {
-    const helpButton = document.createElement("button");
-    helpButton.type = "button";
-    helpButton.id = "cascade-help-toggle";
-    helpButton.textContent = "? Help";
-    helpButton.title = "Explain the mechanics on this level.";
-    helpButton.addEventListener("click", openContextHelp);
-    controls.append(helpButton);
-  }
   if (!document.querySelector("#cascade-tutorial-toggle")) {
     const button = document.createElement("button");
     button.type = "button";
@@ -236,6 +227,22 @@ function installControls() {
     controls.append(button);
   }
   updateToggle();
+}
+
+function installDesktopHelpButton() {
+  if (document.querySelector("#cascade-help-toggle")) return;
+  const objective = document.querySelector(".cascade-objective");
+  if (!objective) {
+    window.setTimeout(installDesktopHelpButton, 50);
+    return;
+  }
+  const helpButton = document.createElement("button");
+  helpButton.type = "button";
+  helpButton.id = "cascade-help-toggle";
+  helpButton.textContent = "? Help";
+  helpButton.title = "Explain the mechanics on this level.";
+  helpButton.addEventListener("click", openContextHelp);
+  objective.append(helpButton);
 }
 
 function installMobileHelpButton() {
@@ -634,6 +641,7 @@ function interceptFirstAction(event) {
 }
 
 installControls();
+installDesktopHelpButton();
 installMobileHelpButton();
 document.addEventListener("click", interceptFirstAction, true);
 
