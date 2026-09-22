@@ -43,13 +43,11 @@ test("Cascade shows a themed first tip once and the checkbox disables future tip
   await expect(dialog.locator(".cascade-tutorial-visual.is-match")).toBeVisible();
   await expect(dialog.locator('.cascade-tutorial-game-tile[data-kind="1"]')).toHaveCount(3);
   await expect(dialog.locator(".cascade-tutorial-mini-tile")).toHaveCount(0);
-  await expect(page.locator("#cascade-tutorial-toggle")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#cascade-help-toggle")).toBeVisible();
 
   await dialog.locator("[data-tutorial-disable]").check();
   await dialog.locator("[data-tutorial-continue]").click();
   await expect(dialog).not.toBeVisible();
-  await expect(page.locator("#cascade-tutorial-toggle")).toHaveText(/Auto tips off/);
-
   const saved = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), TUTORIAL_KEY);
   expect(saved.enabled).toBe(false);
   expect(saved.seen.match).toBe(true);
@@ -57,7 +55,11 @@ test("Cascade shows a themed first tip once and the checkbox disables future tip
   await page.reload();
   await page.waitForTimeout(700);
   await expect(page.locator("#cascade-tutorial-dialog")).not.toBeVisible();
-  await expect(page.locator("#cascade-tutorial-toggle")).toHaveAttribute("aria-pressed", "false");
+  await page.locator("#cascade-help-toggle").click();
+  const help = page.locator("#cascade-context-help-dialog");
+  await expect(help).toBeVisible();
+  await expect(help.locator("[data-context-help-auto]")).not.toBeChecked();
+  await help.locator("[data-context-help-close]").last().click();
 });
 
 test("Cascade does not gate the striped special to level two and keeps the live-tile tutorial visual", async ({ page }) => {
@@ -256,7 +258,8 @@ test("every Cascade tutorial preview is built from live game tiles or live game 
     await page.evaluate((tip) => window.cascadeTutorial.show(tip), id);
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveAttribute("data-tutorial", id);
-    await expect(dialog.locator(selector)).toHaveCount(id === "match" ? 3 : id === "collect" ? 2 : 1);
+    const expectedCount = id === "match" ? 3 : id === "collect" || id === "crystal-forge" ? 2 : 1;
+    await expect(dialog.locator(selector)).toHaveCount(expectedCount);
     await expect(dialog.locator(".cascade-tutorial-mini-tile")).toHaveCount(0);
     await dialog.locator("[data-tutorial-continue]").click();
     await expect(dialog).not.toBeVisible();
