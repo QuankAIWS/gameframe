@@ -145,6 +145,27 @@ test("manual Help explains the current level even when automatic tips are off", 
   await expect(page.locator("#cascade-tutorial-dialog")).not.toBeVisible();
 });
 
+test("context Help stays unavailable during the timed Weekly Blitz", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(({ tutorialKey, stateKey, seenTips }) => {
+    localStorage.setItem(tutorialKey, JSON.stringify({ enabled: true, seen: seenTips }));
+    localStorage.setItem(stateKey, JSON.stringify({ level: 18, lives: 5, lastLifeAt: Date.now(), streak: 0, hammers: 2 }));
+  }, { tutorialKey: TUTORIAL_KEY, stateKey: STATE_KEY, seenTips: ALL_SEEN });
+
+  await page.goto("/cascade.html?player=context-help-blitz&tutorials=force");
+  await page.waitForFunction(() => Boolean(window.cascadeResearch?.startBlitz && window.cascadeTutorial?.openHelp));
+  await page.evaluate(() => window.cascadeResearch.startBlitz(5));
+  await expect(page.locator("body")).toHaveClass(/cascade-blitz-mode/);
+
+  await expect(page.locator("#cascade-help-toggle")).toBeDisabled();
+  await expect(page.locator("#cascade-mobile-help-toggle")).toBeDisabled();
+  await expect(page.locator("#cascade-mobile-help-toggle")).toHaveAttribute("title", /available after this timed Blitz/i);
+
+  const opened = await page.evaluate(() => window.cascadeTutorial.openHelp());
+  expect(opened).toBe(false);
+  await expect(page.locator("#cascade-context-help-dialog")).toHaveCount(0);
+});
+
 test("context Help shows every special objective on a mixed level", async ({ page }) => {
   await page.addInitScript(({ tutorialKey, stateKey, seenTips }) => {
     localStorage.setItem(tutorialKey, JSON.stringify({ enabled: true, seen: seenTips }));
