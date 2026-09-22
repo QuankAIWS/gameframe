@@ -243,6 +243,13 @@ test("every Cascade tutorial preview is built from live game tiles or live game 
     ["hammer", ".cascade-tutorial-hammer-card.cascade-card button"],
     ["weekly", ".cascade-tutorial-weekly-card.cascade-weekly-card button"],
     ["memory-bloom", ".cascade-tutorial-game-tile.has-memory-bloom .cascade-bloom-mark.is-revealed"],
+    ["butterfly", '.cascade-tutorial-game-tile[data-special="fish"] .cascade-special-mark'],
+    ["drop", ".cascade-tutorial-game-tile.has-drop-object .cascade-drop-object"],
+    ["cage", ".cascade-tutorial-game-tile.has-cage .cascade-lock-mark"],
+    ["recall-lock", ".cascade-tutorial-game-tile.has-recall-lock .cascade-lock-mark.is-revealed"],
+    ["enchanted-ground", ".cascade-tutorial-game-tile.has-enchanted-ground .cascade-ground-mark"],
+    ["crystal-forge", ".cascade-tutorial-game-tile.has-producer .cascade-producer-mark"],
+    ["color-ward", ".cascade-tutorial-game-tile.has-color-ward .cascade-color-ward-mark"],
   ];
 
   for (const [id, selector] of cases) {
