@@ -48,7 +48,7 @@ test("Cascade shows a themed first tip once and the checkbox disables future tip
   await dialog.locator("[data-tutorial-disable]").check();
   await dialog.locator("[data-tutorial-continue]").click();
   await expect(dialog).not.toBeVisible();
-  await expect(page.locator("#cascade-tutorial-toggle")).toHaveText(/Tutorial tips off/);
+  await expect(page.locator("#cascade-tutorial-toggle")).toHaveText(/Auto tips off/);
 
   const saved = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), TUTORIAL_KEY);
   expect(saved.enabled).toBe(false);
