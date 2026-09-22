@@ -1,6 +1,7 @@
 const TUTORIAL_KEY = "scribbles-gameframe.cascade-tutorial:v1";
 const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
 const BLOOM_SYMBOLS = Object.freeze(["♥", "◆", "★", "●", "✦", "✿"]);
+const BASIC_HELP_IDS = Object.freeze(["match", "stripe", "bomb", "combo", "color", "butterfly", "hammer"]);
 
 const tutorials = Object.freeze({
   match: Object.freeze({
@@ -91,6 +92,62 @@ const tutorials = Object.freeze({
     accent: "#e85db0",
     visual: "memory-bloom",
   }),
+  butterfly: Object.freeze({
+    kicker: "BUTTERFLY",
+    title: "A 2×2 square makes a Butterfly.",
+    copy: "Make a 2×2 square of one color to create a Butterfly. When it triggers, it flies to a useful objective cell and clears there.",
+    tip: "Butterflies are especially useful when an objective is awkward to reach directly.",
+    accent: "#e85db0",
+    visual: "butterfly",
+  }),
+  drop: Object.freeze({
+    kicker: "DROP OBJECTIVE",
+    title: "Drop every diamond to its exit.",
+    copy: "Clear pieces underneath each diamond so gravity carries it down to the glowing exit at the bottom.",
+    tip: "Vertical stripes and clears below the diamond can move it quickly.",
+    accent: "#44c9ee",
+    visual: "drop",
+  }),
+  cage: Object.freeze({
+    kicker: "CAGE",
+    title: "Crack every cage open.",
+    copy: "Caged candies stay fixed and cannot be swapped. Clear beside a cage or hit it with a special to break a layer.",
+    tip: "A double cage needs two hits before the candy is free.",
+    accent: "#a56af4",
+    visual: "cage",
+  }),
+  "recall-lock": Object.freeze({
+    kicker: "RECALL LOCK",
+    title: "Remember the lock's color-symbol.",
+    copy: "Each magic lock briefly shows the color-symbol it wants. Remember it, then clear that color beside the lock.",
+    tip: "If you forget, tap the closed lock for a quick clue.",
+    accent: "#a56af4",
+    visual: "recall-lock",
+  }),
+  "enchanted-ground": Object.freeze({
+    kicker: "MAGIC GROUND",
+    title: "Spread the sparkling ground.",
+    copy: "Make clears that touch enchanted ground. The magic spreads through the cells in that clear until the target is covered.",
+    tip: "Long clears and specials can spread the ground across several cells at once.",
+    accent: "#69d877",
+    visual: "enchanted-ground",
+  }),
+  "crystal-forge": Object.freeze({
+    kicker: "CRYSTAL FORGE",
+    title: "Feed each forge, then collect its crystal.",
+    copy: "Clear beside a forge to make a crystal. Then clear the forge tile later to collect that crystal. Repeat until every charge is used.",
+    tip: "A forge with a crystal is ready to be cleared; an empty forge needs a neighboring clear first.",
+    accent: "#44c9ee",
+    visual: "crystal-forge",
+  }),
+  "color-ward": Object.freeze({
+    kicker: "COLOR WARD",
+    title: "Clear the color shown by the ward.",
+    copy: "Each ward displays the color-symbol it wants. Clear that visible color beside the ward to open it.",
+    tip: "Unlike Recall Locks, the ward keeps its requested color visible — no memorizing required.",
+    accent: "#ffd34e",
+    visual: "color-ward",
+  }),
 });
 
 const queue = [];
@@ -134,10 +191,13 @@ function hasSeen(id) {
 
 function updateToggle() {
   const button = document.querySelector("#cascade-tutorial-toggle");
-  if (!button) return;
-  button.textContent = state.enabled ? "💡 Tutorial tips on" : "💡 Tutorial tips off";
-  button.setAttribute("aria-pressed", String(state.enabled));
-  button.title = state.enabled ? "Turn off future first-time tutorial tips." : "Turn tutorial tips back on.";
+  if (button) {
+    button.textContent = state.enabled ? "💡 Auto tips on" : "💡 Auto tips off";
+    button.setAttribute("aria-pressed", String(state.enabled));
+    button.title = state.enabled ? "Turn off automatic first-time mechanic tips." : "Turn automatic mechanic tips back on.";
+  }
+  const helpToggle = document.querySelector("[data-context-help-auto]");
+  if (helpToggle) helpToggle.checked = state.enabled;
 }
 
 function setEnabled(enabled, source = "settings") {
@@ -146,24 +206,48 @@ function setEnabled(enabled, source = "settings") {
   if (!state.enabled) {
     queue.length = 0;
     pendingIds.clear();
+  } else {
+    scheduleMechanicScan();
   }
   updateToggle();
   track(state.enabled ? "tutorial_tips_enabled" : "tutorial_tips_disabled", { source });
 }
 
-function installToggle() {
-  if (document.querySelector("#cascade-tutorial-toggle")) return;
+function installControls() {
   const controls = document.querySelector("#cascade-feedback-card .cascade-feedback-controls");
   if (!controls) {
-    window.setTimeout(installToggle, 50);
+    window.setTimeout(installControls, 50);
     return;
   }
+  if (!document.querySelector("#cascade-help-toggle")) {
+    const helpButton = document.createElement("button");
+    helpButton.type = "button";
+    helpButton.id = "cascade-help-toggle";
+    helpButton.textContent = "? Help";
+    helpButton.title = "Explain the mechanics on this level.";
+    helpButton.addEventListener("click", openContextHelp);
+    controls.append(helpButton);
+  }
+  if (!document.querySelector("#cascade-tutorial-toggle")) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.id = "cascade-tutorial-toggle";
+    button.addEventListener("click", () => setEnabled(!state.enabled));
+    controls.append(button);
+  }
+  updateToggle();
+}
+
+function installMobileHelpButton() {
+  if (document.querySelector("#cascade-mobile-help-toggle")) return;
   const button = document.createElement("button");
   button.type = "button";
-  button.id = "cascade-tutorial-toggle";
-  button.addEventListener("click", () => setEnabled(!state.enabled));
-  controls.append(button);
-  updateToggle();
+  button.id = "cascade-mobile-help-toggle";
+  button.setAttribute("aria-label", "Help for this level");
+  button.title = "Help for this level";
+  button.textContent = "?";
+  button.addEventListener("click", openContextHelp);
+  document.body.append(button);
 }
 
 function tileMarkup(kind, { special = "", ice = 0, extraClass = "" } = {}) {
@@ -186,6 +270,15 @@ function bloomTileMarkup(symbol = 3, { revealed = false } = {}) {
   const symbolData = revealed ? ` data-bloom-symbol="${bloomSymbol}"` : "";
   const text = revealed ? BLOOM_SYMBOLS[bloomSymbol] : "✿";
   return `<i class="cascade-tile cascade-tutorial-game-tile has-memory-bloom" data-kind="3" data-bloom="true" aria-hidden="true"><span class="${markClass}"${symbolData} aria-hidden="true">${text}</span></i>`;
+}
+
+function objectiveTileMarkup(kind, { classes = [], attributes = "", markClass = "", markText = "", markInner = "" } = {}) {
+  const tileKind = Math.max(0, Math.min(5, Math.floor(Number(kind) || 0)));
+  const className = ["cascade-tile", "cascade-tutorial-game-tile", ...classes].join(" ");
+  const mark = markClass
+    ? `<span class="${markClass}" aria-hidden="true">${markText}${markInner}</span>`
+    : "";
+  return `<i class="${className}" data-kind="${tileKind}"${attributes ? ` ${attributes}` : ""} aria-hidden="true">${mark}</i>`;
 }
 
 function levelData() {
@@ -238,7 +331,142 @@ function visualMarkup(kind) {
   if (kind === "memory-bloom") {
     return `<div class="cascade-tutorial-equation"><div class="cascade-tutorial-board-sample">${tileMarkup(1)}${bloomTileMarkup(3)}</div><span class="cascade-tutorial-arrow">→</span>${bloomTileMarkup(3, { revealed: true })}</div><b class="cascade-tutorial-preview-caption">CLEAR ON OR BESIDE ✿ · MATCH THE SAME SYMBOL</b>`;
   }
+  if (kind === "butterfly") {
+    return `<div class="cascade-tutorial-objective-scene">${tileMarkup(3, { special: "fish" })}<b class="cascade-tutorial-preview-caption">2×2 SQUARE → BUTTERFLY</b></div>`;
+  }
+  if (kind === "drop") {
+    const diamond = objectiveTileMarkup(1, { classes: ["has-drop-object"], attributes: 'data-drop-object="help"', markClass: "cascade-drop-object", markText: "◆" });
+    const exit = objectiveTileMarkup(4, { classes: ["has-drop-exit"], attributes: 'data-drop-exit="true"', markClass: "cascade-drop-exit", markText: "⇩" });
+    return `<div class="cascade-tutorial-equation">${diamond}<span class="cascade-tutorial-arrow">↓</span>${exit}</div><b class="cascade-tutorial-preview-caption">CLEAR BELOW THE DIAMOND</b>`;
+  }
+  if (kind === "cage") {
+    const cage = objectiveTileMarkup(2, { classes: ["has-lock", "has-cage"], attributes: 'data-lock="2"', markClass: "cascade-lock-mark", markText: "✦" });
+    return `<div class="cascade-tutorial-objective-scene">${cage}<b class="cascade-tutorial-preview-caption">CLEAR BESIDE IT · 2 HITS SHOWN</b></div>`;
+  }
+  if (kind === "recall-lock") {
+    const recall = objectiveTileMarkup(1, { classes: ["has-lock", "has-recall-lock"], attributes: 'data-lock="1"', markClass: "cascade-lock-mark is-revealed", markText: "◆" });
+    return `<div class="cascade-tutorial-objective-scene">${recall}<b class="cascade-tutorial-preview-caption">REMEMBER THE COLOR-SYMBOL</b></div>`;
+  }
+  if (kind === "enchanted-ground") {
+    const ground = objectiveTileMarkup(3, { classes: ["has-enchanted-ground"], attributes: 'data-ground="true"', markClass: "cascade-ground-mark" });
+    return `<div class="cascade-tutorial-equation">${ground}${tileMarkup(3)}${tileMarkup(3)}</div><b class="cascade-tutorial-preview-caption">CLEAR TOUCHING THE GLOW</b>`;
+  }
+  if (kind === "crystal-forge") {
+    const forge = objectiveTileMarkup(4, {
+      classes: ["has-producer"],
+      attributes: 'data-producer-charges="2"',
+      markClass: "cascade-producer-mark",
+      markText: "✹",
+      markInner: '<span class="cascade-producer-charge" aria-hidden="true">2</span>',
+    });
+    const crystal = objectiveTileMarkup(4, { classes: ["has-producer", "has-producer-crystal"], attributes: 'data-producer-charges="1"', markClass: "cascade-producer-mark", markText: "◆" });
+    return `<div class="cascade-tutorial-equation">${forge}<span class="cascade-tutorial-arrow">→</span>${crystal}</div><b class="cascade-tutorial-preview-caption">FEED FORGE → CLEAR CRYSTAL</b>`;
+  }
+  if (kind === "color-ward") {
+    const ward = objectiveTileMarkup(0, { classes: ["has-color-ward"], attributes: 'data-color-ward="1"', markClass: "cascade-color-ward-mark kind-1", markText: "◆" });
+    return `<div class="cascade-tutorial-equation">${ward}${tileMarkup(1)}${tileMarkup(1)}</div><b class="cascade-tutorial-preview-caption">CLEAR THE SHOWN COLOR BESIDE IT</b>`;
+  }
   return tileMarkup(0);
+}
+
+function contextualTutorialIds(level = levelData()) {
+  if (!level) return ["match"];
+  const ids = [];
+  if (level.level === 1) ids.push("match");
+  else if (level.level === 2) ids.push("stripe");
+  else if (level.level === 3) ids.push("bomb");
+  else if (level.level === 4) ids.push("combo");
+  else if (level.level === 5) ids.push("color");
+  else if (level.level === 6) ids.push("butterfly");
+
+  if (Array.isArray(level.objective?.collect) && level.objective.collect.length) ids.push("collect");
+  if (level.objective?.drop) ids.push("drop");
+  if (level.objective?.locks?.recall) ids.push("recall-lock");
+  else if (level.objective?.locks) ids.push("cage");
+  if (level.objective?.blooms) ids.push("memory-bloom");
+  if (level.objective?.ground) ids.push("enchanted-ground");
+  if (level.objective?.producers) ids.push("crystal-forge");
+  if (level.objective?.colorWards) ids.push("color-ward");
+  if (Number(level.objective?.ice?.layers) >= 2) ids.push("layered-ice");
+  else if (level.objective?.ice) ids.push("ice");
+
+  return [...new Set(ids.length ? ids : ["match"])];
+}
+
+function helpItemMarkup(id) {
+  const definition = tutorials[id];
+  if (!definition) return "";
+  return `
+    <article class="cascade-context-help-item" data-context-help-item="${id}" style="--tutorial-accent:${definition.accent}">
+      <div class="cascade-context-help-preview" aria-hidden="true">
+        <div class="cascade-tutorial-visual is-${definition.visual}">${visualMarkup(definition.visual)}</div>
+      </div>
+      <div class="cascade-context-help-copy">
+        <small>${definition.kicker}</small>
+        <h3>${definition.title}</h3>
+        <p>${definition.copy}</p>
+        <div class="cascade-context-help-tip">${definition.tip}</div>
+      </div>
+    </article>`;
+}
+
+function ensureContextHelpDialog() {
+  let dialog = document.querySelector("#cascade-context-help-dialog");
+  if (dialog) return dialog;
+  dialog = document.createElement("dialog");
+  dialog.id = "cascade-context-help-dialog";
+  dialog.className = "cascade-dialog cascade-context-help-dialog";
+  dialog.setAttribute("aria-labelledby", "cascade-context-help-title");
+  dialog.innerHTML = `
+    <section class="cascade-context-help-sheet">
+      <header class="cascade-context-help-header">
+        <div>
+          <small data-context-help-kicker>LEVEL HELP</small>
+          <h2 id="cascade-context-help-title">How this level works</h2>
+        </div>
+        <button type="button" data-context-help-close aria-label="Close help">×</button>
+      </header>
+      <div class="cascade-context-help-current" data-context-help-current></div>
+      <details class="cascade-context-help-basics">
+        <summary>Basics &amp; specials</summary>
+        <div class="cascade-context-help-list" data-context-help-basics></div>
+      </details>
+      <label class="cascade-context-help-auto">
+        <input type="checkbox" data-context-help-auto>
+        <span><strong>Show new mechanic tips automatically</strong><small>You can always open Help even when automatic tips are off.</small></span>
+      </label>
+      <button type="button" class="cascade-context-help-done" data-context-help-close>Back to game</button>
+    </section>
+  `;
+  dialog.querySelectorAll("[data-context-help-close]").forEach((button) => button.addEventListener("click", () => dialog.close()));
+  dialog.querySelector("[data-context-help-auto]").addEventListener("change", (event) => setEnabled(event.target.checked, "help"));
+  document.body.append(dialog);
+  updateToggle();
+  return dialog;
+}
+
+function renderContextHelp() {
+  const dialog = ensureContextHelpDialog();
+  const level = levelData();
+  const levelNumber = Math.max(1, Math.floor(Number(level?.level) || Number(document.querySelector("#level-number")?.textContent) || 1));
+  const currentIds = contextualTutorialIds(level);
+  dialog.querySelector("[data-context-help-kicker]").textContent = `LEVEL ${levelNumber} HELP`;
+  dialog.querySelector("[data-context-help-current]").innerHTML = currentIds.map(helpItemMarkup).join("");
+  dialog.querySelector("[data-context-help-basics]").innerHTML = BASIC_HELP_IDS.map(helpItemMarkup).join("");
+  dialog.querySelector("[data-context-help-auto]").checked = state.enabled;
+  return { dialog, currentIds };
+}
+
+function openContextHelp() {
+  const mobileMenu = document.querySelector("#cascade-mobile-menu");
+  if (mobileMenu?.open) mobileMenu.close();
+  const { dialog, currentIds } = renderContextHelp();
+  if (!dialog.open) dialog.showModal();
+  dialog.querySelector(".cascade-context-help-sheet")?.scrollTo({ top: 0 });
+  track("context_help_opened", {
+    level: Math.max(1, Math.floor(Number(levelData()?.level) || 1)),
+    mechanics: currentIds,
+  });
 }
 
 function ensureDialog() {
@@ -262,7 +490,7 @@ function ensureDialog() {
       <div class="cascade-tutorial-actions">
         <label class="cascade-tutorial-disable">
           <input type="checkbox" data-tutorial-disable>
-          <span>Turn off tutorial tips</span>
+          <span>Turn off automatic tips</span>
         </label>
         <button type="button" class="cascade-tutorial-continue" data-tutorial-continue>Got it</button>
       </div>
@@ -360,7 +588,13 @@ function scanMechanics() {
   if (board?.querySelector('[data-ice="2"]')) requestTip("layered-ice");
 
   if (Array.isArray(level?.objective?.collect) && level.objective.collect.length) requestTip("collect");
+  if (level?.objective?.drop) requestTip("drop");
+  if (level?.objective?.locks?.recall) requestTip("recall-lock");
+  else if (level?.objective?.locks) requestTip("cage");
   if (level?.objective?.blooms) requestTip("memory-bloom");
+  if (level?.objective?.ground) requestTip("enchanted-ground");
+  if (level?.objective?.producers) requestTip("crystal-forge");
+  if (level?.objective?.colorWards) requestTip("color-ward");
   if (Number(level?.objective?.ice?.layers) >= 2) requestTip("layered-ice");
   else if (level?.objective?.ice) requestTip("ice");
 
@@ -398,7 +632,8 @@ function interceptFirstAction(event) {
   }
 }
 
-installToggle();
+installControls();
+installMobileHelpButton();
 document.addEventListener("click", interceptFirstAction, true);
 
 const board = document.querySelector("#board");
@@ -437,6 +672,8 @@ window.cascadeTutorial = Object.freeze({
   isEnabled: () => state.enabled,
   hasSeen,
   setEnabled,
+  openHelp: openContextHelp,
+  currentHelpIds: () => contextualTutorialIds(),
   show(id) {
     if (!tutorials[id]) return false;
     delete state.seen[id];
