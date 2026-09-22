@@ -806,6 +806,6 @@ export function applySpecialHammer(board, specials, index, rng, options = {}) {
   };
 }
 
-export function applySpecialLevelProgress(levelDefinition, progress, result) {
-  return applyLevelProgress(levelDefinition, progress, result);
+export function applySpecialLevelProgress(levelDefinition, progress, result, options = {}) {
+  return applyLevelProgress(levelDefinition, progress, result, options);
 }
