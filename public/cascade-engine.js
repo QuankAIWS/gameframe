@@ -1614,7 +1614,7 @@ export function describeLevelObjective(levelDefinition, progress, score = 0) {
   }
   if (levelDefinition.objective?.blooms) {
     const current = Math.min(Number(levelDefinition.objective.blooms.pairs || 0), Number(progress?.blooms?.collectedPairs || 0));
-    parts.push(`blooms ${current}/${levelDefinition.objective.blooms.pairs} pairs`);
+    parts.push(`blooms ${current}/${levelDefinition.objective.blooms.pairs} pairs · clear on/beside ✿`);
   }
   if (levelDefinition.objective?.ground) {
     const current = Math.min(Number(levelDefinition.objective.ground.target || 0), Number(progress?.ground?.count || 0));
