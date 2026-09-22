@@ -328,7 +328,9 @@ test("Bloom flow 08 final pair clears the level when score is already satisfied"
   const rewardStage = page.locator(".cascade-reward-stage");
   await expect(rewardStage).toHaveClass(/is-active/, { timeout: 5000 });
   await shot(page, "12-level-clear-reward");
-  await expect(page.locator("#result-dialog")).toBeVisible({ timeout: 12000 });
-  await expect(page.locator("#result-title")).toContainText("Level 753 cleared");
+  await expect(rewardStage).toHaveClass(/is-awaiting-choice/, { timeout: 12000 });
+  await expect(rewardStage.locator(".cascade-reward-actions")).toBeVisible();
+  await expect(rewardStage.locator(".cascade-reward-actions button", { hasText: "Continue" })).toHaveCount(1);
+  await expect(page.locator("#result-dialog")).not.toHaveAttribute("open", "");
   await shot(page, "13-level-clear-actions");
 });
