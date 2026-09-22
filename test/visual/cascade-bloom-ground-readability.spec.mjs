@@ -35,6 +35,21 @@ test("Cascade Memory Blooms are large, fixed, and readable on mobile", async ({ 
   await page.screenshot({ path: `${output}/cascade-memory-blooms-mobile.png`, fullPage: true });
 });
 
+test("Cascade closed Memory Blooms do not leak hidden pair identity", async ({ page }) => {
+  await openLevel(page, 753, { width: 390, height: 844 });
+  const marks = page.locator(".cascade-tile.has-memory-bloom .cascade-bloom-mark:not(.is-revealed)");
+  await expect(marks).toHaveCount(4);
+  const details = await marks.evaluateAll((nodes) => nodes.map((node) => ({
+    text: node.textContent,
+    symbol: node.getAttribute("data-bloom-symbol"),
+    color: getComputedStyle(node).color,
+  })));
+  expect(details.every((item) => item.text === "✿")).toBe(true);
+  expect(details.every((item) => item.symbol === null)).toBe(true);
+  expect(new Set(details.map((item) => item.color)).size).toBe(1);
+  await page.screenshot({ path: `${output}/cascade-memory-blooms-closed-neutral-mobile.png`, fullPage: true });
+});
+
 test("Cascade open Memory Bloom shows redundant symbol and color", async ({ page }) => {
   await openLevel(page, 751, { width: 390, height: 844 });
   const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
