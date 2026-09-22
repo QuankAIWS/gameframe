@@ -636,7 +636,7 @@
     position: fixed;
     z-index: 2147483002;
     top: calc(env(safe-area-inset-top) + 3px);
-    right: max(70px, calc(env(safe-area-inset-right) + 70px));
+    right: max(105px, calc(env(safe-area-inset-right) + 105px));
     display: grid;
     place-items: center;
     width: 46px;
