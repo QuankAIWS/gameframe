@@ -440,26 +440,6 @@
 }
 
 
-#cascade-help-toggle {
-  flex: 0 0 auto;
-  min-height: 34px;
-  padding: 5px 10px;
-  border: 2px solid rgba(112,78,147,.12);
-  border-radius: 12px;
-  background: rgba(255,255,255,.84);
-  color: #69468a;
-  font: inherit;
-  font-weight: 950;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(79,47,103,.08);
-}
-
-#cascade-help-toggle:hover,
-#cascade-help-toggle:focus-visible {
-  background: rgba(255,255,255,.98);
-  border-color: rgba(112,78,147,.24);
-}
-
 #cascade-mobile-help-toggle {
   display: none;
 }
@@ -652,15 +632,11 @@
 }
 
 @media (max-width: 700px) and (orientation: portrait) {
-  #cascade-help-toggle {
-    display: none;
-  }
-
   #cascade-mobile-help-toggle {
     position: fixed;
     z-index: 2147483002;
     top: calc(env(safe-area-inset-top) + 3px);
-    right: max(58px, calc(env(safe-area-inset-right) + 58px));
+    right: max(70px, calc(env(safe-area-inset-right) + 70px));
     display: grid;
     place-items: center;
     width: 46px;
