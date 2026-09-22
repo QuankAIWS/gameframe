@@ -643,6 +643,8 @@ test("Memory Blooms give repeat feedback when the already-open flower is hit aga
   };
   value.symbols[9] = 2;
   value.symbols[54] = 2;
+  value.symbols[18] = 4;
+  value.symbols[45] = 4;
 
   const repeated = advanceBloomProgress(value, [9]);
   assert.equal(repeated.activeIndex, 9);
