@@ -599,6 +599,87 @@ test("one cascade step advances only one Memory Bloom even when a large clear to
   assert.equal(advanced.symbols[18], 4);
 });
 
+test("Memory Blooms prefer direct hits over adjacent lower-index flowers", () => {
+  const value = {
+    totalPairs: 2,
+    collectedPairs: 0,
+    activeIndex: -1,
+    symbols: Array(64).fill(-1),
+    lastEvents: [],
+  };
+  value.symbols[9] = 2;
+  value.symbols[17] = 4;
+
+  const advanced = advanceBloomProgress(value, [17]);
+  assert.equal(advanced.activeIndex, 17);
+  assert.equal(advanced.lastEvents[0].type, "open");
+  assert.equal(advanced.lastEvents[0].index, 17);
+});
+
+test("Memory Blooms do not let an already-open adjacent flower swallow a different touched flower", () => {
+  const value = {
+    totalPairs: 2,
+    collectedPairs: 0,
+    activeIndex: 9,
+    symbols: Array(64).fill(-1),
+    lastEvents: [],
+  };
+  value.symbols[9] = 2;
+  value.symbols[18] = 4;
+
+  const advanced = advanceBloomProgress(value, [17]);
+  assert.equal(advanced.activeIndex, -1);
+  assert.equal(advanced.lastEvents[0].type, "mismatch");
+  assert.deepEqual(advanced.lastEvents[0].indices, [9, 18]);
+});
+
+test("Memory Blooms give repeat feedback when the already-open flower is hit again", () => {
+  const value = {
+    totalPairs: 2,
+    collectedPairs: 0,
+    activeIndex: 9,
+    symbols: Array(64).fill(-1),
+    lastEvents: [],
+  };
+  value.symbols[9] = 2;
+  value.symbols[54] = 2;
+
+  const repeated = advanceBloomProgress(value, [9]);
+  assert.equal(repeated.activeIndex, 9);
+  assert.equal(repeated.collectedPairs, 0);
+  assert.equal(repeated.lastEvents[0].type, "repeat");
+  assert.equal(repeated.lastEvents[0].index, 9);
+});
+
+test("one player action advances Memory Blooms at most once across multiple cascades", () => {
+  const level = CASCADE_LEVELS[752];
+  const progress = createLevelProgress(level);
+  progress.blooms = {
+    totalPairs: 2,
+    collectedPairs: 0,
+    activeIndex: -1,
+    symbols: Array(64).fill(-1),
+    lastEvents: [],
+  };
+  progress.blooms.symbols[9] = 2;
+  progress.blooms.symbols[54] = 2;
+  progress.blooms.symbols[18] = 4;
+  progress.blooms.symbols[45] = 4;
+  const board = Array(64).fill(0);
+
+  const advanced = applyLevelProgress(level, progress, {
+    transitions: [
+      { matchedForProgress: [8], matched: [8], before: board, cleared: board },
+      { matchedForProgress: [55], matched: [55], before: board, cleared: board },
+    ],
+  });
+
+  assert.equal(advanced.blooms.activeIndex, 9);
+  assert.equal(advanced.blooms.collectedPairs, 0);
+  assert.equal(advanced.blooms.lastEvents.length, 1);
+  assert.equal(advanced.blooms.lastEvents[0].type, "open");
+});
+
 test("Enchanted Ground spreads only when a clear touches existing magic", () => {
   const value = {
     target: 12,
