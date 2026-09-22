@@ -224,6 +224,24 @@ function installControls() {
     controls.append(helpButton);
   }
   updateToggle();
+  syncHelpAvailability();
+}
+
+function helpIsBlockedByTimedMode() {
+  try {
+    return window.cascadeResearch?.exportLevel?.()?.mode === "blitz";
+  } catch {
+    return document.body.classList.contains("cascade-blitz-mode");
+  }
+}
+
+function syncHelpAvailability() {
+  const blocked = helpIsBlockedByTimedMode() || document.body.classList.contains("cascade-blitz-mode");
+  for (const button of document.querySelectorAll("#cascade-help-toggle, #cascade-mobile-help-toggle")) {
+    button.disabled = blocked;
+    button.setAttribute("aria-disabled", String(blocked));
+    button.title = blocked ? "Help is available after this timed Blitz." : "Help for this level";
+  }
 }
 
 function installMobileHelpButton() {
@@ -236,6 +254,7 @@ function installMobileHelpButton() {
   button.textContent = "?";
   button.addEventListener("click", openContextHelp);
   document.body.append(button);
+  syncHelpAvailability();
 }
 
 function tileMarkup(kind, { special = "", ice = 0, extraClass = "" } = {}) {
@@ -446,6 +465,11 @@ function renderContextHelp() {
 }
 
 function openContextHelp() {
+  if (helpIsBlockedByTimedMode()) {
+    syncHelpAvailability();
+    track("context_help_blocked", { reason: "timed_blitz" });
+    return false;
+  }
   const mobileMenu = document.querySelector("#cascade-mobile-menu");
   if (mobileMenu?.open) mobileMenu.close();
   const { dialog, currentIds } = renderContextHelp();
@@ -455,6 +479,7 @@ function openContextHelp() {
     level: Math.max(1, Math.floor(Number(levelData()?.level) || 1)),
     mechanics: currentIds,
   });
+  return true;
 }
 
 function ensureDialog() {
@@ -623,6 +648,8 @@ function interceptFirstAction(event) {
 
 installControls();
 installMobileHelpButton();
+new MutationObserver(syncHelpAvailability).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+syncHelpAvailability();
 document.addEventListener("click", interceptFirstAction, true);
 
 const board = document.querySelector("#board");
