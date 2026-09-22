@@ -16,6 +16,13 @@ const ALL_SEEN = Object.freeze({
   hammer: true,
   weekly: true,
   "memory-bloom": true,
+  butterfly: true,
+  drop: true,
+  cage: true,
+  "recall-lock": true,
+  "enchanted-ground": true,
+  "crystal-forge": true,
+  "color-ward": true,
 });
 
 async function seed(page, level) {
@@ -65,3 +72,33 @@ for (const { id, level, viewport } of tutorialCases) {
     await page.screenshot({ path: `${output}/cascade-tutorial-${id}-${viewport.width <= 500 ? "mobile" : "desktop"}.png`, fullPage: false });
   });
 }
+
+test("Cascade contextual Help is one tap from the mobile board and shows mixed level mechanics", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seed(page, 851);
+  await page.goto("/cascade.html?player=context-help-visual&tutorials=force");
+  await page.waitForFunction(() => Boolean(window.cascadeTutorial));
+
+  const helpButton = page.locator("#cascade-mobile-help-toggle");
+  const menuButton = page.locator("#cascade-mobile-menu-toggle");
+  await expect(helpButton).toBeVisible();
+  await expect(menuButton).toBeVisible();
+  const [helpBox, menuBox] = await Promise.all([helpButton.boundingBox(), menuButton.boundingBox()]);
+  expect(helpBox?.width).toBeGreaterThanOrEqual(44);
+  expect(helpBox?.height).toBeGreaterThanOrEqual(44);
+  expect(menuBox?.width).toBeGreaterThanOrEqual(44);
+  expect(helpBox.x + helpBox.width).toBeLessThanOrEqual(menuBox.x);
+
+  await helpButton.click();
+  const dialog = page.locator("#cascade-context-help-dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('[data-context-help-current] [data-context-help-item="memory-bloom"]')).toHaveCount(1);
+  await expect(dialog.locator('[data-context-help-current] [data-context-help-item="enchanted-ground"]')).toHaveCount(1);
+  await expect(dialog.locator("[data-context-help-auto]")).toBeChecked();
+  await expect(dialog.locator(".cascade-context-help-basics")).not.toHaveAttribute("open", "");
+  await page.screenshot({ path: `${output}/cascade-context-help-mixed-mobile.png`, fullPage: false });
+
+  await dialog.locator(".cascade-context-help-basics summary").click();
+  await expect(dialog.locator(".cascade-context-help-basics")).toHaveAttribute("open", "");
+  await page.screenshot({ path: `${output}/cascade-context-help-basics-mobile.png`, fullPage: false });
+});
