@@ -14,6 +14,13 @@ const ALL_SEEN = Object.freeze({
   hammer: true,
   weekly: true,
   "memory-bloom": true,
+  butterfly: true,
+  drop: true,
+  cage: true,
+  "recall-lock": true,
+  "enchanted-ground": true,
+  "crystal-forge": true,
+  "color-ward": true,
 });
 
 function cascadeState(level = 1) {
@@ -111,6 +118,63 @@ test("Memory Bloom tutorial appears on first Bloom encounter and explains the in
   await expect(dialog.locator(".cascade-bloom-mark:not(.is-revealed)")).not.toHaveAttribute("data-bloom-symbol", /.+/);
   await dialog.locator("[data-tutorial-continue]").click();
   await expect(dialog).not.toBeVisible();
+});
+
+test("manual Help explains the current level even when automatic tips are off", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(({ tutorialKey, stateKey }) => {
+    localStorage.setItem(tutorialKey, JSON.stringify({ enabled: false, seen: { "memory-bloom": true } }));
+    localStorage.setItem(stateKey, JSON.stringify({ level: 753, lives: 5, lastLifeAt: Date.now(), streak: 0, hammers: 2 }));
+  }, { tutorialKey: TUTORIAL_KEY, stateKey: STATE_KEY });
+
+  await page.goto("/cascade.html?player=context-help-off&tutorials=force");
+  await expect(page.locator("#cascade-tutorial-dialog")).not.toBeVisible();
+  await expect(page.locator("#cascade-mobile-help-toggle")).toBeVisible();
+  await page.locator("#cascade-mobile-help-toggle").click();
+
+  const help = page.locator("#cascade-context-help-dialog");
+  await expect(help).toBeVisible();
+  await expect(help.locator("[data-context-help-kicker]")).toHaveText("LEVEL 753 HELP");
+  await expect(help.locator('[data-context-help-current] [data-context-help-item="memory-bloom"]')).toHaveCount(1);
+  await expect(help.locator("[data-context-help-auto]")).not.toBeChecked();
+  await expect(help.locator(".cascade-context-help-basics")).not.toHaveAttribute("open", "");
+  await help.locator("[data-context-help-close]").last().click();
+  await expect(help).not.toBeVisible();
+  await expect(page.locator("#cascade-tutorial-dialog")).not.toBeVisible();
+});
+
+test("context Help shows every special objective on a mixed level", async ({ page }) => {
+  await page.addInitScript(({ tutorialKey, stateKey, seenTips }) => {
+    localStorage.setItem(tutorialKey, JSON.stringify({ enabled: true, seen: seenTips }));
+    localStorage.setItem(stateKey, JSON.stringify({ level: 851, lives: 5, lastLifeAt: Date.now(), streak: 0, hammers: 2 }));
+  }, { tutorialKey: TUTORIAL_KEY, stateKey: STATE_KEY, seenTips: ALL_SEEN });
+
+  await page.goto("/cascade.html?player=context-help-mixed&tutorials=force");
+  await page.waitForFunction(() => Boolean(window.cascadeTutorial));
+  expect(await page.evaluate(() => window.cascadeTutorial.currentHelpIds())).toEqual(["memory-bloom", "enchanted-ground"]);
+
+  await page.locator("#cascade-help-toggle").click();
+  const current = page.locator("#cascade-context-help-dialog [data-context-help-current]");
+  await expect(current.locator('[data-context-help-item="memory-bloom"]')).toHaveCount(1);
+  await expect(current.locator('[data-context-help-item="enchanted-ground"]')).toHaveCount(1);
+  await expect(current.locator("[data-context-help-item]")).toHaveCount(2);
+});
+
+test("turning automatic tips back on from Help queues the current mechanic reminder", async ({ page }) => {
+  await page.addInitScript(({ tutorialKey, stateKey }) => {
+    localStorage.setItem(tutorialKey, JSON.stringify({ enabled: false, seen: {} }));
+    localStorage.setItem(stateKey, JSON.stringify({ level: 753, lives: 5, lastLifeAt: Date.now(), streak: 0, hammers: 2 }));
+  }, { tutorialKey: TUTORIAL_KEY, stateKey: STATE_KEY });
+
+  await page.goto("/cascade.html?player=context-help-reenable&tutorials=force");
+  await page.locator("#cascade-help-toggle").click();
+  const help = page.locator("#cascade-context-help-dialog");
+  await help.locator("[data-context-help-auto]").check();
+  await help.locator("[data-context-help-close]").last().click();
+
+  const tip = page.locator("#cascade-tutorial-dialog");
+  await expect(tip).toBeVisible();
+  await expect(tip).toHaveAttribute("data-tutorial", "memory-bloom");
 });
 
 test("Hammer tutorial appears before the booster arms, then resumes the click", async ({ page }) => {
