@@ -257,6 +257,7 @@ test("Cascade introduces Memory Blooms at level 751", async ({ page }) => {
 
   await expect(page.locator("#level-number")).toHaveText("751");
   await expect(page.locator("#objective-label")).toContainText("blooms");
+  await expect(page.locator("#objective-label")).toContainText("clear on/beside ✿");
   await expect(page.locator(".cascade-tile.has-memory-bloom")).toHaveCount(4);
   await expect(page.locator(".cascade-help")).toContainText("matching flower pair");
 

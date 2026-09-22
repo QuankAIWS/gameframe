@@ -13,6 +13,7 @@ const ALL_SEEN = Object.freeze({
   "layered-ice": true,
   hammer: true,
   weekly: true,
+  "memory-bloom": true,
 });
 
 function cascadeState(level = 1) {
@@ -76,6 +77,40 @@ test("Cascade does not gate the striped special to level two and keeps the live-
   await expect(dialog).not.toBeVisible();
 
   await expect.poll(() => page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").seen?.stripe, TUTORIAL_KEY)).toBe(true);
+});
+
+test("Memory Bloom tutorial appears on first Bloom encounter and explains the interaction", async ({ page }) => {
+  await page.addInitScript(({ tutorialKey, stateKey }) => {
+    localStorage.setItem(tutorialKey, JSON.stringify({
+      enabled: true,
+      seen: {
+        match: true,
+        stripe: true,
+        bomb: true,
+        combo: true,
+        color: true,
+        ice: true,
+        collect: true,
+        "layered-ice": true,
+        hammer: true,
+        weekly: true,
+      },
+    }));
+    localStorage.setItem(stateKey, JSON.stringify({ level: 753, lives: 5, lastLifeAt: Date.now(), streak: 0, hammers: 2 }));
+  }, { tutorialKey: TUTORIAL_KEY, stateKey: STATE_KEY });
+
+  await page.goto("/cascade.html?player=tutorial-memory-bloom&tutorials=force");
+  await expect(page.locator("#level-number")).toHaveText("753");
+  const dialog = page.locator("#cascade-tutorial-dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute("data-tutorial", "memory-bloom");
+  await expect(dialog.locator("[data-tutorial-title]")).toHaveText("Reveal one flower, then find its match.");
+  await expect(dialog.locator("[data-tutorial-copy]")).toContainText("directly beside a closed flower");
+  await expect(dialog.locator(".cascade-tutorial-game-tile.has-memory-bloom")).toHaveCount(2);
+  await expect(dialog.locator(".cascade-bloom-mark.is-revealed")).toHaveCount(1);
+  await expect(dialog.locator(".cascade-bloom-mark:not(.is-revealed)")).not.toHaveAttribute("data-bloom-symbol", /.+/);
+  await dialog.locator("[data-tutorial-continue]").click();
+  await expect(dialog).not.toBeVisible();
 });
 
 test("Hammer tutorial appears before the booster arms, then resumes the click", async ({ page }) => {
@@ -143,6 +178,7 @@ test("every Cascade tutorial preview is built from live game tiles or live game 
     ["layered-ice", ".cascade-tutorial-game-tile.has-ice.ice-2"],
     ["hammer", ".cascade-tutorial-hammer-card.cascade-card button"],
     ["weekly", ".cascade-tutorial-weekly-card.cascade-weekly-card button"],
+    ["memory-bloom", ".cascade-tutorial-game-tile.has-memory-bloom .cascade-bloom-mark.is-revealed"],
   ];
 
   for (const [id, selector] of cases) {

@@ -15,6 +15,7 @@ const ALL_SEEN = Object.freeze({
   "layered-ice": true,
   hammer: true,
   weekly: true,
+  "memory-bloom": true,
 });
 
 async function seed(page, level) {
@@ -41,6 +42,7 @@ const tutorialCases = [
   { id: "layered-ice", level: 151, viewport: { width: 390, height: 844 } },
   { id: "hammer", level: 1, viewport: { width: 1100, height: 800 } },
   { id: "weekly", level: 1, viewport: { width: 390, height: 844 } },
+  { id: "memory-bloom", level: 753, viewport: { width: 390, height: 844 } },
 ];
 
 test.beforeAll(async () => {

@@ -1216,17 +1216,24 @@ function bloomTriggerIndices(clearIndices, blooms) {
   const triggered = [];
   for (let index = 0; index < blooms.symbols.length; index += 1) {
     if (blooms.symbols[index] < 0) continue;
-    if (clearSet.has(index) || adjacentIndices(index).some((neighbor) => clearSet.has(neighbor))) triggered.push(index);
+    const direct = clearSet.has(index);
+    const adjacent = !direct && adjacentIndices(index).some((neighbor) => clearSet.has(neighbor));
+    if (direct || adjacent) triggered.push({ index, direct });
   }
-  return triggered.sort((a, b) => a - b);
+  return triggered.sort((a, b) => {
+    if (a.direct !== b.direct) return a.direct ? -1 : 1;
+    const aIsActive = a.index === blooms.activeIndex;
+    const bIsActive = b.index === blooms.activeIndex;
+    if (aIsActive !== bIsActive) return aIsActive ? 1 : -1;
+    return a.index - b.index;
+  });
 }
 
 export function advanceBloomProgress(value, clearIndices) {
   const next = normalizeBloomProgress(value);
   const events = [];
-  // One Bloom interaction per cascade step keeps large specials useful without
-  // allowing a single board-wide clear to auto-solve the memory objective.
-  const index = bloomTriggerIndices(clearIndices, next)[0];
+  const trigger = bloomTriggerIndices(clearIndices, next)[0];
+  const index = trigger?.index;
   if (!Number.isInteger(index) || next.symbols[index] < 0) {
     next.lastEvents = events;
     return next;
@@ -1234,7 +1241,9 @@ export function advanceBloomProgress(value, clearIndices) {
   if (next.activeIndex < 0) {
     next.activeIndex = index;
     events.push({ type: "open", index, symbol: next.symbols[index], indices: [index], symbols: [next.symbols[index]] });
-  } else if (next.activeIndex !== index) {
+  } else if (next.activeIndex === index) {
+    events.push({ type: "repeat", index, symbol: next.symbols[index], indices: [index], symbols: [next.symbols[index]] });
+  } else {
     const first = next.activeIndex;
     const firstSymbol = next.symbols[first];
     const secondSymbol = next.symbols[index];
@@ -1475,7 +1484,7 @@ export function createLevelProgress(levelDefinition) {
   return { collected: Array(TILE_KINDS).fill(0), ice: createIceBoard(levelDefinition), drop, locks, blooms, ground, producers, colorWards };
 }
 
-export function applyLevelProgress(levelDefinition, progress, result) {
+export function applyLevelProgress(levelDefinition, progress, result, options = {}) {
   const next = {
     collected: Array.from({ length: TILE_KINDS }, (_, kind) => Math.max(0, Number(progress?.collected?.[kind]) || 0)),
     ice: normalizeIce(result?.iceAfter ?? result?.ice ?? progress?.ice),
@@ -1492,11 +1501,22 @@ export function applyLevelProgress(levelDefinition, progress, result) {
   const groundSpread = [];
   const producerTriggers = [];
   const wardOpenings = [];
+  let bloomInteractionConsumed = options.skipBlooms === true;
+  next.blooms.lastEvents = [];
+
+  const advanceBloomOnce = (clearIndices) => {
+    if (bloomInteractionConsumed) return;
+    next.blooms = advanceBloomProgress(next.blooms, clearIndices);
+    if (next.blooms.lastEvents.length) {
+      bloomEvents.push(...next.blooms.lastEvents);
+      bloomInteractionConsumed = true;
+    }
+  };
+
   if (result?.hammer?.cleared) {
     const clearIndices = result.hammer.matchedForProgress || result.hammer.matched || [];
     next.drop = dropStepProgress(next.drop, result.hammer);
-    next.blooms = advanceBloomProgress(next.blooms, clearIndices);
-    bloomEvents.push(...next.blooms.lastEvents);
+    advanceBloomOnce(clearIndices);
     next.ground = advanceGroundProgress(next.ground, clearIndices);
     groundSpread.push(...next.ground.lastSpread);
     next.producers = advanceProducerProgress(next.producers, clearIndices);
@@ -1507,8 +1527,7 @@ export function applyLevelProgress(levelDefinition, progress, result) {
   for (const step of steps) {
     next.drop = dropStepProgress(next.drop, step);
     const clearIndices = step.matchedForProgress || step.matched || [];
-    next.blooms = advanceBloomProgress(next.blooms, clearIndices);
-    bloomEvents.push(...next.blooms.lastEvents);
+    advanceBloomOnce(clearIndices);
     next.ground = advanceGroundProgress(next.ground, clearIndices);
     groundSpread.push(...next.ground.lastSpread);
     next.producers = advanceProducerProgress(next.producers, clearIndices);
@@ -1595,7 +1614,7 @@ export function describeLevelObjective(levelDefinition, progress, score = 0) {
   }
   if (levelDefinition.objective?.blooms) {
     const current = Math.min(Number(levelDefinition.objective.blooms.pairs || 0), Number(progress?.blooms?.collectedPairs || 0));
-    parts.push(`blooms ${current}/${levelDefinition.objective.blooms.pairs} pairs`);
+    parts.push(`blooms ${current}/${levelDefinition.objective.blooms.pairs} pairs · clear on/beside ✿`);
   }
   if (levelDefinition.objective?.ground) {
     const current = Math.min(Number(levelDefinition.objective.ground.target || 0), Number(progress?.ground?.count || 0));
