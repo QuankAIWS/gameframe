@@ -203,6 +203,17 @@ test("levels 1051-1150 teach bounded creeping vines with a 14 percent memory cad
   assert.ok(rollingMemory.length / rolling.length >= 0.13 && rollingMemory.length / rolling.length <= 0.20);
 });
 
+test("Vine campaign pressure stays bounded outside challenge beats", () => {
+  for (const definition of CASCADE_LEVELS.slice(1050, 1150)) {
+    const vines = definition.objective.vines;
+    if (!vines) continue;
+    assert.ok(vines.count <= 4, `level ${definition.level} should not start with more than four vines`);
+    assert.ok(vines.cap <= vines.count + 2, `level ${definition.level} should keep bounded regrowth headroom`);
+    if (definition.difficulty === "relief") assert.ok(vines.count <= 2, `relief level ${definition.level} should keep vine pressure light`);
+    if (definition.difficulty === "normal") assert.ok(vines.count <= 3, `normal level ${definition.level} should keep vine pressure moderate`);
+  }
+});
+
 test("creeping vines spread once per player action, respect their cap, and stop when fully cleared", () => {
   const definition = CASCADE_LEVELS[1050];
   const progress = createLevelProgress(definition);
