@@ -257,6 +257,25 @@ test("levels 1151-2000 extend the campaign with slow-ramp recombination and a ro
   assert.ok(last.moves >= first.moves, "the long-horizon ramp should not rely on shrinking move budgets");
 });
 
+test("post-1150 player-facing map chapters keep memory accents spaced inside the 13-20 percent band", () => {
+  const memoryLevels = CASCADE_LEVELS
+    .slice(1140, 2000)
+    .filter((definition) => definition.objective.blooms || definition.objective.locks?.recall)
+    .map((definition) => definition.level);
+
+  for (let index = 1; index < memoryLevels.length; index += 1) {
+    assert.ok(memoryLevels[index] - memoryLevels[index - 1] >= 5, `memory accents ${memoryLevels[index - 1]} and ${memoryLevels[index]} should remain spaced`);
+  }
+
+  for (let start = 1141; start <= 1981; start += CHAPTER_SIZE) {
+    const end = Math.min(2000, start + CHAPTER_SIZE - 1);
+    const chapter = CASCADE_LEVELS.slice(start - 1, end);
+    const count = chapter.filter((definition) => definition.objective.blooms || definition.objective.locks?.recall).length;
+    const density = count / chapter.length;
+    assert.ok(density >= 0.13 && density <= 0.20, `map chapter ${start}-${end} memory density ${density.toFixed(3)} should remain inside the 13-20% band`);
+  }
+});
+
 test("Vine campaign pressure stays bounded outside challenge beats", () => {
   for (const definition of CASCADE_LEVELS.slice(1050, 1150)) {
     const vines = definition.objective.vines;
