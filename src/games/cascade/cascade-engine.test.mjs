@@ -556,8 +556,8 @@ test("campaign first-pass targets ramp gradually across the 10000-level horizon"
 
   assert.deepEqual(opening, { min: 0.82, max: 0.94, phase: "early" });
   assert.deepEqual(thousand, { min: 0.78, max: 0.90, phase: "growth" });
-  assert.deepEqual(milestone, { min: 0.68, max: 0.83, phase: "milestone" });
-  assert.deepEqual(mature, { min: 0.48, max: 0.68, phase: "mature" });
+  assert.deepEqual(milestone, { min: 0.76, max: 0.88, phase: "milestone" });
+  assert.deepEqual(mature, { min: 0.71, max: 0.85, phase: "mature" });
   assert.deepEqual(beyond, mature);
   assert.ok(opening.min > milestone.min);
   assert.ok(milestone.min > mature.min);
