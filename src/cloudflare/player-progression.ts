@@ -10,7 +10,7 @@ export const GAMER_XP_RULES = Object.freeze({
   spiderWin: 50,
 });
 
-export const MAX_CASCADE_LEVEL = 1150; // Keep aligned with public/cascade-engine.js LEVEL_COUNT; guarded by tests.
+export const MAX_CASCADE_LEVEL = 2000; // Keep aligned with public/cascade-engine.js LEVEL_COUNT; guarded by tests.
 
 export interface LifetimeGameRecord {
   played: number;
