@@ -1010,7 +1010,7 @@ function campaignSpec(levelNumber) {
 
   if (levelNumber <= 1110) {
     return buildSpec({
-      levelNumber, start: 1081, chapter: "vine-routing", baseTarget: 35000, targetStep: 95, baseMoves: 45,
+      levelNumber, start: 1081, chapter: "vine-routing", baseTarget: 33400, targetStep: 60, baseMoves: 45,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
@@ -1033,7 +1033,7 @@ function campaignSpec(levelNumber) {
 
   if (levelNumber <= 1140) {
     return buildSpec({
-      levelNumber, start: 1111, chapter: "vine-dependency-mix", baseTarget: 37600, targetStep: 100, baseMoves: 46,
+      levelNumber, start: 1111, chapter: "vine-dependency-mix", baseTarget: 33800, targetStep: 60, baseMoves: 46,
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
@@ -1059,7 +1059,7 @@ function campaignSpec(levelNumber) {
   }
 
   return buildSpec({
-    levelNumber, start: 1141, chapter: "vine-mastery", baseTarget: 40600, targetStep: 105, baseMoves: 47,
+    levelNumber, start: 1141, chapter: "vine-mastery", baseTarget: 34800, targetStep: 60, baseMoves: 47,
     objectiveFactory: ({ phase, within, wave }) => {
       const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
       const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
