@@ -3,7 +3,7 @@
 Status: canonical campaign expansion plan  
 Immediate production milestone: 3,000 shipped levels  
 Long-horizon capacity: 10,000 levels  
-Current implemented candidate slice: 1–1,150
+Current implemented candidate slice: 1–2,000
 
 ## Core doctrine
 
@@ -35,7 +35,7 @@ Accepted historical level definitions must not drift as a side effect of adding 
 
 A new mechanic should earn its place by changing player decisions. Cosmetic variants or additional hit points do not count as new mechanic families.
 
-The cognitive-health and engagement contract is maintained in `planning/cascade-cognitive-health-and-engagement.md`. It is a canonical companion to this roadmap for older-player cognitive load, memory-mechanic design, engagement cadence, hidden-information simulation, and the 601–1,050 content mix.
+The cognitive-health and engagement contract is maintained in `planning/cascade-cognitive-health-and-engagement.md`. It is a canonical companion to this roadmap for older-player cognitive load, memory-mechanic design, engagement cadence, hidden-information simulation, and the implemented 601–2,000 content mix.
 
 ### 451–650 — Drop / exit objects
 
@@ -174,98 +174,94 @@ At level 1,000, explicitly review both ordinary level difficulty and the new cog
 
 This checkpoint improves later unplayed batches; it does not require stopping production or waiting for the active player to reach the checkpoint.
 
-### 1,051–1,250 — Regrowing / spreading blockers
+### 1,051–1,250 — Creeping Vines: teach, contain, then normalize
 
-Levels 1,051–1,150 implement the first bounded form as **Creeping Vines**. Clearing at least one Vine suppresses growth for that player action; ignoring surviving Vines allows at most one deterministic adjacent spread below the authored cap. The 1,051–1,150 production slice uses 14 explicit memory accents (14%), with the first ten Vine-teaching levels memory-free.
+Levels 1,051–1,150 establish **Creeping Vines**. Clearing at least one Vine suppresses growth for that player action; ignoring surviving Vines allows at most one deterministic adjacent spread below the authored cap. The introduction deliberately keeps the first ten teaching levels free of explicit memory accents.
 
-Primary rule: an unresolved blocker can reproduce or reclaim cells at end of turn.
+Levels 1,151–1,250 move Vines into the ordinary vocabulary:
 
-Decision changes:
+- Vine + Drop;
+- Vine + Producer;
+- Vine + Color Ward;
+- Vine + Ground;
+- light Recall/Bloom accents at the rolling 13–20% cadence.
 
-- urgency and containment enter the puzzle;
-- allowing a threat to survive has an opportunity cost;
-- local tactics compete with long-term control.
+The purpose is to prove the mechanic can become familiar rather than remain a permanent novelty tax.
 
-Growth must be bounded and deterministic enough for the simulator to profile reliably. This family should not be stacked with difficult memory tasks on introduction.
+### 1,251–1,400 — Implemented access-planning recombination
 
-### 1,251–1,450 — Reveal / access systems
+This slice uses mature Locks, Drop, Producers, Color Wards, and occasional memory accents to create access/order decisions **without shipping a rushed new reveal mechanic**.
 
-Primary rule: curtains, gates, covers, or similar elements hide or isolate board regions until conditions are met.
+The earlier roadmap proposed curtains/gates here. That proposal remains useful research, but King-style complexity-staircase guidance explicitly says a new blocker should earn its place rather than appear on a calendar. Until a reveal/access prototype is clearly distinct from Locks and is fully represented in simulation, replay, accessibility, and UI, this range uses the proven vocabulary.
 
-Decision changes:
+### 1,401–1,550 — Implemented producer-dependency
 
-- the available board changes during the level;
-- early moves can be about opening future space;
-- objectives can be staged without requiring another scene.
+This range deepens the Producer family rather than introducing another foundation:
 
-These systems can later support memory-aware variants, but their initial form should remain visually explicit.
+- Producers + Drop routing;
+- Producers + Color Wards;
+- Producers + Ground;
+- occasional Vine pressure;
+- light memory accents on relief/normal beats only.
 
-### 1,451–1,700 — Advanced producer / dependency chains
+The dependency itself is the puzzle. Raw score pressure remains secondary.
 
-Generators/Producers are already introduced around 901–950. This later slice deepens them rather than introducing them again.
+### 1,551–1,700 — Implemented cognitive-spatial mix
 
-Use:
+This range uses Ground, Drop, Color Wards, Vines, Recall Locks, and Memory Blooms in controlled combinations.
 
-- producer + cage dependencies;
-- producer + Drop routing;
-- producers that create required objectives;
-- controlled multi-step dependency chains.
+Rules:
 
-No new cognitive family is required here unless level-1,000 family data clearly supports one.
+- explicit memory remains in the rolling 13–20% band;
+- memory accents do not occupy hard/super-hard beats;
+- a memory-heavy board does not also receive extreme geometry or score pressure;
+- no more than three objective families should compete for attention on one authored level.
 
-### 1,701–1,950 — Portals
+### 1,701–1,850 — Implemented routing mastery
 
-Primary rule: gravity can transfer pieces between linked entry/exit cells.
+This range emphasizes Drop routing and access order using existing vocabulary:
 
-Decision changes:
+- Drop remains present throughout the chapter family;
+- Locks, Producers, or Vines provide the secondary routing problem;
+- Recall/Bloom accents remain spaced and forgiving;
+- hard/super-hard beats increase decision pressure, not permanent score starvation.
 
-- board topology becomes non-Euclidean;
-- vertical planning no longer maps directly to screen position;
-- Drop objects and producers gain substantially more depth.
+### 1,851–2,000 — Implemented milestone mix
 
-Portals must expose their routing graph to the simulator and level validator.
+The 2,000-level inventory milestone is a recombination arc, not a mechanic dump.
 
-### 1,951–2,200 — Conveyors / moving board elements
+It rotates among:
 
-Primary rule: selected cells or occupants move automatically at turn boundaries.
+- Vines;
+- Drop;
+- Producers;
+- Color Wards;
+- Ground;
+- spaced Recall/Bloom accents.
 
-Decision changes:
+The important milestone property is **continuity**: the campaign should feel richer than level 1,000 without feeling like the player crossed into a different, punitive game.
 
-- board state changes even when the player does not directly touch an element;
-- timing and prediction become important;
-- moving objectives create controlled dynamism without random hazards.
+### 2,001–2,800 — Candidate foundational families, not a release quota
 
-### 2,201–2,450 — Special-only armor / charged devices
+Reveal/access systems, Portals, Conveyors, special-only armor/charged devices, and Toggle elements remain strong candidate families. Their earlier proposed order is retained as a design backlog, but **none is required merely because a level-number boundary was reached**.
 
-Primary rule: some elements require specials, combinations, or accumulated charge rather than ordinary matches.
+A candidate enters the shipped campaign only when all of the following are true:
 
-Decision changes:
+- it creates a decision that the current vocabulary cannot express cleanly;
+- it has a readable older-eye presentation;
+- simulator, replay, telemetry, and deterministic validation understand it;
+- it survives a small teaching pilot without collapsing the human-like difficulty proxy;
+- it does not force historical accepted levels to drift.
 
-- special creation becomes mandatory rather than merely advantageous;
-- players must preserve and position specials deliberately;
-- Butterfly remains useful without becoming a universal answer.
+Likely research order:
 
-### 2,451–2,650 — Toggle / alternating elements
+1. reveal/access prototype;
+2. portals;
+3. conveyors / deterministic movement;
+4. special-only armor / charged devices;
+5. toggle / alternating-state elements.
 
-Primary rule: elements change state on a deterministic turn cadence or after specific actions.
-
-Decision changes:
-
-- timing joins color and position as a planning axis;
-- the same move can be good or bad depending on current state;
-- the mechanic naturally exercises cognitive flexibility without becoming a memory test.
-
-### 2,651–2,800 — Cross-system mastery prelude
-
-Introduce few or no foundational mechanics.
-
-Use the established vocabulary to practice:
-
-- producer + portal routing;
-- Recall Locks with already-mastered spatial systems;
-- Ground + conveyors;
-- toggles + color conditions;
-- memory accents only when visual load remains manageable.
+Large stretches may continue to use recombination if the existing library is still producing good levels. The list is a candidate queue, not a blocker quota.
 
 ### 2,801–3,000 — First milestone mastery arc
 
