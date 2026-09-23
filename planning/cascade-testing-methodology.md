@@ -69,32 +69,62 @@ Purpose: solvability and planning upper bound.
 
 Lookahead resolves candidate moves, retains the strongest immediate candidates, and evaluates a second move. It is deliberately unsuitable as a human-difficulty estimate.
 
-## Long-term first-pass difficulty target
+## Long-term difficulty calibration
 
 Cascade is designed around a **10,000-level campaign horizon**, with **3,000 levels as the immediate production milestone** rather than the start of endgame difficulty.
 
-The campaign keeps two separate forms of progression:
+Two numbers must be kept separate:
 
-- **complexity growth** can continue for thousands of levels as mechanics and interactions accumulate;
-- **raw first-pass difficulty** rises slowly, oscillates inside the ten-level tension wave, and eventually plateaus instead of increasing forever.
+1. **Player-facing first-pass goals** describe the intended family experience.
+2. **Human-skilled simulator rates** are an uncalibrated proxy used for relative comparisons, outliers, and regression detection.
 
-The human-skilled target bands are piecewise anchors, not a single linear ramp:
+Do **not** quote a human-skilled bot percentage as if it were the expected pass rate of a real family player. Historical family traces have materially outperformed the current human-skilled proxy on overlapping level ranges, so the mapping is not 1:1.
+
+### Player-facing design envelope
+
+The product goal is a slow ramp that preserves momentum. The percentages below are internal authoring goals informed by family telemetry and the product objective; they are **not** percentages published by King or cognitive-science research.
+
+| Level anchor | Relief | Normal | Hard | Super-hard | Approx. wave-average midpoint |
+|---|---:|---:|---:|---:|---:|
+| 1,000 | 98–100% | 94–97% | 86–92% | 72–84% | ~94% |
+| 1,500 | 98–100% | 93–97% | 84–91% | 70–82% | ~93% |
+| 2,000 | 97–100% | 92–96% | 82–90% | 68–80% | ~92% |
+| 3,000 | 97–100% | 90–95% | 80–88% | 65–78% | ~91% |
+| 5,000 | 95–99% | 88–94% | 76–86% | 60–75% | ~89% |
+| 7,500 | 94–99% | 86–93% | 73–84% | 56–72% | ~87% |
+| 10,000+ | 93–98% | 85–92% | 70–82% | 52–70% | ~86% |
+
+These are rolling experience targets, not promises for every individual player. The ten-level tension wave remains essential: a hard/super-hard miss is acceptable because relief and ordinary levels restore momentum.
+
+### Human-skilled simulator proxy envelope
+
+Until move-choice replay calibrates the persona, the simulator should decline **more slowly** than the previous 82% -> 74% by level 3,000 doctrine.
 
 | Level anchor | Relief | Normal | Hard | Super-hard | Approx. wave-average midpoint |
 |---|---:|---:|---:|---:|---:|
 | 301 | 90–98% | 82–94% | 70–84% | 55–72% | ~86% |
 | 1,000 | 88–96% | 78–90% | 64–78% | 50–68% | ~82% |
-| 2,000 | 85–94% | 73–87% | 59–74% | 45–63% | ~78% |
-| 3,000 | 82–92% | 68–83% | 54–70% | 40–58% | ~74% |
-| 5,000 | 78–90% | 60–78% | 46–64% | 33–52% | ~68% |
-| 7,500 | 74–87% | 53–72% | 39–58% | 27–46% | ~62% |
-| 10,000+ | 70–84% | 48–68% | 34–54% | 23–42% | ~58% |
+| 1,500 | 88–96% | 78–90% | 64–78% | 50–68% | ~82% |
+| 2,000 | 87–95% | 77–89% | 63–77% | 49–67% | ~81% |
+| 3,000 | 86–95% | 76–88% | 62–76% | 48–66% | ~80% |
+| 5,000 | 85–94% | 74–87% | 60–75% | 46–64% | ~79% |
+| 7,500 | 84–93% | 72–86% | 58–73% | 44–62% | ~77% |
+| 10,000+ | 83–92% | 71–85% | 57–72% | 43–61% | ~76% |
 
-Targets interpolate between anchors. Beyond level 10,000, the mature bands plateau until player data justifies another change.
+The simulator bands remain advisory until calibration. Their main job is to identify **relative drift**.
 
-Levels 301–600 therefore remain **early-campaign content**. They should not be tuned toward the mature 5,000–10,000 difficulty envelope merely because 450 is the current shipping ceiling.
+### Continuity guard
 
-These bands remain **advisory** and must not fail CI until the human personas are calibrated against replayable family traces.
+For post-1,000 production:
+
+- a new 30-level chapter should normally stay within about **5 percentage points** of the preceding established chapter's human-skilled proxy average unless an explicit challenge arc is intended;
+- a foundational-mechanic introduction should not create a sustained downward staircase across its teach/practice/mix/mastery chapters;
+- relief and ordinary waves must recover after hard/super-hard beats;
+- if lookahead remains near-perfect but human-skilled collapses across a chapter, tune objective/score pressure before assuming the new mechanic itself is bad;
+- score targets are a secondary tuning control and must not silently become the dominant source of late-level failure.
+
+King's published level-design material supports deliberate difficulty variation and bot-assisted outlier detection, not a universal first-pass percentage. Human telemetry remains the final calibration evidence.
+
 
 ## Family-playtest data policy
 
