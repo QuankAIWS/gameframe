@@ -151,8 +151,8 @@ const tutorials = Object.freeze({
   "creeping-vine": Object.freeze({
     kicker: "CREEPING VINES",
     title: "Clear the vines before they spread.",
-    copy: "Candy beneath a vine still plays normally. Clear a vined candy to remove that vine. After a move, one surviving vine can creep into a neighboring open cell.",
-    tip: "Contain the vines early. If you clear every vine in one move, nothing regrows.",
+    copy: "Candy beneath a vine still plays normally. Clear a vined candy to remove it and suppress growth for that move. Ignore the vines and one survivor can creep into a neighboring open cell.",
+    tip: "Contain the vines early. Any move that clears a vine buys a quiet turn; clearing them all finishes the threat."
     accent: "#78c94d",
     visual: "creeping-vine",
   }),
