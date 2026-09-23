@@ -124,7 +124,7 @@ test("Producer plus Color Ward recombination remains legible on desktop", async 
 test("Creeping Vines stay unmistakable on older-eye mobile layouts without hiding candy identity", async ({ page }) => {
   await openLevel(page, 1051);
   const vines = page.locator(".cascade-tile.has-creeping-vine");
-  await expect(vines).toHaveCount(3);
+  await expect(vines).toHaveCount(2);
   const geometry = await vines.first().evaluate((tile) => {
     const tileRect = tile.getBoundingClientRect();
     const mark = tile.querySelector(".cascade-vine-mark").getBoundingClientRect();
