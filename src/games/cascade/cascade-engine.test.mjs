@@ -34,12 +34,12 @@ test("Cascade cloud progression ceiling matches the shipped campaign", () => {
   assert.equal(Number(match[1]), LEVEL_COUNT);
 });
 
-test("Cascade ships 1150 levels on a campaign model sized for 10000", () => {
-  assert.equal(LEVEL_COUNT, 1150);
+test("Cascade ships 2000 levels on a campaign model sized for 10000", () => {
+  assert.equal(LEVEL_COUNT, 2000);
   assert.equal(CAMPAIGN_CAPACITY, 10000);
   assert.equal(CAMPAIGN_MILESTONE, 3000);
   assert.equal(CHAPTER_SIZE, 30);
-  assert.equal(CASCADE_LEVELS.length, 1150);
+  assert.equal(CASCADE_LEVELS.length, 2000);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
   assert.equal(CASCADE_LEVELS[0].moves, 20);
   assert.equal(CASCADE_LEVELS[4].target, 2375);
@@ -201,6 +201,60 @@ test("levels 1051-1150 teach bounded creeping vines with a 14 percent memory cad
   const rollingMemory = rolling.filter((definition) => definition.objective.blooms || definition.objective.locks?.recall);
   assert.equal(rollingMemory.length, 22);
   assert.ok(rollingMemory.length / rolling.length >= 0.13 && rollingMemory.length / rolling.length <= 0.20);
+});
+
+test("levels 1151-2000 extend the campaign with slow-ramp recombination and a rolling memory dose", () => {
+  const expansion = CASCADE_LEVELS.slice(1150, 2000);
+  assert.equal(expansion.length, 850);
+  assert.equal(CASCADE_LEVELS[1150].chapter, "vine-established");
+  assert.equal(CASCADE_LEVELS[1250].chapter, "access-planning");
+  assert.equal(CASCADE_LEVELS[1400].chapter, "producer-dependency");
+  assert.equal(CASCADE_LEVELS[1550].chapter, "cognitive-spatial");
+  assert.equal(CASCADE_LEVELS[1700].chapter, "routing-mastery");
+  assert.equal(CASCADE_LEVELS[1850].chapter, "milestone-mix");
+  assert.equal(CASCADE_LEVELS[1999].chapter, "milestone-mix");
+
+  const ranges = [
+    [1151, 1250],
+    [1251, 1400],
+    [1401, 1550],
+    [1551, 1700],
+    [1701, 1850],
+    [1851, 2000],
+  ];
+
+  for (const [from, to] of ranges) {
+    const slice = CASCADE_LEVELS.slice(from - 1, to);
+    const memory = slice.filter((definition) => definition.objective.blooms || definition.objective.locks?.recall);
+    const density = memory.length / slice.length;
+    assert.ok(density >= 0.13 && density <= 0.20, `${from}-${to} memory density ${density.toFixed(3)} should remain inside the 13-20% band`);
+    for (const definition of memory) {
+      assert.ok(
+        definition.difficulty === "relief" || definition.difficulty === "normal",
+        `memory accent level ${definition.level} should stay off hard/super-hard beats`,
+      );
+    }
+  }
+
+  for (const definition of expansion) {
+    const activeFamilies = [
+      definition.objective.drop,
+      definition.objective.locks,
+      definition.objective.blooms,
+      definition.objective.ground,
+      definition.objective.producers,
+      definition.objective.colorWards,
+      definition.objective.vines,
+      definition.objective.collect.length ? definition.objective.collect : null,
+    ].filter(Boolean).length;
+    assert.ok(activeFamilies >= 1 && activeFamilies <= 3, `level ${definition.level} should stay readable`);
+    assert.ok(definition.moves >= 45, `level ${definition.level} should retain a generous move floor`);
+  }
+
+  const first = CASCADE_LEVELS[1150];
+  const last = CASCADE_LEVELS[1999];
+  assert.ok(last.target < first.target * 2, "score pressure should grow slowly through level 2000");
+  assert.ok(last.moves >= first.moves, "the long-horizon ramp should not rely on shrinking move budgets");
 });
 
 test("Vine campaign pressure stays bounded outside challenge beats", () => {
