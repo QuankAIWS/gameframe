@@ -11,6 +11,7 @@ import {
   producerSupportIndices,
   colorWardSupportIndices,
   colorWardTargetKinds,
+  vineTargetIndices,
   emptySpecials,
   findSpecialMatchGroups,
   objectiveComplete,
@@ -42,6 +43,7 @@ export const HUMAN_PERSONAS = Object.freeze({
       ground: 1.35,
       producer: 1.45,
       colorWard: 1.65,
+      vine: 1.7,
     }),
   }),
   "human-skilled": Object.freeze({
@@ -67,6 +69,7 @@ export const HUMAN_PERSONAS = Object.freeze({
       ground: 2.55,
       producer: 2.85,
       colorWard: 3.15,
+      vine: 3.35,
     }),
   }),
 });
@@ -346,6 +349,9 @@ function objectiveAdvanceValue(level, before, after) {
   const beforeWards = Number(before?.colorWards?.opened || 0);
   const afterWards = Number(after?.colorWards?.opened || 0);
   value += Math.max(0, afterWards - beforeWards) * 420;
+  const beforeVines = (before?.vines?.active || []).filter(Boolean).length;
+  const afterVines = (after?.vines?.active || []).filter(Boolean).length;
+  value += Math.max(0, beforeVines - afterVines) * 520;
   return value;
 }
 
@@ -387,6 +393,7 @@ function visibleMoveFeatures(level, progress, board, specials, move, recallKnowl
     ground: 0,
     producer: 0,
     colorWard: 0,
+    vine: 0,
   };
 
   if (a === SPECIAL.COLOR || b === SPECIAL.COLOR) {
@@ -454,6 +461,11 @@ function visibleMoveFeatures(level, progress, board, specials, move, recallKnowl
     if (col > 0) neighbors.push(wardIndex - 1);
     if (col < 7) neighbors.push(wardIndex + 1);
     if (neighbors.some((index) => matched.has(index) && Number(swappedBoard[index]) === requiredKind)) features.colorWard += 1;
+  }
+
+  const activeVines = progress?.vines?.active || [];
+  for (const index of matched) {
+    if (activeVines[index] === true) features.vine += 1;
   }
 
   const bloomTargets = bloomTargetsForMatched(progress, matched);
@@ -559,7 +571,7 @@ function evaluateImmediate(level, progress, board, specials, move, boardRng) {
     ice: progress.ice,
     locks: progress.locks,
     targetKinds: remainingTargetKinds(level, progress),
-    targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress), ...producerSupportIndices(progress), ...colorWardSupportIndices(progress)])],
+    targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress), ...producerSupportIndices(progress), ...colorWardSupportIndices(progress), ...vineTargetIndices(progress)])],
   });
   if (!result.legal) return null;
   const nextProgress = applySpecialLevelProgress(level, progress, result);
@@ -690,7 +702,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
       ice: progress.ice,
       locks: progress.locks,
       targetKinds: remainingTargetKinds(definition, progress),
-      targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress), ...producerSupportIndices(progress), ...colorWardSupportIndices(progress)])],
+      targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress), ...producerSupportIndices(progress), ...colorWardSupportIndices(progress), ...vineTargetIndices(progress)])],
     });
     if (!result.legal) throw new Error(`Cascade bot selected an illegal move ${move.from}->${move.to}`);
 
