@@ -360,8 +360,8 @@ test("Cascade admin console reaches levels 1000 and 2000 with valid map windows"
   await page.locator("#cascade-admin-command").fill("go to level 2000");
   await page.locator("[data-admin-run]").click();
   await expect(page.locator("#level-number")).toHaveText("2000");
-  await expect(page.locator("#level-map > li")).toHaveCount(30);
-  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "1971-2000");
+  await expect(page.locator("#level-map > li")).toHaveCount(20);
+  await expect(page.locator("#level-map")).toHaveAttribute("data-range", "1981-2000");
 });
 
 test("Cascade admin special lab spawns color-preserving Butterflies and ready combos", async ({ page }) => {
