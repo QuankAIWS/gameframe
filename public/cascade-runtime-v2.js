@@ -29,7 +29,7 @@ const STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 const PERFORMANCE_KEY = "scribbles-gameframe.cascade-performance:v1";
 const ANALYTICS_KEY = "scribbles-gameframe.cascade-analytics:v1";
 const ACTIVE_RUN_KEY = "scribbles-gameframe.cascade-active-run:v1";
-const ACTIVE_RUN_VERSION = 3;
+const ACTIVE_RUN_VERSION = 4;
 const BOARD_CELL_COUNT = BOARD_SIZE * BOARD_SIZE;
 const VALID_SPECIALS = new Set(Object.values(SPECIAL));
 const BLITZ_SECONDS = 30;
@@ -249,6 +249,20 @@ function saveActiveRun() {
             requiredKinds: (levelProgress.colorWards.requiredKinds || []).slice(),
           }
         : null,
+      vines: levelProgress?.vines
+        ? {
+            initial: Number(levelProgress.vines.initial) || 0,
+            cap: Number(levelProgress.vines.cap) || 0,
+            active: (levelProgress.vines.active || []).slice(),
+            protectedCells: (levelProgress.vines.protectedCells || []).slice(),
+            pattern: String(levelProgress.vines.pattern || "center"),
+            level: Number(levelProgress.vines.level) || 0,
+            turn: Number(levelProgress.vines.turn) || 0,
+            cleared: Number(levelProgress.vines.cleared) || 0,
+            lastCleared: (levelProgress.vines.lastCleared || []).slice(),
+            lastSpread: (levelProgress.vines.lastSpread || []).slice(),
+          }
+        : null,
     },
     rngState: boardRng.snapshot(),
     savedAt: Date.now(),
@@ -287,6 +301,7 @@ function loadActiveRun(levelNumber) {
       ground: parsed.levelProgress?.ground,
       producers: parsed.levelProgress?.producers,
       colorWards: parsed.levelProgress?.colorWards,
+      vines: parsed.levelProgress?.vines ?? baseline.vines,
     }, {});
     return {
       board: savedBoard,
@@ -706,7 +721,7 @@ function renderHelp() {
   } else if (activeLevel.level === 951) {
     helpElement.textContent = "New attention objective: each color ward shows the color-symbol it wants. Clear that visible color beside the ward to open it. No memorizing required.";
   } else if (activeLevel.level === 1051) {
-    helpElement.textContent = "New objective: clear every creeping vine. Candy under a vine still plays normally. After each move, one surviving vine can spread to a neighboring open cell, so contain it before it grows.";
+    helpElement.textContent = "New objective: clear every creeping vine. Candy under a vine still plays normally. Clear at least one vine to stop growth for that move; ignore them and one surviving vine can spread to a neighboring open cell.";
   } else {
     const notes = [];
     if (activeLevel.objective?.drop) notes.push("clear below each diamond to drop it into its exit");
@@ -714,7 +729,7 @@ function renderHelp() {
     if (activeLevel.objective?.ground) notes.push("make clears that touch sparkling ground to spread the magic");
     if (activeLevel.objective?.producers) notes.push("feed crystal forges, then clear each produced crystal from its forge");
     if (activeLevel.objective?.colorWards) notes.push("clear each visible ward color beside its matching ward");
-    if (activeLevel.objective?.vines) notes.push("clear creeping vines before surviving growth spreads to a neighboring cell");
+    if (activeLevel.objective?.vines) notes.push("clear at least one creeping vine to suppress growth; ignored vines can spread to a neighboring cell");
     if (activeLevel.objective?.locks?.recall) notes.push("remember each magic lock cue and clear that color beside it");
     else if (activeLevel.objective?.locks) notes.push("clear beside every cage to open it");
     if (activeLevel.objective?.ice) notes.push("crack every iced cell");
@@ -1082,6 +1097,9 @@ async function presentResolvedResult(result) {
       producerCollections: levelProgress?.producers?.lastCollected?.length || 0,
       colorWardsOpened: Number(levelProgress?.colorWards?.opened || 0),
       colorWardOpenings: levelProgress?.colorWards?.lastOpened?.length || 0,
+      vinesRemaining: (levelProgress?.vines?.active || []).filter(Boolean).length,
+      vinesCleared: levelProgress?.vines?.lastCleared?.length || 0,
+      vineSpread: levelProgress?.vines?.lastSpread?.length || 0,
     });
     await presentFallTransition(transition);
     await sleep(PRESENTATION.betweenCascades);
