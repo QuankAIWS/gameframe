@@ -3,7 +3,7 @@
 Status: canonical campaign expansion plan  
 Immediate production milestone: 3,000 shipped levels  
 Long-horizon capacity: 10,000 levels  
-Current shipped slice: 1–600
+Current implemented candidate slice: 1–1,150
 
 ## Core doctrine
 
@@ -141,17 +141,25 @@ Decision changes:
 - visual search and selective attention become more important;
 - mature Recall-Lock combinations can coexist with non-memory color-conditional elements.
 
-Level 1,000 is a major human-data and cognitive-mechanic checkpoint. The owner explicitly requested stopping the current production pass at 1,000, so 901–1,000 is a 100-level milestone slice; 1,001–1,050 remains the unfinished tail of the normal 150-level production batch.
+Level 1,000 remains a useful human-data and cognitive-mechanic checkpoint, but it is **not a production gate**. Maintain content inventory ahead of the active player and use incoming telemetry to tune later unplayed batches rather than waiting for the player to reach each checkpoint.
 
-### 1,001–1,050 — Mastery plus Pattern Echo pilot
+### 1,001–1,050 — Implemented post-milestone mastery bridge
 
-Use the remaining slice of the 901–1,050 production batch for recombination and review.
+This range is implemented as a familiar-vocabulary bridge using established mechanics rather than another foundational system.
 
-Pattern Echo / Magic Melody may receive a small, low-pressure pilot only if Recall Locks and Memory Blooms show good family engagement. It presents a short 2–4 item color/symbol sequence and asks the player to advance it in order; wrong colors do not reset the sequence.
+Production intent:
 
-### Player-data checkpoint A — level 1,000, with follow-up through 1,500
+- preserve momentum after the 1,000 milestone;
+- recombine Producers, Color Wards, Ground, Drop, Locks, Recall Locks, and Blooms in readable combinations;
+- keep explicit memory accents within the 13–20% rolling band;
+- do not force Pattern Echo into the campaign merely because it was once proposed.
 
-Before generating the remainder of the 3,000-level milestone at scale:
+Pattern Echo / Magic Melody remains an optional future pilot if a later family-playtest demonstrates a real need for another sequence-memory verb.
+
+
+### Calibration checkpoint A — levels 1,000–1,500 (non-blocking)
+
+While continuing to generate inventory toward the 3,000-level milestone:
 
 - consult the retained Cascade difficulty history (private canonical archive, with the GameFrame public-safe mirror for local comparison) rather than recomputing every earlier batch by default;
 - export new family telemetry;
@@ -164,9 +172,11 @@ Before generating the remainder of the 3,000-level milestone at scale:
 
 At level 1,000, explicitly review both ordinary level difficulty and the new cognitive-accent mechanics: participation, clean first-pass rate, memory success/mismatch behavior, hint/re-show use, retries, stopping points, and direct family feedback. Continue collecting through 1,500 before locking later cognitive-mechanic density.
 
-This checkpoint is deliberately before the campaign reaches 3,000 so the second half can benefit from real play.
+This checkpoint improves later unplayed batches; it does not require stopping production or waiting for the active player to reach the checkpoint.
 
 ### 1,051–1,250 — Regrowing / spreading blockers
+
+Levels 1,051–1,150 implement the first bounded form as **Creeping Vines**. Clearing at least one Vine suppresses growth for that player action; ignoring surviving Vines allows at most one deterministic adjacent spread below the authored cap. The 1,051–1,150 production slice uses 14 explicit memory accents (14%), with the first ten Vine-teaching levels memory-free.
 
 Primary rule: an unresolved blocker can reproduce or reclaim cells at end of turn.
 
@@ -306,23 +316,28 @@ A rough pacing target is one genuinely new foundational family every several hun
 
 The 10,000-level horizon is not a promise that 10,000 is a hard stop. The difficulty curve plateaus there so additional levels can be added without turning the campaign into permanent punishment.
 
-## Difficulty anchors
+## Difficulty doctrine
 
-Human-skilled first-pass bands use the canonical anchors in the simulator:
+The old single table that treated human-skilled bot rates as the campaign's player pass-rate target is superseded.
 
-| Anchor | Approx. wave-average midpoint |
-|---|---:|
-| 301 | ~86% |
-| 1,000 | ~82% |
-| 2,000 | ~78% |
-| 3,000 | ~74% |
-| 5,000 | ~68% |
-| 7,500 | ~62% |
-| 10,000+ | ~58% |
+Cascade now keeps two separate calibration layers:
 
-These are advisory authoring targets, not guarantees or CI gates.
+- **player-facing family experience:** approximately 94% wave-average first-pass around level 1,000, easing slowly toward about 91% around level 3,000 and plateauing in the mid-80s even at the 10,000-level horizon;
+- **human-skilled bot proxy:** a deliberately more conservative diagnostic series used to detect relative drift and outliers, not a literal forecast of family pass rate.
 
-The ten-level wave remains more important than the global average: relief must still feel like relief, and super-hard beats must remain exceptional rather than becoming the permanent baseline.
+The detailed player-facing and proxy bands live in `planning/cascade-testing-methodology.md`.
+
+Authoring rules:
+
+- raw failure pressure must rise slowly across thousands of levels;
+- complexity may rise much faster than failure rate;
+- no new mechanic arc should create a sustained chapter-by-chapter collapse in human-proxy success;
+- hard/super-hard beats are isolated pressure events and are followed by real relief;
+- if bots can solve a range but human-like proxies collapse while objective completion remains high, inspect score pressure before weakening the mechanic;
+- family telemetry outranks an uncalibrated simulator percentage.
+
+At the 3,000 milestone the intended experience is still predominantly successful, momentum-rich play—not a grind where ordinary levels routinely require many retries.
+
 
 ## 150-level production pass
 
@@ -416,6 +431,6 @@ Only after this review should the 3,001–10,000 recipe mix be locked in.
 2. Drop/exit objectives end-to-end plus the 451–600 production batch — implemented, profiled, tuned, accepted, and archived.
 3. Production batch 601–750: advanced Drop, Locks/Cages, then low-pressure Recall Locks.
 4. Production batch 751–900: Memory Blooms, Enchanted Ground, then controlled cognitive/spatial recombination.
-5. Production batch 901–1,050: Producers, color-conditional attention elements, level-1,000 player-data checkpoint, and a small Pattern Echo pilot only if earlier memory systems test well.
+5. Production batch 901–1,050: Producers, Color Wards, then the implemented post-milestone mastery bridge; level-1,000 telemetry is a calibration checkpoint, not a production stop.
 6. Continue later mechanics in 150-level production batches, using level-1,000 and level-1,500 family data to decide cognitive-accent density.
 7. Reassess batch policy only through an explicit later decision; do not silently revert to chapter-sized generation.
