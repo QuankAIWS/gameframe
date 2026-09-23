@@ -994,12 +994,12 @@ function campaignSpec(levelNumber) {
           });
         }
         const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
-        const count = wave.difficulty === "relief" ? 3 : 3 + Math.min(2, phase);
+        const count = wave.difficulty === "relief" ? 2 : 3;
         return objective({
-          vines: { count, cap: count + (phase >= 2 ? 3 : 2), pattern },
+          vines: { count, cap: count + 2, pattern },
           collect: phase >= 2 ? [{
             kind: (levelNumber + phase) % TILE_KINDS,
-            count: scaleCount(5 + Math.floor(within / 4), Math.min(1, wave.objectiveFactor)),
+            count: scaleCount(3 + Math.floor(within / 6), Math.min(1, wave.objectiveFactor)),
           }] : [],
           locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
           blooms: memoryAccent === "bloom" ? { pairs: 2, pattern } : null,
@@ -1014,14 +1014,15 @@ function campaignSpec(levelNumber) {
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
-        const count = wave.difficulty === "relief" ? 3 : 4 + (phase >= 2 ? 1 : 0);
+        const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        const count = wave.difficulty === "relief" ? 2 : (pressureBeat ? 4 : 3);
         const dropLane = within % 2 === 1;
         return objective({
-          vines: { count, cap: count + 3, pattern },
-          drop: dropLane ? dropObjective(levelNumber, wave.difficulty === "super-hard" ? 2 : 1, phase + 1) : null,
+          vines: { count, cap: count + 2, pattern },
+          drop: dropLane ? dropObjective(levelNumber, 1, phase + 1) : null,
           collect: dropLane ? [] : [{
             kind: (levelNumber + phase + 1) % TILE_KINDS,
-            count: scaleCount(5 + phase + Math.floor(within / 5), Math.min(1.04, wave.objectiveFactor)),
+            count: scaleCount(4 + Math.floor(within / 6), Math.min(1, wave.objectiveFactor)),
           }],
           locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
           blooms: memoryAccent === "bloom" ? { pairs: wave.difficulty === "relief" ? 2 : 3, pattern } : null,
@@ -1036,17 +1037,18 @@ function campaignSpec(levelNumber) {
       objectiveFactory: ({ phase, within, wave }) => {
         const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
         const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
-        const count = wave.difficulty === "relief" ? 3 : 4 + (phase >= 1 ? 1 : 0);
+        const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        const count = wave.difficulty === "relief" ? 2 : (pressureBeat ? 4 : 3);
         const producerLane = within % 2 === 0;
         return objective({
-          vines: { count, cap: count + 3, pattern },
+          vines: { count, cap: count + 2, pattern },
           producers: producerLane ? {
-            count: wave.difficulty === "relief" ? 2 : 3,
+            count: 2,
             charges: 1,
             pattern,
           } : null,
           colorWards: producerLane ? null : {
-            count: wave.difficulty === "relief" ? 2 : 3,
+            count: 2,
             pattern,
           },
           locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
@@ -1061,13 +1063,14 @@ function campaignSpec(levelNumber) {
     objectiveFactory: ({ phase, within, wave }) => {
       const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
       const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
-      const count = wave.difficulty === "relief" ? 4 : 5;
+      const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+      const count = wave.difficulty === "relief" ? 2 : (pressureBeat ? 4 : 3);
       const route = within % 3;
       return objective({
-        vines: { count, cap: count + 3, pattern },
-        drop: route === 0 ? dropObjective(levelNumber, wave.difficulty === "super-hard" ? 2 : 1, phase + 1) : null,
+        vines: { count, cap: count + 2, pattern },
+        drop: route === 0 ? dropObjective(levelNumber, 1, phase + 1) : null,
         producers: route === 1 ? { count: 2, charges: 1, pattern } : null,
-        colorWards: route === 2 ? { count: wave.difficulty === "relief" ? 2 : 3, pattern } : null,
+        colorWards: route === 2 ? { count: 2, pattern } : null,
         locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
         blooms: memoryAccent === "bloom" ? { pairs: wave.difficulty === "relief" ? 2 : 3, pattern } : null,
       });
