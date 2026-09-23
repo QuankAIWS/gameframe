@@ -1,7 +1,7 @@
 # Cascade Research — Match-3 Engagement and Content Architecture
 
 Status: living research / competitive-design reference  
-Last reviewed: 2026-08-30  
+Last reviewed: 2026-09-23  
 Use with:
 - `planning/cascade-cognitive-health-and-engagement.md`
 - `planning/cascade-10000-campaign-roadmap.md`
@@ -35,6 +35,46 @@ Cascade implications:
 - preserve the ten-level relief/normal/hard/super-hard wave;
 - target "almost had it / one more try" rather than seed-dependent frustration;
 - complexity can raise challenge without constantly cutting moves.
+
+## King at scale: reuse the vocabulary instead of racing to invent mechanics
+
+King's 2017 level-design material reported that Candy Crush Saga was using roughly **18 blockers and 6 game modes to create about 3,000 levels**. The same material described level balancing as an iterative process using objectives, moves, mastery thresholds, color count, and blocker count/strength.
+
+Source:
+- Jeremy Kang, King, *Mechanics to Dynamics / Level Design Process* (2017), especially slides 32-36: https://speakerdeck.com/wnconf/jeremy-kang-king
+
+Cascade implications:
+
+- reaching 3,000 levels does not require dozens of new foundational mechanics;
+- geometry, objective combinations, ordering, routing, and familiar mechanic pairings should provide most late-campaign variety;
+- move count and score targets are tuning controls, not the primary source of novelty;
+- a difficult level should still be iterated when the result is frustrating rather than interesting.
+
+## King 2026: the complexity staircase and deliberate difficulty variation
+
+Candy Crush senior product manager John Davies described modern Candy Crush difficulty as a **complexity staircase** rather than a simple ever-rising wall.
+
+Published design points include:
+
+- there is no fixed cadence for adding blockers;
+- a new blocker should earn its place with a distinct behavior or decision;
+- later difficulty often comes from more intricate objectives, tighter constraints, and more complex layouts;
+- difficulty is deliberately varied rather than making every level harder than the previous one;
+- a particularly challenging level is commonly followed by something lighter to restore momentum;
+- bots are used at scale to estimate difficulty and identify outliers, while human testing and live player data remain necessary because bots do not fully capture feel.
+
+Source:
+- PocketGamer.biz, *Crafting Candy Crush's difficulty: Blockers, level design, AI and the "complexity staircase"* (2026-01-16): https://www.pocketgamer.biz/crafting-candy-crushs-difficulty-blockers-level-design-ai-and-the-complexity-staircase/
+
+Cascade implications:
+
+- complexity growth and raw failure rate are separate axes;
+- a new mechanic may increase decision depth without forcing a major pass-rate drop;
+- chapter-to-chapter human-proxy difficulty should not ratchet downward continuously;
+- relief beats must genuinely recover after pressure;
+- automated pass rates are comparative diagnostics until calibrated against family telemetry.
+
+**Neither King source specifies a universal first-pass percentage that Cascade should copy.** Cascade's numeric difficulty targets are an internal product decision informed by family telemetry and by the goal of sustained, rewarding play.
 
 ## Royal Match: small offensive toolkit, broad board vocabulary
 
