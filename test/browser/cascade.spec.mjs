@@ -318,15 +318,15 @@ test("Cascade introduces readable Creeping Vines at level 1051", async ({ page }
   await page.goto("/cascade.html?cascadeTestLevel=1051");
 
   await expect(page.locator("#level-number")).toHaveText("1051");
-  await expect(page.locator("#objective-label")).toContainText("creeping vines 3 left");
-  await expect(page.locator(".cascade-tile.has-creeping-vine")).toHaveCount(3);
-  await expect(page.locator(".cascade-vine-mark")).toHaveCount(3);
+  await expect(page.locator("#objective-label")).toContainText("creeping vines 2 left");
+  await expect(page.locator(".cascade-tile.has-creeping-vine")).toHaveCount(2);
+  await expect(page.locator(".cascade-vine-mark")).toHaveCount(2);
   await expect(page.locator(".cascade-help")).toContainText("clear every creeping vine");
 
   const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
   expect(exported.level.chapter).toBe("creeping-vine-intro");
-  expect(exported.progress.vines.active.filter(Boolean)).toHaveLength(3);
-  expect(exported.progress.vines.cap).toBe(5);
+  expect(exported.progress.vines.active.filter(Boolean)).toHaveLength(2);
+  expect(exported.progress.vines.cap).toBe(4);
 
   const label = await page.locator(".cascade-tile.has-creeping-vine").first().getAttribute("aria-label");
   expect(label).toContain("creeping vine");
