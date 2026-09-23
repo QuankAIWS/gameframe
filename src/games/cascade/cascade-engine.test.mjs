@@ -10,6 +10,7 @@ import {
   advanceBloomProgress,
   advanceGroundProgress,
   advanceProducerProgress,
+  advanceVineProgress,
   advanceColorWardProgress,
   applyLevelProgress,
   applySwap,
@@ -21,6 +22,7 @@ import {
   listLegalMoves,
   objectiveComplete,
   resolveCascades,
+  vineTargetIndices,
 } from "../../../public/cascade-engine.js";
 import { chooseMove, profileCascadeLevels, profileCascadeMoveFragility, runCascadeLevel, scoreVisibleMove, targetFirstPassBand } from "./cascade-simulator.js";
 import { analyzePlaytestExport } from "./cascade-playtest-analysis.js";
@@ -32,12 +34,12 @@ test("Cascade cloud progression ceiling matches the shipped campaign", () => {
   assert.equal(Number(match[1]), LEVEL_COUNT);
 });
 
-test("Cascade ships 1050 levels on a campaign model sized for 10000", () => {
-  assert.equal(LEVEL_COUNT, 1050);
+test("Cascade ships 1150 levels on a campaign model sized for 10000", () => {
+  assert.equal(LEVEL_COUNT, 1150);
   assert.equal(CAMPAIGN_CAPACITY, 10000);
   assert.equal(CAMPAIGN_MILESTONE, 3000);
   assert.equal(CHAPTER_SIZE, 30);
-  assert.equal(CASCADE_LEVELS.length, 1050);
+  assert.equal(CASCADE_LEVELS.length, 1150);
   assert.equal(CASCADE_LEVELS[0].target, 1085);
   assert.equal(CASCADE_LEVELS[0].moves, 20);
   assert.equal(CASCADE_LEVELS[4].target, 2375);
@@ -141,6 +143,116 @@ test("levels 1001-1050 form a readable mastery bridge with a 16 percent memory c
       definition.objective.colorWards,
     ].filter(Boolean).length;
     assert.ok(activeFamilies >= 1 && activeFamilies <= 3, `level ${definition.level} should remain readable`);
+  }
+});
+
+test("levels 1051-1150 teach bounded creeping vines with a 14 percent memory cadence", () => {
+  const batch = CASCADE_LEVELS.slice(1050, 1150);
+  assert.equal(batch.length, 100);
+  assert.equal(batch[0].chapter, "creeping-vine-intro");
+  assert.equal(batch[29].chapter, "creeping-vine-intro");
+  assert.equal(batch[30].chapter, "vine-routing");
+  assert.equal(batch[59].chapter, "vine-routing");
+  assert.equal(batch[60].chapter, "vine-dependency-mix");
+  assert.equal(batch[89].chapter, "vine-dependency-mix");
+  assert.equal(batch[90].chapter, "vine-mastery");
+  assert.equal(batch[99].chapter, "vine-mastery");
+
+  const memoryLevels = batch.filter((definition) => definition.objective.blooms || definition.objective.locks?.recall);
+  assert.deepEqual(memoryLevels.map((definition) => definition.level), [
+    1062, 1068, 1073, 1082, 1088, 1093, 1102,
+    1108, 1113, 1122, 1128, 1133, 1142, 1148,
+  ]);
+  assert.equal(memoryLevels.length / batch.length, 0.14);
+  assert.equal(batch.slice(0, 10).some((definition) => definition.objective.blooms || definition.objective.locks?.recall), false);
+
+  for (const definition of memoryLevels) {
+    assert.ok(
+      definition.difficulty === "relief" || definition.difficulty === "normal",
+      `memory accent level ${definition.level} should stay off hard/super-hard beats`,
+    );
+  }
+
+  for (let index = 1; index < memoryLevels.length; index += 1) {
+    assert.ok(memoryLevels[index].level - memoryLevels[index - 1].level >= 4, "memory accents should remain spaced");
+  }
+
+  assert.equal(CASCADE_LEVELS[1054].objective.vines, null, "first-wave hard beat should use a familiar objective");
+  assert.ok(CASCADE_LEVELS[1054].objective.colorWards);
+  assert.equal(CASCADE_LEVELS[1059].objective.vines, null, "first-wave super-hard beat should use a familiar objective");
+  assert.ok(CASCADE_LEVELS[1059].objective.colorWards);
+
+  for (const definition of batch) {
+    assert.ok(definition.mechanics.includes("creeping-vines"));
+    const activeFamilies = [
+      definition.objective.drop,
+      definition.objective.locks,
+      definition.objective.blooms,
+      definition.objective.ground,
+      definition.objective.producers,
+      definition.objective.colorWards,
+      definition.objective.vines,
+      definition.objective.collect.length ? definition.objective.collect : null,
+    ].filter(Boolean).length;
+    assert.ok(activeFamilies >= 1 && activeFamilies <= 3, `level ${definition.level} should stay readable`);
+  }
+
+  const rolling = CASCADE_LEVELS.slice(1000, 1150);
+  const rollingMemory = rolling.filter((definition) => definition.objective.blooms || definition.objective.locks?.recall);
+  assert.equal(rollingMemory.length, 22);
+  assert.ok(rollingMemory.length / rolling.length >= 0.13 && rollingMemory.length / rolling.length <= 0.20);
+});
+
+test("creeping vines spread once per player action, respect their cap, and stop when fully cleared", () => {
+  const definition = CASCADE_LEVELS[1050];
+  const progress = createLevelProgress(definition);
+  assert.ok(definition.objective.vines);
+  assert.equal(vineTargetIndices(progress).length, definition.objective.vines.count);
+  assert.equal(progress.vines.cap, definition.objective.vines.cap);
+
+  const initialTargets = vineTargetIndices(progress);
+  const grown = advanceVineProgress(progress.vines, []);
+  assert.equal(vineTargetIndices({ vines: grown }).length, initialTargets.length + 1);
+  assert.equal(grown.lastSpread.length, 1);
+  assert.equal(grown.turn, 1);
+
+  let capped = grown;
+  while (vineTargetIndices({ vines: capped }).length < capped.cap) {
+    capped = advanceVineProgress(capped, []);
+  }
+  const atCap = vineTargetIndices({ vines: capped }).length;
+  const stillCapped = advanceVineProgress(capped, []);
+  assert.equal(vineTargetIndices({ vines: stillCapped }).length, atCap);
+  assert.deepEqual(stillCapped.lastSpread, []);
+
+  const cleared = advanceVineProgress(progress.vines, initialTargets);
+  assert.equal(vineTargetIndices({ vines: cleared }).length, 0);
+  assert.equal(cleared.lastSpread.length, 0, "a decisive clear must not regrow a vine");
+});
+
+test("creeping vines never spawn onto fixed objective anchors", () => {
+  for (const definition of CASCADE_LEVELS.slice(1080, 1150)) {
+    if (!definition.objective.vines) continue;
+    const progress = createLevelProgress(definition);
+    const occupied = new Set([
+      ...progress.drop.tokens.map((token) => token.index),
+      ...progress.drop.exits,
+      ...progress.locks.layers.flatMap((layer, index) => layer > 0 ? [index] : []),
+      ...progress.blooms.symbols.flatMap((symbol, index) => symbol >= 0 ? [index] : []),
+      ...progress.producers.remaining.flatMap((charges, index) => charges > 0 ? [index] : []),
+      ...progress.colorWards.requiredKinds.flatMap((kind, index) => kind >= 0 ? [index] : []),
+    ]);
+    for (const index of vineTargetIndices(progress)) {
+      assert.equal(occupied.has(index), false, `level ${definition.level} vine should not overlap a fixed objective anchor`);
+    }
+
+    let current = progress.vines;
+    for (let turn = 0; turn < 8; turn += 1) {
+      current = advanceVineProgress(current, []);
+      for (const index of vineTargetIndices({ vines: current })) {
+        assert.equal(occupied.has(index), false, `level ${definition.level} spread vine should avoid fixed objective anchors`);
+      }
+    }
   }
 });
 
