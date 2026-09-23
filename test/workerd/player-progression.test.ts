@@ -34,8 +34,8 @@ function jsonRequest(path: string, body: Record<string, unknown>): Request {
 }
 
 describe("Gamer Level progression", () => {
-  it("accepts veteran Cascade progress through the current 1000-level campaign", () => {
-    expect(MAX_CASCADE_LEVEL).toBe(1000);
+  it("accepts veteran Cascade progress through the current 1150-level campaign", () => {
+    expect(MAX_CASCADE_LEVEL).toBe(1150);
 
     const base = emptyPlayerProgression("campaign-cap", 1_000);
     const progressed = applyCascadeProgression(base, {
