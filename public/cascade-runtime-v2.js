@@ -16,6 +16,7 @@ import {
   ordinaryLockTargetIndices,
   producerSupportIndices,
   colorWardButterflyTargetIndices,
+  vineTargetIndices,
   emptySpecials,
   objectiveComplete,
 } from "./cascade-special-engine.js";
@@ -427,6 +428,7 @@ function remainingButterflyTargetIndices() {
     ...ordinaryLockTargetIndices(levelProgress),
     ...producerSupportIndices(levelProgress),
     ...colorWardButterflyTargetIndices(levelProgress, board),
+    ...vineTargetIndices(levelProgress),
   ])];
 }
 
@@ -477,6 +479,8 @@ function renderBoard() {
     const producerCollected = mode === "normal" && (levelProgress?.producers?.lastCollected || []).includes(index);
     const wardKind = mode === "normal" ? Number(levelProgress?.colorWards?.requiredKinds?.[index]) : -1;
     const wardOpened = mode === "normal" && (levelProgress?.colorWards?.lastOpened || []).includes(index);
+    const vineActive = mode === "normal" && levelProgress?.vines?.active?.[index] === true;
+    const vineNew = vineActive && (levelProgress?.vines?.lastSpread || []).includes(index);
     tile.type = "button";
     tile.className = "cascade-tile";
     tile.dataset.kind = String(kind);
@@ -551,6 +555,22 @@ function renderBoard() {
     } else if (wardOpened) {
       tile.classList.add("is-color-ward-opened");
     }
+    if (vineActive) {
+      tile.dataset.vine = "active";
+      tile.classList.add("has-creeping-vine");
+      if (vineNew) tile.classList.add("is-vine-new");
+      const vineMark = document.createElement("span");
+      vineMark.className = "cascade-vine-mark";
+      vineMark.setAttribute("aria-hidden", "true");
+      const stem = document.createElement("span");
+      stem.className = "cascade-vine-stem";
+      const leafA = document.createElement("i");
+      leafA.className = "cascade-vine-leaf vine-leaf-a";
+      const leafB = document.createElement("i");
+      leafB.className = "cascade-vine-leaf vine-leaf-b";
+      vineMark.append(stem, leafA, leafB);
+      tile.append(vineMark);
+    }
     if (bloomSymbol >= 0) {
       tile.dataset.bloom = "true";
       tile.classList.add("has-memory-bloom");
@@ -578,7 +598,7 @@ function renderBoard() {
       tile.append(lockMark);
     }
     tile.setAttribute("role", "gridcell");
-    tile.setAttribute("aria-label", `Tile ${index + 1}${special ? `, ${specialName(special)}` : ""}${iceLayers ? `, ${iceLayers} ice ${iceLayers === 1 ? "layer" : "layers"}` : ""}${dropToken ? ", drop object" : ""}${dropExit ? ", drop exit" : ""}${groundCovered ? ", enchanted ground" : ""}${producerActive ? producerCrystal ? `, crystal forge holding a crystal with ${producerCharges} charges left` : `, crystal forge with ${producerCharges} ${producerCharges === 1 ? "charge" : "charges"} left` : ""}${wardKind >= 0 ? `, color ward wants ${["pink","cyan","yellow","green","purple","orange"][wardKind]}` : ""}${bloomSymbol >= 0 ? bloomActive ? `, open memory bloom showing ${RECALL_SYMBOLS[bloomSymbol]}` : ", closed memory bloom" : ""}${lockLayers ? recallKind >= 0 ? cueVisible ? `, recall lock wants ${["pink","cyan","yellow","green","purple","orange"][recallKind]}` : ", recall lock, cue hidden" : `, cage ${lockLayers === 1 ? "locked" : "double locked"}` : ""}`);
+    tile.setAttribute("aria-label", `Tile ${index + 1}${special ? `, ${specialName(special)}` : ""}${iceLayers ? `, ${iceLayers} ice ${iceLayers === 1 ? "layer" : "layers"}` : ""}${dropToken ? ", drop object" : ""}${dropExit ? ", drop exit" : ""}${groundCovered ? ", enchanted ground" : ""}${producerActive ? producerCrystal ? `, crystal forge holding a crystal with ${producerCharges} charges left` : `, crystal forge with ${producerCharges} ${producerCharges === 1 ? "charge" : "charges"} left` : ""}${wardKind >= 0 ? `, color ward wants ${["pink","cyan","yellow","green","purple","orange"][wardKind]}` : ""}${vineActive ? ", creeping vine" : ""}${bloomSymbol >= 0 ? bloomActive ? `, open memory bloom showing ${RECALL_SYMBOLS[bloomSymbol]}` : ", closed memory bloom" : ""}${lockLayers ? recallKind >= 0 ? cueVisible ? `, recall lock wants ${["pink","cyan","yellow","green","purple","orange"][recallKind]}` : ", recall lock, cue hidden" : `, cage ${lockLayers === 1 ? "locked" : "double locked"}` : ""}`);
     if (selectedIndex === index) tile.classList.add("is-selected");
     if (hammerMode) tile.classList.add("is-hammer-target");
     tile.addEventListener("click", () => onTileClick(index));
@@ -603,6 +623,11 @@ function mapLabel(level) {
   const hasGround = Boolean(level.objective?.ground);
   const hasProducers = Boolean(level.objective?.producers);
   const hasColorWards = Boolean(level.objective?.colorWards);
+  const hasVines = Boolean(level.objective?.vines);
+  if (hasVines && hasDrop) return "Vines + drop";
+  if (hasVines && hasProducers) return "Vines + forge";
+  if (hasVines && hasColorWards) return "Vines + ward";
+  if (hasVines) return "Creeping vines";
   if (hasColorWards && hasProducers) return "Ward + forge";
   if (hasColorWards) return "Color ward";
   if (hasProducers) return "Crystal forge";
@@ -680,6 +705,8 @@ function renderHelp() {
     helpElement.textContent = "New objective: use every crystal forge. Clear beside a forge to make a crystal, then clear that forge tile later to collect it. Repeat until every forge charge is used and every crystal is collected.";
   } else if (activeLevel.level === 951) {
     helpElement.textContent = "New attention objective: each color ward shows the color-symbol it wants. Clear that visible color beside the ward to open it. No memorizing required.";
+  } else if (activeLevel.level === 1051) {
+    helpElement.textContent = "New objective: clear every creeping vine. Candy under a vine still plays normally. After each move, one surviving vine can spread to a neighboring open cell, so contain it before it grows.";
   } else {
     const notes = [];
     if (activeLevel.objective?.drop) notes.push("clear below each diamond to drop it into its exit");
@@ -687,6 +714,7 @@ function renderHelp() {
     if (activeLevel.objective?.ground) notes.push("make clears that touch sparkling ground to spread the magic");
     if (activeLevel.objective?.producers) notes.push("feed crystal forges, then clear each produced crystal from its forge");
     if (activeLevel.objective?.colorWards) notes.push("clear each visible ward color beside its matching ward");
+    if (activeLevel.objective?.vines) notes.push("clear creeping vines before surviving growth spreads to a neighboring cell");
     if (activeLevel.objective?.locks?.recall) notes.push("remember each magic lock cue and clear that color beside it");
     else if (activeLevel.objective?.locks) notes.push("clear beside every cage to open it");
     if (activeLevel.objective?.ice) notes.push("crack every iced cell");
