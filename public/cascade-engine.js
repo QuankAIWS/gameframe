@@ -1752,7 +1752,7 @@ export function advanceVineProgress(value, clearIndices) {
   next.lastSpread = [];
 
   const activeIndices = next.active.flatMap((isActive, index) => isActive ? [index] : []);
-  if (!activeIndices.length || activeIndices.length >= next.cap) return next;
+  if (!activeIndices.length || cleared.length || activeIndices.length >= next.cap) return next;
 
   const candidates = new Set();
   for (const index of activeIndices) {
