@@ -148,6 +148,14 @@ const tutorials = Object.freeze({
     accent: "#ffd34e",
     visual: "color-ward",
   }),
+  "creeping-vine": Object.freeze({
+    kicker: "CREEPING VINES",
+    title: "Clear the vines before they spread.",
+    copy: "Candy beneath a vine still plays normally. Clear a vined candy to remove it and suppress growth for that move. Ignore the vines and one survivor can creep into a neighboring open cell.",
+    tip: "Contain the vines early. Any move that clears a vine buys a quiet turn; clearing them all finishes the threat.",
+    accent: "#78c94d",
+    visual: "creeping-vine",
+  }),
 });
 
 const queue = [];
@@ -373,6 +381,15 @@ function visualMarkup(kind) {
     const ward = objectiveTileMarkup(0, { classes: ["has-color-ward"], attributes: 'data-color-ward="1"', markClass: "cascade-color-ward-mark kind-1", markText: "◆" });
     return `<div class="cascade-tutorial-equation">${ward}${tileMarkup(1)}${tileMarkup(1)}</div><b class="cascade-tutorial-preview-caption">CLEAR THE SHOWN COLOR BESIDE IT</b>`;
   }
+  if (kind === "creeping-vine") {
+    const vine = objectiveTileMarkup(3, {
+      classes: ["has-creeping-vine"],
+      attributes: 'data-vine="active"',
+      markClass: "cascade-vine-mark",
+      markInner: '<span class="cascade-vine-stem"></span><i class="cascade-vine-leaf vine-leaf-a"></i><i class="cascade-vine-leaf vine-leaf-b"></i>',
+    });
+    return `<div class="cascade-tutorial-equation">${vine}<span class="cascade-tutorial-arrow">→</span>${tileMarkup(3)}</div><b class="cascade-tutorial-preview-caption">CLEAR VINES BEFORE THEY CREEP</b>`;
+  }
   return tileMarkup(0);
 }
 
@@ -394,6 +411,7 @@ function contextualTutorialIds(level = levelData()) {
   if (level.objective?.ground) ids.push("enchanted-ground");
   if (level.objective?.producers) ids.push("crystal-forge");
   if (level.objective?.colorWards) ids.push("color-ward");
+  if (level.objective?.vines) ids.push("creeping-vine");
   if (Number(level.objective?.ice?.layers) >= 2) ids.push("layered-ice");
   else if (level.objective?.ice) ids.push("ice");
 
@@ -609,6 +627,7 @@ function scanMechanics() {
   if (level?.objective?.ground) requestTip("enchanted-ground");
   if (level?.objective?.producers) requestTip("crystal-forge");
   if (level?.objective?.colorWards) requestTip("color-ward");
+  if (level?.objective?.vines) requestTip("creeping-vine");
   if (Number(level?.objective?.ice?.layers) >= 2) requestTip("layered-ice");
   else if (level?.objective?.ice) requestTip("ice");
 

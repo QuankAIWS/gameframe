@@ -113,6 +113,7 @@ Every normal match-3 level already exercises visual search, planning, inhibition
 After a cognitive family has completed its dedicated foundation/teaching arc:
 
 - target roughly **4–6 steady-state cognitive-accent levels per 30-level chapter** (about 13–20%);
+- treat 13–20% as a **rolling design band, not a quota**: stay nearer the low end when a complex new mainstream mechanic is being taught, and use the upper end when the surrounding board vocabulary is familiar and the memory task remains light;
 - normally place **1–2 steady-state cognitive-accent levels per ten-level tension wave**;
 - avoid more than two explicit memory-accent levels consecutively in steady-state mixed chapters;
 - dedicated foundation arcs may temporarily use much more frequent, easier exposures so the player actually learns the new rule;

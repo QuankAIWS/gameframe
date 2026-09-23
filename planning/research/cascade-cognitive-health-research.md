@@ -1,7 +1,7 @@
 # Cascade Research — Cognitive Health, Aging, and Game Design
 
 Status: living research reference  
-Last reviewed: 2026-08-30  
+Last reviewed: 2026-09-23  
 Use with:
 - `planning/cascade-cognitive-health-and-engagement.md`
 - `planning/cascade-10000-campaign-roadmap.md`
@@ -56,6 +56,29 @@ Cascade implications:
 - exercise several domains rather than only sequence recall;
 - make cognitive accents recurring rather than one-off tests;
 - preserve player control and allow thinking time.
+
+### Memory-training and spaced-retrieval evidence
+
+Memory-specific training has a more direct evidence base than a broad claim that any game improves general cognition.
+
+A meta-analysis of 35 memory-training studies in cognitively intact, community-dwelling older adults reported an overall trained-versus-control effect of about 0.31 standard deviations. A newer systematic review/meta-analysis of serious games in older adults without obvious cognitive impairment reported an overall memory effect around SMD 0.35, with substantial variation by memory domain.
+
+Sources:
+- Gross AL et al. *Memory training interventions for older adults: a meta-analysis.* PMID 22423647: https://pubmed.ncbi.nlm.nih.gov/22423647/
+- *Effects of Serious Games on Memory Improvement in Older Adults Without Obvious Cognitive Impairment: A Systematic Review and Meta-Analysis.* PMID 40474799: https://pubmed.ncbi.nlm.nih.gov/40474799/
+
+A retrieval-practice experiment directly comparing younger and older adults found that repeated **spaced** testing improved later retention in both age groups, whereas repeated massed testing provided the same additional benefit only to younger adults.
+
+Source:
+- *Retrieval Practice and Spacing Effects in Young and Older Adults: An Examination of the Benefits of Desirable Difficulty.* PMCID PMC4480221: https://pmc.ncbi.nlm.nih.gov/articles/PMC4480221/
+
+Cascade implications:
+
+- recurring memory practice is reasonable as a supplementary design goal;
+- spacing memory accents across ordinary match-3 play is preferable to clustering them into long test-like blocks;
+- use several memory forms (associative, visuospatial, prospective, short sequence) instead of drilling one task continuously;
+- the evidence supports practice effects and modest domain-specific improvement, not a guarantee that Cascade improves everyday memory or prevents cognitive decline;
+- enjoyment and continued voluntary play remain essential because a theoretically useful exercise has little practical value if the player abandons it.
 
 ### ACTIVE 10-year randomized trial
 

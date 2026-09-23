@@ -11,6 +11,7 @@ import {
   producerSupportIndices,
   colorWardSupportIndices,
   colorWardTargetKinds,
+  vineTargetIndices,
   emptySpecials,
   findSpecialMatchGroups,
   objectiveComplete,
@@ -42,6 +43,7 @@ export const HUMAN_PERSONAS = Object.freeze({
       ground: 1.35,
       producer: 1.45,
       colorWard: 1.65,
+      vine: 1.7,
     }),
   }),
   "human-skilled": Object.freeze({
@@ -67,6 +69,7 @@ export const HUMAN_PERSONAS = Object.freeze({
       ground: 2.55,
       producer: 2.85,
       colorWard: 3.15,
+      vine: 3.35,
     }),
   }),
 });
@@ -95,53 +98,63 @@ const CAMPAIGN_DIFFICULTY_ANCHORS = Object.freeze([
     }),
   }),
   Object.freeze({
+    level: 1500,
+    phase: "growth-mastery",
+    bands: Object.freeze({
+      relief: Object.freeze([0.88, 0.96]),
+      normal: Object.freeze([0.78, 0.90]),
+      hard: Object.freeze([0.64, 0.78]),
+      "super-hard": Object.freeze([0.50, 0.68]),
+    }),
+  }),
+  Object.freeze({
     level: 2000,
     phase: "established",
     bands: Object.freeze({
-      relief: Object.freeze([0.85, 0.94]),
-      normal: Object.freeze([0.73, 0.87]),
-      hard: Object.freeze([0.59, 0.74]),
-      "super-hard": Object.freeze([0.45, 0.63]),
+      relief: Object.freeze([0.87, 0.95]),
+      normal: Object.freeze([0.77, 0.89]),
+      hard: Object.freeze([0.63, 0.77]),
+      "super-hard": Object.freeze([0.49, 0.67]),
     }),
   }),
   Object.freeze({
     level: 3000,
     phase: "milestone",
     bands: Object.freeze({
-      relief: Object.freeze([0.82, 0.92]),
-      normal: Object.freeze([0.68, 0.83]),
-      hard: Object.freeze([0.54, 0.70]),
-      "super-hard": Object.freeze([0.40, 0.58]),
+      relief: Object.freeze([0.86, 0.95]),
+      normal: Object.freeze([0.76, 0.88]),
+      hard: Object.freeze([0.62, 0.76]),
+      "super-hard": Object.freeze([0.48, 0.66]),
     }),
   }),
   Object.freeze({
     level: 5000,
     phase: "advanced",
     bands: Object.freeze({
-      relief: Object.freeze([0.78, 0.90]),
-      normal: Object.freeze([0.60, 0.78]),
-      hard: Object.freeze([0.46, 0.64]),
-      "super-hard": Object.freeze([0.33, 0.52]),
+      relief: Object.freeze([0.85, 0.94]),
+      normal: Object.freeze([0.74, 0.87]),
+      hard: Object.freeze([0.60, 0.75]),
+      "super-hard": Object.freeze([0.46, 0.64]),
     }),
   }),
   Object.freeze({
     level: 7500,
     phase: "deep",
     bands: Object.freeze({
-      relief: Object.freeze([0.74, 0.87]),
-      normal: Object.freeze([0.53, 0.72]),
-      hard: Object.freeze([0.39, 0.58]),
-      "super-hard": Object.freeze([0.27, 0.46]),
+      relief: Object.freeze([0.84, 0.93]),
+      normal: Object.freeze([0.72, 0.86]),
+      hard: Object.freeze([0.58, 0.73]),
+      "super-hard": Object.freeze([0.44, 0.62]),
     }),
   }),
   Object.freeze({
     level: 10000,
     phase: "mature",
     bands: Object.freeze({
-      relief: Object.freeze([0.70, 0.84]),
-      normal: Object.freeze([0.48, 0.68]),
-      hard: Object.freeze([0.34, 0.54]),
-      "super-hard": Object.freeze([0.23, 0.42]),
+      relief: Object.freeze([0.83, 0.92]),
+      normal: Object.freeze([0.71, 0.85]),
+      hard: Object.freeze([0.57, 0.72]),
+      "super-hard": Object.freeze([0.43, 0.61]),
     }),
   }),
 ]);
@@ -346,6 +359,9 @@ function objectiveAdvanceValue(level, before, after) {
   const beforeWards = Number(before?.colorWards?.opened || 0);
   const afterWards = Number(after?.colorWards?.opened || 0);
   value += Math.max(0, afterWards - beforeWards) * 420;
+  const beforeVines = (before?.vines?.active || []).filter(Boolean).length;
+  const afterVines = (after?.vines?.active || []).filter(Boolean).length;
+  value += Math.max(0, beforeVines - afterVines) * 520;
   return value;
 }
 
@@ -387,6 +403,7 @@ function visibleMoveFeatures(level, progress, board, specials, move, recallKnowl
     ground: 0,
     producer: 0,
     colorWard: 0,
+    vine: 0,
   };
 
   if (a === SPECIAL.COLOR || b === SPECIAL.COLOR) {
@@ -454,6 +471,11 @@ function visibleMoveFeatures(level, progress, board, specials, move, recallKnowl
     if (col > 0) neighbors.push(wardIndex - 1);
     if (col < 7) neighbors.push(wardIndex + 1);
     if (neighbors.some((index) => matched.has(index) && Number(swappedBoard[index]) === requiredKind)) features.colorWard += 1;
+  }
+
+  const activeVines = progress?.vines?.active || [];
+  for (const index of matched) {
+    if (activeVines[index] === true) features.vine += 1;
   }
 
   const bloomTargets = bloomTargetsForMatched(progress, matched);
@@ -559,7 +581,7 @@ function evaluateImmediate(level, progress, board, specials, move, boardRng) {
     ice: progress.ice,
     locks: progress.locks,
     targetKinds: remainingTargetKinds(level, progress),
-    targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress), ...producerSupportIndices(progress), ...colorWardSupportIndices(progress)])],
+    targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress), ...producerSupportIndices(progress), ...colorWardSupportIndices(progress), ...vineTargetIndices(progress)])],
   });
   if (!result.legal) return null;
   const nextProgress = applySpecialLevelProgress(level, progress, result);
@@ -690,7 +712,7 @@ export function runCascadeLevel({ level, seed, strategy = "lookahead" }) {
       ice: progress.ice,
       locks: progress.locks,
       targetKinds: remainingTargetKinds(definition, progress),
-      targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress), ...producerSupportIndices(progress), ...colorWardSupportIndices(progress)])],
+      targetIndices: [...new Set([...dropSupportIndices(progress), ...ordinaryLockTargetIndices(progress), ...producerSupportIndices(progress), ...colorWardSupportIndices(progress), ...vineTargetIndices(progress)])],
     });
     if (!result.legal) throw new Error(`Cascade bot selected an illegal move ${move.from}->${move.to}`);
 

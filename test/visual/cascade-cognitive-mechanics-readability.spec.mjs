@@ -119,3 +119,32 @@ test("Producer plus Color Ward recombination remains legible on desktop", async 
   await expect(page.locator(".cascade-tile.has-color-ward").first()).toBeVisible();
   await page.screenshot({ path: `${output}/cascade-producer-ward-remix-desktop.png`, fullPage: true });
 });
+
+
+test("Creeping Vines stay unmistakable on older-eye mobile layouts without hiding candy identity", async ({ page }) => {
+  await openLevel(page, 1051);
+  const vines = page.locator(".cascade-tile.has-creeping-vine");
+  await expect(vines).toHaveCount(2);
+  const geometry = await vines.first().evaluate((tile) => {
+    const tileRect = tile.getBoundingClientRect();
+    const mark = tile.querySelector(".cascade-vine-mark").getBoundingClientRect();
+    const stem = tile.querySelector(".cascade-vine-stem").getBoundingClientRect();
+    const candy = getComputedStyle(tile, "::before");
+    return {
+      tileWidth: tileRect.width,
+      markWidth: mark.width,
+      stemHeight: stem.height,
+      candyWidth: Number.parseFloat(candy.width),
+    };
+  });
+  expect(geometry.markWidth).toBeGreaterThan(geometry.tileWidth * .82);
+  expect(geometry.stemHeight).toBeGreaterThan(geometry.tileWidth * .75);
+  expect(geometry.candyWidth).toBeGreaterThan(geometry.tileWidth * .5);
+  await page.screenshot({ path: `${output}/cascade-creeping-vines-mobile.png`, fullPage: true });
+});
+
+test("Creeping Vine mastery remains legible on desktop", async ({ page }) => {
+  await openLevel(page, 1148, { width: 1440, height: 960 });
+  await expect(page.locator(".cascade-tile.has-creeping-vine").first()).toBeVisible();
+  await page.screenshot({ path: `${output}/cascade-creeping-vines-mastery-desktop.png`, fullPage: true });
+});

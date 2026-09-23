@@ -1,6 +1,6 @@
 export const BOARD_SIZE = 8;
 export const TILE_KINDS = 6;
-export const LEVEL_COUNT = 1050;
+export const LEVEL_COUNT = 1150;
 export const CAMPAIGN_CAPACITY = 10000;
 export const CAMPAIGN_MILESTONE = 3000;
 export const CHAPTER_SIZE = 30;
@@ -44,6 +44,7 @@ function mechanicsForLevel(levelNumber) {
   if (levelNumber >= 801) mechanics.push("enchanted-ground");
   if (levelNumber >= 901) mechanics.push("producers");
   if (levelNumber >= 951) mechanics.push("color-wards");
+  if (levelNumber >= 1051) mechanics.push("creeping-vines");
   return mechanics;
 }
 
@@ -51,7 +52,7 @@ function collectGoal(kind, count) {
   return Object.freeze({ kind, count });
 }
 
-function objective({ collect = [], ice = null, drop = null, locks = null, blooms = null, ground = null, producers = null, colorWards = null } = {}) {
+function objective({ collect = [], ice = null, drop = null, locks = null, blooms = null, ground = null, producers = null, colorWards = null, vines = null } = {}) {
   return Object.freeze({
     collect: Object.freeze(collect.map((item) => collectGoal(item.kind, item.count))),
     ice: ice ? Object.freeze({ ...ice }) : null,
@@ -94,6 +95,16 @@ function objective({ collect = [], ice = null, drop = null, locks = null, blooms
       ? Object.freeze({
           count: Math.max(1, Math.min(10, Math.floor(Number(colorWards.count) || 4))),
           pattern: String(colorWards.pattern || "center"),
+        })
+      : null,
+    vines: vines
+      ? Object.freeze({
+          count: Math.max(1, Math.min(12, Math.floor(Number(vines.count) || 3))),
+          cap: Math.max(
+            Math.max(1, Math.min(12, Math.floor(Number(vines.count) || 3))),
+            Math.min(18, Math.floor(Number(vines.cap) || 7)),
+          ),
+          pattern: String(vines.pattern || "center"),
         })
       : null,
   });
@@ -225,6 +236,7 @@ function applyLateObjectiveTuning(levelNumber, levelObjective) {
     ground: levelObjective?.ground ? { ...levelObjective.ground } : null,
     producers: levelObjective?.producers ? { ...levelObjective.producers } : null,
     colorWards: levelObjective?.colorWards ? { ...levelObjective.colorWards } : null,
+    vines: levelObjective?.vines ? { ...levelObjective.vines } : null,
   });
 }
 
@@ -285,6 +297,7 @@ function compoundGeometryMoveBonus(levelObjective, difficulty) {
   if (levelObjective?.ground && !memoryHeavy && difficulty === "relief") bonus += 1;
   if (levelObjective?.producers && difficulty === "relief") bonus += 1;
   if (levelObjective?.colorWards && difficulty === "relief") bonus += 1;
+  if (levelObjective?.vines && difficulty === "relief") bonus += 1;
   return bonus;
 }
 
@@ -319,6 +332,23 @@ const POST_1000_MEMORY_ACCENTS = new Map([
   [1027, "bloom"],
   [1033, "recall"],
   [1048, "bloom"],
+]);
+
+const SPREADING_MEMORY_ACCENTS = new Map([
+  [1062, "recall"],
+  [1068, "bloom"],
+  [1073, "recall"],
+  [1082, "bloom"],
+  [1088, "recall"],
+  [1093, "bloom"],
+  [1102, "recall"],
+  [1108, "bloom"],
+  [1113, "recall"],
+  [1122, "bloom"],
+  [1128, "recall"],
+  [1133, "bloom"],
+  [1142, "recall"],
+  [1148, "bloom"],
 ]);
 
 function campaignSpec(levelNumber) {
@@ -913,38 +943,136 @@ function campaignSpec(levelNumber) {
     });
   }
 
+  if (levelNumber <= 1050) {
+    return buildSpec({
+      levelNumber, start: 1031, chapter: "foundation-remix", baseTarget: 30400, targetStep: 100, baseMoves: 42,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "hard" : wave.difficulty);
+        const memoryAccent = POST_1000_MEMORY_ACCENTS.get(levelNumber) || null;
+        const groundLane = within % 2 === 0;
+        return objective({
+          ground: groundLane ? {
+            target: scaleCount(22 + phase * 3 + Math.floor(within / 4), Math.min(1.06, wave.objectiveFactor)),
+            seeds: 4,
+            pattern,
+          } : null,
+          producers: groundLane ? {
+            count: wave.difficulty === "relief" ? 2 : 3,
+            charges: 1,
+            pattern,
+          } : null,
+          drop: groundLane ? null : dropObjective(levelNumber, wave.difficulty === "super-hard" ? 2 : 1, phase + 1),
+          colorWards: groundLane ? null : {
+            count: wave.difficulty === "relief" ? 2 : 3,
+            pattern,
+          },
+          locks: memoryAccent === "recall" ? {
+            count: 2,
+            layers: 1,
+            pattern,
+            recall: true,
+          } : null,
+          blooms: memoryAccent === "bloom" ? {
+            pairs: wave.difficulty === "relief" ? 2 : 3,
+            pattern,
+          } : null,
+        });
+      },
+    });
+  }
+
+  if (levelNumber <= 1080) {
+    return buildSpec({
+      levelNumber, start: 1051, chapter: "creeping-vine-intro", baseTarget: 32600, targetStep: 90, baseMoves: 44,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const firstTeachingWave = phase === 0;
+        const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        const pattern = firstTeachingWave ? "center" : latePatternFor(levelNumber, phase, wave.difficulty);
+        if (firstTeachingWave && pressureBeat) {
+          return objective({
+            colorWards: { count: wave.difficulty === "hard" ? 3 : 4, pattern: "center" },
+          });
+        }
+        const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
+        const count = wave.difficulty === "relief" ? 2 : 3;
+        return objective({
+          vines: { count, cap: count + 2, pattern },
+          collect: phase >= 2 ? [{
+            kind: (levelNumber + phase) % TILE_KINDS,
+            count: scaleCount(3 + Math.floor(within / 6), Math.min(1, wave.objectiveFactor)),
+          }] : [],
+          locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
+          blooms: memoryAccent === "bloom" ? { pairs: 2, pattern } : null,
+        });
+      },
+    });
+  }
+
+  if (levelNumber <= 1110) {
+    return buildSpec({
+      levelNumber, start: 1081, chapter: "vine-routing", baseTarget: 33400, targetStep: 60, baseMoves: 45,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
+        const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        const count = wave.difficulty === "relief" ? 2 : (pressureBeat ? 4 : 3);
+        const dropLane = within % 2 === 1;
+        return objective({
+          vines: { count, cap: count + 2, pattern },
+          drop: dropLane ? dropObjective(levelNumber, 1, phase + 1) : null,
+          collect: dropLane ? [] : [{
+            kind: (levelNumber + phase + 1) % TILE_KINDS,
+            count: scaleCount(4 + Math.floor(within / 6), Math.min(1, wave.objectiveFactor)),
+          }],
+          locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
+          blooms: memoryAccent === "bloom" ? { pairs: wave.difficulty === "relief" ? 2 : 3, pattern } : null,
+        });
+      },
+    });
+  }
+
+  if (levelNumber <= 1140) {
+    return buildSpec({
+      levelNumber, start: 1111, chapter: "vine-dependency-mix", baseTarget: 33800, targetStep: 60, baseMoves: 46,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
+        const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        const count = wave.difficulty === "relief" ? 2 : (pressureBeat ? 4 : 3);
+        const producerLane = within % 2 === 0;
+        return objective({
+          vines: { count, cap: count + 2, pattern },
+          producers: producerLane ? {
+            count: 2,
+            charges: 1,
+            pattern,
+          } : null,
+          colorWards: producerLane ? null : {
+            count: 2,
+            pattern,
+          },
+          locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
+          blooms: memoryAccent === "bloom" ? { pairs: wave.difficulty === "relief" ? 2 : 3, pattern } : null,
+        });
+      },
+    });
+  }
+
   return buildSpec({
-    levelNumber, start: 1031, chapter: "foundation-remix", baseTarget: 30400, targetStep: 100, baseMoves: 42,
+    levelNumber, start: 1141, chapter: "vine-mastery", baseTarget: 34800, targetStep: 60, baseMoves: 47,
     objectiveFactory: ({ phase, within, wave }) => {
-      const pattern = latePatternFor(levelNumber, phase, wave.difficulty === "super-hard" ? "hard" : wave.difficulty);
-      const memoryAccent = POST_1000_MEMORY_ACCENTS.get(levelNumber) || null;
-      const groundLane = within % 2 === 0;
+      const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+      const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
+      const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+      const count = wave.difficulty === "relief" ? 2 : (pressureBeat ? 4 : 3);
+      const route = within % 3;
       return objective({
-        ground: groundLane ? {
-          target: scaleCount(22 + phase * 3 + Math.floor(within / 4), Math.min(1.06, wave.objectiveFactor)),
-          seeds: 4,
-          pattern,
-        } : null,
-        producers: groundLane ? {
-          count: wave.difficulty === "relief" ? 2 : 3,
-          charges: 1,
-          pattern,
-        } : null,
-        drop: groundLane ? null : dropObjective(levelNumber, wave.difficulty === "super-hard" ? 2 : 1, phase + 1),
-        colorWards: groundLane ? null : {
-          count: wave.difficulty === "relief" ? 2 : 3,
-          pattern,
-        },
-        locks: memoryAccent === "recall" ? {
-          count: 2,
-          layers: 1,
-          pattern,
-          recall: true,
-        } : null,
-        blooms: memoryAccent === "bloom" ? {
-          pairs: wave.difficulty === "relief" ? 2 : 3,
-          pattern,
-        } : null,
+        vines: { count, cap: count + 2, pattern },
+        drop: route === 0 ? dropObjective(levelNumber, 1, phase + 1) : null,
+        producers: route === 1 ? { count: 2, charges: 1, pattern } : null,
+        colorWards: route === 2 ? { count: 2, pattern } : null,
+        locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
+        blooms: memoryAccent === "bloom" ? { pairs: wave.difficulty === "relief" ? 2 : 3, pattern } : null,
       });
     },
   });
@@ -1399,13 +1527,14 @@ export function advanceGroundProgress(value, clearIndices) {
   return next;
 }
 
-function occupiedObjectiveCells(dropProgress, lockProgress, bloomProgress, producerProgress = null) {
+function occupiedObjectiveCells(dropProgress, lockProgress, bloomProgress, producerProgress = null, colorWardProgress = null) {
   return new Set([
     ...(dropProgress?.tokens || []).map((token) => Number(token.index)),
     ...(dropProgress?.exits || []).map(Number),
     ...(lockProgress?.layers || []).flatMap((layer, index) => Number(layer) > 0 ? [index] : []),
     ...(bloomProgress?.symbols || []).flatMap((symbol, index) => Number(symbol) >= 0 ? [index] : []),
     ...(producerProgress?.remaining || []).flatMap((charges, index) => Number(charges) > 0 ? [index] : []),
+    ...(colorWardProgress?.requiredKinds || []).flatMap((kind, index) => Number(kind) >= 0 ? [index] : []),
   ]);
 }
 
@@ -1556,6 +1685,98 @@ export function advanceColorWardProgress(value, boardBefore, clearIndices, { all
   return next;
 }
 
+function createVineProgress(levelDefinition, dropProgress = null, lockProgress = null, bloomProgress = null, producerProgress = null, colorWardProgress = null) {
+  const spec = levelDefinition?.objective?.vines;
+  const active = Array(BOARD_SIZE * BOARD_SIZE).fill(false);
+  const protectedCells = Array(BOARD_SIZE * BOARD_SIZE).fill(false);
+  if (!spec?.count) {
+    return { initial: 0, cap: 0, active, protectedCells, pattern: "center", level: Number(levelDefinition?.level || 0), turn: 0, cleared: 0, lastCleared: [], lastSpread: [] };
+  }
+  const blocked = occupiedObjectiveCells(dropProgress, lockProgress, bloomProgress, producerProgress, colorWardProgress);
+  for (const index of blocked) if (Number.isInteger(index) && index >= 0 && index < protectedCells.length) protectedCells[index] = true;
+  const cells = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
+    const row = Math.floor(index / BOARD_SIZE);
+    const col = index % BOARD_SIZE;
+    return { index, score: patternScore(spec.pattern, row, col) };
+  }).filter(({ index }) => !protectedCells[index]);
+  cells.sort((a, b) => a.score - b.score || ((a.index * 47 + levelDefinition.level * 37) % 101) - ((b.index * 47 + levelDefinition.level * 37) % 101));
+  const count = Math.min(cells.length, Math.max(1, Math.floor(Number(spec.count) || 3)));
+  for (const { index } of cells.slice(0, count)) active[index] = true;
+  const cap = Math.max(count, Math.min(18, Math.floor(Number(spec.cap) || (count + 2))));
+  return {
+    initial: count,
+    cap,
+    active,
+    protectedCells,
+    pattern: String(spec.pattern || "center"),
+    level: Number(levelDefinition?.level || 0),
+    turn: 0,
+    cleared: 0,
+    lastCleared: [],
+    lastSpread: [],
+  };
+}
+
+export function normalizeVineProgress(value) {
+  const active = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => value?.active?.[index] === true);
+  const protectedCells = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => value?.protectedCells?.[index] === true);
+  const activeCount = active.filter(Boolean).length;
+  return {
+    initial: Math.max(0, Math.floor(Number(value?.initial) || activeCount)),
+    cap: Math.max(activeCount, Math.min(18, Math.floor(Number(value?.cap) || activeCount))),
+    active,
+    protectedCells,
+    pattern: String(value?.pattern || "center"),
+    level: Math.max(0, Math.floor(Number(value?.level) || 0)),
+    turn: Math.max(0, Math.floor(Number(value?.turn) || 0)),
+    cleared: Math.max(0, Math.floor(Number(value?.cleared) || 0)),
+    lastCleared: Array.isArray(value?.lastCleared) ? value.lastCleared.filter((index) => Number.isInteger(index) && index >= 0 && index < active.length) : [],
+    lastSpread: Array.isArray(value?.lastSpread) ? value.lastSpread.filter((index) => Number.isInteger(index) && index >= 0 && index < active.length) : [],
+  };
+}
+
+export function vineTargetIndices(progress) {
+  return normalizeVineProgress(progress?.vines).active.flatMap((isActive, index) => isActive ? [index] : []);
+}
+
+export function advanceVineProgress(value, clearIndices) {
+  const next = normalizeVineProgress(value);
+  if (!next.initial) return next;
+  const clearSet = new Set((clearIndices || []).filter((index) => Number.isInteger(index) && index >= 0 && index < BOARD_SIZE * BOARD_SIZE));
+  const cleared = [];
+  for (const index of clearSet) {
+    if (!next.active[index]) continue;
+    next.active[index] = false;
+    cleared.push(index);
+  }
+  next.cleared += cleared.length;
+  next.turn += 1;
+  next.lastCleared = cleared;
+  next.lastSpread = [];
+
+  const activeIndices = next.active.flatMap((isActive, index) => isActive ? [index] : []);
+  if (!activeIndices.length || cleared.length || activeIndices.length >= next.cap) return next;
+
+  const candidates = new Set();
+  for (const index of activeIndices) {
+    for (const neighbor of adjacentIndices(index)) {
+      if (next.active[neighbor] || next.protectedCells[neighbor]) continue;
+      candidates.add(neighbor);
+    }
+  }
+  const ordered = [...candidates].sort((a, b) => {
+    const aHash = (a * 47 + next.level * 37 + next.turn * 29) % 101;
+    const bHash = (b * 47 + next.level * 37 + next.turn * 29) % 101;
+    return aHash - bHash || a - b;
+  });
+  const spreadIndex = ordered[0];
+  if (Number.isInteger(spreadIndex)) {
+    next.active[spreadIndex] = true;
+    next.lastSpread = [spreadIndex];
+  }
+  return next;
+}
+
 export function createLevelProgress(levelDefinition) {
   const drop = createDropProgress(levelDefinition);
   const locks = createLockProgress(levelDefinition, drop);
@@ -1563,7 +1784,8 @@ export function createLevelProgress(levelDefinition) {
   const ground = createGroundProgress(levelDefinition, drop, locks, blooms);
   const producers = createProducerProgress(levelDefinition, drop, locks, blooms);
   const colorWards = createColorWardProgress(levelDefinition, drop, locks, blooms, producers);
-  return { collected: Array(TILE_KINDS).fill(0), ice: createIceBoard(levelDefinition), drop, locks, blooms, ground, producers, colorWards };
+  const vines = createVineProgress(levelDefinition, drop, locks, blooms, producers, colorWards);
+  return { collected: Array(TILE_KINDS).fill(0), ice: createIceBoard(levelDefinition), drop, locks, blooms, ground, producers, colorWards, vines };
 }
 
 export function applyLevelProgress(levelDefinition, progress, result, options = {}) {
@@ -1576,6 +1798,7 @@ export function applyLevelProgress(levelDefinition, progress, result, options = 
     ground: normalizeGroundProgress(progress?.ground),
     producers: normalizeProducerProgress(progress?.producers),
     colorWards: normalizeColorWardProgress(progress?.colorWards),
+    vines: normalizeVineProgress(progress?.vines),
   };
   addKindCounts(next.collected, result?.clearedKindCounts);
   const steps = Array.isArray(result?.transitions) ? result.transitions : result?.cleared ? [result] : [];
@@ -1583,6 +1806,7 @@ export function applyLevelProgress(levelDefinition, progress, result, options = 
   const groundSpread = [];
   const producerTriggers = [];
   const wardOpenings = [];
+  const vineClearIndices = new Set();
   let bloomInteractionConsumed = options.skipBlooms === true;
   next.blooms.lastEvents = [];
 
@@ -1597,6 +1821,7 @@ export function applyLevelProgress(levelDefinition, progress, result, options = 
 
   if (result?.hammer?.cleared) {
     const clearIndices = result.hammer.matchedForProgress || result.hammer.matched || [];
+    for (const index of clearIndices) vineClearIndices.add(index);
     next.drop = dropStepProgress(next.drop, result.hammer);
     advanceBloomOnce(clearIndices);
     next.ground = advanceGroundProgress(next.ground, clearIndices);
@@ -1609,6 +1834,7 @@ export function applyLevelProgress(levelDefinition, progress, result, options = 
   for (const step of steps) {
     next.drop = dropStepProgress(next.drop, step);
     const clearIndices = step.matchedForProgress || step.matched || [];
+    for (const index of clearIndices) vineClearIndices.add(index);
     advanceBloomOnce(clearIndices);
     next.ground = advanceGroundProgress(next.ground, clearIndices);
     groundSpread.push(...next.ground.lastSpread);
@@ -1621,6 +1847,7 @@ export function applyLevelProgress(levelDefinition, progress, result, options = 
   next.ground.lastSpread = [...new Set(groundSpread)];
   next.producers.lastTriggered = [...new Set(producerTriggers)];
   next.colorWards.lastOpened = [...new Set(wardOpenings)];
+  next.vines = advanceVineProgress(next.vines, [...vineClearIndices]);
   return next;
 }
 
@@ -1634,6 +1861,7 @@ export function objectiveComplete(levelDefinition, progress, score) {
   if (levelDefinition.objective?.ground && Number(progress?.ground?.count || 0) < Number(levelDefinition.objective.ground.target || 0)) return false;
   if (levelDefinition.objective?.producers && Number(progress?.producers?.collected || 0) < Number(progress?.producers?.total || 0)) return false;
   if (levelDefinition.objective?.colorWards && (progress?.colorWards?.requiredKinds || []).some((kind) => Number(kind) >= 0)) return false;
+  if (levelDefinition.objective?.vines && (progress?.vines?.active || []).some(Boolean)) return false;
   return true;
 }
 
@@ -1673,6 +1901,10 @@ export function objectiveRemaining(levelDefinition, progress, score) {
     const count = (progress?.colorWards?.requiredKinds || []).filter((kind) => Number(kind) >= 0).length;
     if (count > 0) remaining.push({ type: "color-ward", count });
   }
+  if (levelDefinition.objective?.vines) {
+    const count = (progress?.vines?.active || []).filter(Boolean).length;
+    if (count > 0) remaining.push({ type: "vine", count });
+  }
   return remaining;
 }
 
@@ -1710,6 +1942,10 @@ export function describeLevelObjective(levelDefinition, progress, score = 0) {
     const total = Number(progress?.colorWards?.total || 0);
     const opened = Math.min(total, Number(progress?.colorWards?.opened || 0));
     parts.push(`color wards ${opened}/${total}`);
+  }
+  if (levelDefinition.objective?.vines) {
+    const remaining = (progress?.vines?.active || []).filter(Boolean).length;
+    parts.push(`creeping vines ${remaining} left`);
   }
   return parts.join(" · ");
 }
