@@ -1,6 +1,6 @@
 export const BOARD_SIZE = 8;
 export const TILE_KINDS = 6;
-export const LEVEL_COUNT = 1150;
+export const LEVEL_COUNT = 2000;
 export const CAMPAIGN_CAPACITY = 10000;
 export const CAMPAIGN_MILESTONE = 3000;
 export const CHAPTER_SIZE = 30;
@@ -350,6 +350,20 @@ const SPREADING_MEMORY_ACCENTS = new Map([
   [1142, "recall"],
   [1148, "bloom"],
 ]);
+
+function expansionMemoryAccent(levelNumber, start) {
+  const offset = levelNumber - start;
+  const withinChapter = ((offset % 30) + 30) % 30;
+  const slots = new Set([2, 7, 12, 18, 23]);
+  if (!slots.has(withinChapter)) return null;
+  const difficulty = waveForLevel(levelNumber).difficulty;
+  if (difficulty === "hard" || difficulty === "super-hard") return null;
+  return Math.floor(offset / 30 + withinChapter) % 2 === 0 ? "recall" : "bloom";
+}
+
+function expansionPattern(levelNumber, phase, difficulty) {
+  return latePatternFor(levelNumber, phase % 3, difficulty);
+}
 
 function campaignSpec(levelNumber) {
   if (levelNumber <= 30) {
@@ -1058,21 +1072,150 @@ function campaignSpec(levelNumber) {
     });
   }
 
+  if (levelNumber <= 1150) {
+    return buildSpec({
+      levelNumber, start: 1141, chapter: "vine-mastery", baseTarget: 34800, targetStep: 60, baseMoves: 47,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
+        const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
+        const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        const count = wave.difficulty === "relief" ? 2 : (pressureBeat ? 4 : 3);
+        const route = within % 3;
+        return objective({
+          vines: { count, cap: count + 2, pattern },
+          drop: route === 0 ? dropObjective(levelNumber, 1, phase + 1) : null,
+          producers: route === 1 ? { count: 2, charges: 1, pattern } : null,
+          colorWards: route === 2 ? { count: 2, pattern } : null,
+          locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
+          blooms: memoryAccent === "bloom" ? { pairs: wave.difficulty === "relief" ? 2 : 3, pattern } : null,
+        });
+      },
+    });
+  }
+
+  if (levelNumber <= 1250) {
+    return buildSpec({
+      levelNumber, start: 1151, chapter: "vine-established", baseTarget: 35000, targetStep: 32, baseMoves: 48,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const local = phase % 3;
+        const pattern = expansionPattern(levelNumber, phase, wave.difficulty);
+        const memoryAccent = expansionMemoryAccent(levelNumber, 1151);
+        const route = within % 4;
+        const count = wave.difficulty === "relief" ? 2 : (wave.difficulty === "normal" ? 3 : 4);
+        return objective({
+          vines: { count, cap: count + 2, pattern },
+          drop: route === 0 ? dropObjective(levelNumber, 1, local + 1) : null,
+          producers: route === 1 ? { count: 2, charges: 1, pattern } : null,
+          colorWards: route === 2 ? { count: 2, pattern } : null,
+          ground: route === 3 ? { target: 18 + local * 2, seeds: 4, pattern } : null,
+          locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
+          blooms: memoryAccent === "bloom" ? { pairs: 2, pattern } : null,
+        });
+      },
+    });
+  }
+
+  if (levelNumber <= 1400) {
+    return buildSpec({
+      levelNumber, start: 1251, chapter: "access-planning", baseTarget: 37000, targetStep: 24, baseMoves: 49,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const local = phase % 3;
+        const pattern = expansionPattern(levelNumber, phase, wave.difficulty);
+        const memoryAccent = expansionMemoryAccent(levelNumber, 1251);
+        const route = within % 3;
+        const pressure = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        return objective({
+          locks: memoryAccent === "recall"
+            ? { count: 2, layers: 1, pattern, recall: true }
+            : { count: wave.difficulty === "relief" ? 2 : (pressure ? 4 : 3), layers: local === 2 && pressure ? 2 : 1, pattern },
+          drop: route === 0 ? dropObjective(levelNumber, pressure ? 2 : 1, local + 1) : null,
+          producers: route === 1 ? { count: 2, charges: 1, pattern } : null,
+          colorWards: route === 2 ? { count: 2, pattern } : null,
+          blooms: memoryAccent === "bloom" ? { pairs: 2, pattern } : null,
+        });
+      },
+    });
+  }
+
+  if (levelNumber <= 1550) {
+    return buildSpec({
+      levelNumber, start: 1401, chapter: "producer-dependency", baseTarget: 39000, targetStep: 22, baseMoves: 50,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const local = phase % 3;
+        const pattern = expansionPattern(levelNumber, phase, wave.difficulty);
+        const memoryAccent = expansionMemoryAccent(levelNumber, 1401);
+        const route = within % 4;
+        return objective({
+          producers: { count: wave.difficulty === "relief" ? 2 : 3, charges: local === 2 && wave.difficulty === "super-hard" ? 2 : 1, pattern },
+          drop: route === 0 ? dropObjective(levelNumber, 1, local + 1) : null,
+          colorWards: route === 1 ? { count: 2, pattern } : null,
+          ground: route === 2 ? { target: 18 + local * 2, seeds: 4, pattern } : null,
+          vines: route === 3 ? { count: wave.difficulty === "relief" ? 2 : 3, cap: wave.difficulty === "relief" ? 4 : 5, pattern } : null,
+          locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
+          blooms: memoryAccent === "bloom" ? { pairs: 2, pattern } : null,
+        });
+      },
+    });
+  }
+
+  if (levelNumber <= 1700) {
+    return buildSpec({
+      levelNumber, start: 1551, chapter: "cognitive-spatial", baseTarget: 41000, targetStep: 20, baseMoves: 51,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const local = phase % 3;
+        const pattern = expansionPattern(levelNumber, phase, wave.difficulty);
+        const memoryAccent = expansionMemoryAccent(levelNumber, 1551);
+        const route = within % 4;
+        return objective({
+          ground: route === 0 ? { target: 20 + local * 2, seeds: 4, pattern } : null,
+          drop: route === 1 ? dropObjective(levelNumber, 1, local + 1) : null,
+          colorWards: route === 2 ? { count: 2, pattern } : null,
+          vines: route === 3 ? { count: wave.difficulty === "relief" ? 2 : 3, cap: wave.difficulty === "relief" ? 4 : 5, pattern } : null,
+          locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
+          blooms: memoryAccent === "bloom" ? { pairs: 2, pattern } : null,
+        });
+      },
+    });
+  }
+
+  if (levelNumber <= 1850) {
+    return buildSpec({
+      levelNumber, start: 1701, chapter: "routing-mastery", baseTarget: 43000, targetStep: 18, baseMoves: 52,
+      objectiveFactory: ({ phase, within, wave }) => {
+        const local = phase % 3;
+        const pattern = expansionPattern(levelNumber, phase, wave.difficulty);
+        const memoryAccent = expansionMemoryAccent(levelNumber, 1701);
+        const route = within % 4;
+        const pressure = wave.difficulty === "hard" || wave.difficulty === "super-hard";
+        return objective({
+          drop: dropObjective(levelNumber, pressure && route === 0 ? 2 : 1, local + 1),
+          locks: memoryAccent === "recall"
+            ? { count: 2, layers: 1, pattern, recall: true }
+            : (route === 1 ? { count: pressure ? 4 : 3, layers: 1, pattern } : null),
+          producers: route === 2 ? { count: 2, charges: 1, pattern } : null,
+          vines: route === 3 ? { count: wave.difficulty === "relief" ? 2 : 3, cap: wave.difficulty === "relief" ? 4 : 5, pattern } : null,
+          blooms: memoryAccent === "bloom" ? { pairs: 2, pattern } : null,
+        });
+      },
+    });
+  }
+
   return buildSpec({
-    levelNumber, start: 1141, chapter: "vine-mastery", baseTarget: 34800, targetStep: 60, baseMoves: 47,
+    levelNumber, start: 1851, chapter: "milestone-mix", baseTarget: 45000, targetStep: 16, baseMoves: 53,
     objectiveFactory: ({ phase, within, wave }) => {
-      const pattern = latePatternFor(levelNumber, phase, wave.difficulty);
-      const memoryAccent = SPREADING_MEMORY_ACCENTS.get(levelNumber) || null;
-      const pressureBeat = wave.difficulty === "hard" || wave.difficulty === "super-hard";
-      const count = wave.difficulty === "relief" ? 2 : (pressureBeat ? 4 : 3);
-      const route = within % 3;
+      const local = phase % 3;
+      const pattern = expansionPattern(levelNumber, phase, wave.difficulty);
+      const memoryAccent = expansionMemoryAccent(levelNumber, 1851);
+      const route = within % 5;
+      const pressure = wave.difficulty === "hard" || wave.difficulty === "super-hard";
       return objective({
-        vines: { count, cap: count + 2, pattern },
-        drop: route === 0 ? dropObjective(levelNumber, 1, phase + 1) : null,
-        producers: route === 1 ? { count: 2, charges: 1, pattern } : null,
-        colorWards: route === 2 ? { count: 2, pattern } : null,
+        vines: route === 0 ? { count: wave.difficulty === "relief" ? 2 : 3, cap: wave.difficulty === "relief" ? 4 : 5, pattern } : null,
+        drop: route === 1 ? dropObjective(levelNumber, pressure ? 2 : 1, local + 1) : null,
+        producers: route === 2 ? { count: 2, charges: 1, pattern } : null,
+        colorWards: route === 3 ? { count: 2, pattern } : null,
+        ground: route === 4 ? { target: 20 + local * 2, seeds: 4, pattern } : null,
         locks: memoryAccent === "recall" ? { count: 2, layers: 1, pattern, recall: true } : null,
-        blooms: memoryAccent === "bloom" ? { pairs: wave.difficulty === "relief" ? 2 : 3, pattern } : null,
+        blooms: memoryAccent === "bloom" ? { pairs: 2, pattern } : null,
       });
     },
   });
