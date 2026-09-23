@@ -216,6 +216,11 @@ test("creeping vines spread once per player action, respect their cap, and stop 
   assert.equal(grown.lastSpread.length, 1);
   assert.equal(grown.turn, 1);
 
+  const containedTarget = vineTargetIndices({ vines: grown })[0];
+  const contained = advanceVineProgress(grown, [containedTarget]);
+  assert.equal(vineTargetIndices({ vines: contained }).length, vineTargetIndices({ vines: grown }).length - 1);
+  assert.deepEqual(contained.lastSpread, [], "clearing a vine should suppress growth for that action");
+
   let capped = grown;
   while (vineTargetIndices({ vines: capped }).length < capped.cap) {
     capped = advanceVineProgress(capped, []);
