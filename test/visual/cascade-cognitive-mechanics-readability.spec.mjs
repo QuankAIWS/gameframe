@@ -41,23 +41,30 @@ test("Memory Blooms read as large fixed flowers without hiding the candy board",
   await page.screenshot({ path: `${output}/cascade-memory-blooms-mobile.png`, fullPage: true });
 });
 
-test("Enchanted Ground is visible as an underlay rather than another blocker", async ({ page }) => {
-  await openLevel(page, 801);
+test("Enchanted Ground is visible as a colorful cell layer behind the candy", async ({ page }) => {
+  await openLevel(page, 833);
   const ground = page.locator(".cascade-tile.has-enchanted-ground");
   await expect(ground).toHaveCount(3);
   const geometry = await ground.first().evaluate((tile) => {
     const tileRect = tile.getBoundingClientRect();
-    const mark = tile.querySelector(".cascade-ground-mark").getBoundingClientRect();
+    const markElement = tile.querySelector(".cascade-ground-mark");
+    const mark = markElement.getBoundingClientRect();
+    const groundStyle = getComputedStyle(markElement);
     const candy = getComputedStyle(tile, "::before");
     return {
       tileWidth: tileRect.width,
       markWidth: mark.width,
       candyWidth: Number.parseFloat(candy.width),
+      groundZ: Number.parseInt(groundStyle.zIndex, 10),
+      candyZ: Number.parseInt(candy.zIndex, 10),
+      groundBackground: groundStyle.backgroundImage,
     };
   });
-  expect(geometry.markWidth).toBeGreaterThan(geometry.tileWidth * .88);
+  expect(geometry.markWidth).toBeGreaterThan(geometry.tileWidth * .94);
   expect(geometry.candyWidth).toBeGreaterThan(geometry.tileWidth * .75);
-  await page.screenshot({ path: `${output}/cascade-enchanted-ground-mobile.png`, fullPage: true });
+  expect(geometry.groundZ).toBeLessThan(geometry.candyZ);
+  expect(geometry.groundBackground).toContain("conic-gradient");
+  await page.screenshot({ path: `${output}/cascade-enchanted-ground-833-mobile.png`, fullPage: true });
 });
 
 test("Bloom plus Ground recombination remains legible on desktop", async ({ page }) => {
