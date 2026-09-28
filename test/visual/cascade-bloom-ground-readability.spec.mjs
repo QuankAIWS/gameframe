@@ -100,17 +100,28 @@ test("Cascade open Memory Bloom shows redundant symbol and color", async ({ page
   await expect(open).toHaveCount(1);
   const cue = await open.evaluate((element) => {
     const tile = element.closest(".cascade-tile");
+    const symbol = element.querySelector(".cascade-bloom-symbol");
     const style = getComputedStyle(element);
+    const symbolStyle = getComputedStyle(symbol);
     const tileStyle = getComputedStyle(tile);
+    const flowerRect = element.getBoundingClientRect();
+    const symbolRect = symbol.getBoundingClientRect();
     return {
-      text: element.textContent,
-      fontSize: Number.parseFloat(style.fontSize),
+      text: symbol.textContent,
+      fontSize: Number.parseFloat(symbolStyle.fontSize),
       petal: style.getPropertyValue("--bloom-petal").trim(),
       tileColor: tileStyle.getPropertyValue("--tile").trim(),
+      centerDx: Math.abs((symbolRect.left + symbolRect.width / 2) - (flowerRect.left + flowerRect.width / 2)),
+      centerDy: Math.abs((symbolRect.top + symbolRect.height / 2) - (flowerRect.top + flowerRect.height / 2)),
+      symbolWidth: symbolRect.width,
+      flowerWidth: flowerRect.width,
     };
   });
   expect(["♥", "◆", "★", "☾", "✦", "☼"]).toContain(cue.text);
-  expect(cue.fontSize).toBeGreaterThanOrEqual(18);
+  expect(cue.fontSize).toBeGreaterThanOrEqual(28);
+  expect(cue.centerDx).toBeLessThanOrEqual(2);
+  expect(cue.centerDy).toBeLessThanOrEqual(2);
+  expect(cue.symbolWidth).toBeGreaterThan(cue.flowerWidth * .65);
   expect(cue.petal).toBe(cue.tileColor);
   await page.screenshot({ path: `${output}/cascade-memory-bloom-revealed-mobile.png`, fullPage: true });
 });
@@ -139,15 +150,26 @@ test("Cascade wrong Bloom pair stays open as two distinct flowers until the next
   await expect(marks).toHaveCount(2);
   const details = await marks.evaluateAll((nodes) => nodes.map((node) => {
     const style = getComputedStyle(node);
+    const symbol = node.querySelector(".cascade-bloom-symbol");
+    const symbolStyle = getComputedStyle(symbol);
+    const flowerRect = node.getBoundingClientRect();
+    const symbolRect = symbol.getBoundingClientRect();
     return {
-      text: node.textContent,
-      color: style.color,
+      text: symbol.textContent,
+      color: symbolStyle.color,
       background: style.backgroundImage,
       mask: style.maskImage || style.webkitMaskImage,
+      fontSize: Number.parseFloat(symbolStyle.fontSize),
+      centerDx: Math.abs((symbolRect.left + symbolRect.width / 2) - (flowerRect.left + flowerRect.width / 2)),
+      centerDy: Math.abs((symbolRect.top + symbolRect.height / 2) - (flowerRect.top + flowerRect.height / 2)),
     };
   }));
   expect(new Set(details.map((item) => item.text)).size).toBe(2);
   expect(new Set(details.map((item) => item.color)).size).toBe(2);
+  expect(details.every((item) => item.fontSize >= 28)).toBe(true);
+  // The crescent gets a deliberate optical right shift because its glyph box
+  // contains asymmetric whitespace; all other symbols remain geometrically centered.
+  expect(details.every((item) => item.centerDx <= (item.text === "☾" ? 4 : 2) && item.centerDy <= 2)).toBe(true);
   expect(details.every((item) => item.background.includes("conic-gradient"))).toBe(true);
   expect(details.every((item) => item.mask.includes("svg"))).toBe(true);
   await page.screenshot({ path: `${output}/cascade-memory-bloom-mismatch-persistent-mobile.png`, fullPage: true });

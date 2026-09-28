@@ -602,7 +602,14 @@ function renderBoard() {
       bloomMark.classList.toggle("is-revealed", bloomRevealed);
       if (bloomRevealed) bloomMark.dataset.bloomSymbol = String(bloomSymbol);
       bloomMark.setAttribute("aria-hidden", "true");
-      bloomMark.textContent = bloomRevealed ? BLOOM_SYMBOLS[bloomSymbol] : "✿";
+      if (bloomRevealed) {
+        const bloomSymbolMark = document.createElement("span");
+        bloomSymbolMark.className = "cascade-bloom-symbol";
+        bloomSymbolMark.textContent = BLOOM_SYMBOLS[bloomSymbol];
+        bloomMark.append(bloomSymbolMark);
+      } else {
+        bloomMark.textContent = "✿";
+      }
       tile.append(bloomMark);
     }
     if (lockLayers > 0) {
@@ -1043,8 +1050,11 @@ async function presentBloomFeedback(events = []) {
         mark.className = "cascade-bloom-peek is-success";
         const symbol = event.symbols?.[offset] ?? event.symbol ?? 0;
         mark.dataset.bloomSymbol = String(symbol);
-        mark.textContent = BLOOM_SYMBOLS[symbol];
         mark.setAttribute("aria-hidden", "true");
+        const symbolMark = document.createElement("span");
+        symbolMark.className = "cascade-bloom-symbol";
+        symbolMark.textContent = BLOOM_SYMBOLS[symbol];
+        mark.append(symbolMark);
         tile.append(mark);
         temp.push(mark);
       }
