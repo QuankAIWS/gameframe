@@ -746,106 +746,117 @@
 }
 
 .cascade-bloom-mark {
+  --bloom-flower-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='black'%3E%3Cellipse cx='50' cy='19' rx='14' ry='23'/%3E%3Cellipse cx='50' cy='81' rx='14' ry='23'/%3E%3Cellipse cx='19' cy='50' rx='23' ry='14'/%3E%3Cellipse cx='81' cy='50' rx='23' ry='14'/%3E%3Cellipse cx='28' cy='28' rx='13' ry='22' transform='rotate(-45 28 28)'/%3E%3Cellipse cx='72' cy='28' rx='13' ry='22' transform='rotate(45 72 28)'/%3E%3Cellipse cx='28' cy='72' rx='13' ry='22' transform='rotate(45 28 72)'/%3E%3Cellipse cx='72' cy='72' rx='13' ry='22' transform='rotate(-45 72 72)'/%3E%3Ccircle cx='50' cy='50' r='28'/%3E%3C/g%3E%3C/svg%3E");
   position: absolute;
   z-index: 8;
-  left: 6%;
-  top: 4%;
-  width: 88%;
-  height: 90%;
+  left: 5%;
+  top: 3%;
+  width: 90%;
+  height: 92%;
   pointer-events: none;
   display: grid;
   place-items: center;
   isolation: isolate;
   border: 0;
-  border-radius: 50%;
-  color: #7b3f86;
-  font-size: clamp(1.18rem, 5vw, 2.45rem);
+  border-radius: 0;
+  color: #773b85;
+  font-size: clamp(1.12rem, 4.8vw, 2.35rem);
   font-weight: 1000;
   line-height: 1;
   letter-spacing: -.04em;
   background:
-    radial-gradient(circle at 50% 50%, #fff8c9 0 13%, #ffe8a1 14% 19%, transparent 20%),
-    radial-gradient(ellipse at 50% 12%, #ffb9df 0 18%, transparent 19%),
-    radial-gradient(ellipse at 77% 23%, #f7a8de 0 18%, transparent 19%),
-    radial-gradient(ellipse at 89% 50%, #eaa8ea 0 18%, transparent 19%),
-    radial-gradient(ellipse at 77% 77%, #cdb0f4 0 18%, transparent 19%),
-    radial-gradient(ellipse at 50% 89%, #b9c8f6 0 18%, transparent 19%),
-    radial-gradient(ellipse at 23% 77%, #d8b5f2 0 18%, transparent 19%),
-    radial-gradient(ellipse at 11% 50%, #f6addb 0 18%, transparent 19%),
-    radial-gradient(ellipse at 23% 23%, #ffc0dc 0 18%, transparent 19%);
-  box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,.55),
-    0 0 0 2px rgba(235,163,224,.20),
-    0 4px 7px rgba(91,56,112,.24),
-    0 0 12px rgba(235,163,224,.18);
-  filter: saturate(1.05);
+    radial-gradient(circle at 50% 50%, #fffdf1 0 22%, #ffeaa9 23% 29%, transparent 30%),
+    conic-gradient(
+      from -22.5deg,
+      #ffb6dc 0 12.5%,
+      #d8b5f3 12.5% 25%,
+      #f6a9d8 25% 37.5%,
+      #b8c5f5 37.5% 50%,
+      #ffbddb 50% 62.5%,
+      #cbb4f4 62.5% 75%,
+      #f4a8dc 75% 87.5%,
+      #b9cdf7 87.5% 100%
+    );
+  -webkit-mask: var(--bloom-flower-mask) center / contain no-repeat;
+  mask: var(--bloom-flower-mask) center / contain no-repeat;
+  filter:
+    drop-shadow(0 1px 0 rgba(255,255,255,.92))
+    drop-shadow(0 4px 4px rgba(91,56,112,.28))
+    drop-shadow(0 0 6px rgba(235,163,224,.28))
+    saturate(1.06);
   text-shadow:
     0 1px 0 rgba(255,255,255,.98),
     0 0 7px rgba(255,255,255,.86);
+  transform: scale(.82);
   transform-origin: 50% 52%;
-  transition: transform .2s ease, filter .2s ease, box-shadow .2s ease;
+  transition: transform .2s ease, filter .2s ease;
 }
 
 .cascade-bloom-mark::before {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 28%;
+  width: 36%;
+  aspect-ratio: 1;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 38% 33%, rgba(255,255,255,.96) 0 11%, transparent 12%),
-    radial-gradient(circle, rgba(255,250,213,.98) 0 54%, rgba(255,219,126,.72) 56% 70%, transparent 72%);
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,.72),
-    0 0 7px rgba(255,228,153,.54);
+    radial-gradient(circle at 35% 28%, rgba(255,255,255,.98) 0 11%, transparent 12%),
+    radial-gradient(circle, rgba(255,251,220,.98) 0 55%, rgba(255,215,118,.82) 57% 72%, transparent 74%);
+  box-shadow: 0 0 6px rgba(255,225,139,.65);
 }
 
 .cascade-bloom-mark::after {
   content: "✦";
   position: absolute;
-  right: 2%;
-  top: 5%;
-  color: rgba(255,255,255,.94);
-  font-size: .38em;
+  right: 9%;
+  top: 10%;
+  color: rgba(255,255,255,.98);
+  font-size: .34em;
   text-shadow:
-    0 0 4px rgba(255,255,255,.96),
-    -2.4em 7.8em 0 rgba(255,244,174,.78);
-  opacity: .72;
+    0 0 4px rgba(255,255,255,.98),
+    -7.2em 6.4em 0 rgba(255,244,174,.82);
+  opacity: .76;
 }
 
 .cascade-bloom-mark.is-revealed {
   color: var(--bloom-ink, #70407d);
-  font-size: clamp(1.55rem, 6vw, 2.85rem);
+  font-size: clamp(1.5rem, 5.8vw, 2.75rem);
   background:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,.99) 0 20%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 72%, white) 21% 27%, transparent 28%),
-    radial-gradient(ellipse at 50% 7%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 78%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 80% 18%, color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 94% 50%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 78%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 80% 82%, color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 50% 94%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 20% 82%, color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 6% 50%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 78%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 20% 18%, color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white) 0 19%, transparent 20%);
-  box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,.72),
-    0 0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 34%, white),
-    0 0 15px color-mix(in srgb, var(--bloom-color, #d47ac7) 45%, transparent),
-    0 6px 8px rgba(87,52,108,.20);
-  filter: saturate(1.12) brightness(1.04);
-  transform: scale(1.06);
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.99) 0 25%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 70%, white) 26% 32%, transparent 33%),
+    conic-gradient(
+      from -22.5deg,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 12.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 76%, white) 12.5% 25%,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 50%, white) 25% 37.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 37.5% 50%,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white) 50% 62.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 78%, white) 62.5% 75%,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 54%, white) 75% 87.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 80%, white) 87.5% 100%
+    );
+  filter:
+    drop-shadow(0 1px 0 rgba(255,255,255,.96))
+    drop-shadow(0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 55%, white))
+    drop-shadow(0 0 9px color-mix(in srgb, var(--bloom-color, #d47ac7) 48%, transparent))
+    drop-shadow(0 6px 5px rgba(87,52,108,.22))
+    saturate(1.13)
+    brightness(1.04);
+  transform: scale(1.03);
 }
 
 .cascade-tile.is-bloom-open .cascade-bloom-mark.is-revealed {
-  animation: cascade-bloom-open .42s cubic-bezier(.16,.82,.24,1.18) both;
+  animation: cascade-bloom-open .46s cubic-bezier(.14,.84,.22,1.18) both;
 }
 
 .cascade-tile.is-bloom-mismatch-open .cascade-bloom-mark.is-revealed {
-  box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,.76),
-    0 0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white),
-    0 0 0 6px rgba(255,111,158,.10),
-    0 0 16px color-mix(in srgb, var(--bloom-color, #d47ac7) 48%, transparent),
-    0 6px 8px rgba(87,52,108,.20);
+  filter:
+    drop-shadow(0 1px 0 rgba(255,255,255,.96))
+    drop-shadow(0 0 3px rgba(255,255,255,.94))
+    drop-shadow(0 0 10px color-mix(in srgb, var(--bloom-color, #d47ac7) 52%, transparent))
+    drop-shadow(0 0 5px rgba(255,101,151,.38))
+    drop-shadow(0 6px 5px rgba(87,52,108,.22))
+    saturate(1.15)
+    brightness(1.04);
 }
 
 .cascade-tile.is-bloom-mismatch .cascade-bloom-mark.is-revealed {
@@ -853,35 +864,41 @@
 }
 
 .cascade-tile.is-bloom-closing .cascade-bloom-mark:not(.is-revealed) {
-  animation: cascade-bloom-close .26s ease-out both;
+  animation: cascade-bloom-close .28s ease-out both;
 }
 
 .cascade-bloom-peek {
+  --bloom-flower-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='black'%3E%3Cellipse cx='50' cy='19' rx='14' ry='23'/%3E%3Cellipse cx='50' cy='81' rx='14' ry='23'/%3E%3Cellipse cx='19' cy='50' rx='23' ry='14'/%3E%3Cellipse cx='81' cy='50' rx='23' ry='14'/%3E%3Cellipse cx='28' cy='28' rx='13' ry='22' transform='rotate(-45 28 28)'/%3E%3Cellipse cx='72' cy='28' rx='13' ry='22' transform='rotate(45 72 28)'/%3E%3Cellipse cx='28' cy='72' rx='13' ry='22' transform='rotate(45 28 72)'/%3E%3Cellipse cx='72' cy='72' rx='13' ry='22' transform='rotate(-45 72 72)'/%3E%3Ccircle cx='50' cy='50' r='28'/%3E%3C/g%3E%3C/svg%3E");
   position: absolute;
   z-index: 12;
-  inset: 6%;
+  inset: 4%;
   pointer-events: none;
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 50%;
+  border-radius: 0;
   color: var(--bloom-ink, #70407d);
-  font-size: clamp(1.55rem, 6vw, 2.85rem);
+  font-size: clamp(1.5rem, 5.8vw, 2.75rem);
   font-weight: 1000;
   background:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,.99) 0 21%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 72%, white) 22% 28%, transparent 29%),
-    radial-gradient(ellipse at 50% 7%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 82% 20%, color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 93% 50%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 82% 80%, color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 50% 93%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 18% 80%, color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 7% 50%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 0 19%, transparent 20%),
-    radial-gradient(ellipse at 18% 20%, color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 19%, transparent 20%);
-  box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,.85),
-    0 0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white),
-    0 0 18px color-mix(in srgb, var(--bloom-color, #d47ac7) 58%, transparent);
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.99) 0 25%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 72%, white) 26% 32%, transparent 33%),
+    conic-gradient(
+      from -22.5deg,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white) 0 12.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 80%, white) 12.5% 25%,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 52%, white) 25% 37.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 84%, white) 37.5% 50%,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 46%, white) 50% 62.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 80%, white) 62.5% 75%,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 56%, white) 75% 87.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 87.5% 100%
+    );
+  -webkit-mask: var(--bloom-flower-mask) center / contain no-repeat;
+  mask: var(--bloom-flower-mask) center / contain no-repeat;
+  filter:
+    drop-shadow(0 1px 0 rgba(255,255,255,.96))
+    drop-shadow(0 0 11px color-mix(in srgb, var(--bloom-color, #d47ac7) 58%, transparent))
+    drop-shadow(0 6px 5px rgba(87,52,108,.20));
   text-shadow:
     0 1px 0 rgba(255,255,255,.98),
     0 0 8px rgba(255,255,255,.9);
