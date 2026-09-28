@@ -276,6 +276,13 @@ function initialBloomKnowledge(personaName, progress) {
     && Number.isInteger(activeSymbol) && activeSymbol >= 0 && activeSymbol < TILE_KINDS) {
     knowledge[activeIndex] = activeSymbol;
   }
+  for (const index of progress?.blooms?.mismatchIndices || []) {
+    const symbol = Number(progress?.blooms?.symbols?.[index]);
+    if (Number.isInteger(index) && index >= 0 && index < knowledge.length
+      && Number.isInteger(symbol) && symbol >= 0 && symbol < TILE_KINDS) {
+      knowledge[index] = symbol;
+    }
+  }
   return knowledge;
 }
 
@@ -283,6 +290,11 @@ function rememberBloomEvents(personaName, knowledge, events, decisionRng) {
   const persona = HUMAN_PERSONAS[personaName];
   if (!persona || !knowledge || !Array.isArray(events)) return;
   for (const event of events) {
+    for (const closedIndex of event.closedIndices || []) {
+      const index = Number(closedIndex);
+      if (!Number.isInteger(index) || index < 0 || index >= knowledge.length) continue;
+      if (decisionRng.next() > Number(persona.recallRetention || 0)) knowledge[index] = -1;
+    }
     const indices = event.indices || [];
     const symbols = event.symbols || [];
     for (let offset = 0; offset < indices.length; offset += 1) {
@@ -294,7 +306,8 @@ function rememberBloomEvents(personaName, knowledge, events, decisionRng) {
         continue;
       }
       if (Number.isInteger(symbol) && symbol >= 0 && symbol < TILE_KINDS) {
-        if (event.type === "open" || decisionRng.next() <= Number(persona.recallRetention || 0)) {
+        if (event.type === "open" || event.type === "mismatch" || event.type === "mismatch-repeat"
+          || decisionRng.next() <= Number(persona.recallRetention || 0)) {
           knowledge[index] = symbol;
         }
       }
@@ -481,9 +494,10 @@ function visibleMoveFeatures(level, progress, board, specials, move, recallKnowl
   const bloomTargets = bloomTargetsForMatched(progress, matched);
   if (bloomTargets.length) {
     const activeIndex = Number(progress?.blooms?.activeIndex);
+    const mismatchIndices = new Set(progress?.blooms?.mismatchIndices || []);
     const activeSymbol = activeIndex >= 0 ? Number(progress?.blooms?.symbols?.[activeIndex]) : -1;
     for (const index of bloomTargets) {
-      if (index === activeIndex) continue;
+      if (index === activeIndex || mismatchIndices.has(index)) continue;
       if (activeIndex < 0) {
         features.bloomExplore += 1;
         continue;
