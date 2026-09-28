@@ -167,7 +167,9 @@ test("Cascade wrong Bloom pair stays open as two distinct flowers until the next
   expect(new Set(details.map((item) => item.text)).size).toBe(2);
   expect(new Set(details.map((item) => item.color)).size).toBe(2);
   expect(details.every((item) => item.fontSize >= 28)).toBe(true);
-  expect(details.every((item) => item.centerDx <= 2 && item.centerDy <= 2)).toBe(true);
+  // The crescent gets a deliberate optical right shift because its glyph box
+  // contains asymmetric whitespace; all other symbols remain geometrically centered.
+  expect(details.every((item) => item.centerDx <= (item.text === "☾" ? 4 : 2) && item.centerDy <= 2)).toBe(true);
   expect(details.every((item) => item.background.includes("conic-gradient"))).toBe(true);
   expect(details.every((item) => item.mask.includes("svg"))).toBe(true);
   await page.screenshot({ path: `${output}/cascade-memory-bloom-mismatch-persistent-mobile.png`, fullPage: true });
