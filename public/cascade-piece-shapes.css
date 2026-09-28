@@ -737,138 +737,229 @@
 }
 
 .cascade-tile.has-memory-bloom::before {
-  transform: scale(.64);
+  transform: scale(.61);
   filter:
-    drop-shadow(0 2px 0 rgba(255,255,255,.55))
-    drop-shadow(0 4px 4px rgba(82,57,113,.16))
-    saturate(.86);
+    drop-shadow(0 2px 0 rgba(255,255,255,.58))
+    drop-shadow(0 4px 4px rgba(82,57,113,.15))
+    saturate(.84)
+    brightness(.98);
 }
 
 .cascade-bloom-mark {
   position: absolute;
   z-index: 8;
-  left: 10%;
-  top: 8%;
-  width: 80%;
-  height: 82%;
+  left: 6%;
+  top: 4%;
+  width: 88%;
+  height: 90%;
   pointer-events: none;
   display: grid;
   place-items: center;
+  isolation: isolate;
+  border: 0;
   border-radius: 50%;
-  color: #8f4c9b;
-  font-size: clamp(1.55rem, 6vw, 2.8rem);
+  color: #7b3f86;
+  font-size: clamp(1.18rem, 5vw, 2.45rem);
   font-weight: 1000;
   line-height: 1;
+  letter-spacing: -.04em;
   background:
-    radial-gradient(circle at 50% 50%, rgba(255,253,222,.98) 0 15%, transparent 16%),
-    radial-gradient(ellipse at 50% 16%, rgba(255,160,210,.94) 0 22%, transparent 23%),
-    radial-gradient(ellipse at 84% 50%, rgba(246,143,220,.92) 0 22%, transparent 23%),
-    radial-gradient(ellipse at 50% 84%, rgba(198,147,242,.92) 0 22%, transparent 23%),
-    radial-gradient(ellipse at 16% 50%, rgba(255,183,222,.94) 0 22%, transparent 23%);
-  filter:
-    drop-shadow(0 2px 0 rgba(255,255,255,.8))
-    drop-shadow(0 5px 6px rgba(108,60,128,.26));
+    radial-gradient(circle at 50% 50%, #fff8c9 0 13%, #ffe8a1 14% 19%, transparent 20%),
+    radial-gradient(ellipse at 50% 12%, #ffb9df 0 18%, transparent 19%),
+    radial-gradient(ellipse at 77% 23%, #f7a8de 0 18%, transparent 19%),
+    radial-gradient(ellipse at 89% 50%, #eaa8ea 0 18%, transparent 19%),
+    radial-gradient(ellipse at 77% 77%, #cdb0f4 0 18%, transparent 19%),
+    radial-gradient(ellipse at 50% 89%, #b9c8f6 0 18%, transparent 19%),
+    radial-gradient(ellipse at 23% 77%, #d8b5f2 0 18%, transparent 19%),
+    radial-gradient(ellipse at 11% 50%, #f6addb 0 18%, transparent 19%),
+    radial-gradient(ellipse at 23% 23%, #ffc0dc 0 18%, transparent 19%);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.55),
+    0 0 0 2px rgba(235,163,224,.20),
+    0 4px 7px rgba(91,56,112,.24),
+    0 0 12px rgba(235,163,224,.18);
+  filter: saturate(1.05);
   text-shadow:
     0 1px 0 rgba(255,255,255,.98),
-    0 0 8px rgba(255,255,255,.94);
-  transition: transform .18s ease, filter .18s ease;
+    0 0 7px rgba(255,255,255,.86);
+  transform-origin: 50% 52%;
+  transition: transform .2s ease, filter .2s ease, box-shadow .2s ease;
+}
+
+.cascade-bloom-mark::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 28%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 38% 33%, rgba(255,255,255,.96) 0 11%, transparent 12%),
+    radial-gradient(circle, rgba(255,250,213,.98) 0 54%, rgba(255,219,126,.72) 56% 70%, transparent 72%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.72),
+    0 0 7px rgba(255,228,153,.54);
+}
+
+.cascade-bloom-mark::after {
+  content: "✦";
+  position: absolute;
+  right: 2%;
+  top: 5%;
+  color: rgba(255,255,255,.94);
+  font-size: .38em;
+  text-shadow:
+    0 0 4px rgba(255,255,255,.96),
+    -2.4em 7.8em 0 rgba(255,244,174,.78);
+  opacity: .72;
 }
 
 .cascade-bloom-mark.is-revealed {
+  color: var(--bloom-ink, #70407d);
+  font-size: clamp(1.55rem, 6vw, 2.85rem);
   background:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 24%, transparent 25%),
-    radial-gradient(ellipse at 50% 14%, rgba(255,195,229,.96) 0 24%, transparent 25%),
-    radial-gradient(ellipse at 86% 50%, rgba(249,170,225,.94) 0 24%, transparent 25%),
-    radial-gradient(ellipse at 50% 86%, rgba(216,174,249,.94) 0 24%, transparent 25%),
-    radial-gradient(ellipse at 14% 50%, rgba(255,205,233,.96) 0 24%, transparent 25%);
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.99) 0 20%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 72%, white) 21% 27%, transparent 28%),
+    radial-gradient(ellipse at 50% 7%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 78%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 80% 18%, color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 94% 50%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 78%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 80% 82%, color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 50% 94%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 20% 82%, color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 6% 50%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 78%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 20% 18%, color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white) 0 19%, transparent 20%);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.72),
+    0 0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 34%, white),
+    0 0 15px color-mix(in srgb, var(--bloom-color, #d47ac7) 45%, transparent),
+    0 6px 8px rgba(87,52,108,.20);
+  filter: saturate(1.12) brightness(1.04);
   transform: scale(1.06);
-  filter:
-    drop-shadow(0 2px 0 rgba(255,255,255,.9))
-    drop-shadow(0 0 10px rgba(239,153,229,.6))
-    drop-shadow(0 6px 7px rgba(108,60,128,.22));
+}
+
+.cascade-tile.is-bloom-open .cascade-bloom-mark.is-revealed {
+  animation: cascade-bloom-open .42s cubic-bezier(.16,.82,.24,1.18) both;
+}
+
+.cascade-tile.is-bloom-mismatch-open .cascade-bloom-mark.is-revealed {
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.76),
+    0 0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white),
+    0 0 0 6px rgba(255,111,158,.10),
+    0 0 16px color-mix(in srgb, var(--bloom-color, #d47ac7) 48%, transparent),
+    0 6px 8px rgba(87,52,108,.20);
+}
+
+.cascade-tile.is-bloom-mismatch .cascade-bloom-mark.is-revealed {
+  animation: cascade-bloom-mismatch .48s ease-in-out both;
+}
+
+.cascade-tile.is-bloom-closing .cascade-bloom-mark:not(.is-revealed) {
+  animation: cascade-bloom-close .26s ease-out both;
 }
 
 .cascade-bloom-peek {
   position: absolute;
   z-index: 12;
-  inset: 10%;
+  inset: 6%;
   pointer-events: none;
   display: grid;
   place-items: center;
+  border: 0;
   border-radius: 50%;
-  background: rgba(255, 239, 250, .96);
-  color: #70407d;
-  font-size: clamp(1.45rem, 6vw, 2.7rem);
+  color: var(--bloom-ink, #70407d);
+  font-size: clamp(1.55rem, 6vw, 2.85rem);
   font-weight: 1000;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.99) 0 21%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 72%, white) 22% 28%, transparent 29%),
+    radial-gradient(ellipse at 50% 7%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 82% 20%, color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 93% 50%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 82% 80%, color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 50% 93%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 18% 80%, color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 7% 50%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 0 19%, transparent 20%),
+    radial-gradient(ellipse at 18% 20%, color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 19%, transparent 20%);
   box-shadow:
-    inset 0 0 0 3px rgba(255,255,255,.9),
-    0 0 0 3px rgba(224,150,225,.45),
-    0 0 12px rgba(224,150,225,.5);
+    inset 0 0 0 2px rgba(255,255,255,.85),
+    0 0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white),
+    0 0 18px color-mix(in srgb, var(--bloom-color, #d47ac7) 58%, transparent);
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 8px rgba(255,255,255,.9);
 }
 
-.cascade-tile.is-bloom-match .cascade-bloom-mark,
 .cascade-tile.is-bloom-match .cascade-bloom-peek {
-  animation: cascade-bloom-success .3s ease-out both;
+  animation: cascade-bloom-success .34s cubic-bezier(.16,.8,.24,1.12) both;
 }
 
-.cascade-tile.is-bloom-mismatch .cascade-bloom-peek {
-  animation: cascade-bloom-mismatch .58s ease-in-out both;
+@keyframes cascade-bloom-open {
+  0% {
+    transform: scale(.56) rotate(-16deg);
+    opacity: .58;
+    filter: saturate(.85) brightness(.92);
+  }
+  58% {
+    transform: scale(1.14) rotate(4deg);
+    opacity: 1;
+    filter: saturate(1.22) brightness(1.12);
+  }
+  100% {
+    transform: scale(1.06) rotate(0);
+    opacity: 1;
+    filter: saturate(1.12) brightness(1.04);
+  }
+}
+
+@keyframes cascade-bloom-close {
+  0% { transform: scale(1.07) rotate(3deg); filter: brightness(1.10); }
+  56% { transform: scale(.72) rotate(-8deg); filter: brightness(.96); }
+  100% { transform: scale(1) rotate(0); filter: brightness(1); }
 }
 
 @keyframes cascade-bloom-success {
-  0% { transform: scale(.86) rotate(-4deg); }
-  70% { transform: scale(1.18) rotate(3deg); filter: brightness(1.18); }
+  0% { transform: scale(.82) rotate(-5deg); }
+  64% { transform: scale(1.18) rotate(3deg); filter: brightness(1.18) saturate(1.16); }
   100% { transform: scale(1) rotate(0); }
 }
 
 @keyframes cascade-bloom-mismatch {
-  0%, 100% { transform: translateX(0) scale(.96); }
-  28% { transform: translateX(-4%) scale(1); }
-  58% { transform: translateX(4%) scale(1); }
+  0%, 100% { transform: translateX(0) scale(1.06) rotate(0); }
+  26% { transform: translateX(-4%) scale(1.08) rotate(-2deg); }
+  58% { transform: translateX(4%) scale(1.08) rotate(2deg); }
+}
+
+.cascade-bloom-mark[data-bloom-symbol="0"],
+.cascade-bloom-peek[data-bloom-symbol="0"] { --bloom-color: #e83f91; --bloom-soft: #ffd4e9; --bloom-ink: #9f155e; color: var(--bloom-ink); }
+.cascade-bloom-mark[data-bloom-symbol="1"],
+.cascade-bloom-peek[data-bloom-symbol="1"] { --bloom-color: #22b9d7; --bloom-soft: #d4f7ff; --bloom-ink: #087088; color: var(--bloom-ink); }
+.cascade-bloom-mark[data-bloom-symbol="2"],
+.cascade-bloom-peek[data-bloom-symbol="2"] { --bloom-color: #e4b51b; --bloom-soft: #fff0a8; --bloom-ink: #755700; color: var(--bloom-ink); }
+.cascade-bloom-mark[data-bloom-symbol="3"],
+.cascade-bloom-peek[data-bloom-symbol="3"] { --bloom-color: #57c86a; --bloom-soft: #d8f7dc; --bloom-ink: #237437; color: var(--bloom-ink); }
+.cascade-bloom-mark[data-bloom-symbol="4"],
+.cascade-bloom-peek[data-bloom-symbol="4"] { --bloom-color: #9f69df; --bloom-soft: #eadcff; --bloom-ink: #5929a0; color: var(--bloom-ink); }
+.cascade-bloom-mark[data-bloom-symbol="5"],
+.cascade-bloom-peek[data-bloom-symbol="5"] { --bloom-color: #f18a45; --bloom-soft: #ffe0c7; --bloom-ink: #8f3f13; color: var(--bloom-ink); }
+
+body[data-cascade-effects="reduced"] .cascade-bloom-mark,
+body[data-cascade-effects="reduced"] .cascade-bloom-peek,
+body[data-cascade-effects="reduced"] .cascade-tile.is-bloom-open .cascade-bloom-mark,
+body[data-cascade-effects="reduced"] .cascade-tile.is-bloom-mismatch .cascade-bloom-mark,
+body[data-cascade-effects="reduced"] .cascade-tile.is-bloom-closing .cascade-bloom-mark {
+  animation: none !important;
+  transition-duration: 1ms !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cascade-bloom-mark,
-  .cascade-bloom-peek {
-    animation-duration: 1ms !important;
+  .cascade-bloom-peek,
+  .cascade-tile.is-bloom-open .cascade-bloom-mark,
+  .cascade-tile.is-bloom-mismatch .cascade-bloom-mark,
+  .cascade-tile.is-bloom-closing .cascade-bloom-mark {
+    animation: none !important;
     transition-duration: 1ms !important;
   }
 }
 
-
-.cascade-bloom-mark[data-bloom-symbol="0"],
-.cascade-bloom-peek[data-bloom-symbol="0"] { --bloom-color: #e33d91; --bloom-soft: #ffd4e9; color: #a91d65; }
-.cascade-bloom-mark[data-bloom-symbol="1"],
-.cascade-bloom-peek[data-bloom-symbol="1"] { --bloom-color: #20b8d6; --bloom-soft: #d4f7ff; color: #0d728c; }
-.cascade-bloom-mark[data-bloom-symbol="2"],
-.cascade-bloom-peek[data-bloom-symbol="2"] { --bloom-color: #e2b51d; --bloom-soft: #fff2ae; color: #7e6100; }
-.cascade-bloom-mark[data-bloom-symbol="3"],
-.cascade-bloom-peek[data-bloom-symbol="3"] { --bloom-color: #58c969; --bloom-soft: #d8f7dc; color: #27793a; }
-.cascade-bloom-mark[data-bloom-symbol="4"],
-.cascade-bloom-peek[data-bloom-symbol="4"] { --bloom-color: #9f69df; --bloom-soft: #eadcff; color: #6030a8; }
-.cascade-bloom-mark[data-bloom-symbol="5"],
-.cascade-bloom-peek[data-bloom-symbol="5"] { --bloom-color: #f18a45; --bloom-soft: #ffe0c7; color: #9c4617; }
-
-.cascade-bloom-mark.is-revealed {
-  box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,.84),
-    0 0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white),
-    0 0 12px color-mix(in srgb, var(--bloom-color, #d47ac7) 48%, transparent);
-}
-
-.cascade-bloom-peek {
-  background:
-    radial-gradient(circle at 50% 35%, rgba(255,255,255,.98) 0 14%, transparent 15%),
-    linear-gradient(145deg, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white), color-mix(in srgb, var(--bloom-color, #d47ac7) 26%, white));
-  border: 3px solid color-mix(in srgb, var(--bloom-color, #d47ac7) 58%, white);
-}
-
-.cascade-bloom-peek.is-success {
-  box-shadow:
-    inset 0 0 0 3px rgba(255,255,255,.9),
-    0 0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 45%, white),
-    0 0 16px color-mix(in srgb, var(--bloom-color, #d47ac7) 58%, transparent);
-}
 
 .cascade-tile.is-ground-new .cascade-ground-mark {
   animation: cascade-ground-spread .44s ease-out both;
