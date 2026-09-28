@@ -173,14 +173,15 @@ test("Bloom flow 03 wrong pair stays open until the next new Bloom", async ({ pa
   await expect(page.locator(".cascade-tile.is-bloom-mismatch-open .cascade-bloom-mark.is-revealed")).toHaveCount(2, { timeout: 2500 });
   await expect(page.locator("#combo-label")).toContainText("NOT A MATCH");
   await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().progress.blooms.mismatchIndices.length)).toBe(2);
+  await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportActiveRun()?.levelProgress?.blooms?.mismatchIndices?.length || 0)).toBe(2);
   await shot(page, "04-mismatch-two-symbols-persist");
 
   await configureHammerState(page, { hammerTarget: next });
   await hammer(page, next);
+  await expect(page.locator("#combo-label")).toContainText("NEW BLOOM", { timeout: 2500 });
   await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().progress.blooms.mismatchIndices.length)).toBe(0);
   await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().progress.blooms.activeIndex)).toBe(next);
   await expect(page.locator(".cascade-bloom-mark.is-revealed")).toHaveCount(1);
-  await expect(page.locator("#combo-label")).toContainText("NEW BLOOM");
   await shot(page, "05-mismatch-closes-on-next-bloom");
 });
 
