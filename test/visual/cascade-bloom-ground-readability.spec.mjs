@@ -104,11 +104,13 @@ test("Cascade wrong Bloom pair stays open as two distinct flowers until the next
       text: node.textContent,
       color: style.color,
       background: style.backgroundImage,
+      mask: style.maskImage || style.webkitMaskImage,
     };
   }));
   expect(new Set(details.map((item) => item.text)).size).toBe(2);
   expect(new Set(details.map((item) => item.color)).size).toBe(2);
-  expect(details.every((item) => (item.background.match(/radial-gradient/g) || []).length >= 8)).toBe(true);
+  expect(details.every((item) => item.background.includes("conic-gradient"))).toBe(true);
+  expect(details.every((item) => item.mask.includes("svg"))).toBe(true);
   await page.screenshot({ path: `${output}/cascade-memory-bloom-mismatch-persistent-mobile.png`, fullPage: true });
 });
 
