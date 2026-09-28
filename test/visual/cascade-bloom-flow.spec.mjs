@@ -161,21 +161,27 @@ test("Bloom flow 02 reveal and repeat-hit communicate a stable open flower", asy
   await shot(page, "03-repeat-hit");
 });
 
-test("Bloom flow 03 wrong pair shows both long enough, then closes both", async ({ page }) => {
+test("Bloom flow 03 wrong pair stays open until the next new Bloom", async ({ page }) => {
   await openLevel753(page);
   const pairs = await bloomPairs(page);
   const first = pairs[0].indices[0];
   const wrong = pairs[1].indices[0];
+  const next = pairs.flatMap((pair) => pair.indices).find((index) => index !== first && index !== wrong);
 
   await configureHammerState(page, { activeIndex: first, hammerTarget: wrong });
   await hammer(page, wrong);
-  await expect(page.locator(".cascade-bloom-peek")).toHaveCount(2, { timeout: 2500 });
+  await expect(page.locator(".cascade-tile.is-bloom-mismatch-open .cascade-bloom-mark.is-revealed")).toHaveCount(2, { timeout: 2500 });
   await expect(page.locator("#combo-label")).toContainText("NOT A MATCH");
-  await shot(page, "04-mismatch-two-symbols");
+  await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().progress.blooms.mismatchIndices.length)).toBe(2);
+  await shot(page, "04-mismatch-two-symbols-persist");
 
-  await expect(page.locator(".cascade-bloom-peek")).toHaveCount(0, { timeout: 3500 });
-  await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().progress.blooms.activeIndex)).toBe(-1);
-  await shot(page, "05-mismatch-closed-again");
+  await configureHammerState(page, { hammerTarget: next });
+  await hammer(page, next);
+  await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().progress.blooms.mismatchIndices.length)).toBe(0);
+  await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().progress.blooms.activeIndex)).toBe(next);
+  await expect(page.locator(".cascade-bloom-mark.is-revealed")).toHaveCount(1);
+  await expect(page.locator("#combo-label")).toContainText("NEW BLOOM");
+  await shot(page, "05-mismatch-closes-on-next-bloom");
 });
 
 test("Bloom flow 04 direct hit beats the adjacent lower-index open Bloom", async ({ page }) => {
@@ -189,8 +195,9 @@ test("Bloom flow 04 direct hit beats the adjacent lower-index open Bloom", async
 
   await configureHammerState(page, { activeIndex: active, hammerTarget: target });
   await hammer(page, target);
-  await expect(page.locator(".cascade-bloom-peek")).toHaveCount(2, { timeout: 2500 });
+  await expect(page.locator(".cascade-tile.is-bloom-mismatch-open .cascade-bloom-mark.is-revealed")).toHaveCount(2, { timeout: 2500 });
   await expect(page.locator("#combo-label")).toContainText("NOT A MATCH");
+  await expect.poll(async () => page.evaluate(() => window.cascadeResearch.exportLevel().progress.blooms.mismatchIndices.length)).toBe(2);
   await shot(page, "06-direct-hit-beats-adjacent-open-bloom");
 });
 
