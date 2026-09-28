@@ -854,6 +854,45 @@
   transform: scale(1.03);
 }
 
+.cascade-bloom-mark.is-revealed::before {
+  width: 50%;
+}
+
+.cascade-bloom-symbol {
+  position: absolute;
+  z-index: 4;
+  inset: 10%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--bloom-ink, #70407d);
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", system-ui, sans-serif;
+  font-size: clamp(2rem, 8.8vw, 3.9rem);
+  font-weight: 1000;
+  line-height: .72;
+  letter-spacing: 0;
+  text-align: center;
+  transform: translateY(.015em);
+  -webkit-text-stroke: 1px rgba(255,255,255,.82);
+  paint-order: stroke fill;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 4px rgba(255,255,255,.94),
+    0 0 8px color-mix(in srgb, var(--bloom-color, #d47ac7) 34%, transparent);
+}
+
+.cascade-bloom-mark[data-bloom-symbol="0"] .cascade-bloom-symbol { transform: translateY(.04em) scale(1.04); }
+.cascade-bloom-mark[data-bloom-symbol="1"] .cascade-bloom-symbol { transform: translateY(.015em) scale(1.08); }
+.cascade-bloom-mark[data-bloom-symbol="2"] .cascade-bloom-symbol { transform: translateY(.02em) scale(1.02); }
+.cascade-bloom-mark[data-bloom-symbol="3"] .cascade-bloom-symbol { transform: translateY(-.015em) scale(1.10); }
+.cascade-bloom-mark[data-bloom-symbol="4"] .cascade-bloom-symbol { transform: translateY(.01em) scale(1.10); }
+.cascade-bloom-mark[data-bloom-symbol="5"] .cascade-bloom-symbol { transform: translateY(-.01em) scale(1.04); }
+
+.cascade-bloom-peek .cascade-bloom-symbol {
+  font-size: clamp(2.05rem, 9vw, 4rem);
+}
+
 .cascade-tile.is-bloom-open .cascade-bloom-mark.is-revealed {
   animation: cascade-bloom-open .46s cubic-bezier(.14,.84,.22,1.18) both;
 }
