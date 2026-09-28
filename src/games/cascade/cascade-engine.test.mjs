@@ -785,11 +785,12 @@ test("human Bloom scoring uses remembered symbols rather than hidden pair truth"
   assert.equal(scoreVisibleMove("human-skilled", level, progress, board, specials, move, null, remembered).features.bloomMatch, 1);
 });
 
-test("Memory Blooms reveal, mismatch safely, and collect only matching fixed pairs", () => {
+test("Memory Blooms keep a wrong pair open until the next new Bloom, then collect only matching fixed pairs", () => {
   const value = {
     totalPairs: 2,
     collectedPairs: 0,
     activeIndex: -1,
+    mismatchIndices: [],
     symbols: Array(64).fill(-1),
     lastEvents: [],
   };
@@ -800,20 +801,33 @@ test("Memory Blooms reveal, mismatch safely, and collect only matching fixed pai
 
   const first = advanceBloomProgress(value, [8]);
   assert.equal(first.activeIndex, 9);
+  assert.deepEqual(first.mismatchIndices, []);
   assert.equal(first.collectedPairs, 0);
   assert.equal(first.lastEvents[0].type, "open");
 
   const mismatch = advanceBloomProgress(first, [19]);
   assert.equal(mismatch.activeIndex, -1);
+  assert.deepEqual(mismatch.mismatchIndices, [9, 18]);
   assert.equal(mismatch.collectedPairs, 0);
   assert.equal(mismatch.lastEvents.at(-1).type, "mismatch");
   assert.equal(mismatch.symbols[9], 2);
   assert.equal(mismatch.symbols[18], 4);
 
-  const reopen = advanceBloomProgress(mismatch, [8]);
-  const matched = advanceBloomProgress(reopen, [55]);
+  const repeatedMismatch = advanceBloomProgress(mismatch, [8]);
+  assert.equal(repeatedMismatch.activeIndex, -1);
+  assert.deepEqual(repeatedMismatch.mismatchIndices, [9, 18]);
+  assert.equal(repeatedMismatch.lastEvents.at(-1).type, "mismatch-repeat");
+
+  const nextBloom = advanceBloomProgress(repeatedMismatch, [55]);
+  assert.equal(nextBloom.activeIndex, 54);
+  assert.deepEqual(nextBloom.mismatchIndices, []);
+  assert.deepEqual(nextBloom.lastEvents.at(-1).closedIndices, [9, 18]);
+  assert.equal(nextBloom.lastEvents.at(-1).type, "open");
+
+  const matched = advanceBloomProgress(nextBloom, [8]);
   assert.equal(matched.collectedPairs, 1);
   assert.equal(matched.activeIndex, -1);
+  assert.deepEqual(matched.mismatchIndices, []);
   assert.equal(matched.lastEvents.at(-1).type, "match");
   assert.equal(matched.symbols[9], -1);
   assert.equal(matched.symbols[54], -1);
@@ -867,6 +881,7 @@ test("Memory Blooms do not let an already-open adjacent flower swallow a differe
 
   const advanced = advanceBloomProgress(value, [17]);
   assert.equal(advanced.activeIndex, -1);
+  assert.deepEqual(advanced.mismatchIndices, [9, 18]);
   assert.equal(advanced.lastEvents[0].type, "mismatch");
   assert.deepEqual(advanced.lastEvents[0].indices, [9, 18]);
 });
