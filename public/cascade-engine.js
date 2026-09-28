@@ -1523,7 +1523,7 @@ export function chipLockProgress(lockProgress, board, clearIndices, { allowRecal
 function createBloomProgress(levelDefinition, dropProgress = null, lockProgress = null) {
   const spec = levelDefinition?.objective?.blooms;
   const symbols = Array(BOARD_SIZE * BOARD_SIZE).fill(-1);
-  if (!spec?.pairs) return { totalPairs: 0, collectedPairs: 0, activeIndex: -1, symbols, lastEvents: [] };
+  if (!spec?.pairs) return { totalPairs: 0, collectedPairs: 0, activeIndex: -1, mismatchIndices: [], symbols, lastEvents: [] };
   const blocked = new Set([
     ...(dropProgress?.tokens || []).map((token) => Number(token.index)),
     ...(dropProgress?.exits || []).map(Number),
@@ -1544,7 +1544,7 @@ function createBloomProgress(levelDefinition, dropProgress = null, lockProgress 
     if (first) symbols[first.index] = symbol;
     if (second) symbols[second.index] = symbol;
   }
-  return { totalPairs: pairCount, collectedPairs: 0, activeIndex: -1, symbols, lastEvents: [] };
+  return { totalPairs: pairCount, collectedPairs: 0, activeIndex: -1, mismatchIndices: [], symbols, lastEvents: [] };
 }
 
 export function normalizeBloomProgress(value) {
@@ -1555,12 +1555,18 @@ export function normalizeBloomProgress(value) {
   const remainingPairs = Math.floor(symbols.filter((symbol) => symbol >= 0).length / 2);
   const totalPairs = Math.max(0, Math.floor(Number(value?.totalPairs) || remainingPairs));
   const activeIndex = Math.floor(Number(value?.activeIndex));
+  const normalizedActiveIndex = Number.isInteger(activeIndex) && activeIndex >= 0 && activeIndex < symbols.length && symbols[activeIndex] >= 0 ? activeIndex : -1;
+  const mismatchIndices = [...new Set((Array.isArray(value?.mismatchIndices) ? value.mismatchIndices : [])
+    .map((index) => Math.floor(Number(index)))
+    .filter((index) => Number.isInteger(index) && index >= 0 && index < symbols.length && symbols[index] >= 0 && index !== normalizedActiveIndex))]
+    .slice(0, 2);
   return {
     totalPairs,
     collectedPairs: Math.max(0, Math.min(totalPairs, Math.floor(Number(value?.collectedPairs) || (totalPairs - remainingPairs)))),
-    activeIndex: Number.isInteger(activeIndex) && activeIndex >= 0 && activeIndex < symbols.length && symbols[activeIndex] >= 0 ? activeIndex : -1,
+    activeIndex: normalizedActiveIndex,
+    mismatchIndices: mismatchIndices.length === 2 ? mismatchIndices : [],
     symbols,
-    lastEvents: Array.isArray(value?.lastEvents) ? value.lastEvents.map((event) => ({ ...event, indices: (event.indices || []).slice(), symbols: (event.symbols || []).slice() })) : [],
+    lastEvents: Array.isArray(value?.lastEvents) ? value.lastEvents.map((event) => ({ ...event, indices: (event.indices || []).slice(), symbols: (event.symbols || []).slice(), closedIndices: (event.closedIndices || []).slice() })) : [],
   };
 }
 
@@ -1575,9 +1581,9 @@ function bloomTriggerIndices(clearIndices, blooms) {
   }
   return triggered.sort((a, b) => {
     if (a.direct !== b.direct) return a.direct ? -1 : 1;
-    const aIsActive = a.index === blooms.activeIndex;
-    const bIsActive = b.index === blooms.activeIndex;
-    if (aIsActive !== bIsActive) return aIsActive ? 1 : -1;
+    const aIsOpen = a.index === blooms.activeIndex || (blooms.mismatchIndices || []).includes(a.index);
+    const bIsOpen = b.index === blooms.activeIndex || (blooms.mismatchIndices || []).includes(b.index);
+    if (aIsOpen !== bIsOpen) return aIsOpen ? 1 : -1;
     return a.index - b.index;
   });
 }
@@ -1591,7 +1597,30 @@ export function advanceBloomProgress(value, clearIndices) {
     next.lastEvents = events;
     return next;
   }
-  if (next.activeIndex < 0) {
+
+  if (next.mismatchIndices.length === 2) {
+    if (next.mismatchIndices.includes(index)) {
+      events.push({
+        type: "mismatch-repeat",
+        index,
+        symbol: next.symbols[index],
+        indices: next.mismatchIndices.slice(),
+        symbols: next.mismatchIndices.map((candidate) => next.symbols[candidate]),
+      });
+    } else {
+      const closedIndices = next.mismatchIndices.slice();
+      next.mismatchIndices = [];
+      next.activeIndex = index;
+      events.push({
+        type: "open",
+        index,
+        symbol: next.symbols[index],
+        indices: [index],
+        symbols: [next.symbols[index]],
+        closedIndices,
+      });
+    }
+  } else if (next.activeIndex < 0) {
     next.activeIndex = index;
     events.push({ type: "open", index, symbol: next.symbols[index], indices: [index], symbols: [next.symbols[index]] });
   } else if (next.activeIndex === index) {
@@ -1605,9 +1634,11 @@ export function advanceBloomProgress(value, clearIndices) {
       next.symbols[index] = -1;
       next.collectedPairs = Math.min(next.totalPairs, next.collectedPairs + 1);
       next.activeIndex = -1;
+      next.mismatchIndices = [];
       events.push({ type: "match", index, symbol: secondSymbol, indices: [first, index], symbols: [firstSymbol, secondSymbol] });
     } else {
       next.activeIndex = -1;
+      next.mismatchIndices = [first, index];
       events.push({ type: "mismatch", index, symbol: secondSymbol, indices: [first, index], symbols: [firstSymbol, secondSymbol] });
     }
   }

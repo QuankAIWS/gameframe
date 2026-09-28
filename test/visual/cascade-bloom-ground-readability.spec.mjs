@@ -71,9 +71,47 @@ test("Cascade open Memory Bloom shows redundant symbol and color", async ({ page
     text: element.textContent,
     fontSize: Number.parseFloat(getComputedStyle(element).fontSize),
   }));
-  expect(["♥", "◆", "★", "●", "✦", "✿"]).toContain(cue.text);
+  expect(["♥", "◆", "★", "☾", "✦", "☼"]).toContain(cue.text);
   expect(cue.fontSize).toBeGreaterThanOrEqual(18);
   await page.screenshot({ path: `${output}/cascade-memory-bloom-revealed-mobile.png`, fullPage: true });
+});
+
+test("Cascade wrong Bloom pair stays open as two distinct flowers until the next Bloom", async ({ page }) => {
+  await openLevel(page, 753, { width: 390, height: 844 });
+  const exported = await page.evaluate(() => window.cascadeResearch.exportLevel());
+  const entries = exported.progress.blooms.symbols
+    .map((symbol, index) => ({ symbol, index }))
+    .filter(({ symbol }) => symbol >= 0);
+  const first = entries[0];
+  const second = entries.find(({ symbol }) => symbol !== first.symbol);
+  expect(first).toBeTruthy();
+  expect(second).toBeTruthy();
+
+  await page.evaluate(({ firstIndex, secondIndex }) => {
+    const live = window.cascadeResearch.exportLevel();
+    live.progress.blooms.activeIndex = -1;
+    live.progress.blooms.mismatchIndices = [firstIndex, secondIndex];
+  }, { firstIndex: first.index, secondIndex: second.index });
+  await page.reload();
+
+  const openTiles = page.locator(".cascade-tile.is-bloom-mismatch-open");
+  await expect(openTiles).toHaveCount(2);
+  const marks = openTiles.locator(".cascade-bloom-mark.is-revealed");
+  await expect(marks).toHaveCount(2);
+  const details = await marks.evaluateAll((nodes) => nodes.map((node) => {
+    const style = getComputedStyle(node);
+    return {
+      text: node.textContent,
+      color: style.color,
+      background: style.backgroundImage,
+      mask: style.maskImage || style.webkitMaskImage,
+    };
+  }));
+  expect(new Set(details.map((item) => item.text)).size).toBe(2);
+  expect(new Set(details.map((item) => item.color)).size).toBe(2);
+  expect(details.every((item) => item.background.includes("conic-gradient"))).toBe(true);
+  expect(details.every((item) => item.mask.includes("svg"))).toBe(true);
+  await page.screenshot({ path: `${output}/cascade-memory-bloom-mismatch-persistent-mobile.png`, fullPage: true });
 });
 
 test("Cascade Enchanted Ground remains visible beneath candy on desktop and mobile", async ({ page }) => {

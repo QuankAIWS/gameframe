@@ -176,6 +176,7 @@ let recallCueRevealUntil = 0;
 let recallHintIndex = -1;
 let recallHintUntil = 0;
 const RECALL_SYMBOLS = Object.freeze(["♥", "◆", "★", "●", "✦", "✿"]);
+const BLOOM_SYMBOLS = Object.freeze(["♥", "◆", "★", "☾", "✦", "☼"]);
 
 function saveState() {
   localStorage.setItem(STATE_KEY, JSON.stringify(state));
@@ -223,6 +224,7 @@ function saveActiveRun() {
             totalPairs: Number(levelProgress.blooms.totalPairs) || 0,
             collectedPairs: Number(levelProgress.blooms.collectedPairs) || 0,
             activeIndex: Number(levelProgress.blooms.activeIndex),
+            mismatchIndices: (levelProgress.blooms.mismatchIndices || []).slice(),
             symbols: (levelProgress.blooms.symbols || []).slice(),
           }
         : null,
@@ -484,7 +486,11 @@ function renderBoard() {
     const recallKind = mode === "normal" ? Number(levelProgress?.locks?.requiredKinds?.[index]) : -1;
     const cueVisible = lockLayers > 0 && recallKind >= 0 && recallCueVisible(index);
     const bloomSymbol = mode === "normal" ? Number(levelProgress?.blooms?.symbols?.[index]) : -1;
+    const bloomMismatchOpen = bloomSymbol >= 0 && (levelProgress?.blooms?.mismatchIndices || []).includes(index);
     const bloomActive = bloomSymbol >= 0 && Number(levelProgress?.blooms?.activeIndex) === index;
+    const bloomRevealed = bloomActive || bloomMismatchOpen;
+    const bloomJustClosed = bloomSymbol >= 0 && (levelProgress?.blooms?.lastEvents || [])
+      .some((event) => (event.closedIndices || []).includes(index));
     const groundCovered = mode === "normal" && levelProgress?.ground?.covered?.[index] === true;
     const groundNew = groundCovered && (levelProgress?.ground?.lastSpread || []).includes(index);
     const producerCharges = mode === "normal" ? Math.max(0, Number(levelProgress?.producers?.remaining?.[index]) || 0) : 0;
@@ -589,12 +595,14 @@ function renderBoard() {
     if (bloomSymbol >= 0) {
       tile.dataset.bloom = "true";
       tile.classList.add("has-memory-bloom");
+      if (bloomMismatchOpen) tile.classList.add("is-bloom-mismatch-open");
+      if (bloomJustClosed) tile.classList.add("is-bloom-closing");
       const bloomMark = document.createElement("span");
       bloomMark.className = "cascade-bloom-mark";
-      bloomMark.classList.toggle("is-revealed", bloomActive);
-      if (bloomActive) bloomMark.dataset.bloomSymbol = String(bloomSymbol);
+      bloomMark.classList.toggle("is-revealed", bloomRevealed);
+      if (bloomRevealed) bloomMark.dataset.bloomSymbol = String(bloomSymbol);
       bloomMark.setAttribute("aria-hidden", "true");
-      bloomMark.textContent = bloomActive ? RECALL_SYMBOLS[bloomSymbol] : "✿";
+      bloomMark.textContent = bloomRevealed ? BLOOM_SYMBOLS[bloomSymbol] : "✿";
       tile.append(bloomMark);
     }
     if (lockLayers > 0) {
@@ -613,7 +621,7 @@ function renderBoard() {
       tile.append(lockMark);
     }
     tile.setAttribute("role", "gridcell");
-    tile.setAttribute("aria-label", `Tile ${index + 1}${special ? `, ${specialName(special)}` : ""}${iceLayers ? `, ${iceLayers} ice ${iceLayers === 1 ? "layer" : "layers"}` : ""}${dropToken ? ", drop object" : ""}${dropExit ? ", drop exit" : ""}${groundCovered ? ", enchanted ground" : ""}${producerActive ? producerCrystal ? `, crystal forge holding a crystal with ${producerCharges} charges left` : `, crystal forge with ${producerCharges} ${producerCharges === 1 ? "charge" : "charges"} left` : ""}${wardKind >= 0 ? `, color ward wants ${["pink","cyan","yellow","green","purple","orange"][wardKind]}` : ""}${vineActive ? ", creeping vine" : ""}${bloomSymbol >= 0 ? bloomActive ? `, open memory bloom showing ${RECALL_SYMBOLS[bloomSymbol]}` : ", closed memory bloom" : ""}${lockLayers ? recallKind >= 0 ? cueVisible ? `, recall lock wants ${["pink","cyan","yellow","green","purple","orange"][recallKind]}` : ", recall lock, cue hidden" : `, cage ${lockLayers === 1 ? "locked" : "double locked"}` : ""}`);
+    tile.setAttribute("aria-label", `Tile ${index + 1}${special ? `, ${specialName(special)}` : ""}${iceLayers ? `, ${iceLayers} ice ${iceLayers === 1 ? "layer" : "layers"}` : ""}${dropToken ? ", drop object" : ""}${dropExit ? ", drop exit" : ""}${groundCovered ? ", enchanted ground" : ""}${producerActive ? producerCrystal ? `, crystal forge holding a crystal with ${producerCharges} charges left` : `, crystal forge with ${producerCharges} ${producerCharges === 1 ? "charge" : "charges"} left` : ""}${wardKind >= 0 ? `, color ward wants ${["pink","cyan","yellow","green","purple","orange"][wardKind]}` : ""}${vineActive ? ", creeping vine" : ""}${bloomSymbol >= 0 ? bloomRevealed ? `, open memory bloom showing ${BLOOM_SYMBOLS[bloomSymbol]}${bloomMismatchOpen ? ", part of an incorrect pair" : ""}` : ", closed memory bloom" : ""}${lockLayers ? recallKind >= 0 ? cueVisible ? `, recall lock wants ${["pink","cyan","yellow","green","purple","orange"][recallKind]}` : ", recall lock, cue hidden" : `, cage ${lockLayers === 1 ? "locked" : "double locked"}` : ""}`);
     if (selectedIndex === index) tile.classList.add("is-selected");
     if (hammerMode) tile.classList.add("is-hammer-target");
     tile.addEventListener("click", () => onTileClick(index));
@@ -713,7 +721,7 @@ function renderHelp() {
   } else if (activeLevel.level === 701) {
     helpElement.textContent = "Memory challenge: each magic lock briefly shows the color-symbol it wants. Remember it, then clear that color beside the lock. Tap a closed lock anytime for a quick clue.";
   } else if (activeLevel.level === 751) {
-    helpElement.textContent = "New memory objective: clear beside a flower to reveal its symbol. Find the matching flower pair. A wrong pair simply closes again and gives you another clue.";
+    helpElement.textContent = "New memory objective: clear beside a flower to open it and reveal its symbol. Find the matching flower pair. A wrong pair stays open so you can study both clues; it closes when you open the next flower.";
   } else if (activeLevel.level === 801) {
     helpElement.textContent = "New objective: spread the sparkling magic ground. Make clears that touch glowing ground and the magic spreads through that clear.";
   } else if (activeLevel.level === 901) {
@@ -725,7 +733,7 @@ function renderHelp() {
   } else {
     const notes = [];
     if (activeLevel.objective?.drop) notes.push("clear below each diamond to drop it into its exit");
-    if (activeLevel.objective?.blooms) notes.push("clear on or beside one flower per move, then remember its matching symbol");
+    if (activeLevel.objective?.blooms) notes.push("clear on or beside one flower per move; wrong pairs stay open until you reveal the next flower");
     if (activeLevel.objective?.ground) notes.push("make clears that touch sparkling ground to spread the magic");
     if (activeLevel.objective?.producers) notes.push("feed crystal forges, then clear each produced crystal from its forge");
     if (activeLevel.objective?.colorWards) notes.push("clear each visible ward color beside its matching ward");
@@ -1002,14 +1010,19 @@ async function presentBloomFeedback(events = []) {
   if (!events.length) return;
   const temp = [];
   const eventTypes = new Set(events.map((event) => event.type));
+  const openedAfterMismatch = events.some((event) => event.type === "open" && (event.closedIndices || []).length);
   if (eventTypes.has("mismatch")) {
-    comboLabelElement.textContent = "NOT A MATCH · REMEMBER BOTH";
+    comboLabelElement.textContent = "NOT A MATCH · BOTH STAY OPEN";
     comboLabelElement.classList.add("is-hot");
   } else if (eventTypes.has("match")) {
     comboLabelElement.textContent = "BLOOM PAIR!";
     comboLabelElement.classList.add("is-hot");
+  } else if (eventTypes.has("mismatch-repeat")) {
+    comboLabelElement.textContent = "NOT A MATCH · OPEN A NEW BLOOM";
   } else if (eventTypes.has("repeat")) {
     comboLabelElement.textContent = "THIS BLOOM IS OPEN · FIND ITS MATCH";
+  } else if (openedAfterMismatch) {
+    comboLabelElement.textContent = "NEW BLOOM · REMEMBER IT";
   } else {
     comboLabelElement.textContent = "REMEMBER THIS BLOOM";
   }
@@ -1018,21 +1031,26 @@ async function presentBloomFeedback(events = []) {
       const index = event.indices[offset];
       const tile = tileAt(index);
       if (!tile) continue;
-      tile.classList.add(event.type === "match" ? "is-bloom-match" : event.type === "mismatch" ? "is-bloom-mismatch" : "is-bloom-open");
-      if (event.type === "mismatch" || event.type === "match") {
+      tile.classList.add(
+        event.type === "match"
+          ? "is-bloom-match"
+          : event.type === "mismatch" || event.type === "mismatch-repeat"
+            ? "is-bloom-mismatch"
+            : "is-bloom-open",
+      );
+      if (event.type === "match") {
         const mark = document.createElement("span");
-        mark.className = "cascade-bloom-peek";
-        if (event.type === "match") mark.classList.add("is-success");
+        mark.className = "cascade-bloom-peek is-success";
         const symbol = event.symbols?.[offset] ?? event.symbol ?? 0;
         mark.dataset.bloomSymbol = String(symbol);
-        mark.textContent = RECALL_SYMBOLS[symbol];
+        mark.textContent = BLOOM_SYMBOLS[symbol];
         mark.setAttribute("aria-hidden", "true");
         tile.append(mark);
         temp.push(mark);
       }
     }
   }
-  const hold = eventTypes.has("mismatch") ? 1300 : eventTypes.has("match") ? 700 : eventTypes.has("repeat") ? 700 : 520;
+  const hold = eventTypes.has("match") ? 700 : eventTypes.has("mismatch") ? 620 : eventTypes.has("mismatch-repeat") ? 520 : eventTypes.has("repeat") ? 620 : 520;
   await sleep(hold);
   temp.forEach((element) => element.remove());
 }
@@ -1540,7 +1558,7 @@ function startBlitz(completedLevel) {
     ice: [],
     drop: { delivered: 0, total: 0, tokens: [], exits: [] },
     locks: { total: 0, opened: 0, layers: Array(BOARD_CELL_COUNT).fill(0), requiredKinds: Array(BOARD_CELL_COUNT).fill(-1), recall: false },
-    blooms: { totalPairs: 0, collectedPairs: 0, activeIndex: -1, symbols: Array(BOARD_CELL_COUNT).fill(-1), lastEvents: [] },
+    blooms: { totalPairs: 0, collectedPairs: 0, activeIndex: -1, mismatchIndices: [], symbols: Array(BOARD_CELL_COUNT).fill(-1), lastEvents: [] },
     ground: { target: 0, covered: Array(BOARD_CELL_COUNT).fill(false), count: 0, lastSpread: [] },
     producers: { total: 0, produced: 0, collected: 0, remaining: Array(BOARD_CELL_COUNT).fill(0), crystals: Array(BOARD_CELL_COUNT).fill(false), lastTriggered: [], lastCollected: [] },
     colorWards: { total: 0, opened: 0, requiredKinds: Array(BOARD_CELL_COUNT).fill(-1), lastOpened: [] },

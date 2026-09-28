@@ -737,138 +737,246 @@
 }
 
 .cascade-tile.has-memory-bloom::before {
-  transform: scale(.64);
+  transform: scale(.61);
   filter:
-    drop-shadow(0 2px 0 rgba(255,255,255,.55))
-    drop-shadow(0 4px 4px rgba(82,57,113,.16))
-    saturate(.86);
+    drop-shadow(0 2px 0 rgba(255,255,255,.58))
+    drop-shadow(0 4px 4px rgba(82,57,113,.15))
+    saturate(.84)
+    brightness(.98);
 }
 
 .cascade-bloom-mark {
+  --bloom-flower-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='black'%3E%3Cellipse cx='50' cy='19' rx='14' ry='23'/%3E%3Cellipse cx='50' cy='81' rx='14' ry='23'/%3E%3Cellipse cx='19' cy='50' rx='23' ry='14'/%3E%3Cellipse cx='81' cy='50' rx='23' ry='14'/%3E%3Cellipse cx='28' cy='28' rx='13' ry='22' transform='rotate(-45 28 28)'/%3E%3Cellipse cx='72' cy='28' rx='13' ry='22' transform='rotate(45 72 28)'/%3E%3Cellipse cx='28' cy='72' rx='13' ry='22' transform='rotate(45 28 72)'/%3E%3Cellipse cx='72' cy='72' rx='13' ry='22' transform='rotate(-45 72 72)'/%3E%3Ccircle cx='50' cy='50' r='28'/%3E%3C/g%3E%3C/svg%3E");
   position: absolute;
   z-index: 8;
-  left: 10%;
-  top: 8%;
-  width: 80%;
-  height: 82%;
+  left: 5%;
+  top: 3%;
+  width: 90%;
+  height: 92%;
   pointer-events: none;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  color: #8f4c9b;
-  font-size: clamp(1.55rem, 6vw, 2.8rem);
+  isolation: isolate;
+  border: 0;
+  border-radius: 0;
+  color: #773b85;
+  font-size: clamp(1.12rem, 4.8vw, 2.35rem);
   font-weight: 1000;
   line-height: 1;
+  letter-spacing: -.04em;
   background:
-    radial-gradient(circle at 50% 50%, rgba(255,253,222,.98) 0 15%, transparent 16%),
-    radial-gradient(ellipse at 50% 16%, rgba(255,160,210,.94) 0 22%, transparent 23%),
-    radial-gradient(ellipse at 84% 50%, rgba(246,143,220,.92) 0 22%, transparent 23%),
-    radial-gradient(ellipse at 50% 84%, rgba(198,147,242,.92) 0 22%, transparent 23%),
-    radial-gradient(ellipse at 16% 50%, rgba(255,183,222,.94) 0 22%, transparent 23%);
+    radial-gradient(circle at 50% 50%, #fffdf1 0 22%, #ffeaa9 23% 29%, transparent 30%),
+    conic-gradient(
+      from -22.5deg,
+      #ffb6dc 0 12.5%,
+      #d8b5f3 12.5% 25%,
+      #f6a9d8 25% 37.5%,
+      #b8c5f5 37.5% 50%,
+      #ffbddb 50% 62.5%,
+      #cbb4f4 62.5% 75%,
+      #f4a8dc 75% 87.5%,
+      #b9cdf7 87.5% 100%
+    );
+  -webkit-mask: var(--bloom-flower-mask) center / contain no-repeat;
+  mask: var(--bloom-flower-mask) center / contain no-repeat;
   filter:
-    drop-shadow(0 2px 0 rgba(255,255,255,.8))
-    drop-shadow(0 5px 6px rgba(108,60,128,.26));
+    drop-shadow(0 1px 0 rgba(255,255,255,.92))
+    drop-shadow(0 4px 4px rgba(91,56,112,.28))
+    drop-shadow(0 0 6px rgba(235,163,224,.28))
+    saturate(1.06);
   text-shadow:
     0 1px 0 rgba(255,255,255,.98),
-    0 0 8px rgba(255,255,255,.94);
-  transition: transform .18s ease, filter .18s ease;
+    0 0 7px rgba(255,255,255,.86);
+  transform: scale(.92);
+  transform-origin: 50% 52%;
+  transition: transform .2s ease, filter .2s ease;
+}
+
+.cascade-bloom-mark::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 36%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255,255,255,.98) 0 11%, transparent 12%),
+    radial-gradient(circle, rgba(255,251,220,.98) 0 55%, rgba(255,215,118,.82) 57% 72%, transparent 74%);
+  box-shadow: 0 0 6px rgba(255,225,139,.65);
+}
+
+.cascade-bloom-mark::after {
+  content: "✦";
+  position: absolute;
+  right: 9%;
+  top: 10%;
+  color: rgba(255,255,255,.98);
+  font-size: .34em;
+  text-shadow:
+    0 0 4px rgba(255,255,255,.98),
+    -7.2em 6.4em 0 rgba(255,244,174,.82);
+  opacity: .76;
 }
 
 .cascade-bloom-mark.is-revealed {
+  color: var(--bloom-ink, #70407d);
+  font-size: clamp(1.5rem, 5.8vw, 2.75rem);
   background:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 24%, transparent 25%),
-    radial-gradient(ellipse at 50% 14%, rgba(255,195,229,.96) 0 24%, transparent 25%),
-    radial-gradient(ellipse at 86% 50%, rgba(249,170,225,.94) 0 24%, transparent 25%),
-    radial-gradient(ellipse at 50% 86%, rgba(216,174,249,.94) 0 24%, transparent 25%),
-    radial-gradient(ellipse at 14% 50%, rgba(255,205,233,.96) 0 24%, transparent 25%);
-  transform: scale(1.06);
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.99) 0 25%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 70%, white) 26% 32%, transparent 33%),
+    conic-gradient(
+      from -22.5deg,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 12.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 76%, white) 12.5% 25%,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 50%, white) 25% 37.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 37.5% 50%,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white) 50% 62.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 78%, white) 62.5% 75%,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 54%, white) 75% 87.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 80%, white) 87.5% 100%
+    );
   filter:
-    drop-shadow(0 2px 0 rgba(255,255,255,.9))
-    drop-shadow(0 0 10px rgba(239,153,229,.6))
-    drop-shadow(0 6px 7px rgba(108,60,128,.22));
+    drop-shadow(0 1px 0 rgba(255,255,255,.96))
+    drop-shadow(0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 55%, white))
+    drop-shadow(0 0 9px color-mix(in srgb, var(--bloom-color, #d47ac7) 48%, transparent))
+    drop-shadow(0 6px 5px rgba(87,52,108,.22))
+    saturate(1.13)
+    brightness(1.04);
+  transform: scale(1.03);
+}
+
+.cascade-tile.is-bloom-open .cascade-bloom-mark.is-revealed {
+  animation: cascade-bloom-open .46s cubic-bezier(.14,.84,.22,1.18) both;
+}
+
+.cascade-tile.is-bloom-mismatch-open .cascade-bloom-mark.is-revealed {
+  filter:
+    drop-shadow(0 1px 0 rgba(255,255,255,.96))
+    drop-shadow(0 0 3px rgba(255,255,255,.94))
+    drop-shadow(0 0 10px color-mix(in srgb, var(--bloom-color, #d47ac7) 52%, transparent))
+    drop-shadow(0 0 5px rgba(255,101,151,.38))
+    drop-shadow(0 6px 5px rgba(87,52,108,.22))
+    saturate(1.15)
+    brightness(1.04);
+}
+
+.cascade-tile.is-bloom-mismatch .cascade-bloom-mark.is-revealed {
+  animation: cascade-bloom-mismatch .48s ease-in-out both;
+}
+
+.cascade-tile.is-bloom-closing .cascade-bloom-mark:not(.is-revealed) {
+  animation: cascade-bloom-close .28s ease-out both;
 }
 
 .cascade-bloom-peek {
+  --bloom-flower-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='black'%3E%3Cellipse cx='50' cy='19' rx='14' ry='23'/%3E%3Cellipse cx='50' cy='81' rx='14' ry='23'/%3E%3Cellipse cx='19' cy='50' rx='23' ry='14'/%3E%3Cellipse cx='81' cy='50' rx='23' ry='14'/%3E%3Cellipse cx='28' cy='28' rx='13' ry='22' transform='rotate(-45 28 28)'/%3E%3Cellipse cx='72' cy='28' rx='13' ry='22' transform='rotate(45 72 28)'/%3E%3Cellipse cx='28' cy='72' rx='13' ry='22' transform='rotate(45 28 72)'/%3E%3Cellipse cx='72' cy='72' rx='13' ry='22' transform='rotate(-45 72 72)'/%3E%3Ccircle cx='50' cy='50' r='28'/%3E%3C/g%3E%3C/svg%3E");
   position: absolute;
   z-index: 12;
-  inset: 10%;
+  inset: 4%;
   pointer-events: none;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  background: rgba(255, 239, 250, .96);
-  color: #70407d;
-  font-size: clamp(1.45rem, 6vw, 2.7rem);
+  border: 0;
+  border-radius: 0;
+  color: var(--bloom-ink, #70407d);
+  font-size: clamp(1.5rem, 5.8vw, 2.75rem);
   font-weight: 1000;
-  box-shadow:
-    inset 0 0 0 3px rgba(255,255,255,.9),
-    0 0 0 3px rgba(224,150,225,.45),
-    0 0 12px rgba(224,150,225,.5);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.99) 0 25%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 72%, white) 26% 32%, transparent 33%),
+    conic-gradient(
+      from -22.5deg,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white) 0 12.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 80%, white) 12.5% 25%,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 52%, white) 25% 37.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 84%, white) 37.5% 50%,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 46%, white) 50% 62.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 80%, white) 62.5% 75%,
+      color-mix(in srgb, var(--bloom-color, #d47ac7) 56%, white) 75% 87.5%,
+      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 87.5% 100%
+    );
+  -webkit-mask: var(--bloom-flower-mask) center / contain no-repeat;
+  mask: var(--bloom-flower-mask) center / contain no-repeat;
+  filter:
+    drop-shadow(0 1px 0 rgba(255,255,255,.96))
+    drop-shadow(0 0 11px color-mix(in srgb, var(--bloom-color, #d47ac7) 58%, transparent))
+    drop-shadow(0 6px 5px rgba(87,52,108,.20));
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 8px rgba(255,255,255,.9);
 }
 
-.cascade-tile.is-bloom-match .cascade-bloom-mark,
 .cascade-tile.is-bloom-match .cascade-bloom-peek {
-  animation: cascade-bloom-success .3s ease-out both;
+  animation: cascade-bloom-success .34s cubic-bezier(.16,.8,.24,1.12) both;
 }
 
-.cascade-tile.is-bloom-mismatch .cascade-bloom-peek {
-  animation: cascade-bloom-mismatch .58s ease-in-out both;
+@keyframes cascade-bloom-open {
+  0% {
+    transform: scale(.56) rotate(-16deg);
+    opacity: .58;
+    filter: saturate(.85) brightness(.92);
+  }
+  58% {
+    transform: scale(1.14) rotate(4deg);
+    opacity: 1;
+    filter: saturate(1.22) brightness(1.12);
+  }
+  100% {
+    transform: scale(1.06) rotate(0);
+    opacity: 1;
+    filter: saturate(1.12) brightness(1.04);
+  }
+}
+
+@keyframes cascade-bloom-close {
+  0% { transform: scale(1.07) rotate(3deg); filter: brightness(1.10); }
+  56% { transform: scale(.72) rotate(-8deg); filter: brightness(.96); }
+  100% { transform: scale(1) rotate(0); filter: brightness(1); }
 }
 
 @keyframes cascade-bloom-success {
-  0% { transform: scale(.86) rotate(-4deg); }
-  70% { transform: scale(1.18) rotate(3deg); filter: brightness(1.18); }
+  0% { transform: scale(.82) rotate(-5deg); }
+  64% { transform: scale(1.18) rotate(3deg); filter: brightness(1.18) saturate(1.16); }
   100% { transform: scale(1) rotate(0); }
 }
 
 @keyframes cascade-bloom-mismatch {
-  0%, 100% { transform: translateX(0) scale(.96); }
-  28% { transform: translateX(-4%) scale(1); }
-  58% { transform: translateX(4%) scale(1); }
+  0%, 100% { transform: translateX(0) scale(1.06) rotate(0); }
+  26% { transform: translateX(-4%) scale(1.08) rotate(-2deg); }
+  58% { transform: translateX(4%) scale(1.08) rotate(2deg); }
+}
+
+.cascade-bloom-mark[data-bloom-symbol="0"],
+.cascade-bloom-peek[data-bloom-symbol="0"] { --bloom-color: #e83f91; --bloom-soft: #ffd4e9; --bloom-ink: #9f155e; color: var(--bloom-ink); }
+.cascade-bloom-mark[data-bloom-symbol="1"],
+.cascade-bloom-peek[data-bloom-symbol="1"] { --bloom-color: #22b9d7; --bloom-soft: #d4f7ff; --bloom-ink: #087088; color: var(--bloom-ink); }
+.cascade-bloom-mark[data-bloom-symbol="2"],
+.cascade-bloom-peek[data-bloom-symbol="2"] { --bloom-color: #e4b51b; --bloom-soft: #fff0a8; --bloom-ink: #755700; color: var(--bloom-ink); }
+.cascade-bloom-mark[data-bloom-symbol="3"],
+.cascade-bloom-peek[data-bloom-symbol="3"] { --bloom-color: #57c86a; --bloom-soft: #d8f7dc; --bloom-ink: #237437; color: var(--bloom-ink); }
+.cascade-bloom-mark[data-bloom-symbol="4"],
+.cascade-bloom-peek[data-bloom-symbol="4"] { --bloom-color: #9f69df; --bloom-soft: #eadcff; --bloom-ink: #5929a0; color: var(--bloom-ink); }
+.cascade-bloom-mark[data-bloom-symbol="5"],
+.cascade-bloom-peek[data-bloom-symbol="5"] { --bloom-color: #f18a45; --bloom-soft: #ffe0c7; --bloom-ink: #8f3f13; color: var(--bloom-ink); }
+
+body[data-cascade-effects="reduced"] .cascade-bloom-mark,
+body[data-cascade-effects="reduced"] .cascade-bloom-peek,
+body[data-cascade-effects="reduced"] .cascade-tile.is-bloom-open .cascade-bloom-mark,
+body[data-cascade-effects="reduced"] .cascade-tile.is-bloom-mismatch .cascade-bloom-mark,
+body[data-cascade-effects="reduced"] .cascade-tile.is-bloom-closing .cascade-bloom-mark {
+  animation: none !important;
+  transition-duration: 1ms !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cascade-bloom-mark,
-  .cascade-bloom-peek {
-    animation-duration: 1ms !important;
+  .cascade-bloom-peek,
+  .cascade-tile.is-bloom-open .cascade-bloom-mark,
+  .cascade-tile.is-bloom-mismatch .cascade-bloom-mark,
+  .cascade-tile.is-bloom-closing .cascade-bloom-mark {
+    animation: none !important;
     transition-duration: 1ms !important;
   }
 }
 
-
-.cascade-bloom-mark[data-bloom-symbol="0"],
-.cascade-bloom-peek[data-bloom-symbol="0"] { --bloom-color: #e33d91; --bloom-soft: #ffd4e9; color: #a91d65; }
-.cascade-bloom-mark[data-bloom-symbol="1"],
-.cascade-bloom-peek[data-bloom-symbol="1"] { --bloom-color: #20b8d6; --bloom-soft: #d4f7ff; color: #0d728c; }
-.cascade-bloom-mark[data-bloom-symbol="2"],
-.cascade-bloom-peek[data-bloom-symbol="2"] { --bloom-color: #e2b51d; --bloom-soft: #fff2ae; color: #7e6100; }
-.cascade-bloom-mark[data-bloom-symbol="3"],
-.cascade-bloom-peek[data-bloom-symbol="3"] { --bloom-color: #58c969; --bloom-soft: #d8f7dc; color: #27793a; }
-.cascade-bloom-mark[data-bloom-symbol="4"],
-.cascade-bloom-peek[data-bloom-symbol="4"] { --bloom-color: #9f69df; --bloom-soft: #eadcff; color: #6030a8; }
-.cascade-bloom-mark[data-bloom-symbol="5"],
-.cascade-bloom-peek[data-bloom-symbol="5"] { --bloom-color: #f18a45; --bloom-soft: #ffe0c7; color: #9c4617; }
-
-.cascade-bloom-mark.is-revealed {
-  box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,.84),
-    0 0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white),
-    0 0 12px color-mix(in srgb, var(--bloom-color, #d47ac7) 48%, transparent);
-}
-
-.cascade-bloom-peek {
-  background:
-    radial-gradient(circle at 50% 35%, rgba(255,255,255,.98) 0 14%, transparent 15%),
-    linear-gradient(145deg, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white), color-mix(in srgb, var(--bloom-color, #d47ac7) 26%, white));
-  border: 3px solid color-mix(in srgb, var(--bloom-color, #d47ac7) 58%, white);
-}
-
-.cascade-bloom-peek.is-success {
-  box-shadow:
-    inset 0 0 0 3px rgba(255,255,255,.9),
-    0 0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 45%, white),
-    0 0 16px color-mix(in srgb, var(--bloom-color, #d47ac7) 58%, transparent);
-}
 
 .cascade-tile.is-ground-new .cascade-ground-mark {
   animation: cascade-ground-spread .44s ease-out both;
