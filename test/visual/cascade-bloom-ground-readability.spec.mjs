@@ -35,19 +35,50 @@ test("Cascade Memory Blooms are large, fixed, and readable on mobile", async ({ 
   await page.screenshot({ path: `${output}/cascade-memory-blooms-mobile.png`, fullPage: true });
 });
 
-test("Cascade closed Memory Blooms do not leak hidden pair identity", async ({ page }) => {
+test("Cascade closed Memory Blooms mirror the underlying candy color without leaking pair identity", async ({ page }) => {
   await openLevel(page, 753, { width: 390, height: 844 });
-  const marks = page.locator(".cascade-tile.has-memory-bloom .cascade-bloom-mark:not(.is-revealed)");
+  const blooms = page.locator(".cascade-tile.has-memory-bloom");
+  const marks = blooms.locator(".cascade-bloom-mark:not(.is-revealed)");
   await expect(marks).toHaveCount(4);
-  const details = await marks.evaluateAll((nodes) => nodes.map((node) => ({
-    text: node.textContent,
-    symbol: node.getAttribute("data-bloom-symbol"),
-    color: getComputedStyle(node).color,
-  })));
-  expect(details.every((item) => item.text === "✿")).toBe(true);
-  expect(details.every((item) => item.symbol === null)).toBe(true);
-  expect(new Set(details.map((item) => item.color)).size).toBe(1);
-  await page.screenshot({ path: `${output}/cascade-memory-blooms-closed-neutral-mobile.png`, fullPage: true });
+
+  await blooms.evaluateAll((nodes) => nodes.forEach((node, index) => {
+    node.dataset.kind = String(index);
+  }));
+  const firstFour = await marks.evaluateAll((nodes) => nodes.map((node) => {
+    const tile = node.closest(".cascade-tile");
+    const markStyle = getComputedStyle(node);
+    const tileStyle = getComputedStyle(tile);
+    return {
+      text: node.textContent,
+      symbol: node.getAttribute("data-bloom-symbol"),
+      kind: tile.dataset.kind,
+      petal: markStyle.getPropertyValue("--bloom-petal").trim(),
+      tileColor: tileStyle.getPropertyValue("--tile").trim(),
+      background: markStyle.backgroundImage,
+    };
+  }));
+  expect(firstFour.every((item) => item.text === "✿")).toBe(true);
+  expect(firstFour.every((item) => item.symbol === null)).toBe(true);
+  expect(firstFour.every((item) => item.petal === item.tileColor)).toBe(true);
+  expect(new Set(firstFour.map((item) => item.background)).size).toBe(4);
+  await page.screenshot({ path: `${output}/cascade-memory-blooms-piece-colors-0-3-mobile.png`, fullPage: true });
+
+  await blooms.evaluateAll((nodes) => nodes.forEach((node, index) => {
+    node.dataset.kind = String(index + 2);
+  }));
+  const lastFour = await marks.evaluateAll((nodes) => nodes.map((node) => {
+    const tile = node.closest(".cascade-tile");
+    const markStyle = getComputedStyle(node);
+    const tileStyle = getComputedStyle(tile);
+    return {
+      petal: markStyle.getPropertyValue("--bloom-petal").trim(),
+      tileColor: tileStyle.getPropertyValue("--tile").trim(),
+      background: markStyle.backgroundImage,
+    };
+  }));
+  expect(lastFour.every((item) => item.petal === item.tileColor)).toBe(true);
+  expect(new Set(lastFour.map((item) => item.background)).size).toBe(4);
+  await page.screenshot({ path: `${output}/cascade-memory-blooms-piece-colors-2-5-mobile.png`, fullPage: true });
 });
 
 test("Cascade open Memory Bloom shows redundant symbol and color", async ({ page }) => {
@@ -67,12 +98,20 @@ test("Cascade open Memory Bloom shows redundant symbol and color", async ({ page
 
   const open = page.locator(".cascade-tile.has-memory-bloom .cascade-bloom-mark.is-revealed");
   await expect(open).toHaveCount(1);
-  const cue = await open.evaluate((element) => ({
-    text: element.textContent,
-    fontSize: Number.parseFloat(getComputedStyle(element).fontSize),
-  }));
+  const cue = await open.evaluate((element) => {
+    const tile = element.closest(".cascade-tile");
+    const style = getComputedStyle(element);
+    const tileStyle = getComputedStyle(tile);
+    return {
+      text: element.textContent,
+      fontSize: Number.parseFloat(style.fontSize),
+      petal: style.getPropertyValue("--bloom-petal").trim(),
+      tileColor: tileStyle.getPropertyValue("--tile").trim(),
+    };
+  });
   expect(["♥", "◆", "★", "☾", "✦", "☼"]).toContain(cue.text);
   expect(cue.fontSize).toBeGreaterThanOrEqual(18);
+  expect(cue.petal).toBe(cue.tileColor);
   await page.screenshot({ path: `${output}/cascade-memory-bloom-revealed-mobile.png`, fullPage: true });
 });
 
