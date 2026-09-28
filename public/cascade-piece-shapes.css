@@ -736,6 +736,13 @@
   to { opacity: 1; transform: scale(1.08) rotate(4deg); }
 }
 
+.cascade-tile.has-memory-bloom {
+  --bloom-petal: var(--tile, #d47ac7);
+  --bloom-petal-soft: color-mix(in srgb, var(--bloom-petal) 42%, white);
+  --bloom-petal-light: color-mix(in srgb, var(--bloom-petal) 66%, white);
+  --bloom-petal-deep: color-mix(in srgb, var(--bloom-petal) 84%, #382445);
+}
+
 .cascade-tile.has-memory-bloom::before {
   transform: scale(.61);
   filter:
@@ -759,31 +766,31 @@
   isolation: isolate;
   border: 0;
   border-radius: 0;
-  color: #773b85;
+  color: #5f496b;
   font-size: clamp(1.12rem, 4.8vw, 2.35rem);
   font-weight: 1000;
   line-height: 1;
   letter-spacing: -.04em;
   background:
-    radial-gradient(circle at 50% 50%, #fffdf1 0 22%, #ffeaa9 23% 29%, transparent 30%),
+    radial-gradient(circle at 50% 50%, #fffdf1 0 22%, #ffe9a6 23% 29%, transparent 30%),
     conic-gradient(
       from -22.5deg,
-      #ffb6dc 0 12.5%,
-      #d8b5f3 12.5% 25%,
-      #f6a9d8 25% 37.5%,
-      #b8c5f5 37.5% 50%,
-      #ffbddb 50% 62.5%,
-      #cbb4f4 62.5% 75%,
-      #f4a8dc 75% 87.5%,
-      #b9cdf7 87.5% 100%
+      var(--bloom-petal) 0 12.5%,
+      var(--bloom-petal-soft) 12.5% 25%,
+      var(--bloom-petal-light) 25% 37.5%,
+      var(--bloom-petal) 37.5% 50%,
+      var(--bloom-petal-soft) 50% 62.5%,
+      var(--bloom-petal-light) 62.5% 75%,
+      var(--bloom-petal) 75% 87.5%,
+      var(--bloom-petal-soft) 87.5% 100%
     );
   -webkit-mask: var(--bloom-flower-mask) center / contain no-repeat;
   mask: var(--bloom-flower-mask) center / contain no-repeat;
   filter:
     drop-shadow(0 1px 0 rgba(255,255,255,.92))
-    drop-shadow(0 4px 4px rgba(91,56,112,.28))
-    drop-shadow(0 0 6px rgba(235,163,224,.28))
-    saturate(1.06);
+    drop-shadow(0 4px 4px rgba(91,56,112,.24))
+    drop-shadow(0 0 6px color-mix(in srgb, var(--bloom-petal) 36%, transparent))
+    saturate(1.08);
   text-shadow:
     0 1px 0 rgba(255,255,255,.98),
     0 0 7px rgba(255,255,255,.86);
@@ -822,25 +829,28 @@
   color: var(--bloom-ink, #70407d);
   font-size: clamp(1.5rem, 5.8vw, 2.75rem);
   background:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,.99) 0 25%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 70%, white) 26% 32%, transparent 33%),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.99) 0 25%, color-mix(in srgb, var(--bloom-petal-soft) 68%, white) 26% 32%, transparent 33%),
     conic-gradient(
       from -22.5deg,
-      color-mix(in srgb, var(--bloom-color, #d47ac7) 38%, white) 0 12.5%,
-      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 76%, white) 12.5% 25%,
-      color-mix(in srgb, var(--bloom-color, #d47ac7) 50%, white) 25% 37.5%,
-      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 37.5% 50%,
-      color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white) 50% 62.5%,
-      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 78%, white) 62.5% 75%,
-      color-mix(in srgb, var(--bloom-color, #d47ac7) 54%, white) 75% 87.5%,
-      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 80%, white) 87.5% 100%
+      var(--bloom-petal) 0 12.5%,
+      var(--bloom-petal-soft) 12.5% 25%,
+      var(--bloom-petal-light) 25% 37.5%,
+      var(--bloom-petal) 37.5% 50%,
+      var(--bloom-petal-soft) 50% 62.5%,
+      var(--bloom-petal-light) 62.5% 75%,
+      var(--bloom-petal) 75% 87.5%,
+      var(--bloom-petal-soft) 87.5% 100%
     );
   filter:
     drop-shadow(0 1px 0 rgba(255,255,255,.96))
-    drop-shadow(0 0 3px color-mix(in srgb, var(--bloom-color, #d47ac7) 55%, white))
-    drop-shadow(0 0 9px color-mix(in srgb, var(--bloom-color, #d47ac7) 48%, transparent))
+    drop-shadow(0 0 3px color-mix(in srgb, var(--bloom-petal) 44%, white))
+    drop-shadow(0 0 9px color-mix(in srgb, var(--bloom-petal) 46%, transparent))
     drop-shadow(0 6px 5px rgba(87,52,108,.22))
     saturate(1.13)
     brightness(1.04);
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 6px color-mix(in srgb, var(--bloom-color, #d47ac7) 34%, white);
   transform: scale(1.03);
 }
 
@@ -852,7 +862,7 @@
   filter:
     drop-shadow(0 1px 0 rgba(255,255,255,.96))
     drop-shadow(0 0 3px rgba(255,255,255,.94))
-    drop-shadow(0 0 10px color-mix(in srgb, var(--bloom-color, #d47ac7) 52%, transparent))
+    drop-shadow(0 0 10px color-mix(in srgb, var(--bloom-petal) 52%, transparent))
     drop-shadow(0 0 5px rgba(255,101,151,.38))
     drop-shadow(0 6px 5px rgba(87,52,108,.22))
     saturate(1.15)
@@ -881,23 +891,23 @@
   font-size: clamp(1.5rem, 5.8vw, 2.75rem);
   font-weight: 1000;
   background:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,.99) 0 25%, color-mix(in srgb, var(--bloom-soft, #ffe8f6) 72%, white) 26% 32%, transparent 33%),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.99) 0 25%, color-mix(in srgb, var(--bloom-petal-soft, #f5dff2) 72%, white) 26% 32%, transparent 33%),
     conic-gradient(
       from -22.5deg,
-      color-mix(in srgb, var(--bloom-color, #d47ac7) 42%, white) 0 12.5%,
-      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 80%, white) 12.5% 25%,
-      color-mix(in srgb, var(--bloom-color, #d47ac7) 52%, white) 25% 37.5%,
-      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 84%, white) 37.5% 50%,
-      color-mix(in srgb, var(--bloom-color, #d47ac7) 46%, white) 50% 62.5%,
-      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 80%, white) 62.5% 75%,
-      color-mix(in srgb, var(--bloom-color, #d47ac7) 56%, white) 75% 87.5%,
-      color-mix(in srgb, var(--bloom-soft, #ffe8f6) 82%, white) 87.5% 100%
+      var(--bloom-petal, var(--tile, #d47ac7)) 0 12.5%,
+      var(--bloom-petal-soft, color-mix(in srgb, var(--tile, #d47ac7) 42%, white)) 12.5% 25%,
+      var(--bloom-petal-light, color-mix(in srgb, var(--tile, #d47ac7) 66%, white)) 25% 37.5%,
+      var(--bloom-petal, var(--tile, #d47ac7)) 37.5% 50%,
+      var(--bloom-petal-soft, color-mix(in srgb, var(--tile, #d47ac7) 42%, white)) 50% 62.5%,
+      var(--bloom-petal-light, color-mix(in srgb, var(--tile, #d47ac7) 66%, white)) 62.5% 75%,
+      var(--bloom-petal, var(--tile, #d47ac7)) 75% 87.5%,
+      var(--bloom-petal-soft, color-mix(in srgb, var(--tile, #d47ac7) 42%, white)) 87.5% 100%
     );
   -webkit-mask: var(--bloom-flower-mask) center / contain no-repeat;
   mask: var(--bloom-flower-mask) center / contain no-repeat;
   filter:
     drop-shadow(0 1px 0 rgba(255,255,255,.96))
-    drop-shadow(0 0 11px color-mix(in srgb, var(--bloom-color, #d47ac7) 58%, transparent))
+    drop-shadow(0 0 11px color-mix(in srgb, var(--bloom-petal, var(--tile, #d47ac7)) 58%, transparent))
     drop-shadow(0 6px 5px rgba(87,52,108,.20));
   text-shadow:
     0 1px 0 rgba(255,255,255,.98),
