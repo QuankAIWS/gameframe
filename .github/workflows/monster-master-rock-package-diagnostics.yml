@@ -19,7 +19,7 @@ jobs:
       TARGET_BRANCH: agent/mm-rock-package-diagnostics
     steps:
       - name: Check out current main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0

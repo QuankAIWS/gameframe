@@ -40,7 +40,7 @@ jobs:
 
       - name: Preserve failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gameframe-browser-diagnostics-${{ github.run_id }}
           path: test-results/
@@ -71,7 +71,7 @@ jobs:
 
       - name: Upload curated visual review
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gameframe-visual-review-${{ github.run_id }}
           path: visual-results/
