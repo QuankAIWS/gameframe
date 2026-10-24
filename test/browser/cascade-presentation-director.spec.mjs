@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// Exercise motion where gameplay effects are the behavior under test.
+test.use({ reducedMotion: "no-preference" });
+
 async function firstLegalMove(page) {
   return page.evaluate(async () => {
     const { listLegalMoves } = await import("/cascade-engine.js");
@@ -36,7 +39,6 @@ async function stageVictoryChoice(page) {
 }
 
 test("Cascade routes gameplay spectacle through one explicit presentation director", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/cascade.html?player=cascade-director-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 
