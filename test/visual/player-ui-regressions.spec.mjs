@@ -154,6 +154,8 @@ test("Monster Master keeps its mobile setup control usable without horizontal pa
 });
 
 test("Monster Master uses a battlefield background with working contextual unit and camera overlays", async ({ page }, testInfo) => {
+  // This assertion checks the active-turn animation, which reduced motion intentionally disables.
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/monster-master.html?player=monster-overlay-regression");
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
