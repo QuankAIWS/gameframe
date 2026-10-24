@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// This suite verifies animation behavior; the global baseline remains reduced.
+test.use({ reducedMotion: "no-preference" });
+
 async function firstLegalMove(page) {
   return page.evaluate(async () => {
     const { listLegalMoves } = await import("/cascade-engine.js");
@@ -10,7 +13,6 @@ async function firstLegalMove(page) {
 }
 
 test("Cascade emits large reward effects through one full-viewport screen-blended canvas", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/cascade.html?player=cascade-vfx-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 
@@ -45,7 +47,6 @@ test("Cascade emits large reward effects through one full-viewport screen-blende
 });
 
 test("Cascade keeps full-range confetti and the cabinet visible through a nuclear clear", async ({ page }, testInfo) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.addInitScript(() => {
     localStorage.setItem("scribbles-gameframe.cascade-sound:v1", "off");
