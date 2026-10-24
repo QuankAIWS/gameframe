@@ -80,8 +80,13 @@ function persistSession(force = false) {
   const now = Date.now();
   if (!force && now - lastPersistAt < 5_000) return;
   session.lastSeenAt = now;
-  storage.setItem(SESSION_KEY, JSON.stringify(session));
-  lastPersistAt = now;
+  try {
+    storage.setItem(SESSION_KEY, JSON.stringify(session));
+    lastPersistAt = now;
+  } catch {
+    // Session timing is advisory. Storage quota/security failures must not
+    // break the page's interaction and progression handlers.
+  }
 }
 
 function fnv1a(text) {
@@ -330,7 +335,7 @@ async function start() {
     // An actual offline-to-online transition may retry promptly, but a
     // rapidly flapping network cannot defeat the minimum request spacing.
     const earliest = lastNetworkAttemptAt + BASE_RETRY_MS;
-    nextNetworkAttemptAt = Math.min(nextNetworkAttemptAt, Math.max(Date.now(), earliest));
+    nextNetworkAttemptAt = Math.max(Date.now(), earliest);
     void flushRawEvents();
   });
 

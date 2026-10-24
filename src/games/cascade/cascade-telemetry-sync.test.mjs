@@ -13,7 +13,7 @@ const code = base
 assert.ok(code.includes("function enrichRawEvents"), "test must exercise live browser module");
 assert.ok(!code.includes("void start();"), "module auto-start must be isolated");
 
-function harness({ requests = [], offline = false, cursorFails = false } = {}) {
+function harness({ requests = [], offline = false, cursorFails = false, sessionFails = false } = {}) {
   const values = new Map();
   const clock = { now: Date.parse("2026-10-24T17:00:00Z") };
   const subscribers = new Map();
@@ -24,7 +24,9 @@ function harness({ requests = [], offline = false, cursorFails = false } = {}) {
   const storage = {
     getItem: (key) => values.get(key) ?? null,
     setItem: (key, value) => {
-      if (cursorFails && key === CURSOR_KEY) throw new Error("QuotaExceededError");
+      if ((cursorFails && key === CURSOR_KEY) || (sessionFails && key === "scribbles-gameframe.cascade-play-session:v1")) {
+        throw new Error("QuotaExceededError");
+      }
       values.set(key, String(value));
     },
   };
@@ -53,7 +55,7 @@ function harness({ requests = [], offline = false, cursorFails = false } = {}) {
   vm.runInContext(code, sandbox, { filename: "cascade-telemetry-sync.js" });
   vm.runInContext("identity = { playerId: 'alice' };", sandbox);
   const run = (expression) => vm.runInContext(expression, sandbox);
-  return { values, clock, network, run };
+  return { values, clock, network, subscribers, run };
 }
 
 function raw(number, telemetryId) {
@@ -173,6 +175,43 @@ test("concurrent tab acknowledgement during POST must not regress shared cursor"
   env.network.onPost = null;
   await env.run("flushRawEvents()");
   assert.equal(env.network.requests.length, 2);
+});
+
+test("rapid reconnect flaps cannot bypass minimum spacing for newly queued events", async () => {
+  const env = harness();
+  await env.run("start()");
+  env.network.requests.length = 0; // Ignore the best-effort page-open marker.
+  const first = raw(1, "11111111-1111-4111-8111-111111111111");
+  const second = raw(2, "22222222-2222-4222-8222-222222222222");
+  env.values.set(ANALYTICS_KEY, JSON.stringify([first]));
+  await env.run("flushRawEvents()");
+  assert.equal(env.network.requests.length, 1);
+  env.values.set(ANALYTICS_KEY, JSON.stringify([first, second]));
+  for (let i = 0; i < 5; i += 1) {
+    env.network.offline = true;
+    env.subscribers.get("offline")();
+    env.network.offline = false;
+    env.subscribers.get("online")();
+  }
+  await env.run("flushRawEvents()");
+  assert.equal(env.network.requests.length, 1, "network flapping cannot force another POST immediately");
+  env.clock.now += 14_999;
+  await env.run("flushRawEvents()");
+  assert.equal(env.network.requests.length, 1);
+  env.clock.now += 1;
+  await env.run("flushRawEvents()");
+  assert.equal(env.network.requests.length, 2);
+  assert.equal(env.network.requests[1][0].eventId, "cascade-raw:" + second.telemetryId);
+});
+
+test("session-storage quota errors stay isolated from play and event handlers", async () => {
+  const env = harness({ sessionFails: true });
+  await env.run("start()");
+  env.run("noteInteraction()");
+  env.run("tickActiveTime()");
+  assert.equal(env.subscribers.has("pointerdown"), true);
+  assert.equal(env.subscribers.has("pagehide"), true);
+  assert.equal(env.values.has("scribbles-gameframe.cascade-play-session:v1"), false);
 });
 
 test("every analytics producer saves a bounded queue and a durable UUID", async () => {

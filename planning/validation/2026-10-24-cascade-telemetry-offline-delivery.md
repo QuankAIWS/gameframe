@@ -54,7 +54,10 @@ attempted when `navigator.onLine === false`. On HTTP failure, thrown fetch,
 or failed persistent cursor write, retries back off from **15 seconds**, doubling
 up to **five minutes**. A genuine offline-to-online transition can advance the
 next attempt, but not sooner than 15 seconds after the previous attempt, so
-rapid connectivity flaps cannot force an upload storm. Success resets backoff.
+rapid connectivity flaps cannot force an upload storm, including after a
+successful upload when newly queued events exist. Success resets backoff.
+Session checkpoint storage failures are also isolated from all game input and
+progression event handlers.
 
 Session start/end/heartbeat observations remain best-effort direct requests
 rather than durable queue members. Hidden or idle pages do not send periodic
