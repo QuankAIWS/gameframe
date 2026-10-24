@@ -15,10 +15,9 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:8787",
     ...devices["Desktop Chrome"],
-    // Functional browser checks exercise animation, score reels and VFX.
-    // Reduced-motion accessibility is asserted explicitly by dedicated tests;
-    // the separate visual snapshot config retains its deterministic "reduce".
-    reducedMotion: "no-preference",
+    // Stable accessibility baseline. Tests exercising animation opt into
+    // no-preference explicitly, without affecting unrelated games.
+    reducedMotion: "reduce",
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
     video: "off",
