@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// This suite verifies animation behavior; the global baseline remains reduced.
+test.use({ reducedMotion: "no-preference" });
+
 const PERSONALITY_BY_KIND = {
   "0": "cascade-idle-pink-squish",
   "1": "cascade-idle-cyan-tilt",
@@ -10,7 +13,6 @@ const PERSONALITY_BY_KIND = {
 };
 
 test("Cascade keeps ambient candy life staggered, bounded, and interruptible", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/cascade.html?player=cascade-idle-pulse-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 
@@ -82,7 +84,6 @@ test("Cascade keeps ambient candy life staggered, bounded, and interruptible", a
 });
 
 test("Cascade deep idle adds a brief cabinet attract cue without waking the whole board", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize({ width: 960, height: 540 });
   await page.goto("/cascade.html?player=cascade-idle-attract-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
