@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+test.use({ reducedMotion: "no-preference" });
+
 test("functional Cascade checks exercise normal motion while reduced motion stays testable", async ({ page }) => {
   await page.goto("/cascade.html?player=cascade-motion-contract-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
