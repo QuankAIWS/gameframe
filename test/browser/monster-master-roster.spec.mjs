@@ -45,3 +45,21 @@ test("Arena picker uses approved art and starts the selected roster", async ({ p
   expect(trainerContentIds.has(bot[0].contentId)).toBe(true);
   expect(new Set(bot.slice(1).map((unit) => unit.contentId)).size).toBe(3);
 });
+
+
+test("recovered Voidshard and Mossmaw images decode in Chromium", async ({ page }) => {
+  await page.goto("/monster-master.html?player=monster-art-recovery");
+  const paths = [
+    "/assets/monster-master/creatures/voidshard-reaver-v1-128.webp",
+    "/assets/monster-master/creatures/mossmaw-colossus-v1-128.webp",
+  ];
+  const decoded = await page.evaluate(async (pathsToCheck) => {
+    return Promise.all(pathsToCheck.map(async (src) => {
+      const image = new Image();
+      image.src = src;
+      await image.decode();
+      return { src, width: image.naturalWidth, height: image.naturalHeight };
+    }));
+  }, paths);
+  expect(decoded).toEqual(paths.map((src) => ({ src, width: 128, height: 192 })));
+});
