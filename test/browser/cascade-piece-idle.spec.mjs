@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// This suite verifies animation behavior; the global baseline remains reduced.
+test.use({ reducedMotion: "no-preference" });
+
 const PERSONALITY_BY_KIND = {
   "0": "cascade-idle-pink-squish",
   "1": "cascade-idle-cyan-tilt",
