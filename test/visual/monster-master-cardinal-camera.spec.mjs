@@ -62,6 +62,8 @@ test("Monster Master WASD camera input stays screen-cardinal at every rotation",
 });
 
 test("Monster Master active-turn portrait uses a smooth non-rotating idle motion", async ({ page }) => {
+  // This asserts the actual idle animation, not the reduced-motion fallback.
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/monster-master.html?player=monster-turn-motion");
   await expect.poll(() => page.evaluate(() => Boolean(window.gameFrameMonsterController))).toBe(true);
