@@ -43,7 +43,9 @@ function harness({ requests = [], offline = false, cursorFails = false } = {}) {
     Date: ControlledDate,
     crypto: { randomUUID: () => "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" },
     gameFrameOptionalFetch: async (url, options) => {
-      network.requests.push(JSON.parse(options.body).events);
+      const events = JSON.parse(options.body).events;
+      network.requests.push(events);
+      if (typeof network.onPost === "function") await network.onPost(events, values);
       return { ok: network.okay, status: network.okay ? 200 : 503 };
     },
     tryGameFrameIdentity: async () => ({ playerId: "alice" }),
@@ -131,6 +133,46 @@ test("offline gating and quota-failed cursor persistence do not loop requests", 
   env.clock.now += 60_000;
   await env.run("flushRawEvents()");
   assert.equal(env.network.requests.length, 1);
+});
+
+test("shared cursor advances in another tab supersede the previous local cursor", async () => {
+  const env = harness();
+  const events = [1, 2, 3, 4].map((n) =>
+    raw(n, String(n).repeat(8) + "-1111-4111-8111-" + String(n).repeat(12)));
+  env.values.set(ANALYTICS_KEY, JSON.stringify(events.slice(0, 1)));
+  await env.run("flushRawEvents()");
+  assert.equal(env.network.requests.length, 1);
+  // Simulate another tab uploading the middle events after this tab set its
+  // own volatile cursor. The next flush must send only the unseen tail.
+  env.values.set(ANALYTICS_KEY, JSON.stringify(events));
+  env.values.set(CURSOR_KEY, "cascade-raw:" + events[2].telemetryId);
+  await env.run("flushRawEvents()");
+  assert.equal(env.network.requests.length, 2);
+  assert.deepEqual(
+    Array.from(env.network.requests[1], (e) => e.eventId),
+    ["cascade-raw:" + events[3].telemetryId],
+  );
+  assert.equal(env.values.get(CURSOR_KEY), "cascade-raw:" + events[3].telemetryId);
+});
+
+test("concurrent tab acknowledgement during POST must not regress shared cursor", async () => {
+  const env = harness();
+  const events = Array.from({ length: 7 }, (_, i) => raw(i + 1,
+    String(i + 1).repeat(8) + "-1111-4111-8111-" + String(i + 1).repeat(12)));
+  env.values.set(ANALYTICS_KEY, JSON.stringify(events.slice(0, 1)));
+  await env.run("flushRawEvents()");
+  env.values.set(ANALYTICS_KEY, JSON.stringify(events));
+  env.network.onPost = (_, shared) => shared.set(CURSOR_KEY,
+    "cascade-raw:" + events[6].telemetryId);
+  await env.run("flushRawEvents()");
+  // This page sent 2–6, while a different tab acknowledged 7. The second
+  // page must not replace cursor 7 with its older acknowledgement for 6.
+  assert.equal(env.network.requests.length, 2);
+  assert.equal(env.network.requests[1].length, 5);
+  assert.equal(env.values.get(CURSOR_KEY), "cascade-raw:" + events[6].telemetryId);
+  env.network.onPost = null;
+  await env.run("flushRawEvents()");
+  assert.equal(env.network.requests.length, 2);
 });
 
 test("every analytics producer saves a bounded queue and a durable UUID", async () => {
