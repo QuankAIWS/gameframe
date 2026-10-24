@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// This suite verifies animation behavior; the global baseline remains reduced.
+test.use({ reducedMotion: "no-preference" });
+
 const stateKey = "scribbles-gameframe.cascade-state:v1";
 
 async function openCabinet(page, viewport) {
@@ -151,10 +154,6 @@ test("Cascade spends roomy 16:9 width on the cabinet without shrinking the board
 });
 
 test("Cascade short landscape keeps the utility dock usable and effects state visible", async ({ page }) => {
-  // The default browser project requests reduced motion. That OS preference
-  // deliberately pins effects to reduced; test the user toggle with an
-  // unrestricted preference while preserving the standard reduced-motion suite.
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await openCabinet(page, { width: 800, height: 450 });
 
   const settings = page.locator(".cascade-feedback-controls button");
