@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// Exercise motion where gameplay effects are the behavior under test.
+test.use({ reducedMotion: "no-preference" });
+
 const CASCADE_STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 
 async function installLevelFixture(page, fallbackLevel) {
