@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// Exercise motion where gameplay effects are the behavior under test.
+test.use({ reducedMotion: "no-preference" });
+
 const stateKey = "scribbles-gameframe.cascade-state:v1";
 
 async function prepare(page) {
@@ -18,7 +21,6 @@ async function prepare(page) {
 }
 
 test("Cascade score reel counts upward and the life tray always keeps five visible slots", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await prepare(page);
 
   const score = page.locator("#score");
