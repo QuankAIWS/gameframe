@@ -330,6 +330,7 @@ function track(type, detail = {}) {
       score,
       movesRemaining,
       ...detail,
+      telemetryId: crypto.randomUUID(),
     });
     localStorage.setItem(ANALYTICS_KEY, JSON.stringify(events.slice(-500)));
   } catch {
