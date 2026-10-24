@@ -15,6 +15,8 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:8787",
     ...devices["Desktop Chrome"],
+    // Stable accessibility baseline. Tests exercising animation opt into
+    // no-preference explicitly, without affecting unrelated games.
     reducedMotion: "reduce",
     screenshot: "only-on-failure",
     trace: "retain-on-failure",

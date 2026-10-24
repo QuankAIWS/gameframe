@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// This suite verifies animation behavior; the global baseline remains reduced.
+test.use({ reducedMotion: "no-preference" });
+
 const stateKey = "scribbles-gameframe.cascade-state:v1";
 
 async function openCabinet(page, viewport) {

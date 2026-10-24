@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// This suite verifies animation behavior; the global baseline remains reduced.
+test.use({ reducedMotion: "no-preference" });
+
 async function firstLegalMove(page) {
   return page.evaluate(async () => {
     const { listLegalMoves } = await import("/cascade-engine.js");

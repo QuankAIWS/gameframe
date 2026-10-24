@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+
+// These visual journeys assert animation and effects, rather than reduced-motion snapshots.
+// Accessibility coverage remains under the default reduced-motion visual profile.
+test.use({ reducedMotion: "no-preference" });
 import { mkdir } from "node:fs/promises";
 
 const output = "visual-results/player-ui-review";

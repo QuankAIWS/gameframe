@@ -14,7 +14,7 @@ Scribbles GameFrame remains proprietary and all rights reserved. The following i
 ## PixiJS
 
 - Package: `pixi.js`
-- Version: `8.19.0`
+- Version: `8.22.0`
 - Source: official PixiJS package maintained by the PixiJS project
 - License: MIT
 - Use: WebGL battlefield rendering, scene composition, texture loading, and drawing primitives for Monster Master
