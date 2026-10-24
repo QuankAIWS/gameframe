@@ -250,6 +250,8 @@ test("the destination bar is the only product navigation header during play", as
 });
 
 test("Othello Neon does not keep an idle animation-frame loop alive", async ({ page }) => {
+  // The animated-move assertion requires normal motion; reduced-motion coverage is separate.
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.addInitScript(() => {
     const nativeRequestAnimationFrame = window.requestAnimationFrame.bind(window);
     window.__gameframeRafRequests = 0;
