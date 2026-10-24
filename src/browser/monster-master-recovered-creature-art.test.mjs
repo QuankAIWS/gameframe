@@ -33,9 +33,9 @@ for (const record of expected) {
     assert.equal(asset.provenance.sourceFileId, record.driveId);
     assert.equal(asset.provenance.sourceSha256, record.sourceSha256);
     assert.equal(asset.provenance.runtimeSha256, record.runtimeSha256);
-    assert.match(asset.provenance.transform, /sharp@0\\.35\\.5/);
+    assert.ok(asset.provenance.transform.includes("sharp@0.35.5"));
 
-    const data = await readFile(new URL(asset.path.replace(/^\\//, ""), new URL("../../public/", import.meta.url)));
+    const data = await readFile(new URL(asset.path.slice(1), new URL("../../public/", import.meta.url)));
     // Refuse previous corruption types: ASCII base64 or a forged RIFF header.
     assert.equal(data.subarray(0, 4).toString("ascii"), "RIFF");
     assert.equal(data.subarray(8, 12).toString("ascii"), "WEBP");
