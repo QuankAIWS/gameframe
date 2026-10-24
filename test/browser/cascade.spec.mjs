@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// Exercise motion where gameplay effects are the behavior under test.
+test.use({ reducedMotion: "no-preference" });
+
 const CASCADE_STATE_KEY = "scribbles-gameframe.cascade-state:v1";
 
 async function installLevelFixture(page, fallbackLevel) {
@@ -365,7 +368,6 @@ test("Cascade admin console reaches levels 1000 and 2000 with valid map windows"
 });
 
 test("Cascade admin special lab spawns color-preserving Butterflies and ready combos", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.route("**/api/session", async (route) => {
     await route.fulfill({
       status: 200,
