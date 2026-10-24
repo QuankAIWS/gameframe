@@ -190,7 +190,7 @@ test("Monster Master uses one authoritative controller with guarded Pixi deliver
   assert.equal(manifest.terrain["floor-a"].semantic, "floor");
   assert.equal(manifest.terrain["wall-rubble-a"].semantic, "wall");
 
-  assert.equal(packageJson.dependencies["pixi.js"], "8.19.0");
+  assert.equal(packageJson.dependencies["pixi.js"], "8.22.0");
   assert.match(packageJson.scripts.validate, /check:monster-master-pixi/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-pixi-bundle\.js/);
   assert.match(packageJson.scripts["check:browser"], /public\/monster-master-battlefield-effects\.js/);
