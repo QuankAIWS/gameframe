@@ -1,9 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 
-// Animation-specific visual assertions must not inherit the reduced-motion fixture.
-test.use({ reducedMotion: "no-preference" });
-
 const output = "visual-results/player-ui-review";
 
 test.beforeAll(async () => {
