@@ -205,8 +205,16 @@ async function flushRawEvents() {
     for (let round = 0; round < 32; round += 1) {
       const enriched = enrichRawEvents(analyticsEvents());
       if (!enriched.length) return;
-      const cursor = volatileCursor ?? storage.getItem(CURSOR_KEY);
-      const cursorIndex = cursor ? enriched.findIndex((event) => event.eventId === cursor) : -1;
+      // Other open tabs can advance the shared cursor after this tab's
+      // previous upload. Pick the furthest acknowledged retained event, not
+      // our stale page-local cursor; keep the volatile fallback for quota
+      // errors that prevent durable writes.
+      const sharedCursor = storage.getItem(CURSOR_KEY);
+      const persistedIndex = sharedCursor
+        ? enriched.findIndex((event) => event.eventId === sharedCursor) : -1;
+      const volatileIndex = volatileCursor
+        ? enriched.findIndex((event) => event.eventId === volatileCursor) : -1;
+      const cursorIndex = Math.max(persistedIndex, volatileIndex);
       const pending = enriched.slice(cursorIndex + 1, cursorIndex + 1 + MAX_BATCH);
       if (!pending.length) return;
       lastNetworkAttemptAt = Date.now();
@@ -219,7 +227,17 @@ async function flushRawEvents() {
       clearNetworkBackoff();
       const lastAcceptedId = pending[pending.length - 1].eventId;
       volatileCursor = lastAcceptedId;
-      storage.setItem(CURSOR_KEY, lastAcceptedId);
+      // The other tab may have acknowledged more events *during* this POST.
+      // Never overwrite its newer shared cursor with this older batch.
+      const currentShared = storage.getItem(CURSOR_KEY);
+      const currentSharedIndex = currentShared
+        ? enriched.findIndex((event) => event.eventId === currentShared) : -1;
+      const acceptedIndex = cursorIndex + pending.length;
+      if (currentSharedIndex > acceptedIndex) {
+        volatileCursor = currentShared;
+      } else {
+        storage.setItem(CURSOR_KEY, lastAcceptedId);
+      }
       if (pending.length < MAX_BATCH) return;
     }
   } catch {
