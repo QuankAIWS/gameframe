@@ -36,6 +36,7 @@ async function stageVictoryChoice(page) {
 }
 
 test("Cascade routes gameplay spectacle through one explicit presentation director", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/cascade.html?player=cascade-director-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 

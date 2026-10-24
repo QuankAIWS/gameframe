@@ -18,6 +18,7 @@ async function prepare(page) {
 }
 
 test("Cascade score reel counts upward and the life tray always keeps five visible slots", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await prepare(page);
 
   const score = page.locator("#score");

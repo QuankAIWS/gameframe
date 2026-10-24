@@ -10,6 +10,7 @@ const PERSONALITY_BY_KIND = {
 };
 
 test("Cascade keeps ambient candy life staggered, bounded, and interruptible", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/cascade.html?player=cascade-idle-pulse-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
 
@@ -81,6 +82,7 @@ test("Cascade keeps ambient candy life staggered, bounded, and interruptible", a
 });
 
 test("Cascade deep idle adds a brief cabinet attract cue without waking the whole board", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize({ width: 960, height: 540 });
   await page.goto("/cascade.html?player=cascade-idle-attract-test");
   await expect(page.locator(".cascade-tile")).toHaveCount(64);
