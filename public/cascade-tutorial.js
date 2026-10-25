@@ -186,7 +186,7 @@ function saveState() {
 function track(type, detail = {}) {
   try {
     const events = JSON.parse(localStorage.getItem(ANALYTICS_KEY) || "[]");
-    events.push({ at: new Date().toISOString(), type, mode: "tutorial", ...detail });
+    events.push({ at: new Date().toISOString(), type, mode: "tutorial", ...detail, telemetryId: crypto.randomUUID() });
     localStorage.setItem(ANALYTICS_KEY, JSON.stringify(events.slice(-500)));
   } catch {
     // Tutorial telemetry must never interfere with play.

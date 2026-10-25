@@ -126,7 +126,7 @@ function awardRecallResult(id, result) {
 function track(type, detail = {}) {
   try {
     const events = JSON.parse(window.localStorage.getItem(ANALYTICS_KEY) || "[]");
-    events.push({ at: new Date().toISOString(), type, mode: "bonus", ...detail });
+    events.push({ at: new Date().toISOString(), type, mode: "bonus", ...detail, telemetryId: crypto.randomUUID() });
     window.localStorage.setItem(ANALYTICS_KEY, JSON.stringify(events.slice(-500)));
   } catch {
     // Bonus telemetry is advisory and must never interrupt play.

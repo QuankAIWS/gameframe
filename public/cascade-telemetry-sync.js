@@ -9,11 +9,18 @@ const ACTIVE_TICK_MS = 1_000;
 const IDLE_AFTER_MS = 2 * 60 * 1000;
 const NEW_BLOCK_AFTER_MS = 30 * 60 * 1000;
 const MAX_BATCH = 5;
+const BASE_RETRY_MS = 15_000;
+const MAX_RETRY_MS = 5 * 60_000;
 const MAX_CLIENT_PAYLOAD_BYTES = 1_800;
 const storage = window.localStorage;
 const query = new URLSearchParams(window.location.search);
 let identity = null;
 let flushPending = false;
+let nextNetworkAttemptAt = 0;
+let retryDelayMs = BASE_RETRY_MS;
+let lastNetworkAttemptAt = 0;
+let offlineObserved = window.navigator.onLine === false;
+let volatileCursor = null;
 let lastInputAt = Date.now();
 let lastTickAt = Date.now();
 let lastPersistAt = 0;
@@ -29,7 +36,11 @@ function readJson(key, fallback) {
 
 function analyticsEvents() {
   const value = readJson(ANALYTICS_KEY, []);
-  return Array.isArray(value) ? value.filter((event) => event && typeof event === "object") : [];
+  // Old or externally modified storage may exceed the producers' 500 cap.
+  // Never replay more than the last bounded, still-retained raw events.
+  return Array.isArray(value)
+    ? value.slice(-500).filter((event) => event && typeof event === "object")
+    : [];
 }
 
 function newSession(now = Date.now()) {
@@ -69,8 +80,13 @@ function persistSession(force = false) {
   const now = Date.now();
   if (!force && now - lastPersistAt < 5_000) return;
   session.lastSeenAt = now;
-  storage.setItem(SESSION_KEY, JSON.stringify(session));
-  lastPersistAt = now;
+  try {
+    storage.setItem(SESSION_KEY, JSON.stringify(session));
+    lastPersistAt = now;
+  } catch {
+    // Session timing is advisory. Storage quota/security failures must not
+    // break the page's interaction and progression handlers.
+  }
 }
 
 function fnv1a(text) {
@@ -113,7 +129,16 @@ function enrichRawEvents(events) {
     const fingerprint = JSON.stringify(event);
     const occurrence = duplicateCounts.get(fingerprint) || 0;
     duplicateCounts.set(fingerprint, occurrence + 1);
-    const eventId = `cascade-raw:${fnv1a(fingerprint)}:${occurrence}`;
+    // New raw events carry a durable UUID written at creation. Unlike the
+    // legacy fingerprint occurrence index, it does not change when the
+    // bounded 500-event local history evicts older identical entries.
+    const stableId = typeof event.telemetryId === "string"
+      && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(event.telemetryId)
+      ? event.telemetryId
+      : null;
+    const eventId = stableId
+      ? `cascade-raw:${stableId}`
+      : `cascade-raw:${fnv1a(fingerprint)}:${occurrence}`;
     const timestamp = eventTimestamp(event);
 
     let sessionId = session.sessionId;
@@ -155,6 +180,16 @@ function enrichRawEvents(events) {
   });
 }
 
+function backoffAfterFailure() {
+  nextNetworkAttemptAt = Date.now() + retryDelayMs;
+  retryDelayMs = Math.min(MAX_RETRY_MS, retryDelayMs * 2);
+}
+
+function clearNetworkBackoff() {
+  nextNetworkAttemptAt = 0;
+  retryDelayMs = BASE_RETRY_MS;
+}
+
 async function postEvents(events, { keepalive = false } = {}) {
   if (!identity || !events.length) return false;
   const response = await gameFrameOptionalFetch("/api/me/cascade/telemetry", {
@@ -168,22 +203,52 @@ async function postEvents(events, { keepalive = false } = {}) {
 }
 
 async function flushRawEvents() {
-  if (!identity || flushPending) return;
+  if (!identity || flushPending || window.navigator.onLine === false
+      || Date.now() < nextNetworkAttemptAt) return;
   flushPending = true;
   try {
     for (let round = 0; round < 32; round += 1) {
       const enriched = enrichRawEvents(analyticsEvents());
       if (!enriched.length) return;
-      const cursor = storage.getItem(CURSOR_KEY);
-      const cursorIndex = cursor ? enriched.findIndex((event) => event.eventId === cursor) : -1;
+      // Other open tabs can advance the shared cursor after this tab's
+      // previous upload. Pick the furthest acknowledged retained event, not
+      // our stale page-local cursor; keep the volatile fallback for quota
+      // errors that prevent durable writes.
+      const sharedCursor = storage.getItem(CURSOR_KEY);
+      const persistedIndex = sharedCursor
+        ? enriched.findIndex((event) => event.eventId === sharedCursor) : -1;
+      const volatileIndex = volatileCursor
+        ? enriched.findIndex((event) => event.eventId === volatileCursor) : -1;
+      const cursorIndex = Math.max(persistedIndex, volatileIndex);
       const pending = enriched.slice(cursorIndex + 1, cursorIndex + 1 + MAX_BATCH);
       if (!pending.length) return;
-      if (!await postEvents(pending)) return;
-      storage.setItem(CURSOR_KEY, pending[pending.length - 1].eventId);
+      lastNetworkAttemptAt = Date.now();
+      if (!await postEvents(pending)) {
+        backoffAfterFailure();
+        return;
+      }
+      // A successful POST may be acknowledged even if localStorage is full.
+      // A volatile cursor prevents an immediate same-page duplicate storm.
+      clearNetworkBackoff();
+      const lastAcceptedId = pending[pending.length - 1].eventId;
+      volatileCursor = lastAcceptedId;
+      // The other tab may have acknowledged more events *during* this POST.
+      // Never overwrite its newer shared cursor with this older batch.
+      const currentShared = storage.getItem(CURSOR_KEY);
+      const currentSharedIndex = currentShared
+        ? enriched.findIndex((event) => event.eventId === currentShared) : -1;
+      const acceptedIndex = cursorIndex + pending.length;
+      if (currentSharedIndex > acceptedIndex) {
+        volatileCursor = currentShared;
+      } else {
+        storage.setItem(CURSOR_KEY, lastAcceptedId);
+      }
       if (pending.length < MAX_BATCH) return;
     }
   } catch {
-    // Playtest telemetry is deliberately failure-isolated from gameplay.
+    // Playtest telemetry is failure-isolated from gameplay. Storage quota
+    // failures and network errors must not generate 2-second request storms.
+    backoffAfterFailure();
   } finally {
     flushPending = false;
   }
@@ -262,6 +327,17 @@ async function start() {
   for (const eventName of ["pointerdown", "keydown", "touchstart"]) {
     window.addEventListener(eventName, noteInteraction, { passive: true });
   }
+
+  window.addEventListener("offline", () => { offlineObserved = true; });
+  window.addEventListener("online", () => {
+    if (!offlineObserved) return;
+    offlineObserved = false;
+    // An actual offline-to-online transition may retry promptly, but a
+    // rapidly flapping network cannot defeat the minimum request spacing.
+    const earliest = lastNetworkAttemptAt + BASE_RETRY_MS;
+    nextNetworkAttemptAt = Math.max(Date.now(), earliest);
+    void flushRawEvents();
+  });
 
   window.setInterval(tickActiveTime, ACTIVE_TICK_MS);
   window.setInterval(() => void flushRawEvents(), FLUSH_INTERVAL_MS);
