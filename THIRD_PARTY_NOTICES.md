@@ -25,7 +25,7 @@ The committed Pixi bundle can include transitive runtime code under independentl
 ## esbuild
 
 - Package: `esbuild`
-- Version: `0.28.1`
+- Version: `0.28.2`
 - Source: official esbuild package
 - License: MIT
 - Use: deterministic build-time bundling of the Discord Activity and Monster Master browser entries

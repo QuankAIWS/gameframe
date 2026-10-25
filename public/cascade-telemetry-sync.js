@@ -238,7 +238,13 @@ async function flushRawEvents() {
       const currentSharedIndex = currentShared
         ? enriched.findIndex((event) => event.eventId === currentShared) : -1;
       const acceptedIndex = cursorIndex + pending.length;
-      if (currentSharedIndex > acceptedIndex) {
+      // A peer may have rotated the 500-item ring *and* acknowledged a
+      // newer event during this POST. Its cursor is then absent from our
+      // pre-POST snapshot. Do not clobber a concurrently changed unknown
+      // cursor with an already-evicted acknowledgement.
+      const peerAdvancedOutsideSnapshot = Boolean(currentShared)
+        && currentShared !== sharedCursor && currentSharedIndex === -1;
+      if (currentSharedIndex > acceptedIndex || peerAdvancedOutsideSnapshot) {
         volatileCursor = currentShared;
       } else {
         storage.setItem(CURSOR_KEY, lastAcceptedId);
