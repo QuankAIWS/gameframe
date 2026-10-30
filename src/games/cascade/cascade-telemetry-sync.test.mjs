@@ -177,6 +177,51 @@ test("concurrent tab acknowledgement during POST must not regress shared cursor"
   assert.equal(env.network.requests.length, 2);
 });
 
+test("a concurrent tab's cursor outside the in-flight snapshot must not be overwritten", async () => {
+  const env = harness();
+  const [a, b, c] = [1, 2, 3].map((n) => raw(n,
+    String(n).repeat(8) + "-1111-4111-8111-" + String(n).repeat(12)));
+  env.values.set(ANALYTICS_KEY, JSON.stringify([a]));
+  env.network.onPost = (_, shared) => {
+    // A separate tab may rotate the bounded history and acknowledge its
+    // first new event while this tab still awaits a POST of evicted data.
+    shared.set(ANALYTICS_KEY, JSON.stringify([b, c]));
+    shared.set(CURSOR_KEY, "cascade-raw:" + b.telemetryId);
+  };
+  await env.run("flushRawEvents()");
+  assert.equal(env.values.get(CURSOR_KEY), "cascade-raw:" + b.telemetryId);
+  env.network.onPost = null;
+  await env.run("flushRawEvents()");
+  assert.deepEqual(
+    Array.from(env.network.requests[1], (item) => item.eventId),
+    ["cascade-raw:" + c.telemetryId],
+    "the already acknowledged event from the other tab is not replayed",
+  );
+});
+
+test("evicted cursor replays only the finite retained window and eventually drains", async () => {
+  const env = harness();
+  const events = Array.from({ length: 501 }, (_, index) => raw(index,
+    "11111111-1111-4111-8111-" + String(index).padStart(12, "0")));
+  env.values.set(ANALYTICS_KEY, JSON.stringify([events[0]]));
+  await env.run("flushRawEvents()");
+  assert.equal(env.values.get(CURSOR_KEY), "cascade-raw:" + events[0].telemetryId);
+  env.network.requests.length = 0;
+
+  // The acknowledged cursor fell out of the 500-item local ring.
+  env.values.set(ANALYTICS_KEY, JSON.stringify(events.slice(1)));
+  await env.run("flushRawEvents()");
+  assert.equal(env.network.requests.length, 32, "one invocation has a finite request budget");
+  for (let i = 0; i < 3; i += 1) await env.run("flushRawEvents()");
+  const uploaded = env.network.requests.flat().map((item) => item.eventId);
+  assert.equal(uploaded.length, 500);
+  assert.equal(new Set(uploaded).size, 500, "no retained event is replayed twice");
+  assert.equal(uploaded[0], "cascade-raw:" + events[1].telemetryId);
+  assert.equal(env.values.get(CURSOR_KEY), "cascade-raw:" + events[500].telemetryId);
+  await env.run("flushRawEvents()");
+  assert.equal(env.network.requests.flat().length, 500);
+});
+
 test("rapid reconnect flaps cannot bypass minimum spacing for newly queued events", async () => {
   const env = harness();
   await env.run("start()");

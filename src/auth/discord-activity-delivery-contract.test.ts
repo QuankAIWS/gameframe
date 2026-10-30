@@ -25,9 +25,9 @@ test("Discord Activity client uses the pinned official SDK through a reproducibl
   const notices = await read("THIRD_PARTY_NOTICES.md");
 
   assert.equal(packageJson.devDependencies["@discord/embedded-app-sdk"], "2.5.0");
-  assert.equal(packageJson.devDependencies.esbuild, "0.28.1");
+  assert.equal(packageJson.devDependencies.esbuild, "0.28.2");
   assert.equal(packageLock.packages[""].devDependencies["@discord/embedded-app-sdk"], "2.5.0");
-  assert.equal(packageLock.packages[""].devDependencies.esbuild, "0.28.1");
+  assert.equal(packageLock.packages[""].devDependencies.esbuild, "0.28.2");
   assert.equal(packageJson.scripts["build:activity"], "node scripts/build-activity-bundle.mjs");
   assert.equal(packageJson.scripts["check:activity"], "node scripts/build-activity-bundle.mjs --check");
   assert.match(packageJson.scripts["validate:core"], /npm run check:activity/);
@@ -52,7 +52,7 @@ test("Discord Activity client uses the pinned official SDK through a reproducibl
   assert.match(notices, /@discord\/embedded-app-sdk/);
   assert.match(notices, /Version: `2\.5\.0`/);
   assert.match(notices, /esbuild/);
-  assert.match(notices, /Version: `0\.28\.1`/);
+  assert.match(notices, /Version: `0\.28\.2`/);
 });
 
 test("temporary write-capable Activity bootstrap workflow is absent from the final branch", async () => {

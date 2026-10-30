@@ -45,6 +45,11 @@ active page if persistent cursor storage raises a quota error. If an old
 cursor has been evicted, the uploader begins from the oldest remaining
 retained event. This is an explicit replay policy for the finite storage
 window; server idempotency, not a timestamp guess, handles any replay.
+When a second tab changes the shared cursor during an in-flight POST, the
+uploader preserves that peer's cursor even when it no longer appears in the
+first tab's pre-POST event snapshot. Otherwise a concurrent eviction could
+cause one tab to overwrite a newer acknowledgement with an obsolete one and
+replay accepted events.
 
 ## Network and session behavior
 

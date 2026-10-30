@@ -6,9 +6,10 @@ import { fileURLToPath } from "node:url";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 const retired = ["th", "eo"].join("");
+// Keep suffix matching case-sensitive: /i makes [A-Z] match lowercase
+// letters and incorrectly flags ordinary words such as "theoretical".
 const retiredIdentifierPattern = new RegExp(
-  `${retired}\\b|\\b${retired}(?=[A-Z0-9_])`,
-  "i",
+  `\\b[Tt]${retired.slice(1)}(?:\\b|(?=[A-Z0-9_]))`,
 );
 const textExtensions = new Set([
   ".ts", ".tsx", ".js", ".mjs", ".cjs", ".json", ".jsonc", ".html", ".css",
