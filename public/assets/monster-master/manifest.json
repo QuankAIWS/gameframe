@@ -17,9 +17,15 @@
     "approved-leafwhisk-runner-class-one-isometric-master-v1"
   ],
   "creatureAtlas": "/assets/monster-master/creature-atlas-v1.svg",
-  "creatureCell": { "width": 96, "height": 96 },
+  "creatureCell": {
+    "width": 96,
+    "height": 96
+  },
   "terrainAtlas": "/assets/monster-master/terrain-atlas-v1.svg",
-  "terrainCell": { "width": 64, "height": 64 },
+  "terrainCell": {
+    "width": 64,
+    "height": 64
+  },
   "trainerAssets": {
     "master-trainer-v1": {
       "role": "master",
@@ -40,8 +46,11 @@
       "assignment": "unassigned",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
-      "battlefieldScale": 1.0,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "battlefieldScale": 1,
       "provenance": {
         "provider": "OpenAI ChatGPT image generation",
         "sourceArchive": "private-gameframe-asset-masters",
@@ -62,8 +71,11 @@
       "assignment": "unassigned",
       "facing": "right",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
-      "battlefieldScale": 1.0,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "battlefieldScale": 1,
       "provenance": {
         "provider": "OpenAI ChatGPT image generation",
         "sourceArchive": "private-gameframe-asset-masters",
@@ -84,8 +96,11 @@
       "assignment": "unassigned",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
-      "battlefieldScale": 1.0,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "battlefieldScale": 1,
       "provenance": {
         "provider": "OpenAI ChatGPT image generation",
         "sourceArchive": "private-gameframe-asset-masters",
@@ -106,8 +121,11 @@
       "assignment": "unassigned",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
-      "battlefieldScale": 1.0,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "battlefieldScale": 1,
       "provenance": {
         "provider": "OpenAI ChatGPT image generation",
         "sourceArchive": "private-gameframe-asset-masters",
@@ -128,8 +146,11 @@
       "assignment": "unassigned",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
-      "battlefieldScale": 1.0,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "battlefieldScale": 1,
       "provenance": {
         "provider": "OpenAI ChatGPT image generation",
         "sourceArchive": "private-gameframe-asset-masters",
@@ -144,19 +165,28 @@
     "warden-master-v1": {
       "role": "master",
       "column": 0,
-      "anchor": { "x": 0.5, "y": 0.88 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      },
       "battlefieldScale": 1.34
     },
     "stone-bulwark-v1": {
       "role": "bulwark",
       "column": 1,
-      "anchor": { "x": 0.5, "y": 0.88 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      },
       "battlefieldScale": 1.48
     },
     "emberling-skirmisher-v1": {
       "role": "emberling",
       "column": 2,
-      "anchor": { "x": 0.5, "y": 0.88 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      },
       "battlefieldScale": 1.14
     },
     "rootmaw-brute-v1": {
@@ -167,7 +197,10 @@
       "height": 192,
       "alpha": true,
       "usage": "standalone-arena",
-      "anchor": { "x": 0.5, "y": 0.88 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      },
       "battlefieldScale": 1.58
     },
     "gloamspore-stalker-v1": {
@@ -178,7 +211,10 @@
       "height": 192,
       "alpha": true,
       "usage": "standalone-arena",
-      "anchor": { "x": 0.5, "y": 0.9 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
       "battlefieldScale": 1.36
     },
     "voidshard-reaver-v1": {
@@ -190,8 +226,21 @@
       "usage": "asset-library",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
-      "battlefieldScale": 1.42
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "battlefieldScale": 1.42,
+      "provenance": {
+        "provider": "OpenAI ChatGPT image generation",
+        "sourceArchive": "private-gameframe-asset-masters",
+        "sourceFileId": "1ecVgyOowdlj3UzN5GPwo5sDL_EcgFxmc",
+        "sourceSha256": "fa593deb9bf47bd18c5e57b429ad89c85bdf736205e1d3d2e8b76b94e9fc3497",
+        "runtimeSha256": "359570e2ab72b081110ccd3709ea8fdc6956a2a07bbf39de8e6bac3b8a922bb6",
+        "transform": "sharp@0.35.5, libvips 8.18.7: resize 128x192 fit=contain kernel=lanczos3 background=transparent; webp quality=88 effort=6 alphaQuality=100",
+        "rights": "generated-for-project; repository-proprietary",
+        "attributionRequired": false
+      }
     },
     "stormcrest-skitter-v1": {
       "label": "Stormcrest Skitter",
@@ -205,7 +254,10 @@
       "assignment": "unassigned",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
       "battlefieldScale": 1.18
     },
     "mossmaw-colossus-v1": {
@@ -218,8 +270,21 @@
       "assignment": "unassigned",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
-      "battlefieldScale": 1.5
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
+      "battlefieldScale": 1.5,
+      "provenance": {
+        "provider": "OpenAI ChatGPT image generation",
+        "sourceArchive": "private-gameframe-asset-masters",
+        "sourceFileId": "15LHAhgyD1piJNOYaxGZWpT-hhIbOAyB5",
+        "sourceSha256": "0f83973bacb968339e5172ddea6b76044cf29594a921710ec2dac3520c603e0b",
+        "runtimeSha256": "c1fe2e4ce28282539636dbee213efd3364f7f0d94dffc221f91bd7a0874779ea",
+        "transform": "sharp@0.35.5, libvips 8.18.7: resize 128x192 fit=contain kernel=lanczos3 background=transparent; webp quality=88 effort=6 alphaQuality=100",
+        "rights": "generated-for-project; repository-proprietary",
+        "attributionRequired": false
+      }
     },
     "leafwhisk-runner-v1": {
       "label": "Leafwhisk Runner",
@@ -233,7 +298,10 @@
       "assignment": "unassigned",
       "facing": "left",
       "perspective": "three-quarter-down-isometric",
-      "anchor": { "x": 0.5, "y": 0.9 },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      },
       "battlefieldScale": 1.2,
       "provenance": {
         "provider": "OpenAI ChatGPT image generation",
@@ -247,11 +315,35 @@
     }
   },
   "terrain": {
-    "floor-a": { "column": 0, "row": 0, "semantic": "floor" },
-    "floor-b": { "column": 1, "row": 0, "semantic": "floor" },
-    "difficult-rootstone": { "column": 2, "row": 0, "semantic": "difficult" },
-    "wall-rubble-a": { "column": 0, "row": 1, "semantic": "wall" },
-    "wall-rubble-b": { "column": 1, "row": 1, "semantic": "wall" },
-    "central-command-shrine": { "column": 2, "row": 1, "semantic": "objective" }
+    "floor-a": {
+      "column": 0,
+      "row": 0,
+      "semantic": "floor"
+    },
+    "floor-b": {
+      "column": 1,
+      "row": 0,
+      "semantic": "floor"
+    },
+    "difficult-rootstone": {
+      "column": 2,
+      "row": 0,
+      "semantic": "difficult"
+    },
+    "wall-rubble-a": {
+      "column": 0,
+      "row": 1,
+      "semantic": "wall"
+    },
+    "wall-rubble-b": {
+      "column": 1,
+      "row": 1,
+      "semantic": "wall"
+    },
+    "central-command-shrine": {
+      "column": 2,
+      "row": 1,
+      "semantic": "objective"
+    }
   }
 }
