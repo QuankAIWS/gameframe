@@ -52,6 +52,6 @@
     "wrangler": "4.147.0"
   },
   "dependencies": {
-    "pixi.js": "8.22.0"
+    "pixi.js": "8.23.0"
   }
 }
